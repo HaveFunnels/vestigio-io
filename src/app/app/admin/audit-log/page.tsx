@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
@@ -181,6 +182,7 @@ const icons = {
 const PAGE_SIZE = 25;
 
 export default function AuditLogPage() {
+  const t = useTranslations("console.admin.audit_log");
   const [loading, setLoading] = useState(true);
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [total, setTotal] = useState(0);
@@ -236,39 +238,39 @@ export default function AuditLogPage() {
     <div className="space-y-8 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-content">Audit Log</h1>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Complete trail of admin actions across the platform.
+          {t("subtitle")}
         </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Events"
+          label={t("stat_total_events")}
           value={loading ? "--" : String(total)}
-          sub="All recorded actions"
+          sub={t("stat_total_events_sub")}
           icon={icons.log}
           loading={loading}
         />
         <StatCard
-          label="This Page"
+          label={t("stat_this_page")}
           value={loading ? "--" : String(logs.length)}
-          sub={`Page ${page + 1} of ${totalPages || 1}`}
+          sub={t("stat_this_page_sub", { page: page + 1, total: totalPages || 1 })}
           icon={icons.clock}
           loading={loading}
         />
         <StatCard
-          label="Unique Actors"
+          label={t("stat_unique_actors")}
           value={loading ? "--" : String(uniqueActors)}
-          sub="On current page"
+          sub={t("stat_unique_actors_sub")}
           icon={icons.user}
           loading={loading}
         />
         <StatCard
-          label="Security Events"
+          label={t("stat_security_events")}
           value={loading ? "--" : String(logs.filter((l) => l.action === "org.impersonate" || l.action.startsWith("user.")).length)}
-          sub="Impersonations & role changes"
+          sub={t("stat_security_events_sub")}
           icon={icons.shield}
           warn={logs.some((l) => l.action === "org.impersonate")}
           loading={loading}
@@ -282,7 +284,7 @@ export default function AuditLogPage() {
           value={actionFilter}
           onChange={setActionFilter}
           options={[
-            { value: "", label: "All Actions" },
+            { value: "", label: t("all_actions") },
             ...ALL_ACTIONS.map((a) => ({
               value: a,
               label: ACTION_CATEGORIES[a]?.label || a,
@@ -292,7 +294,7 @@ export default function AuditLogPage() {
 
         <input
           type="text"
-          placeholder="Search by actor email..."
+          placeholder={t("search_actor_placeholder")}
           value={actorSearch}
           onChange={(e) => setActorSearch(e.target.value)}
           className="rounded-lg border border-edge bg-surface-card px-3 py-2 text-sm text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
@@ -306,7 +308,7 @@ export default function AuditLogPage() {
             }}
             className="text-xs text-content-faint hover:text-content"
           >
-            Clear filters
+            {t("clear_filters")}
           </button>
         )}
       </div>
@@ -318,19 +320,19 @@ export default function AuditLogPage() {
             <thead>
               <tr className="border-b border-edge">
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Time
+                  {t("col_time")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Actor
+                  {t("col_actor")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Action
+                  {t("col_action")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Target
+                  {t("col_target")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  IP Address
+                  {t("col_ip")}
                 </th>
               </tr>
             </thead>
@@ -343,7 +345,7 @@ export default function AuditLogPage() {
                     colSpan={5}
                     className="px-5 py-12 text-center text-sm text-content-faint"
                   >
-                    No audit log entries found.
+                    {t("no_entries")}
                   </td>
                 </tr>
               ) : (
@@ -387,7 +389,7 @@ export default function AuditLogPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-edge px-5 py-3">
             <p className="text-xs text-content-faint">
-              Showing {page * PAGE_SIZE + 1}–{Math.min((page + 1) * PAGE_SIZE, total)} of {total}
+              {t("showing_range", { start: page * PAGE_SIZE + 1, end: Math.min((page + 1) * PAGE_SIZE, total), total })}
             </p>
             <div className="flex gap-2">
               <button
@@ -395,14 +397,14 @@ export default function AuditLogPage() {
                 onClick={() => setPage((p) => p - 1)}
                 className="rounded-md border border-edge px-3 py-1.5 text-xs text-content transition-colors hover:bg-surface-card-hover disabled:opacity-40"
               >
-                Previous
+                {t("previous")}
               </button>
               <button
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
                 className="rounded-md border border-edge px-3 py-1.5 text-xs text-content transition-colors hover:bg-surface-card-hover disabled:opacity-40"
               >
-                Next
+                {t("next")}
               </button>
             </div>
           </div>

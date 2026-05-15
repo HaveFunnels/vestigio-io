@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Admin — Environments
@@ -21,6 +22,7 @@ interface EnvRow {
 
 export default function AdminEnvironmentsPage() {
   const router = useRouter();
+  const t = useTranslations("console.admin.environments");
   const [search, setSearch] = useState("");
   const [environments, setEnvironments] = useState<EnvRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,10 +87,10 @@ export default function AdminEnvironmentsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-dark dark:text-white">Environments</h1>
-          <p className="mt-1 text-sm text-body-color">All domains and their audit status.</p>
+          <h1 className="text-2xl font-bold text-dark dark:text-white">{t("title")}</h1>
+          <p className="mt-1 text-sm text-body-color">{t("subtitle")}</p>
         </div>
-        <input type="text" placeholder="Search domains..." value={search} onChange={(e) => setSearch(e.target.value)}
+        <input type="text" placeholder={t("search_placeholder")} value={search} onChange={(e) => setSearch(e.target.value)}
           className="rounded-md border border-stroke bg-transparent px-4 py-2 text-sm dark:border-stroke-dark" />
       </div>
 
@@ -96,25 +98,25 @@ export default function AdminEnvironmentsPage() {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-edge bg-surface-inset/60">
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">Domain</th>
-              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted sm:table-cell">Organization</th>
-              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted lg:table-cell">Production</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">Last Audit</th>
-              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted lg:table-cell">Created</th>
-              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">Actions</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("col_domain")}</th>
+              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted sm:table-cell">{t("col_organization")}</th>
+              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted lg:table-cell">{t("col_production")}</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("col_last_audit")}</th>
+              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted lg:table-cell">{t("col_created")}</th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-content-muted">{t("col_actions")}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-content-faint">Loading...</td></tr>
+              <tr><td colSpan={6} className="px-4 py-12 text-center text-content-faint">{t("loading")}</td></tr>
             ) : environments.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-12 text-center text-content-faint">{search ? "No matches." : "No environments found."}</td></tr>
+              <tr><td colSpan={6} className="px-4 py-12 text-center text-content-faint">{search ? t("no_matches") : t("no_environments")}</td></tr>
             ) : (
               environments.map((env) => (
                 <tr key={env.id} className="border-b border-edge transition-colors hover:bg-surface-card-hover">
                   <td className="px-4 py-3 font-medium text-content">{env.domain}</td>
                   <td className="hidden px-4 py-3 text-content-tertiary sm:table-cell">{env.orgName}</td>
-                  <td className="hidden px-4 py-3 lg:table-cell">{env.isProduction ? "Yes" : "No"}</td>
+                  <td className="hidden px-4 py-3 lg:table-cell">{env.isProduction ? t("yes") : t("no")}</td>
                   <td className="px-4 py-3">
                     <span className={`rounded px-2 py-0.5 text-xs font-medium ${env.lastAuditStatus === "complete" ? "bg-emerald-500/10 text-emerald-400" : env.lastAuditStatus === "running" ? "bg-blue-500/10 text-blue-400" : env.lastAuditStatus === "failed" ? "bg-red-500/10 text-red-400" : "bg-amber-500/10 text-amber-400"}`}>
                       {env.lastAuditStatus}
@@ -128,9 +130,9 @@ export default function AdminEnvironmentsPage() {
                         disabled={triggeringId === env.id}
                         className="text-xs text-accent-text hover:underline disabled:opacity-50"
                       >
-                        {triggeringId === env.id ? "Triggering…" : "Trigger Audit"}
+                        {triggeringId === env.id ? t("triggering") : t("trigger_audit")}
                       </button>
-                      <button onClick={() => handleViewFindings(env)} className="text-xs text-content-muted hover:underline">View Findings</button>
+                      <button onClick={() => handleViewFindings(env)} className="text-xs text-content-muted hover:underline">{t("view_findings")}</button>
                     </div>
                   </td>
                 </tr>

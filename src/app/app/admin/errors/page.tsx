@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
@@ -215,24 +216,24 @@ function SkeletonGroupRow() {
 
 /* ---------- Trend Badge ---------- */
 
-function TrendBadge({ trend }: { trend: "increasing" | "stable" | "decreasing" }) {
+function TrendBadge({ trend, labels }: { trend: "increasing" | "stable" | "decreasing"; labels: { increasing: string; decreasing: string; stable: string } }) {
   if (trend === "increasing") {
     return (
       <span className="inline-flex items-center gap-0.5 rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-400">
-        <span className="text-xs leading-none">&uarr;</span> Increasing
+        <span className="text-xs leading-none">&uarr;</span> {labels.increasing}
       </span>
     );
   }
   if (trend === "decreasing") {
     return (
       <span className="inline-flex items-center gap-0.5 rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
-        <span className="text-xs leading-none">&darr;</span> Decreasing
+        <span className="text-xs leading-none">&darr;</span> {labels.decreasing}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-0.5 rounded bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium text-content-faint">
-      <span className="text-xs leading-none">&rarr;</span> Stable
+      <span className="text-xs leading-none">&rarr;</span> {labels.stable}
     </span>
   );
 }
@@ -240,6 +241,12 @@ function TrendBadge({ trend }: { trend: "increasing" | "stable" | "decreasing" }
 /* ---------- Main Page ---------- */
 
 export default function AdminErrorsPage() {
+  const t = useTranslations("console.admin.errors");
+  const trendLabels = {
+    increasing: t("trend_increasing"),
+    decreasing: t("trend_decreasing"),
+    stable: t("trend_stable"),
+  };
   const [data, setData] = useState<ErrorResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<{
@@ -300,7 +307,7 @@ export default function AdminErrorsPage() {
   };
 
   const purgeOld = async () => {
-    if (!confirm("Purge errors older than 14 days?")) return;
+    if (!confirm(t("purge_confirm"))) return;
     await fetch("/api/admin/errors?olderThanDays=14", { method: "DELETE" });
     fetchErrors();
   };
@@ -338,10 +345,10 @@ export default function AdminErrorsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-content">Error Tracking</h1>
+          <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
           <p className="mt-1 text-sm text-content-muted">
-            Platform-wide error monitoring with smart grouping.{" "}
-            {data ? `${data.total} total errors.` : ""}
+            {t("subtitle")}{" "}
+            {data ? t("total_errors", { count: data.total }) : ""}
           </p>
         </div>
         <div className="flex gap-2">
@@ -350,20 +357,20 @@ export default function AdminErrorsPage() {
               onClick={resolveSelected}
               className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 transition-colors hover:bg-emerald-500/20"
             >
-              Resolve ({selectedIds.size})
+              {t("resolve_selected", { count: selectedIds.size })}
             </button>
           )}
           <button
             onClick={purgeOld}
             className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-muted transition-colors hover:bg-surface-inset hover:text-content"
           >
-            Purge 14d+
+            {t("purge_old")}
           </button>
           <button
             onClick={fetchErrors}
             className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-content-muted transition-colors hover:bg-surface-inset hover:text-content"
           >
-            Refresh
+            {t("refresh")}
           </button>
         </div>
       </div>
@@ -402,7 +409,7 @@ export default function AdminErrorsPage() {
                 : "text-content-muted hover:text-content"
             }`}
           >
-            Grouped
+            {t("grouped")}
           </button>
           <button
             onClick={() => setViewMode("list")}
@@ -412,7 +419,7 @@ export default function AdminErrorsPage() {
                 : "text-content-muted hover:text-content"
             }`}
           >
-            List
+            {t("list")}
           </button>
         </div>
 
@@ -426,7 +433,7 @@ export default function AdminErrorsPage() {
               setPage(0);
             }}
             options={[
-              { value: "", label: "All Severities" },
+              { value: "", label: t("all_severities") },
               { value: "critical", label: "Critical" },
               { value: "error", label: "Error" },
               { value: "warning", label: "Warning" },
@@ -441,15 +448,15 @@ export default function AdminErrorsPage() {
               setPage(0);
             }}
             options={[
-              { value: "false", label: "Unresolved" },
-              { value: "true", label: "Resolved" },
-              { value: "", label: "All" },
+              { value: "false", label: t("unresolved") },
+              { value: "true", label: t("resolved") },
+              { value: "", label: t("all") },
             ]}
           />
 
           <input
             type="text"
-            placeholder="Filter by endpoint..."
+            placeholder={t("filter_endpoint_placeholder")}
             value={filter.endpoint}
             onChange={(e) => {
               setFilter((f) => ({ ...f, endpoint: e.target.value }));
@@ -466,7 +473,7 @@ export default function AdminErrorsPage() {
           onClick={() => setShowMuted(!showMuted)}
           className="text-xs text-content-faint transition-colors hover:text-content-muted"
         >
-          {showMuted ? "Hide" : "Show"} muted ({mutedCount})
+          {showMuted ? t("hide_muted", { count: mutedCount }) : t("show_muted", { count: mutedCount })}
         </button>
       )}
 
@@ -476,11 +483,11 @@ export default function AdminErrorsPage() {
           <div className="border-b border-edge px-5 py-3">
             <div className="flex items-center gap-4 text-[10px] font-medium uppercase tracking-wider text-content-muted">
               <span className="w-5" />
-              <span className="w-14">Count</span>
-              <span className="flex-1">Error Group</span>
-              <span className="w-24">Trend</span>
-              <span className="w-20 text-right">Last Seen</span>
-              <span className="w-16 text-right">Actions</span>
+              <span className="w-14">{t("col_count")}</span>
+              <span className="flex-1">{t("col_error_group")}</span>
+              <span className="w-24">{t("col_trend")}</span>
+              <span className="w-20 text-right">{t("col_last_seen")}</span>
+              <span className="w-16 text-right">{t("col_actions")}</span>
             </div>
           </div>
 
@@ -493,8 +500,8 @@ export default function AdminErrorsPage() {
           ) : visibleGroups.length === 0 ? (
             <div className="px-5 py-12 text-center text-sm text-content-faint">
               {mutedCount > 0 && !showMuted
-                ? "All error groups are muted. Click \"Show muted\" to reveal them."
-                : "No errors found. Your platform is running clean."}
+                ? t("all_muted")
+                : t("no_errors")}
             </div>
           ) : (
             <div className="divide-y divide-edge">
@@ -542,7 +549,7 @@ export default function AdminErrorsPage() {
                     </div>
 
                     <div className="w-24 shrink-0">
-                      <TrendBadge trend={group.trend} />
+                      <TrendBadge trend={group.trend} labels={trendLabels} />
                     </div>
 
                     <span className="w-20 shrink-0 text-right text-xs text-content-faint">
@@ -560,10 +567,10 @@ export default function AdminErrorsPage() {
                             ? "bg-surface-inset text-content-faint hover:text-content-muted"
                             : "text-content-faint hover:bg-surface-inset hover:text-content-muted"
                         }`}
-                        title={group.muted ? "Unmute" : "Mute"}
+                        title={group.muted ? t("unmute") : t("mute")}
                       >
                         {group.muted ? icons.volumeOff : icons.volumeOn}
-                        <span>{group.muted ? "Muted" : "Mute"}</span>
+                        <span>{group.muted ? t("muted") : t("mute")}</span>
                       </button>
                     </div>
                   </div>
@@ -712,7 +719,7 @@ export default function AdminErrorsPage() {
             </div>
           ) : !data?.errors.length ? (
             <div className="px-5 py-12 text-center text-sm text-content-faint">
-              No errors found. Your platform is running clean.
+              {t("no_errors")}
             </div>
           ) : (
             <div className="divide-y divide-edge">
@@ -836,8 +843,7 @@ export default function AdminErrorsPage() {
       {data && data.total > limit && (
         <div className="flex items-center justify-between">
           <span className="text-xs text-content-faint">
-            Showing {page * limit + 1}--{Math.min((page + 1) * limit, data.total)}{" "}
-            of {data.total}
+            {t("showing_range", { start: page * limit + 1, end: Math.min((page + 1) * limit, data.total), total: data.total })}
           </span>
           <div className="flex gap-1">
             <button
@@ -845,14 +851,14 @@ export default function AdminErrorsPage() {
               onClick={() => setPage((p) => p - 1)}
               className="rounded-lg border border-edge px-2.5 py-1.5 text-xs text-content-muted transition-colors hover:bg-surface-inset disabled:opacity-30"
             >
-              Prev
+              {t("prev")}
             </button>
             <button
               disabled={(page + 1) * limit >= data.total}
               onClick={() => setPage((p) => p + 1)}
               className="rounded-lg border border-edge px-2.5 py-1.5 text-xs text-content-muted transition-colors hover:bg-surface-inset disabled:opacity-30"
             >
-              Next
+              {t("next")}
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
@@ -240,6 +241,7 @@ function groupByType(feedbacks: Feedback[]): FeedbackGroup[] {
 /* ---------- Main Page ---------- */
 
 export default function AdminFeedbackPage() {
+  const t = useTranslations("console.admin.feedback");
   const [loading, setLoading] = useState(true);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [total, setTotal] = useState(0);
@@ -318,9 +320,9 @@ export default function AdminFeedbackPage() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-content">Feedback</h1>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Consolidated user feedback grouped by type. Review, triage, and action on insights from your users.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -343,7 +345,7 @@ export default function AdminFeedbackPage() {
               ) : (
                 <span className="text-xl font-bold text-content">{typeCounts[type] || 0}</span>
               )}
-              <span className="text-[10px] text-content-faint">items</span>
+              <span className="text-[10px] text-content-faint">{t("items")}</span>
             </div>
           </div>
         ))}
@@ -353,19 +355,28 @@ export default function AdminFeedbackPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Status tabs */}
         <div className="flex rounded-lg border border-edge bg-surface-card p-0.5">
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setStatusFilter(tab.value)}
-              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                statusFilter === tab.value
-                  ? "bg-accent/20 text-accent-text"
-                  : "text-content-muted hover:text-content"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {STATUS_TABS.map((tab) => {
+            const tabLabelMap: Record<string, string> = {
+              "": t("tab_all"),
+              "new": t("tab_new"),
+              "reviewed": t("tab_reviewed"),
+              "actioned": t("tab_actioned"),
+              "dismissed": t("tab_dismissed"),
+            };
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  statusFilter === tab.value
+                    ? "bg-accent/20 text-accent-text"
+                    : "text-content-muted hover:text-content"
+                }`}
+              >
+                {tabLabelMap[tab.value] ?? tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* View mode toggle */}
@@ -378,7 +389,7 @@ export default function AdminFeedbackPage() {
                 : "text-content-muted hover:text-content"
             }`}
           >
-            Grouped
+            {t("grouped")}
           </button>
           <button
             onClick={() => setViewMode("list")}
@@ -388,7 +399,7 @@ export default function AdminFeedbackPage() {
                 : "text-content-muted hover:text-content"
             }`}
           >
-            List
+            {t("list")}
           </button>
         </div>
       </div>
@@ -399,9 +410,9 @@ export default function AdminFeedbackPage() {
           <div className="border-b border-edge px-5 py-3">
             <div className="flex items-center gap-4 text-[10px] font-medium uppercase tracking-wider text-content-muted">
               <span className="w-5" />
-              <span className="w-14">Count</span>
-              <span className="flex-1">Type</span>
-              <span className="w-24 text-right">Last Received</span>
+              <span className="w-14">{t("col_count")}</span>
+              <span className="flex-1">{t("col_type")}</span>
+              <span className="w-24 text-right">{t("col_last_received")}</span>
             </div>
           </div>
 
@@ -413,7 +424,7 @@ export default function AdminFeedbackPage() {
             </div>
           ) : groups.length === 0 ? (
             <div className="px-5 py-12 text-center text-sm text-content-faint">
-              No feedback found for this filter.
+              {t("no_feedback")}
             </div>
           ) : (
             <div className="divide-y divide-edge">
@@ -513,7 +524,7 @@ export default function AdminFeedbackPage() {
                                   </div>
                                   <div className="flex items-center gap-2 pt-1">
                                     <span className="text-[10px] font-medium uppercase tracking-wider text-content-muted">
-                                      Set Status:
+                                      {t("set_status")}
                                     </span>
                                     {FEEDBACK_STATUSES.map((s) => (
                                       <button
@@ -552,23 +563,23 @@ export default function AdminFeedbackPage() {
       {viewMode === "list" && (
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="flex items-center justify-between border-b border-edge px-5 py-4">
-            <h2 className="text-sm font-semibold text-content">All Feedback</h2>
+            <h2 className="text-sm font-semibold text-content">{t("all_feedback")}</h2>
             {!loading && (
-              <span className="text-xs text-content-faint">{total} total</span>
+              <span className="text-xs text-content-faint">{t("total_count", { count: total })}</span>
             )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-edge">
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">User</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Type</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Rating</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Content</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Page</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Status</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Created</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Actions</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_user")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_type")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_rating")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_content")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_page")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_status")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_created")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_actions")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-edge">
@@ -577,7 +588,7 @@ export default function AdminFeedbackPage() {
                 ) : feedbacks.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-5 py-12 text-center text-sm text-content-faint">
-                      No feedback found for this filter.
+                      {t("no_feedback")}
                     </td>
                   </tr>
                 ) : (

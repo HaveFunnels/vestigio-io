@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { signIn, useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import ExportButton from "@/components/app/ExportButton";
 import {
@@ -158,6 +159,7 @@ function StatCard({
 /* ---------- Main Page ---------- */
 
 export default function AdminOrganizationsPage() {
+  const t = useTranslations("console.admin.organizations");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<"" | "customer" | "demo" | "trial">("");
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
@@ -218,8 +220,11 @@ export default function AdminOrganizationsPage() {
 
   async function handleSuspend(org: OrgRow) {
     const isSuspended = org.status === "suspended";
-    const action = isSuspended ? "reactivate" : "suspend";
-    if (!confirm(`Are you sure you want to ${action} "${org.name}"?`)) return;
+    const confirmMsg = isSuspended
+      ? t("confirm_reactivate", { name: org.name })
+      : t("confirm_suspend", { name: org.name });
+    const failMsg = isSuspended ? t("failed_to_reactivate") : t("failed_to_suspend");
+    if (!confirm(confirmMsg)) return;
 
     try {
       const res = await fetch(`/api/admin/organizations/${org.id}/suspend`, {
@@ -234,10 +239,10 @@ export default function AdminOrganizationsPage() {
         }
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(data.message || `Failed to ${action} organization.`);
+        alert(data.message || failMsg);
       }
     } catch {
-      alert(`Failed to ${action} organization.`);
+      alert(failMsg);
     }
   }
 
@@ -250,13 +255,13 @@ export default function AdminOrganizationsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.message || "Failed to find org owner");
+        alert(data.message || t("failed_find_owner"));
         return;
       }
 
       const adminEmail = session?.user?.email;
       if (!adminEmail) {
-        alert("Could not determine admin email");
+        alert(t("could_not_determine_admin"));
         return;
       }
 
@@ -267,12 +272,12 @@ export default function AdminOrganizationsPage() {
       });
 
       if (result?.error) {
-        alert(`Impersonation failed: ${result.error}`);
+        alert(t("impersonation_failed_with_reason", { reason: result.error }));
       } else {
         window.location.href = "/app";
       }
     } catch {
-      alert("Impersonation failed.");
+      alert(t("impersonation_failed"));
     }
   }
 
@@ -318,20 +323,20 @@ export default function AdminOrganizationsPage() {
     if (org.orgType === "demo") {
       return (
         <span className="inline-block rounded border px-2 py-0.5 text-xs font-medium bg-zinc-500/10 text-content-muted border-zinc-500/20">
-          Demo
+          {t("badge_demo")}
         </span>
       );
     }
     if (org.orgType === "trial") {
-      let daysLeft = "";
+      let label = t("badge_trial");
       if (org.trialEndsAt) {
         const diff = new Date(org.trialEndsAt).getTime() - Date.now();
         const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
-        daysLeft = ` (${days}d left)`;
+        label = t("badge_trial_days_left", { days });
       }
       return (
         <span className="inline-block rounded border px-2 py-0.5 text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20">
-          Trial{daysLeft}
+          {label}
         </span>
       );
     }
@@ -360,9 +365,9 @@ export default function AdminOrganizationsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-xl font-semibold text-content">Organizations</h1>
+            <h1 className="text-xl font-semibold text-content">{t("page_title")}</h1>
             <p className="mt-1 text-sm text-content-muted">
-              Manage tenant organizations, members, and environments.
+              {t("page_description")}
             </p>
           </div>
           <ExportButton
@@ -382,7 +387,7 @@ export default function AdminOrganizationsPage() {
         <div className="flex items-center gap-2">
           <input
             type="text"
-            placeholder="Search organizations..."
+            placeholder={t("search_placeholder")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
@@ -391,7 +396,7 @@ export default function AdminOrganizationsPage() {
             href="/app/admin/organizations/new"
             className="rounded-lg bg-accent/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent/30"
           >
-            New Organization
+            {t("new_organization")}
           </Link>
         </div>
       </div>
@@ -399,27 +404,27 @@ export default function AdminOrganizationsPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Organizations"
+          label={t("stat_total_organizations")}
           value={loading ? placeholder : String(totalOrgs)}
-          sub={`${activeOrgs} active, ${suspendedOrgs} suspended`}
+          sub={t("stat_total_organizations_sub", { active: activeOrgs, suspended: suspendedOrgs })}
           icon={icons.building}
         />
         <StatCard
-          label="Total Members"
+          label={t("stat_total_members")}
           value={loading ? placeholder : String(totalMembers)}
-          sub={`Across ${totalOrgs} organizations`}
+          sub={t("stat_total_members_sub", { count: totalOrgs })}
           icon={icons.users}
         />
         <StatCard
-          label="Total Environments"
+          label={t("stat_total_environments")}
           value={loading ? placeholder : String(totalEnvs)}
-          sub="Domains registered"
+          sub={t("stat_total_environments_sub")}
           icon={icons.globe}
         />
         <StatCard
-          label="Active Orgs"
+          label={t("stat_active_orgs")}
           value={loading ? placeholder : String(activeOrgs)}
-          sub={suspendedOrgs > 0 ? `${suspendedOrgs} suspended` : "All healthy"}
+          sub={suspendedOrgs > 0 ? t("stat_active_orgs_suspended_sub", { count: suspendedOrgs }) : t("stat_active_orgs_healthy_sub")}
           icon={icons.building}
           accent
           warn={suspendedOrgs > 0}
@@ -429,10 +434,10 @@ export default function AdminOrganizationsPage() {
       {/* Org Type Filter Tabs */}
       <div className="flex items-center gap-1 rounded-lg border border-edge bg-surface-card p-1">
         {([
-          { value: "" as const, label: "All" },
-          { value: "customer" as const, label: "Customers" },
-          { value: "trial" as const, label: "Trial" },
-          { value: "demo" as const, label: "Demo" },
+          { value: "" as const, label: t("tab_all") },
+          { value: "customer" as const, label: t("tab_customers") },
+          { value: "trial" as const, label: t("tab_trial") },
+          { value: "demo" as const, label: t("tab_demo") },
         ] as const).map((tab) => (
           <button
             key={tab.value}
@@ -452,17 +457,23 @@ export default function AdminOrganizationsPage() {
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="border-b border-edge px-5 py-4">
           <h2 className="text-sm font-semibold text-content">
-            {typeFilter ? `${typeFilter.charAt(0).toUpperCase() + typeFilter.slice(1)} Organizations` : "All Organizations"}
+            {typeFilter === "customer"
+              ? t("section_customer_organizations")
+              : typeFilter === "trial"
+                ? t("section_trial_organizations")
+                : typeFilter === "demo"
+                  ? t("section_demo_organizations")
+                  : t("section_all_organizations")}
           </h2>
         </div>
 
         {loading ? (
           <div className="px-5 py-12 text-center text-sm text-content-faint">
-            Loading...
+            {t("loading")}
           </div>
         ) : orgs.length === 0 ? (
           <div className="px-5 py-12 text-center text-sm text-content-faint">
-            {search ? "No matches." : "No organizations yet."}
+            {search ? t("no_matches") : t("no_organizations_yet")}
           </div>
         ) : (
           <div className="divide-y divide-edge">
@@ -499,9 +510,14 @@ export default function AdminOrganizationsPage() {
                         {orgTypeBadge(org)}
                       </div>
                       <p className="mt-0.5 text-xs text-content-faint">
-                        {org.memberCount} member{org.memberCount !== 1 ? "s" : ""} &middot;{" "}
-                        {org.envCount} environment{org.envCount !== 1 ? "s" : ""} &middot;{" "}
-                        Created {timeAgo(org.createdAt)}
+                        {org.memberCount === 1
+                          ? t("members_count_one", { count: org.memberCount })
+                          : t("members_count", { count: org.memberCount })}{" "}
+                        &middot;{" "}
+                        {org.envCount === 1
+                          ? t("environments_count_one", { count: org.envCount })
+                          : t("environments_count", { count: org.envCount })}{" "}
+                        &middot; {t("created_ago", { when: timeAgo(org.createdAt) })}
                       </p>
                     </div>
 
@@ -519,13 +535,13 @@ export default function AdminOrganizationsPage() {
                           href={`/app/admin/organizations/${org.id}`}
                           className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-xs text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
                         >
-                          Detail
+                          {t("action_detail")}
                         </Link>
                         <button
                           onClick={() => handleToggleDetail(org.id)}
                           className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
                         >
-                          {isOpen ? "Close" : "View"}
+                          {isOpen ? t("action_close") : t("action_view")}
                         </button>
                         <button
                           onClick={() => handleSuspend(org)}
@@ -533,13 +549,13 @@ export default function AdminOrganizationsPage() {
                             org.status === "suspended" ? "text-emerald-400" : "text-amber-400"
                           }`}
                         >
-                          {org.status === "suspended" ? "Reactivate" : "Suspend"}
+                          {org.status === "suspended" ? t("action_reactivate") : t("action_suspend")}
                         </button>
                         <button
                           onClick={() => handleImpersonate(org)}
                           className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-xs text-accent-text transition-colors hover:bg-surface-card-hover"
                         >
-                          Impersonate
+                          {t("action_impersonate")}
                         </button>
                       </PopoverContent>
                     </Popover>
@@ -550,7 +566,7 @@ export default function AdminOrganizationsPage() {
                     <div className="border-t border-edge bg-surface-inset/30 px-5 py-5">
                       {detailLoading ? (
                         <div className="py-8 text-center text-sm text-content-faint">
-                          Loading organization details...
+                          {t("loading_details")}
                         </div>
                       ) : orgDetail && orgDetail.id === org.id ? (
                         <div className="grid gap-5 lg:grid-cols-2">
@@ -558,12 +574,12 @@ export default function AdminOrganizationsPage() {
                           <div className="rounded-lg border border-edge bg-surface-card">
                             <div className="flex items-center justify-between border-b border-edge px-4 py-3">
                               <h3 className="text-xs font-semibold uppercase tracking-wider text-content-muted">
-                                Members ({orgDetail.members.length})
+                                {t("members_section", { count: orgDetail.members.length })}
                               </h3>
                             </div>
                             {orgDetail.members.length === 0 ? (
                               <div className="px-4 py-6 text-center text-xs text-content-faint">
-                                No members found.
+                                {t("no_members_found")}
                               </div>
                             ) : (
                               <div className="divide-y divide-edge">
@@ -582,7 +598,7 @@ export default function AdminOrganizationsPage() {
                                     <div className="min-w-0 flex-1">
                                       <div className="flex items-center gap-2">
                                         <p className="truncate text-sm font-medium text-content">
-                                          {member.name || "Unnamed"}
+                                          {member.name || t("unnamed")}
                                         </p>
                                         {roleBadge(member.role)}
                                       </div>
@@ -591,7 +607,7 @@ export default function AdminOrganizationsPage() {
                                       </p>
                                     </div>
                                     <p className="shrink-0 text-[11px] text-content-faint">
-                                      Joined {timeAgo(member.joinedAt)}
+                                      {t("joined_ago", { when: timeAgo(member.joinedAt) })}
                                     </p>
                                   </div>
                                 ))}
@@ -603,12 +619,12 @@ export default function AdminOrganizationsPage() {
                           <div className="rounded-lg border border-edge bg-surface-card">
                             <div className="flex items-center justify-between border-b border-edge px-4 py-3">
                               <h3 className="text-xs font-semibold uppercase tracking-wider text-content-muted">
-                                Environments ({orgDetail.environments.length})
+                                {t("environments_section", { count: orgDetail.environments.length })}
                               </h3>
                             </div>
                             {orgDetail.environments.length === 0 ? (
                               <div className="px-4 py-6 text-center text-xs text-content-faint">
-                                No environments found.
+                                {t("no_environments_found")}
                               </div>
                             ) : (
                               <div className="divide-y divide-edge">
@@ -633,7 +649,7 @@ export default function AdminOrganizationsPage() {
                                     <div className="flex shrink-0 items-center gap-2">
                                       {env.isProduction && (
                                         <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
-                                          production
+                                          {t("production_label")}
                                         </span>
                                       )}
                                       <p className="text-[11px] text-content-faint">
@@ -650,20 +666,20 @@ export default function AdminOrganizationsPage() {
                           {(orgDetail.orgType === "demo" || orgDetail.orgType === "trial") && (
                             <div className="rounded-lg border border-edge bg-surface-card px-4 py-3 lg:col-span-2">
                               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                                Organization Type
+                                {t("organization_type")}
                               </h3>
                               <div className="flex gap-6 text-sm">
                                 <span className="text-content-faint">
-                                  Type:{" "}
+                                  {t("type_label")}{" "}
                                   <span className="font-medium capitalize text-content">
                                     {orgDetail.orgType}
                                   </span>
                                 </span>
                                 {orgDetail.orgType === "trial" && orgDetail.trialEndsAt && (
                                   <span className="text-content-faint">
-                                    Trial Ends:{" "}
+                                    {t("trial_ends_label")}{" "}
                                     <span className="font-medium text-amber-600 dark:text-amber-400">
-                                      {new Date(orgDetail.trialEndsAt).toLocaleDateString()} ({Math.max(0, Math.ceil((new Date(orgDetail.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))}d remaining)
+                                      {new Date(orgDetail.trialEndsAt).toLocaleDateString()} ({t("trial_days_remaining", { days: Math.max(0, Math.ceil((new Date(orgDetail.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))) })})
                                     </span>
                                   </span>
                                 )}
@@ -675,18 +691,18 @@ export default function AdminOrganizationsPage() {
                           {orgDetail.businessProfile && (
                             <div className="rounded-lg border border-edge bg-surface-card px-4 py-3 lg:col-span-2">
                               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-                                Business Profile
+                                {t("business_profile")}
                               </h3>
                               <div className="flex gap-6 text-sm">
                                 <span className="text-content-faint">
-                                  Model:{" "}
+                                  {t("model_label")}{" "}
                                   <span className="font-medium capitalize text-content">
                                     {orgDetail.businessProfile.businessModel}
                                   </span>
                                 </span>
                                 {orgDetail.businessProfile.monthlyRevenue != null && (
                                   <span className="text-content-faint">
-                                    Monthly Revenue:{" "}
+                                    {t("monthly_revenue_label")}{" "}
                                     <span className="font-medium text-content">
                                       ${orgDetail.businessProfile.monthlyRevenue.toLocaleString()}
                                     </span>
@@ -698,7 +714,7 @@ export default function AdminOrganizationsPage() {
                         </div>
                       ) : (
                         <div className="py-8 text-center text-sm text-content-faint">
-                          Failed to load details.
+                          {t("failed_to_load_details")}
                         </div>
                       )}
                     </div>

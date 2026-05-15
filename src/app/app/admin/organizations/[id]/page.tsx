@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { signIn, useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import CustomSelect from "@/components/console/CustomSelect";
@@ -279,6 +280,7 @@ function roleBadge(role: string) {
 /* ---------- Main Page ---------- */
 
 export default function AdminOrganizationDetailPage() {
+  const t = useTranslations("console.admin.org_detail");
   const params = useParams();
   const { data: session } = useSession();
 
@@ -303,17 +305,17 @@ export default function AdminOrganizationDetailPage() {
       const res = await fetch(`/api/admin/organizations/${orgId}`);
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.message || "Failed to load organization");
+        setError(data.message || t("failed_to_load"));
         return;
       }
       const data = await res.json();
       setOrg(data.organization);
     } catch {
-      setError("Failed to load organization");
+      setError(t("failed_to_load"));
     } finally {
       setLoading(false);
     }
-  }, [orgId]);
+  }, [orgId, t]);
 
   useEffect(() => {
     fetchOrg();
@@ -324,8 +326,11 @@ export default function AdminOrganizationDetailPage() {
   async function handleSuspend() {
     if (!org) return;
     const isSuspended = org.status === "suspended";
-    const action = isSuspended ? "reactivate" : "suspend";
-    if (!confirm(`Are you sure you want to ${action} "${org.name}"?`)) return;
+    const confirmMsg = isSuspended
+      ? t("confirm_reactivate", { name: org.name })
+      : t("confirm_suspend", { name: org.name });
+    const failMsg = isSuspended ? t("failed_to_reactivate") : t("failed_to_suspend");
+    if (!confirm(confirmMsg)) return;
 
     setActionLoading(true);
     try {
@@ -338,10 +343,10 @@ export default function AdminOrganizationDetailPage() {
         await fetchOrg();
       } else {
         const data = await res.json().catch(() => ({}));
-        alert(data.message || `Failed to ${action} organization.`);
+        alert(data.message || failMsg);
       }
     } catch {
-      alert(`Failed to ${action} organization.`);
+      alert(failMsg);
     } finally {
       setActionLoading(false);
     }
@@ -395,11 +400,10 @@ export default function AdminOrganizationDetailPage() {
       payload.plan &&
       org.billing?.subscriptionId &&
       !confirm(
-        `This org has an active subscription (${org.billing.subscriptionId}). ` +
-          `Changing the plan here updates Organization.plan only — it does NOT ` +
-          `migrate the subscription at Paddle/Stripe. The customer will keep ` +
-          `being billed for "${org.plan}" until the subscription is changed ` +
-          `in the billing provider. Continue?`,
+        t("confirm_plan_change", {
+          subscriptionId: org.billing.subscriptionId,
+          currentPlan: org.plan,
+        }),
       )
     ) {
       return;
@@ -409,7 +413,7 @@ export default function AdminOrganizationDetailPage() {
     const currentTrialIso = org.trialEndsAt ? org.trialEndsAt.slice(0, 10) : "";
     if (editOrgType === "trial") {
       if (!editTrialEndsAt) {
-        setSaveError("Trial end date is required for trial orgs");
+        setSaveError(t("trial_end_required"));
         return;
       }
       if (editTrialEndsAt !== currentTrialIso) {
@@ -435,13 +439,13 @@ export default function AdminOrganizationDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setSaveError(data.message || "Failed to update organization");
+        setSaveError(data.message || t("failed_to_update"));
         return;
       }
       await fetchOrg();
       setEditorOpen(false);
     } catch {
-      setSaveError("Failed to update organization");
+      setSaveError(t("failed_to_update"));
     } finally {
       setActionLoading(false);
     }
@@ -458,13 +462,13 @@ export default function AdminOrganizationDetailPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.message || "Failed to find org owner");
+        alert(data.message || t("failed_find_owner"));
         return;
       }
 
       const adminEmail = session?.user?.email;
       if (!adminEmail) {
-        alert("Could not determine admin email");
+        alert(t("could_not_determine_admin"));
         return;
       }
 
@@ -475,12 +479,12 @@ export default function AdminOrganizationDetailPage() {
       });
 
       if (result?.error) {
-        alert(`Impersonation failed: ${result.error}`);
+        alert(t("impersonation_failed_with_reason", { reason: result.error }));
       } else {
         window.location.href = "/app";
       }
     } catch {
-      alert("Impersonation failed.");
+      alert(t("impersonation_failed"));
     } finally {
       setActionLoading(false);
     }
@@ -497,12 +501,12 @@ export default function AdminOrganizationDetailPage() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(`Audit cycle started: ${data.cycleId}`);
+        alert(t("audit_cycle_started", { cycleId: data.cycleId }));
       } else {
-        alert(data.message || "Failed to trigger audit");
+        alert(data.message || t("failed_to_trigger_audit"));
       }
     } catch {
-      alert("Failed to trigger audit");
+      alert(t("failed_to_trigger_audit"));
     } finally {
       setActionLoading(false);
     }
@@ -518,7 +522,7 @@ export default function AdminOrganizationDetailPage() {
           className="inline-flex items-center gap-2 text-sm text-content-muted transition-colors hover:text-content"
         >
           {icons.arrowLeft}
-          Back to Organizations
+          {t("back_to_organizations")}
         </Link>
         <div className="rounded-lg border border-red-500/30 bg-red-500/5 px-6 py-12 text-center">
           <p className="text-sm text-red-400">{error}</p>
@@ -538,7 +542,7 @@ export default function AdminOrganizationDetailPage() {
           className="inline-flex items-center gap-2 text-sm text-content-muted transition-colors hover:text-content"
         >
           {icons.arrowLeft}
-          Back to Organizations
+          {t("back_to_organizations")}
         </Link>
       </div>
 
@@ -559,8 +563,8 @@ export default function AdminOrganizationDetailPage() {
                 {statusBadge(org.status)}
               </div>
               <p className="mt-1 text-sm text-content-muted">
-                Created {formatDate(org.createdAt)} &middot; Last updated{" "}
-                {timeAgo(org.updatedAt)}
+                {t("created_on", { date: formatDate(org.createdAt) })} &middot;{" "}
+                {t("last_updated", { when: timeAgo(org.updatedAt) })}
               </p>
             </>
           ) : null}
@@ -574,7 +578,7 @@ export default function AdminOrganizationDetailPage() {
               disabled={actionLoading}
               className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
             >
-              Edit plan &amp; type
+              {t("edit_plan_type")}
             </button>
             <button
               onClick={handleSuspend}
@@ -585,21 +589,21 @@ export default function AdminOrganizationDetailPage() {
                   : "border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
               }`}
             >
-              {org.status === "suspended" ? "Reactivate" : "Suspend"}
+              {org.status === "suspended" ? t("reactivate") : t("suspend")}
             </button>
             <button
               onClick={handleTriggerAudit}
               disabled={actionLoading}
               className="rounded-lg border border-emerald-500/30 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
             >
-              Run Full Audit
+              {t("run_full_audit")}
             </button>
             <button
               onClick={handleImpersonate}
               disabled={actionLoading}
               className="rounded-lg border border-accent/30 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/10 disabled:opacity-50"
             >
-              Impersonate
+              {t("impersonate")}
             </button>
           </div>
         )}
@@ -610,17 +614,17 @@ export default function AdminOrganizationDetailPage() {
         <div className="rounded-lg border border-edge bg-surface-card p-5">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-content">
-              Edit plan &amp; type
+              {t("editor_title")}
             </h2>
             <p className="text-xs text-content-faint">
-              Changes bypass the Stripe/Paddle flow and are audit-logged.
+              {t("editor_description")}
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Plan
+                {t("label_plan")}
               </label>
               <CustomSelect
                 value={editPlan}
@@ -638,30 +642,30 @@ export default function AdminOrganizationDetailPage() {
 
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Status
+                {t("label_status")}
               </label>
               <CustomSelect
                 value={editStatus}
                 onChange={(val) => setEditStatus(val as "active" | "pending" | "suspended")}
                 options={[
-                  { value: "active", label: "Active" },
-                  { value: "pending", label: "Pending" },
-                  { value: "suspended", label: "Suspended" },
+                  { value: "active", label: t("status_active") },
+                  { value: "pending", label: t("status_pending") },
+                  { value: "suspended", label: t("status_suspended") },
                 ]}
               />
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Org type
+                {t("label_org_type")}
               </label>
               <CustomSelect
                 value={editOrgType}
                 onChange={(val) => setEditOrgType(val as "customer" | "demo" | "trial")}
                 options={[
-                  { value: "customer", label: "Customer" },
-                  { value: "trial", label: "Trial" },
-                  { value: "demo", label: "Demo" },
+                  { value: "customer", label: t("type_customer") },
+                  { value: "trial", label: t("type_trial") },
+                  { value: "demo", label: t("type_demo") },
                 ]}
               />
             </div>
@@ -669,7 +673,7 @@ export default function AdminOrganizationDetailPage() {
             {editOrgType === "trial" && (
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Trial ends at
+                  {t("label_trial_ends_at")}
                 </label>
                 <input
                   type="date"
@@ -691,14 +695,14 @@ export default function AdminOrganizationDetailPage() {
               disabled={actionLoading}
               className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               onClick={handleSaveEdits}
               disabled={actionLoading}
               className="rounded-lg bg-accent/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent/30 disabled:opacity-50"
             >
-              {actionLoading ? "Saving..." : "Save changes"}
+              {actionLoading ? t("saving") : t("save_changes")}
             </button>
           </div>
         </div>
@@ -707,49 +711,52 @@ export default function AdminOrganizationDetailPage() {
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Members"
+          label={t("stat_members")}
           value={org ? String(org.members.length) : "0"}
           sub={
             org
-              ? `${org.members.filter((m) => m.role === "owner").length} owner, ${org.members.filter((m) => m.role === "admin").length} admin`
+              ? t("stat_members_sub", {
+                  owners: org.members.filter((m) => m.role === "owner").length,
+                  admins: org.members.filter((m) => m.role === "admin").length,
+                })
               : undefined
           }
           icon={icons.users}
           loading={loading}
         />
         <StatCard
-          label="Environments"
+          label={t("stat_environments")}
           value={org ? String(org.environments.length) : "0"}
           sub={
             org
-              ? `${org.environments.filter((e) => e.isProduction).length} production`
+              ? t("stat_environments_sub", { count: org.environments.filter((e) => e.isProduction).length })
               : undefined
           }
           icon={icons.globe}
           loading={loading}
         />
         <StatCard
-          label="MCP Queries"
+          label={t("stat_mcp_queries")}
           value={org ? String(org.usageStats.mcpQueries) : "0"}
-          sub={org ? `Period: ${org.usageStats.period}` : undefined}
+          sub={org ? t("stat_period", { period: org.usageStats.period }) : undefined}
           icon={icons.bolt}
           accent
           loading={loading}
         />
         <StatCard
-          label="Last Audit"
+          label={t("stat_last_audit")}
           value={
             org
               ? org.lastAudit
                 ? formatDate(org.lastAudit.date)
-                : "Never"
+                : t("never")
               : "--"
           }
           sub={
             org && org.lastAudit
-              ? `Status: ${org.lastAudit.status}`
+              ? t("status_label", { status: org.lastAudit.status })
               : org
-                ? "No audits run yet"
+                ? t("no_audits_run_yet")
                 : undefined
           }
           icon={icons.calendar}
@@ -764,7 +771,7 @@ export default function AdminOrganizationDetailPage() {
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="flex items-center justify-between border-b border-edge px-5 py-4">
             <h2 className="text-sm font-semibold text-content">
-              Members{org ? ` (${org.members.length})` : ""}
+              {t("members_section")}{org ? ` (${org.members.length})` : ""}
             </h2>
           </div>
           {loading ? (
@@ -775,7 +782,7 @@ export default function AdminOrganizationDetailPage() {
             </div>
           ) : org && org.members.length === 0 ? (
             <div className="px-5 py-8 text-center text-sm text-content-faint">
-              No members found.
+              {t("no_members_found")}
             </div>
           ) : org ? (
             <div className="overflow-x-auto">
@@ -783,16 +790,16 @@ export default function AdminOrganizationDetailPage() {
                 <thead>
                   <tr className="border-b border-edge">
                     <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                      Name
+                      {t("col_name")}
                     </th>
                     <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                      Email
+                      {t("col_email")}
                     </th>
                     <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                      Role
+                      {t("col_role")}
                     </th>
                     <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                      Joined
+                      {t("col_joined")}
                     </th>
                   </tr>
                 </thead>
@@ -809,7 +816,7 @@ export default function AdminOrganizationDetailPage() {
                                 : "?"}
                           </div>
                           <span className="truncate text-sm font-medium text-content">
-                            {member.name || "Unnamed"}
+                            {member.name || t("unnamed")}
                           </span>
                         </div>
                       </td>
@@ -832,7 +839,7 @@ export default function AdminOrganizationDetailPage() {
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="flex items-center justify-between border-b border-edge px-5 py-4">
             <h2 className="text-sm font-semibold text-content">
-              Environments{org ? ` (${org.environments.length})` : ""}
+              {t("environments_section")}{org ? ` (${org.environments.length})` : ""}
             </h2>
           </div>
           {loading ? (
@@ -843,7 +850,7 @@ export default function AdminOrganizationDetailPage() {
             </div>
           ) : org && org.environments.length === 0 ? (
             <div className="px-5 py-8 text-center text-sm text-content-faint">
-              No environments found.
+              {t("no_environments_found")}
             </div>
           ) : org ? (
             <div className="overflow-x-auto">
@@ -851,13 +858,13 @@ export default function AdminOrganizationDetailPage() {
                 <thead>
                   <tr className="border-b border-edge">
                     <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                      Domain
+                      {t("col_domain")}
                     </th>
                     <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                      Type
+                      {t("col_type")}
                     </th>
                     <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                      Created
+                      {t("col_created")}
                     </th>
                   </tr>
                 </thead>
@@ -877,11 +884,11 @@ export default function AdminOrganizationDetailPage() {
                       <td className="px-5 py-3">
                         {env.isProduction ? (
                           <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
-                            production
+                            {t("production")}
                           </span>
                         ) : (
                           <span className="rounded bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium text-content-muted">
-                            staging
+                            {t("staging")}
                           </span>
                         )}
                       </td>
@@ -901,12 +908,12 @@ export default function AdminOrganizationDetailPage() {
       {!loading && org?.businessProfile && (
         <div className="rounded-lg border border-edge bg-surface-card p-5">
           <h2 className="mb-4 text-sm font-semibold text-content">
-            Business Profile
+            {t("business_profile")}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                Business Model
+                {t("business_model")}
               </p>
               <p className="mt-1 text-sm font-medium capitalize text-content">
                 {org.businessProfile.businessModel.replace("_", " ")}
@@ -915,7 +922,7 @@ export default function AdminOrganizationDetailPage() {
             {org.businessProfile.monthlyRevenue != null && (
               <div>
                 <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Monthly Revenue
+                  {t("monthly_revenue")}
                 </p>
                 <p className="mt-1 text-sm font-medium text-content">
                   ${org.businessProfile.monthlyRevenue.toLocaleString()}
@@ -930,39 +937,39 @@ export default function AdminOrganizationDetailPage() {
       {!loading && org?.billing && (
         <div className="rounded-lg border border-edge bg-surface-card p-5">
           <h2 className="mb-4 text-sm font-semibold text-content">
-            Billing &amp; Subscription
+            {t("billing_subscription")}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                Plan
+                {t("plan_label")}
               </p>
               <p className="mt-1">{planBadge(org.plan)}</p>
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                Subscription ID
+                {t("subscription_id")}
               </p>
               <p className="mt-1 truncate text-sm font-mono text-content-faint">
-                {org.billing.subscriptionId || "None"}
+                {org.billing.subscriptionId || t("none")}
               </p>
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                Customer ID
+                {t("customer_id")}
               </p>
               <p className="mt-1 truncate text-sm font-mono text-content-faint">
-                {org.billing.customerId || "None"}
+                {org.billing.customerId || t("none")}
               </p>
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                Current Period End
+                {t("current_period_end")}
               </p>
               <p className="mt-1 text-sm text-content-faint">
                 {org.billing.currentPeriodEnd
                   ? formatDate(org.billing.currentPeriodEnd)
-                  : "N/A"}
+                  : t("not_available")}
               </p>
             </div>
           </div>
@@ -973,12 +980,12 @@ export default function AdminOrganizationDetailPage() {
       {!loading && org && (
         <div className="rounded-lg border border-edge bg-surface-card p-5">
           <h2 className="mb-4 text-sm font-semibold text-content">
-            Usage This Period ({org.usageStats.period})
+            {t("usage_this_period", { period: org.usageStats.period })}
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                MCP Queries
+                {t("mcp_queries")}
               </p>
               <p className="mt-1 text-lg font-bold tabular-nums text-content">
                 {org.usageStats.mcpQueries.toLocaleString()}
@@ -986,7 +993,7 @@ export default function AdminOrganizationDetailPage() {
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                Playwright Runs
+                {t("playwright_runs")}
               </p>
               <p className="mt-1 text-lg font-bold tabular-nums text-content">
                 {org.usageStats.playwrightRuns.toLocaleString()}
@@ -994,10 +1001,10 @@ export default function AdminOrganizationDetailPage() {
             </div>
             <div>
               <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                Last Audit
+                {t("last_audit")}
               </p>
               <p className="mt-1 text-lg font-bold text-content">
-                {org.lastAudit ? timeAgo(org.lastAudit.date) : "Never"}
+                {org.lastAudit ? timeAgo(org.lastAudit.date) : t("never")}
               </p>
             </div>
           </div>
@@ -1047,38 +1054,37 @@ function auditStatusBadge(status: string) {
 }
 
 function AuditHistoryCard({ rows }: { rows: AuditHistoryRow[] }) {
+  const t = useTranslations("console.admin.org_detail");
   const [expandedError, setExpandedError] = useState<string | null>(null);
 
   return (
     <div className="rounded-lg border border-edge bg-surface-card">
       <div className="border-b border-edge px-5 py-4">
         <h2 className="text-sm font-semibold text-content">
-          Audit History{rows.length > 0 ? ` (last ${rows.length})` : ""}
+          {rows.length > 0 ? t("audit_history_last", { count: rows.length }) : t("audit_history")}
         </h2>
         <p className="mt-0.5 text-xs text-content-faint">
-          Per-cycle outcome with finding, action, and evidence counts. Failed
-          runs expose the captured error so you don't have to grep the runner
-          logs.
+          {t("audit_history_description")}
         </p>
       </div>
       {rows.length === 0 ? (
         <div className="px-5 py-8 text-center text-sm text-content-faint">
-          No audits run yet.
+          {t("no_audits_run_yet")}
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-edge">
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">When</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Env</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Type</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Status</th>
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">Duration</th>
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">Findings</th>
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">Actions</th>
-                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">Evidence</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Notes</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_when")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_env")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_type")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_status")}</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_duration")}</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_findings")}</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_actions")}</th>
+                <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_evidence")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_notes")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-edge">
@@ -1121,7 +1127,7 @@ function AuditHistoryCard({ rows }: { rows: AuditHistoryRow[] }) {
                         <div className="flex items-center gap-2">
                           {row.retryCount > 0 && (
                             <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-400">
-                              {row.retryCount} retry
+                              {t("retry_count", { count: row.retryCount })}
                             </span>
                           )}
                           {hasError && (
@@ -1130,7 +1136,7 @@ function AuditHistoryCard({ rows }: { rows: AuditHistoryRow[] }) {
                               onClick={() => setExpandedError(isExpanded ? null : row.id)}
                               className="text-[10px] text-red-400 underline hover:text-red-300"
                             >
-                              {isExpanded ? "hide error" : "view error"}
+                              {isExpanded ? t("hide_error") : t("view_error")}
                             </button>
                           )}
                         </div>

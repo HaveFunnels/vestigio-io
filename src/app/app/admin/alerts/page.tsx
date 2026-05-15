@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
@@ -174,6 +175,7 @@ const icons = {
 const EVENTS_PAGE_SIZE = 20;
 
 export default function AlertsPage() {
+  const t = useTranslations("console.admin.alerts");
   const [loading, setLoading] = useState(true);
   const [rules, setRules] = useState<AlertRule[]>([]);
   const [events, setEvents] = useState<AlertEvent[]>([]);
@@ -354,41 +356,41 @@ export default function AlertsPage() {
     <div className="space-y-8 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-content">Alerts & Thresholds</h1>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Configure metric-based alerts and review triggered events.
+          {t("subtitle")}
         </p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Rules"
+          label={t("stat_total_rules")}
           value={loading ? "--" : String(rules.length)}
-          sub={`${enabledRules} active`}
+          sub={t("stat_total_rules_sub", { count: enabledRules })}
           icon={icons.bell}
           accent
           loading={loading}
         />
         <StatCard
-          label="Enabled Rules"
+          label={t("stat_enabled_rules")}
           value={loading ? "--" : String(enabledRules)}
-          sub="Currently monitoring"
+          sub={t("stat_enabled_rules_sub")}
           icon={icons.bolt}
           accent
           loading={loading}
         />
         <StatCard
-          label="Total Events"
+          label={t("stat_total_events")}
           value={loading ? "--" : String(eventsTotal)}
-          sub="All triggered alerts"
+          sub={t("stat_total_events_sub")}
           icon={icons.exclamation}
           loading={loading}
         />
         <StatCard
-          label="Unacknowledged"
+          label={t("stat_unack")}
           value={loading ? "--" : String(unackEvents)}
-          sub="Require attention"
+          sub={t("stat_unack_sub")}
           icon={icons.exclamation}
           warn={unackEvents > 0}
           loading={loading}
@@ -398,7 +400,7 @@ export default function AlertsPage() {
       {/* ── Active Rules ── */}
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="flex items-center justify-between border-b border-edge px-5 py-4">
-          <h2 className="text-sm font-semibold text-content">Alert Rules</h2>
+          <h2 className="text-sm font-semibold text-content">{t("alert_rules")}</h2>
           <button
             onClick={() => {
               resetForm();
@@ -406,7 +408,7 @@ export default function AlertsPage() {
             }}
             className="rounded-md bg-accent-subtle-bg/10 px-3 py-1.5 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/20"
           >
-            {showForm ? "Cancel" : "+ New Rule"}
+            {showForm ? t("cancel") : t("new_rule")}
           </button>
         </div>
 
@@ -416,7 +418,7 @@ export default function AlertsPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Name
+                  {t("name")}
                 </label>
                 <input
                   type="text"
@@ -428,7 +430,7 @@ export default function AlertsPage() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Metric
+                  {t("metric")}
                 </label>
                 <CustomSelect
                   value={formMetric}
@@ -441,21 +443,21 @@ export default function AlertsPage() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Condition
+                  {t("condition")}
                 </label>
                 <CustomSelect
                   value={formCondition}
                   onChange={setFormCondition}
                   options={[
-                    { value: "gt", label: "Greater than (>)" },
-                    { value: "lt", label: "Less than (<)" },
-                    { value: "eq", label: "Equal to (=)" },
+                    { value: "gt", label: t("condition_gt") },
+                    { value: "lt", label: t("condition_lt") },
+                    { value: "eq", label: t("condition_eq") },
                   ]}
                 />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Threshold
+                  {t("threshold")}
                 </label>
                 <input
                   type="number"
@@ -466,7 +468,7 @@ export default function AlertsPage() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Window (minutes)
+                  {t("window_minutes")}
                 </label>
                 <input
                   type="number"
@@ -477,7 +479,7 @@ export default function AlertsPage() {
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Channel
+                  {t("channel")}
                 </label>
                 <CustomSelect
                   value={formChannel}
@@ -490,7 +492,7 @@ export default function AlertsPage() {
               </div>
               <div className="sm:col-span-2 lg:col-span-3">
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Description (optional)
+                  {t("description_optional")}
                 </label>
                 <input
                   type="text"
@@ -507,7 +509,7 @@ export default function AlertsPage() {
                 disabled={saving || !formName.trim()}
                 className="rounded-md bg-accent-subtle-bg/10 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/20 disabled:opacity-40"
               >
-                {saving ? "Saving..." : editingRule ? "Update Rule" : "Create Rule"}
+                {saving ? t("saving") : editingRule ? t("update_rule") : t("create_rule")}
               </button>
               <label className="flex items-center gap-2 text-sm text-content-muted">
                 <input
@@ -516,7 +518,7 @@ export default function AlertsPage() {
                   onChange={(e) => setFormEnabled(e.target.checked)}
                   className="rounded border-edge"
                 />
-                Enabled
+                {t("enabled")}
               </label>
             </div>
           </div>
@@ -528,7 +530,7 @@ export default function AlertsPage() {
             Array.from({ length: 3 }).map((_, i) => <SkeletonRuleRow key={i} />)
           ) : rules.length === 0 ? (
             <div className="px-5 py-12 text-center text-sm text-content-faint">
-              No alert rules configured. Click &quot;+ New Rule&quot; to get started.
+              {t("no_rules")}
             </div>
           ) : (
             rules.map((rule) => (
@@ -548,7 +550,7 @@ export default function AlertsPage() {
                           : "bg-surface-inset text-content-faint"
                       }`}
                     >
-                      {rule.enabled ? "active" : "disabled"}
+                      {rule.enabled ? t("active") : t("disabled")}
                     </span>
                   </div>
                   <p className="mt-0.5 text-xs text-content-faint">
@@ -583,14 +585,14 @@ export default function AlertsPage() {
                     onClick={() => startEdit(rule)}
                     className="rounded-md px-2 py-1 text-xs text-content-muted transition-colors hover:bg-surface-inset hover:text-content"
                   >
-                    Edit
+                    {t("edit")}
                   </button>
                   {/* Delete */}
                   <button
                     onClick={() => handleDelete(rule.id)}
                     className="rounded-md px-2 py-1 text-xs text-red-400 transition-colors hover:bg-red-500/10"
                   >
-                    Delete
+                    {t("delete")}
                   </button>
                 </div>
               </div>
@@ -602,10 +604,10 @@ export default function AlertsPage() {
       {/* ── Recent Events ── */}
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="flex items-center justify-between border-b border-edge px-5 py-4">
-          <h2 className="text-sm font-semibold text-content">Alert Events</h2>
+          <h2 className="text-sm font-semibold text-content">{t("alert_events")}</h2>
           {eventsTotal > 0 && (
             <p className="text-xs text-content-faint">
-              {eventsTotal} total event{eventsTotal !== 1 ? "s" : ""}
+              {t("total_events_count", { count: eventsTotal })}
             </p>
           )}
         </div>
@@ -615,19 +617,19 @@ export default function AlertsPage() {
             <thead>
               <tr className="border-b border-edge">
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Time
+                  {t("col_time")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Rule
+                  {t("col_rule")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Value
+                  {t("col_value")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Message
+                  {t("col_message")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Status
+                  {t("col_status")}
                 </th>
               </tr>
             </thead>
@@ -640,7 +642,7 @@ export default function AlertsPage() {
                     colSpan={5}
                     className="px-5 py-12 text-center text-sm text-content-faint"
                   >
-                    No alert events recorded.
+                    {t("no_events")}
                   </td>
                 </tr>
               ) : (
@@ -656,7 +658,7 @@ export default function AlertsPage() {
                     </td>
                     <td className="px-5 py-3">
                       <p className="truncate text-sm font-medium text-content">
-                        {evt.rule?.name || "Unknown"}
+                        {evt.rule?.name || t("unknown")}
                       </p>
                       <p className="text-[11px] text-content-faint">
                         {evt.rule?.metric ? METRIC_LABELS[evt.rule.metric] || evt.rule.metric : ""}
@@ -673,14 +675,14 @@ export default function AlertsPage() {
                     <td className="px-5 py-3">
                       {evt.acknowledged ? (
                         <span className="inline-block rounded px-2 py-0.5 text-xs font-medium bg-emerald-500/10 text-emerald-400">
-                          Acknowledged
+                          {t("acknowledged")}
                         </span>
                       ) : (
                         <button
                           onClick={() => handleAcknowledge(evt.id)}
                           className="rounded-md bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-400 transition-colors hover:bg-amber-500/20"
                         >
-                          Acknowledge
+                          {t("acknowledge")}
                         </button>
                       )}
                     </td>
@@ -705,14 +707,14 @@ export default function AlertsPage() {
                 onClick={() => setEventsPage((p) => p - 1)}
                 className="rounded-md border border-edge px-3 py-1.5 text-xs text-content transition-colors hover:bg-surface-card-hover disabled:opacity-40"
               >
-                Previous
+                {t("previous")}
               </button>
               <button
                 disabled={eventsPage >= eventsTotalPages - 1}
                 onClick={() => setEventsPage((p) => p + 1)}
                 className="rounded-md border border-edge px-3 py-1.5 text-xs text-content transition-colors hover:bg-surface-card-hover disabled:opacity-40"
               >
-                Next
+                {t("next")}
               </button>
             </div>
           </div>

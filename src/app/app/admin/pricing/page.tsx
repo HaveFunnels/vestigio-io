@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Admin Pricing Config
@@ -35,6 +36,7 @@ interface CreditConfig {
 }
 
 export default function AdminPricingPage() {
+  const t = useTranslations("console.admin.pricing");
   const [plans, setPlans] = useState<PlanConfig[]>([]);
   // Snapshot of plans as they were last loaded. Used at save time to
   // detect Stripe priceId changes and warn the admin that the new
@@ -67,7 +69,7 @@ export default function AdminPricingPage() {
         );
         setCredits(data.credits);
       })
-      .catch(() => setError("Failed to load pricing config"))
+      .catch(() => setError(t("failed_load")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -182,9 +184,9 @@ export default function AdminPricingPage() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-content">Pricing Configuration</h1>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Configure plan limits, price IDs, MCP quotas, and credit pricing.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -200,19 +202,19 @@ export default function AdminPricingPage() {
       {/* Plan configs */}
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="border-b border-edge px-5 py-4">
-          <h2 className="text-sm font-semibold text-content">Plans</h2>
+          <h2 className="text-sm font-semibold text-content">{t("plans")}</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-edge">
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Plan</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Price ($/mo)</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">MCP Calls</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Envs</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Members</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Continuous</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Credits</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_plan")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_price")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_mcp_calls")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_envs")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_members")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_continuous")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_credits")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-edge">
@@ -262,14 +264,14 @@ export default function AdminPricingPage() {
       {/* Feature Table per Plan */}
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="border-b border-edge px-5 py-4">
-          <h2 className="text-sm font-semibold text-content">Features per Plan</h2>
-          <p className="mt-1 text-xs text-content-faint">Configure which features appear in the pricing comparison table. These are shown to customers.</p>
+          <h2 className="text-sm font-semibold text-content">{t("features_per_plan")}</h2>
+          <p className="mt-1 text-xs text-content-faint">{t("features_subtitle")}</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-edge">
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Feature</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_feature")}</th>
                 {plans.map((plan) => (
                   <th key={plan.key} className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-content-muted">{plan.label}</th>
                 ))}
@@ -292,7 +294,7 @@ export default function AdminPricingPage() {
                         setSaved(false);
                       }}
                       className={`${inputClass} w-full`}
-                      placeholder="Feature name"
+                      placeholder={t("feature_name_placeholder")}
                     />
                   </td>
                   {plans.map((plan, planIndex) => (
@@ -342,7 +344,7 @@ export default function AdminPricingPage() {
             }}
             className="text-xs font-medium text-accent hover:text-accent/80"
           >
-            + Add Feature
+            {t("add_feature")}
           </button>
         </div>
       </div>
@@ -350,19 +352,19 @@ export default function AdminPricingPage() {
       {/* Payment Provider IDs */}
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="border-b border-edge px-5 py-4">
-          <h2 className="text-sm font-semibold text-content">Payment Provider Price IDs</h2>
-          <p className="mt-1 text-xs text-content-faint">Paddle IDs are auto-managed via Sync.</p>
+          <h2 className="text-sm font-semibold text-content">{t("payment_providers")}</h2>
+          <p className="mt-1 text-xs text-content-faint">{t("payment_providers_subtitle")}</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-edge">
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Plan</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Stripe Price ID</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Paddle Product</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Paddle Monthly</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Paddle Annual</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Lemon Squeezy</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_plan")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_stripe_price_id")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_paddle_product")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_paddle_monthly")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_paddle_annual")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_lemon_squeezy")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-edge">
@@ -381,7 +383,7 @@ export default function AdminPricingPage() {
                         {plan.paddleProductId}
                       </span>
                     ) : (
-                      <span className="text-xs italic text-content-faint">Not synced</span>
+                      <span className="text-xs italic text-content-faint">{t("not_synced")}</span>
                     )}
                   </td>
                   <td className="px-5 py-3">
@@ -391,7 +393,7 @@ export default function AdminPricingPage() {
                         {plan.paddlePriceId}
                       </span>
                     ) : (
-                      <span className="text-xs italic text-content-faint">Not synced</span>
+                      <span className="text-xs italic text-content-faint">{t("not_synced")}</span>
                     )}
                   </td>
                   <td className="px-5 py-3">
@@ -401,7 +403,7 @@ export default function AdminPricingPage() {
                         {plan.paddleAnnualPriceId}
                       </span>
                     ) : (
-                      <span className="text-xs italic text-content-faint">Not synced</span>
+                      <span className="text-xs italic text-content-faint">{t("not_synced")}</span>
                     )}
                   </td>
                   <td className="px-5 py-3">
@@ -419,9 +421,9 @@ export default function AdminPricingPage() {
       {/* Paddle Sync */}
       <div className="rounded-lg border border-edge bg-surface-card p-5">
         <div className="mb-4">
-          <h2 className="text-sm font-semibold text-content">Paddle Sync</h2>
+          <h2 className="text-sm font-semibold text-content">{t("paddle_sync")}</h2>
           <p className="mt-1 text-xs text-content-faint">
-            Create products and prices in Paddle for plans missing IDs.
+            {t("paddle_sync_subtitle")}
           </p>
         </div>
 
@@ -434,10 +436,10 @@ export default function AdminPricingPage() {
             {paddleSyncing ? (
               <span className="flex items-center gap-2">
                 <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/10 border-t-emerald-500" />
-                Syncing...
+                {t("syncing")}
               </span>
             ) : (
-              "Sync to Paddle"
+              t("sync_to_paddle")
             )}
           </button>
 
@@ -452,12 +454,12 @@ export default function AdminPricingPage() {
             plans.every((p) => p.paddleProductId && p.paddlePriceId) ? (
               <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                All plans synced
+                {t("all_synced")}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 text-xs text-amber-400">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                {plans.filter((p) => !p.paddleProductId || !p.paddlePriceId).length} plan(s) not synced
+                {t("plans_not_synced", { count: plans.filter((p) => !p.paddleProductId || !p.paddlePriceId).length })}
               </span>
             )
           )}
@@ -473,24 +475,24 @@ export default function AdminPricingPage() {
       {/* Credit pricing */}
       <div className="rounded-lg border border-edge bg-surface-card p-5">
         <div className="mb-4">
-          <h2 className="text-sm font-semibold text-content">Credit Pricing</h2>
+          <h2 className="text-sm font-semibold text-content">{t("credit_pricing")}</h2>
         </div>
         <div className="flex items-end gap-5">
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-content-muted">Base cost per MCP call ($)</label>
+            <label className="mb-1.5 block text-xs font-medium text-content-muted">{t("base_cost")}</label>
             <input type="number" step="0.01" value={credits.baseCostPerCall}
               onChange={(e) => { setCredits({ ...credits, baseCostPerCall: parseFloat(e.target.value) }); setSaved(false); }}
               className={`${inputClass} w-28`} />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium text-content-muted">Markup multiplier</label>
+            <label className="mb-1.5 block text-xs font-medium text-content-muted">{t("markup")}</label>
             <input type="number" step="0.1" value={credits.markupMultiplier}
               onChange={(e) => { setCredits({ ...credits, markupMultiplier: parseFloat(e.target.value) }); setSaved(false); }}
               className={`${inputClass} w-28`} />
           </div>
           <div className="pb-1.5">
             <span className="text-sm text-content-faint">
-              Effective: <span className="font-semibold text-content">${(credits.baseCostPerCall * credits.markupMultiplier).toFixed(2)}</span> / call
+              {t("effective_per_call")} <span className="font-semibold text-content">${(credits.baseCostPerCall * credits.markupMultiplier).toFixed(2)}</span> / call
             </span>
           </div>
         </div>
@@ -506,7 +508,7 @@ export default function AdminPricingPage() {
             : "bg-accent-text text-white hover:bg-accent-text/90"
         }`}
       >
-        {saving ? "Saving..." : saved ? "Saved!" : "Save Configuration"}
+        {saving ? t("saving") : saved ? t("saved") : t("save_config")}
       </button>
     </div>
   );

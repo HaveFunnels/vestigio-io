@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
@@ -35,6 +36,7 @@ function arrowLeftIcon() {
 export default function AdminCreateOrganizationPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const t = useTranslations("console.admin.new_organization");
 
   const [plans, setPlans] = useState<PlanOption[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
@@ -98,17 +100,17 @@ export default function AdminCreateOrganizationPage() {
   }, []);
 
   function validate(): string | null {
-    if (!name.trim()) return "Organization name is required";
-    if (!plan) return "Plan is required";
-    if (!ownerEmail.trim()) return "Owner email is required";
+    if (!name.trim()) return t("err_name_required");
+    if (!plan) return t("err_plan_required");
+    if (!ownerEmail.trim()) return t("err_email_required");
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ownerEmail.trim())) {
-      return "Owner email is not valid";
+      return t("err_email_invalid");
     }
     if (orgType === "trial" && !trialEndsAt) {
-      return "Trial end date is required for trial orgs";
+      return t("err_trial_date_required");
     }
     if (provisionEnv && !domain.trim()) {
-      return "Domain is required when provisioning the environment inline";
+      return t("err_domain_required");
     }
     return null;
   }
@@ -154,7 +156,7 @@ export default function AdminCreateOrganizationPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message || "Failed to create organization");
+        setError(data.message || t("err_create_failed"));
         return;
       }
 
@@ -167,7 +169,7 @@ export default function AdminCreateOrganizationPage() {
       });
       setActivationResent(false);
     } catch {
-      setError("Failed to create organization");
+      setError(t("err_create_failed"));
     } finally {
       setSubmitting(false);
     }
@@ -209,20 +211,18 @@ export default function AdminCreateOrganizationPage() {
           className="inline-flex items-center gap-2 text-sm text-content-muted transition-colors hover:text-content"
         >
           {arrowLeftIcon()}
-          Back to Organizations
+          {t("back_to_orgs")}
         </Link>
 
         <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-6">
           <h1 className="text-lg font-semibold text-content">
-            Organization created
+            {t("org_created")}
           </h1>
           <p className="mt-2 text-sm text-content-muted">
-            <span className="font-medium text-content">{createdOrg.name}</span> is
-            ready. {createdOrg.ownerCreated ? (
-              <>An activation email was sent to <span className="font-mono text-content-secondary">{createdOrg.ownerEmail}</span> — they have 7 days to activate. You can also sign in as them via impersonation.</>
-            ) : (
-              <>Owner <span className="font-mono text-content-secondary">{createdOrg.ownerEmail}</span> already had an account — they can log in normally.</>
-            )}
+            <span className="font-medium text-content">{createdOrg.name}</span>{" "}
+            {createdOrg.ownerCreated
+              ? t("owner_created_msg", { email: createdOrg.ownerEmail })
+              : t("owner_existing_msg", { email: createdOrg.ownerEmail })}
           </p>
 
           <div className="mt-5 flex flex-wrap gap-2">
@@ -230,7 +230,7 @@ export default function AdminCreateOrganizationPage() {
               onClick={handleImpersonate}
               className="rounded-lg border border-accent/30 bg-accent-subtle-bg/5 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/10"
             >
-              Sign in as owner
+              {t("sign_in_as_owner")}
             </button>
             {createdOrg.ownerCreated && (
               <button
@@ -257,14 +257,14 @@ export default function AdminCreateOrganizationPage() {
                 disabled={resendingActivation || activationResent}
                 className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
               >
-                {activationResent ? "Activation email resent ✓" : resendingActivation ? "Sending..." : "Resend activation email"}
+                {activationResent ? t("activation_resent") : resendingActivation ? t("sending") : t("resend_activation")}
               </button>
             )}
             <Link
               href={`/app/admin/organizations/${createdOrg.id}`}
               className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
             >
-              Open organization detail
+              {t("open_org_detail")}
             </Link>
             <button
               onClick={() => {
@@ -279,7 +279,7 @@ export default function AdminCreateOrganizationPage() {
               }}
               className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
             >
-              Create another
+              {t("create_another")}
             </button>
           </div>
         </div>
@@ -296,40 +296,39 @@ export default function AdminCreateOrganizationPage() {
           className="inline-flex items-center gap-2 text-sm text-content-muted transition-colors hover:text-content"
         >
           {arrowLeftIcon()}
-          Back to Organizations
+          {t("back_to_orgs")}
         </Link>
       </div>
 
       <div>
-        <h1 className="text-xl font-semibold text-content">New Organization</h1>
+        <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Provision an organization manually — for demos, trials, or comp&#39;d
-          accounts that skip the Stripe/Paddle checkout flow.
+          {t("subtitle")}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ── Organization ── */}
         <section className="rounded-lg border border-edge bg-surface-card p-5">
-          <h2 className="mb-4 text-sm font-semibold text-content">Organization</h2>
+          <h2 className="mb-4 text-sm font-semibold text-content">{t("organization")}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Name *
+                {t("name_required")}
               </label>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                placeholder="Acme Commerce"
+                placeholder={t("name_placeholder")}
                 className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
               />
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Plan *
+                {t("plan_required")}
               </label>
               <CustomSelect
                 value={plan}
@@ -337,9 +336,9 @@ export default function AdminCreateOrganizationPage() {
                 disabled={plansLoading}
                 options={
                   plansLoading
-                    ? [{ value: "", label: "Loading plans..." }]
+                    ? [{ value: "", label: t("loading_plans") }]
                     : plans.length === 0
-                      ? [{ value: "", label: "No plans available" }]
+                      ? [{ value: "", label: t("no_plans") }]
                       : plans.map((p) => ({
                           value: p.key,
                           label: `${p.label} — $${(p.monthlyPriceCents / 100).toFixed(0)}/mo`,
@@ -350,30 +349,30 @@ export default function AdminCreateOrganizationPage() {
 
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Org type
+                {t("org_type")}
               </label>
               <CustomSelect
                 value={orgType}
                 onChange={(val) => setOrgType(val as "customer" | "demo" | "trial")}
                 options={[
-                  { value: "customer", label: "Customer (paying)" },
-                  { value: "trial", label: "Trial" },
-                  { value: "demo", label: "Demo" },
+                  { value: "customer", label: t("org_type_customer") },
+                  { value: "trial", label: t("org_type_trial") },
+                  { value: "demo", label: t("org_type_demo") },
                 ]}
               />
             </div>
 
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Status
+                {t("status")}
               </label>
               <CustomSelect
                 value={status}
                 onChange={(val) => setStatus(val as "active" | "pending" | "suspended")}
                 options={[
-                  { value: "active", label: "Active" },
-                  { value: "pending", label: "Pending" },
-                  { value: "suspended", label: "Suspended" },
+                  { value: "active", label: t("status_active") },
+                  { value: "pending", label: t("status_pending") },
+                  { value: "suspended", label: t("status_suspended") },
                 ]}
               />
             </div>
@@ -381,7 +380,7 @@ export default function AdminCreateOrganizationPage() {
             {orgType === "trial" && (
               <div>
                 <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Trial ends at *
+                  {t("trial_ends_at")}
                 </label>
                 <input
                   type="date"
@@ -397,35 +396,33 @@ export default function AdminCreateOrganizationPage() {
 
         {/* ── Owner ── */}
         <section className="rounded-lg border border-edge bg-surface-card p-5">
-          <h2 className="mb-1 text-sm font-semibold text-content">Owner</h2>
+          <h2 className="mb-1 text-sm font-semibold text-content">{t("owner")}</h2>
           <p className="mb-4 text-xs text-content-faint">
-            If no User exists with this email, one will be created without a
-            password. Sign in via impersonation, or the customer can set a
-            password via the reset flow.
+            {t("owner_note")}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Email *
+                {t("email_required")}
               </label>
               <input
                 type="email"
                 value={ownerEmail}
                 onChange={(e) => setOwnerEmail(e.target.value)}
                 required
-                placeholder="founder@acme.com"
+                placeholder={t("email_placeholder")}
                 className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Name
+                {t("name")}
               </label>
               <input
                 type="text"
                 value={ownerName}
                 onChange={(e) => setOwnerName(e.target.value)}
-                placeholder="Jane Doe"
+                placeholder={t("owner_name_placeholder")}
                 className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
               />
             </div>
@@ -443,10 +440,10 @@ export default function AdminCreateOrganizationPage() {
             />
             <span>
               <span className="block text-sm font-medium text-content">
-                Provision environment &amp; business profile now
+                {t("provision_env_label")}
               </span>
               <span className="mt-0.5 block text-xs text-content-faint">
-                Off by default. Owner fills the domain + monthly revenue + AOV + business model during onboarding after impersonation — they have the real numbers that calibrate impact findings. Flip this on only when you already have trustworthy data (e.g. from a sales call) and want a one-shot setup.
+                {t("provision_env_help")}
               </span>
             </span>
           </label>
@@ -455,27 +452,27 @@ export default function AdminCreateOrganizationPage() {
         {/* ── Environment ── */}
         {provisionEnv && (
         <section className="rounded-lg border border-edge bg-surface-card p-5">
-          <h2 className="mb-4 text-sm font-semibold text-content">Initial environment</h2>
+          <h2 className="mb-4 text-sm font-semibold text-content">{t("initial_environment")}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Domain *
+                {t("domain_required")}
               </label>
               <input
                 type="text"
                 value={domain}
                 onChange={(e) => setDomain(e.target.value)}
                 required
-                placeholder="acme.com"
+                placeholder={t("domain_placeholder")}
                 className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
               />
               <p className="mt-1 text-xs text-content-faint">
-                No protocol. We&#39;ll normalize and strip trailing slashes.
+                {t("domain_help")}
               </p>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Landing URL
+                {t("landing_url")}
               </label>
               <input
                 type="text"
@@ -485,7 +482,7 @@ export default function AdminCreateOrganizationPage() {
                 className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder:text-content-faint focus:border-accent/50 focus:outline-none focus:ring-1 focus:ring-accent/30"
               />
               <p className="mt-1 text-xs text-content-faint">
-                Defaults to <span className="font-mono">https://{domain || "<domain>"}</span>
+                {t("landing_url_help")} <span className="font-mono">https://{domain || "<domain>"}</span>
               </p>
             </div>
             <div className="sm:col-span-2">
@@ -496,7 +493,7 @@ export default function AdminCreateOrganizationPage() {
                   onChange={(e) => setIsProduction(e.target.checked)}
                   className="h-4 w-4 rounded border-edge bg-surface-inset text-accent focus:ring-accent/30"
                 />
-                Production environment
+                {t("production_env")}
               </label>
             </div>
           </div>
@@ -506,41 +503,41 @@ export default function AdminCreateOrganizationPage() {
         {/* ── Business Profile ── */}
         {provisionEnv && (
         <section className="rounded-lg border border-edge bg-surface-card p-5">
-          <h2 className="mb-4 text-sm font-semibold text-content">Business profile</h2>
+          <h2 className="mb-4 text-sm font-semibold text-content">{t("business_profile")}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Business model
+                {t("business_model")}
               </label>
               <CustomSelect
                 value={businessModel}
                 onChange={(val) => setBusinessModel(val as "ecommerce" | "lead_gen" | "saas" | "hybrid")}
                 options={[
-                  { value: "ecommerce", label: "E-commerce" },
-                  { value: "lead_gen", label: "Lead gen" },
-                  { value: "saas", label: "SaaS" },
-                  { value: "hybrid", label: "Hybrid" },
+                  { value: "ecommerce", label: t("business_ecommerce") },
+                  { value: "lead_gen", label: t("business_lead_gen") },
+                  { value: "saas", label: t("business_saas") },
+                  { value: "hybrid", label: t("business_hybrid") },
                 ]}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Conversion model
+                {t("conversion_model")}
               </label>
               <CustomSelect
                 value={conversionModel}
                 onChange={(val) => setConversionModel(val as "checkout" | "whatsapp" | "form" | "external")}
                 options={[
-                  { value: "checkout", label: "Checkout" },
-                  { value: "whatsapp", label: "WhatsApp" },
-                  { value: "form", label: "Form" },
-                  { value: "external", label: "External" },
+                  { value: "checkout", label: t("conversion_checkout") },
+                  { value: "whatsapp", label: t("conversion_whatsapp") },
+                  { value: "form", label: t("conversion_form") },
+                  { value: "external", label: t("conversion_external") },
                 ]}
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Monthly revenue (USD)
+                {t("monthly_revenue")}
               </label>
               <input
                 type="number"
@@ -554,7 +551,7 @@ export default function AdminCreateOrganizationPage() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Average order value (USD)
+                {t("average_order_value")}
               </label>
               <input
                 type="number"
@@ -584,14 +581,14 @@ export default function AdminCreateOrganizationPage() {
             onClick={() => router.push("/app/admin/organizations")}
             className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
           >
-            Cancel
+            {t("cancel")}
           </button>
           <button
             type="submit"
             disabled={submitting}
             className="rounded-lg bg-accent/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent/30 disabled:opacity-50"
           >
-            {submitting ? "Creating..." : "Create organization"}
+            {submitting ? t("submitting") : t("create_org")}
           </button>
         </div>
       </form>

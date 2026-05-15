@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 import ExportButton from "@/components/app/ExportButton";
 import CustomSelect from "@/components/console/CustomSelect";
 
@@ -484,6 +485,7 @@ const tabs: { key: TabKey; label: string }[] = [
 /* ========== Main Page ========== */
 
 export default function AdminMarketingPage() {
+  const t = useTranslations("console.admin.marketing");
   const [tab, setTab] = useState<TabKey>("overview");
   const [period, setPeriod] = useState<"1d" | "7d" | "30d" | "90d" | "custom">("7d");
   const [loading, setLoading] = useState(true);
@@ -827,9 +829,9 @@ export default function AdminMarketingPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <div>
-            <h1 className="text-xl font-semibold text-content">Marketing</h1>
+            <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
             <p className="mt-1 text-sm text-content-muted">
-              Website analytics, A/B testing, and conversion tracking.
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -839,7 +841,7 @@ export default function AdminMarketingPage() {
             <ExportButton
               data={getExportData()}
               filename={`marketing-${tab}-${period}`}
-              label="Export CSV"
+              label={t("export_csv")}
             />
           )}
         </div>
@@ -848,19 +850,29 @@ export default function AdminMarketingPage() {
       {/* Tab switcher + Period selector row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex rounded-lg border border-edge">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              className={`px-3.5 py-1.5 text-xs font-medium transition-colors ${
-                tab === t.key
-                  ? "bg-accent-subtle-bg/10 text-accent-text"
-                  : "text-content-muted hover:text-content-secondary"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+          {tabs.map((tabDef) => {
+            const tabLabels: Record<string, string> = {
+              overview: t("tab_overview"),
+              utm: t("tab_utm"),
+              ab_testing: t("tab_ab_testing"),
+              pixels: t("tab_pixels"),
+              journeys: t("tab_journeys"),
+              blog: t("tab_blog"),
+            };
+            return (
+              <button
+                key={tabDef.key}
+                onClick={() => setTab(tabDef.key)}
+                className={`px-3.5 py-1.5 text-xs font-medium transition-colors ${
+                  tab === tabDef.key
+                    ? "bg-accent-subtle-bg/10 text-accent-text"
+                    : "text-content-muted hover:text-content-secondary"
+                }`}
+              >
+                {tabLabels[tabDef.key] ?? tabDef.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Date Range Picker */}
@@ -880,7 +892,7 @@ export default function AdminMarketingPage() {
                       : "text-content-muted hover:text-content-secondary"
                   }`}
                 >
-                  {p === "1d" ? "Today" : p}
+                  {p === "1d" ? t("today") : p}
                 </button>
               ))}
               <button
@@ -894,7 +906,7 @@ export default function AdminMarketingPage() {
                     : "text-content-muted hover:text-content-secondary"
                 }`}
               >
-                Custom
+                {t("custom")}
               </button>
             </div>
             {showCustomRange && (
@@ -919,7 +931,7 @@ export default function AdminMarketingPage() {
                   disabled={!customFrom}
                   className="rounded-lg bg-accent-text px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-accent-text/90 disabled:opacity-50"
                 >
-                  Apply
+                  {t("apply")}
                 </button>
               </div>
             )}
@@ -936,7 +948,7 @@ export default function AdminMarketingPage() {
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                 </svg>
-                Compare
+                {t("compare")}
               </button>
             )}
           </div>
@@ -967,7 +979,7 @@ export default function AdminMarketingPage() {
           {/* KPI Cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              label="Total Page Views"
+              label={t("stat_page_views")}
               value={summary ? formatNum(summary.totalPageViews) : "..."}
               sub={compareMode && prevSummary ? `vs ${formatNum(prevSummary.totalPageViews)} prev` : (period === "custom" ? "Custom range" : `Last ${period}`)}
               icon={icons.eye}
@@ -976,7 +988,7 @@ export default function AdminMarketingPage() {
               delta={prevSummary ? computeDelta(summary?.totalPageViews ?? 0, prevSummary.totalPageViews) : undefined}
             />
             <StatCard
-              label="Unique Sessions"
+              label={t("stat_unique_sessions")}
               value={summary ? formatNum(summary.uniqueSessions) : "..."}
               sub={compareMode && prevSummary ? `vs ${formatNum(prevSummary.uniqueSessions)} prev` : (period === "custom" ? "Custom range" : `Last ${period}`)}
               icon={icons.users}
@@ -984,7 +996,7 @@ export default function AdminMarketingPage() {
               delta={prevSummary ? computeDelta(summary?.uniqueSessions ?? 0, prevSummary.uniqueSessions) : undefined}
             />
             <StatCard
-              label="Avg Time on Page"
+              label={t("stat_avg_time")}
               value={summary ? `${summary.avgTimeOnPage}s` : "..."}
               sub={compareMode && prevSummary ? `vs ${prevSummary.avgTimeOnPage}s prev` : "Estimated from events"}
               icon={icons.clock}
@@ -992,7 +1004,7 @@ export default function AdminMarketingPage() {
               delta={prevSummary ? computeDelta(summary?.avgTimeOnPage ?? 0, prevSummary.avgTimeOnPage) : undefined}
             />
             <StatCard
-              label="Bounce Rate"
+              label={t("stat_bounce_rate")}
               value={summary ? pct(summary.bounceRate) : "..."}
               sub={compareMode && prevSummary ? `vs ${pct(prevSummary.bounceRate)} prev` : "Single-page sessions"}
               icon={icons.arrowTrendingDown}
@@ -1027,7 +1039,7 @@ export default function AdminMarketingPage() {
             {/* Top Pages */}
             <div className="rounded-lg border border-edge bg-surface-card">
               <div className="border-b border-edge px-5 py-4">
-                <h2 className="text-sm font-semibold text-content">Top Pages</h2>
+                <h2 className="text-sm font-semibold text-content">{t("top_pages")}</h2>
               </div>
               {loading ? (
                 <SkeletonTable />
@@ -1592,7 +1604,7 @@ export default function AdminMarketingPage() {
           {/* A/B Tests */}
           <div className="rounded-lg border border-edge bg-surface-card">
             <div className="flex items-center justify-between border-b border-edge px-5 py-4">
-              <h2 className="text-sm font-semibold text-content">A/B Tests</h2>
+              <h2 className="text-sm font-semibold text-content">{t("ab_tests")}</h2>
               <button
                 onClick={() => setShowNewTest(!showNewTest)}
                 className="flex items-center gap-1.5 rounded-lg bg-accent-subtle-bg/10 px-3 py-1.5 text-xs font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/20"
@@ -2069,7 +2081,7 @@ export default function AdminMarketingPage() {
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              label="Total Blog Views"
+              label={t("stat_blog_views")}
               value={stats?.blog ? formatNum(stats.blog.totalViews) : "..."}
               sub={period === "custom" ? "Custom range" : `Last ${period}`}
               icon={icons.eye}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
@@ -216,6 +217,7 @@ function StatCard({
 /* ---------- Main Page ---------- */
 
 export default function AdminSupportTicketsPage() {
+  const t = useTranslations("console.admin.support_tickets");
   const [loading, setLoading] = useState(true);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [total, setTotal] = useState(0);
@@ -358,43 +360,43 @@ export default function AdminSupportTicketsPage() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold text-content">Support Tickets</h1>
+          <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
           <div className="flex items-center gap-2 text-xs text-content-faint">
-            <span className="rounded bg-blue-500/10 px-2 py-0.5 text-blue-400">{openCount} Open</span>
-            <span className="rounded bg-amber-500/10 px-2 py-0.5 text-amber-400">{inProgressCount} In Progress</span>
-            <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-emerald-400">{resolvedCount} Resolved</span>
+            <span className="rounded bg-blue-500/10 px-2 py-0.5 text-blue-400">{t("open_count", { count: openCount })}</span>
+            <span className="rounded bg-amber-500/10 px-2 py-0.5 text-amber-400">{t("in_progress_count", { count: inProgressCount })}</span>
+            <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-emerald-400">{t("resolved_count", { count: resolvedCount })}</span>
           </div>
         </div>
         <p className="mt-1 text-sm text-content-muted">
-          Manage customer support tickets, reply to users, and track resolution.
+          {t("subtitle")}
         </p>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
-          label="Open"
+          label={t("stat_open")}
           value={loading ? "--" : String(openCount)}
           icon={icons.inbox}
           danger
           loading={loading}
         />
         <StatCard
-          label="In Progress"
+          label={t("stat_in_progress")}
           value={loading ? "--" : String(inProgressCount)}
           icon={icons.clock}
           warn
           loading={loading}
         />
         <StatCard
-          label="Resolved Today"
+          label={t("stat_resolved_today")}
           value={loading ? "--" : String(resolvedToday)}
           icon={icons.check}
           accent
           loading={loading}
         />
         <StatCard
-          label="Total"
+          label={t("stat_total")}
           value={loading ? "--" : String(total)}
           icon={icons.ticket}
           loading={loading}
@@ -403,19 +405,28 @@ export default function AdminSupportTicketsPage() {
 
       {/* Tab bar */}
       <div className="flex rounded-lg border border-edge bg-surface-card p-0.5">
-        {STATUS_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => setStatusFilter(tab.value)}
-            className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-              statusFilter === tab.value
-                ? "bg-accent/20 text-accent-text"
-                : "text-content-muted hover:text-content"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {STATUS_TABS.map((tab) => {
+          const tabLabelMap: Record<string, string> = {
+            "": t("tab_all"),
+            "open": t("tab_open"),
+            "in_progress": t("tab_in_progress"),
+            "resolved": t("tab_resolved"),
+            "spam": t("tab_spam"),
+          };
+          return (
+            <button
+              key={tab.value}
+              onClick={() => setStatusFilter(tab.value)}
+              className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                statusFilter === tab.value
+                  ? "bg-accent/20 text-accent-text"
+                  : "text-content-muted hover:text-content"
+              }`}
+            >
+              {tabLabelMap[tab.value] ?? tab.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Main content: table + detail panel */}
@@ -426,15 +437,15 @@ export default function AdminSupportTicketsPage() {
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-edge">
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Ticket#</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Name</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Email</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Subject</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Category</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Priority</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Status</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Created</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Updated</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_ticket")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_name")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_email")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_subject")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_category")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_priority")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_status")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_created")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_updated")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-edge">
@@ -443,7 +454,7 @@ export default function AdminSupportTicketsPage() {
                 ) : tickets.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-5 py-12 text-center text-sm text-content-faint">
-                      No tickets found for this filter.
+                      {t("no_tickets")}
                     </td>
                   </tr>
                 ) : (
@@ -520,7 +531,7 @@ export default function AdminSupportTicketsPage() {
 
               {/* Full message */}
               <div className="border-b border-edge px-5 py-4">
-                <p className="text-xs font-medium uppercase tracking-wider text-content-muted">Message</p>
+                <p className="text-xs font-medium uppercase tracking-wider text-content-muted">{t("message")}</p>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-content">
                   {selectedTicket.message}
                 </p>
@@ -531,7 +542,7 @@ export default function AdminSupportTicketsPage() {
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-content-muted">
-                      Status
+                      {t("status")}
                     </label>
                     <CustomSelect
                       size="sm"
@@ -546,7 +557,7 @@ export default function AdminSupportTicketsPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-content-muted">
-                      Priority
+                      {t("priority")}
                     </label>
                     <CustomSelect
                       size="sm"
@@ -561,7 +572,7 @@ export default function AdminSupportTicketsPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-[10px] font-medium uppercase tracking-wider text-content-muted">
-                      Category
+                      {t("category")}
                     </label>
                     <CustomSelect
                       size="sm"
@@ -590,7 +601,7 @@ export default function AdminSupportTicketsPage() {
                     className="mt-3 flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs text-red-400 transition-colors hover:bg-red-500/10"
                   >
                     {icons.noSymbol}
-                    <span>Mark as Spam</span>
+                    <span>{t("mark_spam")}</span>
                   </button>
                 )}
               </div>
@@ -598,7 +609,7 @@ export default function AdminSupportTicketsPage() {
               {/* Reply thread */}
               <div className="border-b border-edge px-5 py-4">
                 <p className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Replies
+                  {t("replies")}
                 </p>
                 <div className="mt-3 space-y-3">
                   {repliesLoading ? (
@@ -612,7 +623,7 @@ export default function AdminSupportTicketsPage() {
                       ))}
                     </div>
                   ) : replies.length === 0 ? (
-                    <p className="text-xs text-content-faint">No replies yet.</p>
+                    <p className="text-xs text-content-faint">{t("no_replies")}</p>
                   ) : (
                     replies.map((reply) => (
                       <div
@@ -645,7 +656,7 @@ export default function AdminSupportTicketsPage() {
                 <textarea
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Type your reply..."
+                  placeholder={t("reply_placeholder")}
                   rows={3}
                   className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
                 />
@@ -656,7 +667,7 @@ export default function AdminSupportTicketsPage() {
                     className="flex items-center gap-2 rounded-lg bg-accent/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent/30 disabled:opacity-50"
                   >
                     {icons.send}
-                    <span>{sendingReply ? "Sending..." : "Send Reply"}</span>
+                    <span>{sendingReply ? t("sending") : t("send_reply")}</span>
                   </button>
                 </div>
               </div>

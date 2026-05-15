@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
@@ -165,12 +166,13 @@ function StatCard({
 function RoleBadge({ role }: { role: string }) {
   // Legacy adminRole values (viewer/support/marketing/billing) render as
   // generic "Admin" since they were never enforced anyway.
+  const t = useTranslations("console.admin.admin_users");
   const normalized = role === "super_admin" ? "super_admin" : "admin";
-  const roleInfo = ROLES.find((r) => r.value === normalized);
   const colorClass = ROLE_COLORS[normalized] || "bg-surface-inset text-content-muted border-edge";
+  const label = normalized === "super_admin" ? t("role_super_admin") : t("role_admin");
   return (
     <span className={`inline-block rounded border px-2 py-0.5 text-[11px] font-medium ${colorClass}`}>
-      {roleInfo?.label || role}
+      {label}
     </span>
   );
 }
@@ -178,6 +180,7 @@ function RoleBadge({ role }: { role: string }) {
 /* ---------- Main Page ---------- */
 
 export default function AdminUsersPage() {
+  const t = useTranslations("console.admin.admin_users");
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
@@ -222,7 +225,7 @@ export default function AdminUsersPage() {
   async function handleInvite() {
     setInviteError("");
     if (!inviteName.trim() || !inviteEmail.trim() || !invitePassword.trim()) {
-      setInviteError("Name, email, and password are required.");
+      setInviteError(t("error_required_fields"));
       return;
     }
     setSaving(true);
@@ -239,7 +242,7 @@ export default function AdminUsersPage() {
       });
       if (!res.ok) {
         const data = await res.json();
-        setInviteError(data.message || "Failed to invite admin.");
+        setInviteError(data.message || t("error_failed_invite"));
         return;
       }
       setInviteName("");
@@ -249,7 +252,7 @@ export default function AdminUsersPage() {
       setShowInvite(false);
       fetchUsers();
     } catch {
-      setInviteError("Network error. Please try again.");
+      setInviteError(t("error_network"));
     } finally {
       setSaving(false);
     }
@@ -308,9 +311,9 @@ export default function AdminUsersPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-content">Admin Users</h1>
+          <h1 className="text-xl font-semibold text-content">{t("page_title")}</h1>
           <p className="mt-1 text-sm text-content-muted">
-            Manage admin access, roles, and permissions.
+            {t("page_description")}
           </p>
         </div>
         <button
@@ -327,14 +330,14 @@ export default function AdminUsersPage() {
           className="flex items-center gap-2 rounded-lg bg-accent/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent/30"
         >
           {showInvite ? icons.x : icons.plus}
-          <span>{showInvite ? "Cancel" : "Invite Admin"}</span>
+          <span>{showInvite ? t("cancel") : t("invite_admin")}</span>
         </button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <StatCard
-          label="Total Admins"
+          label={t("stat_total_admins")}
           value={loading ? "--" : String(total)}
           icon={icons.users}
           accent
@@ -343,9 +346,9 @@ export default function AdminUsersPage() {
         {ROLES.map((role) => (
           <StatCard
             key={role.value}
-            label={role.label}
+            label={role.value === "super_admin" ? t("role_super_admin") : t("role_admin")}
             value={loading ? "--" : String(roleCounts[role.value] || 0)}
-            sub={role.description}
+            sub={role.value === "super_admin" ? t("role_super_admin_description") : t("role_admin_description")}
             icon={icons.shield}
             loading={loading}
           />
@@ -356,57 +359,58 @@ export default function AdminUsersPage() {
       {showInvite && (
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="border-b border-edge px-5 py-4">
-            <h2 className="text-sm font-semibold text-content">Invite New Admin</h2>
+            <h2 className="text-sm font-semibold text-content">{t("section_invite_new")}</h2>
           </div>
           <div className="space-y-4 p-5">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Name
+                  {t("label_name")}
                 </label>
                 <input
                   type="text"
                   value={inviteName}
                   onChange={(e) => setInviteName(e.target.value)}
-                  placeholder="Full name"
+                  placeholder={t("placeholder_name")}
                   className="w-full rounded-lg border border-edge bg-surface-inset px-4 py-2.5 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Email
+                  {t("label_email")}
                 </label>
                 <input
                   type="email"
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="admin@vestigio.io"
+                  placeholder={t("placeholder_email")}
                   className="w-full rounded-lg border border-edge bg-surface-inset px-4 py-2.5 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Password
+                  {t("label_password")}
                 </label>
                 <input
                   type="password"
                   value={invitePassword}
                   onChange={(e) => setInvitePassword(e.target.value)}
-                  placeholder="Temporary password"
+                  placeholder={t("placeholder_password")}
                   className="w-full rounded-lg border border-edge bg-surface-inset px-4 py-2.5 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
                 />
               </div>
               <div>
                 <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Role
+                  {t("label_role")}
                 </label>
                 <CustomSelect
                   value={inviteRole}
                   onChange={setInviteRole}
-                  options={ROLES.map((r) => ({
-                    value: r.value,
-                    label: `${r.label} -- ${r.description}`,
-                  }))}
+                  options={ROLES.map((r) => {
+                    const label = r.value === "super_admin" ? t("role_super_admin") : t("role_admin");
+                    const desc = r.value === "super_admin" ? t("role_super_admin_description") : t("role_admin_description");
+                    return { value: r.value, label: `${label} -- ${desc}` };
+                  })}
                 />
               </div>
             </div>
@@ -423,7 +427,7 @@ export default function AdminUsersPage() {
                 disabled={saving}
                 className="rounded-lg bg-accent/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent/30 disabled:opacity-50"
               >
-                {saving ? "Inviting..." : "Send Invite"}
+                {saving ? t("inviting") : t("send_invite")}
               </button>
             </div>
           </div>
@@ -433,9 +437,9 @@ export default function AdminUsersPage() {
       {/* Users Table */}
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="flex items-center justify-between border-b border-edge px-5 py-4">
-          <h2 className="text-sm font-semibold text-content">All Admin Users</h2>
+          <h2 className="text-sm font-semibold text-content">{t("section_all_admins")}</h2>
           {!loading && (
-            <span className="text-xs text-content-faint">{total} total</span>
+            <span className="text-xs text-content-faint">{t("total_label", { count: total })}</span>
           )}
         </div>
         <div className="overflow-x-auto">
@@ -443,19 +447,19 @@ export default function AdminUsersPage() {
             <thead>
               <tr className="border-b border-edge">
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Name
+                  {t("col_name")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Email
+                  {t("col_email")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Role
+                  {t("col_role")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Created
+                  {t("col_created")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Actions
+                  {t("col_actions")}
                 </th>
               </tr>
             </thead>
@@ -465,7 +469,7 @@ export default function AdminUsersPage() {
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-5 py-12 text-center text-sm text-content-faint">
-                    No admin users found. Click &quot;Invite Admin&quot; to add one.
+                    {t("no_admin_users_found")}
                   </td>
                 </tr>
               ) : (
@@ -487,14 +491,14 @@ export default function AdminUsersPage() {
                           }}
                           options={ROLES.map((r) => ({
                             value: r.value,
-                            label: r.label,
+                            label: r.value === "super_admin" ? t("role_super_admin") : t("role_admin"),
                           }))}
                         />
                       ) : (
                         <button
                           onClick={() => setEditingRoleId(user.id)}
                           className="transition-opacity hover:opacity-80"
-                          title="Click to change role"
+                          title={t("role_change_title")}
                         >
                           <RoleBadge role={user.adminRole} />
                         </button>
@@ -508,28 +512,28 @@ export default function AdminUsersPage() {
                     <td className="px-5 py-3">
                       {confirmRemoveId === user.id ? (
                         <div className="flex items-center gap-2">
-                          <span className="text-xs text-red-400">Remove?</span>
+                          <span className="text-xs text-red-400">{t("remove_confirm")}</span>
                           <button
                             onClick={() => handleRemove(user.id)}
                             className="rounded px-2 py-1 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/10"
                           >
-                            Yes
+                            {t("remove_yes")}
                           </button>
                           <button
                             onClick={() => setConfirmRemoveId(null)}
                             className="rounded px-2 py-1 text-xs text-content-muted transition-colors hover:bg-surface-inset"
                           >
-                            No
+                            {t("remove_no")}
                           </button>
                         </div>
                       ) : (
                         <button
                           onClick={() => setConfirmRemoveId(user.id)}
                           className="flex items-center gap-1 rounded px-2 py-1 text-xs text-red-400 transition-colors hover:bg-red-500/10"
-                          title="Remove admin access"
+                          title={t("remove_title")}
                         >
                           {icons.trash}
-                          <span>Remove</span>
+                          <span>{t("remove")}</span>
                         </button>
                       )}
                     </td>

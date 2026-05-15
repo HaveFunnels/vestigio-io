@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Admin — System Health + Uptime History Grid
@@ -55,15 +56,18 @@ interface UptimeResponse {
 
 /* ---------- Helpers ---------- */
 
-function timeAgo(iso: string): string {
+function timeAgo(
+  iso: string,
+  labels: { justNow: string; mAgo: (m: number) => string; hAgo: (h: number) => string; dAgo: (d: number) => string },
+): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return labels.justNow;
+  if (mins < 60) return labels.mAgo(mins);
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return labels.hAgo(hrs);
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return labels.dAgo(days);
 }
 
 function formatNum(n: number): string {
@@ -206,15 +210,16 @@ const STATUS_COLORS: Record<string, string> = {
   no_data: "bg-surface-inset",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  ok: "Operational",
-  degraded: "Degraded",
-  down: "Down",
-  no_data: "No data",
-};
-
 function UptimeCell({ day }: { day: UptimeDayData }) {
+  const t = useTranslations("console.admin.system_health");
   const [showTooltip, setShowTooltip] = useState(false);
+
+  const statusLabels: Record<string, string> = {
+    ok: t("uptime_operational"),
+    degraded: t("uptime_degraded"),
+    down: t("uptime_down"),
+    no_data: t("uptime_no_data"),
+  };
 
   return (
     <div className="relative">
@@ -229,8 +234,8 @@ function UptimeCell({ day }: { day: UptimeDayData }) {
         <div className="absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-[11px] shadow-lg">
           <p className="font-medium text-content">{formatDate(day.date)}</p>
           <p className="text-content-faint">
-            {STATUS_LABELS[day.status]}
-            {day.checkCount > 0 && ` (${day.checkCount} checks)`}
+            {statusLabels[day.status]}
+            {day.checkCount > 0 && ` ${t("uptime_check_count", { count: day.checkCount })}`}
           </p>
           <div
             className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-edge"
@@ -244,6 +249,7 @@ function UptimeCell({ day }: { day: UptimeDayData }) {
 /* ---------- Uptime Grid ---------- */
 
 function UptimeGrid({ uptimeData, loading }: { uptimeData: UptimeResponse | null; loading: boolean }) {
+  const t = useTranslations("console.admin.system_health");
   if (loading) return <UptimeGridSkeleton />;
 
   const isEmpty = !uptimeData || uptimeData.empty || Object.keys(uptimeData.services).length === 0;
@@ -264,11 +270,11 @@ function UptimeGrid({ uptimeData, loading }: { uptimeData: UptimeResponse | null
     <div className="rounded-lg border border-edge bg-surface-card">
       <div className="flex items-center justify-between border-b border-edge px-5 py-4">
         <h2 className="text-sm font-semibold text-content">
-          Uptime History
+          {t("uptime_history")}
         </h2>
         {!isEmpty && (
           <div className="flex items-center gap-3">
-            <span className="text-xs text-content-faint">Last 30 days</span>
+            <span className="text-xs text-content-faint">{t("last_30_days")}</span>
             <span
               className={`rounded px-2 py-0.5 text-xs font-medium ${
                 overallUptime >= 99.5
@@ -278,7 +284,7 @@ function UptimeGrid({ uptimeData, loading }: { uptimeData: UptimeResponse | null
                     : "bg-red-500/10 text-red-400"
               }`}
             >
-              {overallUptime}% uptime
+              {t("uptime_pct", { value: overallUptime })}
             </span>
           </div>
         )}
@@ -286,7 +292,7 @@ function UptimeGrid({ uptimeData, loading }: { uptimeData: UptimeResponse | null
 
       {isEmpty ? (
         <div className="px-5 py-12 text-center text-sm text-content-faint">
-          No uptime data yet. History will populate as health checks run.
+          {t("uptime_empty")}
         </div>
       ) : (
         <div className="p-5 space-y-5">
@@ -320,19 +326,19 @@ function UptimeGrid({ uptimeData, loading }: { uptimeData: UptimeResponse | null
           <div className="flex items-center gap-4 pt-2 text-[10px] text-content-faint">
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-[1px] bg-emerald-500" />
-              <span>Operational</span>
+              <span>{t("uptime_operational")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-[1px] bg-amber-500" />
-              <span>Degraded</span>
+              <span>{t("uptime_degraded")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-[1px] bg-red-500" />
-              <span>Down</span>
+              <span>{t("uptime_down")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <div className="h-2.5 w-2.5 rounded-[1px] bg-surface-inset opacity-40" />
-              <span>No data</span>
+              <span>{t("uptime_no_data")}</span>
             </div>
           </div>
         </div>
@@ -344,6 +350,13 @@ function UptimeGrid({ uptimeData, loading }: { uptimeData: UptimeResponse | null
 /* ---------- Main Page ---------- */
 
 export default function AdminSystemHealthPage() {
+  const t = useTranslations("console.admin.system_health");
+  const timeAgoLabels = {
+    justNow: t("just_now"),
+    mAgo: (m: number) => t("minutes_ago", { count: m }),
+    hAgo: (h: number) => t("hours_ago", { count: h }),
+    dAgo: (d: number) => t("days_ago", { count: d }),
+  };
   const [loading, setLoading] = useState(true);
   const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [liveChecks, setLiveChecks] = useState<LiveCheck[]>([]);
@@ -409,52 +422,52 @@ export default function AdminSystemHealthPage() {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl font-semibold text-content">System Health</h1>
+        <h1 className="text-xl font-semibold text-content">{t("page_title")}</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Infrastructure status, MCP performance, and error monitoring.
+          {t("page_subtitle")}
         </p>
       </div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Overall Status"
+          label={t("stat_overall_status")}
           value={
             loading
               ? placeholder
               : hasLiveChecks
                 ? healthOk
-                  ? "Healthy"
+                  ? t("status_healthy")
                   : overallStatus === "degraded"
-                    ? "Degraded"
-                    : `${failedChecks} Issue(s)`
-                : "Unknown"
+                    ? t("status_degraded")
+                    : t("status_issues", { count: failedChecks })
+                : t("status_unknown")
           }
-          sub={hasLiveChecks ? `${totalChecks} services checked` : "Waiting for first health check"}
+          sub={hasLiveChecks ? t("services_checked", { count: totalChecks }) : t("waiting_first_check")}
           icon={icons.heart}
           accent={healthOk}
           warn={healthData != null && !healthOk}
         />
         <StatCard
-          label="MCP Queries Today"
+          label={t("stat_mcp_today")}
           value={usageTotals ? formatNum(usageTotals.total_mcp_queries) : placeholder}
-          sub="Total across all orgs"
+          sub={t("stat_mcp_sub")}
           icon={icons.bolt}
           accent
         />
         <StatCard
-          label="Playwright Runs Today"
+          label={t("stat_playwright_today")}
           value={usageTotals ? formatNum(usageTotals.total_playwright_runs) : placeholder}
-          sub="Browser verification runs"
+          sub={t("stat_playwright_sub")}
           icon={icons.playwright}
         />
         <StatCard
-          label="Unresolved Errors"
+          label={t("stat_unresolved_errors")}
           value={loading ? placeholder : String(unresolvedErrors)}
           sub={
             errorSummary && errorSummary.groupedByType.length > 0
-              ? `Top: ${errorSummary.groupedByType[0].errorType}`
-              : "No errors"
+              ? t("top_error", { type: errorSummary.groupedByType[0].errorType })
+              : t("no_errors")
           }
           icon={icons.exclamation}
           warn={unresolvedErrors > 0}
@@ -464,15 +477,15 @@ export default function AdminSystemHealthPage() {
       {/* Health Checks */}
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="border-b border-edge px-5 py-4">
-          <h2 className="text-sm font-semibold text-content">Health Checks</h2>
+          <h2 className="text-sm font-semibold text-content">{t("health_checks")}</h2>
         </div>
         {loading ? (
           <div className="px-5 py-12 text-center text-sm text-content-faint">
-            Loading...
+            {t("loading")}
           </div>
         ) : liveChecks.length === 0 && checkEntries.length === 0 ? (
           <div className="px-5 py-12 text-center text-sm text-content-faint">
-            No health check data yet. Checks run automatically every 5 minutes.
+            {t("no_health_data")}
           </div>
         ) : liveChecks.length > 0 ? (
           <div className="divide-y divide-edge">
@@ -524,7 +537,7 @@ export default function AdminSystemHealthPage() {
                         : "bg-red-500/10 text-red-400"
                   }`}
                 >
-                  {check.status === "ok" ? "Healthy" : check.status === "degraded" ? "Degraded" : "Down"}
+                  {check.status === "ok" ? t("status_healthy") : check.status === "degraded" ? t("status_degraded") : t("status_down")}
                 </span>
               </div>
             ))}
@@ -543,7 +556,7 @@ export default function AdminSystemHealthPage() {
                   {check.message && <p className="mt-0.5 text-xs text-content-faint">{check.message}</p>}
                 </div>
                 <span className={`rounded px-2 py-0.5 text-xs font-medium ${check.ok ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400"}`}>
-                  {check.ok ? "Pass" : "Fail"}
+                  {check.ok ? t("check_pass") : t("check_fail")}
                 </span>
               </div>
             ))}
@@ -559,7 +572,7 @@ export default function AdminSystemHealthPage() {
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="border-b border-edge px-5 py-4">
             <h2 className="text-sm font-semibold text-content">
-              Unresolved Errors by Type
+              {t("unresolved_errors_by_type")}
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -567,13 +580,13 @@ export default function AdminSystemHealthPage() {
               <thead>
                 <tr className="border-b border-edge">
                   <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Error Type
+                    {t("col_error_type")}
                   </th>
                   <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Count
+                    {t("col_count")}
                   </th>
                   <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Last Seen
+                    {t("col_last_seen")}
                   </th>
                 </tr>
               </thead>
@@ -589,7 +602,7 @@ export default function AdminSystemHealthPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-xs text-content-faint">
-                      {g.lastOccurrence ? timeAgo(g.lastOccurrence) : "--"}
+                      {g.lastOccurrence ? timeAgo(g.lastOccurrence, timeAgoLabels) : "--"}
                     </td>
                   </tr>
                 ))}
@@ -603,7 +616,7 @@ export default function AdminSystemHealthPage() {
       {!loading && !healthData && unresolvedErrors === 0 && (
         <div className="rounded-lg border border-dashed border-edge px-6 py-12 text-center">
           <p className="text-sm text-content-faint">
-            Health monitoring will populate once the system begins processing requests.
+            {t("empty_state")}
           </p>
         </div>
       )}

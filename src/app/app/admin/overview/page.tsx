@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Admin Overview — full platform dashboard
@@ -94,15 +95,18 @@ function formatNum(n: number): string {
   return n.toLocaleString();
 }
 
-function timeAgo(iso: string): string {
+function timeAgo(
+  iso: string,
+  labels: { justNow: string; mAgo: (m: number) => string; hAgo: (h: number) => string; dAgo: (d: number) => string },
+): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return labels.justNow;
+  if (mins < 60) return labels.mAgo(mins);
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return labels.hAgo(hrs);
   const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+  return labels.dAgo(days);
 }
 
 function trialDaysRemaining(trialEndsAt: string | null): number | null {
@@ -252,6 +256,7 @@ function generateTrend(current: number, seed: number = 0): number[] {
 /* ---------- Live Indicator ---------- */
 
 function LiveIndicator({ lastUpdated }: { lastUpdated: Date | null }) {
+  const t = useTranslations("console.admin.overview");
   const [, setTick] = useState(0);
 
   // Re-render every 10s to update relative time
@@ -263,10 +268,10 @@ function LiveIndicator({ lastUpdated }: { lastUpdated: Date | null }) {
   const agoText = lastUpdated
     ? (() => {
         const secs = Math.floor((Date.now() - lastUpdated.getTime()) / 1000);
-        if (secs < 10) return "just now";
-        if (secs < 60) return `${secs}s ago`;
+        if (secs < 10) return t("just_now");
+        if (secs < 60) return t("seconds_ago", { count: secs });
         const mins = Math.floor(secs / 60);
-        return `${mins}m ago`;
+        return t("minutes_ago", { count: mins });
       })()
     : null;
 
@@ -276,10 +281,10 @@ function LiveIndicator({ lastUpdated }: { lastUpdated: Date | null }) {
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
         <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
       </span>
-      <span className="text-xs font-medium text-emerald-400">Live</span>
+      <span className="text-xs font-medium text-emerald-400">{t("live")}</span>
       {agoText && (
         <span className="text-[11px] text-content-faint">
-          Updated {agoText}
+          {t("updated_label", { time: agoText })}
         </span>
       )}
     </div>
@@ -432,6 +437,13 @@ function QuickLink({
 /* ---------- Main Page ---------- */
 
 export default function AdminOverviewPage() {
+  const t = useTranslations("console.admin.overview");
+  const timeAgoLabels = {
+    justNow: t("just_now"),
+    mAgo: (m: number) => t("minutes_ago", { count: m }),
+    hAgo: (h: number) => t("hours_ago", { count: h }),
+    dAgo: (d: number) => t("days_ago", { count: d }),
+  };
   const [loading, setLoading] = useState(true);
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [usageTotals, setUsageTotals] = useState<UsageTotals | null>(null);
@@ -539,10 +551,10 @@ export default function AdminOverviewPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-semibold text-content">
-            Platform Overview
+            {t("page_title")}
           </h1>
           <p className="mt-1 text-sm text-content-muted">
-            Real-time platform metrics, revenue, and operational health.
+            {t("page_subtitle")}
           </p>
         </div>
         <LiveIndicator lastUpdated={lastUpdated} />
@@ -551,14 +563,14 @@ export default function AdminOverviewPage() {
       {/* ── Row 1: Primary KPIs ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          label="Total Organizations"
+          label={t("stat_total_orgs")}
           value={String(totalOrgs)}
-          sub={`${activeOrgs} active${demoOrgs > 0 ? `, ${demoOrgs} demo` : ""}, ${totalOrgs - activeOrgs} inactive`}
+          sub={`${t("active_count", { count: activeOrgs })}${demoOrgs > 0 ? `, ${t("demo_count", { count: demoOrgs })}` : ""}, ${t("inactive_count", { count: totalOrgs - activeOrgs })}`}
           icon={icons.building}
           loading={loading}
         />
         <StatCard
-          label="Active Subscriptions"
+          label={t("stat_active_subs")}
           value={String(activeOrgs)}
           sub={Object.entries(planCounts)
             .map(([k, v]) => `${v} ${k}`)
@@ -568,17 +580,17 @@ export default function AdminOverviewPage() {
           loading={loading}
         />
         <StatCard
-          label="Monthly Recurring Revenue"
+          label={t("stat_mrr")}
           value={dollars(mrr)}
-          sub={`${cents(mrr)} / month${demoOrgs > 0 ? ` (excl. ${demoOrgs} demo)` : ""}`}
+          sub={`${cents(mrr)} ${t("per_month")}${demoOrgs > 0 ? ` ${t("excl_demo", { count: demoOrgs })}` : ""}`}
           icon={icons.currencyDollar}
           accent
           loading={loading}
         />
         <StatCard
-          label="MCP Queries Today"
+          label={t("stat_mcp_today")}
           value={formatNum(mcpToday)}
-          sub={overLimit > 0 ? `${overLimit} org(s) over limit` : "All within limits"}
+          sub={overLimit > 0 ? t("orgs_over_limit", { count: overLimit }) : t("all_within_limits")}
           icon={icons.bolt}
           warn={overLimit > 0}
           loading={loading}
@@ -588,52 +600,52 @@ export default function AdminOverviewPage() {
       {/* ── Row 2: Secondary KPIs ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <StatCard
-          label="Trial Accounts"
+          label={t("stat_trial_accounts")}
           value={String(trialOrgs)}
-          sub={trialOrgs > 0 ? `${trialOrgs} active trial(s)` : "No active trials"}
+          sub={trialOrgs > 0 ? t("active_trials", { count: trialOrgs }) : t("no_active_trials")}
           icon={icons.clock}
           warn={trialOrgs > 0}
           loading={loading}
         />
         <StatCard
-          label="Total Users"
+          label={t("stat_total_users")}
           value={formatNum(totalMembers)}
-          sub={`Across ${totalOrgs} organizations`}
+          sub={t("across_orgs", { count: totalOrgs })}
           icon={icons.users}
           loading={loading}
         />
         <StatCard
-          label="Playwright Runs Today"
+          label={t("stat_playwright_today")}
           value={formatNum(playwrightToday)}
-          sub={`Est. cost: ${cents(costToday)}`}
+          sub={t("est_cost", { cost: cents(costToday) })}
           icon={icons.playwright}
           loading={loading}
         />
         <StatCard
-          label="Unresolved Errors"
+          label={t("stat_unresolved_errors")}
           value={String(unresolvedErrors)}
           sub={
             errorSummary && errorSummary.groupedByType.length > 0
-              ? `Top: ${errorSummary.groupedByType[0].errorType} (${errorSummary.groupedByType[0].count})`
-              : "No errors"
+              ? t("top_error", { type: errorSummary.groupedByType[0].errorType, count: errorSummary.groupedByType[0].count })
+              : t("no_errors")
           }
           icon={icons.exclamation}
           warn={unresolvedErrors > 0}
           loading={loading}
         />
         <StatCard
-          label="System Health"
+          label={t("stat_system_health")}
           value={
             healthData
               ? healthOk
-                ? "Healthy"
-                : `${failedChecks} issue(s)`
-              : "Unknown"
+                ? t("status_healthy")
+                : t("status_issues", { count: failedChecks })
+              : t("status_unknown")
           }
           sub={
             healthData
-              ? `${Object.keys(healthChecks).length} checks run`
-              : "Health endpoint unavailable"
+              ? t("checks_run", { count: Object.keys(healthChecks).length })
+              : t("health_endpoint_unavailable")
           }
           icon={icons.heart}
           accent={healthOk}
@@ -647,10 +659,10 @@ export default function AdminOverviewPage() {
         <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-3">
           <span className="text-amber-400">{icons.exclamation}</span>
           <p className="text-sm text-amber-300">
-            <span className="font-semibold">{overLimit} organization(s)</span>{" "}
-            have exceeded their daily MCP budget.{" "}
+            <span className="font-semibold">{t("orgs_count", { count: overLimit })}</span>{" "}
+            {t("over_budget_message")}{" "}
             <Link href="/app/admin/usage-billing" className="underline hover:text-amber-200">
-              View usage details
+              {t("view_usage_details")}
             </Link>
           </p>
         </div>
@@ -662,13 +674,13 @@ export default function AdminOverviewPage() {
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="flex items-center justify-between border-b border-edge px-5 py-4">
             <h2 className="text-sm font-semibold text-content">
-              Top Usage Today
+              {t("top_usage_today")}
             </h2>
             <Link
               href="/app/admin/usage-billing"
               className="text-xs text-accent-text hover:underline"
             >
-              View all
+              {t("view_all")}
             </Link>
           </div>
           <div className="divide-y divide-edge">
@@ -676,7 +688,7 @@ export default function AdminOverviewPage() {
               <>{Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}</>
             ) : topUsageOrgs.length === 0 ? (
               <div className="px-5 py-8 text-center text-sm text-content-faint">
-                No usage data yet.
+                {t("no_usage_yet")}
               </div>
             ) : (
               topUsageOrgs.map((row, idx) => (
@@ -718,7 +730,7 @@ export default function AdminOverviewPage() {
                       </span>
                       {(row.is_over_mcp_limit || row.is_over_playwright_limit) && (
                         <span className="rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-                          over limit
+                          {t("over_limit_badge")}
                         </span>
                       )}
                     </div>
@@ -733,13 +745,13 @@ export default function AdminOverviewPage() {
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="flex items-center justify-between border-b border-edge px-5 py-4">
             <h2 className="text-sm font-semibold text-content">
-              Recently Created Organizations
+              {t("recent_orgs")}
             </h2>
             <Link
               href="/app/admin/organizations"
               className="text-xs text-accent-text hover:underline"
             >
-              View all
+              {t("view_all")}
             </Link>
           </div>
           <div className="divide-y divide-edge">
@@ -747,7 +759,7 @@ export default function AdminOverviewPage() {
               <>{Array.from({ length: 4 }).map((_, i) => <SkeletonRow key={i} />)}</>
             ) : recentOrgs.length === 0 ? (
               <div className="px-5 py-8 text-center text-sm text-content-faint">
-                No organizations yet.
+                {t("no_orgs_yet")}
               </div>
             ) : (
               recentOrgs.map((org, idx) => (
@@ -760,22 +772,22 @@ export default function AdminOverviewPage() {
                       {org.name}
                       {org.orgType === "demo" && (
                         <span className="inline-block rounded bg-zinc-500/10 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
-                          Demo
+                          {t("badge_demo")}
                         </span>
                       )}
                       {org.orgType === "trial" && (
                         <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
-                          Trial
+                          {t("badge_trial")}
                           {(() => {
                             const days = trialDaysRemaining(org.trialEndsAt);
-                            return days !== null ? ` (${days}d left)` : "";
+                            return days !== null ? ` ${t("trial_days_left", { count: days })}` : "";
                           })()}
                         </span>
                       )}
                     </p>
                     <p className="text-xs text-content-faint">
-                      {org.memberCount} member{org.memberCount !== 1 ? "s" : ""} &middot;{" "}
-                      {org.envCount} env{org.envCount !== 1 ? "s" : ""}
+                      {t("member_count", { count: org.memberCount })} &middot;{" "}
+                      {t("env_count", { count: org.envCount })}
                     </p>
                   </div>
                   <div className="mx-3">
@@ -796,10 +808,16 @@ export default function AdminOverviewPage() {
                             : "bg-amber-500/10 text-amber-400"
                       }`}
                     >
-                      {org.status.charAt(0).toUpperCase() + org.status.slice(1)}
+                      {org.status === "active"
+                        ? t("status_active")
+                        : org.status === "suspended"
+                          ? t("status_suspended")
+                          : org.status === "inactive"
+                            ? t("status_inactive")
+                            : org.status.charAt(0).toUpperCase() + org.status.slice(1)}
                     </span>
                     <p className="mt-1 text-[11px] text-content-faint">
-                      {timeAgo(org.createdAt)}
+                      {timeAgo(org.createdAt, timeAgoLabels)}
                     </p>
                   </div>
                 </div>
@@ -813,7 +831,7 @@ export default function AdminOverviewPage() {
       {!loading && totalOrgs > 0 && (
         <div className="rounded-lg border border-edge bg-surface-card p-5">
           <h2 className="mb-4 text-sm font-semibold text-content">
-            Plan Distribution
+            {t("plan_distribution")}
           </h2>
           <div className="flex gap-3">
             {(["vestigio", "pro", "max"] as const).map((plan) => {
@@ -841,8 +859,8 @@ export default function AdminOverviewPage() {
                     />
                   </div>
                   <p className="mt-1 text-[11px] text-content-faint">
-                    {cents(PLAN_PRICES_CENTS[plan] || 0)}/mo &middot;{" "}
-                    {cents((planCountsForMrr[plan] || 0) * (PLAN_PRICES_CENTS[plan] || 0))} MRR
+                    {cents(PLAN_PRICES_CENTS[plan] || 0)}{t("per_mo_short")} &middot;{" "}
+                    {cents((planCountsForMrr[plan] || 0) * (PLAN_PRICES_CENTS[plan] || 0))} {t("mrr_short")}
                   </p>
                 </div>
               );
@@ -856,13 +874,13 @@ export default function AdminOverviewPage() {
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="flex items-center justify-between border-b border-edge px-5 py-4">
             <h2 className="text-sm font-semibold text-content">
-              Unresolved Errors by Type
+              {t("unresolved_errors_by_type")}
             </h2>
             <Link
               href="/app/admin/errors"
               className="text-xs text-accent-text hover:underline"
             >
-              View all errors
+              {t("view_all_errors")}
             </Link>
           </div>
           <div className="overflow-x-auto">
@@ -870,13 +888,13 @@ export default function AdminOverviewPage() {
               <thead>
                 <tr className="border-b border-edge">
                   <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Error Type
+                    {t("col_error_type")}
                   </th>
                   <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Count
+                    {t("col_count")}
                   </th>
                   <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Last Seen
+                    {t("col_last_seen")}
                   </th>
                 </tr>
               </thead>
@@ -892,7 +910,7 @@ export default function AdminOverviewPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3 text-xs text-content-faint">
-                      {g.lastOccurrence ? timeAgo(g.lastOccurrence) : "--"}
+                      {g.lastOccurrence ? timeAgo(g.lastOccurrence, timeAgoLabels) : "--"}
                     </td>
                   </tr>
                 ))}
@@ -905,33 +923,33 @@ export default function AdminOverviewPage() {
       {/* ── Quick Links ── */}
       <div>
         <h2 className="mb-3 text-sm font-semibold text-content">
-          Quick Links
+          {t("quick_links")}
         </h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <QuickLink
             href="/app/admin/organizations"
-            label="Organizations"
-            desc="Manage tenants, members, environments"
+            label={t("ql_orgs_label")}
+            desc={t("ql_orgs_desc")}
           />
           <QuickLink
             href="/app/admin/pricing"
-            label="Pricing"
-            desc="Plan pricing and feature gates"
+            label={t("ql_pricing_label")}
+            desc={t("ql_pricing_desc")}
           />
           <QuickLink
             href="/app/admin/usage-billing"
-            label="Usage & Billing"
-            desc="Daily capacity, cost estimates, token economics"
+            label={t("ql_usage_label")}
+            desc={t("ql_usage_desc")}
           />
           <QuickLink
             href="/app/admin/system-health"
-            label="System Health"
-            desc="MCP latency, active audits, observability"
+            label={t("ql_health_label")}
+            desc={t("ql_health_desc")}
           />
           <QuickLink
             href="/app/admin/errors"
-            label="Error Tracking"
-            desc="Unresolved platform errors and alerts"
+            label={t("ql_errors_label")}
+            desc={t("ql_errors_desc")}
           />
         </div>
       </div>
@@ -940,8 +958,7 @@ export default function AdminOverviewPage() {
       {!loading && !usageTotals && orgs.length === 0 && (
         <div className="rounded-lg border border-dashed border-edge px-6 py-12 text-center">
           <p className="text-sm text-content-faint">
-            No platform data yet. Organizations and usage will appear here once
-            users begin onboarding.
+            {t("empty_state")}
           </p>
         </div>
       )}

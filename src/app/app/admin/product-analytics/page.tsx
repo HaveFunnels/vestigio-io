@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import ExportButton from "@/components/app/ExportButton";
 
 // ──────────────────────────────────────────────
@@ -64,6 +65,7 @@ interface ProductAnalyticsData {
 type Period = "7d" | "30d" | "90d";
 
 export default function ProductAnalyticsPage() {
+	const t = useTranslations("console.admin.product_analytics");
 	const [data, setData] = useState<ProductAnalyticsData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [period, setPeriod] = useState<Period>("30d");
@@ -94,10 +96,10 @@ export default function ProductAnalyticsPage() {
 			<div className="flex items-center justify-between">
 				<div>
 					<h1 className="text-xl font-semibold text-content">
-						Product Analytics
+						{t("title")}
 					</h1>
 					<p className="text-sm text-content-muted">
-						In-app engagement, feature adoption, and churn risk
+						{t("subtitle")}
 					</p>
 				</div>
 				<div className="flex items-center gap-3">
@@ -107,7 +109,7 @@ export default function ProductAnalyticsPage() {
 							<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
 							<span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
 						</span>
-						Live
+						{t("live")}
 					</div>
 					{/* Period selector */}
 					<div className="flex rounded-md border border-edge">
@@ -139,18 +141,18 @@ export default function ProductAnalyticsPage() {
 					{/* KPI Cards */}
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 						<StatCard
-							label="Daily Active Users"
+							label={t("stat_dau")}
 							value={data.dau}
 							icon="👤"
 						/>
 						<StatCard
-							label="Avg Engagement Score"
+							label={t("stat_engagement")}
 							value={data.avg_engagement_score}
 							suffix="/100"
 							icon="📊"
 						/>
 						<StatCard
-							label="Feature Adoption"
+							label={t("stat_adoption")}
 							value={
 								data.feature_adoption.activated > 0
 									? Math.round(
@@ -161,11 +163,11 @@ export default function ProductAnalyticsPage() {
 									: 0
 							}
 							suffix="%"
-							sublabel="users who tried chat"
+							sublabel={t("stat_adoption_sub")}
 							icon="🚀"
 						/>
 						<StatCard
-							label="At-Risk Environments"
+							label={t("stat_at_risk")}
 							value={data.at_risk_environments.length}
 							variant={
 								data.at_risk_environments.length > 0
@@ -181,7 +183,7 @@ export default function ProductAnalyticsPage() {
 						{/* Top Pages */}
 						<div className="rounded-lg border border-edge bg-surface-card p-4">
 							<h3 className="mb-3 text-sm font-medium text-content">
-								Top Pages by Views
+								{t("top_pages")}
 							</h3>
 							<div className="space-y-2">
 								{data.top_pages.slice(0, 10).map((page) => {
@@ -213,13 +215,13 @@ export default function ProductAnalyticsPage() {
 								})}
 								{data.top_pages.length === 0 && (
 									<p className="text-xs text-content-faint">
-										No page views yet
+										{t("no_page_views")}
 									</p>
 								)}
 							</div>
 						</div>
 
-						{/* Feature Adoption Funnel */}
+						{/* {t("feature_funnel")} */}
 						<div className="rounded-lg border border-edge bg-surface-card p-4">
 							<h3 className="mb-3 text-sm font-medium text-content">
 								Feature Adoption Funnel
@@ -227,25 +229,25 @@ export default function ProductAnalyticsPage() {
 							<div className="space-y-2">
 								{[
 									{
-										label: "Activated",
+										label: t("funnel_activated"),
 										value: data.feature_adoption.activated,
 									},
 									{
-										label: "First Workspace Drill",
+										label: t("funnel_first_workspace"),
 										value: data.feature_adoption
 											.first_workspace_drill,
 									},
 									{
-										label: "First Chat",
+										label: t("funnel_first_chat"),
 										value: data.feature_adoption.first_chat,
 									},
 									{
-										label: "First Action Created",
+										label: t("funnel_first_action"),
 										value: data.feature_adoption
 											.first_action,
 									},
 									{
-										label: "First Verification",
+										label: t("funnel_first_verify"),
 										value: data.feature_adoption
 											.first_verify,
 									},
@@ -301,7 +303,7 @@ export default function ProductAnalyticsPage() {
 						{/* Engagement Distribution */}
 						<div className="rounded-lg border border-edge bg-surface-card p-4">
 							<h3 className="mb-3 text-sm font-medium text-content">
-								Engagement Score Distribution
+								{t("engagement_dist")}
 							</h3>
 							<div className="flex items-end gap-2">
 								{data.engagement_distribution.labels.map(
@@ -348,15 +350,14 @@ export default function ProductAnalyticsPage() {
 								)}
 							</div>
 							<p className="mt-2 text-center text-[10px] text-content-faint">
-								{data.engagement_distribution.total} total
-								environments
+								{t("total_environments", { count: data.engagement_distribution.total })}
 							</p>
 						</div>
 
 						{/* Events by Type */}
 						<div className="rounded-lg border border-edge bg-surface-card p-4">
 							<h3 className="mb-3 text-sm font-medium text-content">
-								Events by Type ({period})
+								{t("events_by_type", { period })}
 							</h3>
 							<div className="space-y-2">
 								{data.events_by_type.map((evt) => {
@@ -390,7 +391,7 @@ export default function ProductAnalyticsPage() {
 								})}
 								{data.events_by_type.length === 0 && (
 									<p className="text-xs text-content-faint">
-										No events recorded yet
+										{t("no_events")}
 									</p>
 								)}
 							</div>
@@ -402,9 +403,9 @@ export default function ProductAnalyticsPage() {
 						<div className="space-y-4">
 							<div className="flex items-baseline justify-between border-b border-edge pb-2">
 								<h2 className="text-sm font-medium text-content">
-									Chat Dynamics{" "}
+									{t("chat_dynamics")}{" "}
 									<span className="text-content-faint">
-										(MCP copilot)
+										{t("chat_dynamics_sub")}
 									</span>
 								</h2>
 								<span className="text-[10px] text-content-faint">
@@ -522,20 +523,20 @@ export default function ProductAnalyticsPage() {
 								{/* Chat funnel */}
 								<div className="rounded-lg border border-edge bg-surface-card p-4">
 									<h3 className="mb-3 text-sm font-medium text-content">
-										Chat Funnel
+										{t("chat_funnel")}
 									</h3>
 									<div className="space-y-2">
 										{[
 											{
-												label: "Opens",
+												label: t("chat_funnel_opens"),
 												value: data.chat_dynamics.opens,
 											},
 											{
-												label: "Sends",
+												label: t("chat_funnel_sends"),
 												value: data.chat_dynamics.sends,
 											},
 											{
-												label: "First token received",
+												label: t("chat_funnel_first_token"),
 												value: data.chat_dynamics
 													.first_tokens,
 											},
@@ -588,12 +589,12 @@ export default function ProductAnalyticsPage() {
 								{/* Top tools */}
 								<div className="rounded-lg border border-edge bg-surface-card p-4">
 									<h3 className="mb-3 text-sm font-medium text-content">
-										Top MCP Tools Called
+										{t("top_tools")}
 									</h3>
 									<div className="space-y-2">
 										{data.chat_dynamics.top_tools.length === 0 ? (
 											<p className="text-xs text-content-faint">
-												No tool calls recorded yet
+												{t("no_tool_calls")}
 											</p>
 										) : (
 											data.chat_dynamics.top_tools.map((t) => {

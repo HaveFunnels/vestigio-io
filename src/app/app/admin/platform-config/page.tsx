@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef, Component, type ErrorInfo, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 
 /* ---------- Error Boundary ---------- */
 
@@ -1000,6 +1001,7 @@ function SectionSkeleton() {
 /* ---------- Main Page ---------- */
 
 export default function PlatformConfigPage() {
+  const t = useTranslations("console.admin.platform_config");
   const [config, setConfig] = useState<AllConfig>(DEFAULTS);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
@@ -1052,9 +1054,9 @@ export default function PlatformConfigPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold text-content">Platform Config</h1>
+          <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
           <p className="mt-1 text-sm text-content-muted">
-            Manage theme, branding, integrations, credentials, and feature flags. Changes take effect immediately.
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -1077,19 +1079,19 @@ export default function PlatformConfigPage() {
                 d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182"
               />
             </svg>
-            {cacheResetting ? "Resetando..." : "Resetar cache de configura\u00e7\u00e3o"}
+            {cacheResetting ? t("resetting") : t("reset_cache")}
           </button>
           {cacheFeedback === "ok" && (
             <span className="flex items-center gap-1 text-xs text-emerald-400 whitespace-nowrap">
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
-              Cache invalidado
+              {t("cache_invalidated")}
             </span>
           )}
           {cacheFeedback === "error" && (
             <span className="text-xs text-red-400 whitespace-nowrap">
-              Falha ao resetar cache
+              {t("cache_reset_failed")}
             </span>
           )}
         </div>
@@ -1102,7 +1104,7 @@ export default function PlatformConfigPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
           <p className="text-sm text-red-300">
-            Failed to load platform configuration. You may not have admin access or the server is unavailable.
+            {t("load_error")}
           </p>
         </div>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 // ──────────────────────────────────────────────
 // Admin — MCP Observability
@@ -101,6 +102,7 @@ function StatCard({
 /* ---------- Page ---------- */
 
 export default function MCPObservabilityPage() {
+  const t = useTranslations("console.admin.mcp_observability");
   const [data, setData] = useState<Dashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -151,11 +153,9 @@ export default function MCPObservabilityPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-xl font-semibold text-content">MCP Observability</h1>
+        <h1 className="text-xl font-semibold text-content">{t("page_title")}</h1>
         <p className="mt-1 text-sm text-content-muted">
-          Prompt-gate behavior, playbook engagement, suggestion clicks, and
-          session aggregates. Counters are in-memory on the running app
-          process; they reset on deploy.
+          {t("page_subtitle")}
         </p>
       </div>
 
@@ -168,30 +168,29 @@ export default function MCPObservabilityPage() {
       {/* ── Prompt Gate ── */}
       <div className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold text-content">Prompt Gate</h2>
+          <h2 className="text-sm font-semibold text-content">{t("section_prompt_gate")}</h2>
           <p className="text-xs text-content-faint">
-            How often the gate flags a query as weak and the user accepts a
-            rewrite.
+            {t("section_prompt_gate_desc")}
           </p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="Total Evaluated"
+            label={t("stat_total_evaluated")}
             value={pg ? formatNum(pg.total_evaluated) : placeholder}
           />
           <StatCard
-            label="Weak Prompt Rate"
+            label={t("stat_weak_prompt_rate")}
             value={pg ? pct(pg.weak_prompt_rate) : placeholder}
-            sub={pg ? `${formatNum(pg.weak_count)} flagged` : undefined}
+            sub={pg ? t("flagged_count", { count: pg.weak_count }) : undefined}
             warn={weakRateWarn}
           />
           <StatCard
-            label="Rewrites Offered"
+            label={t("stat_rewrites_offered")}
             value={pg ? formatNum(pg.rewrites_offered) : placeholder}
-            sub={pg ? `${formatNum(pg.rewrites_accepted)} accepted / ${formatNum(pg.rewrites_rejected)} rejected` : undefined}
+            sub={pg ? t("rewrites_accepted_rejected", { accepted: formatNum(pg.rewrites_accepted), rejected: formatNum(pg.rewrites_rejected) }) : undefined}
           />
           <StatCard
-            label="Rewrite Acceptance"
+            label={t("stat_rewrite_acceptance")}
             value={pg && pg.rewrites_offered > 0 ? pct(pg.rewrite_acceptance_rate) : placeholder}
             warn={rewriteRateWarn}
           />
@@ -201,29 +200,28 @@ export default function MCPObservabilityPage() {
       {/* ── Playbooks ── */}
       <div className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold text-content">Playbooks</h2>
+          <h2 className="text-sm font-semibold text-content">{t("section_playbooks")}</h2>
           <p className="text-xs text-content-faint">
-            Guided MCP flows. Top playbooks shows which flows actually get
-            kicked off.
+            {t("section_playbooks_desc")}
           </p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="Total Runs"
+            label={t("stat_total_runs")}
             value={pb ? formatNum(pb.total_runs) : placeholder}
           />
           <StatCard
-            label="Completed"
+            label={t("stat_completed")}
             value={pb ? formatNum(pb.completed) : placeholder}
             accent
           />
           <StatCard
-            label="Abandoned"
+            label={t("stat_abandoned")}
             value={pb ? formatNum(pb.abandoned) : placeholder}
             warn={(pb?.abandoned ?? 0) > (pb?.completed ?? 0) && (pb?.total_runs ?? 0) > 0}
           />
           <StatCard
-            label="Completion Rate"
+            label={t("stat_completion_rate")}
             value={pb && pb.total_runs > 0 ? pct(pb.completion_rate) : placeholder}
             warn={completionWarn}
           />
@@ -232,17 +230,17 @@ export default function MCPObservabilityPage() {
           <div className="rounded-lg border border-edge bg-surface-card">
             <div className="border-b border-edge px-5 py-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-content-muted">
-                Top Playbooks
+                {t("top_playbooks")}
               </h3>
             </div>
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-edge">
                   <th className="px-5 py-2 text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Playbook
+                    {t("col_playbook")}
                   </th>
                   <th className="px-5 py-2 text-right text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Runs
+                    {t("col_runs")}
                   </th>
                 </tr>
               </thead>
@@ -266,30 +264,29 @@ export default function MCPObservabilityPage() {
       {/* ── Sessions ── */}
       <div className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold text-content">Sessions</h2>
+          <h2 className="text-sm font-semibold text-content">{t("section_sessions")}</h2>
           <p className="text-xs text-content-faint">
-            Aggregates across all tracked MCP sessions. Chain depth = average
-            number of MCP tool calls per session.
+            {t("section_sessions_desc")}
           </p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
-            label="Total Sessions"
+            label={t("stat_total_sessions")}
             value={ss ? formatNum(ss.total_sessions) : placeholder}
           />
           <StatCard
-            label="Avg Queries / Session"
+            label={t("stat_avg_queries")}
             value={ss ? ss.avg_queries_per_session.toFixed(1) : placeholder}
           />
           <StatCard
-            label="Avg Chain Depth"
+            label={t("stat_avg_chain_depth")}
             value={ss ? ss.avg_chain_depth.toFixed(1) : placeholder}
-            sub="MCP tool calls per session"
+            sub={t("chain_depth_sub")}
           />
           <StatCard
-            label="With Playbook"
+            label={t("stat_with_playbook")}
             value={ss ? formatNum(ss.sessions_with_playbook) : placeholder}
-            sub={ss ? `${formatNum(ss.sessions_with_rewrites)} with rewrites` : undefined}
+            sub={ss ? t("with_rewrites_count", { count: formatNum(ss.sessions_with_rewrites) }) : undefined}
           />
         </div>
       </div>
@@ -297,10 +294,9 @@ export default function MCPObservabilityPage() {
       {/* ── Suggestion Clicks ── */}
       <div className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold text-content">Suggestion Clicks</h2>
+          <h2 className="text-sm font-semibold text-content">{t("section_suggestions")}</h2>
           <p className="text-xs text-content-faint">
-            Which next-step suggestion types users click most. Helps tune the
-            suggestion engine.
+            {t("section_suggestions_desc")}
           </p>
         </div>
         {sg && Object.keys(sg.click_counts).length > 0 ? (
@@ -309,10 +305,10 @@ export default function MCPObservabilityPage() {
               <thead>
                 <tr className="border-b border-edge">
                   <th className="px-5 py-2 text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Suggestion Type
+                    {t("col_suggestion_type")}
                   </th>
                   <th className="px-5 py-2 text-right text-xs font-medium uppercase tracking-wider text-content-muted">
-                    Clicks
+                    {t("col_clicks")}
                   </th>
                 </tr>
               </thead>
@@ -325,7 +321,7 @@ export default function MCPObservabilityPage() {
                         {type}
                         {type === sg.most_clicked_type && (
                           <span className="ml-2 rounded bg-accent-subtle-bg/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent-text">
-                            top
+                            {t("badge_top")}
                           </span>
                         )}
                       </td>
@@ -339,7 +335,7 @@ export default function MCPObservabilityPage() {
           </div>
         ) : (
           <div className="rounded-lg border border-edge bg-surface-card px-5 py-8 text-center text-sm text-content-faint">
-            No suggestion clicks recorded yet.
+            {t("no_suggestions_yet")}
           </div>
         )}
       </div>

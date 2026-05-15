@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import ExportButton from "@/components/app/ExportButton";
 
 // ──────────────────────────────────────────────
@@ -79,16 +80,23 @@ function trialDaysRemaining(trialEndsAt: string | null): number | null {
 }
 
 function OrgTypeBadge({ orgType, trialEndsAt }: { orgType: string; trialEndsAt?: string | null }) {
+  const t = useTranslations("console.admin.usage_billing");
   if (orgType === "demo") {
     return (
       <span className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-zinc-500/15 text-zinc-400">
-        Demo
+        {t("badge_demo")}
       </span>
     );
   }
   if (orgType === "trial") {
     const days = trialDaysRemaining(trialEndsAt ?? null);
     const expired = days !== null && days <= 0;
+    let label = t("badge_trial");
+    if (days !== null) {
+      label = expired
+        ? t("badge_trial_expired")
+        : t("badge_trial_days_left", { days });
+    }
     return (
       <span className={`ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
         expired
@@ -97,7 +105,7 @@ function OrgTypeBadge({ orgType, trialEndsAt }: { orgType: string; trialEndsAt?:
             ? "bg-amber-500/15 text-amber-400"
             : "bg-sky-500/15 text-sky-400"
       }`}>
-        Trial{days !== null ? ` ${expired ? "(expired)" : `(${days}d left)`}` : ""}
+        {label}
       </span>
     );
   }
@@ -192,6 +200,7 @@ function StatCard({
 /* ---------- Main Page ---------- */
 
 export default function AdminUsageBillingPage() {
+  const t = useTranslations("console.admin.usage_billing");
   const [tab, setTab] = useState<"usage" | "economics" | "tokens">("usage");
   const [date, setDate] = useState(() => {
     const now = new Date();
@@ -255,9 +264,9 @@ export default function AdminUsageBillingPage() {
   const placeholder = loading ? "..." : "--";
 
   const tabs = [
-    { key: "usage" as const, label: "Usage" },
-    { key: "economics" as const, label: "Unit Economics" },
-    { key: "tokens" as const, label: "Tokens" },
+    { key: "usage" as const, label: t("tab_usage") },
+    { key: "economics" as const, label: t("tab_economics") },
+    { key: "tokens" as const, label: t("tab_tokens") },
   ];
 
   return (
@@ -266,9 +275,9 @@ export default function AdminUsageBillingPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-xl font-semibold text-content">Usage & Billing</h1>
+            <h1 className="text-xl font-semibold text-content">{t("page_title")}</h1>
             <p className="mt-1 text-sm text-content-muted">
-              Daily capacity usage, cost estimates, and unit economics.
+              {t("page_description")}
             </p>
           </div>
           <ExportButton
@@ -331,35 +340,35 @@ export default function AdminUsageBillingPage() {
           {/* Summary cards */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <StatCard
-              label="Organizations"
+              label={t("stat_organizations")}
               value={totals ? String(totals.total_orgs) : placeholder}
-              sub={totals ? `${totals.customer_orgs} customers, ${totals.trial_orgs} trial, ${totals.demo_orgs} demo` : "Active orgs with usage"}
+              sub={totals ? t("stat_organizations_breakdown", { customers: totals.customer_orgs, trial: totals.trial_orgs, demo: totals.demo_orgs }) : t("stat_organizations_default")}
               icon={icons.building}
             />
             <StatCard
-              label="MCP Queries"
+              label={t("stat_mcp_queries")}
               value={totals ? formatNum(totals.total_mcp_queries) : placeholder}
-              sub="Today"
+              sub={t("stat_mcp_today")}
               icon={icons.bolt}
               accent
             />
             <StatCard
-              label="Playwright Runs"
+              label={t("stat_playwright_runs")}
               value={totals ? formatNum(totals.total_playwright_runs) : placeholder}
-              sub="Today"
+              sub={t("stat_playwright_today")}
               icon={icons.playwright}
             />
             <StatCard
-              label="Billable Cost"
+              label={t("stat_billable_cost")}
               value={totals ? cents(totals.billable_cost_cents) : placeholder}
-              sub={totals ? `${totals.billable_orgs} billable orgs (excl. demo)` : "Revenue cost only"}
+              sub={totals ? t("stat_billable_cost_sub", { count: totals.billable_orgs }) : t("stat_billable_cost_default")}
               icon={icons.currencyDollar}
               accent
             />
             <StatCard
-              label="Total Cost (all)"
+              label={t("stat_total_cost")}
               value={totals ? cents(totals.total_cost_cents) : placeholder}
-              sub={totals && totals.orgs_over_mcp_limit > 0 ? `${totals.orgs_over_mcp_limit} over limit` : "Includes demo usage"}
+              sub={totals && totals.orgs_over_mcp_limit > 0 ? t("stat_total_cost_over_limit", { count: totals.orgs_over_mcp_limit }) : t("stat_total_cost_default")}
               icon={icons.currencyDollar}
               warn={!!totals && totals.orgs_over_mcp_limit > 0}
             />
@@ -370,15 +379,14 @@ export default function AdminUsageBillingPage() {
             <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 px-5 py-3">
               <span className="text-amber-400">{icons.exclamation}</span>
               <p className="text-sm text-amber-300">
-                <span className="font-semibold">{totals.orgs_over_mcp_limit} organization(s)</span>{" "}
-                have exceeded their daily MCP budget.
+                {t("over_limit_warning", { count: totals.orgs_over_mcp_limit })}
               </p>
             </div>
           )}
 
           {/* Org type filter */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-content-muted">Filter:</span>
+            <span className="text-xs font-medium text-content-muted">{t("filter_label")}</span>
             {(["all", "customer", "trial", "demo"] as OrgTypeFilter[]).map((f) => (
               <button
                 key={f}
@@ -395,7 +403,13 @@ export default function AdminUsageBillingPage() {
                     : "bg-surface-inset text-content-muted hover:text-content-secondary"
                 }`}
               >
-                {f === "all" ? "All" : f}
+                {f === "all"
+                  ? t("filter_all")
+                  : f === "customer"
+                    ? t("filter_customer")
+                    : f === "trial"
+                      ? t("filter_trial")
+                      : t("filter_demo")}
                 {f !== "all" && totals && (
                   <span className="ml-1 opacity-70">
                     ({f === "customer" ? totals.customer_orgs : f === "trial" ? totals.trial_orgs : totals.demo_orgs})
@@ -408,29 +422,29 @@ export default function AdminUsageBillingPage() {
           {/* Usage table */}
           <div className="rounded-lg border border-edge bg-surface-card">
             <div className="border-b border-edge px-5 py-4">
-              <h2 className="text-sm font-semibold text-content">Usage by Organization</h2>
+              <h2 className="text-sm font-semibold text-content">{t("section_usage_by_org")}</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-edge">
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Organization</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Plan</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">MCP</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Playwright</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Tokens</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Est. Cost</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Status</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_organization")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_plan")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_mcp")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_playwright")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_tokens")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_est_cost")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_status")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-edge">
                   {loading ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-content-faint">Loading...</td>
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-content-faint">{t("loading")}</td>
                     </tr>
                   ) : filteredOrgs.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-content-faint">No usage data for this date.</td>
+                      <td colSpan={7} className="px-5 py-12 text-center text-sm text-content-faint">{t("no_usage_data")}</td>
                     </tr>
                   ) : (
                     filteredOrgs.map((row) => (
@@ -467,11 +481,11 @@ export default function AdminUsageBillingPage() {
                         <td className="px-5 py-3">
                           {row.is_over_mcp_limit || row.is_over_playwright_limit ? (
                             <span className="rounded bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-400">
-                              Over limit
+                              {t("status_over_limit")}
                             </span>
                           ) : (
                             <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-400">
-                              OK
+                              {t("status_ok")}
                             </span>
                           )}
                         </td>
@@ -489,27 +503,27 @@ export default function AdminUsageBillingPage() {
       {tab === "economics" && (
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="border-b border-edge px-5 py-4">
-            <h2 className="text-sm font-semibold text-content">Unit Economics by Plan</h2>
+            <h2 className="text-sm font-semibold text-content">{t("section_unit_economics")}</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-edge">
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Plan</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Monthly Price</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Max Daily Cost</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Max Monthly Cost</th>
-                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Margin</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_plan")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_monthly_price")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_max_daily_cost")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_max_monthly_cost")}</th>
+                  <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_margin")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-edge">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-12 text-center text-sm text-content-faint">Loading...</td>
+                    <td colSpan={5} className="px-5 py-12 text-center text-sm text-content-faint">{t("loading")}</td>
                   </tr>
                 ) : economics.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-5 py-12 text-center text-sm text-content-faint">No economics data.</td>
+                    <td colSpan={5} className="px-5 py-12 text-center text-sm text-content-faint">{t("no_economics_data")}</td>
                   </tr>
                 ) : (
                   economics.map((row) => (
@@ -545,34 +559,34 @@ export default function AdminUsageBillingPage() {
           {tokenData && (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <StatCard
-                label="Billable Cost"
+                label={t("stat_billable_cost")}
                 value={cents(tokenData.totals?.billableCostCents || 0)}
-                sub={`${tokenData.totals?.billableOrgCount || 0} billable orgs (excl. demo)`}
+                sub={t("stat_billable_cost_sub", { count: tokenData.totals?.billableOrgCount || 0 })}
                 icon={icons.currencyDollar}
                 accent
               />
               <StatCard
-                label="Total Cost (all)"
+                label={t("stat_total_cost")}
                 value={cents(tokenData.totals?.totalCostCents || 0)}
-                sub="Includes demo usage"
+                sub={t("stat_total_cost_includes_demo")}
                 icon={icons.currencyDollar}
               />
               <StatCard
-                label="Total Calls"
+                label={t("stat_total_calls")}
                 value={formatNum(tokenData.totals?.totalCalls || 0)}
-                sub="LLM invocations"
+                sub={t("stat_total_calls_sub")}
                 icon={icons.bolt}
               />
               <StatCard
-                label="Input Tokens"
+                label={t("stat_input_tokens")}
                 value={formatTokens(tokenData.totals?.totalInputTokens || 0)}
-                sub="Prompt tokens"
+                sub={t("stat_input_tokens_sub")}
                 icon={icons.bolt}
               />
               <StatCard
-                label="Output Tokens"
+                label={t("stat_output_tokens")}
                 value={formatTokens(tokenData.totals?.totalOutputTokens || 0)}
-                sub="Completion tokens"
+                sub={t("stat_output_tokens_sub")}
                 icon={icons.bolt}
               />
             </div>
@@ -581,24 +595,24 @@ export default function AdminUsageBillingPage() {
           {/* Token usage by org */}
           <div className="rounded-lg border border-edge bg-surface-card">
             <div className="border-b border-edge px-5 py-4">
-              <h2 className="text-sm font-semibold text-content">Token Usage by Organization</h2>
+              <h2 className="text-sm font-semibold text-content">{t("section_token_usage_by_org")}</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-edge">
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Organization</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Calls</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Input Tokens</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Output Tokens</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Cost</th>
-                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">By Model</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_organization")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_calls")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_input_tokens")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_output_tokens")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_cost")}</th>
+                    <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_by_model")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-edge">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="px-5 py-12 text-center text-sm text-content-faint">Loading...</td>
+                      <td colSpan={6} className="px-5 py-12 text-center text-sm text-content-faint">{t("loading")}</td>
                     </tr>
                   ) : tokenData?.organizations?.length > 0 ? (
                     tokenData.organizations.map((org: any) => (
@@ -626,7 +640,7 @@ export default function AdminUsageBillingPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-5 py-12 text-center text-sm text-content-faint">No token usage data for this period.</td>
+                      <td colSpan={6} className="px-5 py-12 text-center text-sm text-content-faint">{t("no_token_data_period")}</td>
                     </tr>
                   )}
                 </tbody>
@@ -636,7 +650,7 @@ export default function AdminUsageBillingPage() {
 
           {!tokenData && !loading && (
             <div className="rounded-lg border border-dashed border-edge px-6 py-12 text-center">
-              <p className="text-sm text-content-faint">No token data available.</p>
+              <p className="text-sm text-content-faint">{t("no_token_data")}</p>
             </div>
           )}
         </>

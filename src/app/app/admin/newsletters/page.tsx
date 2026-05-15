@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
@@ -327,6 +328,7 @@ const icons = {
 /* ---------- Main Page ---------- */
 
 export default function AdminNewslettersPage() {
+  const t = useTranslations("console.admin.newsletters");
   const [loading, setLoading] = useState(true);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [total, setTotal] = useState(0);
@@ -476,9 +478,9 @@ export default function AdminNewslettersPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-content">Newsletters</h1>
+          <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
           <p className="mt-1 text-sm text-content-muted">
-            Compose and send newsletters to platform users.
+            {t("subtitle")}
           </p>
         </div>
         <button
@@ -498,7 +500,7 @@ export default function AdminNewslettersPage() {
           className="flex items-center gap-2 rounded-lg bg-accent-subtle-bg/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/30"
         >
           {showCompose ? icons.x : icons.plus}
-          <span>{showCompose ? "Cancel" : "Compose"}</span>
+          <span>{showCompose ? t("cancel") : t("compose")}</span>
         </button>
       </div>
 
@@ -507,14 +509,14 @@ export default function AdminNewslettersPage() {
         <div className="rounded-lg border border-edge bg-surface-card">
           <div className="border-b border-edge px-5 py-4">
             <h2 className="text-sm font-semibold text-content">
-              New Newsletter
+              {t("new_newsletter")}
             </h2>
           </div>
           <div className="space-y-4 p-5">
             {/* Template selector */}
             <div>
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Template
+                {t("template")}
               </label>
               <CustomSelect
                 value={selectedTemplate}
@@ -529,13 +531,13 @@ export default function AdminNewslettersPage() {
             {/* Subject */}
             <div>
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Subject
+                {t("subject")}
               </label>
               <input
                 type="text"
                 value={subject}
                 onChange={(e) => setSubject(e.target.value)}
-                placeholder="Newsletter subject line..."
+                placeholder={t("subject_placeholder")}
                 className="w-full rounded-lg border border-edge bg-surface-inset px-4 py-2.5 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
               />
             </div>
@@ -543,16 +545,16 @@ export default function AdminNewslettersPage() {
             {/* Audience */}
             <div>
               <label className="mb-1.5 block text-xs font-medium uppercase tracking-wider text-content-muted">
-                Audience
+                {t("audience")}
               </label>
               <CustomSelect
                 value={audience}
                 onChange={setAudience}
                 options={[
-                  { value: "all", label: "All Users" },
-                  { value: "free", label: "Free Plan" },
-                  { value: "pro", label: "Pro Plan" },
-                  { value: "max", label: "Max Plan" },
+                  { value: "all", label: t("audience_all") },
+                  { value: "free", label: t("audience_free") },
+                  { value: "pro", label: t("audience_pro") },
+                  { value: "max", label: t("audience_max") },
                 ]}
               />
             </div>
@@ -561,7 +563,7 @@ export default function AdminNewslettersPage() {
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <label className="text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Content
+                  {t("content")}
                 </label>
                 <div className="flex rounded-md border border-edge bg-surface-inset p-0.5">
                   <button
@@ -573,7 +575,7 @@ export default function AdminNewslettersPage() {
                         : "text-content-muted hover:text-content"
                     }`}
                   >
-                    Edit
+                    {t("edit")}
                   </button>
                   <button
                     type="button"
@@ -584,7 +586,7 @@ export default function AdminNewslettersPage() {
                         : "text-content-muted hover:text-content"
                     }`}
                   >
-                    Preview
+                    {t("preview")}
                   </button>
                 </div>
               </div>
@@ -619,7 +621,7 @@ export default function AdminNewslettersPage() {
                 disabled={saving || sending}
                 className="rounded-lg border border-edge px-4 py-2 text-sm font-medium text-content-muted transition-colors hover:bg-surface-inset hover:text-content disabled:opacity-50"
               >
-                {saving ? "Saving..." : "Save Draft"}
+                {saving ? t("saving") : t("save_draft")}
               </button>
               <button
                 onClick={handleSendNow}
@@ -627,7 +629,7 @@ export default function AdminNewslettersPage() {
                 className="flex items-center gap-2 rounded-lg bg-accent-subtle-bg/20 px-4 py-2 text-sm font-medium text-accent-text transition-colors hover:bg-accent-subtle-bg/30 disabled:opacity-50"
               >
                 {icons.send}
-                <span>{sending ? "Sending..." : "Send Now"}</span>
+                <span>{sending ? t("sending") : t("send_now")}</span>
               </button>
             </div>
           </div>
@@ -676,11 +678,11 @@ export default function AdminNewslettersPage() {
       <div className="rounded-lg border border-edge bg-surface-card">
         <div className="flex items-center justify-between border-b border-edge px-5 py-4">
           <h2 className="text-sm font-semibold text-content">
-            All Newsletters
+            {t("all_newsletters")}
           </h2>
           {!loading && (
             <span className="text-xs text-content-faint">
-              {total} total
+              {t("total_count", { count: total })}
             </span>
           )}
         </div>
@@ -689,22 +691,22 @@ export default function AdminNewslettersPage() {
             <thead>
               <tr className="border-b border-edge">
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Subject
+                  {t("col_subject")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Audience
+                  {t("col_audience")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Status
+                  {t("col_status")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Recipients
+                  {t("col_recipients")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Sent
+                  {t("col_sent")}
                 </th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">
-                  Actions
+                  {t("col_actions")}
                 </th>
               </tr>
             </thead>
@@ -718,7 +720,7 @@ export default function AdminNewslettersPage() {
               ) : newsletters.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center text-sm text-content-faint">
-                    No newsletters yet. Click "Compose" to create your first one.
+                    {t("no_newsletters")}
                   </td>
                 </tr>
               ) : (
@@ -763,7 +765,7 @@ export default function AdminNewslettersPage() {
                             title="Send"
                           >
                             {icons.send}
-                            <span>{sendingId === nl.id ? "..." : "Send"}</span>
+                            <span>{sendingId === nl.id ? "..." : t("send")}</span>
                           </button>
                         )}
                       </div>
@@ -779,7 +781,7 @@ export default function AdminNewslettersPage() {
         {!loading && totalPages > 1 && (
           <div className="flex items-center justify-between border-t border-edge px-5 py-3">
             <span className="text-xs text-content-faint">
-              Page {page} of {totalPages}
+              {t("page_of", { page, total: totalPages })}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -788,14 +790,14 @@ export default function AdminNewslettersPage() {
                 className="flex items-center gap-1 rounded px-2.5 py-1.5 text-xs text-content-muted transition-colors hover:bg-surface-inset hover:text-content disabled:opacity-30"
               >
                 {icons.chevronLeft}
-                <span>Prev</span>
+                <span>{t("prev")}</span>
               </button>
               <button
                 onClick={() => fetchNewsletters(page + 1)}
                 disabled={page >= totalPages}
                 className="flex items-center gap-1 rounded px-2.5 py-1.5 text-xs text-content-muted transition-colors hover:bg-surface-inset hover:text-content disabled:opacity-30"
               >
-                <span>Next</span>
+                <span>{t("next")}</span>
                 {icons.chevronRight}
               </button>
             </div>

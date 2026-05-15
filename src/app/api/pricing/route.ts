@@ -16,6 +16,10 @@ export const GET = withErrorTracking(async function GET() {
     label: p.label,
     monthlyPriceCents: p.monthlyPriceCents,
     paddlePriceId: p.paddlePriceId || "",
+    // Empty when no annual price has been synced yet — the billing
+    // page hides the annual toggle unless ALL plans expose a non-empty
+    // annual id (see `isAnnualPriceReady` on the billing page).
+    paddleAnnualPriceId: p.paddleAnnualPriceId || "",
     maxMcpCalls: p.maxMcpCalls,
     continuousAudits: p.continuousAudits,
     creditsEnabled: p.creditsEnabled,

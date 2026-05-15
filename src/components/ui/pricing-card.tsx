@@ -509,8 +509,21 @@ export function usePricingPlans() {
 	);
 	const [loading, setLoading] = useState(true);
 	const [currencySymbol, setCurrencySymbol] = useState("$");
+	// True once every plan has a synced Paddle annual price ID. The
+	// home Pricing component uses this to decide whether to render the
+	// Monthly/Annual toggle: showing "Save 20%" while the annual ID is
+	// missing would mislead the visitor — the billing page would silently
+	// fall back to monthly on checkout (the original #5 bug).
+	const [annualReady, setAnnualReady] = useState(false);
 
 	React.useEffect(() => {
+		function computeAnnualReady(raw: any[]): boolean {
+			return (
+				Array.isArray(raw) &&
+				raw.length > 0 &&
+				raw.every((p) => !!p.paddleAnnualPriceId)
+			);
+		}
 		// Try localized prices first, fall back to standard pricing
 		fetch("/api/pricing-preview")
 			.then((r) => r.json())
@@ -518,6 +531,7 @@ export function usePricingPlans() {
 				const tiers = planConfigsToPriceTiers(data.plans);
 				if (tiers) setPlans(tiers);
 				if (data.currencySymbol) setCurrencySymbol(data.currencySymbol);
+				setAnnualReady(computeAnnualReady(data.plans));
 			})
 			.catch(() => {
 				// Fallback to non-localized pricing
@@ -526,13 +540,14 @@ export function usePricingPlans() {
 					.then((data) => {
 						const tiers = planConfigsToPriceTiers(data.plans);
 						if (tiers) setPlans(tiers);
+						setAnnualReady(computeAnnualReady(data.plans));
 					})
 					.catch(() => {});
 			})
 			.finally(() => setLoading(false));
 	}, []);
 
-	return { plans, loading, currencySymbol };
+	return { plans, loading, currencySymbol, annualReady };
 }
 
 // --- Static fallback (used only if API is unavailable) ---

@@ -102,11 +102,12 @@ export async function listPrices(productId: string): Promise<PaddlePrice[]> {
 export async function createPrice(
   productId: string,
   unitAmountCents: number,
-  interval: "month" = "month",
+  interval: "month" | "year" = "month",
 ): Promise<PaddlePrice> {
+  const cadenceLabel = interval === "year" ? "Annual" : "Monthly";
   const body = {
     product_id: productId,
-    description: `Monthly subscription - ${unitAmountCents} cents`,
+    description: `${cadenceLabel} subscription - ${unitAmountCents} cents`,
     unit_price: {
       amount: unitAmountCents.toString(),
       currency_code: "USD",

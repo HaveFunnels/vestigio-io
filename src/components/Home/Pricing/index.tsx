@@ -15,7 +15,7 @@ import FinalCTA from "@/components/shared/FinalCTA";
 const HomePricing = () => {
   const [cycle, setCycle] = useState<BillingCycle>("annually");
   const router = useRouter();
-  const { plans, loading, currencySymbol } = usePricingPlans();
+  const { plans, loading, currencySymbol, annualReady } = usePricingPlans();
 
   const handlePlanSelect = () => {
     router.push("/auth/signup");
@@ -33,6 +33,7 @@ const HomePricing = () => {
         currencySymbol={currencySymbol}
         heading="Veja exatamente o que est&aacute; perdendo. Corrija. Escale."
         subheading="Intelig&ecirc;ncia que se paga sozinha. Comece gr&aacute;tis, evolua quando quiser."
+        annualPricingEnabled={annualReady}
       />
       <SocialProof />
       <ROICalculator />

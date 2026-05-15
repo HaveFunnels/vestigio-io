@@ -18,6 +18,7 @@ interface PlanConfig {
   priceId: string;
   paddleProductId: string;
   paddlePriceId: string;
+  paddleAnnualPriceId: string;
   lemonSqueezyPriceId: string;
   monthlyPriceCents: number;
   maxMcpCalls: number;
@@ -57,6 +58,7 @@ export default function AdminPricingPage() {
           ...p,
           paddleProductId: p.paddleProductId || "",
           paddlePriceId: p.paddlePriceId || "",
+          paddleAnnualPriceId: p.paddleAnnualPriceId || "",
           lemonSqueezyPriceId: p.lemonSqueezyPriceId || "",
         }));
         setPlans(next);
@@ -119,6 +121,7 @@ export default function AdminPricingPage() {
           ...p,
           paddleProductId: p.paddleProductId || "",
           paddlePriceId: p.paddlePriceId || "",
+          paddleAnnualPriceId: p.paddleAnnualPriceId || "",
           lemonSqueezyPriceId: p.lemonSqueezyPriceId || "",
         }));
         setPlans(next);
@@ -151,6 +154,7 @@ export default function AdminPricingPage() {
           ...p,
           paddleProductId: p.paddleProductId || "",
           paddlePriceId: p.paddlePriceId || "",
+          paddleAnnualPriceId: p.paddleAnnualPriceId || "",
           lemonSqueezyPriceId: p.lemonSqueezyPriceId || "",
         })));
       }
@@ -356,7 +360,8 @@ export default function AdminPricingPage() {
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Plan</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Stripe Price ID</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Paddle Product</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Paddle Price</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Paddle Monthly</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Paddle Annual</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Lemon Squeezy</th>
               </tr>
             </thead>
@@ -384,6 +389,16 @@ export default function AdminPricingPage() {
                       <span className="inline-flex items-center gap-1.5 rounded bg-emerald-500/10 px-2.5 py-1 text-xs font-mono text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                         {plan.paddlePriceId}
+                      </span>
+                    ) : (
+                      <span className="text-xs italic text-content-faint">Not synced</span>
+                    )}
+                  </td>
+                  <td className="px-5 py-3">
+                    {plan.paddleAnnualPriceId ? (
+                      <span className="inline-flex items-center gap-1.5 rounded bg-emerald-500/10 px-2.5 py-1 text-xs font-mono text-emerald-400">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                        {plan.paddleAnnualPriceId}
                       </span>
                     ) : (
                       <span className="text-xs italic text-content-faint">Not synced</span>

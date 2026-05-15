@@ -33,6 +33,11 @@ const planSchema = z.object({
   priceId: z.string(),
   paddleProductId: z.string().optional(),
   paddlePriceId: z.string().optional(),
+  // Paddle annual price ID. Auto-provisioned by paddle-sync from the
+  // monthly price (10× monthly = ~17% off, matching the historical
+  // "Save 20%" badge). Stored alongside the monthly so the billing
+  // page can pick the right priceId based on the selected cycle.
+  paddleAnnualPriceId: z.string().optional(),
   lemonSqueezyPriceId: z.string().optional(),
   monthlyPriceCents: z.number(),
   maxMcpCalls: z.number(),
@@ -65,9 +70,9 @@ async function requireAdmin() {
 
 // Default plans (used when no DB config exists yet)
 const DEFAULT_PLANS = [
-  { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
-  { key: "pro", label: "Vestigio Pro", priceId: "", paddleProductId: "", paddlePriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3 },
-  { key: "max", label: "Vestigio Max", priceId: "", paddleProductId: "", paddlePriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10 },
+  { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
+  { key: "pro", label: "Vestigio Pro", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3 },
+  { key: "max", label: "Vestigio Max", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10 },
 ];
 
 const DEFAULT_CREDITS = { baseCostPerCall: 0.05, markupMultiplier: 2.0 };
@@ -141,16 +146,31 @@ export const POST = withErrorTracking(async function POST(request: Request) {
           plansUpdated = true;
         }
 
-        // 2. Create price if missing or if monthlyPriceCents changed
-        // We always create a new price when paddlePriceId is empty.
-        // If paddlePriceId exists, we check whether the stored cents
-        // description matches the current price — if not, create a new price.
+        // 2. Create monthly price if missing. paddleAnnualPriceId is
+        //    provisioned in step 3 — both stay in sync as the admin
+        //    edits the plan's monthlyPriceCents.
         if (!plan.paddlePriceId) {
           const price = await createPrice(
             plan.paddleProductId,
             plan.monthlyPriceCents,
+            "month",
           );
           plan.paddlePriceId = price.id;
+          plansUpdated = true;
+        }
+
+        // 3. Create annual price if missing. We import the multiplier
+        //    so the discount lives in one place (10× monthly = ~17% off).
+        if (!plan.paddleAnnualPriceId) {
+          const { annualPriceCentsFromMonthly } = await import(
+            "@/libs/plan-config"
+          );
+          const annualPrice = await createPrice(
+            plan.paddleProductId,
+            annualPriceCentsFromMonthly(plan.monthlyPriceCents),
+            "year",
+          );
+          plan.paddleAnnualPriceId = annualPrice.id;
           plansUpdated = true;
         }
       }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import { useTranslations } from "next-intl";
@@ -49,6 +49,7 @@ interface PricingPlan {
   key: string;
   label: string;
   paddlePriceId: string;
+  paddleAnnualPriceId: string;
   monthlyPriceCents: number;
   maxMcpCalls: number;
   continuousAudits: boolean;
@@ -253,25 +254,47 @@ export default function BillingPage() {
   // ──────────────────────────────────────────────
 
   const handlePlanSelect = useCallback(
-    (planId: string, _billingCycle: BillingCycle) => {
+    (planId: string, billingCycle: BillingCycle) => {
       if (planId === currentPlanId) return;
 
-      // Find the paddlePriceId for the selected plan
+      // Find the plan + pick the Paddle priceId matching the toggle.
+      // Annual falls back to monthly when the annual hasn't been synced
+      // yet — covered by isAnnualPriceReady below which keeps the
+      // toggle hidden until every plan has an annual id, so this branch
+      // is a safety net rather than a load-bearing fallback.
       const targetPlan = pricingPlans.find((p) => p.key === planId);
-      if (!targetPlan?.paddlePriceId) {
+      if (!targetPlan) {
+        toast.error(t("errors.plan_unavailable"));
+        return;
+      }
+      const targetPriceId =
+        billingCycle === "annually" && targetPlan.paddleAnnualPriceId
+          ? targetPlan.paddleAnnualPriceId
+          : targetPlan.paddlePriceId;
+      if (!targetPriceId) {
         toast.error(t("errors.plan_unavailable"));
         return;
       }
 
       if (billing?.subscriptionId) {
         // Existing subscriber — change plan via API
-        handleChangePlan(targetPlan.paddlePriceId);
+        handleChangePlan(targetPriceId);
       } else {
         // No subscription yet — open Paddle checkout
-        openPaddleCheckout(targetPlan.paddlePriceId);
+        openPaddleCheckout(targetPriceId);
       }
     },
     [currentPlanId, pricingPlans, billing, handleChangePlan, openPaddleCheckout, t],
+  );
+
+  // Show the Monthly/Annual toggle only when EVERY plan has a synced
+  // annual priceId. Until paddle-sync provisions them, the toggle
+  // stays hidden so users don't pick "Annual" for a plan whose annual
+  // id is empty (which would silently fall back to monthly billing —
+  // the original #5 bug).
+  const isAnnualPriceReady = useMemo(
+    () => pricingPlans.length > 0 && pricingPlans.every((p) => !!p.paddleAnnualPriceId),
+    [pricingPlans],
   );
 
   // ──────────────────────────────────────────────
@@ -569,6 +592,7 @@ export default function BillingPage() {
             currencySymbol={currencySymbol}
             heading={t("compare_plans")}
             subheading={t("compare_plans_subtitle")}
+            annualPricingEnabled={isAnnualPriceReady}
           />
         </div>
       )}

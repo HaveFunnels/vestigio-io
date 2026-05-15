@@ -137,21 +137,30 @@ Silently broken, real money or trust on the line. Most are same-class bugs
   Inline editor on the org page with URL validation + cancel — fixes
   misconfigured subpath sites without a DB shell.
 
-- [ ] **#5b Re-enable annual billing toggle**
-  Spun out of #5. Steps:
-  1. Add `paddleAnnualPriceId` to the Zod schema in
-     [src/app/api/admin/pricing/route.ts](src/app/api/admin/pricing/route.ts)
-     + the `PlanConfig` type in
-     [src/libs/plan-config.ts](src/libs/plan-config.ts).
-  2. Update `/api/admin/pricing/paddle-sync` to provision both monthly and
-     annual prices in Paddle.
-  3. Surface a second input row in the admin pricing UI.
-  4. Have `/api/pricing` return both IDs; type `PricingPlan` on the billing
-     page reflects them.
-  5. `handlePlanSelect` picks the right `priceId` from
-     `{paddlePriceId, paddleAnnualPriceId}` based on the `BillingCycle`
-     argument (currently discarded).
-  6. Flip `annualPricingEnabled={true}` on `BillingPage` and `HomePricing`.
+- [x] **#5b Annual billing toggle end-to-end** — ✅ shipped
+  All six steps done:
+  1. `paddleAnnualPriceId` added to `PlanConfig` + the pricing Zod
+     schema + the admin pricing default plans.
+     `annualPriceCentsFromMonthly()` helper centralizes the 10× monthly
+     ≈ 17% off derivation.
+  2. Both `/api/admin/pricing` POST and `/api/admin/pricing/paddle-sync`
+     now provision the annual Paddle price alongside the monthly one
+     (and `paddle-api.createPrice` accepts `interval: "year"`).
+  3. Admin pricing UI gains a "Paddle Annual" column next to "Paddle
+     Monthly" so the synced annual id is visible.
+  4. `/api/pricing` and `/api/pricing-preview` return
+     `paddleAnnualPriceId` on every plan row.
+  5. `handlePlanSelect(planId, cycle)` picks the annual id when
+     `cycle === "annually"` (falls back to monthly when annual is
+     missing — defense in depth; the toggle is gated by readiness so
+     it shouldn't be reachable).
+  6. `annualPricingEnabled` is wired on both surfaces:
+     - `/app/billing` flips when every plan has a synced annual id
+       (`isAnnualPriceReady` useMemo).
+     - Home `/` Pricing flips via `usePricingPlans().annualReady`.
+     Until the first paddle-sync provisions annual prices, the toggle
+     stays hidden — eliminates the "user picks Annual, gets billed
+     Monthly" scenario from the original #5 bug.
 
 ---
 

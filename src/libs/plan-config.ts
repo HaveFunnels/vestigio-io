@@ -18,7 +18,14 @@ export interface PlanConfig {
   label: string;
   priceId: string;          // Stripe price ID
   paddleProductId?: string; // Paddle product ID (auto-synced)
-  paddlePriceId?: string;   // Paddle price ID
+  paddlePriceId?: string;   // Paddle monthly price ID
+  /**
+   * Paddle annual price ID. Optional — when present, the billing page's
+   * Annual cycle uses this priceId at checkout. Auto-provisioned by
+   * /api/admin/pricing/paddle-sync (annualPriceCents = monthly × 10
+   * = ~17% off, see ANNUAL_DISCOUNT_MULTIPLIER below).
+   */
+  paddleAnnualPriceId?: string;
   lemonSqueezyPriceId?: string;
   monthlyPriceCents: number;
   maxMcpCalls: number;
@@ -27,6 +34,19 @@ export interface PlanConfig {
   maxEnvironments: number;
   maxMembers: number;
   features?: PlanFeature[]; // Admin-configurable feature list for pricing table
+}
+
+/**
+ * How much the annual price discounts the monthly price. 10 = 10 months
+ * of monthly billing for the year (~17% off), matching the "Save 20%"
+ * badge the pricing card has historically displayed. Kept here so the
+ * derivation is consistent across the admin paddle-sync and any
+ * UI that wants to show the discount.
+ */
+export const ANNUAL_DISCOUNT_MULTIPLIER = 10;
+
+export function annualPriceCentsFromMonthly(monthlyCents: number): number {
+  return Math.round(monthlyCents * ANNUAL_DISCOUNT_MULTIPLIER);
 }
 
 /**
@@ -120,9 +140,9 @@ const DEFAULT_FEATURES: Record<string, PlanFeature[]> = {
 };
 
 const DEFAULT_PLANS: PlanConfig[] = [
-  { key: "vestigio", label: "Starter", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1, features: DEFAULT_FEATURES.vestigio },
-  { key: "pro", label: "Pro", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3, features: DEFAULT_FEATURES.pro },
-  { key: "max", label: "Max", priceId: "", paddleProductId: "", paddlePriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10, features: DEFAULT_FEATURES.max },
+  { key: "vestigio", label: "Starter", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1, features: DEFAULT_FEATURES.vestigio },
+  { key: "pro", label: "Pro", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3, features: DEFAULT_FEATURES.pro },
+  { key: "max", label: "Max", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10, features: DEFAULT_FEATURES.max },
 ];
 
 let cached: PlanConfig[] | null = null;
@@ -147,11 +167,15 @@ export async function getPlanConfigs(): Promise<PlanConfig[]> {
   return DEFAULT_PLANS;
 }
 
-/** Resolve plan key from any provider's price ID */
+/** Resolve plan key from any provider's price ID (monthly or annual) */
 export async function resolvePlanFromPriceId(priceId: string): Promise<string> {
   const plans = await getPlanConfigs();
   const match = plans.find(
-    (p) => p.priceId === priceId || p.paddlePriceId === priceId || p.lemonSqueezyPriceId === priceId,
+    (p) =>
+      p.priceId === priceId ||
+      p.paddlePriceId === priceId ||
+      p.paddleAnnualPriceId === priceId ||
+      p.lemonSqueezyPriceId === priceId,
   );
   return match?.key || "vestigio";
 }

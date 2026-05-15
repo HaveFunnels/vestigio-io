@@ -5,6 +5,7 @@ import {
   createProduct,
   createPrice,
 } from "@/libs/paddle-api";
+import { annualPriceCentsFromMonthly } from "@/libs/plan-config";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -66,13 +67,27 @@ export const POST = withErrorTracking(async function POST() {
         synced++;
       }
 
-      // Create price if missing
+      // Create monthly price if missing
       if (!plan.paddlePriceId) {
         const price = await createPrice(
           plan.paddleProductId,
           plan.monthlyPriceCents,
+          "month",
         );
         plan.paddlePriceId = price.id;
+        synced++;
+      }
+
+      // Create annual price if missing. Discount is derived from the
+      // monthly cents via annualPriceCentsFromMonthly so the rate stays
+      // consistent with the rest of the codebase.
+      if (!plan.paddleAnnualPriceId) {
+        const annualPrice = await createPrice(
+          plan.paddleProductId,
+          annualPriceCentsFromMonthly(plan.monthlyPriceCents),
+          "year",
+        );
+        plan.paddleAnnualPriceId = annualPrice.id;
         synced++;
       }
     } catch (err: any) {

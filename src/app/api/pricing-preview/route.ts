@@ -54,6 +54,12 @@ export async function GET(req: NextRequest) {
 						monthlyPriceCents: item?.unitAmountCents ?? p.monthlyPriceCents,
 						formattedPrice: item?.formattedTotal ?? null,
 						paddlePriceId: p.paddlePriceId || "",
+						// Annual id is needed by the billing page +
+						// home Pricing to decide whether to surface
+						// the Monthly/Annual toggle. Surface it on
+						// every plan branch so the readiness signal
+						// stays consistent across endpoints.
+						paddleAnnualPriceId: p.paddleAnnualPriceId || "",
 						maxMcpCalls: p.maxMcpCalls,
 						continuousAudits: p.continuousAudits,
 						creditsEnabled: p.creditsEnabled,
@@ -88,6 +94,7 @@ export async function GET(req: NextRequest) {
 		monthlyPriceCents: p.monthlyPriceCents,
 		formattedPrice: null,
 		paddlePriceId: p.paddlePriceId || "",
+		paddleAnnualPriceId: p.paddleAnnualPriceId || "",
 		maxMcpCalls: p.maxMcpCalls,
 		continuousAudits: p.continuousAudits,
 		creditsEnabled: p.creditsEnabled,

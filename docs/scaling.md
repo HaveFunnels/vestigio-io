@@ -14,8 +14,9 @@ This document is for the developer making the next "what should I build next?" c
 2. Every future scaling decision (B1, B3, anything) is informed by real numbers (queue depth, p95 cycle time, DB pool wait, RAM trajectory). Without those, we're pattern-matching on the audit report.
 3. The gap to next visibility tool (currently raw Railway logs + grep) is huge. After OTel: dashboards + alerts + traces. Force multiplier.
 4. Recovery time when something does break drops 10x. That's the kind of compound improvement you want EARLY.
+5. **Money cost: $0/month** until we cross ~10k customers (Grafana Cloud free tier covers it).
 
-After observability is live, the next-best by absolute capacity gain is **B1 (S3 evidence tiering)** because it removes the hardest-to-undo cliff (data migration becomes painful at scale).
+After observability is live, the next-best by absolute capacity gain is **B1 (Cloudflare R2 evidence tiering)** because it removes the hardest-to-undo cliff — existing evidence rows have to be migrated. **Also $0/month at our scale** (R2 free tier: 10GB storage + free egress).
 
 ---
 
@@ -65,7 +66,19 @@ Why "Why static" for A3: Railway native autoscaling is CPU-based with a 30-60s r
 We are scaling on theory, not data. Every Wave 17 item is justified by the original audit report ("this breaks at N customers"), but we have no way to spot the actual bottleneck before it cascades.
 
 **What it costs**
-2-3 days for a baseline setup (audit-runner + web tier instrumentation, span propagation, exporter to Grafana Cloud free tier or Datadog $0/host trial). Additional 1-2 days for custom metrics (queue depth, recompute duration, pool utilization).
+2-3 days of dev work for a baseline setup (audit-runner + web tier instrumentation, span propagation, exporter wiring). Additional 1-2 days for custom metrics (queue depth, recompute duration, pool utilization).
+
+**Money cost: $0/month at our scale.** OpenTelemetry SDK is open source; the cost is in the export backend:
+
+| Backend | Free tier | Our volume estimate | Headroom |
+|---|---|---|---|
+| **Grafana Cloud** (recommended) | 10k metric series, 50GB logs, 50GB traces, 3 users | ~24 cycles/day × 100 spans = ~2.4k traces/day | ~1000x |
+| Honeycomb | 20M events/month | ~1M events/month | ~20x |
+| Uptrace self-hosted on Railway | Open source | Same as above | OK but ops overhead |
+| Datadog | No real free tier | — | $15+/host/month |
+| Sentry | 1k tx/month | Too small | Doesn't fit |
+
+We blow past Grafana Cloud's free tier at ~10k active customers. Until then, it's literally $0. Paid Grafana Cloud starts at $19/month.
 
 **What it unlocks**
 - p95/p99 cycle duration **per pack** (do `payment_health` cycles really take longer than `revenue_integrity`?)
@@ -89,17 +102,26 @@ Already biting. Every issue we've debugged in the last 2 weeks involved grepping
 
 ---
 
-### 🥈 B1. S3 tiering for evidence payloads
+### 🥈 B1. Cloudflare R2 tiering for evidence payloads
 
 **What it solves**
 Evidence rows can hit 100KB each (ContentEnrichment payloads, off-site recon HTML extracts). At 1000+ cycles/week on heavy sites, the Evidence table grows past 10GB quickly, `loadLatestCycle` consumes 1GB+ of RAM, and Postgres queries on JSONB payloads slow down.
 
-**What it costs**
+**Why R2, not S3**: Railway has no native object storage. Of the options:
+- **Cloudflare R2** ← chosen. S3-compatible API (same `@aws-sdk/client-s3` we already have installed), 10GB free, **$0 egress** (S3 charges $0.09/GB for reads — kills the budget when audits read evidence). We already use R2 for assets (`pub-...r2.dev` in next.config.js).
+- AWS S3 — works but the egress fee makes it expensive for our read pattern.
+- Railway Volumes — per-service, not shared between web + worker, so evidence isn't accessible from both. Out.
+- Backblaze B2 — cheap but extra vendor for no real benefit over R2.
+- Keep in Postgres in a "cold" sibling table — saves migration but Postgres is the wrong tool for blob storage and Railway Postgres is more expensive per GB than R2.
+
+**Money cost: $0/month at our scale.** R2 free tier: 10GB storage, 1M PUTs/month, 10M GETs/month. We'd cross 10GB at maybe ~2k customers depending on site sizes. After that: $0.015/GB/month (≈ $1.50/month per 100GB).
+
+**Dev cost**
 3-4 days. Largest item before this gets dramatically harder (data migration of existing rows).
 
 **What it unlocks**
 - Postgres rows stay ~1KB (metadata only) regardless of payload size
-- `loadLatestCycle` reads only metadata, then lazily fetches S3 for inferences that actually use the body
+- `loadLatestCycle` reads only metadata, then lazy-fetches R2 only for inferences that actually use the body
 - 80%+ reduction in Postgres storage cost
 - Evidence cap can be raised from 20k to ~100k rows without RAM impact
 
@@ -107,13 +129,13 @@ Evidence rows can hit 100KB each (ContentEnrichment payloads, off-site recon HTM
 First customer with a 10k-page site that produces 15k+ evidence rows. The 20k cap will trim oldest rows (off-site recon), which is usually safe but not always.
 
 **How it ships**
-1. Add `evidencePayloadUrl: String?` column to Evidence table. Existing rows keep `payload`.
-2. New write path: if payload >8KB, upload to S3 (R2 / Cloudflare R2 is cheapest for us, already in use for assets), store URL in `evidencePayloadUrl`, leave `payload` empty.
-3. New read path: if `evidencePayloadUrl` is set, lazy-fetch S3 only when accessed.
-4. Background migration: trickle existing heavy payloads to S3, drop from PG. Optional.
+1. Add `evidencePayloadUrl: String?` column to Evidence table. Existing rows keep `payload` inline.
+2. New write path: if payload >8KB, upload to R2 (via `@aws-sdk/client-s3` configured with R2 endpoint), store URL in `evidencePayloadUrl`, leave `payload` empty.
+3. New read path: if `evidencePayloadUrl` is set, lazy-fetch R2 only when the engine accesses the body. Cache in-memory per cycle.
+4. Background migration: trickle existing heavy payloads to R2, drop from PG. Optional, can defer until storage cost actually bites.
 5. Update Wave 16 projections cache so it doesn't include heavy payloads (already mostly true).
 
-**Why it ranks here**: hard to do later because existing data needs migration. The longer we wait, the more rows to move. Strategic timing now.
+**Why it ranks here**: hard to do later because existing data needs migration. The longer we wait, the more rows to move. Strategic timing now even though immediate capacity gain is small.
 
 ---
 

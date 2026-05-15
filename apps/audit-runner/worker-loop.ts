@@ -21,7 +21,10 @@
 
 // OpenTelemetry SDK boot — MUST be the first import. Patches Prisma,
 // Redis, http, etc. so subsequent imports get traced transparently.
-import "./otel-boot";
+// Import a named export so esbuild can't tree-shake the side-effect
+// statement.
+import { __otelBooted } from "./otel-boot";
+void __otelBooted;
 import * as http from "node:http";
 import { prisma } from "../../src/libs/prismaDb";
 import { getRedis, initRedis } from "../../src/libs/redis";

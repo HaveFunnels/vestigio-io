@@ -19,20 +19,16 @@
  * dispatch in that mode.
  */
 
-// Diagnostic: write SYNCHRONOUSLY to stdout to confirm file load.
-// process.stdout.write is unbuffered + synchronous, unlike console.log
-// which uses an internal buffer that might be flushed late.
-process.stdout.write("[worker-loop] FILE LOADED — booting OpenTelemetry…\n");
-
-// OpenTelemetry SDK boot — MUST be at the top, before any module that
-// uses http/Prisma/Redis. Inlined here (rather than a separate file)
-// because side-effect-only imports from sibling files were being
-// elided somewhere in the tsx/esbuild pipeline.
+// OpenTelemetry SDK is initialized inside mainLoop() at startup
+// instead of as a top-level statement here. Top-of-file inline code
+// is consistently invisible to Railway's log shipper for reasons
+// not yet diagnosed (we tested console.log, process.stdout.write,
+// side-effect imports, named-export imports — none surfaced). The
+// in-mainLoop init logs work, at the cost of giving up auto-
+// instrumentation for modules loaded before mainLoop runs (Prisma,
+// Redis, http). Manual spans + metrics still work.
 import { initOtel } from "../../src/libs/otel";
 import { registerCustomMetrics } from "../../src/libs/otel-metrics";
-const __otelStarted = initOtel({ serviceName: "audit-worker" });
-if (__otelStarted) registerCustomMetrics();
-process.stdout.write(`[worker-loop] OpenTelemetry started=${__otelStarted}\n`);
 import * as http from "node:http";
 import { prisma } from "../../src/libs/prismaDb";
 import { getRedis, initRedis } from "../../src/libs/redis";
@@ -230,6 +226,21 @@ async function processCycle(
  * Main loop. Exits when shutdownRequested=true AND inFlight=0.
  */
 async function mainLoop(): Promise<void> {
+	// OpenTelemetry init — done here (inside the main loop) instead of
+	// at top-of-file because top-level statements were not reaching
+	// Railway logs and the SDK never started. Logging via rootLog from
+	// inside mainLoop DOES work (see immediately below), so we piggy-
+	// back on that. Auto-instrumentation for modules already loaded
+	// (Prisma, Redis, http) is sacrificed; manual spans + custom
+	// metrics still work.
+	const otelStarted = initOtel({ serviceName: "audit-worker" });
+	if (otelStarted) {
+		registerCustomMetrics();
+		rootLog.info("OpenTelemetry started", { service: "audit-worker" });
+	} else {
+		rootLog.info("OpenTelemetry disabled (no OTEL_EXPORTER_OTLP_ENDPOINT)");
+	}
+
 	rootLog.info("worker-loop starting", {
 		maxConcurrent: MAX_CONCURRENT_PER_WORKER,
 		hasRedis: !!getRedis(),

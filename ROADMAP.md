@@ -97,39 +97,45 @@ Silently broken, real money or trust on the line. Most are same-class bugs
 
 ## Tier 3 — Backlog
 
-Real but lower volume / less visible.
+- [x] **#13 Stripe `priceId` edits — confirm warning when changing** — ✅ shipped
+  Admin pricing save now compares loaded `priceId` per plan against the
+  edited value and forces a confirm dialog when any differ. The dialog
+  is explicit about the semantics: PlatformConfig is updated but live
+  Stripe subscriptions keep being billed at the old price until
+  migrated in the Stripe dashboard. Stops the silent "old subscribers
+  keep paying old price forever, no warning" scenario.
 
-- [ ] **#13 Stripe `priceId` edits don't migrate existing subscriptions**
-  Old subscribers keep old pricing forever. No Stripe subscription update
-  call on plan save.
-  - API: [src/app/api/admin/pricing/route.ts:99](src/app/api/admin/pricing/route.ts#L99)
+- [x] **#14 Admin org "Edit plan & type" — confirm warning** — ✅ shipped
+  PATCH to `/api/admin/organizations/[id]` still writes Organization.plan
+  only (intentionally — it's how admin overrides exist), but the UI
+  now hard-confirms when the org has a live subscription. The dialog
+  spells out that the change does not migrate the Paddle/Stripe
+  subscription so the admin reaches for the proper path.
 
-- [ ] **#14 Admin org "Edit plan & type" bypasses Stripe/Paddle**
-  Acknowledged by inline copy, but raising an org's plan grants features
-  without billing change. Financial reconciliation footgun.
-  - UI: [src/app/app/admin/organizations/[id]/page.tsx:556](src/app/app/admin/organizations/[id]/page.tsx#L556)
+- [x] **#15 NotificationBell click navigates** — ✅ shipped
+  GET `/api/notifications` now returns `href` per row, resolved from
+  the event type (regression/improvement/digest → /app/dashboard,
+  page_down → /app/inventory, incident → /app/actions, etc.). Click
+  handler navigates via `router.push` and closes the popover.
 
-- [ ] **#15 NotificationBell click never navigates**
-  `href?: string` declared on the type but the API never returns it and the
-  click handler never reads it.
-  - Type: [src/components/app/NotificationBell.tsx:22](src/components/app/NotificationBell.tsx#L22)
+- [x] **#17 MiniCalculator → onboarding handoff** — ✅ shipped
+  MiniCalc CTA stashes `revenue` + `business_type` to localStorage at
+  click time (alongside the existing `domain` stash). Onboarding form
+  consumes all three (with a business-type mapping from MiniCalc's
+  six values to onboarding's four), so the visitor doesn't re-type
+  anything they just gave on the homepage.
 
-- [ ] **#17 MiniCalculator revenue + business profile thrown away at handoff**
-  User types monthly revenue + picks business type on the homepage,
-  signup→onboarding stashes only `domain` and re-asks both later.
-  - UI: [src/components/Home/MiniCalculator/index.tsx:231](src/components/Home/MiniCalculator/index.tsx#L231)
-  - Handoff: [src/components/Auth/Signup/index.tsx:47](src/components/Auth/Signup/index.tsx#L47)
+- [x] **#18 Audit log gaps** — ✅ shipped
+  `user.invite` / `user.role_change` / `user.delete` audit events
+  emitted from `/api/admin/users` (shipped in Tier 1). Now adding
+  `alert.create` / `alert.update` / `alert.delete` to
+  `/api/admin/alerts`. All filter options on the audit-log page now
+  surface real data.
 
-- [ ] **#18 Audit log filter lists actions that are never logged**
-  `user.delete`, `user.role_change`, `alert.create` never fire
-  `logAuditEvent`. Admin role changes specifically are not auditable, which
-  is a real security/compliance gap.
-  - UI: [src/app/app/admin/audit-log/page.tsx:75](src/app/app/admin/audit-log/page.tsx#L75)
-
-- [ ] **#19 `landing_url` per-env has no editor**
-  Stored, no read or edit path in the UI. Misconfigured subpath sites can't
-  be fixed without a DB shell.
-  - API write: [src/app/api/environments/activate/route.ts:59](src/app/api/environments/activate/route.ts#L59)
+- [x] **#19 `landing_url` per-env editor** — ✅ shipped
+  New PATCH on `/api/organization/environments` (owner/admin only).
+  Inline editor on the org page with URL validation + cancel — fixes
+  misconfigured subpath sites without a DB shell.
 
 - [ ] **#5b Re-enable annual billing toggle**
   Spun out of #5. Steps:
@@ -149,15 +155,15 @@ Real but lower volume / less visible.
 
 ---
 
-## Tier 4 — Cleanup as you touch the file
+## Tier 4 — Cleanup
 
-- [ ] **#20** `productUpdates` notification toggle persisted but never gated on by `isEventEnabled` ([libs/notifications.ts:436](src/libs/notifications.ts#L436))
-- [ ] **#21** `/app/settings/account` renders only a heading — no password change / no delete despite endpoints existing ([settings/page.tsx:110](src/app/app/settings/page.tsx#L110))
-- [ ] **#22** Cancel "pause" silently no-ops for admin-provisioned (Paddle-free) orgs ([api/billing/cancel/route.ts:209](src/app/api/billing/cancel/route.ts#L209))
-- [ ] **#23** `ForgotPassword` handles a 404 branch the API never returns (200 always, anti-enumeration) ([Auth/ForgotPassword/index.tsx:44](src/components/Auth/ForgotPassword/index.tsx#L44))
-- [ ] **#24** Legacy `SigninWithPassword` sends `remember` as JS boolean — coerces to string in practice but same trap class as the just-fixed remember-me bug ([Auth/SigninWithPassword.tsx:81](src/components/Auth/SigninWithPassword.tsx#L81))
-- [ ] **#25** `lp/audit` `ownershipConfirmed: true` is hard-coded client-side; API still "validates" it ([lp/audit/useLpAuditForm.ts:102](src/app/(site)/lp/audit/useLpAuditForm.ts#L102))
-- [ ] **#26** Signup `?domain=` silently stashed in localStorage with no confirmation toast ([Auth/Signup/index.tsx:46](src/components/Auth/Signup/index.tsx#L46))
+- [x] **#20** `productUpdates` notification toggle now gates a real event — ✅ shipped (added `product_updates` to `NotificationEvent` + `isEventEnabled`).
+- [x] **#21** `/app/settings/account` has working Change Password + Delete Account forms — ✅ shipped (wired to existing `/api/user/change-password` and `/api/user/delete`).
+- [x] **#22** Cancel "pause" / "discount" / "downgrade" return a clear 400 for orgs without an active subscription instead of silently writing `acceptedSave: true` — ✅ shipped.
+- [x] **#23** `ForgotPassword` 404 branch removed (API only returns 200, anti-enumeration) — ✅ shipped.
+- [x] **#24** Legacy `SigninWithPassword` now `String(data.remember)`s the value, matching the new Signin — same trap class as remember-me, defused — ✅ shipped.
+- [~] **#25** `lp/audit` `ownershipConfirmed` hard-coded to true client-side. Decision: leave the API validation in place as defense-in-depth so a bypassed client can't mint a lead with `ownershipConfirmed=false`. Not a defect; documented so future cleanup doesn't drop the check thinking it's dead.
+- [x] **#26** Signup now shows a green chip confirming the carried-over domain when arriving from MiniCalc — ✅ shipped.
 
 ---
 

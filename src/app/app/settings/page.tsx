@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { SUPPORTED_LANGUAGES } from "@/i18n/supported-locales";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -107,12 +107,17 @@ export default function SettingsPage() {
 				</div>
 			</section>
 
-			{/* Account */}
+			{/* Account — password change + delete. Previously this section
+			    had nothing but a heading even though the underlying APIs
+			    (/api/user/change-password and /api/user/delete) already
+			    existed, so users couldn't self-serve either without
+			    contacting support. */}
 			<section>
 				<h2 className='mb-4 text-lg font-semibold text-content'>
 					{t("account.title")}
 				</h2>
-				<p className='text-sm text-content-muted'>{t("account.description")}</p>
+				<p className='mb-4 text-sm text-content-muted'>{t("account.description")}</p>
+				<AccountSettings />
 			</section>
 		</div>
 	);
@@ -721,6 +726,206 @@ function CrawlExclusionsSettings() {
 				<p className='mt-2 text-xs text-emerald-600 dark:text-emerald-400'>
 					{t("saved")}
 				</p>
+			)}
+		</div>
+	);
+}
+
+// ──────────────────────────────────────────────
+// Account Settings — change password + delete account.
+//
+// Both endpoints already existed (/api/user/change-password,
+// /api/user/delete); the section just had no UI on top of them.
+// ──────────────────────────────────────────────
+
+function AccountSettings() {
+	const { data: session } = useSession();
+	const email = session?.user?.email ?? "";
+	return (
+		<div className="space-y-6">
+			<ChangePasswordForm />
+			<DeleteAccountSection email={email} />
+		</div>
+	);
+}
+
+function ChangePasswordForm() {
+	const [currentPassword, setCurrentPassword] = useState("");
+	const [password, setPassword] = useState("");
+	const [confirmPassword, setConfirmPassword] = useState("");
+	const [error, setError] = useState<string | null>(null);
+	const [success, setSuccess] = useState(false);
+	const [saving, setSaving] = useState(false);
+
+	async function submit(e: React.FormEvent) {
+		e.preventDefault();
+		setError(null);
+		setSuccess(false);
+		if (password !== confirmPassword) {
+			setError("New password and confirmation do not match.");
+			return;
+		}
+		setSaving(true);
+		try {
+			const res = await fetch("/api/user/change-password", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ currentPassword, password }),
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok) {
+				setError(data.message || "Failed to change password.");
+				return;
+			}
+			setSuccess(true);
+			setCurrentPassword("");
+			setPassword("");
+			setConfirmPassword("");
+		} catch {
+			setError("Network error.");
+		} finally {
+			setSaving(false);
+		}
+	}
+
+	return (
+		<form
+			onSubmit={submit}
+			className="space-y-3 rounded-md border border-edge bg-surface-card px-6 py-5"
+		>
+			<h3 className="text-sm font-semibold text-content">Change password</h3>
+			<div className="grid gap-3 sm:grid-cols-3">
+				<input
+					type="password"
+					placeholder="Current password"
+					value={currentPassword}
+					onChange={(e) => setCurrentPassword(e.target.value)}
+					autoComplete="current-password"
+					required
+					className="rounded-md border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
+				/>
+				<input
+					type="password"
+					placeholder="New password"
+					value={password}
+					onChange={(e) => setPassword(e.target.value)}
+					autoComplete="new-password"
+					required
+					className="rounded-md border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
+				/>
+				<input
+					type="password"
+					placeholder="Confirm new password"
+					value={confirmPassword}
+					onChange={(e) => setConfirmPassword(e.target.value)}
+					autoComplete="new-password"
+					required
+					className="rounded-md border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
+				/>
+			</div>
+			{error && (
+				<p className="text-xs text-red-400">{error}</p>
+			)}
+			{success && (
+				<p className="text-xs text-emerald-400">Password updated.</p>
+			)}
+			<div className="flex justify-end">
+				<button
+					type="submit"
+					disabled={saving}
+					className="rounded-md border border-emerald-500/40 px-4 py-1.5 text-sm font-medium text-content-secondary transition-colors hover:border-emerald-500 hover:bg-emerald-500/5 disabled:opacity-50"
+				>
+					{saving ? "Saving…" : "Update password"}
+				</button>
+			</div>
+		</form>
+	);
+}
+
+function DeleteAccountSection({ email }: { email: string }) {
+	const [confirm, setConfirm] = useState(false);
+	const [typedEmail, setTypedEmail] = useState("");
+	const [deleting, setDeleting] = useState(false);
+	const [error, setError] = useState<string | null>(null);
+
+	async function handleDelete() {
+		if (typedEmail !== email) {
+			setError("Email confirmation must match exactly.");
+			return;
+		}
+		setError(null);
+		setDeleting(true);
+		try {
+			const res = await fetch("/api/user/delete", {
+				method: "DELETE",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email }),
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok) {
+				setError(data.message || "Failed to delete account.");
+				return;
+			}
+			// Sign the user out — the JWT now references a non-existent user.
+			signOut({ callbackUrl: "/" });
+		} catch {
+			setError("Network error.");
+		} finally {
+			setDeleting(false);
+		}
+	}
+
+	return (
+		<div className="space-y-3 rounded-md border border-red-500/30 bg-red-500/5 px-6 py-5">
+			<h3 className="text-sm font-semibold text-red-400">Delete account</h3>
+			<p className="text-xs text-content-muted">
+				Permanently deletes your user, memberships, and any orgs you own. This cannot be undone.
+			</p>
+			{!confirm && (
+				<button
+					type="button"
+					onClick={() => setConfirm(true)}
+					className="rounded-md border border-red-500/40 px-4 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/10"
+				>
+					Delete my account
+				</button>
+			)}
+			{confirm && (
+				<div className="space-y-2">
+					<p className="text-xs text-content-muted">
+						Type <code className="rounded bg-surface-inset px-1 py-0.5 font-mono text-[10px] text-content">{email}</code> to confirm.
+					</p>
+					<input
+						type="email"
+						value={typedEmail}
+						onChange={(e) => setTypedEmail(e.target.value)}
+						placeholder={email}
+						className="w-full rounded-md border border-edge bg-surface-inset px-3 py-2 text-sm text-content placeholder-content-faint outline-none transition-colors focus:border-red-500/40 focus:ring-1 focus:ring-red-500/20"
+					/>
+					{error && <p className="text-xs text-red-400">{error}</p>}
+					<div className="flex items-center gap-2">
+						<button
+							type="button"
+							onClick={handleDelete}
+							disabled={deleting || typedEmail !== email}
+							className="rounded-md border border-red-500/60 bg-red-500/10 px-4 py-1.5 text-xs font-semibold text-red-400 transition-colors hover:bg-red-500/20 disabled:opacity-50"
+						>
+							{deleting ? "Deleting…" : "Permanently delete"}
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								setConfirm(false);
+								setTypedEmail("");
+								setError(null);
+							}}
+							disabled={deleting}
+							className="rounded-md px-3 py-1.5 text-xs text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
 			)}
 		</div>
 	);

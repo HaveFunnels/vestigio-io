@@ -1,4 +1,6 @@
 import { authOptions } from "@/libs/auth";
+import { logAuditEvent } from "@/libs/audit-log";
+import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
@@ -80,6 +82,21 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Audit trail — matches the "alert.create" / "alert.update" entries
+  // exposed in the audit-log filter dropdown. Earlier these filter
+  // options existed but no code path emitted them.
+  const ip = await getIp();
+  logAuditEvent({
+    actorId: (admin as any).id,
+    actorEmail: (admin as any).email ?? "unknown",
+    action: id ? "alert.update" : "alert.create",
+    targetType: "alert_rule",
+    targetId: rule.id,
+    targetName: rule.name,
+    metadata: { metric: data.metric, condition: data.condition, threshold: data.threshold },
+    ipAddress: ip ?? undefined,
+  });
+
   return NextResponse.json({ rule });
 }
 
@@ -94,6 +111,21 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ message: "id required" }, { status: 400 });
   }
 
-  await prisma.alertRule.delete({ where: { id } });
+  const deleted = await prisma.alertRule.delete({
+    where: { id },
+    select: { id: true, name: true },
+  });
+
+  const ip = await getIp();
+  logAuditEvent({
+    actorId: (admin as any).id,
+    actorEmail: (admin as any).email ?? "unknown",
+    action: "alert.delete",
+    targetType: "alert_rule",
+    targetId: deleted.id,
+    targetName: deleted.name,
+    ipAddress: ip ?? undefined,
+  });
+
   return NextResponse.json({ message: "Deleted" });
 }

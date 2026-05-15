@@ -384,6 +384,27 @@ export default function AdminOrganizationDetailPage() {
     if (editStatus && editStatus !== org.status) payload.status = editStatus;
     if (editOrgType && editOrgType !== org.orgType) payload.orgType = editOrgType;
 
+    // Hard confirm when changing plan on an org with a live Paddle/Stripe
+    // subscription. The PATCH only writes Organization.plan — it does not
+    // call the billing provider. Letting an admin silently flip a Max org
+    // to Pro (or vice versa) creates a feature-vs-invoice mismatch the
+    // customer will eventually notice on their next bill. Force an
+    // explicit acknowledgment so the admin reaches for the proper path
+    // (Paddle dashboard / Stripe customer portal) when it matters.
+    if (
+      payload.plan &&
+      org.billing?.subscriptionId &&
+      !confirm(
+        `This org has an active subscription (${org.billing.subscriptionId}). ` +
+          `Changing the plan here updates Organization.plan only — it does NOT ` +
+          `migrate the subscription at Paddle/Stripe. The customer will keep ` +
+          `being billed for "${org.plan}" until the subscription is changed ` +
+          `in the billing provider. Continue?`,
+      )
+    ) {
+      return;
+    }
+
     // Trial date: only send when orgType is trial, or when clearing
     const currentTrialIso = org.trialEndsAt ? org.trialEndsAt.slice(0, 10) : "";
     if (editOrgType === "trial") {

@@ -19,12 +19,16 @@
  * dispatch in that mode.
  */
 
-// OpenTelemetry SDK boot — MUST be the first import. Patches Prisma,
-// Redis, http, etc. so subsequent imports get traced transparently.
-// Import a named export so esbuild can't tree-shake the side-effect
-// statement.
-import { __otelBooted } from "./otel-boot";
-void __otelBooted;
+// OpenTelemetry SDK boot — MUST be at the top, before any module that
+// uses http/Prisma/Redis. Inlined here (rather than a separate file)
+// because side-effect-only imports from sibling files were being
+// elided somewhere in the tsx/esbuild pipeline.
+import { initOtel } from "../../src/libs/otel";
+import { registerCustomMetrics } from "../../src/libs/otel-metrics";
+console.log("[worker-loop] booting OpenTelemetry…");
+const __otelStarted = initOtel({ serviceName: "audit-worker" });
+if (__otelStarted) registerCustomMetrics();
+console.log(`[worker-loop] OpenTelemetry started=${__otelStarted}`);
 import * as http from "node:http";
 import { prisma } from "../../src/libs/prismaDb";
 import { getRedis, initRedis } from "../../src/libs/redis";

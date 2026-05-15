@@ -44,11 +44,40 @@ export async function GET() {
 			body: "",
 			timestamp: formatRelative(log.createdAt),
 			unread: log.readAt === null, // readAt null = unread; independent of delivery status
+			// Resolve a click destination per event. NotificationLog has no
+			// target_id column today, so we route by event class to the
+			// section most likely to carry the relevant context. Null when
+			// there's nowhere meaningful to send the user (magic links,
+			// system messages).
+			href: resolveHrefForEvent(log.event),
 		}));
 
 		return NextResponse.json({ notifications });
 	} catch {
 		return NextResponse.json({ notifications: [] });
+	}
+}
+
+function resolveHrefForEvent(event: string | null | undefined): string | null {
+	if (!event) return null;
+	switch (event) {
+		// Finding-shaped events — dashboard is the right landing because
+		// it shows the change report + KPI tiles that surface regressions /
+		// improvements / resolutions. Once NotificationLog learns to store
+		// a finding/action ref, we can deep-link straight to the drawer.
+		case "regression":
+		case "improvement":
+		case "resolved":
+		case "verified_resolved":
+		case "digest":
+			return "/app/dashboard";
+		case "page_down":
+			return "/app/inventory";
+		case "incident":
+			return "/app/actions";
+		// Newsletter / magic_link / system don't have an in-app landing.
+		default:
+			return null;
 	}
 }
 

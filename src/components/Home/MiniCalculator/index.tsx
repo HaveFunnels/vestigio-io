@@ -720,7 +720,34 @@ const MiniCalculator = ({
 										{t("cta_question")}
 									</p>
 									<div className='mb-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
-										<Link href={domain ? `${primaryCtaHref}?domain=${encodeURIComponent(domain)}` : primaryCtaHref} className='inline-block'>
+										<Link
+											href={domain ? `${primaryCtaHref}?domain=${encodeURIComponent(domain)}` : primaryCtaHref}
+											className='inline-block'
+											onClick={() => {
+												// Stash revenue + business type so the onboarding
+												// form can pre-fill the same values the visitor
+												// just typed on the homepage. Earlier only the
+												// domain survived the signup hop — both other
+												// inputs were re-asked.
+												try {
+													if (monthlyRevenue) {
+														localStorage.setItem(
+															"vestigio_onboard_revenue",
+															String(monthlyRevenue),
+														);
+													}
+													if (businessType) {
+														localStorage.setItem(
+															"vestigio_onboard_business_type",
+															businessType,
+														);
+													}
+												} catch {
+													// localStorage unavailable (private mode) —
+													// degrade silently, onboarding still works.
+												}
+											}}
+										>
 											<ShinyButton className='w-full sm:w-auto'>
 												{t("cta_signup")}
 											</ShinyButton>

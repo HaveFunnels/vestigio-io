@@ -240,6 +240,26 @@ export const POST = withErrorTracking(
 				);
 			}
 
+			// Admin-provisioned orgs (no Paddle subscription) can't accept
+			// any provider-backed offer — pause/discount/downgrade all
+			// require a subscription to mutate. Reject explicitly so the
+			// UI surfaces it instead of writing acceptedSave=true and
+			// silently doing nothing.
+			if (
+				(offerType === "pause" ||
+					offerType === "discount" ||
+					offerType === "downgrade") &&
+				!session.user.subscriptionId
+			) {
+				return NextResponse.json(
+					{
+						message:
+							"This org has no active subscription, so the offer can't be applied automatically. Reach out to support to keep your seat.",
+					},
+					{ status: 400 },
+				);
+			}
+
 			try {
 				if (
 					offerType === "pause" &&

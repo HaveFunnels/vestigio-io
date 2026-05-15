@@ -9,6 +9,7 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
@@ -32,6 +33,7 @@ const TYPE_STYLES: Record<string, { dot: string; label: string }> = {
 };
 
 export default function NotificationBell() {
+	const router = useRouter();
 	const [notifications, setNotifications] = useState<AppNotification[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [open, setOpen] = useState(false);
@@ -99,15 +101,22 @@ export default function NotificationBell() {
 		fetch("/api/notifications/mark-read", { method: "POST" }).catch(() => {});
 	}
 
-	function handleNotificationClick(id: string) {
+	function handleNotificationClick(notification: AppNotification) {
+		// Mark read optimistically and fire-and-forget the API write.
 		setNotifications((prev) =>
-			prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),
+			prev.map((n) => (n.id === notification.id ? { ...n, unread: false } : n)),
 		);
 		fetch("/api/notifications/mark-read", {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ id }),
+			body: JSON.stringify({ id: notification.id }),
 		}).catch(() => {});
+		// Navigate to the resolved destination (set per-event in the API).
+		// Close the popover so the user lands cleanly on the target page.
+		if (notification.href) {
+			setOpen(false);
+			router.push(notification.href);
+		}
 	}
 
 	return (
@@ -171,7 +180,7 @@ export default function NotificationBell() {
 											<div className="min-w-0 flex-1 space-y-0.5">
 												<button
 													className="text-left text-content-secondary after:absolute after:inset-0"
-													onClick={() => handleNotificationClick(notification.id)}
+													onClick={() => handleNotificationClick(notification)}
 												>
 													<span className="text-xs font-medium text-content">
 														{notification.title}

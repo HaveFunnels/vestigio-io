@@ -42,13 +42,24 @@ export default function Signup() {
 	const [showPassword, setShowPassword] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [data, setData] = useState({ name: "", email: "", password: "" });
+	// Surface the domain we stashed from MiniCalc so the visitor sees we
+	// kept it. Empty when they arrived without one (organic /auth/signup).
+	const [stashedDomain, setStashedDomain] = useState<string | null>(null);
 
 	// Persist domain from MiniCalc
 	useEffect(() => {
 		const domain = searchParams.get("domain");
 		if (domain) {
 			try { localStorage.setItem("vestigio_onboard_domain", domain); } catch {}
+			setStashedDomain(domain);
+			return;
 		}
+		// Re-display the previously stashed domain so a refresh on the
+		// signup page doesn't make the carried context invisible.
+		try {
+			const saved = localStorage.getItem("vestigio_onboard_domain");
+			if (saved) setStashedDomain(saved);
+		} catch {}
 	}, [searchParams]);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,9 +132,30 @@ export default function Signup() {
 					<h1 className="auth-fade-in auth-delay-200 mb-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
 						{t("title")}
 					</h1>
-					<p className="auth-fade-in auth-delay-200 mb-8 text-sm text-zinc-500">
+					<p className="auth-fade-in auth-delay-200 mb-4 text-sm text-zinc-500">
 						{t("subtitle")}
 					</p>
+
+					{/* MiniCalc handoff acknowledgment. Without this the visitor
+					    types a domain on the homepage, clicks the CTA, lands on
+					    signup and can't tell whether the context was preserved.
+					    The actual stashing happens in the useEffect above. */}
+					{stashedDomain && (
+						<div className="auth-fade-in auth-delay-200 mb-6 flex items-center gap-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] px-3 py-2 text-xs text-emerald-300">
+							<svg
+								className="h-3.5 w-3.5 shrink-0 text-emerald-400"
+								fill="none"
+								viewBox="0 0 24 24"
+								strokeWidth={2}
+								stroke="currentColor"
+							>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+							</svg>
+							<span>
+								We&apos;ll audit <strong className="font-semibold text-emerald-200">{stashedDomain}</strong> after you sign up.
+							</span>
+						</div>
+					)}
 
 					{/* Google (primary) */}
 					<button

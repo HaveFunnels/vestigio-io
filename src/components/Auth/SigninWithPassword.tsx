@@ -78,7 +78,12 @@ export default function SigninWithPassword() {
 			return;
 		}
 
-		signIn("credentials", { ...data, redirect: false })
+		// The credentials provider reads `remember` as a string (it's a
+		// NextAuth Credentials input, not a JS field) and tests
+		// `=== "true"`. Coerce here so a refactor that drops the new
+		// Signin/index.tsx's existing `String(remember)` call doesn't
+		// silently regress to "always 12h sessions".
+		signIn("credentials", { ...data, remember: String(data.remember), redirect: false })
 			.then((callback) => {
 				if (callback?.error) {
 					toast.error(callback.error);

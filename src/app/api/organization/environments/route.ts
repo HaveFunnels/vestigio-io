@@ -70,6 +70,67 @@ export const POST = withErrorTracking(async function POST(request: Request) {
   return NextResponse.json({ environment }, { status: 201 });
 }, { endpoint: "/api/organization/environments", method: "POST" });
 
+const updateSchema = z.object({
+  environmentId: z.string().min(1),
+  landingUrl: z.string().url(),
+});
+
+// PATCH — owners can fix landing_url after onboarding (e.g. the auto-
+// derived URL points at the bare apex but the real entry is /br or
+// /landing). Previously there was no read or edit path for landing_url
+// in the UI, so misconfigured envs needed a DB shell to fix.
+export const PATCH = withErrorTracking(async function PATCH(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = (session.user as any).id;
+  if (!userId) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const membership = await resolveUserMembership(userId);
+  if (!membership) {
+    return NextResponse.json({ message: "No organization found" }, { status: 404 });
+  }
+
+  if (membership.role !== "owner" && membership.role !== "admin") {
+    return NextResponse.json(
+      { message: "Only owners and admins can edit environments" },
+      { status: 403 },
+    );
+  }
+
+  const body = await request.json();
+  const res = updateSchema.safeParse(body);
+  if (!res.success) {
+    return NextResponse.json(
+      { message: "Invalid payload", errors: res.error.flatten().fieldErrors },
+      { status: 400 },
+    );
+  }
+
+  const env = await prisma.environment.findFirst({
+    where: {
+      id: res.data.environmentId,
+      organizationId: membership.organizationId,
+    },
+    select: { id: true },
+  });
+  if (!env) {
+    return NextResponse.json({ message: "Environment not found" }, { status: 404 });
+  }
+
+  const updated = await prisma.environment.update({
+    where: { id: env.id },
+    data: { landingUrl: res.data.landingUrl },
+    select: { id: true, domain: true, landingUrl: true, isProduction: true, createdAt: true },
+  });
+
+  return NextResponse.json({ environment: updated });
+}, { endpoint: "/api/organization/environments", method: "PATCH" });
+
 const deleteSchema = z.object({
   environmentId: z.string().min(1),
 });

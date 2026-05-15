@@ -41,20 +41,16 @@ export default function ForgotPassword() {
 				email,
 			});
 
-			if (res.status === 404) {
-				toast.error("User not found.");
-				setEmail("");
-				setLoading(false);
-				return;
-			}
-
+			// API returns 200 unconditionally (anti-enumeration: it sends
+			// the reset email when the account exists and otherwise no-ops,
+			// without telling the caller which one happened). The earlier
+			// 404 branch here was dead code.
 			if (res.status === 200) {
 				toast.success(res.data);
-				setLoading(false);
-				setEmail("");
 			}
 
 			setEmail("");
+			setLoading(false);
 		} catch (error: any) {
 			setLoading(false);
 			toast.error(error.response.data);

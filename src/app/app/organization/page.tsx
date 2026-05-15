@@ -200,6 +200,128 @@ function AddEnvironmentModal({
   );
 }
 
+// ── Environment Row ──
+// Lists each env with an inline editor for its landing URL. Editing is
+// gated on owner role; deletion remains owner-only too. The auto-
+// derived landing URL (https://<domain>) is rarely wrong, but for
+// subpath-based sites the only previous fix was a DB shell.
+function EnvironmentRow({
+  env,
+  isOwner,
+  deletingEnv,
+  onDelete,
+  onSaveLandingUrl,
+}: {
+  env: {
+    id: string;
+    domain: string;
+    landingUrl: string;
+    isProduction: boolean;
+    createdAt: string;
+  };
+  isOwner: boolean;
+  deletingEnv: string | null;
+  onDelete: () => void;
+  onSaveLandingUrl: (url: string) => Promise<boolean>;
+}) {
+  const t = useTranslations("console.organization");
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(env.landingUrl);
+  const [saving, setSaving] = useState(false);
+
+  async function commit() {
+    const next = draft.trim();
+    if (!next || next === env.landingUrl) {
+      setEditing(false);
+      setDraft(env.landingUrl);
+      return;
+    }
+    try {
+      new URL(next);
+    } catch {
+      alert("Landing URL must be a valid http(s) URL.");
+      return;
+    }
+    setSaving(true);
+    const ok = await onSaveLandingUrl(next);
+    setSaving(false);
+    if (ok) setEditing(false);
+  }
+
+  return (
+    <div className="rounded-md border border-edge bg-surface-inset px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-sm font-medium text-content-secondary">{env.domain}</span>
+            {env.isProduction && (
+              <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-400">
+                {t("production")}
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 truncate text-xs text-content-muted">
+            <span className="opacity-60">URL: </span>
+            <code className="font-mono text-[11px] text-content-muted">{env.landingUrl}</code>
+          </p>
+          <p className="mt-0.5 text-xs text-content-muted">{t("added_date", { date: formatDate(env.createdAt) })}</p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {isOwner && !editing && (
+            <button
+              onClick={() => {
+                setDraft(env.landingUrl);
+                setEditing(true);
+              }}
+              className="rounded-md px-2 py-1 text-xs text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content"
+            >
+              Edit URL
+            </button>
+          )}
+          {isOwner && (
+            <button
+              onClick={onDelete}
+              disabled={deletingEnv === env.id}
+              className="rounded-md px-2 py-1 text-xs text-content-muted transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+            >
+              {deletingEnv === env.id ? "..." : t("remove")}
+            </button>
+          )}
+        </div>
+      </div>
+      {editing && (
+        <div className="mt-3 flex items-center gap-2">
+          <input
+            type="url"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="https://example.com/br"
+            disabled={saving}
+            className="flex-1 rounded-md border border-edge bg-surface-card px-3 py-1.5 text-xs text-content placeholder-content-faint outline-none transition-colors focus:border-accent/40 focus:ring-1 focus:ring-accent/20"
+          />
+          <button
+            onClick={commit}
+            disabled={saving}
+            className="rounded-md border border-emerald-500/40 px-3 py-1.5 text-xs font-medium text-content-secondary transition-colors hover:border-emerald-500 hover:bg-emerald-500/5 disabled:opacity-50"
+          >
+            {saving ? "Saving…" : "Save"}
+          </button>
+          <button
+            onClick={() => {
+              setEditing(false);
+              setDraft(env.landingUrl);
+            }}
+            disabled={saving}
+            className="rounded-md px-2 py-1.5 text-xs text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Page ──
 export default function OrganizationPage() {
   const t = useTranslations("console.organization");
@@ -338,6 +460,30 @@ export default function OrganizationPage() {
       alert(t("error_network"));
     } finally {
       setDeletingEnv(null);
+    }
+  }
+
+  // Save a new landing URL for an environment. Useful when the auto-
+  // derived URL points at the bare apex but the real entry is a subpath
+  // like /br or /landing. Before this existed, fixing the URL required
+  // a DB shell.
+  async function handleSaveLandingUrl(envId: string, landingUrl: string) {
+    try {
+      const res = await fetch("/api/organization/environments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ environmentId: envId, landingUrl }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        alert(body.message || "Failed to update landing URL.");
+        return false;
+      }
+      await fetchData();
+      return true;
+    } catch {
+      alert(t("error_network"));
+      return false;
     }
   }
 
@@ -632,31 +778,14 @@ export default function OrganizationPage() {
             ) : (
               <div className="space-y-2">
                 {environments.map((env) => (
-                  <div
+                  <EnvironmentRow
                     key={env.id}
-                    className="flex items-center justify-between rounded-md border border-edge bg-surface-inset px-4 py-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-medium text-content-secondary">{env.domain}</span>
-                        {env.isProduction && (
-                          <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-400">
-                            {t("production")}
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-0.5 text-xs text-content-muted">{t("added_date", { date: formatDate(env.createdAt) })}</p>
-                    </div>
-                    {isOwner && (
-                      <button
-                        onClick={() => handleDeleteEnv(env.id)}
-                        disabled={deletingEnv === env.id}
-                        className="ml-3 shrink-0 rounded-md px-2 py-1 text-xs text-content-muted transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
-                      >
-                        {deletingEnv === env.id ? "..." : t("remove")}
-                      </button>
-                    )}
-                  </div>
+                    env={env}
+                    isOwner={isOwner}
+                    deletingEnv={deletingEnv}
+                    onDelete={() => handleDeleteEnv(env.id)}
+                    onSaveLandingUrl={(url) => handleSaveLandingUrl(env.id, url)}
+                  />
                 ))}
               </div>
             )}

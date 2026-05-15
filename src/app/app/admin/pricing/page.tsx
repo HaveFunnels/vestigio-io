@@ -35,6 +35,11 @@ interface CreditConfig {
 
 export default function AdminPricingPage() {
   const [plans, setPlans] = useState<PlanConfig[]>([]);
+  // Snapshot of plans as they were last loaded. Used at save time to
+  // detect Stripe priceId changes and warn the admin that the new
+  // priceId only applies to NEW checkouts — existing subscriptions
+  // continue billing at the old price until migrated in Stripe.
+  const [originalPriceIds, setOriginalPriceIds] = useState<Record<string, string>>({});
   const [credits, setCredits] = useState<CreditConfig>({ baseCostPerCall: 0.05, markupMultiplier: 2.0 });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -48,12 +53,16 @@ export default function AdminPricingPage() {
     fetch("/api/admin/pricing")
       .then((r) => r.json())
       .then((data) => {
-        setPlans(data.plans.map((p: any) => ({
+        const next = data.plans.map((p: any) => ({
           ...p,
           paddleProductId: p.paddleProductId || "",
           paddlePriceId: p.paddlePriceId || "",
           lemonSqueezyPriceId: p.lemonSqueezyPriceId || "",
-        })));
+        }));
+        setPlans(next);
+        setOriginalPriceIds(
+          Object.fromEntries(next.map((p: any) => [p.key, p.priceId || ""])),
+        );
         setCredits(data.credits);
       })
       .catch(() => setError("Failed to load pricing config"))
@@ -70,6 +79,27 @@ export default function AdminPricingPage() {
   };
 
   const handleSave = async () => {
+    // Detect any Stripe priceId changes. The admin pricing save writes
+    // PlatformConfig.plans only — it doesn't migrate existing Stripe
+    // subscriptions to the new priceId, so live subscribers keep being
+    // billed at the old price indefinitely. Force a confirm dialog so
+    // the admin reaches for Stripe's customer.subscriptions.update flow
+    // (or accepts that the change applies to NEW checkouts only).
+    const changedPriceIds = plans
+      .filter((p) => (p.priceId || "") !== (originalPriceIds[p.key] || ""))
+      .map((p) => `${p.label} (${originalPriceIds[p.key] || "—"} → ${p.priceId || "—"})`);
+    if (changedPriceIds.length > 0) {
+      const ok = confirm(
+        `You changed the Stripe priceId for:\n\n${changedPriceIds.join("\n")}\n\n` +
+          `This save updates PlatformConfig only — it does NOT migrate ` +
+          `existing Stripe subscriptions to the new price. Current ` +
+          `subscribers will keep being billed at the OLD price until you ` +
+          `update them in the Stripe dashboard (or via the customer ` +
+          `portal). The new priceId only applies to NEW checkouts.\n\n` +
+          `Continue?`,
+      );
+      if (!ok) return;
+    }
     setSaving(true);
     setError(null);
     setPaddleSyncError(null);
@@ -85,12 +115,16 @@ export default function AdminPricingPage() {
       }
       const data = await res.json();
       if (data.plans) {
-        setPlans(data.plans.map((p: any) => ({
+        const next = data.plans.map((p: any) => ({
           ...p,
           paddleProductId: p.paddleProductId || "",
           paddlePriceId: p.paddlePriceId || "",
           lemonSqueezyPriceId: p.lemonSqueezyPriceId || "",
-        })));
+        }));
+        setPlans(next);
+        setOriginalPriceIds(
+          Object.fromEntries(next.map((p: any) => [p.key, p.priceId || ""])),
+        );
       }
       if (data.paddleSyncError) {
         setPaddleSyncError(data.paddleSyncError);

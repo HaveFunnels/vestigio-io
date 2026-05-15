@@ -136,27 +136,63 @@ export default function useOnboardingForm() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []);
 
-	// ── Domain prefill from MiniCalc ──
-	const prefillDomain = useMemo(() => {
-		if (typeof window === "undefined") return "";
-		try {
-			const saved = localStorage.getItem("vestigio_onboard_domain");
-			if (saved) {
-				localStorage.removeItem("vestigio_onboard_domain");
-				return saved;
+	// ── MiniCalc handoff prefills ──
+	// The homepage MiniCalculator captures domain + revenue + business type.
+	// Before this fix only `domain` survived the signup hop, so visitors
+	// had to re-type the other two. All three are now stashed in
+	// localStorage at CTA click and consumed (then cleared) here.
+	const prefill = useMemo<{
+		domain: string;
+		revenue: number | null;
+		businessType: BusinessType | null;
+	}>(() => {
+		if (typeof window === "undefined") {
+			return { domain: "", revenue: null, businessType: null };
+		}
+		const read = (key: string): string => {
+			try {
+				const v = localStorage.getItem(key);
+				if (v) localStorage.removeItem(key);
+				return v ?? "";
+			} catch {
+				return "";
 			}
-		} catch {}
-		return "";
+		};
+		const domain = read("vestigio_onboard_domain");
+		const revenueRaw = read("vestigio_onboard_revenue");
+		const businessTypeRaw = read("vestigio_onboard_business_type");
+		const revenue = revenueRaw ? Number(revenueRaw) : null;
+		// MiniCalc has six business types; onboarding accepts four. Map the
+		// less-specific ones to the closest match so the prefill survives
+		// without sneaking an invalid value past the form.
+		const businessTypeMap: Record<string, BusinessType> = {
+			ecommerce: "ecommerce",
+			saas: "saas",
+			services: "lead_gen",
+			institutional: "lead_gen",
+			app_download: "saas",
+			blog: "lead_gen",
+		};
+		const businessType: BusinessType | null = businessTypeRaw
+			? businessTypeMap[businessTypeRaw] ?? null
+			: null;
+		return {
+			domain,
+			revenue: revenue != null && Number.isFinite(revenue) ? revenue : null,
+			businessType,
+		};
 	}, []);
+
+	const prefillDomain = prefill.domain;
 
 	// ── Form state ──
 	const defaultForm: OnboardState = {
 		organizationName: "",
 		domain: prefillDomain,
 		ownershipConfirmed: false,
-		businessType: "ecommerce",
+		businessType: prefill.businessType ?? "ecommerce",
 		industryVertical: "",
-		monthlyRevenue: 100000,
+		monthlyRevenue: prefill.revenue ?? 100000,
 		averageTicket: 300,
 		conversionModel: "checkout",
 	};
@@ -165,6 +201,11 @@ export default function useOnboardingForm() {
 		...defaultForm,
 		...(savedDraft?.form ?? {}),
 		...(prefillDomain ? { domain: prefillDomain } : {}),
+		// MiniCalc handoff wins over the saved draft for revenue + business
+		// type when both exist: the visitor just typed them on the homepage
+		// seconds ago, so that's the freshest signal.
+		...(prefill.businessType ? { businessType: prefill.businessType } : {}),
+		...(prefill.revenue != null ? { monthlyRevenue: prefill.revenue } : {}),
 	}));
 
 	// ── Steps (dynamic based on business type — SaaS/Hybrid skip conversion model) ──

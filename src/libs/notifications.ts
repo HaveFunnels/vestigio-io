@@ -41,7 +41,11 @@ export type NotificationEvent =
 	// you recovered $Y/mo" payoff.
 	| "verified_resolved"
 	| "digest"
-	| "mini_audit_complete";
+	| "mini_audit_complete"
+	// Product updates email channel — wired so the productUpdates toggle
+	// in settings actually gates anything. Fired when product release
+	// notes / changelog updates ship.
+	| "product_updates";
 
 interface BaseNotification {
 	event: NotificationEvent;
@@ -457,6 +461,10 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 		case "mini_audit_complete":
 			// Anonymous lead email — always sent (they just requested it)
 			return true;
+		case "product_updates":
+			// Release notes / changelog announcements — opt-out via
+			// preference toggle. Defaults to true.
+			return prefs.productUpdates;
 	}
 }
 

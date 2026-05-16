@@ -1892,12 +1892,27 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		return { cycleId, status: "complete", pagesDiscovered, evidenceCount, durationMs };
 	} catch (err) {
 		const errorMsg = err instanceof Error ? err.message : String(err);
+		const errorStack = err instanceof Error ? err.stack : "";
 		console.error(`[audit-runner ${cycleId}] failed:`, errorMsg);
+		if (errorStack) console.error(`[audit-runner ${cycleId}] stack:`, errorStack.slice(0, 800));
 
+		// Wave 18j — also stamp lastError so the dashboard can show
+		// WHY a cycle failed without needing Railway logs. Pre-fix
+		// this top-level catch only updated status + completedAt,
+		// which is why every havefunnels failure landed with
+		// lastError=null. Step-level stampCycleError already fills
+		// in step-specific errors for some paths, but throws from
+		// any unprotected step (recompute, project, persist) bubble
+		// up here and were going undiagnosed.
 		await prisma.auditCycle
 			.update({
 				where: { id: cycleId },
-				data: { status: "failed", completedAt: new Date() },
+				data: {
+					status: "failed",
+					completedAt: new Date(),
+					lastError: `runAuditCycle: ${errorMsg}`.slice(0, 1000),
+					lastErrorAt: new Date(),
+				},
 			})
 			.catch(() => {
 				/* swallow secondary error */

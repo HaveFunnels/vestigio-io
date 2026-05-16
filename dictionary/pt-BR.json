@@ -2667,6 +2667,7 @@
 					"cycles_analyzed": "{count} ciclos analisados — todos os findings estáveis",
 					"needs_cycles": "Precisa de pelo menos 3 ciclos de auditoria para detectar tendências",
 					"no_alerts": "Nenhum padrão de tendência acionável",
+					"load_failed": "Não foi possível carregar tendências. Recarregue a página.",
 					"more_alerts": "+{count} alertas adicionais",
 					"consecutive_regressions": "Degradando há {streak} ciclos",
 					"sudden_spike": "Pico repentino",

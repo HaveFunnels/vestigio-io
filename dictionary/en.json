@@ -2648,6 +2648,7 @@
 					"cycles_analyzed": "{count} cycles analyzed — all findings stable",
 					"needs_cycles": "Needs at least 3 audit cycles to detect trends",
 					"no_alerts": "No actionable trend patterns",
+					"load_failed": "Couldn't load trend data. Reload the page.",
 					"more_alerts": "+{count} more alerts",
 					"consecutive_regressions": "Degrading {streak} cycles",
 					"sudden_spike": "Sudden spike",

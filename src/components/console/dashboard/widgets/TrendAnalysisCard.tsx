@@ -120,6 +120,12 @@ function TrendAnalysisCardComponent({ data: _data }: WidgetProps) {
 	const t = useTranslations("console.dashboard.widgets.trend_analysis");
 	const [trendData, setTrendData] = useState<TrendData | null>(null);
 	const [loading, setLoading] = useState(true);
+	// Wave 18g — distinguish "fetch failed" from "fetch succeeded but
+	// no data". Pre-fix, both states fell through to the
+	// "needs_cycles" copy ("precisa de 3+ ciclos"), so customers with
+	// 3+ complete cycles AND a transient API error saw a misleading
+	// message blaming the cycle count.
+	const [loadError, setLoadError] = useState(false);
 
 	useEffect(() => {
 		let cancelled = false;
@@ -129,9 +135,11 @@ function TrendAnalysisCardComponent({ data: _data }: WidgetProps) {
 				if (res.ok && !cancelled) {
 					const data = await res.json();
 					setTrendData(data);
+				} else if (!cancelled) {
+					setLoadError(true);
 				}
 			} catch {
-				// Non-fatal — widget shows empty state
+				if (!cancelled) setLoadError(true);
 			} finally {
 				if (!cancelled) setLoading(false);
 			}
@@ -149,16 +157,23 @@ function TrendAnalysisCardComponent({ data: _data }: WidgetProps) {
 	}
 
 	if (!trendData || trendData.alerts.length === 0) {
-		const needsMore = !trendData || trendData.lookback_cycles < 2;
+		// Wave 18g — threshold aligned with the i18n message. The
+		// dashboard widget needs 3+ cycles for direction + velocity
+		// math to be meaningful; the underlying API exposes 2-cycle
+		// partial trends for other consumers, but we don't surface
+		// those here. Three distinct states now: load-failed,
+		// genuinely insufficient cycles, and no-actionable-patterns.
+		const failed = loadError;
+		const needsMore = !failed && (!trendData || trendData.lookback_cycles < 3);
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
 				<TrendUpIcon size={28} className="text-zinc-500" />
 				<p className="text-sm text-zinc-400">
-					{needsMore ? t("needs_cycles") : t("no_alerts")}
+					{failed ? t("load_failed") : needsMore ? t("needs_cycles") : t("no_alerts")}
 				</p>
-				{!needsMore && (
+				{!failed && !needsMore && trendData && (
 					<p className="text-xs text-zinc-500">
-						{t("cycles_analyzed", { count: trendData!.lookback_cycles })}
+						{t("cycles_analyzed", { count: trendData.lookback_cycles })}
 					</p>
 				)}
 			</div>

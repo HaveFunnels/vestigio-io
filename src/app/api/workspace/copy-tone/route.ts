@@ -108,10 +108,12 @@ export const GET = withErrorTracking(
 			return NextResponse.json({ pages: [], fallback: true });
 		}
 
+		// Wave 18g — Evidence.environmentRef has the "environment:" prefix.
 		const cycleRef = `audit_cycle:${latestCycle.id}`;
+		const envRef = `environment:${env.id}`;
 		const rows = await prisma.evidence.findMany({
 			where: {
-				environmentRef: env.id,
+				environmentRef: envRef,
 				evidenceType: "page_content",
 				cycleRef,
 			},

@@ -125,10 +125,12 @@ export const GET = withErrorTracking(
 
 		// Read the same TechnologyDetected evidence as /api/workspace/tech-stack
 		// (don't deduplicate via that endpoint to avoid an internal HTTP hop).
+		// Wave 18g — Evidence.environmentRef has the "environment:" prefix.
 		const cycleRef = `audit_cycle:${latestCycle.id}`;
+		const envRef = `environment:${env.id}`;
 		const rows = await prisma.evidence.findMany({
 			where: {
-				environmentRef: env.id,
+				environmentRef: envRef,
 				evidenceType: "technology_detected",
 				cycleRef,
 			},

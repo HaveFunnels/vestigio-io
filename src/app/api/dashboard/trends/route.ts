@@ -46,9 +46,15 @@ export const GET = withErrorTracking(
 		const lookback = Math.min(20, Math.max(3, parseInt(url.searchParams.get("lookback") ?? "10", 10)));
 		const patternFilter = url.searchParams.get("pattern") as TrendPattern | null;
 
-		// Load the workspace ref from the most recent snapshot
+		// Wave 18g — CycleSnapshot.environmentRef has the
+		// "environment:" prefix. Pre-fix this route queried with bare
+		// environment.id which never matched, so latestSnapshot was
+		// always null and the trend widget defaulted to "needs more
+		// cycles" forever — confused havefunnels customers who had
+		// 5+ complete cycles.
+		const envRef = `environment:${environment.id}`;
 		const latestSnapshot = await prisma.cycleSnapshot.findFirst({
-			where: { environmentRef: environment.id },
+			where: { environmentRef: envRef },
 			orderBy: { createdAt: "desc" },
 			select: { workspaceRef: true },
 		});
@@ -65,7 +71,7 @@ export const GET = withErrorTracking(
 		const snapshotStore = new PrismaSnapshotStore(prisma);
 		const snapshots = await snapshotStore.asyncList(
 			latestSnapshot.workspaceRef,
-			environment.id,
+			envRef,
 			lookback,
 		);
 

@@ -49,9 +49,13 @@ export const GET = withErrorTracking(
 		const url = new URL(request.url);
 		const lookback = Math.min(20, Math.max(3, parseInt(url.searchParams.get("lookback") ?? "10", 10)));
 
-		// Load snapshots with revenue data
+		// Load snapshots with revenue data.
+		// Wave 18g — CycleSnapshot.environmentRef has the "environment:"
+		// prefix. Pre-fix this route queried with bare environment.id
+		// and the recovery widget never had data to compute.
+		const envRef = `environment:${environment.id}`;
 		const latestSnapshot = await prisma.cycleSnapshot.findFirst({
-			where: { environmentRef: environment.id },
+			where: { environmentRef: envRef },
 			orderBy: { createdAt: "desc" },
 			select: { workspaceRef: true },
 		});
@@ -71,7 +75,7 @@ export const GET = withErrorTracking(
 		const snapshotStore = new PrismaSnapshotStore(prisma);
 		const snapshots = await snapshotStore.asyncList(
 			latestSnapshot.workspaceRef,
-			environment.id,
+			envRef,
 			lookback,
 		);
 

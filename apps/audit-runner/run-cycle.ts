@@ -436,12 +436,30 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		console.log(`[audit-runner ${cycleId}] page_content=${contentEv}, policy_page=${policyEv}, content_enrichment=${enrichEv}`);
 
 		// 5. Persist evidence to Postgres
-		try {
+		//
+		// Wave 18g — evidence persistence is now FATAL. Pre-fix the
+		// catch swallowed the error with a "non-fatal — pipeline
+		// succeeded, just couldn't persist for warm restart" comment.
+		// That was wrong: every downstream consumer (Framework Lens,
+		// /api/workspace/copy-content, /api/inventory, MCP context,
+		// findings drawer source URLs) reads Evidence rows. A cycle
+		// completing with a populated cache but zero Evidence rows
+		// means dashboards work but workspace lenses are silently
+		// blank. Diagnosed on havefunnels full cycle cmp7t1l7p where
+		// 96 signals + 31 findings landed but Evidence count was 0
+		// — Framework Lens stayed empty even though copy_alignment
+		// was producing findings.
+		//
+		// Throwing here marks the cycle failed; the heal cron retries
+		// on the next interval. Loud failure is the right default —
+		// a broken cycle that LOOKS healthy is the worst outcome.
+		if (result.evidence.length > 0) {
 			const store = new PrismaEvidenceStore(prisma);
 			await store.addMany(result.evidence);
-		} catch (err) {
-			console.error(`[audit-runner ${cycleId}] evidence persistence error:`, err);
-			// Non-fatal — pipeline succeeded, just couldn't persist for warm restart.
+		} else {
+			console.warn(
+				`[audit-runner ${cycleId}] pipeline produced 0 evidence rows — likely crawl block / 4xx / Cloudflare challenge. Findings derived from in-memory state will land but downstream lenses will be empty.`,
+			);
 		}
 
 		// 6. Persist PageInventoryItem rows from coverage map

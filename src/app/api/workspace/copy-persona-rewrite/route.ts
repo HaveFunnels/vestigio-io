@@ -131,10 +131,12 @@ export const GET = withErrorTracking(
 
 		// Pull homepage PageContent — heuristic: pick the entry with the
 		// shortest path (apex / homepage) for the latest cycle.
+		// Wave 18g — Evidence.environmentRef has the "environment:" prefix.
 		const cycleRef = `audit_cycle:${latestCycle.id}`;
+		const envRef = `environment:${env.id}`;
 		const pageRows = await prisma.evidence.findMany({
 			where: {
-				environmentRef: env.id,
+				environmentRef: envRef,
 				evidenceType: "page_content",
 				cycleRef,
 			},

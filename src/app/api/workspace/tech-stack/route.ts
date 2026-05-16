@@ -164,10 +164,12 @@ export const GET = withErrorTracking(
 
 		// Evidence.cycleRef is the engine-side ref string `audit_cycle:<id>`
 		// (see apps/audit-runner producers). Construct it here from the DB id.
+		// Wave 18g — Evidence.environmentRef has the "environment:" prefix.
 		const cycleRef = `audit_cycle:${latestCycle.id}`;
+		const envRef = `environment:${env.id}`;
 		const rows = await prisma.evidence.findMany({
 			where: {
-				environmentRef: env.id,
+				environmentRef: envRef,
 				evidenceType: "technology_detected",
 				cycleRef,
 			},

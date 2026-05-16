@@ -65,9 +65,16 @@ export const GET = withErrorTracking(
 		}
 
 		const cycleRef = `audit_cycle:${latestCycle.id}`;
+		// Wave 18g — Evidence.environmentRef is stored with the
+		// "environment:" prefix (set by staged-pipeline scoping). The
+		// previous query used bare env.id and silently returned 0
+		// rows, which is why Framework Lens never populated for any
+		// customer even after Wave 18a added body_text_snippet to
+		// page_content payloads.
+		const envRef = `environment:${env.id}`;
 		const rows = await prisma.evidence.findMany({
 			where: {
-				environmentRef: env.id,
+				environmentRef: envRef,
 				evidenceType: "page_content",
 				cycleRef,
 			},

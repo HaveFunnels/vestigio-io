@@ -37,7 +37,11 @@
 // constraints satisfied.
 // ──────────────────────────────────────────────
 
-import { randomUUID } from "node:crypto";
+// Webpack (Next.js client bundle) doesn't handle the `node:` URI
+// scheme — keep the bare `crypto` import to match other producers
+// (workers/ingestion/parser.ts, browser-worker.ts) and let the
+// Next.js server bundle pick up Node's crypto without complaints.
+import { randomUUID } from "crypto";
 
 export class IdGenerator {
 	private counter = 0;

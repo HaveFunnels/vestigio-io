@@ -704,7 +704,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				const result2 = await prisma.surfaceRelation.createMany({ data: batchData, skipDuplicates: true });
 				console.log(`[audit-runner ${cycleId}] surface relations persisted: ${result2.count} (from ${batchData.length} deduped, ${result.surface_relations.length} raw)`);
 			} catch (err) {
-				console.error(`[audit-runner ${cycleId}] surface relation batch error:`, err);
+				// Wave 18m — kept non-fatal (link graph is supporting
+				// metadata, not load-bearing), but stamp a partial-write
+				// signal on the cycle so the dashboard can flag missing
+				// funnel-bottleneck data instead of pretending it's complete.
+				console.error(`[audit-runner ${cycleId}] surface relation batch error (link graph degraded, audit continues):`, err);
+				await stampCycleError(cycleId, "surface_relations_partial", err);
 			}
 		}
 
@@ -1106,14 +1111,19 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					// rehydration path (ensureContext → loadLatestCycle) sees
 					// behavioral evidence after a server restart. The earlier
 					// addMany() at step 5 ran before this evidence existed.
-					try {
+					//
+					// Wave 18m — fatal, mirroring the Wave H change for the
+					// initial Evidence persist at line ~456. Pre-fix the
+					// try/catch swallowed addMany errors with the misleading
+					// note "in-cycle still works" — the in-MEMORY processing
+					// runs, but the cold-start path reads from DB, so a
+					// failure here silently dropped 30 days of behavioral
+					// evidence (sessions, attribution, device classification)
+					// from every server restart that followed. Loud failure
+					// → cycle marks failed → heal cron retries.
+					{
 						const evidenceStore = new PrismaEvidenceStore(prisma);
 						await evidenceStore.addMany(behavioral.evidence);
-					} catch (err) {
-						console.warn(
-							`[audit-runner ${cycleId}] behavioral evidence persistence failed (in-cycle still works):`,
-							err,
-						);
 					}
 					console.log(
 						`[audit-runner ${cycleId}] behavioral evidence added (sessions=${behavioral.sessionCount}, events=${behavioral.eventCount})`,
@@ -1179,7 +1189,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						await prisma.integrationConnection.update({
 							where: { id: shopifyConn.id },
 							data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
-						}).catch(() => { /* swallow secondary error */ });
+						}).catch((secondaryErr) => {
+							// Wave 18m — log the secondary failure instead of
+							// swallowing it. If syncError can't even be stamped
+							// on the connection row, the admin dashboard shows
+							// no signal of the original integration failure;
+							// at least surface the secondary write failure in
+							// Railway logs so ops can correlate.
+							console.error(`[audit-runner ${cycleId}] failed to stamp syncError on integration connection:`, secondaryErr);
+						});
 					}
 				}
 
@@ -1216,7 +1234,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 							await prisma.integrationConnection.update({
 								where: { id: nuvemshopConn.id },
 								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
-							}).catch(() => { /* swallow secondary error */ });
+							}).catch((secondaryErr) => {
+							// Wave 18m — log the secondary failure instead of
+							// swallowing it. If syncError can't even be stamped
+							// on the connection row, the admin dashboard shows
+							// no signal of the original integration failure;
+							// at least surface the secondary write failure in
+							// Railway logs so ops can correlate.
+							console.error(`[audit-runner ${cycleId}] failed to stamp syncError on integration connection:`, secondaryErr);
+						});
 						}
 					}
 
@@ -1295,7 +1321,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 							await prisma.integrationConnection.update({
 								where: { id: metaAdsConn.id },
 								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
-							}).catch(() => { /* swallow secondary error */ });
+							}).catch((secondaryErr) => {
+							// Wave 18m — log the secondary failure instead of
+							// swallowing it. If syncError can't even be stamped
+							// on the connection row, the admin dashboard shows
+							// no signal of the original integration failure;
+							// at least surface the secondary write failure in
+							// Railway logs so ops can correlate.
+							console.error(`[audit-runner ${cycleId}] failed to stamp syncError on integration connection:`, secondaryErr);
+						});
 						}
 					}
 
@@ -1359,7 +1393,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 							await prisma.integrationConnection.update({
 								where: { id: googleAdsConn.id },
 								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
-							}).catch(() => { /* swallow secondary error */ });
+							}).catch((secondaryErr) => {
+							// Wave 18m — log the secondary failure instead of
+							// swallowing it. If syncError can't even be stamped
+							// on the connection row, the admin dashboard shows
+							// no signal of the original integration failure;
+							// at least surface the secondary write failure in
+							// Railway logs so ops can correlate.
+							console.error(`[audit-runner ${cycleId}] failed to stamp syncError on integration connection:`, secondaryErr);
+						});
 						}
 					}
 
@@ -1405,7 +1447,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 							await prisma.integrationConnection.update({
 								where: { id: stripeConn.id },
 								data: { syncError: err instanceof Error ? err.message : 'Unknown error' },
-							}).catch(() => { /* swallow secondary error */ });
+							}).catch((secondaryErr) => {
+							// Wave 18m — log the secondary failure instead of
+							// swallowing it. If syncError can't even be stamped
+							// on the connection row, the admin dashboard shows
+							// no signal of the original integration failure;
+							// at least surface the secondary write failure in
+							// Railway logs so ops can correlate.
+							console.error(`[audit-runner ${cycleId}] failed to stamp syncError on integration connection:`, secondaryErr);
+						});
 						}
 					}
 				} catch (err) {
@@ -1944,7 +1994,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 // catching truly hung cycles (process killed mid-flight, never
 // resumed) within an acceptable window.
 const STUCK_RUNNING_AFTER_MS = 25 * 60 * 1000; // 25 minutes
-const ORPHANED_PENDING_AFTER_MS = 5 * 60 * 1000; // 5 minutes
+// Wave 18m — bumped 5→15 min. The previous 5min cutoff was too
+// aggressive for a latency-sensitive queue: a transient Redis hiccup
+// or a worker scaling event could leave a pending cycle untouched
+// for 5+ minutes legitimately. Re-dispatching at the 5min mark could
+// double-run the cycle (orphan re-dispatch races the original worker
+// finally picking it up). 15min gives genuine room for queue delays
+// while still recovering from real worker crashes within a useful
+// window.
+const ORPHANED_PENDING_AFTER_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
  * Auto-fail any AuditCycle stuck in `running` for too long.

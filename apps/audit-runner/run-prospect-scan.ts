@@ -164,7 +164,12 @@ export async function runProspectScan(scanId: string): Promise<RunProspectScanRe
 // Heal helper — same pattern as audit-runner.healStuckCycles
 // ──────────────────────────────────────────────
 
-const STUCK_RUNNING_AFTER_MS = 10 * 60 * 1000;
+// Wave 18m — bumped 10→20 min, mirroring Wave 18i for healStuckCycles.
+// Prospect scans run in shallow_plus mode (1 homepage + 5 critical
+// pages, 15s budget) but slow sites + heavy LLM enrichment passes
+// can legitimately push to 7-10min. The previous 10min cutoff was
+// killing healthy scans right at the edge.
+const STUCK_RUNNING_AFTER_MS = 20 * 60 * 1000;
 
 export async function healStuckProspectScans(): Promise<number> {
 	const cutoff = new Date(Date.now() - STUCK_RUNNING_AFTER_MS);
@@ -172,7 +177,7 @@ export async function healStuckProspectScans(): Promise<number> {
 		where: { status: "running", createdAt: { lt: cutoff } },
 		data: {
 			status: "failed",
-			errorMsg: "Worker timed out (>10min)",
+			errorMsg: `Worker timed out (>${Math.round(STUCK_RUNNING_AFTER_MS / 60000)}min, heal-cron auto-fail)`,
 			completedAt: new Date(),
 		},
 	});

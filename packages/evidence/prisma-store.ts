@@ -81,6 +81,13 @@ export class PrismaEvidenceStore {
   async add(evidence: Evidence): Promise<void> {
     const data = toPrismaData(evidence);
     const { id: _id, ...updateData } = data;
+    // Wave 18m — at least log the upsert failure. Pre-fix the
+    // `.catch(() => {})` silenced every error from this legacy
+    // single-row path. Modern code uses `addMany` (batched, properly
+    // surfaces errors), but this method is still exposed by the
+    // PrismaEvidenceStore interface and may be called from places
+    // that haven't migrated. A silent swallow here would re-create
+    // the exact class of bug the broader audit closed.
     await this.prisma.evidence.upsert({
       where: {
         cycleRef_evidenceKey: {
@@ -90,7 +97,13 @@ export class PrismaEvidenceStore {
       },
       create: data,
       update: updateData,
-    }).catch(() => {});
+    }).catch((err: unknown) => {
+      console.error(
+        `[prisma-evidence-store] single-row upsert failed for evidence_key=${evidence.evidence_key}, cycle_ref=${evidence.cycle_ref}:`,
+        err,
+      );
+      throw err;
+    });
   }
 
   /**

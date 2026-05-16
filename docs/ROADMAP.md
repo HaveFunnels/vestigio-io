@@ -2678,6 +2678,18 @@ Mitigations (priority by ROI):
 
 Companion fix already shipped (commit `db91331`): worker-loop catch now stamps `lastError = "worker-loop: <message>"` so the next time this happens we can read the cause from the DB instead of needing Railway logs.
 
+### Audit-driven backlog (Wave 18m audit pass, 2026-05-16)
+
+Broader audit run after the `bv_1` PK collision exposed a class of latent bugs. Most shipped in Waves 18d-18m. Remaining items deferred here:
+
+- **Impersonation auto-expiry after 1h** — `impersonationStartedAt` is set in the JWT at sign-in but never enforced as a session expiry. `blockIfImpersonating` returns 403 regardless of timestamp, so destructive actions are correctly blocked, but read access to customer data continues for the full 30-day cookie window. Fix shape: in `src/libs/auth.ts` session callback, treat the session as expired when `isImpersonating && Date.now() - impersonationStartedAt > 1h` (same pattern as `sessionExpiresAt`). UX cost: admin re-clicks "Impersonate" hourly.
+
+- **`hasOrganization`/`hasActivatedEnv` JWT staleness** — if an admin deletes an org or deactivates an env after a user's JWT is minted, the user passes the middleware onboarding gate with stale `true` values. Downstream `resolveOrgContext()` falls back to DEMO_CONTEXT, so it's a UX bug (confusing empty state) rather than a security boundary. Fix shape: revalidate these signals on a periodic refresh (next session.update() after 1h since last refresh).
+
+- **`isImpersonating` exit edge case** — if an admin is demoted from ADMIN to USER mid-impersonation, the exit-impersonation flow tries to mint a restore-admin token for an email that no longer has admin role, the restore-admin provider rejects, and the user is stuck impersonating until they clear cookies. Rare; UX-only impact. Fix shape: fall back to plain `signOut()` in `/api/admin/exit-impersonation` when restore-admin token mint fails.
+
+- **Orphaned pending re-dispatch race** (cutoff bumped 5→15min in Wave 18m, not fully resolved) — even at 15min there's a race where a slow worker is about to claim a pending cycle while the heal cron concurrently re-dispatches it, producing a double-run. Real fix is a heartbeat-on-claim model: the worker writes `cycle.lastHeartbeatAt` periodically while running, and the orphan re-dispatch checks heartbeat freshness instead of `createdAt`. Defer until we observe actual double-runs in production.
+
 ---
 
 ## What is NOT on this roadmap

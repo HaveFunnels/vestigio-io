@@ -362,7 +362,7 @@ export default function CopyFrameworkLens() {
 								type="button"
 								onClick={() => setSelectedFramework(fw.id)}
 								aria-pressed={isActive}
-								className={`flex min-w-[72px] flex-col items-center gap-1.5 rounded-xl border px-3 py-2 transition-all duration-200 ${
+								className={`flex min-w-[72px] md:min-w-[110px] lg:min-w-[128px] flex-col items-center gap-1.5 rounded-xl border px-3 md:px-4 py-2 transition-all duration-200 ${
 									isActive
 										? "border-emerald-500/60 bg-emerald-500/[0.08] shadow-[inset_0_0_0_1px_rgba(16,185,129,0.18)]"
 										: "border-edge bg-surface-card/40 hover:-translate-y-px hover:border-edge-strong hover:bg-surface-card-hover"

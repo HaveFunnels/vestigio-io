@@ -3154,7 +3154,10 @@
 					"post_purchase_chain": "Weak post-purchase experience is driving chargebacks",
 					"brand_impersonation_revenue": "Active brand impersonation is eroding trust"
 				}
-			}
+			},
+			"narrative_summary": "<strong>{count}</strong> cross-domain {count, plural, one {finding converges} other {findings converge}} on <mono>{surface}</mono>",
+			"narrative_causal": "Cause-effect chain — <strong>{first}</strong> findings preceded <strong>{last}</strong>.",
+			"narrative_combined_exposure": "Combined monthly exposure: <strong>{impact}{per_month}</strong>"
 		},
 		"activity_heatmap": {
 			"eyebrow": "Activity · 90 days",

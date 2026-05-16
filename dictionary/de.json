@@ -3180,6 +3180,9 @@
 		"cross_signals": {
 			"title": "Cross-Signal-Insights",
 			"subtitle": "Seiten, auf denen Befunde aus verschiedenen Perspektiven konvergieren — Vestigios einzigartige Multi-Domain-Korrelation.",
+			"narrative_summary": "<strong>{count}</strong> {count, plural, one {Cross-Domain-Befund konvergiert} other {Cross-Domain-Befunde konvergieren}} auf <mono>{surface}</mono>",
+			"narrative_causal": "Ursache-Wirkungs-Kette — <strong>{first}</strong>-Befunde gingen <strong>{last}</strong> voraus.",
+			"narrative_combined_exposure": "Kombinierte monatliche Exposition: <strong>{impact}{per_month}</strong>",
 			"hero_chains": "Cross-Signal-Ketten",
 			"hero_at_risk": "Monatliche Exposition",
 			"hero_sequential": "Kausale Muster",

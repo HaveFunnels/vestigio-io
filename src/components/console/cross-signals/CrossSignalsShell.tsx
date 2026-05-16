@@ -252,7 +252,6 @@ export default function CrossSignalsShell({ chains, currency = "USD" }: Props) {
 						links={chain.links}
 						totalImpactCents={chain.totalImpactCents}
 						temporalPattern={chain.temporalPattern}
-						narrative={chain.narrative}
 						firstDetectedAt={chain.firstDetectedAt}
 						currency={currency}
 					/>

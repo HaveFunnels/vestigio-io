@@ -3238,7 +3238,10 @@
 					"post_purchase_chain": "Experiência pós-compra fraca está gerando chargebacks",
 					"brand_impersonation_revenue": "Imitação ativa da marca está erodindo a confiança"
 				}
-			}
+			},
+			"narrative_summary": "<strong>{count}</strong> {count, plural, one {achado cruzado converge} other {achados cruzados convergem}} em <mono>{surface}</mono>",
+			"narrative_causal": "Cadeia causal — achados de <strong>{first}</strong> precederam <strong>{last}</strong>.",
+			"narrative_combined_exposure": "Exposição combinada: <strong>{impact}{per_month}</strong>"
 		},
 		"activity_heatmap": {
 			"eyebrow": "Atividade · 90 dias",

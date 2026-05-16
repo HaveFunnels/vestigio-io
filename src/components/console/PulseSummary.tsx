@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { renderRichText } from "@/lib/rich-text";
 
 // ──────────────────────────────────────────────
 // Pulse Summary — Intelligence briefing
@@ -81,7 +82,7 @@ export default function PulseSummary({ perspective, workspaceName, findingIds }:
         </span>
       </div>
       <p className={`relative text-[13px] leading-[1.7] text-content-secondary transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
-        {text}
+        {renderRichText(text)}
       </p>
     </div>
   );

@@ -3016,7 +3016,10 @@
 					"post_purchase_chain": "Experiencia post-compra debil esta generando chargebacks",
 					"brand_impersonation_revenue": "Imitacion activa de marca esta erosionando la confianza"
 				}
-			}
+			},
+			"narrative_summary": "<strong>{count}</strong> {count, plural, one {hallazgo cruzado converge} other {hallazgos cruzados convergen}} en <mono>{surface}</mono>",
+			"narrative_causal": "Cadena causal — hallazgos de <strong>{first}</strong> precedieron a <strong>{last}</strong>.",
+			"narrative_combined_exposure": "Exposición combinada: <strong>{impact}{per_month}</strong>"
 		},
 		"activity_heatmap": {
 			"eyebrow": "Actividad · 90 días",

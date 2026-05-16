@@ -207,7 +207,6 @@ function CrossSignalSection() {
             links={chain.links}
             totalImpactCents={chain.totalImpactCents}
             temporalPattern={chain.temporalPattern}
-            narrative={chain.narrative}
             firstDetectedAt={chain.firstDetectedAt}
             currency={currency}
           />

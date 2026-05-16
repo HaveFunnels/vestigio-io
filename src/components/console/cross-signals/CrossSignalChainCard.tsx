@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import { formatDate } from "@/lib/format-date";
+import CrossSignalNarrative from "./CrossSignalNarrative";
 
 // ──────────────────────────────────────────────
 // CrossSignalChainCard — Expandable card for a single chain
@@ -26,7 +27,6 @@ interface Props {
 	links: Link[];
 	totalImpactCents: number;
 	temporalPattern: "sequential" | "simultaneous" | null;
-	narrative: string;
 	firstDetectedAt: string | null;
 	currency?: string;
 }
@@ -71,7 +71,6 @@ export default function CrossSignalChainCard({
 	links,
 	totalImpactCents,
 	temporalPattern,
-	narrative,
 	currency = "USD",
 }: Props) {
 	const t = useTranslations("console.cross_signals");
@@ -156,10 +155,17 @@ export default function CrossSignalChainCard({
 			{/* Expanded details */}
 			{expanded && (
 				<div className="border-t border-edge px-4 pb-4 pt-3">
-					{/* Narrative */}
-					<p className="mb-3 text-xs leading-relaxed text-content-muted">
-						{narrative}
-					</p>
+					{/* Structured narrative — replaces the flat prose paragraph
+					    so pack chips + monetary values land in the eye, and the
+					    locale-correct copy comes from the dictionary instead of
+					    the aggregator's caption-template fallback chain. */}
+					<CrossSignalNarrative
+						surface={surface}
+						links={links}
+						totalImpactCents={totalImpactCents}
+						temporalPattern={temporalPattern}
+						currency={currency}
+					/>
 
 					{/* Finding details */}
 					<div className="space-y-2">

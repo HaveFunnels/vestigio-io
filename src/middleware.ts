@@ -50,22 +50,42 @@ function hasValidSession(token: unknown): boolean {
 	return Date.now() < expiresAt;
 }
 
+/**
+ * Strip the port (if any) and lowercase the host header. Host headers
+ * are case-insensitive per RFC 7230 §5.4 and dev / Railway URLs can
+ * arrive with mixed case (e.g. `APP.VESTIGIO.IO`) so every comparison
+ * below has to go through this normalization first.
+ */
+function normalizeHost(host: string): string {
+	return (host || "").split(":")[0].toLowerCase();
+}
+
+/**
+ * Wave 18e — exact-match host validation. Previous version used
+ * `host.startsWith(APP_DOMAIN)` which matched `app.vestigio.io.evil.com`,
+ * `host.includes(".up.railway.app")` which matched
+ * `evil.com/.up.railway.app/wat` as substring, and
+ * `host.startsWith("localhost")` which matched `localhost.attacker.com`.
+ * Each was a host-header-injection vector that could trick the
+ * middleware into treating an attacker-controlled origin as the app
+ * domain — relevant if a misconfigured upstream proxy ever forwarded
+ * an arbitrary Host header to us.
+ */
 function isAppDomain(host: string): boolean {
-	// Match app.vestigio.io, app.vestigio.io:3000, localhost, Railway generated domain
-	return (
-		host.startsWith(`${APP_DOMAIN}`) ||
-		host.startsWith("localhost") ||
-		host.includes(".up.railway.app")
-	);
+	const h = normalizeHost(host);
+	if (!h) return false;
+	if (h === APP_DOMAIN) return true;
+	// Dev: bare `localhost` (port already stripped above).
+	if (h === "localhost") return true;
+	// Railway-generated preview URLs end with `.up.railway.app` — must
+	// be anchored so we don't match an attacker-suffixed host.
+	if (h.endsWith(".up.railway.app")) return true;
+	return false;
 }
 
 function isMarketingDomain(host: string): boolean {
-	// Match vestigio.io (no subdomain) or www.vestigio.io
-	const stripped = host.split(":")[0]; // remove port
-	return (
-		stripped === MARKETING_DOMAIN ||
-		stripped === `www.${MARKETING_DOMAIN}`
-	);
+	const h = normalizeHost(host);
+	return h === MARKETING_DOMAIN || h === `www.${MARKETING_DOMAIN}`;
 }
 
 function appUrl(path: string, req: NextRequestWithAuth): URL {

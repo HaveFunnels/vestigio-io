@@ -177,19 +177,34 @@ async function processCycle(
 		return { backoffMs: 0 };
 	} catch (err: any) {
 		const message = err?.message || "unknown";
+		const stack = err?.stack || "";
 		log.error("cycle dispatch threw", {
 			durationMs: Date.now() - started,
 			attempt,
 			err: message,
+			stack: stack.slice(0, 500),
 		});
 
 		// Persist failure on the DB row so the UI doesn't think it's
 		// still running. runAuditCycle normally handles this internally,
 		// but if it threw before reaching the write, we backstop here.
+		//
+		// Wave 18i — also stamp lastError so ops can diagnose the
+		// failure from the dashboard without digging into Railway
+		// logs. Several havefunnels hot cycles died with
+		// lastError=null because they threw before reaching any
+		// internal stampCycleError call (e.g. queue-side error,
+		// auth lookup failure, transient Prisma blip). The
+		// dashboard would just show "failed" with no explanation.
 		try {
 			await prisma.auditCycle.update({
 				where: { id: cycleId },
-				data: { status: "failed", completedAt: new Date() },
+				data: {
+					status: "failed",
+					completedAt: new Date(),
+					lastError: `worker-loop: ${message}`.slice(0, 1000),
+					lastErrorAt: new Date(),
+				},
 			});
 		} catch (writeErr) {
 			log.warn("failed to mark cycle failed in DB", {

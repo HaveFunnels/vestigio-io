@@ -363,34 +363,62 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   form_submit_unreachable_mobile: 'scale_readiness',
   trust_badges_invisible_at_checkout: 'revenue_integrity',
   navigation_traps_commercial_flow: 'revenue_integrity',
-  social_proof_loads_too_late: 'scale_readiness',
+  // Wave 18g taxonomy fix — social_proof_loads_too_late was bucketed
+  // into scale_readiness (it WAS once a perf finding) but it is really
+  // about social proof copy positioning. Moved to copy_alignment so
+  // it surfaces alongside other social-proof findings instead of
+  // hiding in a perf section the customer rarely looks at.
+  social_proof_loads_too_late: 'copy_alignment',
   consent_banner_obscures_first_action: 'revenue_integrity',
   price_hidden_behind_interaction: 'revenue_integrity',
-  // Funnel journey findings
-  hero_outcome_absent: 'funnel_journey',
-  cognitive_load_first_screen: 'funnel_journey',
-  primary_cta_delayed: 'funnel_journey',
-  specificity_deficit: 'funnel_journey',
-  proof_of_work_missing: 'funnel_journey',
+  // ── Wave 9 funnel-moment findings split by nature ─────────────
+  //
+  // Wave 18g taxonomy fix. The original Wave 9 lumped EVERY funnel-
+  // moment finding under funnel_journey because that is where the
+  // *inference logic* lives (URL classification + funnel position).
+  // But ~half of those findings are conceptually copy issues — value
+  // prop quality, headline outcome, feature-benefit writing, urgency
+  // language, etc. They were just bucketed by inference origin, not
+  // by problem domain.
+  //
+  // The user-visible consequence was a copy_alignment pack with only
+  // 1-2 findings while funnel_journey looked overloaded with what
+  // customers perceived as "copy issues". Reassigning the writing-
+  // quality inferences to copy_alignment gives both packs a fair
+  // mix and makes the cross-signal pack grouping (Wave C) coherent.
+  //
+  // Kept in funnel_journey: structural/flow problems (navigation,
+  // page depth, mobile friction, auth/payment plumbing).
+  // Moved to copy_alignment: every inference whose *fix* would be
+  // rewriting copy rather than restructuring flow.
+
+  // Copy/writing-quality issues — moved to copy_alignment
+  hero_outcome_absent: 'copy_alignment',           // headline writes "what" instead of "outcome"
+  cognitive_load_first_screen: 'copy_alignment',   // above-fold message competition
+  primary_cta_delayed: 'copy_alignment',           // CTA hierarchy / above-fold structure
+  specificity_deficit: 'copy_alignment',           // vague language
+  proof_of_work_missing: 'copy_alignment',         // expertise/credibility copy
+  feature_benefit_disconnect: 'copy_alignment',    // features-as-benefits writing
+  comparison_absent: 'copy_alignment',             // competitive positioning copy
+  objection_echo_chamber: 'copy_alignment',        // handling objections in copy
+  social_channels_decorative: 'copy_alignment',    // social proof signal quality
+  pricing_without_context: 'copy_alignment',       // pricing-page copy / anchor
+  guarantee_invisible_at_decision: 'copy_alignment', // guarantee/refund copy at conversion
+  urgency_mechanics_absent: 'copy_alignment',      // urgency language
+  tone_shift_across_journey: 'copy_alignment',     // voice/tone consistency
+  trust_gradient_inverted: 'copy_alignment',       // trust signal placement copy
+
+  // Structural / flow problems — kept in funnel_journey
   navigation_dead_ends: 'funnel_journey',
   page_depth_before_conversion: 'funnel_journey',
-  feature_benefit_disconnect: 'funnel_journey',
-  comparison_absent: 'funnel_journey',
-  objection_echo_chamber: 'funnel_journey',
-  social_channels_decorative: 'funnel_journey',
-  pricing_without_context: 'funnel_journey',
   checkout_identity_break: 'funnel_journey',
   payment_options_invisible: 'funnel_journey',
-  guarantee_invisible_at_decision: 'funnel_journey',
-  urgency_mechanics_absent: 'funnel_journey',
   first_value_path_unclear: 'funnel_journey',
   support_response_expectation_gap: 'funnel_journey',
   billing_transparency_absent: 'funnel_journey',
   upgrade_value_gap: 'funnel_journey',
   referral_path_nonexistent: 'funnel_journey',
   success_story_feedback_loop_broken: 'funnel_journey',
-  tone_shift_across_journey: 'funnel_journey',
   mobile_journey_friction_compound: 'funnel_journey',
-  trust_gradient_inverted: 'funnel_journey',
 };
 

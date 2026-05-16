@@ -558,15 +558,21 @@ export default function FindingDetailPanel({
 				{finding.polarity !== "positive" && (
 					<>
 						{finding.action_refs.length > 0 ? (
+							// Wave 18g — button text is just "Ver ação" (no concat
+							// of the full action title, which was bloating the
+							// CTA and looked off in a side panel) and the visual
+							// matches the workspace/action chips above (neutral
+							// edge + accent hover) instead of the loud sky-blue
+							// that conflicted with the rest of the drawer.
 							<button
 								onClick={() =>
 									router.push(
 										`/app/actions?selected=${encodeURIComponent(finding.action_refs[0].id)}`,
 									)
 								}
-								className="w-full rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-2.5 text-sm font-medium text-sky-600 transition-colors hover:border-sky-500 hover:bg-sky-500/15 dark:text-sky-400"
+								className="w-full rounded-lg border border-edge bg-surface-card px-4 py-2.5 text-sm font-medium text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover hover:text-content"
 							>
-								{td("see_action")} — {finding.action_refs[0].title}
+								{td("see_action")}
 							</button>
 						) : (
 							<ShinyButton

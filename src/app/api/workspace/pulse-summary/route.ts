@@ -57,13 +57,27 @@ function classifyFindingPerspective(pack: string): string {
 
 // ── Prompt builders ───────────────────────────
 
-function buildSystemMessage(locale: Locale): string {
+// Currency symbol per ISO 4217 code. The LLM gets the explicit symbol
+// + format hint so it never falls back to "$" when the org is on BRL/
+// EUR. Without this, pt-BR customers (havefunnels) saw all dollar
+// amounts as "$" in an otherwise pt-BR briefing.
+function currencyHint(currencyCode: string | null | undefined, locale: Locale): { symbol: string; instruction: string } {
+  const code = (currencyCode || "").toUpperCase();
+  const resolved = code || (locale === "pt-BR" ? "BRL" : locale === "es" ? "EUR" : locale === "de" ? "EUR" : "USD");
+  const symbol = resolved === "BRL" ? "R$" : resolved === "EUR" ? "€" : resolved === "GBP" ? "£" : "$";
+  return {
+    symbol,
+    instruction: `Use ${symbol} as the currency symbol for every monetary value. Format ${resolved === "BRL" ? "as R$ 1.234,56 (Brazilian format)" : resolved === "EUR" ? "as €1.234,56" : "as $1,234.56"}. Never substitute "$" when the symbol is ${symbol}.`,
+  };
+}
+
+function buildSystemMessage(locale: Locale, currency: ReturnType<typeof currencyHint>): string {
   const lang = locale === "pt-BR" ? "Brazilian Portuguese" : locale === "es" ? "Spanish" : locale === "de" ? "German" : "English";
   return [
     "You are the Vestigio intelligence engine generating a workspace briefing.",
     "Be direct, specific, and commercially-focused.",
     "Frame everything in terms of revenue impact.",
-    "When dollar/currency amounts are available, cite them specifically.",
+    `When monetary amounts are available, cite them specifically. ${currency.instruction}`,
     "Adapt tone to the business situation — urgent when there are critical issues, encouraging when things are improving.",
     `Respond in ${lang}.`,
     "Output ONLY the briefing text — no headings, no bullet points, no markdown.",
@@ -82,8 +96,10 @@ function buildUserMessage(perspective: string, context: {
   resolved: number;
   positiveChecks: number;
   workspaceName?: string | null;
+  currencySymbol: string;
 }): string {
   const parts: string[] = [];
+  const sym = context.currencySymbol;
 
   if (context.workspaceName) {
     parts.push(`Workspace: ${context.workspaceName} (${perspective} perspective)`);
@@ -95,15 +111,15 @@ function buildUserMessage(perspective: string, context: {
   if (context.businessProfile) {
     const bp = context.businessProfile;
     if (bp.businessModel) parts.push(`Business model: ${bp.businessModel}`);
-    if (bp.monthlyRevenue) parts.push(`Monthly revenue: $${bp.monthlyRevenue.toLocaleString()}`);
+    if (bp.monthlyRevenue) parts.push(`Monthly revenue: ${sym}${bp.monthlyRevenue.toLocaleString()}`);
   }
 
-  parts.push(`Total monthly exposure: $${Math.round(context.totalExposure).toLocaleString()}`);
+  parts.push(`Total monthly exposure: ${sym}${Math.round(context.totalExposure).toLocaleString()}`);
 
   const negativeFindings = context.findings.filter(f => f.polarity === "negative");
   if (negativeFindings.length > 0) {
     const lines = negativeFindings.slice(0, 12).map(f => {
-      const impact = f.impact_mid > 0 ? ` ($${Math.round(f.impact_mid).toLocaleString()}/mo)` : "";
+      const impact = f.impact_mid > 0 ? ` (${sym}${Math.round(f.impact_mid).toLocaleString()}/mo)` : "";
       const change = f.change_class ? ` [${f.change_class}]` : "";
       return `- ${f.title} (${f.severity})${impact}${change}`;
     });
@@ -274,6 +290,15 @@ export async function POST(request: Request) {
   });
 
   // ── Call Haiku ──
+  // Wave 18g — resolve currency from org's preferred code (set during
+  // onboarding or auto-derived from locale). Passes to both the system
+  // prompt (so the LLM never substitutes "$") and the user prompt
+  // (so every cited amount uses the same symbol).
+  const orgCurrencyCode =
+    (membership.organization as unknown as { currencyCode?: string | null }).currencyCode ??
+    (membership.organization as unknown as { currency?: string | null }).currency ??
+    null;
+  const currency = currencyHint(orgCurrencyCode, locale);
   try {
     const result = await callModel(
       "haiku_4_5",
@@ -288,11 +313,12 @@ export async function POST(request: Request) {
         resolved,
         positiveChecks,
         workspaceName,
+        currencySymbol: currency.symbol,
       }) }],
       {
         max_tokens: 300,
         temperature: 0.4,
-        system: buildSystemMessage(locale),
+        system: buildSystemMessage(locale, currency),
       },
     );
 

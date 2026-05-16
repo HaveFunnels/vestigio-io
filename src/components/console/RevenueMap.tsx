@@ -28,9 +28,15 @@ const PERSPECTIVE_STYLE: Record<string, { barColor: string; textColor: string }>
 };
 
 function classifyWorkspacePerspective(ws: WorkspaceProjection): string {
+  // Wave 18g — copy_alignment was being silently bucketed into "trust"
+  // because of the catch-all return below, which is why the revenue
+  // map showed only three dimensions even when the customer had real
+  // copy_alignment findings. Now an explicit branch keeps copy as its
+  // own dimension (the PERSPECTIVE_STYLE map already had the color).
   if (ws.category === "behavioral") return "behavior";
   if (ws.type === "revenue" || ws.type === "chargeback") return "revenue";
   if (ws.type === "preflight") return "trust";
+  if (ws.type === "copy_alignment") return "copy";
   return "trust";
 }
 
@@ -43,6 +49,7 @@ interface RevenueMapProps {
 
 export default function RevenueMap({ workspaces, filterPerspective }: RevenueMapProps) {
   const t = useTranslations("console.workspaces");
+  const tc = useTranslations("console.common");
   const { currency } = useMcpData();
   const fmt = (value: number) => fmtCurrency(value, currency);
   const [animated, setAnimated] = useState(false);
@@ -86,7 +93,7 @@ export default function RevenueMap({ workspaces, filterPerspective }: RevenueMap
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
           {t("lenses.revenue_map")}
         </span>
-        <span className="font-mono text-[10px] tabular-nums text-content-faint">/ mo</span>
+        <span className="font-mono text-[10px] tabular-nums text-content-faint">{tc("per_month_short")}</span>
       </div>
 
       <div className="flex-1 space-y-3">

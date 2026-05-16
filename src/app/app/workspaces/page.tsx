@@ -121,6 +121,12 @@ const MAX_INLINE_CHAINS = 5;
 
 function CrossSignalSection() {
   const t = useTranslations("console.cross_signals");
+  // Wave 18g — "more_patterns" lives in console.upgrade_moments
+  // (the Pro upgrade nudge namespace). The previous code called
+  // t("more_patterns") on the cross_signals namespace, which has
+  // no such key, so users saw the raw "console.cross_signals.more_patterns"
+  // string on the panorama page.
+  const tu = useTranslations("console.upgrade_moments");
   const { currency } = useMcpData();
   const [chains, setChains] = useState<CrossSignalChain[]>([]);
   const [expanded, setExpanded] = useState(false);
@@ -182,7 +188,7 @@ function CrossSignalSection() {
             onClick={(e) => { e.stopPropagation(); setExpanded(true); }}
             className="w-full rounded-lg border border-dashed border-edge py-2 text-[11px] text-content-faint transition-colors hover:border-edge-strong hover:text-content-muted"
           >
-            {t("more_patterns", { count: chains.length - 2 })}
+            {tu("more_patterns", { count: chains.length - 2 })}
           </button>
         )}
       </div>

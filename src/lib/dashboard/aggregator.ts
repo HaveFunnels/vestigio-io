@@ -878,7 +878,7 @@ export function emptyDashboardData(currency: string = DEFAULT_CURRENCY, captionT
 		changeReport,
 		activityHeatmap,
 		adSpend: { totalMonthly: 0, currency: "USD", byPlatform: [], hasData: false, caption: "" },
-		crossSignal: { chains: [], allChains: [], totalChains: 0, totalImpactCents: 0, allChainsImpactCents: 0, caption: "" },
+		crossSignal: { chains: [], allChains: [], totalChains: 0, totalImpactCents: 0, allChainsImpactCents: 0, caption: "", journey: [] },
 	};
 }
 
@@ -1159,6 +1159,133 @@ const CROSS_SIGNAL_WHERE = (envId: string, cycleId: string | null) => ({
 	NOT: { surface: "" },
 });
 
+// ──────────────────────────────────────────────
+// Wave 18h — Cross-journey insights
+//
+// Where buildCrossSignalChains groups findings BY URL (multiple
+// disciplines stack on one page), buildJourneyChains groups them
+// ALONG the funnel sequence so the user sees a story: awareness →
+// consideration → decision → retention, with the top-impact finding
+// at each stage.
+//
+// Stage classification reuses the URL classifier from
+// packages/page-priority so the cross-journey output stays consistent
+// with how the crawler + decision engine categorize pages.
+// ──────────────────────────────────────────────
+function classifyJourneyStage(url: string): { stage: string; pageType: string } | null {
+	let host: string;
+	let path: string;
+	try {
+		const u = new URL(url);
+		host = u.hostname.toLowerCase();
+		path = (u.pathname || "/").toLowerCase();
+	} catch {
+		return null;
+	}
+	// Checkout subdomain (seguro.X, pay.X) — decision stage regardless of path
+	if (/^(seguro|secure|pay|payment|checkout|compra|comprar|carrinho|cart|finalizar|cobranca|cobrança|billing|gateway|order)\./i.test(host)) {
+		return { stage: "decision", pageType: "checkout" };
+	}
+	if (path === "/" || path === "") return { stage: "awareness", pageType: "homepage" };
+	if (/\/(checkout|cart|carrinho|carro|carrito|finalizar|pagamento|payment|comprar)/i.test(path)) {
+		return { stage: "decision", pageType: "checkout" };
+	}
+	if (/\/(pricing|preco|precos|preço|planos|plans|precios|planes)/i.test(path)) {
+		return { stage: "decision", pageType: "pricing" };
+	}
+	if (/\/(signup|sign-up|register|cadastro|registro|get-started|comece|empezar)/i.test(path)) {
+		return { stage: "decision", pageType: "signup" };
+	}
+	if (/\/(demo|trial|teste-gratis|prueba)/i.test(path)) {
+		return { stage: "decision", pageType: "trial_demo" };
+	}
+	if (/\/(product|produto|item|p\/|features|recursos|funcionalidades)/i.test(path)) {
+		return { stage: "consideration", pageType: "product" };
+	}
+	if (/\/(about|sobre|company|empresa|quem-somos)/i.test(path)) {
+		return { stage: "consideration", pageType: "about" };
+	}
+	if (/\/(login|signin|sign-in|entrar)/i.test(path)) {
+		return { stage: "retention", pageType: "login" };
+	}
+	if (/\/(app|dashboard|onboard|welcome|getting-started|setup)\b/i.test(path)) {
+		return { stage: "retention", pageType: "onboarding" };
+	}
+	if (/\/(blog|article|post)/i.test(path)) {
+		return { stage: "awareness", pageType: "blog" };
+	}
+	if (/\/(lp|landing|promo|campaign|offer)\b/i.test(path)) {
+		return { stage: "awareness", pageType: "landing_page" };
+	}
+	return null;
+}
+
+const STAGE_RANK: Record<string, number> = {
+	awareness: 0,
+	consideration: 1,
+	decision: 2,
+	retention: 3,
+};
+
+function buildJourneyChains(findings: CrossSignalFindingRow[]): import("@/lib/dashboard/types").JourneyStage[] {
+	// 1. Bucket findings per (URL, classified stage). Skip URLs that
+	//    don't classify into a stage — they cannot meaningfully sit
+	//    in a funnel sequence.
+	const bySurface = new Map<string, { stage: string; pageType: string; findings: CrossSignalFindingRow[] }>();
+	for (const f of findings) {
+		if (!f.surface) continue;
+		const normalized = normalizeSurface(f.surface);
+		const classified = classifyJourneyStage(normalized);
+		if (!classified) continue;
+		const existing = bySurface.get(normalized);
+		if (existing) {
+			existing.findings.push(f);
+		} else {
+			bySurface.set(normalized, { stage: classified.stage, pageType: classified.pageType, findings: [f] });
+		}
+	}
+
+	// 2. For each (URL, stage), pick the top-impact finding.
+	const stages: import("@/lib/dashboard/types").JourneyStage[] = [];
+	for (const [surface, group] of bySurface) {
+		const sorted = [...group.findings].sort(
+			(a, b) => (b.impactMidpoint ?? 0) - (a.impactMidpoint ?? 0),
+		);
+		const top = sorted[0];
+		let title = "Untitled";
+		try {
+			const proj = JSON.parse(top.projection || "{}");
+			title = proj.title || title;
+		} catch {
+			// fall through
+		}
+		const totalImpactCents = sorted.reduce((s, f) => s + dollarsToCents(f.impactMidpoint ?? 0), 0);
+		stages.push({
+			stage: group.stage,
+			pageType: group.pageType,
+			surface,
+			topFinding: {
+				findingId: top.id,
+				title,
+				pack: top.pack ?? "unknown",
+				severity: top.severity ?? "medium",
+				impactCents: dollarsToCents(top.impactMidpoint ?? 0),
+			},
+			totalImpactCents,
+			additionalFindings: Math.max(0, sorted.length - 1),
+		});
+	}
+
+	// 3. Order by funnel stage rank, then by impact within stage.
+	stages.sort((a, b) => {
+		const stageDiff = (STAGE_RANK[a.stage] ?? 99) - (STAGE_RANK[b.stage] ?? 99);
+		if (stageDiff !== 0) return stageDiff;
+		return b.topFinding.impactCents - a.topFinding.impactCents;
+	});
+
+	return stages;
+}
+
 async function computeCrossSignal(
 	prisma: PrismaClient,
 	envId: string
@@ -1172,6 +1299,7 @@ async function computeCrossSignal(
 
 		const allChains = buildCrossSignalChains(findings);
 		const topChains = allChains.slice(0, 5);
+		const journey = buildJourneyChains(findings);
 
 		// Deduplicate by findingId when computing aggregate impact.
 		// A single finding can appear in multiple chains (e.g. same finding
@@ -1200,9 +1328,10 @@ async function computeCrossSignal(
 			totalImpactCents,
 			allChainsImpactCents,
 			caption: captionForCrossSignal(allChains.length, _captionT),
+			journey,
 		};
 	} catch {
-		return { chains: [], allChains: [], totalChains: 0, totalImpactCents: 0, allChainsImpactCents: 0, caption: "" };
+		return { chains: [], allChains: [], totalChains: 0, totalImpactCents: 0, allChainsImpactCents: 0, caption: "", journey: [] };
 	}
 }
 
@@ -1220,6 +1349,24 @@ export async function computeAllCrossSignals(
 		select: CROSS_SIGNAL_SELECT,
 	});
 	return buildCrossSignalChains(findings).slice(0, 50);
+}
+
+/**
+ * Wave 18h — Compute the journey view (funnel sequence) for the
+ * dedicated /api/cross-signals endpoint. Returns top-impact finding
+ * per URL ordered by funnel stage rank: awareness → consideration →
+ * decision → retention.
+ */
+export async function computeJourneyForEnv(
+	prisma: PrismaClient,
+	envId: string,
+): Promise<import("@/lib/dashboard/types").JourneyStage[]> {
+	const cycleId = await latestCycleId(prisma, envId);
+	const findings = await prisma.finding.findMany({
+		where: CROSS_SIGNAL_WHERE(envId, cycleId),
+		select: CROSS_SIGNAL_SELECT,
+	});
+	return buildJourneyChains(findings);
 }
 
 export async function computeDashboardData(

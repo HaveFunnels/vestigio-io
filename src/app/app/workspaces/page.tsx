@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
@@ -119,6 +120,22 @@ const SEVERITY_RANK: Record<string, number> = {
 
 const MAX_INLINE_CHAINS = 5;
 
+// Wave 18h — Journey stage data type (mirror of aggregator's shape)
+interface JourneyStageData {
+  stage: string;
+  pageType: string;
+  surface: string;
+  topFinding: {
+    findingId: string;
+    title: string;
+    pack: string;
+    severity: string;
+    impactCents: number;
+  };
+  totalImpactCents: number;
+  additionalFindings: number;
+}
+
 function CrossSignalSection() {
   const t = useTranslations("console.cross_signals");
   // Wave 18g — "more_patterns" lives in console.upgrade_moments
@@ -129,6 +146,7 @@ function CrossSignalSection() {
   const tu = useTranslations("console.upgrade_moments");
   const { currency } = useMcpData();
   const [chains, setChains] = useState<CrossSignalChain[]>([]);
+  const [journey, setJourney] = useState<JourneyStageData[]>([]);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
@@ -136,15 +154,27 @@ function CrossSignalSection() {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.chains) setChains(data.chains);
+        if (Array.isArray(data?.journey)) setJourney(data.journey);
       })
       .catch(() => {});
   }, []);
 
-  if (chains.length === 0) return null;
+  if (chains.length === 0 && journey.length === 0) return null;
 
   const visible = expanded ? chains.slice(0, MAX_INLINE_CHAINS) : chains.slice(0, 2);
 
   return (
+    <>
+      {/* Wave 18h — Journey view (cross-page funnel sequence).
+          Sits above the per-URL cross-signal chains. Where cross-signal
+          stacks disciplines on one surface, journey shows the worst
+          issue at each funnel stage so the user reads the leak as a
+          sequence (awareness → consideration → decision → retention)
+          instead of as isolated hotspots. */}
+      {journey.length > 0 && (
+        <JourneySection journey={journey} currency={currency} />
+      )}
+
     <section className="rounded-2xl border border-edge bg-surface-card shadow-lg">
       <button
         type="button"
@@ -191,6 +221,100 @@ function CrossSignalSection() {
             {tu("more_patterns", { count: chains.length - 2 })}
           </button>
         )}
+      </div>
+    </section>
+    </>
+  );
+}
+
+// ── Journey View (Wave 18h) — funnel-sequence cross-page insights ──
+//
+// Renders the funnel as a horizontal flow: awareness → consideration
+// → decision → retention. Each stage shows the URL representing it +
+// the top-impact finding on that URL. Reads as a story rather than
+// a hotspot list. Complements (does not replace) the per-URL cross-
+// signal chains rendered below.
+
+const STAGE_LABELS_PT: Record<string, string> = {
+  awareness: "Descoberta",
+  consideration: "Consideração",
+  decision: "Decisão",
+  retention: "Retenção",
+};
+const STAGE_COLORS: Record<string, { dot: string; text: string; bar: string }> = {
+  awareness: { dot: "bg-sky-500", text: "text-sky-400", bar: "bg-sky-500/20" },
+  consideration: { dot: "bg-violet-500", text: "text-violet-400", bar: "bg-violet-500/20" },
+  decision: { dot: "bg-amber-500", text: "text-amber-400", bar: "bg-amber-500/20" },
+  retention: { dot: "bg-emerald-500", text: "text-emerald-400", bar: "bg-emerald-500/20" },
+};
+
+function JourneySection({
+  journey,
+  currency,
+}: {
+  journey: JourneyStageData[];
+  currency: string;
+}) {
+  const stageRank: Record<string, number> = { awareness: 0, consideration: 1, decision: 2, retention: 3 };
+  // Group by stage so multiple URLs at the same stage stack together
+  const byStage = new Map<string, JourneyStageData[]>();
+  for (const s of journey) {
+    const arr = byStage.get(s.stage) ?? [];
+    arr.push(s);
+    byStage.set(s.stage, arr);
+  }
+  const orderedStages = [...byStage.entries()].sort(
+    (a, b) => (stageRank[a[0]] ?? 99) - (stageRank[b[0]] ?? 99),
+  );
+  const totalImpactCents = journey.reduce((s, j) => s + j.totalImpactCents, 0);
+  const fmt = (cents: number) => fmtCurrency(cents / 100, currency);
+
+  return (
+    <section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+      <div className="mb-4 flex items-baseline justify-between">
+        <div className="flex items-center gap-2">
+          <svg className="h-4 w-4 text-emerald-400 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4.5h17.25m-17.25 6h17.25m-17.25 6h17.25M3 4.5h17.25M3 10.5h17.25M3 16.5h17.25" />
+          </svg>
+          <span className="text-[13px] font-semibold text-content">Vazamento pela jornada</span>
+        </div>
+        <span className="font-mono text-[11px] tabular-nums text-red-400">
+          −{fmt(totalImpactCents)}/mês
+        </span>
+      </div>
+      <div className="space-y-3">
+        {orderedStages.map(([stage, items]) => {
+          const colors = STAGE_COLORS[stage] ?? STAGE_COLORS.awareness;
+          const stageLabel = STAGE_LABELS_PT[stage] ?? stage;
+          return (
+            <div key={stage}>
+              <div className="mb-1.5 flex items-center gap-2">
+                <span className={`h-1.5 w-1.5 rounded-full ${colors.dot}`} />
+                <span className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${colors.text}`}>{stageLabel}</span>
+              </div>
+              <div className="space-y-1.5">
+                {items.map((it) => (
+                  <Link
+                    key={it.surface}
+                    href={`/app/findings?finding=${it.topFinding.findingId}`}
+                    className="flex items-start gap-3 rounded-lg border border-edge/50 bg-surface-inset/40 px-3 py-2 transition-colors hover:border-edge-strong hover:bg-surface-card-hover"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-mono text-[10px] text-content-faint">{it.surface}</div>
+                      <div className="mt-0.5 truncate text-[12px] text-content-secondary">{it.topFinding.title}</div>
+                      {it.additionalFindings > 0 && (
+                        <div className="mt-0.5 text-[10px] text-content-faint">+{it.additionalFindings} outras nesta página</div>
+                      )}
+                    </div>
+                    <span className="shrink-0 font-mono text-[11px] tabular-nums text-red-400">
+                      −{fmt(it.totalImpactCents)}/mês
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

@@ -167,6 +167,38 @@ export interface CrossSignalChain {
 	firstDetectedAt: string | null;
 }
 
+/**
+ * Wave 18h — Cross-journey insight.
+ *
+ * Where CrossSignalChain stacks findings from different packs on the
+ * SAME URL ("multiple disciplines flag this surface"), JourneyStage
+ * groups findings ACROSS URLs along the funnel sequence
+ * (awareness → consideration → decision → retention). Each entry is
+ * the top-impact finding at that stage, with the URL it was found on.
+ * Reads as a story: "Your funnel leaks at these N moments — here is
+ * the top issue at each."
+ */
+export interface JourneyStage {
+	/** awareness | consideration | decision | retention */
+	stage: string;
+	/** Page slot (homepage, pricing, checkout, etc.) for the URL */
+	pageType: string;
+	/** The URL representing this stage */
+	surface: string;
+	/** Top-impact finding on this URL */
+	topFinding: {
+		findingId: string;
+		title: string;
+		pack: string;
+		severity: string;
+		impactCents: number;
+	};
+	/** Combined monthly impact across all findings on this surface */
+	totalImpactCents: number;
+	/** Number of additional findings on this surface (top + others) */
+	additionalFindings: number;
+}
+
 export interface CrossSignalData {
 	/** Top chains for dashboard widget (max 5) */
 	chains: CrossSignalChain[];
@@ -177,6 +209,11 @@ export interface CrossSignalData {
 	totalImpactCents: number;
 	allChainsImpactCents: number;
 	caption: string;
+	/**
+	 * Wave 18h — funnel-journey view of findings. Ordered by funnel
+	 * stage. Empty for envs without enough funnel coverage.
+	 */
+	journey: JourneyStage[];
 }
 
 export interface DashboardData {

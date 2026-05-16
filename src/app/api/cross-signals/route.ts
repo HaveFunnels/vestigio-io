@@ -2,7 +2,7 @@ import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
 import { withErrorTracking } from "@/libs/error-tracker";
-import { computeAllCrossSignals } from "@/lib/dashboard/aggregator";
+import { computeAllCrossSignals, computeJourneyForEnv } from "@/lib/dashboard/aggregator";
 import { isDemoOrg } from "@/lib/demo-account";
 import { currencyFromLocale } from "../../../../packages/impact";
 
@@ -57,11 +57,18 @@ export const GET = withErrorTracking(
 		});
 
 		if (!environment) {
-			return NextResponse.json({ chains: [], currency: resolvedCurrency });
+			return NextResponse.json({ chains: [], journey: [], currency: resolvedCurrency });
 		}
 
-		const chains = await computeAllCrossSignals(prisma, environment.id);
-		return NextResponse.json({ chains, currency: resolvedCurrency });
+		// Wave 18h — also return the journey-ordered view so the
+		// panorama page can render the funnel-sequence section
+		// (awareness → consideration → decision → retention)
+		// alongside the per-URL cross-signal chains.
+		const [chains, journey] = await Promise.all([
+			computeAllCrossSignals(prisma, environment.id),
+			computeJourneyForEnv(prisma, environment.id),
+		]);
+		return NextResponse.json({ chains, journey, currency: resolvedCurrency });
 	},
 	{ endpoint: "/api/cross-signals", method: "GET" },
 );

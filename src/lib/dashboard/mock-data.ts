@@ -227,6 +227,7 @@ export function buildMockDashboardData(t: MockTranslator): DashboardData {
 			totalImpactCents: 365000,
 			allChainsImpactCents: 512000,
 			caption: "3 cross-domain patterns detected across your site.",
+			journey: [],
 		},
 	};
 }
@@ -397,6 +398,7 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
 		allChains: [],
 		allChainsImpactCents: 699000,
 		caption: "2 cross-domain patterns detected — checkout is the highest-impact surface.",
+		journey: [],
 	},
 };
 

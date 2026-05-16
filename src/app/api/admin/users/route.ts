@@ -22,13 +22,24 @@ async function getAdminSession() {
     return null;
   }
 
-  // Fetch adminRole from DB since it's not in the JWT
+  // Wave 18e — also verify role from DB to catch ex-admins whose JWT
+  // is still cached as ADMIN. Without this, an admin demoted in DB
+  // keeps full power over admin user management (promote/demote
+  // others, list admins, invite admins) until their cookie ceiling
+  // hits — which is the most sensitive of all admin surfaces.
   const user = await prisma.user.findUnique({
     where: { id: (session.user as any).id },
-    select: { id: true, adminRole: true, name: true, email: true },
+    select: { id: true, role: true, adminRole: true, name: true, email: true },
   });
 
-  if (!user) return null;
+  if (!user || user.role !== "ADMIN") {
+    if (user && user.role !== "ADMIN") {
+      console.warn(
+        `[admin-users] user ${user.id} has stale ADMIN role in JWT but DB role=${user.role} — denied`,
+      );
+    }
+    return null;
+  }
 
   return { session, user };
 }

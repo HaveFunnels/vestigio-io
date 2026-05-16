@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { sendActivationEmail } from "@/libs/notification-triggers";
@@ -15,10 +14,8 @@ import { sendActivationEmail } from "@/libs/notification-triggers";
 // ──────────────────────────────────────────────
 
 export async function POST(request: Request) {
-	const session = await getServerSession(authOptions);
-	if (!session?.user || (session.user as any).role !== "ADMIN") {
-		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	const body = await request.json();
 	const { userId, domain } = body;
@@ -64,7 +61,7 @@ export async function POST(request: Request) {
 	}
 
 	// Audit log
-	console.log(`[admin.resend-activation] Admin ${(session.user as any).email} resent activation for user ${user.email} (${userId})`);
+	console.log(`[admin.resend-activation] Admin ${gate.admin.email ?? gate.admin.userId} resent activation for user ${user.email} (${userId})`);
 
 	return NextResponse.json({ message: "Activation email sent", email: user.email });
 }

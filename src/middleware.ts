@@ -271,18 +271,21 @@ export const config = {
 		"/app/:path*",
 		// Auth pages (need middleware for domain routing)
 		"/auth/:path*",
-		// Legacy routes (redirect or protect)
+		// Legacy routes still in use: billing portal lives under /user,
+		// boilerplate admin pages live under /admin (both redirect to
+		// /app/* inside the middleware function).
 		"/user/:path*",
 		"/admin/:path*",
 		// Sanity Studio (admin-protected)
 		"/studio/:path*",
-		// Old console routes (redirect)
-		"/analysis/:path*",
-		"/actions/:path*",
-		"/workspaces/:path*",
-		"/chat/:path*",
-		"/maps/:path*",
-		"/settings/:path*",
-		"/onboard/:path*",
+		// Wave 18e cleanup — removed the never-redirecting matchers for
+		// /analysis, /actions, /workspaces, /chat, /maps, /settings,
+		// /onboard. Those paths existed in an earlier console layout but
+		// the current app namespaces everything under /app/*; leaving
+		// them in the matcher meant middleware ran on every 404 against
+		// those URLs for no functional reason. If a customer keeps a
+		// pre-Wave-3 bookmark to /workspaces/<id>, they now hit a 404
+		// directly instead of paying middleware overhead first. Add a
+		// redirect rule here if that becomes a real complaint.
 	],
 };

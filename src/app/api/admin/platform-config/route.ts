@@ -1,8 +1,7 @@
-import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
 import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextResponse } from "next/server";
 
 // ──────────────────────────────────────────────
@@ -147,24 +146,12 @@ function maskSecrets(
   return masked;
 }
 
-// ── Auth helper ──────────────────────────────
-
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return null;
-  }
-  return session.user;
-}
-
 // ── GET ──────────────────────────────────────
 
 export async function GET() {
   try {
-    const admin = await requireAdmin();
-    if (!admin) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    const gate = await requireAdmin();
+    if (gate.denied) return gate.denied;
 
     const keys: string[] = CONFIG_KEYS.slice();
     const rows = await prisma.platformConfig.findMany({
@@ -231,10 +218,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const admin = await requireAdmin();
-    if (!admin) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    const gate = await requireAdmin();
+    if (gate.denied) return gate.denied;
 
     const body = await request.json();
     const { section, data } = body as {
@@ -287,8 +272,8 @@ export async function POST(request: Request) {
     // Audit log
     const ip = await getIp();
     logAuditEvent({
-      actorId: (admin as any).id,
-      actorEmail: (admin as any).email ?? "unknown",
+      actorId: gate.admin.userId,
+      actorEmail: gate.admin.email ?? "unknown",
       action: "config.update",
       targetType: "config",
       targetName: section,

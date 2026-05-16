@@ -1,9 +1,8 @@
-import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextResponse } from "next/server";
 
 /**
@@ -15,10 +14,8 @@ import { NextResponse } from "next/server";
  * Returns: { email: string, name: string }
  */
 export const POST = withErrorTracking(async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const { organizationId } = await request.json();
   if (!organizationId) {
@@ -45,8 +42,8 @@ export const POST = withErrorTracking(async function POST(request: Request) {
   // Audit log
   const ip = await getIp();
   logAuditEvent({
-    actorId: (session.user as any).id,
-    actorEmail: (session.user as any).email ?? "unknown",
+    actorId: gate.admin.userId,
+    actorEmail: gate.admin.email ?? "unknown",
     action: "org.impersonate",
     targetType: "organization",
     targetId: organizationId,

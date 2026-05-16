@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextResponse } from "next/server";
 
 /**
@@ -13,10 +12,8 @@ import { NextResponse } from "next/server";
  * Body: { organizationId: string }
  */
 export async function POST(request: Request) {
-	const session = await getServerSession(authOptions);
-	if (!session?.user || (session.user as any).role !== "ADMIN") {
-		return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	const { organizationId } = await request.json();
 	if (!organizationId) {

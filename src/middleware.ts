@@ -20,6 +20,36 @@ import { NextResponse } from "next/server";
 const APP_DOMAIN = process.env.NEXT_PUBLIC_APP_DOMAIN || "app.vestigio.io";
 const MARKETING_DOMAIN = process.env.NEXT_PUBLIC_MARKETING_DOMAIN || "vestigio.io";
 
+/**
+ * Returns true when the JWT token is present AND still within its
+ * per-login sessionExpiresAt window. Wave 18d fix for an
+ * ERR_TOO_MANY_REDIRECTS class of bugs introduced by the "Remember
+ * me" feature (commit 3481594):
+ *
+ *   - Cookie maxAge is 30 days (the upper bound).
+ *   - Per-login session lifetime is 12h (no remember) or 30d (remember).
+ *   - When the per-login window elapses but the cookie hasn't, the
+ *     server-side `session` callback in auth.ts returns an expired
+ *     session with `user: {}` — but the raw JWT decoded by `getToken`
+ *     (what withAuth gives us as `req.nextauth.token`) is still
+ *     cryptographically valid.
+ *   - Without this check, middleware sees `token` as truthy and treats
+ *     the user as authenticated, while server-rendered pages see no
+ *     user. The two views disagree and the UI can land in a redirect
+ *     loop (e.g. /auth/signin → middleware redirects to /app because
+ *     "token exists" → /app shows logged-out state → client redirects
+ *     to /auth/signin → repeat).
+ *
+ * Legacy tokens without sessionExpiresAt are treated as valid so
+ * existing logins from before commit 3481594 don't break.
+ */
+function hasValidSession(token: unknown): boolean {
+	if (!token || typeof token !== "object") return false;
+	const expiresAt = (token as { sessionExpiresAt?: number | null }).sessionExpiresAt;
+	if (typeof expiresAt !== "number") return true; // legacy / not set
+	return Date.now() < expiresAt;
+}
+
 function isAppDomain(host: string): boolean {
 	// Match app.vestigio.io, app.vestigio.io:3000, localhost, Railway generated domain
 	return (
@@ -53,7 +83,15 @@ export default withAuth(
 	function middleware(req: NextRequestWithAuth) {
 		const pathname = req.nextUrl?.pathname;
 		const host = req.headers.get("host") || "";
-		const isAdmin = req.nextauth.token?.role === "ADMIN";
+		// Wave 18d — treat per-login-expired JWTs as logged out for
+		// every middleware decision below. Without this the auth pages
+		// redirect users into /app (because token is cryptographically
+		// valid) while the app pages render the logged-out shell
+		// (because session callback returns expires=epoch), producing
+		// an ERR_TOO_MANY_REDIRECTS loop.
+		const sessionValid = hasValidSession(req.nextauth.token);
+		const tokenForAuth = sessionValid ? req.nextauth.token : null;
+		const isAdmin = sessionValid && req.nextauth.token?.role === "ADMIN";
 
 		// ── Domain routing ──────────────────────────
 		// Marketing domain: redirect auth/app routes to app domain
@@ -72,17 +110,17 @@ export default withAuth(
 
 		// ── Sanity Studio: ADMIN only ──────────────────
 		if (pathname.startsWith("/studio")) {
-			if (!req.nextauth.token) {
+			if (!tokenForAuth) {
 				return NextResponse.redirect(new URL("/auth/signin", req.url));
 			}
-			if (req.nextauth.token.role !== "ADMIN") {
+			if (tokenForAuth.role !== "ADMIN") {
 				return NextResponse.redirect(new URL("/", req.url));
 			}
 			return NextResponse.next();
 		}
 
 		// ── Authenticated user on auth pages → redirect to /app ──
-		if (isAppDomain(host) && pathname.startsWith("/auth/") && req.nextauth.token) {
+		if (isAppDomain(host) && pathname.startsWith("/auth/") && tokenForAuth) {
 			return NextResponse.redirect(new URL("/app", req.url));
 		}
 
@@ -90,8 +128,7 @@ export default withAuth(
 		// app.vestigio.io/ (root) → redirect to /app (auth required)
 		// or /auth/signin if not authenticated
 		if (isAppDomain(host) && (pathname === "/" || pathname === "")) {
-			const token = req.nextauth.token;
-			if (!token) {
+			if (!tokenForAuth) {
 				return NextResponse.redirect(new URL("/auth/signin", req.url));
 			}
 			return NextResponse.redirect(new URL("/app", req.url));
@@ -148,12 +185,12 @@ export default withAuth(
 
 		// ── Onboarding gate (users only) ────────────
 		// Users without an active org must complete onboarding first.
-		const hasOrganization = req.nextauth.token?.hasOrganization;
+		const hasOrganization = tokenForAuth?.hasOrganization;
 		// Wave 5 Fase 2: admin-provisioned "shell" orgs have a membership but
 		// no activated environment. Route them through onboarding too so the
 		// owner contributes env + business profile + triggers the first audit
 		// cycle, rather than landing in an empty dashboard.
-		const hasActivatedEnv = req.nextauth.token?.hasActivatedEnv;
+		const hasActivatedEnv = tokenForAuth?.hasActivatedEnv;
 		const needsOnboarding =
 			hasOrganization === false || hasActivatedEnv === false;
 		if (
@@ -194,8 +231,13 @@ export default withAuth(
 				// App domain root — allow through so middleware function can handle redirect
 				if (pathname === "/" || pathname === "") return true;
 
-				// Everything else requires a token
-				return !!token;
+				// Wave 18d — gate on hasValidSession (not just !!token) so a
+				// per-login-expired JWT (cookie still cryptographically valid
+				// but past sessionExpiresAt) is treated as logged-out here too.
+				// If we return true for an expired token, withAuth lets the
+				// request through; the middleware function then redirects
+				// to /app while the page renders the logged-out shell ⇒ loop.
+				return hasValidSession(token);
 			},
 		},
 	}

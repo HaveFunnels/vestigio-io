@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatDateLong } from "@/lib/format-date";
 import CustomSelect from "@/components/console/CustomSelect";
 
 // ──────────────────────────────────────────────
@@ -76,12 +77,11 @@ const CONVERSION_MODEL_LABELS: Record<string, string> = {
   external: "External",
 };
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+// Wave 18o — locale-aware via a helper that needs to be called from
+// a component (useLocale is a React hook). The component wires in
+// the locale; this module-level helper just delegates.
+function formatDate(dateStr: string, locale: string) {
+  return formatDateLong(dateStr, locale);
 }
 
 function formatCurrency(value: number | null | undefined) {
@@ -225,6 +225,7 @@ function EnvironmentRow({
   onSaveLandingUrl: (url: string) => Promise<boolean>;
 }) {
   const t = useTranslations("console.organization");
+  const locale = useLocale();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(env.landingUrl);
   const [saving, setSaving] = useState(false);
@@ -264,7 +265,7 @@ function EnvironmentRow({
             <span className="opacity-60">URL: </span>
             <code className="font-mono text-[11px] text-content-muted">{env.landingUrl}</code>
           </p>
-          <p className="mt-0.5 text-xs text-content-muted">{t("added_date", { date: formatDate(env.createdAt) })}</p>
+          <p className="mt-0.5 text-xs text-content-muted">{t("added_date", { date: formatDate(env.createdAt, locale) })}</p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {isOwner && !editing && (
@@ -325,6 +326,7 @@ function EnvironmentRow({
 // ── Main Page ──
 export default function OrganizationPage() {
   const t = useTranslations("console.organization");
+  const locale = useLocale();
   const [data, setData] = useState<OrgData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -620,7 +622,7 @@ export default function OrganizationPage() {
               {/* Created */}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-content-muted">{t("created")}</span>
-                <span className="text-sm text-content-secondary">{formatDate(organization.createdAt)}</span>
+                <span className="text-sm text-content-secondary">{formatDate(organization.createdAt, locale)}</span>
               </div>
             </div>
           </section>
@@ -850,7 +852,7 @@ export default function OrganizationPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-xs text-content-muted">
-                          {formatDate(member.createdAt)}
+                          {formatDate(member.createdAt, locale)}
                         </td>
                         {isOwner && (
                           <td className="px-4 py-3">

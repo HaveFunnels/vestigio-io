@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
+import { formatDate } from "@/lib/format-date";
 
 // ──────────────────────────────────────────────
 // CrossSignalChainCard — Expandable card for a single chain
@@ -76,6 +77,7 @@ export default function CrossSignalChainCard({
 	const t = useTranslations("console.cross_signals");
 	const tc = useTranslations("console.common");
 	const tp = useTranslations("console.common.packs");
+	const locale = useLocale();
 	const [expanded, setExpanded] = useState(false);
 
 	return (
@@ -173,7 +175,7 @@ export default function CrossSignalChainCard({
 									</p>
 									{link.firstSeenAt && (
 										<p className="mt-0.5 text-[10px] text-content-faint">
-											{new Date(link.firstSeenAt).toLocaleDateString()}
+											{formatDate(link.firstSeenAt, locale)}
 										</p>
 									)}
 								</div>

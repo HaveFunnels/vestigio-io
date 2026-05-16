@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import toast from "react-hot-toast";
 import CustomSelect from "@/components/console/CustomSelect";
+import { formatDate } from "@/lib/format-date";
 
 // ──────────────────────────────────────────────
 // Support — Authenticated ticket management
@@ -34,6 +35,7 @@ const categoryOptions = ["general", "bug", "feature", "billing", "security"];
 
 export default function SupportPage() {
   const t = useTranslations("console.customer_center.support");
+  const locale = useLocale();
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -237,7 +239,7 @@ export default function SupportPage() {
                 </div>
                 <div className="mt-1 flex items-center gap-3 text-xs text-content-faint">
                   <span>{t(`categories.${ticket.category}`)}</span>
-                  <span>{new Date(ticket.createdAt).toLocaleDateString()}</span>
+                  <span>{formatDate(ticket.createdAt, locale)}</span>
                   {ticket.replyCount > 0 && (
                     <span className="flex items-center gap-1">
                       <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">

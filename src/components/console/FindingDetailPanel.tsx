@@ -20,7 +20,8 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatDate } from "@/lib/format-date";
 import Link from "next/link";
 import type { FindingProjection, ActionProjection } from "@/../../packages/projections/types";
 import { useCopilot } from "@/components/app/CopilotProvider";
@@ -67,6 +68,7 @@ export default function FindingDetailPanel({
 	const tc = useTranslations("console.common");
 	const tp = useTranslations("console.copilot.shared_prompts");
 	const tFix = useTranslations("console.actions.fix_with_ai");
+	const locale = useLocale();
 	const router = useRouter();
 	const copilot = useCopilot();
 	const mcpData = useMcpData();
@@ -315,7 +317,7 @@ export default function FindingDetailPanel({
 										{finding.data_freshness === "stale" ? "⏳" : "✓"}
 									</span>
 									<span className="text-xs text-content-muted">
-										{td("checked_on", { date: new Date(finding.source_url_observed_at).toLocaleDateString() })}
+										{td("checked_on", { date: formatDate(finding.source_url_observed_at, locale) })}
 										{finding.data_freshness === "stale" && (
 											<span className="ml-2 text-amber-500">— {td("stale_warning")}</span>
 										)}

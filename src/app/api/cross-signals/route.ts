@@ -1,8 +1,10 @@
 import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { computeAllCrossSignals, computeJourneyForEnv } from "@/lib/dashboard/aggregator";
+import { loadCaptionTranslations } from "@/lib/dashboard/load-caption-translations";
 import { isDemoOrg } from "@/lib/demo-account";
 import { currencyFromLocale } from "../../../../packages/impact";
 
@@ -64,8 +66,19 @@ export const GET = withErrorTracking(
 		// panorama page can render the funnel-sequence section
 		// (awareness → consideration → decision → retention)
 		// alongside the per-URL cross-signal chains.
+		//
+		// Wave 18o — load caption translations + pass currency so the
+		// narrative generator inside buildCrossSignalChains uses pt-BR
+		// templates + the right currency symbol. Pre-fix this endpoint
+		// never set the aggregator's _captionT/_currency singletons,
+		// so the narrative always fell back to English templates with
+		// "$" regardless of org locale — producing the mixed-language
+		// blob the customer reported.
+		const cookieStore = await cookies();
+		const locale = cookieStore.get("locale")?.value || "";
+		const captionT = loadCaptionTranslations(locale);
 		const [chains, journey] = await Promise.all([
-			computeAllCrossSignals(prisma, environment.id),
+			computeAllCrossSignals(prisma, environment.id, resolvedCurrency, captionT),
 			computeJourneyForEnv(prisma, environment.id),
 		]);
 		return NextResponse.json({ chains, journey, currency: resolvedCurrency });

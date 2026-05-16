@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatDate } from "@/lib/format-date";
 import { useTrack } from "@/hooks/useProductTrack";
 import toast from "react-hot-toast";
 import DataTable, { Column } from "@/components/console/DataTable";
@@ -60,6 +61,7 @@ export default function FindingsPage() {
 	const tc = useTranslations("console.common");
 	const tp = useTranslations("console.copilot.shared_prompts");
 	const td = useTranslations("console.findings.discutir");
+	const locale = useLocale();
 	const { track } = useTrack();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -649,7 +651,7 @@ export default function FindingsPage() {
 			render: (row) => (
 				<span className="text-xs text-content-muted">
 					{(row as any).first_seen
-						? new Date((row as any).first_seen).toLocaleDateString()
+						? formatDate((row as any).first_seen, locale)
 						: "-"}
 				</span>
 			),

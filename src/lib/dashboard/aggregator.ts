@@ -1338,11 +1338,24 @@ async function computeCrossSignal(
 /**
  * Compute ALL cross-signal chains (not capped at 5).
  * Used by the dedicated /api/cross-signals endpoint.
+ *
+ * Wave 18o — now accepts currency + captionTranslations so the
+ * narrative generator inside `buildCrossSignalChains` can render
+ * pt-BR text + the correct currency symbol. Pre-fix, this entry
+ * point never set the module-level _captionT / _currency, so
+ * `buildCrossSignalChains` fell back to the hardcoded English
+ * templates AND the "$" symbol regardless of org locale — producing
+ * a Frankenstein narrative like "Your / has 12 cross-domain issues:
+ * <pt-BR finding title> (English pack label), ..., leading to ~$37k/mo".
  */
 export async function computeAllCrossSignals(
 	prisma: PrismaClient,
 	envId: string,
+	currency: string = DEFAULT_CURRENCY,
+	captionTranslations?: CaptionTranslations,
 ): Promise<CrossSignalChain[]> {
+	_currency = currency;
+	_captionT = captionTranslations;
 	const cycleId = await latestCycleId(prisma, envId);
 	const findings = await prisma.finding.findMany({
 		where: CROSS_SIGNAL_WHERE(envId, cycleId),

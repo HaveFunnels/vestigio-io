@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatDate } from "@/lib/format-date";
 import { useTrack } from "@/hooks/useProductTrack";
 import { useCopilot } from "@/components/app/CopilotProvider";
 import toast from "react-hot-toast";
@@ -1531,6 +1532,7 @@ function UserActionsTable({
 	onRowClick: (row: UserActionRow) => void;
 }) {
 	const t = useTranslations("console.actions");
+	const locale = useLocale();
 	const { currency: orgCurrency } = useMcpData();
 	const currSym = CURRENCY_SYMBOLS[orgCurrency] || "$";
 
@@ -1609,7 +1611,7 @@ function UserActionsTable({
 			className: "w-28",
 			render: (row) => (
 				<span className='font-mono text-xs text-content-muted'>
-					{new Date(row.created_at).toLocaleDateString()}
+					{formatDate(row.created_at, locale)}
 				</span>
 			),
 		},

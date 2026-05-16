@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatDateLong } from "@/lib/format-date";
 import InviteMemberModal from "@/components/app/InviteMemberModal";
 import CustomSelect from "@/components/console/CustomSelect";
 
@@ -132,12 +133,11 @@ export default function MembersPage() {
     (inv) => inv.status === "pending" && new Date(inv.expiresAt) > new Date(),
   );
 
+  // Wave 18o — locale-aware. Hardcoded "en-US" was rendering
+  // mm/dd/yyyy for pt-BR/es/de customers.
+  const locale = useLocale();
   function formatDate(dateStr: string) {
-    return new Date(dateStr).toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+    return formatDateLong(dateStr, locale);
   }
 
   function roleLabel(role: string) {

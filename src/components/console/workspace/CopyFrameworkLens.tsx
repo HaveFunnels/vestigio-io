@@ -217,7 +217,16 @@ export default function CopyFrameworkLens() {
 				for (const r of results) {
 					if (r.status === "fulfilled") {
 						const { id, data } = r.value;
-						if (data && Array.isArray(data.criteria) && typeof data.score_pct === "number") {
+						// Wave 18g — when the API returns { criteria: [],
+						// score_pct: 0, fallback: true }, the previous code
+						// treated it as a valid result and showed 0% with an
+						// empty checklist. That looked like "the framework
+						// failed every criterion" when in fact the audit
+						// could not run (no LLM, no body, no env, etc.).
+						// Now we surface those as "error" so the UI renders
+						// the unavailable state instead of a misleading 0.
+						const isFallback = data && (data.fallback === true || (Array.isArray(data.criteria) && data.criteria.length === 0));
+						if (data && Array.isArray(data.criteria) && typeof data.score_pct === "number" && !isFallback) {
 							next.set(`${id}::${pageUrl}`, {
 								criteria: data.criteria,
 								score_pct: data.score_pct,

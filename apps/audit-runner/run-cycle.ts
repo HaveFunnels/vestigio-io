@@ -1535,7 +1535,24 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			const recomputeMs = Date.now() - recomputeStartMs;
 
 			// (c) Project for the UI
-			const projections = projectAll(multiPackResult, translations);
+			//
+			// Wave 18g — load the previous cycle's findings BEFORE this
+			// cycle's findings land in the DB, so projectAll can compute
+			// real inference-level change_class (new_issue / regression /
+			// improvement / stable_risk) by comparing inferenceKey sets.
+			// Pre-fix every Finding row had changeClass=null because the
+			// decision-level change_report didn't share inferenceKey
+			// granularity with FindingProjection — the dashboard's
+			// "O que mudou" + Cycle Delta widgets were silently empty.
+			let previousFindings: import("../../packages/projections").FindingProjection[] = [];
+			try {
+				const findingStorePrev = new PrismaFindingStore(prisma);
+				const prev = await findingStorePrev.loadLatestForEnvironment(env.id);
+				previousFindings = prev?.findings ?? [];
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] failed to load prev findings for change-class:`, err);
+			}
+			const projections = projectAll(multiPackResult, translations, { previousFindings });
 
 			// (d+e+complete) Transactional persistence.
 			//

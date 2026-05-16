@@ -798,8 +798,40 @@ function resolveReasoning(
   return result;
 }
 
-export function projectAll(result: MultiPackResult, translations?: EngineTranslations): ProjectionResult {
-  const findings = projectFindings(result, translations);
+/**
+ * Wave 18g — projectAll optionally accepts the previous cycle's
+ * FindingProjections so we can compute Finding-level change_class.
+ *
+ * Pre-Wave-18g, buildFindingChangeClass matched the current finding's
+ * inferenceKey against decision_keys in the change_report. But
+ * inferenceKeys (e.g. "hero_outcome_absent") and decision_keys (e.g.
+ * "copy_misaligned") are at different granularities, so the substring
+ * match almost never hit. Every Finding row was persisted with
+ * changeClass=null, which broke the dashboard's "O que mudou" card
+ * and the panorama Cycle Delta card — both read Finding.changeClass
+ * to decide what counts as new/regressed/improved.
+ *
+ * The fix is direct: compare the current cycle's inferenceKey set
+ * against the previous cycle's. Missing-from-prev → new_issue.
+ * Present-with-higher-severity → regression. Lower-severity →
+ * improvement. Same-severity-and-risky → stable_risk.
+ *
+ * Resolved findings (present-in-prev, absent-now) cannot be expressed
+ * as a current FindingProjection — they have no row — so they stay
+ * in the decision-level change_report consumed by the dashboard
+ * aggregator separately.
+ */
+export interface ProjectAllOptions {
+  previousFindings?: FindingProjection[];
+}
+
+export function projectAll(
+  result: MultiPackResult,
+  translations?: EngineTranslations,
+  options: ProjectAllOptions = {},
+): ProjectionResult {
+  const prevMap = buildPreviousFindingMap(options.previousFindings);
+  const findings = projectFindings(result, translations, prevMap);
   const actions = projectActions(result, findings, translations);
   const workspaces = projectWorkspaces(result, findings, translations);
 
@@ -810,6 +842,31 @@ export function projectAll(result: MultiPackResult, translations?: EngineTransla
   const systemHealth = buildSystemHealth(result);
   const changeReport = projectChangeReport(result, translations, translations?.locale);
   return { findings: enrichedFindings, actions, workspaces, coherence_score: coherenceScore, system_health: systemHealth, change_report: changeReport };
+}
+
+const SEVERITY_RANK: Record<string, number> = {
+  none: 0,
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4,
+};
+
+function buildPreviousFindingMap(
+  prev: FindingProjection[] | undefined,
+): Map<string, { severity: string }> | undefined {
+  if (!prev || prev.length === 0) return undefined;
+  const m = new Map<string, { severity: string }>();
+  for (const f of prev) {
+    // Keep the highest-severity entry per inferenceKey in case the
+    // previous cycle had duplicates (legacy data from before the
+    // Wave 18 dedupe fix).
+    const existing = m.get(f.inference_key);
+    if (!existing || (SEVERITY_RANK[f.severity] ?? 0) > (SEVERITY_RANK[existing.severity] ?? 0)) {
+      m.set(f.inference_key, { severity: f.severity });
+    }
+  }
+  return m;
 }
 
 // ──────────────────────────────────────────────
@@ -953,7 +1010,11 @@ function enrichFindingsWithCrossRefs(
   });
 }
 
-export function projectFindings(result: MultiPackResult, translations?: EngineTranslations): FindingProjection[] {
+export function projectFindings(
+  result: MultiPackResult,
+  translations?: EngineTranslations,
+  previousByKey?: Map<string, { severity: string }>,
+): FindingProjection[] {
   const valueCases = result.impact.value_cases;
   const rootCauses = result.intelligence.root_causes;
   const inferences = result.inferences;
@@ -1041,7 +1102,8 @@ export function projectFindings(result: MultiPackResult, translations?: EngineTr
 
     // Phase 0 UX: Build verification, change, and evidence quality context
     const verificationCtx = buildFindingVerificationContext(inf, result);
-    const changeClass = buildFindingChangeClass(vc.inference_key, result);
+    const currentSeverity = mapSeverityFromInference(inf);
+    const changeClass = buildFindingChangeClass(vc.inference_key, currentSeverity, result, previousByKey);
     const evidenceQualityCtx = buildFindingEvidenceQuality(inf, result);
 
     // Parameterize titles for findings that carry concrete parameters
@@ -2756,11 +2818,39 @@ function buildFindingVerificationContext(
 
 function buildFindingChangeClass(
   inferenceKey: string,
+  currentSeverity: string,
   result: MultiPackResult,
+  previousByKey?: Map<string, { severity: string }>,
 ): FindingProjection['change_class'] {
-  if (!result.change_report) return null;
+  // Wave 18g — direct inference-level comparison. The previous
+  // implementation matched the current finding's inferenceKey against
+  // decision_keys in the change_report (e.g. "copy_misaligned",
+  // "funnel_journey_critical_gaps"), but those are pack-level
+  // outcomes one granularity above inferences. The substring match
+  // almost never fired, so every Finding was persisted with
+  // changeClass=null. Dashboard widgets ("O que mudou", Cycle Delta)
+  // depend on this column and rendered empty as a result.
+  //
+  // The direct comparison is cheaper too — no decision_key string
+  // games, just a Map lookup against the previous cycle's findings.
+  if (previousByKey) {
+    const prev = previousByKey.get(inferenceKey);
+    if (!prev) return 'new_issue';
+    const prevRank = SEVERITY_RANK[prev.severity] ?? 0;
+    const currRank = SEVERITY_RANK[currentSeverity] ?? 0;
+    if (currRank > prevRank) return 'regression';
+    if (currRank < prevRank) return 'improvement';
+    // Same severity — risky severities count as stable_risk so the
+    // dashboard can flag persistent problems; benign ones stay null
+    // so we don't fill the "stable" bucket with noise.
+    return currRank >= 2 ? 'stable_risk' : null;
+  }
 
-  // Match by decision_key against change report entries
+  // No previous data — fall through to legacy decision-key match
+  // for backwards compatibility on the very first cycle for an env
+  // (loadLatestForEnvironment returns null) and during the migration
+  // window when older cycles still have changeClass=null.
+  if (!result.change_report) return null;
   const report = result.change_report;
 
   // Check regressions

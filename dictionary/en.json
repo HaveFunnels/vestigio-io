@@ -2018,7 +2018,7 @@
 			"no_actions": "No actions yet",
 			"workspaces_in_perspective": "Workspaces",
 			"lenses": {
-				"revenue_map": "Revenue Map",
+				"revenue_map": "Exposure by Area",
 				"total_exposure": "Total exposure",
 				"cycle_delta": "Cycle Delta",
 				"no_changes": "No changes this cycle.",

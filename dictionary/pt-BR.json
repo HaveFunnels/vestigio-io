@@ -2536,7 +2536,7 @@
 			"no_actions": "Nenhuma ação ainda",
 			"workspaces_in_perspective": "Workspaces",
 			"lenses": {
-				"revenue_map": "Mapa de Faturamento",
+				"revenue_map": "Exposição por Área",
 				"total_exposure": "Exposição total",
 				"cycle_delta": "Delta do Ciclo",
 				"no_changes": "Sem mudanças neste ciclo.",

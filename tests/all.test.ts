@@ -61,26 +61,45 @@ runSuite('Domain Contracts', () => {
     assertThrows(() => parseRef('nocolon'), 'Invalid ref');
   });
 
-  test('IdGenerator produces sequential deterministic IDs', () => {
+  test('IdGenerator produces prefixed unique IDs', () => {
+    // Wave 18l — IdGenerator.next() now returns `${prefix}_${UUID}`
+    // so ids stay unique across generator instances (the previous
+    // counter-based ids collided on Evidence PK whenever a second
+    // call produced `bv_1` etc.). Tests assert prefix + uniqueness
+    // instead of literal sequential values.
     const gen = new IdGenerator('test');
-    assertEqual(gen.next(), 'test_1');
-    assertEqual(gen.next(), 'test_2');
-    assertEqual(gen.next(), 'test_3');
+    const a = gen.next();
+    const b = gen.next();
+    const c = gen.next();
+    assert(a.startsWith('test_'), 'first id has prefix');
+    assert(b.startsWith('test_'), 'second id has prefix');
+    assert(c.startsWith('test_'), 'third id has prefix');
+    assert(a !== b && b !== c && a !== c, 'all ids unique');
   });
 
-  test('IdGenerator reset restarts sequence', () => {
+  test('IdGenerator counter advances + resets', () => {
+    // `current()` still tracks a sequential counter so human-readable
+    // evidence_keys built like `auth_session_${ids.current()}` keep
+    // working.
     const gen = new IdGenerator('x');
+    assertEqual(gen.current(), 0);
     gen.next(); gen.next();
+    assertEqual(gen.current(), 2);
     gen.reset();
-    assertEqual(gen.next(), 'x_1');
+    assertEqual(gen.current(), 0);
   });
 
   test('two IdGenerators are independent', () => {
     const a = new IdGenerator('a');
     const b = new IdGenerator('b');
-    assertEqual(a.next(), 'a_1');
-    assertEqual(b.next(), 'b_1');
-    assertEqual(a.next(), 'a_2');
+    const idA1 = a.next();
+    const idB1 = b.next();
+    const idA2 = a.next();
+    assert(idA1.startsWith('a_') && idA2.startsWith('a_'), 'a-prefixed');
+    assert(idB1.startsWith('b_'), 'b-prefixed');
+    assert(idA1 !== idA2, 'a generator produces unique ids');
+    assertEqual(a.current(), 2);
+    assertEqual(b.current(), 1);
   });
 
   test('testScoping produces valid scoping', () => {

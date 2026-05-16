@@ -1,10 +1,10 @@
+import { randomUUID } from 'crypto';
 import {
   Evidence,
   EvidenceType,
   SourceKind,
   CollectionMethod,
   FreshnessState,
-  IdGenerator,
   Scoping,
 } from '../../packages/domain';
 import {
@@ -255,14 +255,32 @@ export class BrowserWorker implements VerificationExecutor {
   // ── Evidence conversion (unchanged contract) ──
 
   private resultToEvidence(result: BrowserVerificationResult, scoping: Scoping, cycleRef: string, subjectUrl: string): Evidence[] {
-    const ids = new IdGenerator('bv');
+    // Wave 18k — UUID-based ids instead of `IdGenerator("bv")`.
+    //
+    // The previous generator was a per-instance counter that always
+    // started at 0, so every browser-verification call produced
+    // `bv_1`, `bv_2`, etc. The Evidence PK is globally unique, so the
+    // second cycle that ran Stage D collided with the first cycle's
+    // `bv_1` row and Postgres raised 23505. Wave H made addMany
+    // throw on that error (previously swallowed by a try/catch), so
+    // full audits started failing visibly. Diagnosed on havefunnels
+    // full cycle cmp8e96z1 with lastError "Key (id)=(bv_1) already
+    // exists" — collision with rows from cycle cmoufrl7e dated
+    // 2026-05-06, the org's first audit.
+    //
+    // evidence_key keeps the human-readable prefix + per-call index
+    // so the (cycleRef, evidenceKey) unique constraint still works
+    // within a single cycle; the conflict was only on the PK.
+    let counter = 0;
+    const nextEvKey = (kind: string): string => `${kind}_${++counter}`;
+    const nextId = (): string => `bv_${randomUUID()}`;
     const evidence: Evidence[] = [];
     const now = new Date();
     const freshness = { observed_at: now, fresh_until: new Date(now.getTime() + 86400000), freshness_state: FreshnessState.Fresh, staleness_reason: null };
 
     if (result.observations.redirect_chain.length > 0) {
       evidence.push({
-        id: ids.next(), evidence_key: `browser_nav_trace_${ids.current()}`,
+        id: nextId(), evidence_key: nextEvKey('browser_nav_trace'),
         evidence_type: EvidenceType.BrowserNavigationTrace, subject_ref: subjectUrl,
         scoping, cycle_ref: cycleRef, freshness,
         source_kind: SourceKind.BrowserVerification, collection_method: CollectionMethod.DynamicRender,
@@ -274,7 +292,7 @@ export class BrowserWorker implements VerificationExecutor {
 
     if (result.observations.checkout_detected) {
       evidence.push({
-        id: ids.next(), evidence_key: `browser_checkout_${ids.current()}`,
+        id: nextId(), evidence_key: nextEvKey('browser_checkout'),
         evidence_type: EvidenceType.BrowserCheckoutConfirmation, subject_ref: subjectUrl,
         scoping, cycle_ref: cycleRef, freshness,
         source_kind: SourceKind.BrowserVerification, collection_method: CollectionMethod.DynamicRender,
@@ -285,7 +303,7 @@ export class BrowserWorker implements VerificationExecutor {
 
     if (result.observations.errors_detected) {
       evidence.push({
-        id: ids.next(), evidence_key: `browser_failure_${ids.current()}`,
+        id: nextId(), evidence_key: nextEvKey('browser_failure'),
         evidence_type: EvidenceType.BrowserFailureEvent, subject_ref: subjectUrl,
         scoping, cycle_ref: cycleRef, freshness,
         source_kind: SourceKind.BrowserVerification, collection_method: CollectionMethod.DynamicRender,

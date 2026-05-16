@@ -1918,18 +1918,39 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 // Heal helpers — called by cron in instrumentation.ts
 // ──────────────────────────────────────────────
 
-const STUCK_RUNNING_AFTER_MS = 10 * 60 * 1000; // 10 minutes
+// Wave 18i — bumped from 10 → 25 min. The 10-minute cutoff was
+// catching legitimate full audits before they could finish. A real
+// cold/full cycle on a medium site takes 8-11 min end-to-end
+// (Playwright headless renders + LLM enrichment passes + recompute +
+// projection + snapshot save + cache write). Five havefunnels
+// cycles in a single dev session died at the 10-12 min mark, all
+// with lastError=null because healStuckCycles wasn't stamping the
+// reason. 25 min gives full audits ~2.5× breathing room while still
+// catching truly hung cycles (process killed mid-flight, never
+// resumed) within an acceptable window.
+const STUCK_RUNNING_AFTER_MS = 25 * 60 * 1000; // 25 minutes
 const ORPHANED_PENDING_AFTER_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Auto-fail any AuditCycle stuck in `running` for too long.
  * Returns the count of cycles that were healed.
+ *
+ * Wave 18i — also stamps lastError + lastErrorAt so ops can tell a
+ * heal-cron auto-fail apart from a regular failure. Pre-fix every
+ * heal-killed cycle landed with lastError=null which made the
+ * failure indistinguishable from a worker-side crash that happened
+ * before stampCycleError could write.
  */
 export async function healStuckCycles(): Promise<number> {
 	const cutoff = new Date(Date.now() - STUCK_RUNNING_AFTER_MS);
 	const result = await prisma.auditCycle.updateMany({
 		where: { status: "running", createdAt: { lt: cutoff } },
-		data: { status: "failed", completedAt: new Date() },
+		data: {
+			status: "failed",
+			completedAt: new Date(),
+			lastError: `heal-cron: auto-failed after ${Math.round(STUCK_RUNNING_AFTER_MS / 60000)}min stuck in running state`,
+			lastErrorAt: new Date(),
+		},
 	});
 	if (result.count > 0) {
 		console.warn(`[audit-runner heal] auto-failed ${result.count} stuck running cycles`);

@@ -2644,6 +2644,42 @@ Goal: make every crawled page produce evidence rich enough that (a) the engine's
 
 ---
 
+## Wave 18z — Backlog (not blocking customers, defer until friction shows up)
+
+### Docker image size — ~750MB on each Railway deploy
+
+Diagnosed 2026-05-16. Current image breaks down roughly as:
+
+- Chromium binary (Playwright) — **~280 MB** — required for audit-worker headless render
+- Debian system libs (libnss3, libcairo, libgbm, libpango, ...) — **~150 MB** — Chromium dependencies
+- node_modules (prod, after `npm ci --omit=dev`) — **~150 MB**
+- Prisma engine binaries (5 platforms) — **~50 MB**
+- Next.js standalone output (.next/standalone + static) — **~60 MB**
+- Prisma CLI shipped for boot-time `db push` — **~43 MB**
+- Worker source for tsx runtime (workers/apps/packages/src/dictionary) — **~15 MB**
+
+Not bloated for this stack (Chromium + Debian + Prisma = ~480MB irreducible). The non-Chromium portion (~270MB) is roughly right-sized. But there are 3 quick wins worth ~150MB combined when we want to optimize:
+
+1. **`experimental.optimizePackageImports`** in next.config.js for `@phosphor-icons/react` (57MB local), `lucide-react` (38MB), `date-fns` (24MB). One config line, low risk, probably ~80-100MB off the standalone bundle.
+2. **Drop Prisma CLI from runtime** (~43MB) — move `prisma db push` from the boot CMD to a pre-deploy step (Railway hook or GitHub Action) so the runtime image doesn't need the CLI at all.
+3. **Split into two images** — web (no Chromium, ~200MB) and worker (full, ~700MB). Cuts web image by ~70% but doubles Railway deploy ops. Only worth doing if web deploy cadence diverges from worker, or if cold-start latency becomes a customer complaint.
+
+Trigger to revisit: Railway image storage pricing becomes meaningful, or deploy time crosses ~3 min on web-only changes, or we ship lots of marketing/CMS updates that don't need a worker redeploy.
+
+### Audit-worker deploy interrupts in-flight cycles
+
+Observed 2026-05-16: every `git push` to main triggers a Railway rolling deploy of `audit-worker`. The old container's running cycle gets SIGTERM mid-flight; the new worker (or heal cron) marks the cycle `status='failed'` with `lastError=null`. Three havefunnels hot cycles died this way during a single development session (cmp7q716h, cmp7slk7d, cmp7ubm6g — all ~12 min duration).
+
+Mitigations (priority by ROI):
+
+- **Increase Railway grace period** for `audit-worker` from default (30s) to 15-20 min so in-flight cycles have time to drain. Trade-off: longer deploys. Worth it because audit cycles are the product.
+- **Pre-stop hook**: Have the worker stop polling for new jobs as soon as SIGTERM arrives, finish the current one, then exit. (Partially in place via shutdownRequested, but doesn't extend the grace period.)
+- **Skip worker redeploys on web-only commits**: if Railway can be configured to only rebuild on changes touching `apps/audit-runner/**`, `workers/**`, or `packages/**`, every dashboard tweak stops killing audits.
+
+Companion fix already shipped (commit `db91331`): worker-loop catch now stamps `lastError = "worker-loop: <message>"` so the next time this happens we can read the cause from the DB instead of needing Railway logs.
+
+---
+
 ## What is NOT on this roadmap
 
 Per the [North Star anti-drift commitments](NORTHSTAR.md):

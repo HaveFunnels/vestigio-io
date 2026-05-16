@@ -22,6 +22,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { formatDate } from "@/lib/format-date";
+import { renderRichText } from "@/lib/rich-text";
 import Link from "next/link";
 import type { FindingProjection, ActionProjection } from "@/../../packages/projections/types";
 import { useCopilot } from "@/components/app/CopilotProvider";
@@ -155,7 +156,7 @@ export default function FindingDetailPanel({
 		<div className="space-y-5">
 			{/* Summary + badges */}
 			<DrawerSection title={td("summary")} accent={severityAccent}>
-				<p className="text-sm text-content-secondary">{finding.cause}</p>
+				<p className="text-sm text-content-secondary">{renderRichText(finding.cause)}</p>
 				<div className="mt-2 flex flex-wrap items-center gap-2">
 					{finding.polarity === "positive" ? (
 						<span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400">
@@ -251,7 +252,7 @@ export default function FindingDetailPanel({
 			{/* Effect */}
 			{finding.effect && (
 				<DrawerSection title={td("effect")}>
-					<p className="text-sm text-content-muted">{finding.effect}</p>
+					<p className="text-sm text-content-muted">{renderRichText(finding.effect)}</p>
 				</DrawerSection>
 			)}
 
@@ -261,7 +262,7 @@ export default function FindingDetailPanel({
 					<DrawerStatBox>
 						<div className="px-4 py-3">
 							<span className="text-sm font-medium text-content-secondary">
-								{finding.root_cause}
+								{renderRichText(finding.root_cause)}
 							</span>
 						</div>
 					</DrawerStatBox>
@@ -279,7 +280,7 @@ export default function FindingDetailPanel({
 				<DrawerStatBox>
 					<div className="px-4 py-3">
 						<p className="text-sm leading-relaxed text-content-secondary">
-							{finding.reasoning}
+							{renderRichText(finding.reasoning)}
 						</p>
 					</div>
 				</DrawerStatBox>

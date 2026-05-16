@@ -25,6 +25,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useCopilot } from "@/components/app/CopilotProvider";
+import { renderRichText } from "@/lib/rich-text";
 import {
 	COPY_FRAMEWORKS,
 	pickText,
@@ -494,7 +495,7 @@ export default function CopyFrameworkLens() {
 											</div>
 											{verdict?.evidence && (
 												<p className="mt-1.5 text-[11px] leading-snug text-content-muted">
-													<span className="font-semibold">{t("evidence_label")}</span> {verdict.evidence}
+													<span className="font-semibold">{t("evidence_label")}</span> {renderRichText(verdict.evidence)}
 												</p>
 											)}
 											{verdict?.fix && status !== "pass" && (

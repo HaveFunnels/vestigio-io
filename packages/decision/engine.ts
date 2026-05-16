@@ -446,6 +446,39 @@ function resolveDecisionOutcome(
     return { decision_key: 'security_posture_adequate', category: DecisionClass.State, primary_outcome: 'observation' };
   }
 
+  // ── Funnel Journey (Wave 9.x funnel-moment pack) ──
+  //
+  // Previously fell through to the `${questionKey}_result` fallback,
+  // which surfaced raw English keys in regression emails for non-en
+  // customers. Adding the 4-tier mapping makes the title translatable
+  // via the same `summaries` dictionary used by every other pack.
+  if (questionKey === 'are_funnel_journey_issues_present') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'funnel_journey_critical_gaps', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'funnel_journey_significant_gaps', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'funnel_journey_minor_gaps', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'funnel_journey_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
+  // ── Vertical-specific (Wave 9.x vertical pack) ──
+  if (questionKey === 'are_vertical_specific_issues_present') {
+    if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
+      return { decision_key: 'vertical_critical_gaps', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
+      return { decision_key: 'vertical_significant_gaps', category: DecisionClass.Risk, primary_outcome: 'incident' };
+    }
+    if (risk.decision_impact === DecisionImpact.Optimize) {
+      return { decision_key: 'vertical_minor_gaps', category: DecisionClass.State, primary_outcome: 'observation' };
+    }
+    return { decision_key: 'vertical_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
+  }
+
   // Default fallback
   return {
     decision_key: `${questionKey}_result`,

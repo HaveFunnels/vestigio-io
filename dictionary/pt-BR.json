@@ -6292,6 +6292,14 @@
 			"security_posture_elevated": "Risco elevado de postura de segurança. Headers fracos ou redirecionamentos abertos aumentam a exposição.",
 			"security_posture_weak": "Postura de segurança com lacunas menores. Oportunidades de fortalecimento existem mas não são bloqueantes.",
 			"security_posture_adequate": "Postura de segurança adequada. Nenhuma exposição significativa detectada.",
+			"funnel_journey_critical_gaps": "Falhas críticas na jornada de compra. Pontos de saída e quedas estão impedindo conversões em momentos-chave do funil.",
+			"funnel_journey_significant_gaps": "Lacunas significativas na jornada de compra. Múltiplos momentos do funil precisam de atenção antes de escalar o tráfego.",
+			"funnel_journey_minor_gaps": "Pequenas lacunas na jornada de compra. Oportunidades de otimização existem mas não são bloqueantes.",
+			"funnel_journey_healthy": "Jornada de compra saudável. Sem rupturas significativas detectadas no funil.",
+			"vertical_critical_gaps": "Falhas críticas específicas do segmento. Padrões importantes do vertical estão ausentes ou quebrados.",
+			"vertical_significant_gaps": "Lacunas significativas no padrão do segmento. Vários elementos esperados precisam de correção antes de escalar.",
+			"vertical_minor_gaps": "Pequenas lacunas no padrão do segmento. Oportunidades de refinamento disponíveis.",
+			"vertical_healthy": "Padrões do segmento estão alinhados. Sem lacunas significativas detectadas.",
 			"default_summary": "Decisão: {decision_key}."
 		},
 		"confidence_narrative": {

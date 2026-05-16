@@ -4155,6 +4155,14 @@
 			"security_posture_elevated": "Erhoehtes Sicherheitsrisiko. Risikobewertung: {risk_score}/100, Vertrauen: {confidence_score}/100. Schwache Header oder offene Weiterleitungen erhoehen die Exposition.",
 			"security_posture_weak": "Sicherheitslage hat kleinere Luecken. Risikobewertung: {risk_score}/100. Haertungsmoeglichkeiten vorhanden aber nicht blockierend.",
 			"security_posture_adequate": "Sicherheitslage ist ausreichend. Keine signifikanten Expositionen erkannt (Bewertung: {risk_score}/100).",
+			"funnel_journey_critical_gaps": "Kritische Luecken in der Funnel-Journey. Exit-Punkte und Drop-offs blockieren Conversions an wichtigen Funnel-Momenten.",
+			"funnel_journey_significant_gaps": "Signifikante Luecken in der Funnel-Journey. Mehrere Funnel-Momente benoetigen Aufmerksamkeit vor dem Skalieren.",
+			"funnel_journey_minor_gaps": "Kleinere Luecken in der Funnel-Journey. Optimierungsmoeglichkeiten vorhanden aber nicht blockierend.",
+			"funnel_journey_healthy": "Funnel-Journey ist gesund. Keine signifikanten Brueche erkannt.",
+			"vertical_critical_gaps": "Kritische branchenspezifische Luecken. Wichtige Branchenpatterns fehlen oder sind defekt.",
+			"vertical_significant_gaps": "Signifikante branchenspezifische Luecken. Mehrere erwartete Patterns benoetigen Korrekturen vor dem Skalieren.",
+			"vertical_minor_gaps": "Kleinere branchenspezifische Luecken. Verfeinerungsmoeglichkeiten verfuegbar.",
+			"vertical_healthy": "Branchenpatterns sind abgestimmt. Keine signifikanten Luecken erkannt.",
 			"default_summary": "Entscheidung: {decision_key}. Risiko: {risk_score}/100, Vertrauen: {confidence_score}/100."
 		},
 		"confidence_narrative": {

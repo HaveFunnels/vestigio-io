@@ -6154,6 +6154,14 @@
 			"security_posture_elevated": "Elevated security posture risk. Weak headers or open redirects increase exposure.",
 			"security_posture_weak": "Security posture has minor gaps. Hardening opportunities exist but are not blocking.",
 			"security_posture_adequate": "Security posture is adequate. No significant exposures detected.",
+			"funnel_journey_critical_gaps": "Critical funnel journey gaps. Exit points and drop-offs are blocking conversion at key funnel moments.",
+			"funnel_journey_significant_gaps": "Significant funnel journey gaps. Multiple funnel moments need attention before scaling traffic.",
+			"funnel_journey_minor_gaps": "Minor funnel journey gaps. Optimization opportunities exist but are not blocking.",
+			"funnel_journey_healthy": "Funnel journey is healthy. No significant breaks detected in the funnel.",
+			"vertical_critical_gaps": "Critical vertical-specific gaps. Important industry patterns are missing or broken.",
+			"vertical_significant_gaps": "Significant vertical-specific gaps. Multiple expected patterns need fixes before scaling.",
+			"vertical_minor_gaps": "Minor vertical-specific gaps. Refinement opportunities available.",
+			"vertical_healthy": "Vertical patterns are aligned. No significant gaps detected.",
 			"default_summary": "Decision: {decision_key}."
 		},
 		"confidence_narrative": {

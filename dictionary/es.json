@@ -5682,6 +5682,14 @@
 			"security_posture_elevated": "Riesgo elevado de postura de seguridad. Headers débiles o redirecciones abiertas aumentan la exposición.",
 			"security_posture_weak": "Postura de seguridad con brechas menores. Oportunidades de fortalecimiento existen pero no son bloqueantes.",
 			"security_posture_adequate": "Postura de seguridad adecuada. Ninguna exposición significativa detectada.",
+			"funnel_journey_critical_gaps": "Brechas críticas en el embudo de conversión. Puntos de salida y caídas están bloqueando conversiones en momentos clave del funnel.",
+			"funnel_journey_significant_gaps": "Brechas significativas en el embudo. Varios momentos del funnel requieren atención antes de escalar el tráfico.",
+			"funnel_journey_minor_gaps": "Brechas menores en el embudo. Oportunidades de optimización disponibles pero no bloqueantes.",
+			"funnel_journey_healthy": "Embudo de conversión saludable. No se detectaron rupturas significativas.",
+			"vertical_critical_gaps": "Brechas críticas del vertical. Patrones importantes del sector están ausentes o rotos.",
+			"vertical_significant_gaps": "Brechas significativas del vertical. Varios patrones esperados requieren correcciones antes de escalar.",
+			"vertical_minor_gaps": "Brechas menores del vertical. Oportunidades de refinamiento disponibles.",
+			"vertical_healthy": "Patrones del vertical alineados. No se detectaron brechas significativas.",
 			"default_summary": "Decisión: {decision_key}."
 		},
 		"confidence_narrative": {

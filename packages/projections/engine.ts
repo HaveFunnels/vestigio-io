@@ -2584,6 +2584,22 @@ function translateContributingFactors(factors: string[], locale?: string): strin
   return factors.map(f => CONTRIBUTING_FACTOR_TRANSLATIONS[f]?.[locale] ?? f);
 }
 
+/**
+ * Wave 18c — last-resort humanizer for raw decision_keys. Used when a
+ * pack's decision_key has no summaries translation entry. Strips the
+ * `_result` suffix produced by the fallback branch of
+ * resolveDecisionOutcome, replaces underscores with spaces, and
+ * title-cases the result. Not as good as a real translation, but
+ * infinitely more readable than `are_funnel_journey_issues_present_result`
+ * showing up in a regression email.
+ */
+function humanizeDecisionKey(decisionKey: string): string {
+  return decisionKey
+    .replace(/_result$/, '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function mapDecisionChange(dc: DecisionChange, translations?: EngineTranslations, locale?: string): DecisionChangeProjection {
   // Build a translated title from the summaries dictionary when available.
   // The raw dc.summary contains English text like "New: copy_misaligned
@@ -2602,6 +2618,17 @@ function mapDecisionChange(dc: DecisionChange, translations?: EngineTranslations
     // Trim to the first sentence for brevity in the timeline
     const firstSentence = title.split('. ')[0];
     if (firstSentence) title = firstSentence;
+  } else {
+    // Wave 18c defense-in-depth — when a pack ships a question_key
+    // without a matching entry in resolveDecisionOutcome (so the
+    // decision_key falls through to `${questionKey}_result`) AND
+    // without a summaries translation, the raw `dc.summary` would
+    // surface in regression emails like:
+    //   "are_funnel_journey_issues_present_result: regressed (risk +12, severity: significant)"
+    // which is what havefunnels customers saw before this fix. Show
+    // a humanized decision_key instead so the email is at least
+    // readable: "Funnel Journey Issues Present Result".
+    title = humanizeDecisionKey(dc.decision_key);
   }
 
   return {

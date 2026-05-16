@@ -742,6 +742,11 @@ function SectionCard({
   data: Record<string, unknown>;
   onUpdate: (sectionKey: SectionKey, data: Record<string, unknown>) => void;
 }) {
+  // The 5 footer strings (Save / Saving… / Changes saved / Save failed
+  // / Section render failed) were declared in the dictionary but this
+  // component never called useTranslations, so they stayed hardcoded
+  // English. Pulling them in here completes the wiring.
+  const t = useTranslations("console.admin.platform_config");
   const meta = sectionKey ? SECTION_META[sectionKey] : null;
   const fields = (meta && Array.isArray(meta.fields)) ? meta.fields : [];
 
@@ -960,19 +965,19 @@ function SectionCard({
               disabled={saving}
               className="rounded-lg bg-accent-text px-4 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              {saving ? "Saving..." : "Save"}
+              {saving ? t("saving") : t("save")}
             </button>
             {feedback === "saved" && (
               <span className="flex items-center gap-1 text-xs text-emerald-400">
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
-                Changes saved
+                {t("changes_saved")}
               </span>
             )}
             {feedback === "error" && (
               <span className="text-xs text-red-400">
-                Failed to save. Please try again.
+                {t("save_failed")}
               </span>
             )}
           </div>

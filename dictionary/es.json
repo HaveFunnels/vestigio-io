@@ -4369,7 +4369,7 @@
 				"col_actions": "Acciones",
 				"col_evidence": "Evidencias",
 				"col_notes": "Notas",
-				"retry_count": "{count} reintento",
+				"retry_count": "{count, plural, one {# reintento} other {# reintentos}}",
 				"view_error": "ver error",
 				"hide_error": "ocultar error",
 				"confirm_suspend": "¿Está seguro de suspender \"{name}\"?",
@@ -4741,8 +4741,7 @@
 				"saving": "Guardando...",
 				"save": "Guardar",
 				"changes_saved": "Cambios guardados",
-				"save_failed": "Error al guardar. Por favor, intenta de nuevo.",
-				"section_render_failed": "Error al renderizar la sección \"{name}\". Error: {error}"
+				"save_failed": "Error al guardar. Por favor, intenta de nuevo."
 			},
 			"surface_scans": {
 				"title": "Surface Scans",

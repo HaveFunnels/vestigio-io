@@ -4732,7 +4732,7 @@
 				"col_actions": "Actions",
 				"col_evidence": "Evidence",
 				"col_notes": "Notes",
-				"retry_count": "{count} retry",
+				"retry_count": "{count, plural, one {# retry} other {# retries}}",
 				"view_error": "view error",
 				"hide_error": "hide error",
 				"confirm_suspend": "Are you sure you want to suspend \"{name}\"?",
@@ -5104,8 +5104,7 @@
 				"saving": "Saving...",
 				"save": "Save",
 				"changes_saved": "Changes saved",
-				"save_failed": "Failed to save. Please try again.",
-				"section_render_failed": "Failed to render \"{name}\" section. Error: {error}"
+				"save_failed": "Failed to save. Please try again."
 			},
 			"surface_scans": {
 				"title": "Surface Scans",

@@ -4816,7 +4816,7 @@
 				"col_actions": "Ações",
 				"col_evidence": "Evidências",
 				"col_notes": "Notas",
-				"retry_count": "{count} retry",
+				"retry_count": "{count, plural, one {# retentativa} other {# retentativas}}",
 				"view_error": "ver erro",
 				"hide_error": "ocultar erro",
 				"confirm_suspend": "Tem certeza que deseja suspender \"{name}\"?",
@@ -5188,8 +5188,7 @@
 				"saving": "Salvando...",
 				"save": "Salvar",
 				"changes_saved": "Alterações salvas",
-				"save_failed": "Falha ao salvar. Tente novamente.",
-				"section_render_failed": "Falha ao renderizar a seção \"{name}\". Erro: {error}"
+				"save_failed": "Falha ao salvar. Tente novamente."
 			},
 			"surface_scans": {
 				"title": "Surface Scans",
@@ -5369,7 +5368,7 @@
 				"demo_count": "{count} demo",
 				"inactive_count": "{count} inativas",
 				"per_month": "/ mês",
-				"excl_demo": "(excl. {count} demo)",
+				"excl_demo": "(exceto {count} demo)",
 				"orgs_over_limit": "{count} org(s) acima do limite",
 				"all_within_limits": "Todas dentro do limite",
 				"active_trials": "{count} trial(s) ativo(s)",

@@ -97,10 +97,45 @@ export const GET = withErrorTracking(async function GET(request: Request) {
   // Total count (for pagination) + paginated query in parallel. Filter
   // out orphan-marked rows by default; an opt-in `?include_removed=1`
   // flag surfaces them for forensics.
+  //
+  // Wave 18n — also hide speculative critical-path probes that
+  // never confirmed the URL exists on the customer's domain. The
+  // crawler seeds /checkout, /pricing, /about, /contact, etc. as
+  // candidates even before knowing the customer's actual layout;
+  // when those return 404 (or never get fetched within budget),
+  // they were still landing in inventory as "Not checked" rows,
+  // confusing customers about what their site actually contains.
+  //
+  // Rule: hide rows where discoverySource = "critical_path" AND
+  // statusCode is null/0/>=400 (we either never confirmed it, or
+  // we did confirm it doesn't exist). Critical-path rows that
+  // returned 2xx/3xx stay — those are confirmed real surfaces and
+  // our speculation happened to be right.
+  //
+  // All other discovery sources (homepage_link, sitemap, internal_link,
+  // pagination, behavioral_event, manual) keep their rows even when
+  // statusCode is null — the URL came from the customer's own site
+  // data, so it's "real" to them even if we haven't fetched yet.
+  //
+  // Opt-in via `?include_unchecked=1` for ops debugging.
   const includeRemoved = url.searchParams.get("include_removed") === "1";
-  const inventoryWhere = includeRemoved
-    ? { websiteRef: website.id }
-    : { websiteRef: website.id, removedAt: null };
+  const includeUnchecked = url.searchParams.get("include_unchecked") === "1";
+  const inventoryWhere: any = { websiteRef: website.id };
+  if (!includeRemoved) inventoryWhere.removedAt = null;
+  if (!includeUnchecked) {
+    inventoryWhere.NOT = {
+      AND: [
+        { discoverySource: "critical_path" },
+        {
+          OR: [
+            { statusCode: null },
+            { statusCode: 0 },
+            { statusCode: { gte: 400 } },
+          ],
+        },
+      ],
+    };
+  }
   const [total, items] = await Promise.all([
     prisma.pageInventoryItem.count({ where: inventoryWhere }),
     prisma.pageInventoryItem.findMany({

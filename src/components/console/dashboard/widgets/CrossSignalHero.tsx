@@ -23,6 +23,42 @@ import {
 import type { CrossSignalChain } from "@/lib/dashboard/types";
 import { getPackStyle } from "@/lib/pack-colors";
 
+// Wave 18g — same pack ranking as CrossSignalsShell so the dashboard
+// widget and the panorama page agree on the order. Keep these two in
+// sync (or hoist into a shared module if more surfaces need it).
+const PACK_RANK: Record<string, number> = {
+	revenue_integrity: 0,
+	copy_alignment: 1,
+	funnel_journey: 2,
+	chargeback_resilience: 3,
+	money_moment_exposure: 4,
+	saas_growth_readiness: 5,
+	scale_readiness: 6,
+	channel_integrity: 7,
+	security_posture: 8,
+	discoverability: 9,
+	content_freshness: 10,
+	brand_integrity: 11,
+	vertical_specific: 12,
+	cross_signal: 13,
+};
+function packSortKey(pack: string | null | undefined): number {
+	if (!pack) return 99;
+	const r = PACK_RANK[pack];
+	return typeof r === "number" ? r : 99;
+}
+function pickPrimaryPack(links: Array<{ pack: string }>): string {
+	if (links.length === 0) return "";
+	const counts = new Map<string, number>();
+	for (const l of links) counts.set(l.pack, (counts.get(l.pack) ?? 0) + 1);
+	let best = links[0].pack;
+	let bestCount = -1;
+	for (const [p, c] of counts) {
+		if (c > bestCount) { best = p; bestCount = c; }
+	}
+	return best;
+}
+
 // Locale hint for Intl.NumberFormat — ensures R$ for BRL, $ for USD, etc.
 const CURRENCY_LOCALE: Record<string, string> = {
 	BRL: "pt-BR",
@@ -177,10 +213,19 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 				</p>
 			)}
 
-			{/* Chain list — flat rows, no nested cards */}
+			{/* Chain list — flat rows, no nested cards.
+			   Wave 18g: chains are pre-sorted by primary pack, links
+			   within each chain pre-sorted by pack rank, so the dashboard
+			   widget reads as grouped instead of random. */}
 			{(() => {
-				const visibleChains = isStarter ? crossSignal.chains.slice(0, 1) : crossSignal.chains;
-				const hiddenCount = crossSignal.chains.length - visibleChains.length;
+				const groupedChains = [...crossSignal.chains]
+					.map((c) => ({
+						...c,
+						links: [...c.links].sort((a, b) => packSortKey(a.pack) - packSortKey(b.pack)),
+					}))
+					.sort((a, b) => packSortKey(pickPrimaryPack(a.links)) - packSortKey(pickPrimaryPack(b.links)));
+				const visibleChains = isStarter ? groupedChains.slice(0, 1) : groupedChains;
+				const hiddenCount = groupedChains.length - visibleChains.length;
 				return (
 					<>
 						<ul className="relative mt-3 flex-1 space-y-0 overflow-y-auto">

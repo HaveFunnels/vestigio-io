@@ -27,6 +27,50 @@ const CURRENCY_LOCALE: Record<string, string> = {
 	USD: "en-US",
 };
 
+// Wave 18g — pack ordering for cross-signal grouping. Chains and
+// links sort by these ranks so the panorama doesn't look like a
+// random shuffle of packs. Lower number = earlier in the list. We
+// front-load the conversion-critical packs (revenue, copy) and let
+// trust / security come after. Unknown packs land at the end.
+const PACK_RANK: Record<string, number> = {
+	revenue_integrity: 0,
+	copy_alignment: 1,
+	funnel_journey: 2,
+	chargeback_resilience: 3,
+	money_moment_exposure: 4,
+	saas_growth_readiness: 5,
+	scale_readiness: 6,
+	channel_integrity: 7,
+	security_posture: 8,
+	discoverability: 9,
+	content_freshness: 10,
+	brand_integrity: 11,
+	vertical_specific: 12,
+	cross_signal: 13,
+};
+
+function packSortKey(pack: string | null | undefined): number {
+	if (!pack) return 99;
+	const r = PACK_RANK[pack];
+	return typeof r === "number" ? r : 99;
+}
+
+/** Most-represented pack in a chain's links, ties broken by first link. */
+function pickPrimaryPack(links: Array<{ pack: string }>): string {
+	if (links.length === 0) return "";
+	const counts = new Map<string, number>();
+	for (const l of links) counts.set(l.pack, (counts.get(l.pack) ?? 0) + 1);
+	let best = links[0].pack;
+	let bestCount = -1;
+	for (const [pack, count] of counts) {
+		if (count > bestCount) {
+			best = pack;
+			bestCount = count;
+		}
+	}
+	return best;
+}
+
 function formatCurrency(cents: number, currency: string = "USD"): string {
 	const locale = CURRENCY_LOCALE[currency] || "en-US";
 	const dollars = Math.abs(cents) / 100;
@@ -101,9 +145,25 @@ export default function CrossSignalsShell({ chains, currency = "USD" }: Props) {
 		});
 	}, [chains, severityFilter, temporalFilter, search]);
 
+	// Wave 18g — group chains by their primary pack so the panorama
+	// view stops looking random. The "primary pack" is the most-
+	// represented pack within the chain's links (ties broken by the
+	// first link). All chains that share the same primary pack render
+	// consecutively. Within each chain, links also sort by pack so
+	// "Jornada → Jornada → Copy" reads cleaner than "Jornada → Copy
+	// → Jornada".
+	const groupedChains = useMemo(() => {
+		return [...filtered]
+			.map((c) => ({
+				...c,
+				links: [...c.links].sort((a, b) => packSortKey(a.pack) - packSortKey(b.pack)),
+			}))
+			.sort((a, b) => packSortKey(pickPrimaryPack(a.links)) - packSortKey(pickPrimaryPack(b.links)));
+	}, [filtered]);
+
 	// Plan gating: Starter sees 2 chains
-	const visibleChains = isStarter ? filtered.slice(0, 2) : filtered;
-	const hiddenCount = filtered.length - visibleChains.length;
+	const visibleChains = isStarter ? groupedChains.slice(0, 2) : groupedChains;
+	const hiddenCount = groupedChains.length - visibleChains.length;
 
 	// Track page view
 	useMemo(() => {

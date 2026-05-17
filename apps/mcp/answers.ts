@@ -101,6 +101,92 @@ export function composeRevenueIntegrityAnswer(ctx: EngineContext, session?: McpS
   };
 }
 
+// ──────────────────────────────────────────────
+// Payment Health Answer (Wave 8.1)
+//
+// Answers "is my payment health creating revenue risk?"
+// Gated by Stripe Connect — when the integration is not
+// wired, the pack is null on the engine result and the
+// answer explains that gracefully instead of fabricating
+// evidence.
+// ──────────────────────────────────────────────
+
+export function composePaymentHealthAnswer(ctx: EngineContext, session?: McpSessionContext): McpAnswer {
+  const sess = session || createEmptySession();
+  const pack = ctx.result.payment_health;
+
+  // Graceful no-Stripe case: pack is null when the integration is missing.
+  // We surface a clear next step (connect Stripe) rather than fake a decision.
+  if (!pack) {
+    const overallFreshness = getOverallFreshness(ctx);
+    return {
+      direct_answer:
+        'Stripe integration not connected — payment health analysis requires Stripe Connect. Connect it at /app/integrations to surface dunning, churn, and MRR signals.',
+      confidence: 0,
+      freshness: overallFreshness,
+      staleness_reason: 'Payment health pack is gated by the Stripe integration. No Stripe data is currently available.',
+      why: [
+        'The payment health decision pack requires Stripe Connect to ingest charges, subscriptions, and dunning events.',
+        'Without Stripe data we cannot quantify involuntary churn, failed-payment recovery, or MRR risk.',
+      ],
+      recommended_next_step:
+        'Connect Stripe at /app/integrations. After the first sync, re-run analysis to see payment health findings.',
+      supporting_refs: [],
+      optional_verification: null,
+      impact_summary: buildImpactSummary(ctx),
+      navigation: {
+        related_findings: [],
+        related_actions: [],
+        related_workspace: null,
+        suggested_map: null,
+        suggestions: ['Connect Stripe at /app/integrations to enable payment health analysis'],
+      },
+      suggestions: buildSuggestions(ctx, sess, 'revenue'),
+      contextual_focus: null,
+    };
+  }
+
+  const decision = pack.decision;
+  const rootCauses = getRootCauses(ctx);
+  const freshness = decision.freshness.freshness_state;
+
+  const directAnswer = composePaymentHealthDirectAnswer(decision.decision_key);
+  const why = composeWhy(decision, rootCauses);
+  const nextStep = composeNextStep(decision);
+  const verification = suggestVerification(decision, freshness);
+
+  return {
+    direct_answer: directAnswer,
+    confidence: decision.confidence_score,
+    freshness,
+    staleness_reason: decision.freshness.staleness_reason,
+    why,
+    recommended_next_step: nextStep,
+    supporting_refs: decision.why.evidence_refs.slice(0, 10),
+    optional_verification: verification,
+    impact_summary: buildImpactSummary(ctx),
+    navigation: buildNavigation(ctx, 'payment_health', 'revenue_leakage'),
+    // Payment health is a revenue-side concern; we reuse the 'revenue'
+    // suggestion domain (workspace = revenue, map = revenue_leakage) to
+    // avoid expanding the buildSuggestions taxonomy. This keeps follow-up
+    // questions and navigation aligned with downstream revenue impact.
+    suggestions: buildSuggestions(ctx, sess, 'revenue'),
+    contextual_focus: null,
+  };
+}
+
+function composePaymentHealthDirectAnswer(decisionKey: string): string {
+  const answers: Record<string, string> = {
+    payment_health_critical:
+      'Yes. Payment health is critical — involuntary churn, failed payments, or MRR loss are actively eroding revenue. Resolve before scaling acquisition.',
+    payment_health_at_risk:
+      'Payment health shows material risk. Dunning, churn, or payment-mix issues are degrading revenue retention and should be fixed before increasing spend.',
+    payment_health_stable:
+      'Payment health is stable. No material involuntary churn or MRR-leakage signals detected from Stripe.',
+  };
+  return answers[decisionKey] || `Decision: ${decisionKey}`;
+}
+
 export function composeRootCauseAnswer(ctx: EngineContext, session?: McpSessionContext): McpAnswer {
   const intel = getIntelligence(ctx);
   const freshness = getOverallFreshness(ctx);

@@ -7,6 +7,7 @@ export type { EngineContext } from './context';
 export {
   composeScaleReadinessAnswer,
   composeRevenueIntegrityAnswer,
+  composePaymentHealthAnswer,
   composeRootCauseAnswer,
   composeFixFirstAnswer,
   composeSaasGrowthAnswer,

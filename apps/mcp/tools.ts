@@ -23,6 +23,7 @@ import {
 import {
   composeScaleReadinessAnswer,
   composeRevenueIntegrityAnswer,
+  composePaymentHealthAnswer,
   composeRootCauseAnswer,
   composeFixFirstAnswer,
   composeFindingChatAnswer,
@@ -110,12 +111,12 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'answer_intent',
-    description: 'Answer one of the four canonical business questions with a structured McpAnswer (direct answer + confidence + freshness + recommended next step + supporting refs). Preferred over the deprecated answer_can_i_scale / answer_where_losing_money / answer_underlying_cause / answer_fix_first tools — same shape, one tool.',
+    description: 'Answer one of the canonical business questions with a structured McpAnswer (direct answer + confidence + freshness + recommended next step + supporting refs). Preferred over the deprecated answer_can_i_scale / answer_where_losing_money / answer_underlying_cause / answer_fix_first tools — same shape, one tool.',
     input_schema: {
       intent: {
         type: 'string',
-        enum: ['can_i_scale', 'where_losing_money', 'underlying_cause', 'fix_first'],
-        description: 'can_i_scale = scale-readiness assessment. where_losing_money = revenue integrity / leakage. underlying_cause = root cause analysis. fix_first = globally prioritized action queue.',
+        enum: ['can_i_scale', 'where_losing_money', 'payment_health', 'underlying_cause', 'fix_first'],
+        description: 'can_i_scale = scale-readiness assessment. where_losing_money = revenue integrity / leakage. payment_health = is payment health (dunning, involuntary churn, MRR risk) creating revenue risk; requires Stripe Connect. underlying_cause = root cause analysis. fix_first = globally prioritized action queue.',
       },
     },
   },
@@ -468,6 +469,8 @@ export function executeTool(
           return { type: 'answer', data: composeScaleReadinessAnswer(ctx) };
         case 'where_losing_money':
           return { type: 'answer', data: composeRevenueIntegrityAnswer(ctx) };
+        case 'payment_health':
+          return { type: 'answer', data: composePaymentHealthAnswer(ctx) };
         case 'underlying_cause':
           return { type: 'answer', data: composeRootCauseAnswer(ctx) };
         case 'fix_first':
@@ -476,7 +479,7 @@ export function executeTool(
           return {
             type: 'error',
             data: {
-              message: `Unknown intent "${intent}". Valid: can_i_scale, where_losing_money, underlying_cause, fix_first.`,
+              message: `Unknown intent "${intent}". Valid: can_i_scale, where_losing_money, payment_health, underlying_cause, fix_first.`,
             },
           };
       }
@@ -488,6 +491,8 @@ export function executeTool(
       return { type: 'answer', data: composeScaleReadinessAnswer(ctx) };
     case 'answer_where_losing_money':
       return { type: 'answer', data: composeRevenueIntegrityAnswer(ctx) };
+    case 'answer_payment_health':
+      return { type: 'answer', data: composePaymentHealthAnswer(ctx) };
     case 'answer_underlying_cause':
       return { type: 'answer', data: composeRootCauseAnswer(ctx) };
     case 'answer_fix_first':

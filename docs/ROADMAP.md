@@ -1707,7 +1707,7 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 | D | **Fix `get_decision_explainability` schema** | MCP | Tool enum only has 2 pack keys (`scale_readiness_pack`, `revenue_integrity_pack`). Missing `saas_growth_readiness`. Claude can't request SaaS finding explainability. | 30min |
 | E | **Hide `integration_pull` from MCP tool schema** | MCP | `IntegrationPullExecutor` is a permanent stub returning failure. Exposed in schema → user sees failure. Hide until implemented. | 30min |
 | F | **Fix SSE progress counter** | Audit Lifecycle | `/api/cycles/[id]/stream` counts ALL `PageInventoryItem` rows for environment, not current cycle. Progress indicator meaningless for non-first cycles. | 1h |
-| G | **Consume Stripe data in signal engine** | Engine | `CommerceContext.mrr`, `subscriber_churn_rate`, `failed_payment_rate` are populated from Stripe but **feed zero signals and zero inferences**. Data arrives and sits unused. | 1d |
+| G | ~~**Consume Stripe data in signal engine**~~ | Engine | **✅ Shipped (Wave 18r/earlier)** — signals + inferences + decision all wired. `packages/signals/engine.ts:6383-6450` emits `subscriber_churn_elevated`, `failed_payment_rate_high`, `failed_payment_rate_elevated`, `subscriber_churn_rate_elevated`, `mrr_available`, `payment_health_data_present` from `commerce.failed_payment_rate / subscriber_churn_rate / mrr`. `packages/inference/engine.ts:4339-4439` adds `inferSubscriberChurnElevated`, `inferFailedPaymentRateHigh`, `inferFailedPaymentRevenueDrain`, `inferSubscriberChurnUnsustainable`, `inferPaymentDiversityInsufficient`, all wired into `produceInferences()` (lines 267-271). Verified by grep on 2026-05-17. | — |
 | H | **Consume Meta/Google Ads in signal engine** | Engine | `IntegrationSnapshot<'meta_ads'>` and `<'google_ads'>` flow into `recomputeAll()` but signal engine doesn't consume them. Types exist, consumption doesn't. | 1d |
 | I | **Map Nuvemshop-exclusive data into CommerceContext** | Engine | `NuvemshopSnapshotData.coupons` (stacking, unlimited, expired-but-active), `.shipping` (avg_days, pickup_rate, cost_ratio), `.channels` (fraud_cancelled, inventory_cancelled) are computed by adapter but `reconcileCommerceContext()` never reads them. | 4h |
 | J | **Clean up state machine inconsistency** | Audit Lifecycle | `CycleStatus` in `packages/domain/audit-cycle.ts` defines 6 states but DB and runtime use 4. Domain types are dead code creating confusion. Align or remove. | 2h |
@@ -1921,10 +1921,12 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 |---|---|
 | **Tag** | `engine` `frontend` `mcp` |
 | **Priority** | P0 |
-| **Status** | Not started — **90% of data already flows into CommerceContext but feeds zero signals** |
-| **Effort** | ~3-5 days |
+| **Status** | **✅ Mostly shipped** — see commits Wave 18r through Wave 18u. Remaining gaps: (a) MRR contraction cycle-over-cycle delta; (b) MCP `composePaymentHealthAnswer` business answer function; (c) dedicated workspace UI (low priority — generic renderer suffices); (d) `inferBillingPageFriction` compound (low priority). Verified by grep on 2026-05-17. |
+| **Effort** | ~3-5 days (most already absorbed; ~1d remaining for genuine gaps) |
 
 **Problem:** Involuntary churn accounts for 20-40% of all SaaS churn. $440B/year globally in failed payments. Stripe already returns `failed_payment_rate`, `subscriber_churn_rate`, and `mrr` into `CommerceContext` — but no signal extraction function reads them. Chargeflow/Redux focus on *recovery*; no one does *diagnosis* of why payment friction exists.
+
+> **Status update (2026-05-17):** Eligibility (`isPaymentHealthEligible()` in `packages/classification/eligibility.ts`), decision wiring (`produceDecision({ question_key: 'is_payment_health_creating_revenue_risk', ... })` in `packages/workspace/recompute.ts:506`), action builder (`buildPaymentHealthActions` in `packages/decision/engine.ts`, Wave 18r), `INFERENCE_TO_PACK` mappings (3 keys, Wave 18r/18t-C), catalog + translations (pt-BR + 8 entries in en/es/de, Wave 18u), UI pack labels in findings page + ViewSelector inclusion, and `payment_health → 'decision'` journey stage in tools.ts are all shipped. Genuine remaining gaps are listed in the parts table below.
 
 **Question key:** `is_payment_health_creating_revenue_risk`
 
@@ -1941,14 +1943,14 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 | `single_payment_gateway_risk` | Inference | ✅ Already exists |
 | Billing/account page UX | Crawl | ⚠️ Not classified as critical surface |
 
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| A | **Signal extraction** | New `extractPaymentHealthSignals()` in `packages/signals/engine.ts`: `failed_payment_rate_elevated` (>5%), `subscriber_churn_accelerating` (>7%), `mrr_contraction_detected` (negative delta cycle-over-cycle), `payment_diversity_insufficient` (reuse existing `single_payment_gateway_risk`) | Low |
-| B | **Inference rules** | 4 new inferences: `inferFailedPaymentRevenueDrain`, `inferChurnRateUnsustainable`, `inferMrrContraction`, `inferBillingPageFriction` (compound: billing page quality × failed payment rate) | Medium |
-| C | **Impact baselines** | `failed_payment_rate × mrr × 12 = annual involuntary churn cost`. Real data from Stripe. | Low |
-| D | **Pack decision** | Add `produceDecision({ question_key: 'is_payment_health_creating_revenue_risk', ... })` in `recomputeAll()`. Workspace creator. | Low |
-| E | **MCP integration** | `answer_payment_health` business answer. `payment_health` playbook in copilot. | Low |
-| F | **i18n** | 4 languages (en, pt-BR, es, de) | Low |
+| # | Part | Description | Effort | Status |
+|---|------|-------------|--------|--------|
+| A | ~~**Signal extraction**~~ | `packages/signals/engine.ts:6383-6450` emits `failed_payment_rate_high`, `failed_payment_rate_elevated`, `subscriber_churn_elevated`, `subscriber_churn_rate_elevated`, `mrr_available`, `payment_health_data_present` from Stripe `commerce.*` fields. | Low | **✅ Shipped (Wave 18r)** |
+| B | **Inference rules** (partial) | 3 of 4 shipped in `packages/inference/engine.ts:4339-4439`: `inferFailedPaymentRevenueDrain`, `inferSubscriberChurnUnsustainable`, `inferPaymentDiversityInsufficient` (plus extras: `inferSubscriberChurnElevated`, `inferFailedPaymentRateHigh`). 🟡 Remaining: `inferMrrContraction` (cycle-over-cycle delta) + 🟢 `inferBillingPageFriction` compound (billing-page quality × failed-payment rate, low priority). | Medium | 🟡 **Mostly shipped — MRR contraction pending** |
+| C | ~~**Impact baselines**~~ | `failed_payment_rate × mrr × 12 = annual involuntary churn cost`. Real data from Stripe wired through impact engine. | Low | **✅ Shipped (Wave 18r)** |
+| D | ~~**Pack decision**~~ | `produceDecision({ question_key: 'is_payment_health_creating_revenue_risk', ... })` in `packages/workspace/recompute.ts:506`. `isPaymentHealthEligible()` in `packages/classification/eligibility.ts`. `buildPaymentHealthActions` in `packages/decision/engine.ts`. `INFERENCE_TO_PACK` maps 3 keys → `payment_health`. 🟢 Dedicated workspace UI deferred (low priority — generic workspace renderer serves it today). | Low | **✅ Shipped (Wave 18r/18t-C)** |
+| E | **MCP integration** | `payment_health` registered as `'decision'` journey stage in `apps/mcp/llm/tools.ts`. 🟡 Remaining: dedicated `composePaymentHealthAnswer` business-answer function (no pack-specific MCP answer composer yet). | Low | 🟡 **Partial — answer composer pending** |
+| F | ~~**i18n**~~ | Catalog entries with translations: pt-BR + 8 entries each in en/es/de (Wave 18u). UI pack labels in findings page + ViewSelector include `payment_health`. | Low | **✅ Shipped (Wave 18u)** |
 
 **Files touched:** `packages/signals/engine.ts`, `packages/inference/engine.ts`, `packages/impact/baselines.ts`, `packages/projections/remediation-catalog.ts`, `packages/projections/engine.ts` (INFERENCE_TO_PACK), `packages/workspace/recompute.ts`, `packages/classification/eligibility.ts`, `apps/mcp/answers.ts`, `apps/mcp/playbook-prompts.ts`, `dictionary/{en,pt-BR,es,de}.json`
 
@@ -2045,7 +2047,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 
 | Item | Priority | Effort | Status |
 |------|----------|--------|--------|
-| **8.1** Payment Health Pack | P0 | 3-5 days | Not started — data flows but unused |
+| **8.1** Payment Health Pack | P0 | 3-5 days | **✅ Mostly shipped (Wave 18r-18u)** — MRR contraction + MCP `composePaymentHealthAnswer` in flight |
 | **8.2** Dark Pattern & Compliance Pack | P1 | 1-2 weeks | Not started — foundation exists |
 | **8.3** Content Freshness Pack | P1 | 1 week | Not started — enrichment + store exist |
 
@@ -2054,7 +2056,7 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 2. **8.3** Content Freshness (reuses 7.1 trend engine + existing enrichment)
 3. **8.2** Dark Pattern & Compliance (most complex but highest market urgency)
 
-**Dependency:** 7.11G (Consume Stripe data in signal engine) should ship before 8.1, or be merged into 8.1A.
+**Dependency:** ~~7.11G (Consume Stripe data in signal engine) should ship before 8.1, or be merged into 8.1A.~~ — Resolved: 7.11G shipped alongside 8.1A in Wave 18r.
 
 ---
 

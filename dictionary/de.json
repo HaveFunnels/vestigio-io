@@ -4854,6 +4854,2599 @@
 					"Dokumentiere das Failover-Playbook für den On-Call-Engineer."
 				],
 				"verification_notes": "Wir prüfen die Integrationsliste und bestätigen, dass mindestens zwei aktive Payment-Gateways konfiguriert sind."
+			},
+			"checkout_integrity": {
+				"remediation_steps": [
+					"Fuehre den Checkout end-to-end in mindestens 3 Browsern (Chrome, Safari, Mobile) aus und notiere jeden Fehler / unerwarteten Redirect.",
+					"Behebe Off-Domain-Redirects und HTTP-Fehler vor jeder Conversion-Optimierung.",
+					"Fuege ein sichtbares SSL-Sicherheitssiegel + 2 Trust-Siegel (Trustpilot, Google Reviews, etc.) im Checkout hinzu.",
+					"Veroeffentliche die Pflichtrichtlinien (Datenschutz, AGB, Widerruf) und verlinke sie im Checkout-Footer.",
+					"Richte Uptime-Monitoring fuer die URLs /checkout und /cart mit Alerts unter 5 Minuten ein."
+				],
+				"verification_notes": "Wir fuehren den Checkout in einem Headless-Browser aus, verfolgen Redirects, messen Latenz und ueberpruefen erneut das Vorhandensein von Richtlinien + Trust-Siegeln."
+			},
+			"revenue_path_fragile": {
+				"remediation_steps": [
+					"Identifiziere die 3 kritischsten Endpunkte des Kaufpfads (Produkt -> Warenkorb -> Checkout) und richte 1-Minuten-Health-Checks ein.",
+					"Entferne Abhaengigkeiten von Third-Party-Skripten, die das Checkout-Rendering blockieren -- verschiebe sie auf async / defer.",
+					"Implementiere ein Fallback fuer den Checkout, wenn das primaere Gateway ausfaellt (automatischer Retry + Nutzermeldung).",
+					"Fuege Client-Side-Error-Logging im Checkout hinzu, um Sichtbarkeit darueber zu erhalten, welche Requests in Produktion fehlschlagen."
+				],
+				"verification_notes": "Wir navigieren den kompletten Pfad (Home -> Produkt -> Warenkorb -> Checkout) headless, messen die Zeiten pro Request, identifizieren blockierende Third-Parties und liefern einen aktualisierten Bericht."
+			},
+			"measurement_coverage": {
+				"remediation_steps": [
+					"Installiere GA4 via GTM auf allen Seiten einschliesslich der Bestaetigungs-URL (/thank-you, /success).",
+					"Konfiguriere das `purchase`-Event mit transaction_id, value, currency und items.",
+					"Fuege Meta Pixel + serverseitige Conversions API hinzu, um den Cookie-Verlust zu ueberstehen.",
+					"Validiere im Tag Assistant / Meta Events Manager, dass alle 4 Tags (GA4, GTM, Pixel, CAPI) bei einem echten Kauf ausloesen."
+				],
+				"verification_notes": "Wir oeffnen den Shop in einem Headless-Browser, loesen synthetische Events aus und pruefen, ob GA4 / GTM / Pixel / CAPI sie empfangen. Wir berichten, welche vorhanden sind und welche noch fehlen."
+			},
+			"critical_path_broken": {
+				"remediation_steps": [
+					"Untersuche den Statuscode, der von /checkout, /cart und Produktseiten zurueckgegeben wird -- priorisiere URLs mit 4xx/5xx.",
+					"Stelle defekte URLs sofort wieder her (per Revert eines aktuellen Deploys oder Routing-Hotfix).",
+					"Richte einen Alert in Sentry / Datadog / UptimeRobot ein, der ausloest, wenn der Statuscode auf einer kritischen URL nicht 2xx ist.",
+					"Ueberpruefe die Release-Pipeline so, dass Deploys blockiert werden, wenn der Checkout-Smoke-Test fehlschlaegt."
+				],
+				"verification_notes": "Wir rufen die kritischen URLs (/checkout, /cart, repraesentative Produktseiten) erneut ab und bestaetigen, ob der Statuscode wieder 2xx ist."
+			},
+			"form_data_leaves_domain": {
+				"remediation_steps": [
+					"Pruefe das `action`-Attribut aller Formulare -- liste auf, welche auf externe Domains zeigen.",
+					"Setze legitime Formulare (OAuth, Hosted Payment Processor) auf eine Whitelist mit Dokumentation, warum sie die Domain verlassen.",
+					"Migriere nicht-essenzielle Formulare, die die Domain verlassen, auf interne Endpunkte, die den externen Dienst proxyen.",
+					"Fuege jedem Formular ein aria-label hinzu, das den Zweck (Signup, Checkout, Support, Search) beschreibt, um die Pruefung zu erleichtern."
+				],
+				"verification_notes": "Wir parsen das HTML der relevanten Seiten erneut, listen alle Formulare mit Cross-Domain-Action auf und pruefen, ob die nicht whitelisted Formulare migriert wurden."
+			},
+			"untrusted_embeds_near_purchase": {
+				"remediation_steps": [
+					"Pruefe Embeds (iframes, Third-Party-Skripte) auf Produkt-, Warenkorb- und Checkout-Seiten.",
+					"Entferne nicht-essenzielle Embeds aus dem Kaufpfad -- dekorative Trust-Badges, generische Chat-Widgets.",
+					"Validiere fuer essenzielle Embeds (Payment Gateway, offizieller Chat), dass sie von anerkannten Domains mit gueltigem Zertifikat stammen.",
+					"Konfiguriere eine restriktive Content-Security-Policy im Checkout, die nur die notwendigen Domains zulaesst."
+				],
+				"verification_notes": "Wir parsen das HTML des Kaufpfads erneut, um alle externen iframes/Skripte zu listen und in essenziell vs nicht-essenziell zu klassifizieren."
+			},
+			"platform_checkout_risk_unaddressed": {
+				"remediation_steps": [
+					"Dokumentiere explizit, welche Checkout-Plattform du nutzt (Shopify, Hosted Gateway) sowie Version / Plan.",
+					"Richte einen Health-Check-Endpunkt gegen die Plattform ein und ueberwache die Uptime via UptimeRobot oder aehnlich.",
+					"Halte einen schriftlichen Notfallplan bereit: Wenn die Plattform >15min ausfaellt, wie verarbeitest du Bestellungen manuell.",
+					"Pruefe, ob dein Plattform-Plan ein SLA und Entschaedigung bei Downtime enthaelt."
+				],
+				"verification_notes": "Wir projizieren den Finding nach deiner naechsten Pruefung erneut -- ohne neue Daten ist dies ein strukturelles Assessment des Plattform-Abhaengigkeitsrisikos."
+			},
+			"revenue_path_regressed": {
+				"remediation_steps": [
+					"Vergleiche das aktuelle Audit mit dem vorherigen -- identifiziere, welche Findings sich verschlechtert haben (Severity oder Confidence gestiegen).",
+					"Isoliere den Deploy oder die Produktaenderung, die mit dem Regressionsfenster zusammenfaellt.",
+					"Wenn die Regression aus einem Deploy stammt: erwaege einen Rollback waehrend der Untersuchung. Wenn sie aus einer operativen Aenderung stammt: pruefe den verursachenden Prozess.",
+					"Fuege einen Smoke-Test auf dem Umsatzpfad hinzu, um diese spezifische Art von Regression beim naechsten Deploy zu verhindern."
+				],
+				"verification_notes": "Wir projizieren erneut anhand der aktuellen Evidenz, um zu bestaetigen, ob die Regression noch vorhanden ist oder nach deinem Fix behoben wurde."
+			},
+			"trust_surface_too_thin": {
+				"remediation_steps": [
+					"Fuege auf der Home mindestens 3 sichtbare Trust-Marker hinzu: SSL-Siegel, Payment-Siegel (akzeptierte Kartenmarken), Testimonials / Bewertungen.",
+					"Binde auf der Produktseite ein: Kundenbewertungen, Widerrufsregelung, Kontaktdaten, Lieferzeit.",
+					"Verstaerke im Checkout: explizites SSL-Siegel, verlinkte Widerrufsregelung, sichtbarer Support-Kanal, Gateway-Logos.",
+					"Vermeide generische Trust-Marker ohne Kontext (Badges ohne echte Zertifizierung dahinter) -- sie koennen mehr schwaechen als helfen."
+				],
+				"verification_notes": "Wir crawlen Home + Produkt + Checkout erneut, um vorhandene Trust-Marker zu zaehlen und mit dem Baseline auditierter Shops zu vergleichen."
+			},
+			"tracking_stack_gaps": {
+				"remediation_steps": [
+					"Liste alle aktiven Traffic-Kanaele auf (organisch, Paid, Social, Email) und welches Tag jeder fuer die Attribution benoetigt.",
+					"Installiere und validiere: GA4, GTM, Meta Pixel (wenn Meta Ads), Google Ads Tag (wenn Google Ads), TikTok Pixel (wenn TikTok).",
+					"Implementiere CAPI / Server-Side fuer Meta und Google -- kritische Mitigation des Cookie-Verlusts auf Safari/iOS.",
+					"Dokumentiere, welches Event (purchase, add_to_cart, initiate_checkout) jedes Tag erfassen muss und teste im Tag Assistant."
+				],
+				"verification_notes": "Wir loesen einen synthetischen Checkout in einem Headless-Browser aus und pruefen, welche Tags feuern -- liefert eine Liste vorhandener vs erwarteter Tags."
+			},
+			"mobile_commercial_path_blocked": {
+				"remediation_steps": [
+					"Fuehre den kompletten Checkout auf einem iPhone und einem Android aus -- notiere jeden Punkt, an dem der Flow stockt (Viewport, Tastatur, Button).",
+					"Korrigiere das Viewport-Meta-Tag (`width=device-width, initial-scale=1`) und stelle sicher, dass der Checkout kein horizontales Scrollen erfordert.",
+					"Teste Buttons: sie sollten mindestens 44x44px klickbare Flaeche und >=8px Abstand zu anderen Elementen haben.",
+					"Eliminiere Overlays / Modals, die auf Mobile brechen (Scroll-Trapping, Close-Button ausserhalb des Viewports)."
+				],
+				"verification_notes": "Wir navigieren den Checkout in einem Headless-Browser mit Mobile-Viewport (375x667) und melden jeden Punkt, an dem der Flow bricht."
+			},
+			"mobile_trust_weaker_than_desktop": {
+				"remediation_steps": [
+					"Vergleiche Home + Produkt + Checkout auf Desktop vs Mobile -- Trust-Marker auf Desktop sollten auch auf Mobile erscheinen.",
+					"Mobile blendet Trust-Marker oft aus, um Platz zu sparen -- priorisiere SSL-Siegel, Widerrufsregelung und Kontakt als immer sichtbar.",
+					"Nutze Akkordeons / Drawer, um Trust-Marker on-demand anzuzeigen, statt sie ganz auszublenden.",
+					"Teste in einem 375px breiten Viewport, dass die Sicherheitsinformationen im Checkout nicht abgeschnitten werden."
+				],
+				"verification_notes": "Wir navigieren headless in Mobile- und Desktop-Viewport und vergleichen, wie viele Trust-Marker jedes Layout zeigt."
+			},
+			"secondary_flows_bypass_trust_path": {
+				"remediation_steps": [
+					"Identifiziere die Sekundaerfluesse: WhatsApp-Kauf, Angebotsformular, Deep Link aus Ads, externe App.",
+					"Validiere fuer jeden Sekundaerfluss, dass der Kaeufer dieselben Trust-Marker (Richtlinie, SSL-Siegel, Kontakt) vor dem Kauf durchlaeuft.",
+					"Wenn ein Sekundaerfluss den offiziellen Checkout umgeht, fuege eine Zwischenseite mit den essenziellen Trust-Markern hinzu.",
+					"Miss die Conversion jedes Sekundaerflusses separat in GA4 -- vergleiche mit dem offiziellen Pfad, um zu isolieren, wo Trust erodiert."
+				],
+				"verification_notes": "Phase 3 fuehrt Probes auf den Sekundaerfluessen (WhatsApp, Formular) ein -- heute besteht die Verifikation darin, anhand bestehender Evidenz erneut zu projizieren."
+			},
+			"runtime_errors_interrupt_purchase": {
+				"remediation_steps": [
+					"Konfiguriere Error-Tracking (Sentry, Rollbar, Datadog RUM) im Checkout- und Cart-Frontend -- noch nicht auf allen Seiten, Fokus auf den Umsatzpfad.",
+					"Pruefe die letzten 50 erfassten JS-Fehler -- priorisiere jene, die auf Produkt-, Cart- und Checkout-Seiten ausloesen.",
+					"Fuege try/catch um externe Aufrufe im Checkout (Gateway, CAPI, Anti-Fraud) hinzu mit Fallback, das den Nutzer nicht blockiert.",
+					"Konfiguriere Source Maps im Build, damit Stack Traces in Produktion lesbar sind."
+				],
+				"verification_notes": "Wir navigieren den Checkout in einem Headless-Browser und sammeln JS-Konsolenfehler -- liefert eine Liste gefundener Fehler im Vergleich zur vorherigen Baseline."
+			},
+			"runtime_measurement_broken": {
+				"remediation_steps": [
+					"Oeffne den Checkout in Chrome DevTools und pruefe im Network-Tab: kommen die GA4 / Pixel / CAPI Requests an (Status 200)?",
+					"Fuege Debug-Logging auf den Analytics-Tags im Staging hinzu, um den gesendeten Payload zu bestaetigen.",
+					"Validiere mit offiziellen Tools: Tag Assistant (Google), Pixel Helper (Meta), GA4 DebugView.",
+					"Wenn das Problem Consent (DSGVO) ist: pruefe die Banner-Logik, damit Tags nach Consent feuern, nicht davor und nicht nie."
+				],
+				"verification_notes": "Wir loesen einen synthetischen Checkout headless aus, erfassen Network-Requests und bestaetigen, welche Tags valide Daten senden."
+			},
+			"high_intent_surfaces_blind": {
+				"remediation_steps": [
+					"Identifiziere die Seiten mit hoechster kommerzieller Intention (Produkt, Pricing, Vergleich) und validiere, dass alle GA4 + Pixel getaggt sind.",
+					"Konfiguriere Scroll-Tracking und Time-on-Page speziell auf diesen Surfaces -- Intent muss ueber den Pageview hinaus gemessen werden.",
+					"Fuege Custom-Engagement-Events hinzu: view_item, add_to_cart, scroll_75, time_on_page_60s.",
+					"Erstelle ein Funnel-Dashboard nur fuer diese Surfaces, um Drop-off pro Intent-Phase zu visualisieren."
+				],
+				"verification_notes": "Wir navigieren headless durch die High-Intent-Seiten und bestaetigen, welche Events feuern vs erwartet."
+			},
+			"conversion_flow_fragmented": {
+				"remediation_steps": [
+					"Mappe den aktuellen Funnel: Home -> Produkt -> Warenkorb -> Checkout -> Bestaetigung. Identifiziere, wo mehr als ein Pfad moeglich ist.",
+					"Konsolidiere doppelte CTAs auf Home und Produkt -- ein klarer Primaer-CTA pro Seite.",
+					"Entferne optionale Schritte, die den Momentum brechen (Newsletter-Popup vor Checkout, Survey nach Add-to-Cart).",
+					"Standardisiere das Checkout-Layout: einspaltig auf Mobile, logisch gruppierte Felder, Fortschrittsanzeige bei Multi-Step."
+				],
+				"verification_notes": "Wir navigieren den kompletten Funnel und zaehlen alternative Pfade + CTAs, die um Aufmerksamkeit konkurrieren."
+			},
+			"friction_on_critical_path": {
+				"remediation_steps": [
+					"Zaehle, wie viele Formularfelder zwischen \"Produkt ansehen\" und \"Bezahlen\" existieren -- reduziere auf <=8 Pflichtfelder.",
+					"Eliminiere erzwungene Logins vor dem Checkout -- biete Gast-Checkout mit optionaler Account-Erstellung danach an.",
+					"Entferne Modals, Popups und Overlays aus dem Kaufpfad -- nur das, was zwingend fuer den Bezahlvorgang noetig ist.",
+					"Wenn der Checkout mehrere Steps hat, stelle sicher, dass Zurueckgehen und Bearbeiten keinen bereits eingegebenen Daten verliert."
+				],
+				"verification_notes": "Wir fuehren den kritischen Pfad headless aus und zaehlen Friktionen: Felder, Modals, Redirects, erzwungene Logins."
+			},
+			"revenue_leakage": {
+				"remediation_steps": [
+					"Pruefe die Liste der Findings mit hoechstem Impact -- priorisiere jene mit Confidence >=70% und Severity >=high.",
+					"Markiere fuer jedes Priorisierungs-Finding den verantwortlichen Owner und das Umsetzungsfenster.",
+					"Blockiere Deploys, die den Umsatzpfad beeintraechtigen, bis kritische Findings geloest sind.",
+					"Erstelle ein woechentliches Dashboard mit der Summe von monthly_range.mid der offenen Findings, um kumuliertes Leakage zu verfolgen."
+				],
+				"verification_notes": "Anhand aktueller Evidenz erneut projizieren, um aggregiertes Leakage neu zu berechnen -- ohne neue Daten nur die aktuelle Summe."
+			},
+			"trust_break_in_checkout": {
+				"remediation_steps": [
+					"Oeffne den Checkout und identifiziere jeden Moment, an dem der Kaeufer zoegern koennte (Domainwechsel, fehlendes Siegel, versteckte Richtlinie).",
+					"Fuege ein explizites SSL-Siegel (\"Sichere Verbindung\") neben dem Kreditkartenfeld hinzu.",
+					"Mache die Widerrufsregelung mit einem Klick aus dem Checkout zugaenglich -- verstecke sie nicht in einem generischen Footer.",
+					"Zeige die Logos der akzeptierten Kartenmarken + das Gateway-Logo (Stripe, Mercado Pago, etc.) zur Staerkung der Glaubwuerdigkeit."
+				],
+				"verification_notes": "Wir navigieren headless zum Checkout und zaehlen die im Bezahl-Viewport sichtbaren Trust-Marker."
+			},
+			"redirect_chain_erodes_checkout_trust": {
+				"remediation_steps": [
+					"Pruefe die Redirect-Kette von /checkout -- nutze curl -L -I oder DevTools Network, um jeden Hop aufzulisten.",
+					"Eliminiere unnoetige Redirects (http->https->www->Subdomain) -- idealerweise ein einziger Redirect oder gar keiner.",
+					"Wenn das Gateway das Verlassen der Domain erfordert, stelle sicher, dass der finale Redirect direkt erfolgt und nicht ueber Zwischenstationen.",
+					"Konfiguriere HSTS auf der Root-Domain, um HTTPS ohne Redirect-Roundtrip zu erzwingen."
+				],
+				"verification_notes": "Wir rufen /checkout erneut ab, folgen den Redirects und zaehlen die Hops -- der Bericht enthaelt jede Zwischen-URL."
+			},
+			"commercial_journey_language_break": {
+				"remediation_steps": [
+					"Pruefe, ob alle kommerziellen Surfaces (Home, Produkt, Checkout, Bestaetigung) in derselben Sprache sind.",
+					"Loese Mischungen auf: Produkt auf Deutsch, aber Checkout auf Englisch ist ein sofortiger Trust-Break fuer den deutschsprachigen Kaeufer.",
+					"Setze `<html lang=\"de\">` auf allen kommerziellen Seiten, um es Suchmaschinen und Screenreadern zu signalisieren.",
+					"Wenn du eine Multi-Sprach-Version hast, implementiere hreflang, damit Google nicht die falsche Version pro Region indexiert."
+				],
+				"verification_notes": "Wir parsen das HTML der kommerziellen Surfaces erneut und extrahieren das lang-Attribut + eine Copy-Stichprobe, um Sprachmischungen zu erkennen."
+			},
+			"post_purchase_confirmation_absent": {
+				"remediation_steps": [
+					"Pruefe die Bestaetigungsseite nach dem Kauf: sie sollte Bestellnummer, Zusammenfassung des Gekauften und geschaetzte Lieferzeit enthalten.",
+					"Konfiguriere eine transaktionale Bestaetigungs-Email, die unmittelbar nach dem Purchase-Event ausgeloest wird.",
+					"Nimm in die Email auf: Rechnung (oder Versandzeitpunkt), Support-Kanal und Tracking-Link, sobald verfuegbar.",
+					"Konfiguriere Retry + Fallback beim Email-Versand -- verlasse dich nicht auf einen einzigen Provider ohne Backup."
+				],
+				"verification_notes": "Wir laden die Bestaetigungs-URL headless und pruefen das Vorhandensein der essenziellen Elemente (Order-ID, Zusammenfassung, ETA)."
+			},
+			"refund_process_unclear": {
+				"remediation_steps": [
+					"Schreibe die Widerrufsregelungs-Seite mit folgender Struktur neu: Frist -> Prozess -> Kontaktkanal -> Ausnahmen.",
+					"Fuege konkrete Beispiele hinzu (\"Wenn du das falsche Produkt erhalten hast, sende eine Email an X mit Foto\") -- bleibe nicht bei abstrakten Regeln.",
+					"Fuege im Checkout oder neben dem Bezahl-Button eine Refund-FAQ mit Link zur vollstaendigen Richtlinie ein.",
+					"Miss die durchschnittliche Zeit bis zum ersten Kundenkontakt ueber den Refund-Kanal -- unter 2 Geschaeftsstunden ist ein guter Benchmark."
+				],
+				"verification_notes": "Wir rufen die Widerrufsregelungs-Seite erneut ab und analysieren Struktur + Inhaltsdichte."
+			},
+			"post_purchase_proof_too_weak": {
+				"remediation_steps": [
+					"Konfiguriere eine professionelle Bestaetigungs-Email (gebrandetes Template, kein Plaintext), die in <1min nach dem Kauf ausgeloest wird.",
+					"Fuege eine elektronische Rechnung / PDF-Quittung als Anhang oder Download-Link hinzu.",
+					"Fuege den Tracking-Code hinzu, sobald verfuegbar (Transporteur-Webhook -> automatische Email).",
+					"Versende eine Post-Delivery-Follow-up-Email mit Bitte um Bewertung -- staerkt den Abschluss des Trust-Zyklus."
+				],
+				"verification_notes": "Post-Purchase-Proof erfolgt per Email/SMS ausserhalb der Seite -- es laesst sich nicht per Crawl verifizieren. Phase 3 erkundet ESP-Integration zur Validierung transaktionaler Templates."
+			},
+			"support_reassurance_too_late": {
+				"remediation_steps": [
+					"Platziere einen sichtbaren Support-Kanal vor dem Checkout -- Footer mit WhatsApp/Chat auf jeder kommerziellen Seite.",
+					"Fuege Microcopy neben dem Bezahl-Button hinzu: \"Fragen? Sprich mit unserem Team via WhatsApp\".",
+					"Wenn du ein Chat-Widget hast, sorge dafuer, dass es schnell laedt (ohne das Checkout-Rendering zu blockieren) und in <5 Geschaeftsminuten antwortet.",
+					"Binde direkt auf der Produkt- und Checkout-Seite eine Kauf-FAQ ein -- beantworte die 5 haeufigsten Fragen, bevor der Kaeufer fragen muss."
+				],
+				"verification_notes": "Wir parsen Home + Produkt + Checkout erneut und erkennen sichtbare Support-Kanaele auf jeder Surface."
+			},
+			"reassurance_routes_disconnected": {
+				"remediation_steps": [
+					"Teste jede Reassurance-Route: oeffnet der Klick auf \"Widerrufsregelung\" vom Checkout aus in einem neuen Tab oder fuehrt er in einen generischen Footer?",
+					"Stelle sicher, dass jeder Trust-Marker (Richtlinie, Kontakt, Testimonials) KONTEXTUELL geoeffnet wird -- Modal oder dedizierte Seite mit Rueckweg.",
+					"Vermeide Richtlinien auf losen Footer-URLs -- verankere sie im Kaufkontext (direkter Link aus dem Checkout zur Widerrufsregelung).",
+					"Miss die Rueckkehrrate nach Klick auf diese Links -- wenn >50% der Klicks nicht zurueckkehren, lenkt der Link den Kaeufer ab."
+				],
+				"verification_notes": "Wir navigieren vom Checkout aus und klicken jeden Reassurance-Link an, um Ziel + Verhalten zu pruefen."
+			},
+			"alternate_flows_unmeasured": {
+				"remediation_steps": [
+					"Liste alle alternativen Kaufkanaele auf: WhatsApp, Email, Anruf, Angebotsformular, Marktplatz.",
+					"Stelle fuer jeden Kanal sicher, dass das Conversion-Event erfasst wird (auch manuell -- im CRM erfassen + Custom-Event in GA4).",
+					"Konfiguriere UTMs + Custom-Source/Medium, um Conversions dieser Kanaele von denen der Hauptsite zu trennen.",
+					"Erstelle ein GA4-Dashboard, das alle Conversion-Quellen konsolidiert, sodass du den kompletten Funnel siehst."
+				],
+				"verification_notes": "Alternative Kanaele laufen ausserhalb der Site -- die Verifikation ist erneutes Projizieren, nachdem du die Events markiert hast."
+			},
+			"runtime_breaking_reassurance": {
+				"remediation_steps": [
+					"Pruefe, ob Reassurance-Komponenten (Richtlinie, Chat-Widget, Trust-Badges) JS-Fehler werfen, die die Seite brechen.",
+					"Stelle sicher, dass Chat-Widgets async/defer laden -- sie duerfen das Rendering des Hauptinhalts nicht blockieren.",
+					"Wenn ein Trust-Badge nicht laedt (Bild 404, externes Skript-Timeout), halte einen Fallback bereit, der keinen kaputten Bereich zeigt.",
+					"Konfiguriere einen JS-Fehler-Alert im Checkout, um Regressionen zu erkennen, bevor der Kaeufer ankommt."
+				],
+				"verification_notes": "Wir oeffnen den Checkout headless mit Console-Capture und pruefen, ob die Trust-Komponenten ohne Fehler rendern."
+			},
+			"checkout_provider_path_weak": {
+				"remediation_steps": [
+					"Wenn du nur einen Checkout-Provider nutzt, baue Notfallplaene auf: konfiguriertes Backup-Gateway + dokumentierter manueller Prozess.",
+					"Pruefe den Vertrag mit dem Provider hinsichtlich SLA und Downtime-Kompensation.",
+					"Richte externes Monitoring (UptimeRobot) speziell gegen die Checkout-URL ein -- verlasse dich nicht nur auf die Statusseite des Providers.",
+					"Halte eine schriftliche Checkliste bereit, wenn der Provider ausfaellt: Team informieren, Backup aktivieren, Kaeufer voruebergehend per WhatsApp bedienen."
+				],
+				"verification_notes": "Strukturelles Single-Provider-Risiko -- die Verifikation ist erneutes Projizieren, nachdem du diversifiziert oder die Notfallplaene dokumentiert hast."
+			},
+			"trust_and_measurement_both_absent": {
+				"remediation_steps": [
+					"Loese zuerst Trust -- es ist guenstig und wirkt sofort (veroeffentlichte Richtlinien + sichtbare Siegel in <=1 Tag).",
+					"Konfiguriere parallel grundlegende GA4 + Pixel auf Home + Checkout, um mindestens eine Messebene zu haben.",
+					"Deploye keine bezahlte Kampagne, solange diese beiden Luecken offen sind -- du zahlst fuer Ads ohne Messung und ohne Abschluesse.",
+					"Erstelle einen woechentlichen Checkpoint mit dem Team, der den Fortschritt an beiden Fronten prueft -- Trust + Measurement duerfen nicht auseinanderlaufen."
+				],
+				"verification_notes": "Wir verifizieren parallel das Vorhandensein von Richtlinien, Siegeln und Mess-Tags und liefern den gemeinsamen Fortschritt."
+			},
+			"consent_undermining_measurement": {
+				"remediation_steps": [
+					"Pruefe dein Consent-Banner: blockiert es GA4 / Pixel BEVOR der Kaeufer reagiert? Wechsle zu konditionalem Blockieren.",
+					"Konfiguriere Google Consent Mode v2 -- ermoeglicht aggregierte Messung auch ohne volle Einwilligung.",
+					"Aktiviere bei Meta die serverseitige Conversions API als Fallback, wenn das Browser-Pixel blockiert ist.",
+					"Validiere in Opt-in- und Opt-out-Umgebungen: in beiden Faellen muss irgendeine Messung eintreffen (auch wenn unter Opt-out begrenzt)."
+				],
+				"verification_notes": "Wir navigieren headless mit abgelehntem und akzeptiertem Consent und pruefen, welche Tags in jedem Szenario feuern."
+			},
+			"checkout_provider_fragmented": {
+				"remediation_steps": [
+					"Liste auf, wie viele unterschiedliche Gateways / Checkouts deine Flows nutzen (Site, Mobile App, Marktplatz, WhatsApp).",
+					"Konsolidiere: idealerweise 1-2 Gateways, die 95% des Volumens abdecken -- Fragmentierung erhoeht Kosten + Komplexitaet.",
+					"Dokumentiere fuer verbleibende Flows mit dediziertem Gateway den Grund (regulatorisch, geografisch), um es zu rechtfertigen.",
+					"Standardisiere die visuelle Checkout-Erfahrung auch bei unterschiedlichem Backend -- der Kunde sollte die Fragmentierung nicht bemerken."
+				],
+				"verification_notes": "Wir crawlen die Checkouts der bekannten Flows erneut und identifizieren, wie viele unterschiedliche Gateways auftauchen."
+			},
+			"refund_policy_gap": {
+				"remediation_steps": [
+					"Veroeffentliche eine Widerrufsregelung mit Frist (14-taegiges Widerrufsrecht), Prozess und expliziter Kontakt-Email.",
+					"Verlinke die Richtlinie im Checkout-Footer und in der Bestaetigungs-Email nach dem Kauf.",
+					"Erwaehne die Richtlinie auf der Produktseite nahe dem Kaufbutton -- senkt die Dispute-Rate."
+				],
+				"verification_notes": "Wir crawlen den Footer + URLs /widerruf /rueckgabe /widerrufsregelung erneut, um Vorhandensein und Mindestdichte zu bestaetigen."
+			},
+			"support_unreachable": {
+				"remediation_steps": [
+					"Zeige mindestens 2 Support-Kanaele im Footer jeder Seite: Email + WhatsApp (oder Telefon).",
+					"Konfiguriere Auto-Antworten in <5 Geschaeftsminuten auf den Hauptkanaelen -- der Kaeufer sollte nicht laenger auf den Erstkontakt warten.",
+					"Veroeffentliche Geschaeftszeiten (\"Mo-Fr 9-18 Uhr\"), um klare Erwartungen zu setzen.",
+					"Miss die durchschnittliche Zeit bis zur ersten Antwort und die First-Contact-Resolution -- nutze sie als Support-KPIs."
+				],
+				"verification_notes": "Wir parsen Footer + Kontaktseiten erneut, um verfuegbare Kanaele zu erkennen (Email, WhatsApp, Telefon, Chat)."
+			},
+			"expectation_misalignment": {
+				"remediation_steps": [
+					"Pruefe die auf dem Produkt angegebenen Lieferzeiten gegen die tatsaechlichen Zeiten -- Diskrepanzen verursachen Chargebacks.",
+					"Wenn die Frist nach Region variiert (Versand), zeige einen PLZ-Rechner auf der Produktseite vor dem Checkout.",
+					"Kommuniziere Verzoegerungen proaktiv per Email, sobald sie bekannt werden -- lass den Kaeufer es nicht selbst bemerken und reklamieren.",
+					"Nimm \"geschaetzte Lieferzeit\" basierend auf echten Logistikdaten auf die Bestaetigungsseite nach dem Kauf auf."
+				],
+				"verification_notes": "Wir crawlen Produktseiten erneut und suchen nach Liefer-/Garantie-Claims, um sie mit echten Logistikdaten zu vergleichen."
+			},
+			"dispute_risk_elevated": {
+				"remediation_steps": [
+					"Priorisiere Fixes auf ALLEN Fronten gleichzeitig: refund_policy + support_unreachable + expectation_misalignment duerfen nicht zusammen offen bleiben.",
+					"Ueberwache die Chargeback-Rate woechentlich -- Alert, wenn sie 0,9% des Volumens uebersteigt (Aufmerksamkeitsschwelle des Gateways).",
+					"Implementiere Pre-Dispute: bevor der Kunde einen Chargeback eroeffnet, sende eine proaktive Nachricht \"Gab es ein Problem? Wir loesen es\".",
+					"Wenn das Gateway die Verarbeitung wegen hoher Chargebacks aussetzt, halte Plan B (anderes Gateway) bereits implementiert."
+				],
+				"verification_notes": "Zusammengesetztes Risiko -- die Verifikation ist erneutes Projizieren anhand der Evidenz, nachdem du die einzelnen Fronten (Refund, Support, Expectations) geschlossen hast."
+			},
+			"refund_terms_too_thin": {
+				"remediation_steps": [
+					"Erweitere die Widerrufsregelung um: exakte Frist, Schritt-fuer-Schritt-Prozess, explizite Ausnahmen, Kontaktkanal.",
+					"Vermeide Juristensprache -- schreibe so, wie du es einem Freund erklaeren wuerdest, was im Problemfall zu tun ist.",
+					"Fuege konkrete Beispiele hinzu (\"Wenn das Produkt beschaedigt ankam, sende eine Email an X mit Foto\").",
+					"Verlinke die FAQ mit den 5 haeufigsten Fragen zur Rueckerstattung direkt im Checkout."
+				],
+				"verification_notes": "Wir rufen die Widerrufsregelung erneut ab und messen Inhaltsdichte + Vorhandensein der wichtigsten strukturellen Elemente."
+			},
+			"support_hidden_at_purchase": {
+				"remediation_steps": [
+					"Fuege im Checkout Microcopy oder ein Banner hinzu: \"Fragen? Sprich mit unserem Team: WhatsApp XXXX-XXXX\".",
+					"Ein Chat-Widget (falls vorhanden) sollte sichtbar in der Ecke sein, ohne die Bezahlfelder zu blockieren.",
+					"Der Support-Button sollte den PRIMAEREN Kanal oeffnen, nicht eine generische FAQ-Seite.",
+					"Konfiguriere automatische Uebergabe an einen Menschen, wenn der Kaeufer im Checkout ist -- Kaufintention > Self-Service-Intention."
+				],
+				"verification_notes": "Wir navigieren headless zum Checkout und pruefen das Vorhandensein eines oberhalb der Falz sichtbaren Support-Kanals."
+			},
+			"activation_blocked": {
+				"remediation_steps": [
+					"Mappe den Aktivierungsfluss: Signup -> erster Login -> erster gelieferter Wert. Stoppe jede Etappe.",
+					"Eliminiere technische Blocker: erzwungene Email-Verifikation, die aufgeschoben werden kann, Setup-Wizard mit zu vielen optionalen Schritten.",
+					"Stelle sicher, dass der erste Login sofortigen Wert liefert -- Dashboard mit Sample-Data, gefuehrte Tour oder kurzer Wizard.",
+					"Miss die Aktivierungsrate (% der Nutzer, die den \"Aha-Moment\" erreichen) und konfiguriere einen Alert, falls sie unter den Baseline faellt."
+				],
+				"verification_notes": "Wir fuehren synthetisches Signup + ersten Login headless aus und messen die Zeit bis zum ersten wahrgenommenen Wert."
+			},
+			"activation_friction_high": {
+				"remediation_steps": [
+					"Reduziere die Pflichtfelder beim Signup -- idealerweise nur Email + Passwort oder OAuth.",
+					"Frage zusaetzliche Daten (Firma, Rolle, Groesse) progressiv ab, nachdem der Nutzer das Produkt erlebt hat.",
+					"Erlaube Signup via OAuth (Google, GitHub), um die Einstiegshuerde zu senken.",
+					"Wenn ein Setup-Wizard noetig ist, zeige Fortschritt und erlaube \"Vorerst ueberspringen\" bei optionalen Schritten."
+				],
+				"verification_notes": "Wir fuehren das Signup headless aus und zaehlen Pflichtfelder + Schritte bis zum ersten Produktzugang."
+			},
+			"unclear_next_step": {
+				"remediation_steps": [
+					"Pruefe den ersten Bildschirm nach dem Login: gibt es einen klaren Primaer-CTA, der den naechsten Schritt anzeigt?",
+					"Implementiere eine sichtbare Onboarding-Checkliste (z.B. \"Profil vervollstaendigen\", \"Erstes Element hinzufuegen\") mit Fortschritt.",
+					"Empty States (leere Listen, Dashboard ohne Daten) sollten einen spezifischen CTA haben, um diesen Kontext zu fuellen.",
+					"Vermeide dichte Dashboards in der ersten Session -- praesentiere das Produkt in Schichten, wenn der Nutzer Intention zeigt."
+				],
+				"verification_notes": "Wir loggen uns headless als neuer Nutzer ein und identifizieren, ob in den ersten 3 Sekunden ein klarer Primaer-CTA sichtbar ist."
+			},
+			"empty_state_without_guidance": {
+				"remediation_steps": [
+					"Gestalte fuer jede Liste/Dashboard, die leer sein kann, einen Empty State mit: Illustration, erklaerendem Text, spezifischem CTA.",
+					"Empty States sollten zur richtigen Aktion fuehren (\"Erstes Element hinzufuegen\", \"Team einladen\", \"Integration verbinden\").",
+					"Wenn der Empty State haeufig ist (z.B. neuer Nutzer), erwaege Vorbefuellung mit entfernbaren Sample-Daten.",
+					"Teste in einer synthetischen Session: kann der neue Nutzer den Empty State in <30s verlassen?"
+				],
+				"verification_notes": "Wir navigieren die Hauptsurfaces als Nutzer ohne Daten und pruefen, ob jeder Empty State einen funktionalen CTA hat."
+			},
+			"navigation_overcomplex": {
+				"remediation_steps": [
+					"Zaehle, wie viele Top-Level-Items deine Navigation hat -- wenn >7, vereinfache durch Gruppierung in Kategorien.",
+					"Organisiere die Navigation nach Nutzungshaeufigkeit -- am haeufigsten genutzte Items oben, selten genutzte hinter \"Mehr\" oder Settings.",
+					"Implementiere globale Suche (Cmd+K), um tiefe Navigation auszugleichen -- der Shortcut reduziert Klicks zu versteckten Features.",
+					"Entferne verwaiste Items: zeigt Analytics nie aufgerufene Features? Verstecke oder entferne sie."
+				],
+				"verification_notes": "Wir parsen die Navigationsstruktur erneut und zaehlen Tiefe + Anzahl der Top-Level-Items."
+			},
+			"feature_discovery_poor": {
+				"remediation_steps": [
+					"Liste Premium-/Advanced-Features auf und verifiziere, dass jede einen entdeckbaren Einstiegspunkt in der UI hat.",
+					"Fuege kontextuelle Hinweise hinzu: wenn der Nutzer X tut, schlaegt ein Tooltip die ergaenzende Feature Y vor.",
+					"Konfiguriere Product Tours (Appcues, Intro.js) fuer neu eingefuehrte Features.",
+					"Miss per Analytics den % der Nutzer, die jede Feature in 30 Tagen verwenden -- Features mit <5% benoetigen moeglicherweise eine Repositionierung."
+				],
+				"verification_notes": "Wir loggen uns als synthetischer Nutzer ein und erkunden jedes Menue, um zu sehen, ob Premium-Features an entdeckbaren Einstiegspunkten erscheinen."
+			},
+			"upgrade_invisible": {
+				"remediation_steps": [
+					"Fuege einen sichtbaren Upgrade-CTA an Touchpoints mit gated Features hinzu (z.B. \"Premium\"-Badge am gesperrten Item).",
+					"Zeige auf der Settings/Pricing-Seite einen Plan-Vergleich mit klarer Feature-by-Feature-Matrix.",
+					"Konfiguriere kontextuelle Prompts: wenn der Nutzer das Plan-Limit erreicht, bietet ein Modal das direkte Upgrade aus dieser Aktion an.",
+					"Vermeide aggressive Paywalls beim Erstkontakt -- liefere zuerst Wert, dann Upgrade."
+				],
+				"verification_notes": "Wir crawlen Settings + Pricing + gated Features erneut, um Vorhandensein und Klarheit der Upgrade-CTAs zu bestaetigen."
+			},
+			"upgrade_timing_wrong": {
+				"remediation_steps": [
+					"Pruefe, wann Upgrade-Prompts erscheinen -- sie duerfen keine kritische Task unterbrechen (z.B. waehrend eines Erstellungs-Flows).",
+					"Ideales Timing: nachdem der Nutzer Wert erlebt hat, am Limit des aktuellen Plans ist oder eine Premium-Feature probiert hat.",
+					"Vermeide zufaellige Upgrade-Popups -- nutze verhaltensbasierte Trigger (Limit erreicht, Feature aufgerufen, 30 Tage aktiv).",
+					"Miss die Conversion-Rate jedes Upgrade-Triggers -- deaktiviere jene mit <1% CR."
+				],
+				"verification_notes": "Upgrade-Timing ist ein Verhaltens- + Produkt-Signal -- erneut anhand der Evidenz projizieren, nachdem du die Trigger angepasst hast."
+			},
+			"no_expansion_path": {
+				"remediation_steps": [
+					"Definiere fuer jeden aktuellen Plan den naechsten natuerlichen Schritt: \"Pro: 10 Nutzer -> Business: 50 Nutzer\" ist ein Beispiel klarer Expansion.",
+					"Konfiguriere ein Expansion-Readiness-Signal: Nutzung nahe dem Limit, neue Nutzer hinzugefuegt, Advanced-Features adoptiert.",
+					"Implementiere Self-Service-Upgrade (ohne Sales-Call) fuer automatische Expansion.",
+					"Miss die monatliche Net Revenue Retention -- gesundes SaaS hat NRR >110%."
+				],
+				"verification_notes": "Expansion ist eine Produktstrategie -- die Verifikation ist erneutes Projizieren, nachdem du einen klaren Pfad definiert und instrumentiert hast."
+			},
+			"landing_app_mismatch": {
+				"remediation_steps": [
+					"Vergleiche die Landingpage mit dem tatsaechlichen Produkt: versprechen sie dasselbe? Tonalitaet, Layout und Value Prop muessen uebereinstimmen.",
+					"Wenn die Landing \"einfach und schnell\" verspricht, muss der erste Login der App dieses Gefuehl liefern -- nicht einen 15-Schritt-Wizard.",
+					"Fuehre einen Test mit 5 neuen Nutzern durch: hole spezifisches Feedback zu \"was die Landing versprach vs was die App lieferte\".",
+					"Pruefe monatlich -- die Landing entwickelt sich in SaaS schnell, die App haelt manchmal nicht Schritt."
+				],
+				"verification_notes": "Wir navigieren headless von der Landing bis zum ersten Login und vergleichen zentrale visuelle Elemente und Copy."
+			},
+			"checkout_trust_language_absent": {
+				"remediation_steps": [
+					"Fuege neben dem Bezahl-Button Copy hinzu, die Sicherheit verstaerkt: \"Verschluesselte Zahlung\", \"SSL-Zertifikat\", \"Deine Daten werden nicht geteilt\".",
+					"Binde Microcopy ein, die die naechsten Schritte erklaert: \"Nach der Zahlung erhaeltst du eine Email mit Rechnung und Tracking\".",
+					"Vermeide generische Copy (\"Sicher und schnell\") -- nutze Phrasen, die auf den Kaufkontext zugeschnitten sind."
+				],
+				"verification_notes": "Wir rufen den Checkout erneut ab und suchen nach Trust-Language-Keywords in der Naehe der Bezahlfelder."
+			},
+			"cta_clarity_weak_on_commercial": {
+				"remediation_steps": [
+					"Ersetze vage CTAs (\"Mehr erfahren\", \"Hier klicken\") durch spezifische Aktionsverben (\"Kaufen\", \"Preise ansehen\", \"Demo buchen\").",
+					"Jede kommerzielle Seite sollte 1 dominanten Primaer-CTA haben -- sekundaere im Outline-/Link-Stil.",
+					"Der CTA-Text muss kommunizieren, was beim naechsten Klick passiert: \"In den Warenkorb\" != \"Zur Zahlung\"."
+				],
+				"verification_notes": "Wir parsen das HTML erneut und pruefen den Text jedes CTAs gegen eine Liste vager Muster."
+			},
+			"product_page_copy_generic": {
+				"remediation_steps": [
+					"Schreibe die Produktbeschreibung mit Fokus auf spezifische Vorteile, nicht generische Features neu.",
+					"Ersetze Template-Copy (\"Hochwertiges Produkt\") durch ueberpruefbare Aussagen (\"100% Bio-Baumwolle, GOTS-zertifiziert\").",
+					"Integriere Nutzungskontext: wer der ideale Kaeufer ist, wann er es nutzt, welches Problem es loest.",
+					"Teste Headlines per A/B -- generische Copy verliert typischerweise 10-20% Conversion gegenueber spezifischer Copy."
+				],
+				"verification_notes": "Wir crawlen Produktseiten erneut und fuehren eine Analyse der semantischen Dichte + Vergleich mit bekannten generischen Templates durch."
+			},
+			"pricing_page_framing_unclear": {
+				"remediation_steps": [
+					"Verdeutliche, was jeden Plan unterscheidet -- spezifische Features, nicht nur numerische Limits.",
+					"Hebe den empfohlenen Plan visuell hervor (Badge \"Beliebtester\", andere Farbe).",
+					"Beantworte die 5 haeufigsten Fragen direkt im Pricing: \"Kann ich den Plan wechseln?\", \"Gibt es eine Mindestlaufzeit?\", \"Gibt es eine Testphase?\".",
+					"Entferne Pricing mit \"Kontaktiere uns\", wenn moeglich -- transparente Preise konvertieren in SMB besser."
+				],
+				"verification_notes": "Wir rufen die Pricing-Seite erneut ab und pruefen die Struktur: unterscheidbare Plaene, markierter empfohlener Plan, vorhandene FAQ."
+			},
+			"social_proof_generic": {
+				"remediation_steps": [
+					"Ersetze generische Testimonials durch Testimonials mit vollstaendigem Namen, Foto, Firma/Kontext.",
+					"Fuege konkrete Zahlen hinzu: \"12.000 Kunden\", \"4,8 Sterne aus 3.200 Bewertungen\", \"X um Y% reduziert\".",
+					"Binde Logos bekannter Kunden ein (mit Erlaubnis) -- visueller Social Proof wirkt staerker als Text.",
+					"Vermeide generische Badges ohne Substanz (\"Nr. 1 in Qualitaet\"), die eher schwaechen als staerken."
+				],
+				"verification_notes": "Phase 3 aktiviert LLM-Enrichment zur Bewertung der Social-Proof-Qualitaet. Heute ist die Verifikation strukturell: sie zaehlt, wie viele Testimonials konkrete Attribute haben."
+			},
+			"form_error_messages_unhelpful": {
+				"remediation_steps": [
+					"Pruefe die Fehlermeldungen jedes kritischen Formulars (Signup, Checkout) -- sie muessen das spezifische Problem erklaeren, nicht nur \"Fehler\".",
+					"Fehler muessen anzeigen, wie zu korrigieren ist: \"Email bereits registriert -- anmelden?\" statt \"Ungueltige Email\".",
+					"Hebe das Feld mit Fehler visuell hervor (roter Rand, Icon) und fokussiere es automatisch zur Korrektur.",
+					"Validiere clientseitig in Echtzeit -- warte nicht auf den Submit, um anzuzeigen, dass die Email einen Tippfehler enthaelt."
+				],
+				"verification_notes": "Phase 3 aktiviert LLM-Enrichment. Heute navigieren wir headless, senden Formulare mit ungueltigen Daten und erfassen die Fehlermeldungen."
+			},
+			"onboarding_no_quick_win": {
+				"remediation_steps": [
+					"Definiere den \"Aha-Moment\" des Produkts -- was ist die kleinste Wertdemonstration, die der neue Nutzer in <5min erleben kann?",
+					"Redesigne den ersten Login, um diesen Aha-Moment in der ersten Session zu liefern -- nicht in der dritten.",
+					"Falls Setup noetig ist (Import, Integration), zeige zuerst einen Preview mit Sample-Daten.",
+					"Miss die \"Aha-Moment-Completion\"-Rate und optimiere darauf -- sie ist der beste Praediktor fuer Retention."
+				],
+				"verification_notes": "Phase 3 aktiviert LLM-Enrichment. Heute fuehren wir Signup + erste Nutzung headless aus und stoppen die Zeit bis zum ersten Wert."
+			},
+			"value_proposition_buried": {
+				"remediation_steps": [
+					"Schreibe die Hero-Headline so um, dass sie kommuniziert WAS das Produkt tut, FUER WEN und WARUM es wichtig ist -- alles in einem Satz.",
+					"Verschiebe das Value Proposition ueber die Falz: der Besucher muss es in 5 Sekunden ohne Scrollen verstehen.",
+					"Reduziere konkurrierende Elemente im Hero -- 1 Headline, 1 Sub-Headline, 1 CTA. Entferne Banner, Slider und sekundaere Widgets.",
+					"Teste Headlines per A/B mit bewaehrten Formeln: \"[Gewuenschtes Ergebnis] ohne [Haupteinwand]\" oder \"[Zahl] [Kundentyp] haben bereits [Ergebnis]\"."
+				],
+				"verification_notes": "Wir crawlen die Homepage erneut und analysieren den Above-the-Fold-Inhalt: Vorhandensein des Value Proposition, Elementdichte und Headline-Spezifitaet."
+			},
+			"trust_copy_absent_at_decision": {
+				"remediation_steps": [
+					"Fuege neben dem Bezahl-Button Sicherheits-Copy hinzu: \"SSL-verschluesselte Zahlung\", \"30 Tage Garantie\", \"Deine Daten sind geschuetzt\".",
+					"Binde Microcopy ein, die erklaert, was nach dem Kauf passiert: \"Du erhaeltst die Bestaetigung per Email in bis zu 2 Minuten\".",
+					"Platziere Trust-Siegel (SSL, Trustpilot, Google Reviews) ohne Scrollen sichtbar auf der Checkout-Seite.",
+					"Entferne jegliche kuenstliche Dringlichkeit (gefaelschte Timer, fingierter Bestand) -- ersetze durch authentische Dringlichkeit basierend auf echten Daten.",
+					"Fuege eine Zufriedenheitsgarantie oder eine zusammengefasste Widerrufsregelung direkt auf der Preise-Seite hinzu."
+				],
+				"verification_notes": "Wir rufen Checkout-, Pricing- und Produktseiten erneut ab und suchen nach Trust-Language-Keywords, Sicherheits-Siegeln und der Abwesenheit von Dark Patterns."
+			},
+			"social_proof_ineffective": {
+				"remediation_steps": [
+					"Ersetze generische Testimonials durch Testimonials mit vollstaendigem Namen, Rolle, Firma und messbarem Ergebnis.",
+					"Platziere Social Proof neben Entscheidungs-CTAs (Kaufbutton, Trial-Formular, Pricing-Seite).",
+					"Fuege konkrete Zahlen hinzu: \"12.000 Kunden\", \"4,8 Sterne aus 3.200 Bewertungen\", \"X um Y% reduziert\".",
+					"Binde echte Kunden-Logos mit Erlaubnis ein -- visueller Social Proof wirkt staerker als generischer Text."
+				],
+				"verification_notes": "Wir crawlen kommerzielle Seiten erneut und bewerten die Social-Proof-Qualitaet: Testimonial-Spezifitaet, Naehe zu CTAs und Vorhandensein konkreter Daten."
+			},
+			"cta_competing_or_unclear": {
+				"remediation_steps": [
+					"Definiere die CTA-Hierarchie: 1 primaer (starke Farbe), 1 sekundaer (Outline), tertiaere Links -- niemals 2+ dominante Buttons im Wettstreit.",
+					"Ersetze vage Labels (\"Mehr erfahren\", \"Hier klicken\") durch spezifische Aktionsverben mit Ergebnis: \"Kostenlose Testphase starten\", \"Preise ansehen\", \"Demo buchen\".",
+					"Pruefe Navigations-Labels: ersetze internen Jargon durch die Sprache der Kaeufer (\"Dashboard\" -> \"Ergebnis-Panel\").",
+					"Teste Heatmaps, um zu bestaetigen, dass der Primaer-CTA die Mehrheit der Klicks erhaelt -- falls nicht, justiere Position und Kontrast."
+				],
+				"verification_notes": "Wir parsen das HTML kommerzieller Seiten erneut und pruefen CTA-Hierarchie, Button-Labels und Navigation gegen Klarheits-Standards."
+			},
+			"objection_unaddressed": {
+				"remediation_steps": [
+					"Liste die 5 häufigsten Käufereinwände auf (Recherche, Support, negative Reviews) und beantworte jeden auf der Entscheidungsseite.",
+					"Füge ein FAQ auf der Pricing-Seite hinzu, das beantwortet: \"Kann ich kündigen?\", \"Gibt es eine Garantie?\", \"Was passiert, wenn es mir nicht gefällt?\".",
+					"Binde einen Vergleich mit Alternativen auf der Produktseite ein — der Käufer wird ohnehin vergleichen, besser er tut es auf deiner Seite.",
+					"Ergänze explizites Risk Reversal nahe dem CTA: \"30-Tage-Garantie — passt es nicht, erstatten wir 100 %\"."
+				],
+				"verification_notes": "Wir crawlen Pricing- und Produktseiten erneut und prüfen das Vorhandensein von FAQ, Garantien, Vergleichen und Risk-Reversal-Elementen."
+			},
+			"copy_cross_page_inconsistent": {
+				"remediation_steps": [
+					"Erstelle einen Brand-Voice-Guide, der Tonalität, Vokabular und Versprechen definiert — verteile ihn an alle, die Copy schreiben.",
+					"Auditiere Homepage, Pricing, Produkt und Checkout nebeneinander — identifiziere Widersprüche in Ton und Versprechen.",
+					"Vereinheitliche die Terminologie: Wenn die Homepage \"einfach\" sagt, darf Pricing nicht 47 Features in einer komplexen Tabelle auflisten.",
+					"Etabliere ein seitenübergreifendes Review vor der Veröffentlichung — jede Seite muss die anderen verstärken, nicht ihnen widersprechen."
+				],
+				"verification_notes": "Wir crawlen mehrere Seiten erneut und vergleichen Ton, Terminologie und Versprechen seitenübergreifend, um Widersprüche zu erkennen."
+			},
+			"copy_funnel_misalignment": {
+				"remediation_steps": [
+					"Ordne jede Seite einer Funnel-Stufe zu (Awareness, Consideration, Decision) und passe die Copy an, um die Frage dieser Stufe zu beantworten.",
+					"Schreibe Produktbeschreibungen neu mit Fokus auf Nutzen und Ergebnis — nicht generische Anbieterfeatures.",
+					"Gestalte die Onboarding-Copy so um, dass sie einen Quick Win in <5 Minuten verspricht und liefert — \"In 2 Minuten siehst du X\".",
+					"Ersetze technische Fehlermeldungen durch menschliche Sprache, die das Problem UND die Lösung erklärt.",
+					"Teste die Copy mit 5 echten Nutzern: frage \"Was will diese Seite, dass du tust?\" — wenn sie es nicht wissen, schreibe sie neu."
+				],
+				"verification_notes": "Wir crawlen Produktseiten, Onboarding und Formulare erneut und bewerten die Spezifität der Copy, das Vorhandensein von Quick Wins und die Qualität der Fehlermeldungen."
+			},
+			"localization_persuasion_lost": {
+				"remediation_steps": [
+					"Vergleiche primäre und übersetzte Version nebeneinander — identifiziere, wo Dringlichkeit, Social Proof und CTA zu generischem Text \"abgeflacht\" wurden.",
+					"Nutze Transkreation (keine wörtliche Übersetzung) für CTAs, Headlines und Social Proof — beauftrage muttersprachliche Copywriter, die Persuasion verstehen.",
+					"Behalte Dringlichkeits- und Knappheitselemente in den übersetzten Versionen bei — passe kulturell an, statt sie zu entfernen.",
+					"Etabliere einen Review-Prozess für lokalisierte Copy: Übersetzer + Muttersprachler-Reviewer + Marketing-Freigabe vor Veröffentlichung."
+				],
+				"verification_notes": "Wir crawlen beide Versionen (primär und übersetzt) erneut und vergleichen die persuasive Struktur: Dringlichkeit, Spezifität des Social Proof und CTA-Stärke."
+			},
+			"micro_copy_friction_high": {
+				"remediation_steps": [
+					"Ersetze generische Buttons (\"Submit\", \"Send\", \"OK\") durch spezifischen, handlungsorientierten Text (\"Kostenlosen Trial starten\", \"Mein Angebot senden\").",
+					"Überarbeite Formular-Labels: jedes Label muss erklären, WAS auszufüllen ist und WARUM — z. B. \"Firmen-Email (damit wir deinen Zugang senden)\" statt nur \"Email\".",
+					"Füge Inline-Helper-Text bei den Feldern hinzu, die den meisten Abbruch verursachen — Placeholder mit echtem Beispiel, keine Wiederholung des Labels.",
+					"Schreibe Fehlermeldungen in menschlicher Sprache: \"Die Email braucht ein @ — bitte prüfen und erneut versuchen\" statt \"Invalid input\".",
+					"Teste Micro-Copy mit 3 Nutzern: lass sie das Formular laut ausfüllen — wo sie zögern oder fragen, versagt die Copy."
+				],
+				"verification_notes": "Wir crawlen Seiten mit Formularen erneut und bewerten die Qualität von Labels, Buttons, Placeholdern und Fehlermeldungen."
+			},
+			"seo_conversion_conflict": {
+				"remediation_steps": [
+					"Schreibe Keyword-überladene H1s um, damit sie Wert an den Käufer kommunizieren — nutze das Keyword im Title-Tag und Meta, aber die H1 muss verkaufen.",
+					"Trenne SEO-Content-Blöcke vom Conversion Path: verschiebe Keyword-reiche Absätze unter den Fold oder auf dedizierte Unterseiten.",
+					"Vereinheitliche Title-Tag und H1: sagt der Title \"Best CRM Software 2026\", sollte die H1 etwa lauten \"Das CRM, das [spezifisches Ergebnis]\".",
+					"Überprüfe Image Alt-Text: er muss das Bild für Barrierefreiheit beschreiben UND das Keyword natürlich enthalten — kein Keyword-Spam.",
+					"Bewerte, ob große SEO-Content-Blöcke unter dem Fold die Conversion-Botschaft verwässern — erwäge, sie nach /blog oder /resources zu verlagern."
+				],
+				"verification_notes": "Wir analysieren H1, Title-Tags und Copy der kommerziellen Seiten erneut, um zu prüfen, ob die SEO-Conversion-Spannung gelöst wurde."
+			},
+			"copy_stale_references": {
+				"remediation_steps": [
+					"Aktualisiere das Copyright-Jahr im Footer auf das aktuelle Jahr — konfiguriere wenn möglich Auto-Update.",
+					"Suche und entferne Verweise auf vergangene Daten, abgelaufene Promotions und veraltete Metriken auf allen kommerziellen Seiten.",
+					"Etabliere ein vierteljährliches Copy-Review: plane alle 3 Monate ein Content-Audit, um gealterte Referenzen zu erkennen.",
+					"Ersetze Social-Proof-Metriken durch aktuelle Zahlen — sagte die Homepage 2024 \"1000+ Kunden\", aktualisiere auf die reale Zahl.",
+					"Konfiguriere automatische Alerts, um Copy mit hartcodierten Daten zu erkennen, die bald veralten."
+				],
+				"verification_notes": "Wir crawlen die Seiten erneut und prüfen: aktualisiertes Copyright, keine vergangenen Daten, keine abgelaufenen Promotions und aktuelle Social-Proof-Metriken."
+			},
+			"commercial_page_stale": {
+				"remediation_steps": [
+					"Auditiere alle kommerziellen Seiten (Checkout, Pricing, Produkt, Homepage) auf veraltete Verweise — Daten, Promotions, Metriken.",
+					"Aktualisiere oder entferne hartcodierte Daten, abgelaufene Angebote und überholte Wettbewerbsaussagen.",
+					"Richte einen vierteljährlichen Content-Review-Kalender speziell für Hoch-Conversion-Seiten ein.",
+					"Implementiere ein dynamisches Copyright-Jahr und \"Last Updated\"-Zeitstempel, die sich automatisch erneuern.",
+					"Erstelle eine Content-Freshness-Checkliste pro Seitentyp mit spezifischen Review-Kriterien."
+				],
+				"verification_notes": "Der Re-Crawl prüft aktualisierte Daten, entfernte veraltete Verweise und Indikatoren für frischen Content auf kommerziellen Seiten."
+			},
+			"pricing_page_outdated": {
+				"remediation_steps": [
+					"Überprüfe alle Aussagen der Pricing-Seite — Wettbewerbsvergleiche, Feature-Listen, Aktionsangebote — und aktualisiere sie auf den aktuellen Stand.",
+					"Entferne oder aktualisiere alle \"Limited Time\"-Formulierungen, die abgelaufen sind.",
+					"Stelle sicher, dass Plannamen, Pricing-Tiers und Feature-Vergleiche zum aktuellen Produkt passen.",
+					"Aktualisiere alle ROI-Rechner, Case Studies oder Metriken, die auf der Pricing-Seite zitiert werden.",
+					"Setze eine monatliche Erinnerung, um den Pricing-Seiten-Content zu prüfen (Pricing-Seiten altern am schnellsten)."
+				],
+				"verification_notes": "Der Re-Crawl prüft, ob der Pricing-Seiten-Content aktualisiert ist — keine veralteten Daten, abgelaufenen Angebote oder überholten Wettbewerbsaussagen."
+			},
+			"social_proof_expired": {
+				"remediation_steps": [
+					"Aktualisiere alle Testimonial-Daten auf aktuelle — oder entferne Daten ganz, falls die Testimonials Evergreen sind.",
+					"Frische Kundenzahlen, Umsatzangaben und Nutzungsstatistiken auf aktuelle Werte auf.",
+					"Ersetze Logo-Walls durch aktuelle Kundenlogos und ergänze \"Stand: [Datum]\"-Hinweise bei allen Metriken.",
+					"Implementiere wo möglich dynamischen Social Proof (Echtzeit-Nutzerzahlen, aktuelle Review-Scores).",
+					"Richte ein vierteljährliches Social-Proof-Refresh ein — fordere neue Testimonials an, aktualisiere Case-Study-Zahlen."
+				],
+				"verification_notes": "Der Re-Crawl prüft aktualisierten Social Proof — keine veralteten Testimonial-Daten, aktuelle Metriken, frische Kundenreferenzen."
+			},
+			"content_decay_progression": {
+				"remediation_steps": [
+					"Führe ein vollständiges Content-Audit über alle kommerziellen Seiten durch — markiere alles mit Daten älter als 6 Monate.",
+					"Priorisiere Updates nach Seitentraffic und Conversion-Impact — beginne mit Checkout- und Pricing-Seiten.",
+					"Implementiere ein automatisiertes Content-Freshness-Monitoring (dieser Vestigio-Befund wird in jedem Zyklus erneut prüfen).",
+					"Weise Content-Ownership pro Seite zu — jede kommerzielle Seite sollte einen benannten Owner für vierteljährliche Reviews haben.",
+					"Erwäge AI-gestützte Content-Refresh-Tools, um Updates über mehrere Seiten hinweg zu beschleunigen."
+				],
+				"verification_notes": "Mehrzyklen-Monitoring — dieser Befund verfolgt, ob sich Staleness-Scores in den folgenden Audit-Zyklen verbessern."
+			},
+			"mixed_content_exposure": {
+				"remediation_steps": [
+					"Liste alle HTTP-Ressourcen auf, die auf HTTPS-Seiten geladen werden — nutze die DevTools-Console, die Mixed-Content-Warnungen meldet.",
+					"Migriere alle Ressourcen auf HTTPS: Bilder, Skripte, CSS, Fonts, Iframes.",
+					"Konfiguriere Content-Security-Policy mit `upgrade-insecure-requests`, um den Browser zu zwingen, automatisch HTTPS zu versuchen.",
+					"Korrigiere hartcodierte interne Links mit http:// — migriere zu Protocol-Relative (//) oder https://."
+				],
+				"verification_notes": "Wir laden kritische URLs headless und erfassen Mixed-Content-Warnungen aus der Console."
+			},
+			"sensitive_endpoint_exposed": {
+				"remediation_steps": [
+					"Entferne administrative URLs von vorhersehbaren Pfaden (/admin, /wp-admin, /.env, /api/debug) — 404 oder Redirect zur Startseite.",
+					"Füge Authentifizierung bei jedem administrativen Endpoint hinzu — verlasse dich nicht auf Obskurität.",
+					"Konfiguriere robots.txt, um sensible Routen zu disallowen (beachte aber, dass robots.txt kein Sicherheitsmechanismus ist).",
+					"Lass regelmäßig Scanner (Nuclei, Katana) laufen, um exponierte Endpoints in Produktion zu erkennen."
+				],
+				"verification_notes": "Wir starten den Nuclei- und Katana-Scanner gegen die öffentliche Infrastruktur, um zu bestätigen, ob sensible Endpoints weiterhin exponiert sind."
+			},
+			"checkout_script_hijack_risk": {
+				"remediation_steps": [
+					"Auditiere alle im Checkout geladenen Skripte — eliminiere nicht-essenzielle Third-Parties.",
+					"Implementiere für essenzielle Third-Parties Subresource Integrity (SRI): `<script integrity=\"sha384-...\">` verhindert Injection, falls das CDN kompromittiert wird.",
+					"Konfiguriere im Checkout eine restriktive CSP: nur Hashes/Nonces bekannter Skripte.",
+					"Überwache Änderungen im Skript-Inventar — alarmiere, wenn ein neues Skript ohne Deploy in Produktion auftaucht."
+				],
+				"verification_notes": "Wir laden den Checkout headless, extrahieren die Skriptliste und vergleichen sie mit einer bekannten Whitelist."
+			},
+			"buyer_session_theft_risk": {
+				"remediation_steps": [
+					"Session-Cookies: konfiguriere `HttpOnly`, `Secure`, `SameSite=Lax` oder `Strict`.",
+					"CSRF-Tokens in allen sensiblen Formularen — Signup, Checkout, Passwortänderung.",
+					"Implementiere Session-ID-Rotation nach dem Login, um Session Fixation zu verhindern.",
+					"Konfiguriere ein angemessenes Session-Timeout (30-60 Min. Inaktivität) und Erneuerung bei Nutzeraktion."
+				],
+				"verification_notes": "Wir navigieren headless und inspizieren Session-Cookie-Attribute sowie das Vorhandensein von CSRF-Tokens in Formularen."
+			},
+			"checkout_clickjack_risk": {
+				"remediation_steps": [
+					"Konfiguriere X-Frame-Options: DENY (oder SAMEORIGIN, wenn du den Checkout in einem eigenen legitimen Iframe einbettest).",
+					"Alternativ nutze CSP `frame-ancestors 'none'`, um zu blockieren, dass externe Seiten deinen Checkout in einen Iframe einbinden.",
+					"Teste mit Clickjack-Testern (z. B. /test-clickjacking-Tools), um zu bestätigen, dass der Checkout nicht in einem externen Iframe rendert.",
+					"Überprüfe Seiten mit sensiblen Aktionen (Passwortänderung, Account-Löschung) — wende denselben Schutz an."
+				],
+				"verification_notes": "Wir holen die Header der Checkout-URL erneut und validieren das Vorhandensein von X-Frame-Options oder CSP frame-ancestors."
+			},
+			"error_page_information_leak": {
+				"remediation_steps": [
+					"Passe 404- und 500-Seiten an — keine Stack Traces, Framework-Versionen oder Serverpfade preisgeben.",
+					"Konfiguriere in Produktion einen generischen Error-Handler, der Details serverseitig loggt, aber eine freundliche Nachricht zurückgibt.",
+					"Auditiere JSON-Antworten der APIs — keine Exception-Details in Produktion einschließen.",
+					"Entferne HTML-Kommentare mit sensiblen Informationen (Versionen, interne Pfade) aus dem Output."
+				],
+				"verification_notes": "Wir fordern bekannte Fehler-URLs (404, 500) an und analysieren den zurückgelieferten Inhalt auf Leaks."
+			},
+			"payment_data_unencrypted": {
+				"remediation_steps": [
+					"Verifiziere, dass Zahlungsformulare Daten über HTTPS senden — das Form-Target muss https:// sein.",
+					"Empfange die PAN (Kartennummer) niemals direkt im Backend — nutze die Tokenisierung des Gateways.",
+					"Falls du eine Kartenmaske (letzte 4 Stellen) anzeigen musst, speichere nur Token + Maske, niemals die vollständige PAN.",
+					"Konfiguriere PCI-DSS SAQ A oder A-EP gemäß deiner Gateway-Integration — dokumentiere den Scope."
+				],
+				"verification_notes": "Wir senden Testdaten headless und inspizieren den Netzwerkverkehr, um Verschlüsselung und Tokenisierung zu bestätigen."
+			},
+			"email_deliverability_risk": {
+				"remediation_steps": [
+					"Konfiguriere SPF, DKIM und DMARC korrekt im DNS der Versanddomain.",
+					"Nutze eine dedizierte Subdomain für Transaktionsmails (z. B. mail.domain.com), getrennt vom Marketing.",
+					"Überwache Bounce Rate und Spam-Complaint-Rate — Ziel: <5 % Bounce und <0,1 % Complaint.",
+					"Nutze einen renommierten Anbieter (SendGrid, AWS SES, Postmark) statt eigenem SMTP für bessere Deliverability."
+				],
+				"verification_notes": "Wir fragen das DNS der Domain ab (SPF/DKIM/DMARC) und führen eine Reputationsanalyse über MX Toolbox durch."
+			},
+			"cors_misconfiguration_risk": {
+				"remediation_steps": [
+					"Auditiere Access-Control-Allow-Origin in APIs — verwende niemals `*` bei Endpoints mit Cookies/Auth.",
+					"Pflege eine explizite Allowlist erlaubter Origins — verwende in Produktion eine Liste statt eines Wildcards.",
+					"Konfiguriere Access-Control-Allow-Credentials nur wenn nötig und kombiniert mit einer spezifischen Origin.",
+					"Exponiere sensible Endpoints (Passwortänderung, Payment) niemals via CORS an externe Origins."
+				],
+				"verification_notes": "Wir senden OPTIONS/GET-Requests gegen kritische APIs und analysieren die zurückgelieferten CORS-Header."
+			},
+			"rate_limiting_absent_on_commerce": {
+				"remediation_steps": [
+					"Implementiere Rate Limits in kritischen APIs: Login (5/min), Signup (3/Stunde), Checkout (10/min pro IP).",
+					"Nutze eine WAF (Cloudflare, AWS WAF) als erste Schicht — Rate Limit plus Bot Protection.",
+					"Konfiguriere Alerts für anomale Peaks: 100 Versuche/min beim Login = Credential-Stuffing-Angriff.",
+					"Antworte mit HTTP 429 und Retry-After-Header — legitime Clients verstehen das, Bots geben auf."
+				],
+				"verification_notes": "Wir feuern kontrollierte Bursts gegen Login-/Signup-Endpoints, um das Vorhandensein von Rate Limits zu validieren."
+			},
+			"predictable_order_urls": {
+				"remediation_steps": [
+					"Ersetze sequentielle IDs in Bestell-URLs (/order/123) durch UUIDs oder opake Tokens (/order/a7f3...).",
+					"Validiere Authorization in jedem Request — ein Nutzer darf nur eigene Bestellungen sehen, nicht durch Kenntnis der URL.",
+					"Route Audit Logs für Bestellzugriffe — erkennt Enumeration- und IDOR-Angriffe.",
+					"Konfiguriere temporäre Tokens für öffentliche Links (Tracking, Bestätigung) mit kurzer Gültigkeit."
+				],
+				"verification_notes": "Wir analysieren die Struktur der Bestell-URLs und testen, ob das Ändern der ID Daten eines anderen Nutzers liefert."
+			},
+			"payment_surface_compromised": {
+				"remediation_steps": [
+					"Untersuche sofort: prüfe aktuelle Commits, geladene Skripte und Zugriffslogs des Checkouts.",
+					"Rotiere alle Gateway-Credentials und exponierten API-Keys — eine kompromittierte Payment Surface leakt Käuferdaten.",
+					"Deaktiviere den Checkout vorübergehend, bis die Forensik abgeschlossen ist — laufender Betrug eskaliert schnell.",
+					"Benachrichtige den Gateway-Anbieter, die Behörden (bei LGPD/GDPR-Breach) und die betroffenen Käufer — gesetzlich vorgeschrieben."
+				],
+				"verification_notes": "Kritischer Vorfall — löst Nuclei- und Katana-Full-Scan, Skriptanalyse und Diff gegen eine als sauber bekannte Baseline aus."
+			},
+			"channel_traffic_divertible": {
+				"remediation_steps": [
+					"Auditiere externe Links auf Homepage und Produktseiten — jeder externe Link ist eine potenzielle Traffic-Umleitung.",
+					"Wenn du Affiliates nutzt, verwende offizielle Link-Shortener (keine generischen Redirects, die gekapert werden können).",
+					"Konfiguriere eine restriktive CSP, um die Injection externer Links über kompromittierte Skripte zu verhindern.",
+					"Überwache Outbound-Traffic-Analytics — anomale Peaks können auf injizierte bösartige Redirects hindeuten."
+				],
+				"verification_notes": "Wir navigieren die Seite headless, sammeln alle Outbound-Links und vergleichen sie mit der erwarteten Allowlist."
+			},
+			"commerce_operations_exposed": {
+				"remediation_steps": [
+					"Identifiziere öffentlich exponierte Endpoints des Handelsbetriebs: Dashboards, interne APIs, Webhooks.",
+					"Implementiere Authentifizierung und IP-Allowlist bei allen administrativen Endpoints.",
+					"Entferne Verweise auf interne Endpoints aus öffentlichem HTML/JS — Operator-Routen sollten weder in robots.txt noch im Source auftauchen.",
+					"Segmentiere das Netzwerk: operative Endpoints in einer privaten VPC, nicht im selben Cluster wie die öffentliche Site."
+				],
+				"verification_notes": "Wir starten Katana und Nuclei gegen die öffentliche Infrastruktur, um exponierte operative Endpoints zu erkennen."
+			},
+			"traffic_landing_low_trust_posture": {
+				"remediation_steps": [
+					"Kampagnen-Landingpages müssen Trust-Marker der Hauptseite erben — sichtbare Policies, Kontakt, Siegel.",
+					"Vermeide Landings auf Subdomains oder separaten Domains ohne Trust-Marker — der Käufer weiß nicht, dass du es bist.",
+					"Wenn eine separate Domain nötig ist (z. B. Black-Friday-Kampagne), repliziere die visuelle Identität und Trust-Marker der Hauptseite.",
+					"Auditiere aktive Landings quartalsweise — manche verwaisen ohne Pflege und regressieren in puncto Trust."
+				],
+				"verification_notes": "Wir crawlen bekannte Landings erneut und messen die Präsenz von Trust-Markern auf jeder."
+			},
+			"channel_compromise_visible": {
+				"remediation_steps": [
+					"Aktiver Vorfall — eskaliere ihn an das Security-Team zur sofortigen Reaktion.",
+					"Identifiziere den Vektor: injiziertes Skript, DNS-Hijack, kompromittiertes Zertifikat oder geleakte Credentials.",
+					"Isoliere den Vektor (entferne das Skript, rotiere Credentials, widerrufe Zertifikate) und dokumentiere die Incident-Timeline.",
+					"Kommuniziere transparent mit betroffenen Käufern — Schweigen während eines Vorfalls schadet der Reputation stärker als der Vorfall selbst."
+				],
+				"verification_notes": "Kritisch — löst einen vollständigen Scan aus (Nuclei + Katana + Brand-Intel), um das Ausmaß der Kompromittierung zu kartieren."
+			},
+			"commercial_path_abuse_friendly": {
+				"remediation_steps": [
+					"Auditiere Kauf-/Promotion-Endpoints auf missbrauchbare Muster: sequentielle IDs, Promos ohne Validierung, akzeptierter Preis-Override.",
+					"Implementiere serverseitige Validierung bei sämtlichem Pricing — vertraue niemals dem vom Client gelieferten Preis.",
+					"Setze aggressive Rate Limits bei kritischen Endpoints: Checkout, apply_coupon, add_to_cart.",
+					"Konfiguriere Fraud Detection: verdächtige Muster (gleiche Karte, gleiche IP, mehrere Emails) blockieren mit manueller Review."
+				],
+				"verification_notes": "Wir starten Katana Deep Discovery, um missbrauchbare Endpoints zu kartieren, und revalidieren nach deinen Fixes."
+			},
+			"economic_exploitation_active": {
+				"remediation_steps": [
+					"Aktiver Finanzvorfall — untersuche sofort, welche Käufe/Promos ausgenutzt wurden.",
+					"Blockiere den spezifischen Vektor (missbrauchter Coupon, manipulierter Preis, Checkout-Bypass).",
+					"Berechne den kumulierten Verlust und entscheide, ob ein Rollback betrügerischer Transaktionen machbar ist oder Chargebacks günstiger sind.",
+					"Auditiere alle aktiven Promotions mit derselben Logik — Exploits funktionieren typischerweise über mehrere Kampagnen hinweg."
+				],
+				"verification_notes": "Wir starten Katana erneut gegen die kompromittierten Endpoints, um den Patch zu bestätigen und Missbrauchsmuster zu überwachen."
+			},
+			"checkout_trust_brittle_infrastructure": {
+				"remediation_steps": [
+					"Auditiere die SSL-Zertifikate: Ablauf, Aussteller, Algorithmus. Erneuere mindestens 30 Tage vor Ablauf.",
+					"Konfiguriere Auto-Renewal (Let's Encrypt, AWS ACM), um abgelaufene Zertifikate in Produktion zu vermeiden.",
+					"Überwache die Trust Chain: Intermediate-Zertifikate plus Root Trust.",
+					"Konfiguriere HSTS Preload, um Downgrade-Angriffe zu mitigieren."
+				],
+				"verification_notes": "Wir validieren Zertifikat und Kette des Checkouts per SSL-Scan (openssl s_client / Qualys SSL Labs)."
+			},
+			"promotion_logic_exposed": {
+				"remediation_steps": [
+					"Verlagere die Rabattlogik ins Backend — der Client darf Promotions niemals berechnen.",
+					"Validiere serverseitig: Coupon-Code existiert, ist nicht abgelaufen, gilt für diese Produkte, hat das Limit nicht überschritten.",
+					"Logge jede Coupon-Anwendung mit user_id + IP, um Missbrauchsmuster zu erkennen.",
+					"Überprüfe aktive Coupons quartalsweise — entferne solche, die keinen Umsatz bringen, aber weiterhin missbraucht werden können."
+				],
+				"verification_notes": "Wir starten Katana gegen Cart-/Coupon-Endpoints, um die missbrauchbare Oberfläche erneut zu validieren."
+			},
+			"cart_variant_weak_control": {
+				"remediation_steps": [
+					"Jede Bestand- und Preisvalidierung muss serverseitig im Checkout erfolgen — vertraue niemals dem Client-Cart.",
+					"Implementiere ein Security-Token pro Cart-Session — invalidiere es bei erkannter Manipulation.",
+					"Überprüfe PATCH/PUT-Endpoints des Carts: sie müssen den Nutzer authentifizieren und Ownership prüfen, bevor Änderungen erfolgen.",
+					"Logge Abweichungen zwischen Client- und Server-Cart, um Manipulationsversuche zu erkennen."
+				],
+				"verification_notes": "Wir proben Cart-Manipulations-Endpoints (Preis/Menge über direkten Request ändern) und bestätigen die Ablehnung."
+			},
+			"hidden_discount_refund_route": {
+				"remediation_steps": [
+					"Auditiere URLs /refund, /discount, /coupon, /comp — sind sie öffentlich erreichbar? Sie müssen Authentifizierung erfordern.",
+					"Administrative Refund-/Discount-Routen gehören hinter Staff-Auth und Audit-Log.",
+					"Entferne Query Strings, die Preis-Overrides akzeptieren (?discount=50, ?price=1) — eine häufige Schwachstelle.",
+					"Überwache Logs auf Exploit-Muster — Peaks bei /refund ohne zugehörige Transaktion = Missbrauch."
+				],
+				"verification_notes": "Wir starten Katana gegen Discount-/Refund-Pfade, um Verbergung und Authentifizierung zu bestätigen."
+			},
+			"guessable_business_endpoint": {
+				"remediation_steps": [
+					"Ersetze sequentielle IDs in kritischen Endpoints durch opake UUIDs: /api/order/abc-123-def statt /api/order/1.",
+					"Implementiere endpointweise Authorization — Nutzer greifen nur auf eigene Ressourcen zu (IDOR-Schutz).",
+					"Auditiere öffentliche APIs: welche exponieren Ressourcenenumeration? Ergänze Rate Limit und Auth.",
+					"Lass regelmäßig einen IDOR-Scanner laufen — teste, ob das Ändern der ID Daten anderer Nutzer liefert."
+				],
+				"verification_notes": "Katana-Dispatch mit Fokus auf numerisch enumerierbare Endpoints und IDOR-Versuchen."
+			},
+			"alternate_pricing_safeguard_bypass": {
+				"remediation_steps": [
+					"Identifiziere Pricing-Varianten (BRL, USD, Promo-Region, B2B) und konsolidiere sie zu einer einzigen serverseitigen Validierung.",
+					"Eliminiere alternative Pricing-Routen ohne Kontrolle — der Käufer darf nicht wählen, welchen Preis er zahlt.",
+					"Konfiguriere ein Feature Flag mit einer Liste autorisierter Kunden für Spezialpreise — nicht über eine exponierte URL.",
+					"Logge Transaktionen außerhalb des Standardpricings — alarmiere für manuelle Review."
+				],
+				"verification_notes": "Wir proben alternative Pricing-Pfade und vergleichen den Endpreis mit dem über das öffentliche Pricing erwarteten."
+			},
+			"js_discovered_purchase_variant": {
+				"remediation_steps": [
+					"Überprüfe öffentliche JS-Bundles — entferne sensible Pfade/Endpoints, die per Crawl entdeckt werden können.",
+					"Nutze Source Maps in Dev, deaktiviere sie in Produktion.",
+					"Obfuskiere (keine Sicherheit, aber erhöht die Hürde) kritischen Pricing-/Checkout-Code im Produktions-Build.",
+					"Auditiere quartalsweise: welche Endpoints werden in öffentlichem JS referenziert?"
+				],
+				"verification_notes": "Katana Discovery auf JS-Bundles, um referenzierte Endpoints zu kartieren und mit autorisierten Surfaces zu vergleichen."
+			},
+			"dynamic_route_weak_control": {
+				"remediation_steps": [
+					"Auditiere dynamische Routen (Regex-Routen, Wildcard-Routen) — sie führen leicht zu ACL-Lücken.",
+					"Nutze ein zentralisiertes Authorization-Framework (Policies/Guards) statt Inline-Checks pro Route.",
+					"Lass automatisierte Authorization-Tests laufen: jede geschützte Route mit einer Liste der berechtigten Nutzer.",
+					"Überprüfe nach jedem Deploy, der dynamische Routen hinzufügt oder ändert."
+				],
+				"verification_notes": "Katana-Exploration dynamischer Routen mit Auth-Bypass-Versuchen."
+			},
+			"hidden_support_burden": {
+				"remediation_steps": [
+					"Miss die durchschnittliche Support-Bearbeitungszeit aufgeteilt nach Kategorie — identifiziere, welcher Tickettyp die meisten Ressourcen verbraucht.",
+					"Behebe die Ursache wiederkehrender Tickets — jedes vermiedene Ticket bedeutet Kostensenkung und Käuferzufriedenheit.",
+					"Automatisiere Antworten auf häufige Fragen über FAQ und Chatbot — skaliere den Support ohne Headcount-Zuwachs.",
+					"Überprüfe monatlich: welche Produkte/Features erzeugen den meisten Support? Priorisiere dort die UX."
+				],
+				"verification_notes": "Support ist eine operative Metrik außerhalb der Website — wird neu projiziert, nachdem du Tickets und Bearbeitungszeit dokumentiert hast."
+			},
+			"alternate_variant_control_breakdown": {
+				"remediation_steps": [
+					"Auditiere die Variantenlogik (Größe, Farbe, Region) im Checkout — stelle sicher, dass jede Variante distinkten Preis und Bestand validiert hat.",
+					"Implementiere konsistente serverseitige Validierung: Menge, Variante, Preis müssen zum echten Katalog passen.",
+					"Teste Edge Cases: Kauf einer ausverkauften Variante, einer nicht existierenden Variante, einer Variante eines archivierten Produkts.",
+					"Logge Abweichungen — der Versuch, eine ungültige Variante zu kaufen, ist ein Signal automatisierter Probes."
+				],
+				"verification_notes": "Katana plus Variant-Manipulations-Probe (nicht existierende IDs, Mischung aus Produkt und verwaister Variante)."
+			},
+			"deep_commerce_exploitation_risk": {
+				"remediation_steps": [
+					"Kombinierter Vorfall — mehrere Exploit-Vektoren gleichzeitig aktiv. Eskaliere ihn an das Security-Team.",
+					"Führe einen vollständigen Scan (Katana + Nuclei) durch, um das Ausmaß des Problems zu kartieren.",
+					"Priorisiere das Patchen nach den finanziell wirkungsvollsten Vektoren zuerst (Preis, Coupon, Checkout).",
+					"Konfiguriere kontinuierliches Monitoring nach der Remediation — kombinierte Exploits versuchen typischerweise einen erneuten Zugriff."
+				],
+				"verification_notes": "Vollständiger Katana- und Nuclei-Scan plus Revalidierung jedes identifizierten Vektors."
+			},
+			"checkout_api_latency_degraded": {
+				"remediation_steps": [
+					"Miss die Latenz kritischer Checkout-Endpoints in Produktion — identifiziere P95 und P99.",
+					"Optimiere Backend-Queries des Checkouts: Indexe, Caching, Entfernen von N+1-Queries.",
+					"Konfiguriere ein CDN für statische Checkout-Assets (CSS, JS, Bilder) — reduziert TTFB.",
+					"Implementiere ein Graceful Timeout: dauert die API länger als 5 Sekunden, zeige dem Nutzer eine Meldung statt zu blockieren."
+				],
+				"verification_notes": "Wir navigieren den Checkout headless, erfassen das Timing jeder Anfrage und geben P50/P95 zurück."
+			},
+			"commercial_pages_slow": {
+				"remediation_steps": [
+					"Führe Lighthouse auf Produkt- und Kategorieseiten aus — Ziel LCP <2,5 s, TTFB <600 ms.",
+					"Optimiere Bilder: WebP/AVIF-Format, Lazy Loading, responsive Größen.",
+					"Entferne nicht-essenzielle Third-Party-Skripte oder verschiebe sie auf async/defer.",
+					"Konfiguriere aggressives Caching statischer Assets (1 Jahr via Cache-Control) plus ETag für HTML."
+				],
+				"verification_notes": "Wir lassen Lighthouse headless gegen kommerzielle Seiten laufen und vergleichen mit der vorherigen Baseline."
+			},
+			"paid_landing_overloaded": {
+				"remediation_steps": [
+					"Kampagnen-Landingpages müssen minimalistisch sein — entferne Widgets, Chats und nicht-essenzielle Analytics.",
+					"Behalte nur einen primären CTA über dem Fold sowie eine Benefits-Sektion und Social Proof.",
+					"Teste mit PageSpeed Insights — Ads-Landings sollten LCP <2 s erreichen, um den Quality Score zu maximieren.",
+					"Hoste Landings auf optimierter Infrastruktur (Vercel, Netlify) statt im selben Stack wie die Hauptapp."
+				],
+				"verification_notes": "Lighthouse plus Analyse des geladenen Ressourcengewichts auf den Paid-Landings."
+			},
+			"third_party_weight_delays_trust": {
+				"remediation_steps": [
+					"Liste die Third-Party-Skripte im Checkout auf: Analytics, Chat, Pixel, A/B-Testing. Gesamtgewicht?",
+					"Eliminiere nicht-Essenzielle (A/B-Testing im Checkout ist riskant, Chat kann später laden).",
+					"Für Essenzielle (GA, Pixel): async laden plus nach dem Main-Content-Render.",
+					"Konfiguriere ein Timeout — antwortet ein Third-Party nicht in 3 s, brich ab und blockiere das Render nicht."
+				],
+				"verification_notes": "Wir erfassen den Netzwerk-Trace des Checkouts und klassifizieren Requests nach Origin (eigene vs. Third-Party)."
+			},
+			"checkout_brittle_third_party": {
+				"remediation_steps": [
+					"Identifiziere kritische Checkout-Abhängigkeiten zu Third-Parties — Gateway, Anti-Fraud, Tax-Calc.",
+					"Konfiguriere einen Fallback: antwortet das Anti-Fraud nicht, erlaube den Kauf mit einem Manual-Review-Flag nachträglich.",
+					"Für das Gateway: halte einen Backup-Anbieter bereit (Stripe + Mercado Pago) und einen automatischen Switchover via Feature Flag.",
+					"Überwache Provider-Statusseiten und konfiguriere serverseitige Alerts bei erkannter Degradation."
+				],
+				"verification_notes": "Wir navigieren den Checkout headless und simulieren Third-Party-Ausfälle, um die Graceful Degradation zu prüfen."
+			},
+			"purchase_blocked_failing_requests": {
+				"remediation_steps": [
+					"Erfasse die letzten 10 Netzwerk-Fehler im Checkout — priorisiere jene, die das Payment betreffen.",
+					"Konfiguriere automatische Retries für nicht-idempotente Requests mit exponentiellem Backoff.",
+					"Für kritische Requests (payment_intent): garantiere einen Idempotency Key, um Duplikate beim Retry zu vermeiden.",
+					"Logge die Erfolgsrate pro Endpoint im Checkout — alarmiere, wenn sie unter 98 % fällt."
+				],
+				"verification_notes": "Wir navigieren den Checkout mehrfach headless, sammeln Failed Requests und ermitteln Erfolgsstatistiken."
+			},
+			"measurement_breaks_revenue_path": {
+				"remediation_steps": [
+					"Blockiert oder verzögert ein Analytics-Tag den Checkout, konfiguriere es auf async/defer.",
+					"Bricht GA/Pixel die Seite, wenn ein Adblocker es blockiert, kapsle es in try/catch mit stillem Fallback.",
+					"Konfiguriere Tags mit einem Performance-Budget — überschreiten sie X ms Ausführungszeit, brich ab.",
+					"Nutze Tag Manager mit bedingten Triggern, um zu messen, ohne Interaktionen zu blockieren."
+				],
+				"verification_notes": "Wir laden den Checkout headless mit und ohne Adblocker und messen den Einfluss auf die Renderzeit."
+			},
+			"purchase_before_deps_ready": {
+				"remediation_steps": [
+					"Auditiere die Ladereihenfolge: der Payment-Button darf nicht klickbar sein, bevor kritische Skripte (Anti-Fraud, Tokenizer) geladen sind.",
+					"Deaktiviere den Submit-Button, bis essenzielle Skripte bereit sind — zeige einen Loading-State.",
+					"Konfiguriere `DOMContentLoaded`-Events plus Deps-Check, bevor der Kauf-Flow aktiviert wird.",
+					"Teste in einer langsamen 3G-Verbindung — Deps müssen innerhalb von 5 s laden, sonst muss der Flow graceful scheitern."
+				],
+				"verification_notes": "Wir laden den Checkout unter 3G-Throttle und testen den Submit-Klick vor abgeschlossenem Load."
+			},
+			"trust_assets_late_load": {
+				"remediation_steps": [
+					"Trust-Marker (SSL-Siegel, Payment-Logos, Policy) gehören ins initiale HTML — nicht per JS nachgeladen.",
+					"Vermeide das Laden von Logos über ein externes CDN, das langsam oder blockierend sein kann — hoste sie intern.",
+					"Priorisiere LCP — Trust-Badges über dem Fold müssen in <2,5 s erscheinen.",
+					"Nutze Preload-Hints für kritische Trust-Bilder: `<link rel=\"preload\" as=\"image\">`."
+				],
+				"verification_notes": "Wir erfassen das Timing des Trust-Marker-Loads im Checkout und vergleichen es mit dem LCP-Ziel."
+			},
+			"mobile_heavy_runtime_chain": {
+				"remediation_steps": [
+					"Mobile hat begrenztere CPU- und Netzwerkkapazität — reduziere aggressiv das im First Paint ausgeführte JS.",
+					"Nutze Code-Splitting: lade nur den Code, der für die aktuelle Route nötig ist, und lazy-loade den Rest.",
+					"Entferne unnötige Polyfills — moderne Mobile-Browser benötigen keinen IE-Support.",
+					"Miss das Main-Thread-Blocking in der Mobile-Simulation — Ziel: <200 ms Long Tasks."
+				],
+				"verification_notes": "Lighthouse Mobile plus Analyse der JS-Bundle-Größe und Long Tasks im Main Thread."
+			},
+			"mobile_trust_payment_deps_failing": {
+				"remediation_steps": [
+					"Teste Payment-Deps (Gateway-Skripte, Tokenizer) gezielt auf Mobile — Web-Deps versagen manchmal in WebView.",
+					"Konfiguriere einen Payment-Method-Fallback, wenn das Primärskript versagt (z. B. Fallback von Stripe Elements auf Redirect-Flow).",
+					"Überwache mobile-spezifische JS-Fehler — alarmiere, wenn sie vom Desktop abweichen.",
+					"Teste auf echtem iOS Safari und Chrome Android, nicht nur in Emulatoren — jedes hat eigene Eigenheiten."
+				],
+				"verification_notes": "Headless Mobile Viewport plus Erfassung von Payment-Script-Fehlern und Erfolgsrate pro Browser."
+			},
+			"trust_surfaces_unstable_deps": {
+				"remediation_steps": [
+					"Kartiere, welche Trust-Surfaces von Third-Parties abhängen (dynamische Siegel, Review-Widgets).",
+					"Miss für jede Third-Party-Dep das Uptime und konfiguriere einen statischen Fallback bei Ausfall.",
+					"Bevorzuge Trust-Marker, die von deiner eigenen Domain ausgeliefert werden — selbst gehostete Siegel hängen nicht von externen Providern ab.",
+					"Konfiguriere spezielles Monitoring für Trust-Surfaces — Providerausfall = sofortiger Conversion-Rückgang."
+				],
+				"verification_notes": "Wir laden Home, Produkt und Checkout und messen den Prozentsatz der Trust-Marker, die fehlerfrei rendern."
+			},
+			"commercial_pages_weak_search_representation": {
+				"remediation_steps": [
+					"Schreibe Title-Tags kommerzieller Seiten neu: 50-60 Zeichen, inklusive Marke, Produkt und Benefit.",
+					"Meta Description: 140-160 Zeichen, die Produkt und Call-to-Action beschreiben. Vermeide Duplikate zwischen Seiten.",
+					"Stelle sicher, dass Title und H1 der Seite abgestimmt, aber nicht identisch sind — Title für Search optimiert, H1 für Menschen.",
+					"Auditiere quartalsweise, welche Titles ranken und welche nicht im Top 10 erscheinen — passe die Copy der Underperformer an."
+				],
+				"verification_notes": "Wir parsen HTML erneut, extrahieren Title/Meta/H1 der kommerziellen Seiten und vergleichen mit Best Practice."
+			},
+			"social_previews_fail_commercial_value": {
+				"remediation_steps": [
+					"Konfiguriere Open-Graph-Tags: og:title, og:description, og:image (1200x630), og:url auf allen kommerziellen Seiten.",
+					"Twitter Card: summary_large_image mit einem für das Teilen optimierten Bild.",
+					"Teste Previews in den offiziellen Debuggern: developers.facebook.com/tools/debug und cards-dev.twitter.com.",
+					"Passe das Preview-Bild pro Produktkategorie an — ein generisches Logo verschwendet den Share."
+				],
+				"verification_notes": "Wir parsen HTML erneut, extrahieren og/twitter Meta-Tags und validieren, dass die Bild-URLs 200 liefern."
+			},
+			"brand_inconsistent_across_surfaces": {
+				"remediation_steps": [
+					"Definiere einen kurzen Brand Guide: Logo, Palette, Typografie, Tone of Voice. Veröffentliche ihn intern.",
+					"Auditiere bestehende Surfaces (Home, App, Email, Landing, Social) — eliminiere Logo-/Farb-/Copy-Abweichungen.",
+					"Zentralisiere Brand Assets in einem eigenen CDN — vermeide kursierende alte Versionen.",
+					"Konfiguriere eine Pre-Deploy-Checkliste, um visuelle Änderungen gegen den Brand Guide zu prüfen."
+				],
+				"verification_notes": "Wir crawlen die Haupt-Surfaces erneut, extrahieren Logo und Palette und vergleichen sie mit den Baseline-Brand-Assets."
+			},
+			"commercial_pages_unlikely_indexed": {
+				"remediation_steps": [
+					"Prüfe robots.txt und Meta-Robots der kommerziellen Seiten — sie dürfen kein versehentliches noindex haben.",
+					"Konfiguriere korrekte Canonical-Tags — verweise auf die bevorzugte Version der Seite (ohne störende Query-Params).",
+					"Reiche eine aktualisierte sitemap.xml in der Google Search Console und den Bing Webmaster Tools ein.",
+					"Erzeuge interne Links zu den kommerziellen Seiten von Home/Blog — Seiten ohne interne Backlinks ranken selten."
+				],
+				"verification_notes": "Wir parsen HTML, robots.txt und sitemap.xml erneut und validieren die Präsenz/Abwesenheit von noindex."
+			},
+			"weak_semantic_intent_signals": {
+				"remediation_steps": [
+					"Ergänze JSON-LD-Schema auf kommerziellen Seiten: Product (Preis, Bestand), Offer, Organization, BreadcrumbList.",
+					"Nutze das korrekte schema.org-Vokabular — Product auf Produktseiten, Article im Blog, Review bei Testimonials.",
+					"Validiere mit Googles Rich Results Test — ungültiges Schema hilft dem SEO nicht.",
+					"Überwache Rich Results in der Search Console — Tickets zu Schema-Fehlern erscheinen dort."
+				],
+				"verification_notes": "Wir parsen HTML erneut, extrahieren JSON-LD und validieren das Schema gegen die Erwartung (Product auf Produkt, usw.)."
+			},
+			"previews_disconnected_from_conversion": {
+				"remediation_steps": [
+					"Social-Preview-Bilder sollten Produkt und Benefit betonen, nicht nur das Logo.",
+					"Der Preview-Title muss kommerziellen Wert vermitteln — \"50 % OFF\" oder \"Kostenloser Versand\" funktioniert besser als ein generischer Titel.",
+					"Teste A/B verschiedene Bilder für dieselbe URL — miss, welches mehr Share-CTR erzeugt.",
+					"Jede Ads-/Social-Kampagne sollte ein für den Kontext optimiertes Preview haben — nutze nicht das Seiten-Default."
+				],
+				"verification_notes": "Wir crawlen erneut und analysieren die Relevanz von og:title und og:image im Vergleich zur kommerziellen Copy der Seite."
+			},
+			"commercial_pages_not_exposed_for_discovery": {
+				"remediation_steps": [
+					"Füge kommerzielle Seiten der sitemap.xml hinzu — priorisiere Produkt und Kategorie mit Priority > 0,8.",
+					"Baue interne Verlinkung: Home → Kategorien → Produkte (max. 3 Klicks).",
+					"Hast du Filter (Farbe, Größe), nutze Canonicals für Varianten und vermeide Duplikate.",
+					"Beantrage in der Search Console eine Reindexierung nach signifikanten Strukturänderungen."
+				],
+				"verification_notes": "Wir crawlen interne Links von der Home, validieren die sitemap.xml und vergleichen die Abdeckung mit den kritischen Seiten."
+			},
+			"lookalike_domain_competing_for_traffic": {
+				"remediation_steps": [
+					"Registriere gängige defensive Domains: Typos (.com.br, .net, .shop), Varianten (mit Bindestrich, ohne Bindestrich).",
+					"Konfiguriere 301-Redirects von defensiven Domains auf die Hauptdomain — fängt Tippfehler-Traffic ein.",
+					"Bei Lookalikes, die aktiv konkurrieren: registriere die Marke und sende eine Takedown-Notice über den Registrar.",
+					"Überwache SERPs regelmäßig — erkenne neue Lookalikes und handle, bevor sie Traktion gewinnen."
+				],
+				"verification_notes": "Wir starten den Brand-Intelligence-Scan erneut, um aktive ähnliche Domains aufzulisten."
+			},
+			"external_sites_mimicking_brand": {
+				"remediation_steps": [
+					"Identifizieren Sie Websites, die Visuals/Copy kopieren — sichern Sie Screenshots als Beweis.",
+					"Senden Sie einen DMCA-Takedown (USA) oder eine LGPD/CDC-Meldung (BR) an den Host der geklonten Website.",
+					"Wenn der Klon Fälschungen verkauft, eskalieren Sie an die Bundespolizei / Verbraucherschutz plus die Verkaufsplattform (Mercado Livre, Shopee).",
+					"Richten Sie Google Alerts für unautorisierte Markenerwähnungen ein."
+				],
+				"verification_notes": "Brand-Intelligence-Scan validiert bekannte Klon-Sites neu und sucht aktiv nach weiteren."
+			},
+			"brand_traffic_exposed_to_deceptive_surfaces": {
+				"remediation_steps": [
+					"Auditieren Sie bezahlte Ads, die Ihre Marke verwenden — Wettbewerber könnten Branded Search auf Ihren Namen schalten.",
+					"Registrieren Sie Ihre Marke, um sie in Google Ads und Facebook Ads zu schützen.",
+					"Setzen Sie defensive Gebote auf Branded Keywords — lassen Sie Wettbewerber keinen billigen Traffic abgreifen.",
+					"Überwachen Sie Google-Suchvorschläge — \"Marke X Beschwerde\" oder \"Marke X Betrug\" weist auf ein Reputationsproblem hin."
+				],
+				"verification_notes": "Brand-Intel-Scan in SERPs plus Gebotsanalyse auf Branded Keywords und Suchvorschlägen."
+			},
+			"suspicious_domains_capturing_purchase_intent": {
+				"remediation_steps": [
+					"Identifizieren Sie verdächtige Domains, die in den Suchergebnissen erscheinen, wenn Nutzer Ihre Marke plus \"kaufen\" suchen.",
+					"Senden Sie Takedowns an die Registrare und Hoster jeder identifizierten verdächtigen Domain.",
+					"Wenn eine Domain organisch über Ihrer rankt, investieren Sie in SEO, um die Position zurückzugewinnen.",
+					"Bieten Sie in Google Ads auf Branded- plus \"kaufen\"-Queries, um die SERP legitim zu dominieren."
+				],
+				"verification_notes": "Brand-Intel-Re-Scan der Branded-Kauf-Queries plus Ranking-Check gegenüber der offiziellen Domain."
+			},
+			"customers_exposed_to_phishing_surfaces": {
+				"remediation_steps": [
+					"Warnen Sie Käufer per E-Mail und Social Media vor identifizierten Phishing-Seiten.",
+					"Konfigurieren Sie DMARC strict (p=reject) auf Ihrer Domain, um E-Mail-Spoofing zu verhindern.",
+					"Melden Sie Phishing-Seiten an Google Safe Browsing und Microsoft Defender SmartScreen — beide entfernen sie aus dem Browsing.",
+					"Erstellen Sie eine /sicherheit- oder /phishing-Seite auf der offiziellen Website, die bekannte Betrügereien und Erkennungsmerkmale dokumentiert."
+				],
+				"verification_notes": "Brand-Intel-Scan plus Phishing-URL-Reporter (Google-/Microsoft-APIs) zur Bestätigung der Entfernung."
+			},
+			"brand_presence_diluted_across_variants": {
+				"remediation_steps": [
+					"Konsolidieren Sie Domains und Subdomains: entfernen Sie unnötige Varianten oder richten Sie Canonical plus Redirect ein.",
+					"Vereinheitlichen Sie das Branding über alle aktiven Surfaces — Inkonsistenz verwirrt den Käufer.",
+					"Definieren Sie eine einzige Master-Domain für Ads, E-Mails und Social — vermeidet Traffic-Streuung.",
+					"Auditieren Sie quartalsweise, welche Domain-Varianten noch aktiv sind und warum."
+				],
+				"verification_notes": "Brand-Intel mappt Domain-/Subdomain-Varianten und gleicht sie gegen die Master-Domain ab."
+			},
+			"checkout_abandonment_revenue_leak": {
+				"remediation_steps": [
+					"Konfigurieren Sie eine Recovery-E-Mail-Sequenz für abgebrochene Warenkörbe: 1h, 24h und 72h nach Abbruch.",
+					"Vereinfachen Sie den Checkout: reduzieren Sie Felder, bieten Sie Gast-Checkout an, zeigen Sie Fortschritt.",
+					"Fügen Sie Urgency/Scarcity hinzu, wenn angemessen (echter Lagerlimit, nicht fake).",
+					"Ein kleiner Rabatt (5-10%) in der letzten Recovery-Mail holt 5-15% der Abbrüche zurück."
+				],
+				"verification_notes": "Re-Pull der Shopify-Metriken zur Bestätigung der Veränderung von Abandonment-Rate und Recovery-Rate."
+			},
+			"promoted_product_out_of_stock": {
+				"remediation_steps": [
+					"Richten Sie eine Echtzeit-Bestandssynchronisation zwischen Shopify und Promotion-Kanälen (Ads, E-Mail, Affiliates) ein.",
+					"Pausieren Sie Ad-Kampagnen automatisch, wenn ein Produkt ausverkauft ist.",
+					"Fügen Sie bei ausverkauften Produkten \"Benachrichtigen, wenn verfügbar\" hinzu, um Nachfrage einzufangen.",
+					"Priorisieren Sie das Wiederauffüllen der meistbeworbenen Produkte — verlorener Bestand während einer Kampagne ist verlorener Umsatz."
+				],
+				"verification_notes": "Re-Pull von Shopify plus Abgleich mit aktiven Kampagnen."
+			},
+			"high_refund_rate_eroding_revenue": {
+				"remediation_steps": [
+					"Auditieren Sie die Top-10-Refund-Gründe in Shopify — identifizieren Sie Muster pro Produkt/SKU.",
+					"Verbessern Sie Fotos und Beschreibungen der meistreklamierten Produkte — Erwartungsmismatch ist die häufige Ursache.",
+					"Wenn ein bestimmtes Produkt >15% Refund-Rate hat, erwägen Sie Auslistung oder Lieferanten-Neuverhandlung.",
+					"Richten Sie eine Pre-Sale-Checkliste ein: sichtbare FAQs, Größentabelle, klare Rückerstattungsrichtlinie."
+				],
+				"verification_notes": "Re-Pull von Shopify zur Bestätigung des Refund-Rate-Trends plus Aufschlüsselung pro Produkt."
+			},
+			"single_payment_gateway_risk": {
+				"remediation_steps": [
+					"Integrieren Sie ein sekundäres Gateway (Stripe plus Mercado Pago, zum Beispiel) für Redundanz.",
+					"Konfigurieren Sie Smart Routing: PIX für BR (günstiger), Karte für International.",
+					"Dokumentieren Sie einen Notfallplan: wenn das Primär-Gateway ausfällt, wie wechseln Sie in <15min.",
+					"Verhandeln Sie Verträge mit SLA — ein Gateway ohne Uptime-Garantie ist eine Wette."
+				],
+				"verification_notes": "Re-Pull der Shopify-Payment-Konfiguration plus Validierung aktiver alternativer Gateways."
+			},
+			"discount_abuse_pattern": {
+				"remediation_steps": [
+					"Auditieren Sie aktive Coupons — begrenzen Sie die Nutzung pro Kunde (1x), pro E-Mail, pro IP.",
+					"Konfigurieren Sie Fraud Detection: dieselbe CPF, die 10x mit Coupon kauft, ist Missbrauch.",
+					"Lassen Sie Coupons regelmäßig auslaufen — permanente Coupons sind eine Einladung zum Teilen auf Seiten wie Cuponeria.",
+					"Messen Sie die Marge nach Rabatt pro Kampagne — einige Coupons können negativ sein."
+				],
+				"verification_notes": "Re-Pull der Shopify-Rabatt-Analytics plus Abgleich mit verdächtigen Nutzungsmustern."
+			},
+			"ad_spend_platform_concentration_risk": {
+				"remediation_steps": [
+					"Identifizieren Sie die zweitbeste Plattform für Ihre ICP — Testen muss nicht warten, bis die erste bricht.",
+					"Verschieben Sie 15-25% des Budgets auf die zweite Plattform in Spiegelkampagnen (gleiches Creative, gleiche Audience).",
+					"Dokumentieren Sie den Stand-up eines neuen Ad-Accounts: Credentials, Tags, Pixel, Genehmigung — erwartete Standup-Zeit ist 1-3 Wochen.",
+					"Konfigurieren Sie Account-Health-Alerts auf beiden Plattformen (Disable, Policy Warning, Spend Anomaly)."
+				],
+				"verification_notes": "Re-Pull der Ad-Plattform-Snapshots zur Bestätigung, dass Spend ohne ROAS-Verlust über >= 2 Plattformen verteilt ist."
+			},
+			"ads_without_conversion_visibility": {
+				"remediation_steps": [
+					"Verbinden Sie Ihre Commerce-Plattform (Shopify, Nuvemshop oder Stripe) unter Settings → Data Sources — der Wizard führt OAuth aus und gleicht den Verlauf in Minuten ab.",
+					"Validieren Sie, dass Orders der letzten 30 Tage importiert werden — kalkulierbares ROAS erscheint sofort im Dashboard.",
+					"Konfigurieren Sie UTM-Tagging auf Kampagnen (utm_source, utm_campaign) für Attribution pro Creative, nicht nur pro Plattform.",
+					"Nach 30 Tagen mit aktivem Conversion-Tracking überprüfen Sie Creatives: pausieren Sie die untersten 20% nach ROAS, verdoppeln Sie das Budget der Top 10%."
+				],
+				"verification_notes": "Re-Pull der Commerce-Integration zur Bestätigung, dass Orders fließen; prüfen Sie total_ad_spend_monthly gegen den attribuierten Umsatz."
+			},
+			"ad_creative_dead_destination": {
+				"remediation_steps": [
+					"Identifizieren Sie das Creative im Ads Manager, das auf die tote URL zeigt — der Finding enthält den Creative-Namen plus Plattform.",
+					"Aktualisieren Sie die Destination URL des Creatives auf eine lebende, relevante Seite für dieselbe Audience.",
+					"Wurde die Seite absichtlich entfernt, pausieren Sie das Creative sofort — jede Stunde live ist verschwendetes Budget.",
+					"Richten Sie einen 301-Redirect von der alten URL auf die neue ein, wenn auch andere Quellen verlinken (SEO, E-Mail, etc.)."
+				],
+				"verification_notes": "Re-Fetch der Destination-URL zur Bestätigung von HTTP 200 ohne übermäßige Redirect-Chain."
+			},
+			"ad_creative_landing_trust_gap": {
+				"remediation_steps": [
+					"Fügen Sie ein Trust Badge (SSL-Siegel, Reviews-Widget, Security-Logo) auf der Landing Page hinzu, auf die die Anzeige verweist.",
+					"Platzieren Sie Testimonials/Reviews nahe an Feldern mit sensiblen Daten — Nähe ist entscheidend.",
+					"Stellen Sie sicher, dass die Datenschutzrichtlinie im selben Viewport wie das sensible Datenfeld verlinkt ist.",
+					"Fügen Sie wenn möglich Strukturierte Daten vom Typ Organization/LocalBusiness für Vertrauen via Rich Snippets hinzu."
+				],
+				"verification_notes": "Re-Crawl der Landing Page zur Bestätigung von >= 2 Trust-Signalen co-lokalisiert mit sensiblen Feldern."
+			},
+			"ad_creative_form_friction_waste": {
+				"remediation_steps": [
+					"Reduzieren Sie das Formular der Landing Page auf 6 Felder oder weniger — entfernen Sie alles, was für die erste Conversion nicht essenziell ist.",
+					"Wenn mehr Daten nötig sind, teilen Sie in Steps auf (Gast-Checkout → Post-Conversion-Erfassung) statt eines monolithischen Formulars.",
+					"Entfernen Sie Felder wie \"E-Mail bestätigen\" oder \"Festnetz\", die Reibung ohne echten Conversion-Wert erzeugen.",
+					"A/B-Test: Kurzversion vs. aktuelle Version. Messen Sie die Conversion Rate pro Variante über 14 Tage."
+				],
+				"verification_notes": "Re-Crawl der Landing Page zur Bestätigung, dass das Hauptformular <= 8 Felder hat."
+			},
+			"ad_creative_mobile_checkout_degraded": {
+				"remediation_steps": [
+					"Testen Sie die Landing Page auf einem echten Mobilgerät (Chrome DevTools Mobile Viewport ersetzt kein echtes Device).",
+					"Identifizieren Sie render-blockierende Skripte — lazy-loaden Sie alles, was nicht above-the-fold ist.",
+					"Stellen Sie sicher, dass der primäre CTA (\"Kaufen\", \"Abonnieren\") im Mobile-Viewport ohne Scrollen sichtbar ist.",
+					"Verwenden Sie wenn möglich AMP oder optimieren Sie den Critical Rendering Path für <3s First Meaningful Paint."
+				],
+				"verification_notes": "Re-Run der Mobile-Verifikation zur Bestätigung, dass der Commercial Path ohne Step Failures und in <8s abgeschlossen wird."
+			},
+			"ad_creative_message_mismatch": {
+				"remediation_steps": [
+					"Öffnen Sie das Ad-Creative im Ads Manager und lesen Sie Headline plus Body Copy nebeneinander mit der Landing Page.",
+					"Aktualisieren Sie das H1 der Landing Page, sodass es das Hauptversprechen der Anzeige aufnimmt — exakte Wortübereinstimmung erhöht die wahrgenommene Relevanz.",
+					"Stellen Sie sicher, dass der CTA auf der Landing Page mit der Aktion übereinstimmt, die die Anzeige versprochen hat (z. B. Anzeige sagt \"Try Free\" aber LP sagt \"Contact Sales\" ist ein Mismatch).",
+					"Wenn die Anzeige ein konkretes Angebot nennt (Rabatt, Free Trial, Feature), stellen Sie sicher, dass es above the fold auf der LP sichtbar ist.",
+					"Alternativ aktualisieren Sie die Ad Copy so, dass sie dem entspricht, was die LP tatsächlich liefert, statt dem, was Sie sich wünschen."
+				],
+				"verification_notes": "Re-Fetch der Landing Page und Re-Run der Message-Match-Analyse zur Bestätigung, dass der Alignment Score über 60 gestiegen ist."
+			},
+			"low_repeat_purchase_rate": {
+				"remediation_steps": [
+					"Konfigurieren Sie Re-Engagement-E-Mails nach 30/60/90 Tagen post Kauf mit personalisierten Empfehlungen.",
+					"Implementieren Sie ein Loyalty-/Punkteprogramm — es reduziert die Reibung für den zweiten Kauf.",
+					"Analysieren Sie LTV pro Kohorte — welcher Akquisitionskanal bringt Kunden, die wiederkaufen?",
+					"Erstellen Sie eine Subscription-Option für Verbrauchsprodukte — wiederkehrender Umsatz ist der größte Hebel."
+				],
+				"verification_notes": "Re-Pull von Shopify zur Bestätigung des Repeat-Purchase-Rate-Trends plus Kohortenanalyse."
+			},
+			"dead_weight_products": {
+				"remediation_steps": [
+					"Listen Sie Produkte mit null Verkäufen in 30 Tagen — auslisten oder neu positionieren.",
+					"Verschieben Sie Dead-Weight-SKUs in eine \"Clearance\"-Kategorie mit echtem Rabatt, um den Bestand zu drehen.",
+					"Analysieren Sie, ob Dead Weight an Preis, Positionierung oder Nachfrage liegt — die Aktion variiert.",
+					"Bereinigen Sie monatlich SKUs ohne Verkauf in 90 Tagen — sie verschmutzen die Suche und verwässern das Inventar."
+				],
+				"verification_notes": "Re-Pull von Shopify plus Cross-Check der Verkäufe pro SKU in den letzten 30 Tagen."
+			},
+			"subscriber_churn_elevated": {
+				"remediation_steps": [
+					"Implementieren Sie eine Cancellation-Umfrage (1-2 Fragen), um die echten Churn-Gründe zu erfassen.",
+					"Konfigurieren Sie Dunning-Automation mit 3-5 Retries plus E-Mail an den Kunden bei fehlgeschlagener Zahlung.",
+					"Erstellen Sie ein Retention-Angebot (Pause, Downgrade, Verlängerung) vor der endgültigen Kündigung.",
+					"Überwachen Sie die wöchentliche Churn Rate mit einem Alert, wenn sie 5% monatlich übersteigt."
+				],
+				"verification_notes": "Re-Pull von Stripe zur Verifikation, ob die Churn Rate im nächsten 30-Tage-Zeitraum unter 5% gefallen ist."
+			},
+			"failed_payment_rate_high": {
+				"remediation_steps": [
+					"Aktivieren Sie den Card Updater in Stripe (automatisch für abgelaufene Karten).",
+					"Konfigurieren Sie Smart Retry mit progressivem Backoff (Stripe Billing unterstützt das bereits).",
+					"Senden Sie dem Kunden bei der ersten Failure eine E-Mail mit Link zum Aktualisieren der Zahlungsmethode.",
+					"Implementieren Sie eine Grace Period von 3-7 Tagen, bevor Sie nach einer Failure den Zugriff sperren."
+				],
+				"verification_notes": "Re-Pull von Stripe zur Verifikation, ob failed_payment_rate im nächsten 30-Tage-Zeitraum unter 3% gefallen ist."
+			},
+			"policy_view_then_abandonment": {
+				"remediation_steps": [
+					"Überprüfen Sie die Copy Ihrer Richtlinien (Rückerstattung, Datenschutz, AGB) — die Lektüre sollte Vertrauen verstärken, nicht Zweifel schüren.",
+					"Fügen Sie in der Rückerstattungsrichtlinie einen subtilen CTA hinzu: \"Fragen? Sprechen Sie mit unserem Team\" mit Link zum Support.",
+					"Wenn Käufer die Richtlinie aufrufen und abbrechen, fügen Sie Post-Policy-Reassurance hinzu (Modal oder Banner), die suggeriert, dass die Richtlinie günstig ist."
+				],
+				"verification_notes": "Warten auf Session-Akkumulation nach Anpassung zur Neubewertung. Aktuelle Sessions im Zeitfenster: {current}/{required}."
+			},
+			"high_intent_detour_before_abandonment": {
+				"remediation_steps": [
+					"Erkennen Sie Seiten, die High-Intent-Käufer vor dem Abbruch besuchen — meist FAQ, Vergleich, Reviews.",
+					"Identifizieren Sie den spezifischen Einwand auf diesen Seiten und lösen Sie ihn direkt im Hauptflow.",
+					"Testen Sie, einen Teil des Traffics direkt in den Hauptflow ohne Detour umzuleiten — beobachten Sie, ob die Conversion steigt."
+				],
+				"verification_notes": "Warten auf neue Sessions, um das Detour-Muster neu zu messen. Aktuell: {current}/{required} Sessions."
+			},
+			"support_discovered_too_late_to_convert": {
+				"remediation_steps": [
+					"Platzieren Sie den Support-Kanal prominent im Kaufprozess — persistenter Footer oder sichtbarer Chat.",
+					"Bieten Sie proaktiv Chat an, wenn der Käufer >60s im Checkout ohne Fortschritt verbringt.",
+					"Messen Sie First Response Time — <5 Arbeitsminuten im Chat reduzieren Reibung deutlich."
+				],
+				"verification_notes": "Warten auf Traffic nach Anpassung, um zu messen, ob die Support Discovery gestiegen ist. Sessions: {current}/{required}."
+			},
+			"cta_visible_but_behaviorally_dead": {
+				"remediation_steps": [
+					"Der CTA erscheint im Viewport, aber niemand klickt — überprüfen Sie Copy, Kontrast und Nähe zur Value Prop.",
+					"Testen Sie A/B-Varianten in Farbe, Größe und Copy des CTAs — kleine Änderungen erzeugen große Swings.",
+					"Stellen Sie sicher, dass der CTA above the fold auf Desktop UND Mobile ist — Mobile begräbt den CTA oft."
+				],
+				"verification_notes": "Warten auf neue Sessions, um die CTR des angepassten CTAs zu messen. {current}/{required} Sessions."
+			},
+			"purchase_hesitation_with_backtrack": {
+				"remediation_steps": [
+					"Käufer kehren mehrfach in den Warenkorb zurück — der Einwand liegt in den dort gezeigten Daten (Preis? Versand? Lieferung?).",
+					"Zeigen Sie ALLE Kosten (Versand plus Steuern) vor dem Checkout — eine Überraschung in der Gesamtsumme ist Top-Abbruchgrund.",
+					"Fügen Sie eine \"Warum wir\"-Zusammenfassung neben dem Bezahl-Button hinzu, um die Entscheidung zu festigen."
+				],
+				"verification_notes": "Warten auf Sessions nach Änderung zur Validierung der Backtrack-Reduktion. {current}/{required}."
+			},
+			"critical_step_retries_before_abandonment": {
+				"remediation_steps": [
+					"Identifizieren Sie, welcher Step am häufigsten vor dem Abbruch wiederholt wird — meist abgelehnte Karte oder PLZ ohne Lieferung.",
+					"Verbessern Sie die Fehlermeldungen in diesen Steps — erklären Sie URSACHE plus NÄCHSTEN SCHRITT.",
+					"Bieten Sie Alternativpfade an: abgelehnte Karte → PIX anbieten; PLZ ohne Lieferung → Abholung anbieten."
+				],
+				"verification_notes": "Warten auf Sessions nach Fix zur Messung der Retry-Rate pro Step. {current}/{required}."
+			},
+			"mobile_fails_first_commercial_action": {
+				"remediation_steps": [
+					"Die erste kommerzielle Aktion auf Mobile (Add-to-Cart, Checkout starten) scheitert häufiger als auf Desktop — testen Sie auf echtem iOS plus Android.",
+					"Validieren Sie Button-Größe (≥44px), Viewport und dass die Tastatur das aktive Input nicht verdeckt.",
+					"Entfernen Sie Modals/Overlays, die auf Mobile scroll-trapped sind oder keinen sichtbaren Close-Button haben."
+				],
+				"verification_notes": "Warten auf neue Mobile-Sessions zur Validierung des Fixes. {current}/{required} Mobile-Sessions."
+			},
+			"funnel_step_alive_but_not_advancing": {
+				"remediation_steps": [
+					"Der Step hat Aktivität (Klicks, Form Fills), schreitet aber nicht voran — es gibt einen technischen Blocker oder ein stummes UX-Problem.",
+					"Überprüfen Sie Validierungen: versteckte Fehlermeldungen, deaktivierter Submit-Button ohne klares Feedback.",
+					"Fügen Sie Analytics für Form-Validation-Fehler hinzu, um zu sehen, welches Feld am meisten blockiert."
+				],
+				"verification_notes": "Warten auf Sessions zur Neumessung der Advance-Rate pro Step. {current}/{required}."
+			},
+			"hesitation_before_conversion_missing_trust": {
+				"remediation_steps": [
+					"Der Käufer zögert nahe am Bezahl-Button — Trust-Marker sind nicht dort, wo sie gebraucht werden.",
+					"Fügen Sie Siegel (SSL, Kartenmarken, Gateway) SICHTBAR im Bezahl-Viewport hinzu.",
+					"Fügen Sie Reassurance-Microcopy neben dem Button hinzu: \"Sichere Zahlung via [Gateway]\"."
+				],
+				"verification_notes": "Warten auf Sessions nach Trust-Markern zur Messung der Hesitations-Reduktion. {current}/{required}."
+			},
+			"pricing_hesitation_unclear_value": {
+				"remediation_steps": [
+					"Der Käufer ruft das Pricing mehrfach erneut auf — ein Hinweis darauf, dass die Value Prop nicht klar ist.",
+					"Schreiben Sie jeden Plan im Sinne des OUTCOMES (\"sparen Sie X Stunden/Woche\") statt der Features.",
+					"Fügen Sie einen visuellen Pros-Cons-Vergleich oder ROI-Rechner hinzu, der dem Käufer bei der Entscheidung hilft."
+				],
+				"verification_notes": "Warten auf Sessions nach Pricing-Rewrite zur Messung der Entscheidungszeit. {current}/{required}."
+			},
+			"policy_detour_before_conversion": {
+				"remediation_steps": [
+					"Der Käufer ruft eine Richtlinie vor der Conversion auf — die Sorge ist präsent. Adressieren Sie sie proaktiv.",
+					"Heben Sie die günstige Rückerstattungsrichtlinie DIREKT im Checkout hervor (nicht im Footer versteckt).",
+					"Verwenden Sie positive Sprache: \"30 Tage Meinung ändern\" statt \"Rückerstattungsrichtlinie\"."
+				],
+				"verification_notes": "Warten auf Sessions zur Messung, ob die Detour-Rate gefallen ist. {current}/{required}."
+			},
+			"cta_viewed_not_engaged": {
+				"remediation_steps": [
+					"Der CTA erscheint, aber das Engagement ist gering — die Copy treibt nicht zur Handlung.",
+					"Verwenden Sie konkrete Verben: \"Jetzt kaufen\" > \"Mehr erfahren\". Echte Dringlichkeit: \"Noch 3 auf Lager\".",
+					"Testen Sie verschiedene Varianten — kleine Copy-Änderungen erzeugen 5-20% CTR-Swings."
+				],
+				"verification_notes": "Warten auf neue Sessions zur Neumessung der CTA-Engagement-Rate. {current}/{required}."
+			},
+			"sensitive_input_abandonment": {
+				"remediation_steps": [
+					"Der Käufer bricht beim Anblick eines sensiblen Feldes (CPF, Karte, Adresse) ab — Trust-Defizit an genau diesem Feld.",
+					"Fügen Sie Microcopy hinzu, die erklärt, WARUM die Daten benötigt werden: \"CPF nur für die Rechnung verwendet\".",
+					"Zeigen Sie ein Schloss-Icon plus SSL-Siegel nahe am sensiblen Feld, um Sicherheit zu betonen."
+				],
+				"verification_notes": "Warten auf Sessions zur Neumessung der Abandonment-Rate in diesen Feldern. {current}/{required}."
+			},
+			"form_excessive_fields_before_conversion": {
+				"remediation_steps": [
+					"Das Formular hat >8 Pflichtfelder vor der Conversion — jedes zusätzliche Feld reduziert die Completion um ~5%.",
+					"Eliminieren Sie optionale Felder, die später abgefragt werden können (z. B. NPS, Profil-Umfrage).",
+					"Nutzen Sie aggressives Auto-Fill: ViaCEP für die Adresse, Masken für CPF/Telefon."
+				],
+				"verification_notes": "Warten auf Sessions zur Neumessung der Form-Completion-Rate. {current}/{required}."
+			},
+			"form_submission_retry_friction": {
+				"remediation_steps": [
+					"Das Formular liefert einen Fehler und der Käufer versucht es mehrfach — die Validierung ist unklar oder die UX hängt.",
+					"Validieren Sie in Echtzeit (inline) statt nur beim Submit — der Käufer weiß sofort, was falsch ist.",
+					"Wenn der Submit fehlschlägt, bewahren Sie ALLE bereits eingegebenen Daten — erzwingen Sie kein erneutes Tippen."
+				],
+				"verification_notes": "Warten auf Sessions zur Neumessung der Retry-Rate nach Fix. {current}/{required}."
+			},
+			"surface_oscillation_before_dropoff": {
+				"remediation_steps": [
+					"Der Käufer oszilliert zwischen Surfaces (Home ↔ Produkt ↔ Cart), bevor er abbricht — Decision Paralysis.",
+					"Reduzieren Sie alternative Pfade im Commercial Flow — ein klarer Weg vom Produkt zum Kauf.",
+					"Fügen Sie einen Direktvergleich auf der Produktseite hinzu, um den Rücksprung zur Kategorie überflüssig zu machen."
+				],
+				"verification_notes": "Warten auf neue Sessions zur Messung des Oszillationsmusters. {current}/{required}."
+			},
+			"conversion_final_step_retry": {
+				"remediation_steps": [
+					"Der letzte Step (Payment-Submit) wird häufig wiederholt — Karte wird abgelehnt oder Anti-Fraud blockiert.",
+					"Verbessern Sie die Post-Ablehnungs-Nachricht: erklären Sie die wahrscheinliche Ursache plus schlagen Sie eine Aktion vor (neue Karte, PIX).",
+					"Fügen Sie einen automatischen Fallback auf andere Methoden hinzu, wenn die primäre fehlschlägt."
+				],
+				"verification_notes": "Warten auf Sessions zur Neumessung der Retry-Rate im letzten Step. {current}/{required}."
+			},
+			"cta_late_availability_delays_action": {
+				"remediation_steps": [
+					"Der CTA erscheint nach vollständigem Render — Skripte verzögern die Interaktivität.",
+					"Rendern Sie kritische CTAs im initialen HTML vor, ohne von JS abzuhängen.",
+					"Messen Sie Time To Interactive speziell für den Conversion-Button — er sollte <2s sein."
+				],
+				"verification_notes": "Warten auf Sessions nach Fix zur Messung des Timings des ersten Klicks auf den CTA. {current}/{required}."
+			},
+			"checkout_abandon_no_feedback": {
+				"remediation_steps": [
+					"Der Käufer bricht den Checkout ab, ohne ein Signal zu hinterlassen (nichts ausgefüllt, leise gegangen).",
+					"Fügen Sie ein Exit-Intent-Modal mit der Frage \"Was hat gefehlt?\" und Freitextfeld hinzu — erfasst Einwände.",
+					"Konfigurieren Sie eine Recovery-Mail für jene, die den Checkout begonnen, aber nicht abgeschlossen haben, mit direktem Link zurück zum Warenkorb."
+				],
+				"verification_notes": "Warten auf neue Sessions zur Messung der Feedback-Captured-Rate. {current}/{required}."
+			},
+			"sensitive_input_perceived_risk_dropoff": {
+				"remediation_steps": [
+					"Sensible Felder verursachen einen direkten Drop — wahrgenommenes Risiko überwiegt den wahrgenommenen Nutzen.",
+					"Fügen Sie Trust-Signale UNMITTELBAR neben dem Feld hinzu: SSL-Siegel, Nutzungserklärung, Link zur Datenschutzrichtlinie.",
+					"Testen Sie eine Umsortierung: fragen Sie sensible Daten NACH Account-Anlage oder Add-to-Cart ab — drops fallen geringer aus."
+				],
+				"verification_notes": "Warten auf Sessions zur Messung der Drop-Rate nach Anpassungen. {current}/{required}."
+			},
+			"first_session_milestone_stall": {
+				"remediation_steps": [
+					"Die erste Session bleibt vor dem Value-Meilenstein stecken — reduzieren Sie die Reibung in den ersten 60s.",
+					"Definieren Sie den \"Aha-Moment\" der Erstnutzung und optimieren Sie den direkten Pfad dorthin.",
+					"Bieten Sie eine optionale geführte Tour an, die in <2min Value demonstriert."
+				],
+				"verification_notes": "Warten auf neue Sessions zur Messung der Milestone-Completion-Rate. {current}/{required}."
+			},
+			"first_session_trust_barrier": {
+				"remediation_steps": [
+					"Neue Besucher stoßen auf eine Trust-Barriere — zeigen Sie Social Proof plus Credentials prominenter.",
+					"Kundenlogos, Testimonials mit Fotos, Awards sichtbar auf der Home above the fold.",
+					"Für ein neues Produkt fügen Sie ein erklärendes \"So funktioniert's\" plus eine explizite Garantie hinzu, um wahrgenommenes Risiko zu senken."
+				],
+				"verification_notes": "Warten auf neue Sessions zur Neumessung der Bounce-Rate neuer Besucher. {current}/{required}."
+			},
+			"first_session_cta_timing_gap": {
+				"remediation_steps": [
+					"Der CTA erscheint zu spät in der ersten Session — der Besucher geht, bevor er das Angebot sieht.",
+					"Zeigen Sie den primären CTA im ersten Paint sichtbar, ohne von Scroll abhängig zu sein.",
+					"Konfigurieren Sie ein Exit-Intent-Modal, um Besucher abzufangen, die ohne Aktion gehen."
+				],
+				"verification_notes": "Warten auf neue Sessions zur Messung des CTA-Exposure-Timings. {current}/{required}."
+			},
+			"low_value_action_dominates": {
+				"remediation_steps": [
+					"Low-Value-Aktionen (Scrollen, Blog-Lesen) dominieren gegenüber High-Value-Aktionen (Add-to-Cart, Signup).",
+					"Überprüfen Sie CTAs auf Traffic-Seiten — viele führen zu Content statt zur Conversion.",
+					"Fügen Sie einen Conversion-CTA auf populären Content-Seiten hinzu (Blog, Hilfe)."
+				],
+				"verification_notes": "Warten auf Sessions zur Neumessung des Verhältnisses High-Value vs Low-Value Actions. {current}/{required}."
+			},
+			"high_value_action_underexposed": {
+				"remediation_steps": [
+					"High-Value-Aktionen (Kauf, Upgrade) erhalten nicht genug Exposure — positionieren Sie sie auf Surfaces mit hohem Traffic.",
+					"Die Home sollte einen primären CTA haben, der auf die Aktion mit dem höchsten kommerziellen Wert zeigt.",
+					"Verstecken Sie Premium-Features nicht hinter mehreren Klicks — zeigen Sie sie direkt mit kontextueller Paywall."
+				],
+				"verification_notes": "Warten auf Sessions zur Messung der Exposure-Rate der High-Value-Aktionen. {current}/{required}."
+			},
+			"dead_weight_surface_traffic": {
+				"remediation_steps": [
+					"Seiten mit Traffic, aber null Conversion, lecken Ad-Budget und zerteilen die Analyse.",
+					"Auditieren Sie die Top-10-Traffic-Seiten nach Conversion Rate — priorisieren Sie Fixes bei 0% CR.",
+					"Wenn die Seite strukturell nicht konvertiert (z. B. generischer Blog-Post), reduzieren Sie den darauf gerichteten Paid Spend."
+				],
+				"verification_notes": "Warten auf Sessions zur Neumessung der Conversion Rate pro Surface. {current}/{required}."
+			},
+			"paid_traffic_friction_elevated": {
+				"remediation_steps": [
+					"Bezahlter Traffic stößt auf mehr Reibung als organischer — Ad-Landing-Pages müssen dediziert sein.",
+					"Erstellen Sie kampagnenspezifische Landing Pages, ohne Navigation, die vom CTA ablenkt.",
+					"Validieren Sie Message Match: Ad verspricht X, Landing liefert X (nicht die generische Home)."
+				],
+				"verification_notes": "Warten auf Paid-Traffic-Sessions zur Neumessung der Reibung. {current}/{required}."
+			},
+			"paid_traffic_trust_gap": {
+				"remediation_steps": [
+					"Bezahlter Traffic hat geringeres Vertrauen als organischer — stärken Sie Credentials auf Ad-Landings.",
+					"Social Proof (Reviews, Kundenanzahl, Medien) sichtbar im ersten Viewport.",
+					"Eine starke, explizite Garantie (\"30 Tage Rückgabe, ohne Fragen\") senkt das wahrgenommene Risiko."
+				],
+				"verification_notes": "Warten auf Paid-Sessions zur Messung der trust-bezogenen Bounce Rate. {current}/{required}."
+			},
+			"paid_mobile_compounding_waste": {
+				"remediation_steps": [
+					"Paid plus Mobile gleich kumulierter Waste. Mobile-Reibung plus Cold Traffic kaufen 2x weniger.",
+					"Trennen Sie Mobile- vs Desktop-Kampagnen und optimieren Sie Landings für jeden Kanal separat.",
+					"Die Mobile-Landing sollte ≤3 Elemente above the fold haben: Headline plus Benefit plus CTA."
+				],
+				"verification_notes": "Warten auf Paid-Mobile-Sessions zur Neumessung der Conversion Rate. {current}/{required}."
+			},
+			"mobile_conversion_gap": {
+				"remediation_steps": [
+					"Die Mobile Conversion Rate liegt deutlich unter Desktop — die Mobile-UX braucht dedizierte Aufmerksamkeit.",
+					"Auditieren Sie Mobile-Form-Completion: winzige Felder, Tastatur über dem Input, unerreichbarer Submit.",
+					"Vereinfachen Sie den Mobile-Flow: eine Spalte, nummerierte Steps, Fortschritt speichern."
+				],
+				"verification_notes": "Warten auf Mobile-Sessions zur Neumessung des Conversion Gaps. {current}/{required}."
+			},
+			"mobile_form_friction_elevated": {
+				"remediation_steps": [
+					"Formulare auf Mobile haben eine höhere Abandonment Rate — Felder plus Tastatur erzeugen Reibung.",
+					"Verwenden Sie die korrekten Input-Typen (tel, email, number), um optimierte Tastaturen zu aktivieren.",
+					"Springen Sie automatisch zwischen Feldern, wo möglich (z. B. PLZ füllt Stadt/Bundesland automatisch)."
+				],
+				"verification_notes": "Warten auf Mobile-Sessions mit Formular-Interaktion. {current}/{required}."
+			},
+			"mobile_cta_timing_degraded": {
+				"remediation_steps": [
+					"Der Mobile-CTA braucht zu lange, um interaktiv zu werden — schwere Skripte blockieren den Main Thread.",
+					"Priorisieren Sie TTI (Time To Interactive) auf Mobile — Ziel <3s auf simuliertem 4G.",
+					"Reduzieren Sie das initiale JS-Bundle, lazy-loaden Sie den Rest."
+				],
+				"verification_notes": "Warten auf Mobile-Sessions nach Optimierung zur Messung des realen Timings. {current}/{required}."
+			},
+			"funnel_step_friction_cost": {
+				"remediation_steps": [
+					"Jeder Funnel-Step hat einen Conversion-Cost — zählen Sie die aktuellen Steps und eliminieren Sie redundante.",
+					"Konsolidieren Sie \"Step 1: Adresse hinzufügen\" plus \"Step 2: Adresse bestätigen\" zu einem einzigen Step.",
+					"Testen Sie One-Page-Checkout vs Multi-Step — für einfache Warenkörbe konvertiert One-Page besser."
+				],
+				"verification_notes": "Warten auf Sessions nach Konsolidierung zur Messung der Step-Completion. {current}/{required}."
+			},
+			"oscillation_decision_cost": {
+				"remediation_steps": [
+					"Der Käufer oszilliert zwischen Optionen (Pläne, Varianten, Zahlungsmethoden) — Decision Fatigue.",
+					"Heben Sie einen empfohlenen Default hervor, um die kognitive Last zu senken — \"beliebteste Wahl\" funktioniert gut.",
+					"Begrenzen Sie Optionen — 3 Pläne sind der Sweet Spot für SaaS, 2-3 Varianten pro Produkt für E-Commerce."
+				],
+				"verification_notes": "Warten auf Sessions zur Messung des Oszillationsmusters. {current}/{required}."
+			},
+			"checkout_entry_friction": {
+				"remediation_steps": [
+					"Der Einstieg in den Checkout hat bereits Reibung — versteckter Button, unterbrechendes Modal, erzwungenes Login.",
+					"Stellen Sie sicher, dass ein \"Zur Kasse\"-CTA im Warenkorb und auf jeder Produktseite sichtbar ist.",
+					"Gast-Checkout als Default — Option zur Account-Erstellung nach dem Kauf."
+				],
+				"verification_notes": "Warten auf Sessions zur Messung der Entry Rate in den Checkout. {current}/{required}."
+			},
+			"trust_deficit_conversion_drag": {
+				"remediation_steps": [
+					"Ein generalisiertes Trust-Defizit zieht die gesamte Conversion nach unten — kein punktueller Fix, sondern systemische Verstärkung.",
+					"Fügen Sie Trust-Marker in ALLE kommerziellen Surfaces ein: Home, Produkt, Warenkorb, Checkout, Bestätigung.",
+					"Konkreter Social Proof (Zahlen, Namen, Logos) reduziert das Trust-Defizit stärker als generische Badges."
+				],
+				"verification_notes": "Warten auf Sessions nach Trust-Verstärkung zur Messung des Conversion-Uplifts. {current}/{required}."
+			},
+			"reassurance_seeking_elevated": {
+				"remediation_steps": [
+					"Käufer suchen Reassurance (FAQ, Reviews, Kontakt), bevor sie sich entscheiden — bedienen Sie dieses Bedürfnis proaktiv.",
+					"Platzieren Sie relevante FAQs direkt auf Produktseiten — zwingen Sie den Käufer nicht zum Navigieren.",
+					"Fügen Sie Badges wie \"verkaufte Stückzahl\" oder \"Durchschnittsbewertung\" als expliziten Social Proof hinzu."
+				],
+				"verification_notes": "Warten auf Sessions zur Messung der Reassurance-Visits vor der Conversion. {current}/{required}."
+			},
+			"sensitive_input_trust_gap": {
+				"remediation_steps": [
+					"Trust-Lücke speziell bei sensiblen Feldern — wahrgenommenes Risiko überwiegt das generische Site-Trust.",
+					"Fügen Sie Microcopy hinzu, die die Datenerhebung erklärt, plus einen Link zur Datenschutzrichtlinie neben dem Feld.",
+					"Verwenden Sie Schloss-Icons plus SSL-Siegel UNMITTELBAR am Feld — Vertrauen muss dort wahrgenommen werden, wo das Risiko gefühlt wird."
+				],
+				"verification_notes": "Warten auf Sessions zur Messung der Completion Rate in sensiblen Feldern. {current}/{required}."
+			},
+			"path_length_exceeds_efficient": {
+				"remediation_steps": [
+					"Der durchschnittliche Käuferpfad bis zur Conversion ist zu lang — jede zusätzliche Seite verwässert die Intent.",
+					"Identifizieren Sie Abkürzungen: hervorgehobenes Produkt auf der Home, direkter CTA ohne Zwischenkategorie, Quick-Add in der Kategorie.",
+					"Minimieren Sie die für einen Kauf nötigen Pageviews — idealerweise <5 Pageviews vom Einstiegspunkt zur Zahlung."
+				],
+				"verification_notes": "Warten auf Sessions zur Messung der durchschnittlichen Path Length nach Optimierung. {current}/{required}."
+			},
+			"intent_absorber_detected": {
+				"remediation_steps": [
+					"Eine Surface absorbiert Intent, ohne zu konvertieren — Blogpost, generisches FAQ, umfangreiche Kategorie.",
+					"Identifizieren Sie die Intent-Absorber per Analytics und fügen Sie relevante Conversion-CTAs auf diesen Seiten ein.",
+					"Oder: Reduzieren Sie die Exposure dieser Seiten in der Hauptnavigation, wenn sie nicht konvertierbar sind."
+				],
+				"verification_notes": "Warten auf Sessions nach dem Hinzufügen der CTAs auf den Absorbern. {current}/{required}."
+			},
+			"intent_decay_time_excessive": {
+				"remediation_steps": [
+					"Der Intent-Decay ist zu schnell — der Buyer kühlt ab, wenn die Session X Minuten ohne Conversion überschreitet.",
+					"Nutzen Sie echte Urgency/Scarcity (geringer Bestand, Promo mit Timer), um die Entscheidung zu beschleunigen.",
+					"Kehrt der Buyer in einer neuen Session zurück, reaktivieren Sie ihn per E-Mail mit Erinnerung an den letzten Stand und einem kleinen Anreiz."
+				],
+				"verification_notes": "Warten auf neue Sessions, um die Intent-Decay-Kurve zu messen. {current}/{required}."
+			},
+			"information_disclosure": {
+				"remediation_steps": [
+					"Konfigurieren Sie einen generischen Error Handler in Produktion — loggen Sie Details serverseitig und geben Sie dem Client eine benutzerfreundliche Meldung zurück.",
+					"Entfernen Sie den Server-Header mit Version (Apache/nginx): Verwenden Sie ServerTokens Prod oder server_tokens off.",
+					"Auditieren Sie 4xx/5xx-Responses — keine darf Stack Trace, internen Pfad oder Framework-Version enthalten.",
+					"Konfigurieren Sie das Framework für den Produktionsmodus (DEBUG=false, RAILS_ENV=production, NODE_ENV=production)."
+				],
+				"verification_notes": "Wir werden Error-URLs anfordern und den Server-Header in Responses prüfen, um die Entfernung sensibler Infos zu bestätigen."
+			},
+			"script_supply_chain_risk": {
+				"remediation_steps": [
+					"Fügen Sie das integrity=-Attribut (SRI-Hash) zu jedem externen <script> im Checkout und auf kommerziellen Seiten hinzu.",
+					"Erzeugen Sie einen SHA-384- oder SHA-512-Hash des versionierten Skripts: openssl dgst -sha384 -binary file | base64.",
+					"Konfigurieren Sie CSP require-sri-for, um Skripte ohne Integrity automatisch zu blockieren.",
+					"Überwachen Sie den CDN-Provider auf Kompromittierungs-Alerts — tauschen Sie den Hash bei Versionsänderung aus."
+				],
+				"verification_notes": "Wir werden kommerzielle Seiten erneut abrufen und prüfen, ob das integrity-Attribut bei externen Skripten vorhanden ist."
+			},
+			"auth_surface_insecure": {
+				"remediation_steps": [
+					"Korrigieren Sie Passwortfelder auf type=\"password\" — verwenden Sie für Passwörter nie type=\"text\".",
+					"Stellen Sie sicher, dass die Form-Action für Login/Signup HTTPS verwendet (niemals HTTP).",
+					"Fügen Sie autocomplete=\"current-password\" zu Login-Inputs und \"new-password\" zu Signup-Inputs hinzu.",
+					"Implementieren Sie HSTS, damit selbst HTTP-Links vor dem Submit auf HTTPS umgeleitet werden."
+				],
+				"verification_notes": "Wir werden Login-Seiten erneut abrufen und den Typ des Passwortfelds sowie das Protokoll der Form-Action prüfen."
+			},
+			"pricing_offer_unclear": {
+				"remediation_steps": [
+					"Fügen Sie einen klaren Vergleich zwischen Tiers hinzu: Feature-für-Feature-Tabelle mit expliziten Häkchen.",
+					"Heben Sie einen empfohlenen Plan hervor (Badge \"Am beliebtesten\" oder \"Bestes Preis-Leistungs-Verhältnis\"), um Entscheidungslähmung zu reduzieren.",
+					"Fügen Sie pro Tier eine 1-Zeilen-Beschreibung hinzu, die erklärt, für wen er gedacht ist (Freelancer, Startup, Enterprise).",
+					"Ist das Pricing-Modell nicht bestimmbar, vereinfachen Sie es — weniger Optionen konvertieren besser."
+				],
+				"verification_notes": "Wir werden die Pricing-Seite per LLM erneut analysieren, um Tier-Klarheit und Vorhandensein einer Empfehlung zu validieren."
+			},
+			"page_purpose_mismatch": {
+				"remediation_steps": [
+					"Richten Sie Title und H1 am tatsächlichen Zweck der Seite aus — die Pricing-Seite sollte \"Pläne/Preise\" enthalten.",
+					"Wurde Content migriert, klassifizieren Sie die Seite neu und aktualisieren Sie Navigation und Sitemap.",
+					"Überarbeiten Sie die Meta-Description, damit sie den aktuellen Inhalt widerspiegelt — Fehlausrichtung schadet der organischen CTR.",
+					"Auditieren Sie das Funnel-Analytics — kommen Buyer mit Erwartung X an und finden Y, steigt die Bounce-Rate."
+				],
+				"verification_notes": "Wir werden die Seite neu klassifizieren und Keywords aus H1/Title mit dem erkannten Page-Type vergleichen."
+			},
+			"structured_data_mismatch": {
+				"remediation_steps": [
+					"Auditieren Sie JSON-LD vs. sichtbaren Inhalt: Der Preis im Schema muss identisch mit dem Preis auf der Seite sein.",
+					"Verwenden Sie den Google Rich Results Test, um zu validieren, dass Schema-Daten die Realität widerspiegeln.",
+					"Automatisieren Sie die JSON-LD-Generierung aus CMS/Datenbank — vermeiden Sie hartkodierte Werte, die veralten.",
+					"Überwachen Sie Preis-/Namensänderungen — aktualisieren Sie das Schema synchron, wenn sich das Produkt ändert."
+				],
+				"verification_notes": "Wir werden JSON-LD extrahieren und Claims (Preis, Name, Rating) mit dem sichtbaren Seiteninhalt vergleichen."
+			},
+			"payment_handoff_dropoff": {
+				"remediation_steps": [
+					"Überwachen Sie die Rückkehrrate nach dem Payment-Handoff — identifizieren Sie das Gateway mit dem größten Abfall.",
+					"Ersetzen Sie externe Redirects möglichst durch Embedded-Checkout (Stripe Elements, PayPal Smart Buttons).",
+					"Ist der Redirect unvermeidlich, fügen Sie das Store-Logo und ein Sicherheitssiegel auf der Gateway-Seite hinzu.",
+					"Implementieren Sie Callback/Webhook, um Sessions zu erkennen, die nie zurückkehren, und starten Sie E-Mail-Recovery.",
+					"Testen Sie den Flow auf Mobile und Desktop — Gateways mit Pop-up können in Safari/iOS blockiert werden."
+				],
+				"verification_notes": "Wir werden den vollständigen Checkout in einem Headless Browser ausführen, den Handoff zum Gateway verfolgen und validieren, ob die Session mit Bestätigung zur Store-Domain zurückkehrt."
+			},
+			"saas_activation_gap_heuristic": {
+				"remediation_steps": [
+					"Mappen Sie die erste Wert-Aktion (First Meaningful Action) und messen Sie, wie viele Trial-User sie abschließen.",
+					"Reduzieren Sie das Onboarding auf maximal 3 Schritte vor dem ersten Erfolg.",
+					"Eliminieren Sie optionale Felder beim Signup — fragen Sie nur E-Mail und Passwort ab, vervollständigen Sie das Profil später.",
+					"Fügen Sie Empty States mit klaren CTAs ein, die zur ersten Wert-Aktion führen.",
+					"Implementieren Sie einen Progress-Indicator, der zeigt, wie viel zur Produkt-Aktivierung fehlt."
+				],
+				"verification_notes": "Wir werden Signup plus erste Aktion in einem Headless Browser simulieren und messen, ob der Flow ohne Fehler oder Abbruch abgeschlossen wird."
+			},
+			"oscillation_clustering": {
+				"remediation_steps": [
+					"Identifizieren Sie das Seitenpaar mit der höchsten Oszillation und analysieren Sie, was auf jeder Seite fehlt, um den Zweifel zu klären.",
+					"Fügen Sie auf der Ursprungsseite einen Inline-Vergleich oder eine Zusammenfassung ein (z. B. Preistabelle auf der Features-Seite).",
+					"Implementieren Sie Breadcrumb oder Progress-Indicator, der zeigt, wo der User im Entscheidungsflow steht.",
+					"Testen Sie einen Sticky-CTA oder eine Sidebar mit Zusammenfassung der Optionen, um die Notwendigkeit des Zurücknavigierens zu reduzieren."
+				],
+				"verification_notes": "Wir werden das Seitenpaar nach der Änderung überwachen und prüfen, ob die Oszillationsrate unter den Threshold gefallen ist."
+			},
+			"network_error_weighted": {
+				"remediation_steps": [
+					"Priorisieren Sie Fixes nach Gewicht: Payment-Fehler (x3) > Measurement-Fehler (x2) > Trust/Third-Party (x1).",
+					"Konfigurieren Sie automatische Retries mit exponentiellem Backoff für Payment- und Analytics-Skripte.",
+					"Implementieren Sie ein visuelles Fallback, wenn Trust-Badges ausfallen (z. B. statischer Text statt dynamisches Widget).",
+					"Überwachen Sie die Uptime kritischer Provider mit Sub-5-Min-Alerting und automatischem Failover.",
+					"Reduzieren Sie Third-Party-Abhängigkeiten im Checkout — inlinen Sie, was möglich ist."
+				],
+				"verification_notes": "Wir werden die Netzwerkerfassung auf kommerziellen Seiten erneut ausführen und prüfen, ob der gewichtete Score unter 5 gefallen ist."
+			},
+			"mobile_trust_gap": {
+				"remediation_steps": [
+					"Auditieren Sie Mobile vs. Desktop nebeneinander — listen Sie alle Trust-Signals auf, die nur auf Desktop sichtbar sind.",
+					"Stellen Sie sicher, dass Sicherheitssiegel, Bewertungen und Garantien auf Mobile above the fold sichtbar sind.",
+					"Vermeiden Sie Trust-Badges in Karussells oder Tabs — auf Mobile müssen sie inline und ohne Scrollen sichtbar sein.",
+					"Testen Sie das Laden von Review-Widgets in gedrosseltem 3G — ersetzen Sie sie durch statische Varianten, falls sie scheitern.",
+					"Fügen Sie sichtbare Sicherheits-Microdata im Mobile-Header ein (SSL-Schloss-Icon plus Text \"Sicherer Einkauf\")."
+				],
+				"verification_notes": "Wir werden Mobile vs. Desktop im Headless prüfen und bestätigen, dass Trust-Signals vorhanden sind und auf Mobile innerhalb von 3 s laden."
+			},
+			"behavioral_micro_pattern_cascade": {
+				"remediation_steps": [
+					"Behandeln Sie nicht jedes Symptom isoliert — das zusammengesetzte Muster zeigt, dass der gesamte Entscheidungsflow umstrukturiert werden muss.",
+					"Vereinfachen Sie die Entscheidungsseite: Reduzieren Sie Optionen, eliminieren Sie Dead Clicks und zentralisieren Sie Preis- plus Wert-Informationen.",
+					"Fügen Sie progressive Reassurance entlang des Funnels ein, statt sie auf den Checkout zu konzentrieren.",
+					"Implementieren Sie Inline-Form-Validation mit klaren Meldungen — eliminieren Sie Retries aufgrund von UX-Fehlern.",
+					"Überwachen Sie den Cascade Score nach jeder Änderung, um zu validieren, dass sich das Muster auflöst."
+				],
+				"verification_notes": "Wir werden die 5 Verhaltensindikatoren gemeinsam überwachen und prüfen, ob weniger als 2 über dem Threshold liegen."
+			},
+			"size_guide_missing": {
+				"remediation_steps": [
+					"Erstellen Sie eine Maßtabelle mit Brust, Taille, Hüfte und Länge für jede Produktkategorie.",
+					"Fügen Sie einen sichtbaren \"Größentabelle\"-Button neben dem Größenwähler auf der Produktseite ein.",
+					"Fügen Sie Anweisungen zum Messen mit dem Maßband in das Modal der Größentabelle ein.",
+					"Erwägen Sie ein Größen-Empfehlungs-Widget basierend auf Größe und Gewicht."
+				],
+				"verification_notes": "Wir werden die Produktseiten erneut crawlen und prüfen, ob eine Größentabelle neben dem Größenwähler verlinkt ist."
+			},
+			"product_images_insufficient": {
+				"remediation_steps": [
+					"Fotografieren Sie jedes Produkt aus mindestens 5 Winkeln: Vorder-, Seiten-, Rückansicht, Detail und getragen/im Einsatz.",
+					"Aktivieren Sie Zoom per Hover oder Touch für jedes Bild auf der Produktseite.",
+					"Fügen Sie mindestens ein Lifestyle-Foto ein, das das Produkt im realen Einsatzkontext zeigt."
+				],
+				"verification_notes": "Wir werden die Produktseiten erneut crawlen und die Bilder pro Produkt zählen — mindestens 4 zum Bestehen."
+			},
+			"no_urgency_indicators": {
+				"remediation_steps": [
+					"Zeigen Sie den Lagerbestand an, wenn weniger als 10 Einheiten verfügbar sind (z. B. \"Letzte 3 Stück\").",
+					"Fügen Sie einen Zähler kürzlicher Käufer ein (z. B. \"Heute haben 12 Personen gekauft\").",
+					"Implementieren Sie \"Zeitlich begrenztes Angebot\"-Badges bei aktiven Promotionen."
+				],
+				"verification_notes": "Wir werden die Produktseiten erneut crawlen und das Vorhandensein von Urgency- oder Scarcity-Indikatoren prüfen."
+			},
+			"cross_sell_absent": {
+				"remediation_steps": [
+					"Fügen Sie unter der Beschreibung der Produktseite einen Abschnitt \"Komplettiere den Look\" oder \"Zusammen kaufen\" ein.",
+					"Konfigurieren Sie automatische Empfehlungen basierend auf häufig zusammen gekauften Produkten.",
+					"Fügen Sie Cross-Sell-Vorschläge auch auf der Warenkorbseite vor dem Checkout ein."
+				],
+				"verification_notes": "Wir werden Produkt- und Warenkorbseiten erneut crawlen und das Vorhandensein von Abschnitten mit verwandten oder ergänzenden Produkten prüfen."
+			},
+			"return_policy_not_on_product": {
+				"remediation_steps": [
+					"Fügen Sie eine Zusammenfassung der Rückgabebedingungen direkt unter dem Kaufbutton auf der Produktseite ein.",
+					"Geben Sie Rückgabefrist, akzeptierte Bedingungen und Übernahme der Rückversandkosten an.",
+					"Verlinken Sie auf die vollständige Richtlinie, halten Sie aber die wesentlichen Punkte inline und sichtbar."
+				],
+				"verification_notes": "Wir werden Produktseiten erneut crawlen und das Vorhandensein von Rückgabeinformationen nahe dem Kauf-CTA prüfen."
+			},
+			"no_free_trial_offered": {
+				"remediation_steps": [
+					"Implementieren Sie eine kostenlose Trial von 7-14 Tagen ohne Kreditkartenpflicht.",
+					"Zeigen Sie den Trial-CTA prominent auf Homepage und Pricing-Seite an.",
+					"Erstellen Sie einen Onboarding-Flow, der bereits in der ersten Trial-Session Wert liefert.",
+					"Fügen Sie eine automatisierte Follow-up-E-Mail hinzu, die zeigt, was der User ausprobieren kann."
+				],
+				"verification_notes": "Wir werden Homepage und Pricing-Page erneut crawlen und das Vorhandensein eines Free-Trial- oder Freemium-CTA prüfen."
+			},
+			"integration_ecosystem_invisible": {
+				"remediation_steps": [
+					"Erstellen Sie auf der Homepage einen Abschnitt \"Integrationen\" mit Logos der bei Ihrer Zielgruppe beliebtesten Tools.",
+					"Fügen Sie eine dedizierte /integrationen-Seite mit Beschreibungen und Status jeder Integration hinzu.",
+					"Erwähnen Sie zentrale Integrationen auf der Pricing-Seite neben den Plänen, die sie enthalten."
+				],
+				"verification_notes": "Wir werden Homepage und Pricing erneut crawlen und das Vorhandensein eines Integrationsabschnitts mit mindestens 3 Logos prüfen."
+			},
+			"changelog_stale_or_missing": {
+				"remediation_steps": [
+					"Erstellen Sie eine /changelog- oder /updates-Seite mit den neuesten Produktänderungen.",
+					"Veröffentlichen Sie mindestens ein Update pro Monat mit Datum, Titel und Beschreibung.",
+					"Verlinken Sie das Changelog im Footer und erwägen Sie ein Badge \"Kürzlich aktualisiert\" auf der Homepage."
+				],
+				"verification_notes": "Wir werden prüfen, ob eine erreichbare Changelog-Seite existiert und ob der letzte Eintrag jünger als 60 Tage ist."
+			},
+			"annual_discount_not_highlighted": {
+				"remediation_steps": [
+					"Fügen Sie auf der Pricing-Seite einen Toggle \"Monatlich / Jährlich\" mit sichtbarem prozentualem Rabatt hinzu.",
+					"Zeigen Sie die jährliche Ersparnis als absoluten Betrag an (z. B. \"Sparen Sie 240 €/Jahr\").",
+					"Wählen Sie den Jahresplan auf der Pricing-Seite standardmäßig vor."
+				],
+				"verification_notes": "Wir werden die Pricing-Seite erneut crawlen und prüfen, ob eine Jahresoption mit sichtbarem, berechnetem Rabatt vorhanden ist."
+			},
+			"no_product_screenshot_visible": {
+				"remediation_steps": [
+					"Fügen Sie auf der Homepage above the fold mindestens 3 Screenshots des Produkts im Einsatz ein.",
+					"Verwenden Sie Kontext-Screenshots, die echte Flows zeigen (keine generischen Mockups).",
+					"Erwägen Sie ein 60-Sekunden-Demo-Video, das das Produkt in Aktion zeigt."
+				],
+				"verification_notes": "Wir werden Homepage und Landing-Pages erneut crawlen und das Vorhandensein von Produktbildern (Screenshots oder Video) prüfen."
+			},
+			"menu_requires_signup": {
+				"remediation_steps": [
+					"Entfernen Sie das Login-/Signup-Gate zum Ansehen der Speisekarte — erlauben Sie vollständigen öffentlichen Zugriff.",
+					"Verschieben Sie die Registrierungspflicht auf den Bestellmoment, nicht auf die Navigation.",
+					"Stellen Sie sicher, dass die vollständige Speisekarte für Suchmaschinen indexierbar ist (HTML, nicht nur PDF)."
+				],
+				"verification_notes": "Wir werden die URL der Speisekarte ohne Authentifizierung aufrufen und prüfen, ob der Inhalt ohne Login sichtbar ist."
+			},
+			"no_food_photos": {
+				"remediation_steps": [
+					"Fotografieren Sie professionell mindestens die 10 meistverkauften Gerichte.",
+					"Fügen Sie das Foto neben jedem Eintrag in der digitalen Speisekarte ein.",
+					"Verwenden Sie echte Bilder (keine Stockfotos) mit guter Beleuchtung und originalgetreuer Darstellung des servierten Gerichts."
+				],
+				"verification_notes": "Wir werden die Speisekarte erneut crawlen und prüfen, ob mindestens 50 % der Einträge ein zugeordnetes Bild haben."
+			},
+			"delivery_area_unclear": {
+				"remediation_steps": [
+					"Fügen Sie auf der Hauptseite eine interaktive Karte oder Liste der bedienten Stadtteile/PLZ ein.",
+					"Ermöglichen Sie es Kunden, die Abdeckung per PLZ zu prüfen, bevor sie die Bestellung zusammenstellen.",
+					"Zeigen Sie das Liefergebiet dauerhaft im Header oder Banner der Website an."
+				],
+				"verification_notes": "Wir werden prüfen, ob die Liefergebietsinformation auf der Hauptseite oder Speisekarte sichtbar ist."
+			},
+			"delivery_time_not_shown": {
+				"remediation_steps": [
+					"Zeigen Sie die geschätzte Lieferzeit auf der Speisekartenseite an (z. B. \"30-45 Min\").",
+					"Aktualisieren Sie die Schätzung in Echtzeit basierend auf Nachfrage und Entfernung.",
+					"Zeigen Sie die Zeit auch im Warenkorb vor der Bestellbestätigung an."
+				],
+				"verification_notes": "Wir werden Speisekarte und Warenkorb erneut crawlen und das Vorhandensein einer Lieferzeitschätzung prüfen."
+			},
+			"allergen_info_missing": {
+				"remediation_steps": [
+					"Fügen Sie zu jedem Menüpunkt Allergen-Icons (Gluten, Laktose, Erdnuss usw.) hinzu.",
+					"Fügen Sie oben oder am Fuß der Speisekarte eine erklärende Legende der Icons ein.",
+					"Fügen Sie einen Filter nach Ernährungsbeschränkung hinzu, um die Navigation zu erleichtern."
+				],
+				"verification_notes": "Wir werden die Speisekarte erneut crawlen und das Vorhandensein von Allergen- oder Ernährungsbeschränkungsinformationen bei den Einträgen prüfen."
+			},
+			"ingredients_not_listed": {
+				"remediation_steps": [
+					"Listen Sie die vollständige Zusammensetzung (INCI) auf der Seite jedes Produkts auf.",
+					"Heben Sie zentrale Inhaltsstoffe und ihre Vorteile in verständlicher Sprache hervor.",
+					"Fügen Sie ein Akkordeon oder einen Tab \"Inhaltsstoffe\" ohne übermäßiges Scrollen sichtbar ein."
+				],
+				"verification_notes": "Wir werden Produktseiten erneut crawlen und das Vorhandensein einer Zutaten- oder Zusammensetzungsliste prüfen."
+			},
+			"no_clinical_endorsement": {
+				"remediation_steps": [
+					"Holen Sie eine dermatologische oder relevante medizinische Fachempfehlung ein und zeigen Sie diese an.",
+					"Veröffentlichen Sie Ergebnisse klinischer Tests oder Studien mit Stichprobengröße und Wirksamkeitsprozenten.",
+					"Fügen Sie ein \"Dermatologisch getestet\"-Siegel oder Äquivalent mit Studienreferenz hinzu."
+				],
+				"verification_notes": "Wir werden Produktseiten erneut crawlen und das Vorhandensein klinischer Siegel, Erwähnungen von Gesundheitsfachpersonen oder Testergebnissen prüfen."
+			},
+			"usage_instructions_absent": {
+				"remediation_steps": [
+					"Fügen Sie auf der Produktseite Schritt-für-Schritt-Anweisungen zur Anwendung hinzu (Häufigkeit, Menge, Auftragsweise).",
+					"Geben Sie Tipps, wann und wie für beste Ergebnisse anzuwenden ist.",
+					"Erwägen Sie ein kurzes Video, das die korrekte Anwendung des Produkts demonstriert."
+				],
+				"verification_notes": "Wir werden Produktseiten erneut crawlen und das Vorhandensein eines Abschnitts zur Anwendung oder Anleitung prüfen."
+			},
+			"subscription_not_offered": {
+				"remediation_steps": [
+					"Implementieren Sie eine \"Abonnieren und Sparen\"-Option mit 10-15 % Rabatt auf der Produktseite.",
+					"Bieten Sie flexible Intervalle (monatlich, zweimonatlich, vierteljährlich) basierend auf dem durchschnittlichen Verbrauch an.",
+					"Heben Sie die kumulierten Ersparnisse und die Bequemlichkeit hervor, nicht ans Nachbestellen denken zu müssen."
+				],
+				"verification_notes": "Wir werden Produktseiten erneut crawlen und das Vorhandensein einer Abo- oder Wiederholungskaufoption prüfen."
+			},
+			"no_results_evidence": {
+				"remediation_steps": [
+					"Fügen Sie Vorher-/Nachher-Fotos mit Einwilligung echter Kunden hinzu.",
+					"Veröffentlichen Sie Testergebnisse mit Prozentangaben (z. B. \"89 % bemerkten eine Verbesserung nach 4 Wochen\").",
+					"Fügen Sie auf der Produktseite Bewertungen mit Kundenfotos hinzu, die Ergebnisse zeigen."
+				],
+				"verification_notes": "Wir werden Produktseiten erneut crawlen und das Vorhandensein visueller Ergebnisbelege oder Wirksamkeitsdaten prüfen."
+			},
+			"curriculum_not_visible": {
+				"remediation_steps": [
+					"Veröffentlichen Sie den vollständigen Lehrplan des Kurses mit Modulen, Lektionen und Dauer jedes Abschnitts.",
+					"Fügen Sie den Lehrplan auf der Verkaufsseite des Kurses im aufklappbaren Format (Akkordeon) ein.",
+					"Fügen Sie klare Lernziele für jedes Modul hinzu."
+				],
+				"verification_notes": "Wir werden die Kursseite erneut crawlen und das Vorhandensein eines detaillierten Lehrplans oder Curriculums prüfen."
+			},
+			"instructor_credentials_missing": {
+				"remediation_steps": [
+					"Fügen Sie eine vollständige Bio des Dozenten mit Ausbildung, Erfahrung und relevanten Ergebnissen hinzu.",
+					"Fügen Sie ein professionelles Foto und Links zu LinkedIn oder Portfolio ein.",
+					"Heben Sie spezifische Errungenschaften hervor, die Autorität im Kursthema belegen."
+				],
+				"verification_notes": "Wir werden die Kursseite erneut crawlen und das Vorhandensein eines Dozenten-Abschnitts mit Qualifikationen prüfen."
+			},
+			"completion_certificate_absent": {
+				"remediation_steps": [
+					"Implementieren Sie die automatische Erstellung eines Abschlusszertifikats nach Beenden des Kurses.",
+					"Zeigen Sie auf der Verkaufsseite des Kurses ein Beispiel des Zertifikats.",
+					"Erwähnen Sie das Zertifikat im Hero oder unter den Vorteilen der Verkaufsseite."
+				],
+				"verification_notes": "Wir werden die Kursseite erneut crawlen und die Erwähnung eines Abschlusszertifikats prüfen."
+			},
+			"time_commitment_unclear": {
+				"remediation_steps": [
+					"Zeigen Sie die Gesamtstundenzahl des Kurses prominent auf der Verkaufsseite an.",
+					"Fügen Sie im Lehrplan eine geschätzte Dauer pro Modul/Lektion hinzu.",
+					"Fügen Sie eine Empfehlung zum Lerntempo ein (z. B. \"2 h pro Woche über 8 Wochen\")."
+				],
+				"verification_notes": "Wir werden die Kursseite erneut crawlen und das Vorhandensein von Stunden- oder Dauerangaben prüfen."
+			},
+			"no_sample_content": {
+				"remediation_steps": [
+					"Geben Sie 1-2 Kurslektionen als kostenlose Vorschau auf der Verkaufsseite frei.",
+					"Fügen Sie ein 2-3-minütiges Trailer-Video hinzu, das Lehrstil und Qualität zeigt.",
+					"Ermöglichen Sie Zugang zum ersten Modul ohne Registrierung, um die Bewertungshürde zu senken."
+				],
+				"verification_notes": "Wir werden die Kursseite erneut crawlen und das Vorhandensein kostenloser Beispielinhalte (Video oder offene Lektion) prüfen."
+			},
+			"no_case_study_with_metrics": {
+				"remediation_steps": [
+					"Veröffentlichen Sie mindestens 3 Case Studies mit Problem, Lösung und messbaren Ergebnissen (%, €, Zeit).",
+					"Fügen Sie Kundenlogo und -name (mit Erlaubnis) für Glaubwürdigkeit hinzu.",
+					"Verlinken Sie relevante Case Studies auf der Homepage und auf zugehörigen Service-Seiten.",
+					"Formatieren Sie jede Case Study mit dem Ergebnis prominent (Headline) vor dem Kontext."
+				],
+				"verification_notes": "Wir werden die Website erneut crawlen und das Vorhandensein von Case Studies mit numerischen Kennzahlen auf kommerziellen Seiten prüfen."
+			},
+			"methodology_not_explained": {
+				"remediation_steps": [
+					"Erstellen Sie einen Abschnitt \"So funktioniert es\" mit 3-5 visuellen Schritten Ihres Prozesses.",
+					"Erläutern Sie jeden Schritt mit konkreten Deliverables und erwarteten Fristen.",
+					"Fügen Sie diesen Abschnitt auf der Homepage und auf den Seiten jedes Service ein."
+				],
+				"verification_notes": "Wir werden Service-Seiten und Homepage erneut crawlen und das Vorhandensein eines Methodik- oder Prozessabschnitts prüfen."
+			},
+			"enterprise_signals_missing": {
+				"remediation_steps": [
+					"Fügen Sie auf der Homepage Logos von Enterprise-Kunden ein (mit Erlaubnis).",
+					"Zeigen Sie relevante Zertifizierungen (ISO, SOC2, GDPR-Compliance) im Footer oder auf einer Security-Seite.",
+					"Erstellen Sie eine /security- oder /compliance-Seite mit Details Ihrer Praktiken.",
+					"Fügen Sie die Anzahl betreuter Kunden und das verarbeitete Volumen als Social Proof hinzu."
+				],
+				"verification_notes": "Wir werden Homepage und Footer erneut crawlen und das Vorhandensein von Kundenlogos, Zertifizierungen oder Enterprise-Signalen prüfen."
+			},
+			"contact_form_excessive_fields": {
+				"remediation_steps": [
+					"Reduzieren Sie das Kontaktformular auf maximal 4-5 essenzielle Felder (Name, E-Mail, Unternehmen, Nachricht).",
+					"Verschieben Sie Qualifizierungsfelder (Budget, Segment, Position) auf die Zeit nach dem Erstkontakt.",
+					"Fügen Sie als Alternative zum Formular die Option hinzu, direkt einen Termin zu buchen (Calendly/Cal.com)."
+				],
+				"verification_notes": "Wir werden die Kontaktseite erneut crawlen und die Anzahl der Pflichtfelder zählen — maximal 5 zum Bestehen."
+			},
+			"response_time_not_promised": {
+				"remediation_steps": [
+					"Fügen Sie im Formular eine Reaktionszeit-Zusage hinzu (z. B. \"Wir antworten innerhalb von 24 Geschäftsstunden\").",
+					"Konfigurieren Sie einen Autoresponder, der den Eingang bestätigt und die Rückmeldefrist mitteilt.",
+					"Zeigen Sie das Reaktions-SLA neben dem Absende-Button des Formulars an."
+				],
+				"verification_notes": "Wir werden die Kontaktseite erneut crawlen und das Vorhandensein einer Reaktionszeit-Zusage nahe dem Formular prüfen."
+			},
+			"meta_promise_content_mismatch": {
+				"remediation_steps": [
+					"Schreiben Sie die Meta-Description jeder Seite so um, dass sie genau widerspiegelt, was der Besucher im H1 und im ersten Absatz vorfindet.",
+					"Stellen Sie sicher, dass der in der Meta-Description genannte Hauptnutzen above the fold auf der Seite erscheint.",
+					"Überarbeiten Sie die Meta-Descriptions der 10 Seiten mit dem meisten Organic Traffic — beginnen Sie mit den kommerziellen.",
+					"Konfigurieren Sie eine Search-Console-Warnung, um die Absprungrate je Seite zu überwachen und neue Abweichungen zu erkennen."
+				],
+				"verification_notes": "Wir werden die betroffenen Seiten erneut crawlen, Meta-Description und H1/ersten Absatz extrahieren und die semantische Ausrichtung beider vergleichen."
+			},
+			"pricing_terms_contradictory": {
+				"remediation_steps": [
+					"Auditieren Sie alle Seiten, die Preise nennen — Produkt, Pricing, Landing-Pages, FAQ — und vereinheitlichen Sie die Werte.",
+					"Zentralisieren Sie die Preistabelle in einer wiederverwendbaren Komponente, um künftige Abweichungen zu vermeiden.",
+					"Entfernen Sie hartkodierte Preise aus Fließtexten — die Referenz muss stets aus einer einzigen Quelle stammen.",
+					"Konfigurieren Sie einen automatisierten Test, der die angezeigten Preise zwischen den kommerziellen Seiten vergleicht."
+				],
+				"verification_notes": "Wir werden alle Seiten mit Preisnennung erneut crawlen und die Konsistenz zwischen den gefundenen Werten prüfen."
+			},
+			"urgency_claim_unverifiable": {
+				"remediation_steps": [
+					"Entfernen Sie jede Urgency-Sprache ohne reales Ablaufdatum (dauerhafte \"letzte Plätze\", \"begrenztes Angebot\", das nie endet).",
+					"Ist das Angebot wirklich begrenzt, binden Sie es an einen echten Countdown mit Enddatum.",
+					"Ersetzen Sie künstliche Urgency durch echten Social Proof (\"127 Personen haben diese Woche gekauft\").",
+					"Wenn Sie Scarcity nutzen, koppeln Sie sie an echten Bestand — \"3 Einheiten übrig\" mit Inventar-Backend."
+				],
+				"verification_notes": "Wir werden die Seiten erneut crawlen und prüfen, ob die Urgency-Sprache entfernt oder an einen echten Zeitmechanismus (Countdown, Ablaufdatum) gekoppelt wurde."
+			},
+			"value_prop_diluted_by_navigation": {
+				"remediation_steps": [
+					"Wählen Sie EINE Hauptwertversprechen und positionieren Sie es als H1 plus Untertitel above the fold.",
+					"Verschieben Sie sekundäre Versprechen in Abschnitte below the fold, jeweils mit eigenem spezifischen CTA.",
+					"Schaffen Sie eine klare visuelle Hierarchie: Das Hauptversprechen sollte das 3-Fache der Sichtbarkeit der sekundären haben.",
+					"Testen Sie mit 5 Personen: Bitten Sie sie nach 5 Sekunden auf der Homepage, in einem Satz zu beschreiben, was Sie tun. Wenn sie es nicht können, vereinfachen Sie."
+				],
+				"verification_notes": "Wir werden die Homepage erneut crawlen und H2s/Wertversprechen oberhalb des Pricing-Links zählen. Besteht, wenn ≤3 Versprechen mit klarer Hierarchie vorhanden sind."
+			},
+			"checkout_copy_creates_anxiety": {
+				"remediation_steps": [
+					"Entfernen oder überarbeiten Sie jeden Satz im Checkout mit Negativ-Framing (\"keine Garantie\", \"nicht erstattungsfähig\").",
+					"Ersetzen Sie durch positive Copy: \"Lieferung innerhalb von X Tagen garantiert\" statt \"Lieferzeit nicht garantiert\".",
+					"Fügen Sie neben jedem Zahlungsfeld Reassurance-Microcopy ein (\"Ihre Daten sind geschützt\", \"Zufriedenheit garantiert\").",
+					"Zeigen Sie Sicherheitssiegel plus eine zusammengefasste Rückgaberichtlinie im Checkout an, nicht nur im Footer."
+				],
+				"verification_notes": "Wir werden den Checkout erneut crawlen und nach angstauslösenden Sprachmustern suchen. Besteht, wenn kein negativer Satz zu Zahlung/Lieferung gefunden wird."
+			},
+			"faq_answers_wrong_questions": {
+				"remediation_steps": [
+					"Fügen Sie dem FAQ die 5 häufigsten Kaufeinwände hinzu: Preis, Rückerstattung, Garantie, Frist und \"Funktioniert es für mich?\".",
+					"Platzieren Sie Kauf-Fragen oben im FAQ — noch vor den technischen Fragen.",
+					"Jede Antwort sollte den Einwand entkräften und mit einem Link zum CTA enden (\"Bereit anzufangen? Starten Sie hier\").",
+					"Überprüfen Sie das FAQ monatlich anhand der häufigsten Support-Tickets."
+				],
+				"verification_notes": "Wir werden das FAQ erneut crawlen und das Vorhandensein von Fragen zu Preis, Rückerstattung, Garantie und Frist prüfen. Besteht, wenn mindestens 3 dieser Einwände abgedeckt sind."
+			},
+			"testimonials_feel_fabricated": {
+				"remediation_steps": [
+					"Ersetzen Sie generische Testimonials durch Testimonials mit konkretem Ergebnis (\"Habe 32 % in 60 Tagen gesteigert\").",
+					"Variieren Sie Länge und Format der Testimonials — einige kurz, einige lang, einige als Video.",
+					"Fügen Sie neben jedem Testimonial ein echtes Foto, den vollständigen Namen und Unternehmen/Position hinzu.",
+					"Fügen Sie pro Social-Proof-Sektion mindestens ein Testimonial mit konkreter Ergebniszahl ein.",
+					"Verlinken Sie nach Möglichkeit auf das LinkedIn-Profil oder eine verifizierte Bewertung (Google, G2, Trustpilot)."
+				],
+				"verification_notes": "Wir werden Seiten mit Testimonials erneut crawlen und Längen-Vielfalt, Vorhandensein konkreter Ergebnisse und verifizierbare Identifikation der Autoren bewerten."
+			},
+			"brand_trust_cliff_at_payment": {
+				"remediation_steps": [
+					"Verlagern Sie den Checkout auf dieselbe Domain wie den Store oder nutzen Sie einen Embedded-Checkout, der die URL Ihrer Website beibehält.",
+					"Ist der Domainwechsel unvermeidlich, fügen Sie auf der externen Seite Logo, Markenfarben und ein Sicherheitssiegel hinzu.",
+					"Fügen Sie auf dem Checkout-Button Copy ein, die erklärt, wohin der Käufer geleitet wird (\"Sichere Zahlung über [Gateway]\").",
+					"Stellen Sie sicher, dass das SSL-Zertifikat gültig und das grüne Schloss auf beiden URLs sichtbar ist."
+				],
+				"verification_notes": "Wir werden den Checkout-Flow in einem Headless Browser ausführen, Redirects verfolgen und prüfen, ob die Marke auf der Zahlungsseite sichtbar bleibt."
+			},
+			"ad_landing_experience_disconnect": {
+				"remediation_steps": [
+					"Überarbeiten Sie Meta-Descriptions und OG-Tags so, dass sie genau den Inhalt above the fold widerspiegeln.",
+					"Stellen Sie sicher, dass das H1 der Seite dieselben Keywords enthält, die in der Meta-Description versprochen werden.",
+					"Erstellen Sie Landing-Page-Varianten je Meta-Tag/Kampagne mit konsistenter Botschaft.",
+					"Testen Sie die Google-Vorschau (Search Console) und Social-Netzwerke (Facebook Debugger), um die Ausrichtung zu bestätigen."
+				],
+				"verification_notes": "Wir werden die Seiten erneut crawlen und Keywords aus Meta-Description/OG mit dem H1 und dem Above-Fold-Inhalt vergleichen, um die Ausrichtung zu bestätigen."
+			},
+			"checkout_form_mobile_hostile": {
+				"remediation_steps": [
+					"Fügen Sie jedem Feld das korrekte autocomplete-Attribut hinzu (name, email, tel, address, cc-number).",
+					"Verwenden Sie input type=\"email\" für E-Mail, type=\"tel\" für Telefon und inputmode=\"numeric\" für Zahlen.",
+					"Reduzieren Sie die Felder auf das Notwendigste — eliminieren Sie optionale Felder oder verschieben Sie sie auf den Post-Purchase.",
+					"Vergrößern Sie die Felder auf ein Tap-Target von mindestens 44 px auf Mobile."
+				],
+				"verification_notes": "Wir werden das Checkout-Formular erneut crawlen und das Vorhandensein von autocomplete, spezialisierten Input-Typen und die Feldanzahl prüfen."
+			},
+			"pricing_page_complexity_paralysis": {
+				"remediation_steps": [
+					"Reduzieren Sie auf maximal 3 sichtbare Pläne — verstecken Sie den 4. hinter \"Alle Pläne anzeigen\".",
+					"Heben Sie einen Plan als \"Am beliebtesten\" oder \"Empfohlen\" mit visuellem Badge und unterscheidbarem Rand hervor.",
+					"Vereinfachen Sie die Feature-Tabelle — zeigen Sie nur die 5-7 relevantesten Unterschiede.",
+					"Fügen Sie auf jedem Plan einen klaren CTA hinzu, der den unmittelbaren nächsten Schritt angibt."
+				],
+				"verification_notes": "Wir werden die Pricing-Seite erneut crawlen und prüfen, ob ein empfohlener Plan ausgewiesen ist und ob die Anzahl von Plänen/Features im Idealbereich liegt."
+			},
+			"support_promise_impossible_to_fulfill": {
+				"remediation_steps": [
+					"Entfernen Sie SLA-Versprechen, die Sie nicht halten können — ersetzen Sie sie durch realistische Erwartungen (\"Wir antworten innerhalb von 24 Geschäftsstunden\").",
+					"Installieren Sie ein funktionierendes Chat-Widget, wenn Sie \"Live-Chat\" oder \"Echtzeit\" versprechen.",
+					"Konfigurieren Sie einen Autoresponder im Kontaktformular, der den Eingang bestätigt und die tatsächliche Frist mitteilt.",
+					"Versprechen Sie 24/7, stellen Sie echte Abdeckung sicher oder ersetzen Sie dies durch ehrliche Geschäftszeiten."
+				],
+				"verification_notes": "Wir werden prüfen, ob das Chat-Widget lädt und antwortet, ob SLA-Versprechen aktualisiert wurden und ob der Autoresponder des Formulars aktiv ist."
+			},
+			"trust_journey_inconsistency": {
+				"remediation_steps": [
+					"Fügen Sie auf den Checkout- und Produktseiten mindestens 2 Trust-Badges (SSL, Bewertungen, Garantie) hinzu.",
+					"Replizieren Sie die relevantesten Testimonials/Bewertungen auf der Checkout-Seite nahe dem Kauf-Button.",
+					"Fügen Sie auf allen kommerziellen Seiten eine Zufriedenheitsgarantie oder ein Rückgabe-Badge sichtbar hinzu.",
+					"Standardisieren Sie einen Trust-Footer mit Siegeln und Richtlinien auf ALLEN Seiten des Funnels."
+				],
+				"verification_notes": "Wir werden Homepage, Checkout und Produktseiten erneut crawlen, um die konsistente Präsenz von Trust-Elementen in jeder Stufe zu prüfen."
+			},
+			"multilingual_conversion_leak": {
+				"remediation_steps": [
+					"Stellen Sie sicher, dass das HTML-lang-Attribut auf allen Seiten desselben Funnels konsistent ist.",
+					"Implementieren Sie eine automatische Spracherkennung pro Session — einmal gewählt, behalten Sie sie im gesamten Flow bei.",
+					"Übersetzen Sie Checkout- und Produktseiten vollständig — vermischen Sie keine Sprachen auf derselben Seite.",
+					"Fügen Sie im Header einen sichtbaren Sprachumschalter mit Flagge ein, damit der User die Auswahl steuert."
+				],
+				"verification_notes": "Wir werden den Funnel in einem Headless Browser durchlaufen und prüfen, ob das lang-Attribut und die Inhaltssprache seitenübergreifend konsistent bleiben."
+			},
+			"staging_environment_publicly_accessible": {
+				"remediation_steps": [
+					"Beschränken Sie den Zugriff auf die Staging-/Dev-Subdomain mit Basisauthentifizierung (HTTP Basic Auth) oder VPN.",
+					"Konfigurieren Sie Firewall-Regeln oder Cloudflare Access, um nur interne IPs zuzulassen.",
+					"Entfernen Sie echte Kundendaten aus dem Staging-Umfeld — verwenden Sie synthetische Daten.",
+					"Fügen Sie die Subdomain mit Disallow: / in der robots.txt hinzu, um Indexierung zu verhindern.",
+					"Konfigurieren Sie Monitoring, das alarmiert, sollte die Umgebung wieder öffentlich werden."
+				],
+				"verification_notes": "Wir werden die Staging-Subdomain erneut testen und prüfen, ob sie 401/403 zurückgibt oder öffentlich nicht erreichbar ist."
+			},
+			"admin_panel_exposed_to_internet": {
+				"remediation_steps": [
+					"Beschränken Sie den Zugriff auf das Admin-Panel mit VPN, IP-Whitelist oder Cloudflare Access.",
+					"Implementieren Sie verpflichtende Zwei-Faktor-Authentifizierung (2FA/MFA) für alle Admin-Zugriffe.",
+					"Verlagern Sie das Panel auf eine nicht erratbare Subdomain oder einen internen, nicht öffentlichen Pfad.",
+					"Konfigurieren Sie aggressives Rate Limiting (max. 5 Versuche/Minute) auf den Login-Routen.",
+					"Überwachen Sie Zugriffsversuche und konfigurieren Sie Alerts für Brute-Force-Versuche."
+				],
+				"verification_notes": "Wir werden die Admin-Subdomain erneut testen und prüfen, ob sie 401/403 zurückgibt oder auf VPN/geschützten Login umleitet."
+			},
+			"subdomain_brand_visual_fragmentation": {
+				"remediation_steps": [
+					"Erstellen Sie ein gemeinsames Design-System (Header, Footer, Farben, Logo) über alle Subdomains hinweg.",
+					"Implementieren Sie einen konsistenten globalen Header via iframe, Web Component oder gemeinsamem CDN.",
+					"Stellen Sie sicher, dass die Navigation zwischen Subdomains Sitzung und visuelle Identität durchgehend beibehält.",
+					"Dokumentieren Sie die Markenrichtlinien für Teams, die unterschiedliche Subdomains betreuen."
+				],
+				"verification_notes": "Wir besuchen jede aktive Subdomain in einem Headless-Browser und vergleichen das Vorhandensein von Markenelementen (Logo, Farben, Header) über die Oberflächen hinweg."
+			},
+			"app_subdomain_disconnected_from_site": {
+				"remediation_steps": [
+					"Fügen Sie einen sichtbaren \"Anmelden\"- oder \"Mein Konto\"-Link im Header der Hauptseite hinzu, der auf die App verweist.",
+					"Binden Sie den App-Link in den Footer aller kommerziellen Seiten ein.",
+					"Erstellen Sie eine /login- oder /zugang-Seite auf der Hauptdomain, die zur App weiterleitet.",
+					"Fügen Sie die App-Subdomain prominent im Mobile-Menü hinzu."
+				],
+				"verification_notes": "Wir crawlen die Hauptseite erneut und prüfen, ob ein Link zur App-Subdomain im Header, Footer oder in der Navigation vorhanden ist."
+			},
+			"whatsapp_channel_disconnected": {
+				"remediation_steps": [
+					"Fügen Sie einen schwebenden WhatsApp-Button oder Link im Header/Footer der kommerziellen Seiten hinzu.",
+					"Binden Sie einen WhatsApp-CTA auf der Produktseite und der Preisseite ein.",
+					"Konfigurieren Sie einen direkten Deep Link (wa.me/nummer), anstatt sich auf die Subdomain zu verlassen.",
+					"Testen Sie, ob der WhatsApp-Link auf Desktop und Mobile funktioniert."
+				],
+				"verification_notes": "Wir crawlen die kommerziellen Seiten erneut und prüfen, ob ein WhatsApp-Link (wa.me, whatsapp.com oder Subdomain) im sichtbaren Inhalt vorhanden ist."
+			},
+			"multiple_payment_subdomains_fragmenting_trust": {
+				"remediation_steps": [
+					"Konsolidieren Sie den Checkout auf derselben Domain mittels eingebettetem Checkout des Gateways (Stripe Elements, MercadoPago Bricks).",
+					"Falls ein Domainwechsel unvermeidbar ist, fügen Sie das Shop-Logo und ein Sicherheitssiegel auf der Zahlungsseite hinzu.",
+					"Implementieren Sie einen Ladezustand zwischen Domains mit dem Hinweis \"Sie werden zur sicheren Zahlung weitergeleitet\".",
+					"Stellen Sie HTTPS und ein gültiges Zertifikat auf der Zahlungs-Subdomain sicher — für den Käufer sichtbar.",
+					"Fügen Sie einen visuellen Breadcrumb hinzu, der den Fortschritt zeigt (Warenkorb → Daten → Zahlung → Bestätigung)."
+				],
+				"verification_notes": "Wir simulieren den Checkout-Flow in einem Headless-Browser, folgen Weiterleitungen und prüfen, ob die Zahlung auf der Hauptdomain bleibt oder ob es Vertrauenssignale auf der externen Domain gibt."
+			},
+			"form_submit_unreachable_mobile": {
+				"remediation_steps": [
+					"Fügen Sie position:sticky oder position:fixed beim Submit-Button in Formularen mit mehr als 5 Feldern hinzu.",
+					"Reduzieren Sie die Anzahl der Pflichtfelder — verschieben Sie optionale Felder auf einen Zeitpunkt nach der ersten Einreichung.",
+					"Testen Sie das Formular in einem Viewport mit 375 px Breite und prüfen Sie, ob der Button durchgehend sichtbar bleibt.",
+					"Erwägen Sie, das Formular in Schritte (Wizard) zu unterteilen, mit einem sichtbaren Weiter-Button in jedem Schritt."
+				],
+				"verification_notes": "Wir öffnen das Formular im Mobile-Viewport (375×667) und prüfen, ob der Submit-Button ohne Scrollen sichtbar oder fest auf dem Bildschirm fixiert ist."
+			},
+			"trust_badges_invisible_at_checkout": {
+				"remediation_steps": [
+					"Verschieben Sie Trust-Badges (SSL, Gateway, Garantie) nahe an den Zahlungsbutton — nicht in den Footer.",
+					"Fügen Sie ein \"Sicherer Kauf\"- oder \"Geschützte Zahlung\"-Badge direkt über oder neben dem Kartenformular ein.",
+					"Stellen Sie sicher, dass die Badges in der häufigsten Checkout-Auflösung (Mobile und Desktop) ohne Scrollen sichtbar sind.",
+					"Testen Sie mit einer Heatmap, um zu bestätigen, dass der Vertrauensbereich vor dem Kaufklick visuelle Aufmerksamkeit erhält."
+				],
+				"verification_notes": "Wir öffnen den Checkout und prüfen, ob Vertrauenselemente (Siegel, Badge, Garantie) above the fold ohne Scrollen sichtbar sind."
+			},
+			"navigation_traps_commercial_flow": {
+				"remediation_steps": [
+					"Fügen Sie auf allen Blog- und About-Seiten einen Conversion-CTA hinzu (Link zu /pricing, /produkt oder /checkout).",
+					"Setzen Sie ein Seitenbanner oder eine feste untere Leiste mit einem kommerziellen Link auf Content-Seiten ein.",
+					"Stellen Sie sicher, dass die Hauptnavigation auf jeder Seite einen direkten Link zur Preis- oder Produktseite enthält.",
+					"Überprüfen Sie die meistbesuchten Seiten über Google Analytics und priorisieren Sie diejenigen ohne Conversion-CTA."
+				],
+				"verification_notes": "Wir crawlen die Content-Seiten erneut und prüfen, ob Links zu kommerziellen URLs (/pricing, /checkout, /product) vorhanden sind."
+			},
+			"social_proof_loads_too_late": {
+				"remediation_steps": [
+					"Entfernen Sie Lazy-Load bei den ersten 2-3 Testimonials — laden Sie sie inline im statischen HTML.",
+					"Verschieben Sie mindestens einen Social-Proof-Block above the fold auf der Startseite und Produktseite.",
+					"Wenn Sie ein externes Widget (Trustpilot, Google Reviews) nutzen, konfigurieren Sie Server-Side Rendering oder statisches Caching.",
+					"Fügen Sie eine Bewertungsanzahl (z. B. \"4.8/5 — 127 Bewertungen\") als statischen Text hinzu, ohne JS-Abhängigkeit."
+				],
+				"verification_notes": "Wir prüfen, ob Social-Proof-Elemente im initialen statischen HTML (ohne Lazy-Load) und above the fold vorhanden sind."
+			},
+			"consent_banner_obscures_first_action": {
+				"remediation_steps": [
+					"Konfigurieren Sie das Consent-Banner so, dass es den primären CTA nicht überlagert — positionieren Sie es im Footer oder als schmale Leiste am oberen Rand.",
+					"Reduzieren Sie die Höhe des Cookie-Banners auf maximal 80 px auf Mobile.",
+					"Implementieren Sie ein automatisches Dismiss nach Interaktion mit einem beliebigen Seitenelement (nicht nur dem \"Akzeptieren\"-Button).",
+					"Führen Sie einen A/B-Test der Banner-Position durch — Bottom-Bar vs. Overlay — und messen Sie den Einfluss auf die CTA-Klickrate."
+				],
+				"verification_notes": "Wir laden die Seite in einem Headless-Browser und prüfen, ob der primäre CTA klickbar ist, ohne zuvor mit dem Consent-Banner zu interagieren."
+			},
+			"price_hidden_behind_interaction": {
+				"remediation_steps": [
+					"Rendern Sie mindestens den Basispreis jedes Plans im statischen HTML der Pricing-Seite (serverseitig).",
+					"Falls der Preis von der Konfiguration abhängt, zeigen Sie ein \"ab X €/Monat\" sichtbar ohne JavaScript an.",
+					"Fügen Sie Preis-Schema-Markup (PriceSpecification) hinzu, damit Suchmaschinen und KI den Preis ebenfalls erkennen.",
+					"Testen Sie die Seite mit deaktiviertem JavaScript — erscheint kein Preis, ist das Problem bestätigt."
+				],
+				"verification_notes": "Wir führen einen HTTP-GET-Request auf die Pricing-Seite aus und suchen nach Preismustern (€, $, /Monat) im zurückgegebenen HTML — ohne JavaScript-Ausführung."
+			},
+			"hero_outcome_absent": {
+				"remediation_steps": [
+					"Schreiben Sie die Haupt-Headline der Startseite so um, dass sie beantwortet, \"was der Käufer gewinnt\" statt \"was Sie tun\".",
+					"Fügen Sie eine Subheadline mit einem konkreten Ergebnis (Zahl, Zeitrahmen, greifbarer Nutzen) direkt unter der Headline hinzu.",
+					"Testen Sie die neue Headline A/B gegen die aktuelle und messen Sie Scrollrate und CTA-Klickrate."
+				],
+				"verification_notes": "Wir holen das HTML der Startseite und prüfen, ob die h1 oder Hero-Section eine auf den Käufernutzen ausgerichtete Sprache enthält."
+			},
+			"cognitive_load_first_screen": {
+				"remediation_steps": [
+					"Reduzieren Sie die Anzahl der Botschaften above the fold auf maximal 1 Wertversprechen + 1 CTA.",
+					"Entfernen Sie Slider, Karussells und konkurrierende Banner vom ersten Bildschirm.",
+					"Priorisieren Sie die visuelle Hierarchie: Headline > Subheadline > CTA — nichts anderes sollte um Aufmerksamkeit konkurrieren."
+				],
+				"verification_notes": "Wir analysieren das HTML above the fold und zählen, wie viele Textelemente und CTAs im ersten Viewport um Aufmerksamkeit konkurrieren."
+			},
+			"primary_cta_delayed": {
+				"remediation_steps": [
+					"Verschieben Sie den primären CTA above the fold — der Besucher sollte die erste Aktion ohne Scrollen sehen.",
+					"Fügen Sie einen Sticky-CTA im Header oder eine Bottom-Bar für Mobile hinzu.",
+					"Reduzieren Sie den Inhalt zwischen Hero und erstem Action-Button auf maximal 2 Blöcke."
+				],
+				"verification_notes": "Wir prüfen, ob ein CTA-Element (Link oder Button mit Aktionstext) innerhalb der ersten 600 px des Startseiten-HTML vorhanden ist."
+			},
+			"specificity_deficit": {
+				"remediation_steps": [
+					"Ersetzen Sie generische Adjektive (beste, innovativ, führend) durch konkrete Zahlen und Ergebnisse.",
+					"Bauen Sie mindestens einen quantitativen Datenpunkt in den Hero ein (z. B. \"von 2.000 Unternehmen genutzt\", \"Lieferung in 24 h\").",
+					"Überarbeiten Sie den gesamten kommerziellen Text und ersetzen Sie Anbietersprache durch Käufersprache."
+				],
+				"verification_notes": "Wir analysieren den Startseiten-Copy erneut und suchen nach dem Vorhandensein konkreter Zahlen und dem Fehlen generischer Adjektive im Hero."
+			},
+			"proof_of_work_missing": {
+				"remediation_steps": [
+					"Veröffentlichen Sie mindestens 3 Testimonials echter Kunden mit Name, Unternehmen und messbarem Ergebnis.",
+					"Erstellen Sie eine eigene Case-/Ergebnisseite mit Vorher-Nachher-Metriken.",
+					"Fügen Sie Kundenlogos oder \"Genutzt von X Unternehmen\" auf der Startseite und Produktseiten hinzu."
+				],
+				"verification_notes": "Wir crawlen die Startseite und die kommerziellen Seiten und suchen nach Testimonial-Mustern (Name + Ergebnis) und Kundenlogos."
+			},
+			"navigation_dead_ends": {
+				"remediation_steps": [
+					"Fügen Sie auf allen Support-, FAQ- und Hilfeseiten einen CTA zur Rückkehr in die Kaufreise hinzu.",
+					"Binden Sie eine Sidebar oder ein Seitenbanner mit einem Link zu Produkt/Pricing auf Content-Seiten ein.",
+					"Überprüfen Sie Breadcrumb und Footer, um sicherzustellen, dass jede Seite einen Weg zurück in den kommerziellen Flow hat."
+				],
+				"verification_notes": "Wir prüfen, ob Support- und Hilfeseiten Links enthalten, die zurück zu kommerziellen Seiten (Pricing, Produkt, Checkout) führen."
+			},
+			"page_depth_before_conversion": {
+				"remediation_steps": [
+					"Kartieren Sie den häufigsten Pfad zwischen Landing und Checkout — reduzieren Sie ihn auf maximal 3 Klicks.",
+					"Fügen Sie einen direkten Shortcut zu Checkout/Pricing im Hero der Startseite und auf Produktseiten ein.",
+					"Entfernen Sie verpflichtende Zwischenschritte, die keinen Mehrwert für die Kaufentscheidung bieten."
+				],
+				"verification_notes": "Wir navigieren die Startseiten-Links bis zum Checkout und zählen, wie viele Klicks bis zur Conversion-Seite erforderlich sind."
+			},
+			"feature_benefit_disconnect": {
+				"remediation_steps": [
+					"Schreiben Sie jedes aufgeführte Feature im Format \"Feature → Was das für Sie bedeutet\" um.",
+					"Fügen Sie neben jedem Hauptfeature reale Nutzungsbeispiele oder Mini-Cases ein.",
+					"Priorisieren Sie Geschäftsvorteile (Zeitersparnis, Umsatzsteigerung) gegenüber technischen Spezifikationen."
+				],
+				"verification_notes": "Wir analysieren die Feature- und Produktseiten erneut und suchen nach nutzenorientierter Sprache anstelle technischer Spezifikationen."
+			},
+			"comparison_absent": {
+				"remediation_steps": [
+					"Erstellen Sie eine Vergleichsseite, die Ihr Produkt gegen die 2-3 wichtigsten Alternativen positioniert.",
+					"Fügen Sie auf der Pricing-Seite eine Vergleichstabelle mit klaren Differenzierungsmerkmalen hinzu.",
+					"Verwenden Sie die Sprache \"warum wir anders sind\" statt \"warum wir besser sind\", um authentisch zu wirken."
+				],
+				"verification_notes": "Wir prüfen, ob eine Vergleichsseite (vs, compare, Alternativen) oder eine Vergleichstabelle auf der Pricing-Seite vorhanden ist."
+			},
+			"objection_echo_chamber": {
+				"remediation_steps": [
+					"Schreiben Sie das FAQ mit den 5-7 wichtigsten Kaufeinwänden (Preis, Zeitrahmen, Garantie, Support, Sicherheit) um.",
+					"Platzieren Sie das FAQ nahe am primären CTA oder auf der Pricing-Seite — nicht auf einer separaten Seite.",
+					"Jede Antwort sollte den Einwand entkräften und mit einer Vertrauensverstärkung (Daten, Garantie, Testimonial) enden."
+				],
+				"verification_notes": "Wir analysieren den FAQ-Inhalt und suchen nach Kaufeinwand-Sprache (Preis, Rückerstattung, Garantie) gegenüber technischen Fragen."
+			},
+			"social_channels_decorative": {
+				"remediation_steps": [
+					"Entfernen Sie Links zu inaktiven Social-Media-Kanälen oder solchen mit weniger als 1 Post in den letzten 30 Tagen.",
+					"Wenn Sie die Links behalten, stellen Sie sicher, dass die Profile aktuellen und professionellen Inhalt haben.",
+					"Ersetzen Sie dekorative Links durch echten Social Proof (Followerzahl, Bewertungen, Erwähnungen)."
+				],
+				"verification_notes": "Wir prüfen, ob die Social-Media-Links im Footer und Header auf Profile mit aktuellem Inhalt verweisen."
+			},
+			"pricing_without_context": {
+				"remediation_steps": [
+					"Fügen Sie neben dem Preis ROI-Kontext hinzu (z. B. \"entspricht X € pro Lead\" oder \"spart Y Stunden/Monat\").",
+					"Binden Sie einen Wertvergleich ein: was der Käufer heute ausgibt vs. was er mit Ihrem Produkt ausgibt.",
+					"Platzieren Sie ein Kundentestimonial mit messbarem Ergebnis nahe der Preistabelle."
+				],
+				"verification_notes": "Wir prüfen die Pricing-Seite auf ROI-, Einsparungs- oder Vergleichswertsprache in der Nähe der Preise."
+			},
+			"checkout_identity_break": {
+				"remediation_steps": [
+					"Wenden Sie Markenlogo, Farben und Typografie auf der Checkout-/Zahlungsseite an.",
+					"Wenn Sie einen externen Checkout (Stripe, PayPal) verwenden, passen Sie ihn an Ihre Marke an oder nutzen Sie eingebetteten Checkout.",
+					"Fügen Sie eine Fortschrittsleiste mit konsistenter visueller Identität im Zahlungsflow hinzu."
+				],
+				"verification_notes": "Wir vergleichen die visuellen Elemente der Startseite mit denen des Checkouts, um die Markenkontinuität zu prüfen."
+			},
+			"payment_options_invisible": {
+				"remediation_steps": [
+					"Zeigen Sie die Logos der akzeptierten Zahlungsarten auf der Pricing-Seite und im Footer.",
+					"Fügen Sie Kartenmarken-Icons, Pix, Boleto (falls zutreffend) nahe dem Kauf-Button hinzu.",
+					"Erwähnen Sie Ratenzahlungsoptionen vor dem Checkout — warten Sie nicht, bis der Käufer sie selbst entdeckt."
+				],
+				"verification_notes": "Wir prüfen, ob Bilder oder Text von Zahlungsarten auf den Pricing- und Produktseiten sichtbar sind."
+			},
+			"guarantee_invisible_at_decision": {
+				"remediation_steps": [
+					"Verschieben Sie die Garantieerwähnung nahe an den Kauf-Button auf den Pricing- und Checkout-Seiten.",
+					"Erstellen Sie ein visuelles \"X-Tage-Garantie\"-Badge und platzieren Sie es nahe dem primären CTA.",
+					"Wiederholen Sie die Garantie an mindestens 3 Funnel-Punkten: Produkt, Pricing und Checkout."
+				],
+				"verification_notes": "Wir prüfen, ob eine Garantie- oder Rückerstattungs-Erwähnung auf den Pricing- und Checkout-Seiten nahe den CTAs vorhanden ist."
+			},
+			"urgency_mechanics_absent": {
+				"remediation_steps": [
+					"Implementieren Sie mindestens 1 legitimes Dringlichkeitselement (begrenzte Plätze, zeitlich begrenzter Preis, temporärer Bonus).",
+					"Vermeiden Sie falsche Dringlichkeit (permanente Countdowns) — nutzen Sie verifizierbare und zeitlich begrenzte Mechanismen.",
+					"Kommunizieren Sie echte Knappheit, wenn vorhanden: \"noch X Plätze\" oder \"Angebot gültig bis TT/MM\"."
+				],
+				"verification_notes": "Wir prüfen, ob auf den Pricing- und Produktseiten zeitliche oder Knappheitssprache vorhanden ist."
+			},
+			"first_value_path_unclear": {
+				"remediation_steps": [
+					"Erstellen Sie ein Onboarding mit 3 klaren Schritten, das den neuen Nutzer in weniger als 5 Minuten zum ersten Ergebnis führt.",
+					"Versenden Sie eine Post-Purchase-E-Mail mit einer visuellen \"Erstes Ergebnis\"-Anleitung — nicht nur eine Zahlungsbestätigung.",
+					"Fügen Sie eine Fortschritts-Checkliste im Dashboard ein, die den Weg zum ersten Wert zeigt."
+				],
+				"verification_notes": "Wir prüfen, ob auf den Post-Login-Seiten und in Transaktions-E-Mails Onboarding-Inhalte oder ein Erstnutzungs-Guide vorhanden sind."
+			},
+			"support_response_expectation_gap": {
+				"remediation_steps": [
+					"Veröffentlichen Sie ein Antwort-SLA auf der Support-Seite (z. B. \"wir antworten innerhalb von 4 Geschäftsstunden\").",
+					"Fügen Sie im Kontaktformular und im Chat eine Schätzung der Antwortzeit hinzu.",
+					"Wenn Sie keine schnelle Antwort versprechen können, bieten Sie eine Wissensdatenbank oder FAQ als sofortige Alternative an."
+				],
+				"verification_notes": "Wir prüfen, ob die Support-/Kontaktseite eine Erwähnung von Antwortzeit oder SLA enthält."
+			},
+			"billing_transparency_absent": {
+				"remediation_steps": [
+					"Erstellen Sie eine eigene Seite, die den Abrechnungszyklus, die Kündigung und den Umgang mit den Daten erklärt.",
+					"Fügen Sie einen Link zu dieser Seite im Footer und im Checkout nahe dem Zahlungsbutton ein.",
+					"Binden Sie Kündigungsinformationen in die Willkommens-E-Mail und in den Kundenbereich ein."
+				],
+				"verification_notes": "Wir prüfen, ob eine Seite existiert, die Billing, Kündigung und Datenaufbewahrung erklärt und im Footer und Checkout verlinkt ist."
+			},
+			"upgrade_value_gap": {
+				"remediation_steps": [
+					"Schreiben Sie den Planvergleich so um, dass er den Geschäftswert jedes Premium-Features zeigt (nicht nur den Namen).",
+					"Fügen Sie einen ROI-Rechner oder ein reales Nutzungsbeispiel hinzu, um das Upgrade zu rechtfertigen.",
+					"Zeigen Sie ein Testimonial eines Kunden, der ein Upgrade durchgeführt hat, samt erreichtem Ergebnis."
+				],
+				"verification_notes": "Wir prüfen, ob die Pricing-/Plan-Seite in den Features der höheren Pläne Sprache zum Geschäftswert enthält."
+			},
+			"referral_path_nonexistent": {
+				"remediation_steps": [
+					"Implementieren Sie ein einfaches Empfehlungsprogramm mit teilbarem Link und klarem Vorteil für beide Seiten.",
+					"Fügen Sie einen \"Empfehlen und verdienen\"-Button im Kundenbereich und in der Post-Purchase-E-Mail hinzu.",
+					"Bieten Sie einen relevanten Anreiz (Rabatt, Guthaben, Extra-Feature), der die Empfehlung motiviert."
+				],
+				"verification_notes": "Wir prüfen, ob eine Referral-/Empfehlungsseite oder ein Link im eingeloggten Bereich oder auf den Seiten der Website zugänglich ist."
+			},
+			"success_story_feedback_loop_broken": {
+				"remediation_steps": [
+					"Erstellen Sie einen automatischen Prozess, um Testimonials nach Kundenerfolgs-Meilensteinen zu sammeln (z. B. 30 Tage, erstes Ergebnis).",
+					"Veröffentlichen Sie die gesammelten Testimonials auf kommerziellen Seiten, der Pricing-Seite und der Startseite.",
+					"Integrieren Sie Bewertungen von Google, Trustpilot oder Reclame Aqui direkt auf den Produktseiten."
+				],
+				"verification_notes": "Wir prüfen, ob auf den wichtigsten kommerziellen Seiten aktuelle Testimonials mit Name und Ergebnis vorhanden sind."
+			},
+			"tone_shift_across_journey": {
+				"remediation_steps": [
+					"Dokumentieren Sie den Markenton mit \"Do\"- und \"Don't\"-Beispielen für jeden Seitentyp.",
+					"Überarbeiten Sie Startseite, Pricing, Checkout und Support und sorgen Sie für Konsistenz von Ton und Vokabular.",
+					"Verwenden Sie auf allen kommerziellen Seiten dasselbe Maß an Formalität und Persönlichkeit."
+				],
+				"verification_notes": "Wir analysieren Ton und Vokabular der Hauptseiten erneut und suchen nach Inkonsistenzen der Stimme zwischen ihnen."
+			},
+			"mobile_journey_friction_compound": {
+				"remediation_steps": [
+					"Auditieren Sie den gesamten Funnel auf Mobile: Startseite → Produkt → Pricing → Checkout — notieren Sie jeden Reibungspunkt.",
+					"Beheben Sie zu kleine Buttons, Formulare, die nicht auf den Bildschirm passen, und Elemente, die das Scrollen blockieren.",
+					"Priorisieren Sie Mobile-First: Was auf Mobile gut funktioniert, funktioniert überall."
+				],
+				"verification_notes": "Wir analysieren die gesamte Mobile-Journey erneut und suchen nach kumulativen Reibungen, die die Kauferfahrung beeinträchtigen."
+			},
+			"trust_gradient_inverted": {
+				"remediation_steps": [
+					"Kartieren Sie, wo Ihre Vertrauenssignale (Siegel, Garantien, Testimonials) sind und wo sie fehlen.",
+					"Verschieben Sie Vertrauenssignale nahe an Entscheidungspunkte: Pricing, Checkout und Zahlungsformulare.",
+					"Reduzieren Sie redundante Vertrauenssignale auf der Startseite und verteilen Sie sie auf die Conversion-Seiten um."
+				],
+				"verification_notes": "Wir vergleichen die Dichte der Vertrauenssignale zwischen Startseite und Entscheidungsseiten (Pricing, Checkout)."
+			},
+			"funnel_dead_end_page": {
+				"remediation_steps": [
+					"Identifizieren Sie die kommerzielle Seite ohne CTA zum nächsten Funnel-Schritt.",
+					"Fügen Sie einen klaren CTA-Button oder -Link hinzu, der zum nächsten Schritt führt (z. B. \"Preise sehen\", \"Jetzt starten\").",
+					"Platzieren Sie den CTA above the fold oder an gut sichtbarer Stelle.",
+					"Stellen Sie sicher, dass der CTA-Text den Wert des nächsten Schritts kommuniziert, nicht nur die Aktion."
+				],
+				"verification_notes": "Wir analysieren die Seiten-Links erneut, um zu bestätigen, dass ein CTA zum nächsten Funnel-Schritt hinzugefügt wurde."
+			},
+			"discoverability_critically_weak": {
+				"remediation_steps": [
+					"Auditieren Sie, welche AI-Crawler in /robots.txt blockiert sind, und geben Sie GPTBot, ClaudeBot, PerplexityBot, Google-Extended frei.",
+					"Veröffentlichen Sie /llms.txt im Stammverzeichnis mit einer einseitigen Zusammenfassung dessen, was das Produkt tut, sowie Links zu Pricing + Docs.",
+					"Fügen Sie JSON-LD hinzu (Organization auf der Startseite + Product/Offer auf /pricing + FAQPage, wo Q&A vorhanden ist) — KIs bevorzugen schema-reiche Seiten.",
+					"Beanspruchen Sie Profile in Verzeichnissen Ihrer Kategorie (G2/Capterra für SaaS, unabhängige Listicles für E-Commerce).",
+					"Bauen Sie \"<Ihre Marke> vs <Top-Wettbewerber>\"-Seiten auf Ihrer eigenen Domain, bevor Wettbewerber diese Narrative besetzen."
+				],
+				"verification_notes": "Wir lassen die externe Recon (DDG SERP + robots.txt + JSON-LD-Parse) erneut laufen und bestätigen, dass der AI Visibility Score über 60 gestiegen ist."
+			},
+			"discoverability_gaps_significant": {
+				"remediation_steps": [
+					"Beginnen Sie mit den Quick-Wins: /llms.txt + Product-Schema auf /pricing (je 30 Minuten).",
+					"Beanspruchen Sie Listings bei Drittanbietern (G2 / Capterra / Product Hunt) — KIs zitieren mehr Marken, die in Drittquellen erscheinen.",
+					"Lösen Sie den sichtbarsten Punkt: Wenn die Marke in der Branded-Suche nicht auftaucht, beheben Sie Title + Canonical + Schema der Startseite.",
+					"Veröffentlichen Sie eine \"best <Kategorie>\"-Seite auf Ihrer Domain, die auf Vergleichs-Queries abzielt, die Sie heute nicht abdecken."
+				],
+				"verification_notes": "Wir lassen die externe Recon in 30-60 Tagen erneut laufen und messen den Lift im AI Visibility Score (Ziel: +10 Punkte)."
+			},
+			"discoverability_improvable": {
+				"remediation_steps": [
+					"Der Discoverability-Kern ist bereits OK — verfeinern Sie ihn für die KI-Suche, um Sichtbarkeit zu kombinieren.",
+					"Erwägen Sie /llms.txt + /pricing.md, falls noch nicht vorhanden, um AI-Agent-Parsing freizuschalten.",
+					"Auditieren Sie das Schema-Markup: Fügen Sie FAQPage hinzu, wo relevante Q&A vorhanden sind, HowTo in den Docs.",
+					"Monitoren Sie den AI Visibility Score vierteljährlich und untersuchen Sie jeden Rückgang."
+				],
+				"verification_notes": "Wir lassen die externe Recon vierteljährlich erneut laufen, um die Entwicklung des AI Visibility Score zu verfolgen."
+			},
+			"discoverability_adequate": {
+				"remediation_steps": [
+					"Gesunde Discoverability — versorgen Sie sie weiterhin mit frischem Inhalt + Struktur.",
+					"Planen Sie eine vierteljährliche externe Recon, um Regressionen früh zu erkennen (verlorene Zitate, entferntes Schema).",
+					"Halten Sie die Präsenz bei Drittanbietern aufrecht: Antworten Sie auf neue Bewertungen, aktualisieren Sie Listings, überwachen Sie Mentions."
+				],
+				"verification_notes": "Wir lassen die externe Recon erneut laufen, um zu bestätigen, dass Ihre KI-Sichtbarkeit weiterhin solide ist."
+			},
+			"brand_integrity_critical": {
+				"remediation_steps": [
+					"Lösen Sie ausstehende öffentliche Beschwerden auf Trustpilot / Reclame Aqui — BR-/EU-Käufer prüfen vor dem Kauf.",
+					"Richten Sie einen Alert für neue Bewertungen ein und streben Sie eine Antwortrate unter 48 h von über 70 % an.",
+					"Reklamieren Sie Wettbewerberseiten, die bezahlte Anzeigen auf Ihre Marke schalten, via Google Ads Trademark Complaints.",
+					"Eröffnen Sie ein UDRP-Verfahren oder kaufen Sie Lookalike-Domains, die Branded-Traffic abgreifen.",
+					"Reichen Sie Takedown-Anträge bei Sites ein, die die Marke nachahmen (Google Safe Browsing + Microsoft Defender)."
+				],
+				"verification_notes": "Wir lassen die externe Recon (Trustpilot + Reclame Aqui + Brand Monitoring) erneut laufen und bestätigen, dass Review-Antworten + Reputation-Labels sich verbessert haben."
+			},
+			"brand_integrity_elevated": {
+				"remediation_steps": [
+					"Beantworten Sie ausstehende negative Bewertungen auf Trustpilot/RA mit empathischer Anerkennung + konkretem nächsten Schritt.",
+					"Verhandeln Sie direkte Deals mit Top-Affiliates, die Provisionen auf Ihren Branded-Traffic verdienen — bessere Marge als über das Netzwerk.",
+					"Veröffentlichen Sie ein Press Kit + eine About-Seite, die die Markenautorität in den SERPs besetzen.",
+					"Monitoren Sie Lookalike-Domains wöchentlich; reichen Sie bei bestätigten Domains Takedowns ein."
+				],
+				"verification_notes": "Wir lassen die externe Recon in 60 Tagen erneut laufen, um zu bestätigen, dass sich Reputations- + SERP-Signale verbessert haben."
+			},
+			"brand_integrity_weak": {
+				"remediation_steps": [
+					"Halten Sie eine Antwort-Kadenz auf Bewertungsplattformen (Trustpilot, G2, Reclame Aqui) aufrecht.",
+					"Fügen Sie einen monatlichen Brand-Monitoring-Sweep hinzu (DDG-Suche \"<Marke>\" + Lookalike-Domain-Queries).",
+					"Aktualisieren Sie Press Kit + About-Seite mit aktuellen Fakten, damit Wikipedia-Editoren sie als Quelle nutzen."
+				],
+				"verification_notes": "Wir lassen die externe Recon monatlich erneut laufen, um neue Lookalike-Bedrohungen oder Reputationsverschlechterungen zu erkennen."
+			},
+			"brand_integrity_strong": {
+				"remediation_steps": [
+					"Die Markenintegrität ist stark — überwachen Sie weiterhin Bewertungsplattformen und Lookalike-Domains.",
+					"Halten Sie eine Antwort-Kadenz unter 48 h für jede neue Bewertung aufrecht.",
+					"Planen Sie eine vierteljährliche externe Recon, um Regressionen zu erkennen."
+				],
+				"verification_notes": "Wir lassen die vierteljährliche externe Recon erneut laufen, um zu bestätigen, dass die Markenintegrität weiterhin solide ist."
+			},
+			"ai_bots_blocked": {
+				"remediation_steps": [
+					"Öffnen Sie die robots.txt im Stammverzeichnis der Site (z. B. https://ihredomain.com/robots.txt).",
+					"Entfernen Sie jedes Disallow: /, das auf die User-Agents GPTBot, ChatGPT-User, ClaudeBot, anthropic-ai, PerplexityBot, Google-Extended, Bingbot, Applebot-Extended angewendet wird.",
+					"Falls eine Wildcard-Blockade existiert (\"User-agent: * → Disallow: /\"), fügen Sie explizite erlaubende Stanzas für jeden AI-Bot hinzu.",
+					"Bestätigen Sie das Deployment + testen Sie jeden blockierten Bot in einem Online-robots.txt-Validator."
+				],
+				"verification_notes": "Wir holen /robots.txt erneut und parsen sie, um zu bestätigen, dass jeder AI-Crawler Zugriff hat."
+			},
+			"no_llms_txt": {
+				"remediation_steps": [
+					"Erstellen Sie /llms.txt im Stammverzeichnis der Site in Markdown: Zeile 1 = \"# <Produktname>\", folgende Zeilen = 1-2 Absätze Zusammenfassung dessen, was es tut + für wen es ist.",
+					"Binden Sie Links zu Schlüsselseiten ein: /pricing, /docs, /about, /contact.",
+					"Halten Sie die Datei unter 2 KB, damit Agenten sie schnell parsen können.",
+					"Vollständige Spezifikation: https://llmstxt.org"
+				],
+				"verification_notes": "Wir holen /llms.txt und bestätigen, dass sie substanziellen Inhalt hat (>100 Zeichen)."
+			},
+			"no_machine_readable_pricing": {
+				"remediation_steps": [
+					"Erstellen Sie /pricing.md im Stammverzeichnis, das Ihre Pläne widerspiegelt.",
+					"Für jeden Plan: Name, monatlicher + jährlicher Preis, Hauptlimits (Sitze, Requests usw.) und eine Bullet-List dessen, was enthalten ist.",
+					"Fügen Sie ein \"last updated\"-Datum am Anfang der Datei hinzu.",
+					"Halten Sie sie synchron, wenn Sie das öffentliche Pricing ändern."
+				],
+				"verification_notes": "Wir holen /pricing.md (oder /pricing.txt) und bestätigen, dass sie substanziellen, parsbaren Inhalt hat."
+			},
+			"schema_markup_missing_for_product": {
+				"remediation_steps": [
+					"Fügen Sie JSON-LD vom Typ Product (oder SoftwareApplication für SaaS) auf /pricing als erste Priorität hinzu.",
+					"Binden Sie ein verschachteltes Offer mit price + priceCurrency + availability ein.",
+					"Fügen Sie auf der Startseite Organization-Schema mit logo + sameAs (Social-Profile) hinzu.",
+					"Validieren Sie mit dem Google Rich Results Test, bevor Sie es freigeben."
+				],
+				"verification_notes": "Wir parsen das JSON-LD von Startseite + /pricing erneut, um zu bestätigen, dass Product-/Offer-Schemas vorhanden sind."
+			},
+			"branded_serp_invisible": {
+				"remediation_steps": [
+					"Bestätigen Sie, dass der <title> der Startseite mit dem Markennamen beginnt.",
+					"Fügen Sie ein sichtbares H1 mit dem Markennamen wortwörtlich hinzu.",
+					"Konfigurieren Sie das Canonical so, dass es auf das Domain-Root der Startseite zeigt.",
+					"Reichen Sie die Domain bei der Google Search Console ein und erzwingen Sie eine Re-Indexierung.",
+					"Fügen Sie Organization-Schema mit sameAs hinzu, das auf alle Social-Profile verweist."
+				],
+				"verification_notes": "Wir wiederholen die DDG-Query nach dem Markennamen und bestätigen, dass Ihre Domain in den Top 3 erscheint."
+			},
+			"trustpilot_complaint_cluster": {
+				"remediation_steps": [
+					"Listen Sie alle 1-2★-Bewertungen ohne Antwort im Trustpilot-Dashboard auf.",
+					"Beantworten Sie jede innerhalb von 48 h mit Anerkennung + konkretem nächsten Schritt.",
+					"Bei alten Bewertungen (>3 Monate) antworten Sie trotzdem — Glaubwürdigkeit kehrt dennoch zurück.",
+					"Richten Sie einen Benachrichtigungs-Alert für jede neue Bewertung ein.",
+					"Dokumentieren Sie Muster in den Beschwerden und passen Sie Produkt/UX an, um Wiederholungen zu reduzieren."
+				],
+				"verification_notes": "Wir holen Ihr Trustpilot-Profil erneut und bestätigen, dass negative Bewertungen eine Owner-Antwort haben."
+			},
+			"reclame_aqui_reputation_critical": {
+				"remediation_steps": [
+					"Greifen Sie auf das Unternehmens-Dashboard von Reclame Aqui zu und listen Sie ausstehende Beschwerden auf.",
+					"Lösen Sie jede Beschwerde öffentlich — markieren Sie sie nach einer Einigung mit dem Kunden als Gelöst.",
+					"Konfigurieren Sie eine Antwortzeit unter 5 Geschäftstagen für neue Beschwerden.",
+					"Arbeiten Sie daran, den \"Solution Index\" innerhalb von 90 Tagen über 7/10 zu heben.",
+					"BR-Käufer prüfen RA vor dem Bezahlen — dies ist eines der kritischsten Vertrauenssignale für den BR-Markt."
+				],
+				"verification_notes": "Wir holen Ihr Reclame-Aqui-Profil erneut über SERP und bestätigen, dass das Reputation-Label nicht mehr Schlecht/Nicht Empfohlen ist."
+			},
+			"competitor_brand_hijack_serp": {
+				"remediation_steps": [
+					"Listen Sie die Wettbewerberdomains auf, die im SERP für den Markennamen über Ihrer ranken.",
+					"Für Wettbewerber, die Google Ads auf Ihre Marke schalten: Öffnen Sie eine Google Ads Trademark Complaint.",
+					"Für irreführende Review-/Affiliate-Seiten: Informieren Sie via DMCA oder direkten Kontakt.",
+					"Verstärken Sie Autoritätssignale: Wikipedia-Artikel, Organization-Schema, aktuelle Pressemitteilungen.",
+					"Veröffentlichen Sie eine \"Marke vs. Wettbewerber\"-Vergleichsseite auf Ihrer Domain, um die Narrative zu besetzen."
+				],
+				"verification_notes": "Wir suchen den Markennamen erneut über DDG und bestätigen, dass Ihre Domain in die Top 3 zurückgekehrt ist."
+			},
+			"category_intent_invisible": {
+				"remediation_steps": [
+					"Veröffentlichen Sie ein \"best <Kategorie> [Jahr]\"-Listicle auf Ihrer Domain, das 5-7 Tools abdeckt (Ihres eingeschlossen, fair).",
+					"Zielen Sie auf Alternative-Keywords: \"<Kategorie> alternatives\", \"best <Kategorie> for <Use Case>\".",
+					"Betreiben Sie Outreach zu 3-5 unabhängigen \"Best of\"-Listicle-Autoren und bieten Sie die Aufnahme an.",
+					"Erwägen Sie kurzfristige bezahlte Anzeigen, während das organische SEO reift."
+				],
+				"verification_notes": "Wir wiederholen die SERP-Query der Kategorie über DDG und bestätigen, dass Ihre Domain in den Top 10 erscheint."
+			},
+			"g2_listing_void": {
+				"remediation_steps": [
+					"Besuchen Sie g2.com/sellers/contact und beanspruchen Sie Ihr Produktprofil (kostenlos).",
+					"Fügen Sie eine vollständige Beschreibung, 5+ Screenshots, aufgelistete Integrationen und relevante Kategorien hinzu.",
+					"Laden Sie 10-15 zufriedene Kunden ein, in den ersten 30 Tagen eine ehrliche Bewertung zu hinterlassen.",
+					"Richten Sie einen Alert für neue Bewertungen ein und antworten Sie innerhalb von 48 h.",
+					"Ziel: 50+ Bewertungen in 90 Tagen — KIs bevorzugen Marken mit verifiziertem Social-Proof-Volumen."
+				],
+				"verification_notes": "Wir versuchen die G2-URL Ihres Produkts erneut und bestätigen, dass ein aktives Profil mit Bewertungen existiert."
+			},
+			"capterra_listing_void": {
+				"remediation_steps": [
+					"Beanspruchen Sie Profile auf Capterra + GetApp + SoftwareAdvice (alle von Gartner, ein einziges Onboarding).",
+					"Fügen Sie Beschreibung, Features, Integrationen und Screenshots hinzu.",
+					"Richten Sie eine monatliche Review-Sammel-Kadenz mit aktiven Kunden ein.",
+					"Reichen Sie in relevanten Kategorien ein — Gartner kuratiert, Freigabe dauert 1-2 Wochen."
+				],
+				"verification_notes": "Wir versuchen die Capterra-Suche nach Ihrer Marke erneut und bestätigen ein gelistetes Profil."
+			},
+			"wikipedia_article_thin_or_outdated": {
+				"remediation_steps": [
+					"Listen Sie bestehende unabhängige Quellen zur Marke auf: Presse, redaktionelle Blogs, Papers, Awards.",
+					"Rekrutieren Sie unabhängige Wikipedia-Editoren (Schreiben Sie NICHT selbst — verletzt NPOV).",
+					"Stellen Sie Quellenmaterial bereit: Press Kit + Factsheet mit Daten, Team, Meilensteinen, Kundenlogos.",
+					"Die Bearbeitung steigert die Markenautorität in KI-Antworten — Wikipedia macht ca. 7,8 % der ChatGPT-Zitate aus."
+				],
+				"verification_notes": "Wir überprüfen den Wikipedia-Artikel der Marke erneut und bestätigen, dass die Extract-Länge > 800 Zeichen und die letzte Bearbeitung < 18 Monate alt ist."
 			}
 		}
 	},

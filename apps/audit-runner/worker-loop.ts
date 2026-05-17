@@ -71,6 +71,15 @@ const RETRY_BACKOFF_CAP_MS = 60_000;
 const MAX_CONCURRENT_PER_WORKER = Number(
 	process.env.AUDIT_WORKER_CONCURRENCY || "2",
 );
+// Graceful-shutdown drain deadline. Configurable so the Railway service's
+// SIGTERM→SIGKILL grace period can be matched. Default 15 min, which is
+// the empirical upper bound for a full havefunnels cycle (~12 min p99).
+// When SIGTERM arrives we stop dequeuing new cycles and wait up to this
+// long for in-flight cycles to complete; if exceeded, we release env
+// locks and exit (heal cron picks up the orphan).
+const DRAIN_TIMEOUT_MS = Number(
+	process.env.WORKER_SHUTDOWN_GRACE_MS || 15 * 60 * 1000,
+);
 
 const workerId = generateWorkerId();
 const rootLog = createLogger({ workerId });
@@ -81,6 +90,11 @@ let inFlight = 0;
 // timeout can best-effort release them, instead of leaving the locks to
 // time out (15min default, blocking other workers for that span).
 const heldEnvLocks = new Set<string>();
+// Wave 18z — track currently-running cycle IDs so the shutdown drain
+// can name them in logs ("waiting for cycle <id>..."). Useful for ops
+// when a deploy stalls on a slow cycle; without this the log just
+// says "inFlight: 2" with no way to find them in the DB.
+const inFlightCycleIds = new Set<string>();
 
 async function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -259,6 +273,7 @@ async function mainLoop(): Promise<void> {
 	rootLog.info("worker-loop starting", {
 		maxConcurrent: MAX_CONCURRENT_PER_WORKER,
 		hasRedis: !!getRedis(),
+		shutdownGraceMs: DRAIN_TIMEOUT_MS,
 	});
 
 	if (!getRedis()) {
@@ -289,12 +304,14 @@ async function mainLoop(): Promise<void> {
 		}
 
 		inFlight += 1;
+		inFlightCycleIds.add(next.cycleId);
 		// Fire-and-track: we don't await individual cycles so this worker
 		// can drain concurrent dispatch up to MAX_CONCURRENT_PER_WORKER.
 		// Errors inside processCycle are already handled via requeueOrDlq;
 		// the .finally() guarantees inFlight decrements.
 		// Wave 5 Fase 1A fix (M4): the post-failure backoff is taken
 		// AFTER inFlight is decremented so it doesn't tie up a slot.
+		const claimedCycleId = next.cycleId;
 		processCycle(
 			next.cycleId,
 			next.priority,
@@ -304,28 +321,53 @@ async function mainLoop(): Promise<void> {
 		)
 			.then(async (outcome) => {
 				inFlight -= 1;
+				inFlightCycleIds.delete(claimedCycleId);
 				if (outcome.backoffMs > 0) {
 					await sleep(outcome.backoffMs);
 				}
 			})
 			.catch((err) => {
 				inFlight -= 1;
+				inFlightCycleIds.delete(claimedCycleId);
 				rootLog.error("processCycle unhandled error", {
-					cycleId: next.cycleId,
+					cycleId: claimedCycleId,
 					err: (err as Error)?.message,
 				});
 			});
 	}
 
 	// Graceful drain: wait for in-flight cycles to complete before exit.
-	rootLog.info("shutdown requested, draining in-flight cycles", {
-		inFlight,
-		heldEnvLocks: heldEnvLocks.size,
-	});
+	// Wave 18z — the drain deadline is configurable via
+	// WORKER_SHUTDOWN_GRACE_MS (default 15min) and should align with the
+	// Railway service's SIGTERM→SIGKILL grace period. The named cycle
+	// IDs are logged so operators can correlate a stalled deploy with
+	// a specific AuditCycle row.
+	const drainGraceMinutes = Math.round(DRAIN_TIMEOUT_MS / 60000);
+	rootLog.info(
+		`[worker] graceful shutdown: ${inFlight} cycle(s) still running, waiting up to ${drainGraceMinutes} minute(s)...`,
+		{
+			inFlight,
+			heldEnvLocks: heldEnvLocks.size,
+			cycleIds: Array.from(inFlightCycleIds),
+			graceMs: DRAIN_TIMEOUT_MS,
+		},
+	);
 	const drainStart = Date.now();
-	const DRAIN_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes max
+	let lastProgressLog = drainStart;
+	const PROGRESS_LOG_INTERVAL_MS = 30_000;
 	while (inFlight > 0 && Date.now() - drainStart < DRAIN_TIMEOUT_MS) {
 		await sleep(500);
+		// Heartbeat log every 30s so a long drain shows progress in
+		// Railway's deploy log instead of going dark.
+		if (Date.now() - lastProgressLog >= PROGRESS_LOG_INTERVAL_MS) {
+			const elapsedSec = Math.round((Date.now() - drainStart) / 1000);
+			rootLog.info("drain in progress", {
+				elapsedSec,
+				inFlight,
+				cycleIds: Array.from(inFlightCycleIds),
+			});
+			lastProgressLog = Date.now();
+		}
 	}
 	// Wave 5 Fase 1A fix (H5): if drain timed out, best-effort release
 	// any env locks we still hold so other workers don't have to wait
@@ -337,6 +379,8 @@ async function mainLoop(): Promise<void> {
 		rootLog.warn("drain timed out, releasing held env locks", {
 			inFlight,
 			heldEnvLocks: heldEnvLocks.size,
+			cycleIds: Array.from(inFlightCycleIds),
+			graceMs: DRAIN_TIMEOUT_MS,
 		});
 		for (const envId of heldEnvLocks) {
 			await releaseEnvLock(envId).catch(() => {
@@ -344,7 +388,9 @@ async function mainLoop(): Promise<void> {
 			});
 		}
 	} else {
-		rootLog.info("drain complete");
+		rootLog.info("drain complete", {
+			elapsedMs: Date.now() - drainStart,
+		});
 	}
 }
 

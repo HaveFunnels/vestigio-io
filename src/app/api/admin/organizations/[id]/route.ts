@@ -87,7 +87,7 @@ export const GET = withErrorTracking(async function GET(
     });
 
     const cycleIds = recentCycles.map((c) => c.id);
-    const [findingCounts, evidenceCounts] = await Promise.all([
+    const [findingCounts, evidenceCounts, actionCounts] = await Promise.all([
       cycleIds.length === 0
         ? Promise.resolve([] as { cycleId: string; _count: number }[])
         : prisma.finding.groupBy({
@@ -104,6 +104,16 @@ export const GET = withErrorTracking(async function GET(
             where: { auditCycleId: { in: cycleIds } },
             _count: true,
           }),
+      // Wave 18t-B continuation — count actions via the new table when
+      // populated. Falls back to JSON-blob length below for cycles
+      // predating the dual-write.
+      cycleIds.length === 0
+        ? Promise.resolve([] as { cycleId: string; _count: number }[])
+        : prisma.action.groupBy({
+            by: ["cycleId"],
+            where: { cycleId: { in: cycleIds } },
+            _count: true,
+          }),
     ]);
 
     const findingCountByCycle = new Map<string, number>();
@@ -116,8 +126,17 @@ export const GET = withErrorTracking(async function GET(
         evidenceCountByCycle.set(row.auditCycleId, row._count);
       }
     }
+    const actionCountByCycle = new Map<string, number>();
+    for (const row of actionCounts) {
+      actionCountByCycle.set(row.cycleId, row._count);
+    }
 
-    function readActionCount(cache: unknown): number | null {
+    function readActionCount(cycleId: string, cache: unknown): number | null {
+      // Wave 18t-B continuation — prefer the SQL count when the Action
+      // table has rows for this cycle. Falls back to deserializing the
+      // JSON blob for cycles that predate the dual-write.
+      const sqlCount = actionCountByCycle.get(cycleId);
+      if (sqlCount != null && sqlCount > 0) return sqlCount;
       if (!cache || typeof cache !== "object") return null;
       const c = cache as Record<string, unknown>;
       const actions = c.actions;
@@ -143,7 +162,7 @@ export const GET = withErrorTracking(async function GET(
       retryCount: c.retryCount,
       findingCount: findingCountByCycle.get(c.id) ?? 0,
       evidenceCount: evidenceCountByCycle.get(c.id) ?? 0,
-      actionCount: readActionCount(c.projectionsCache),
+      actionCount: readActionCount(c.id, c.projectionsCache),
     }));
 
     // ── Usage stats: current period (YYYY-MM) ──

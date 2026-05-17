@@ -103,10 +103,45 @@ export async function loadProjectionsCacheForEnv(envId: string): Promise<CachedP
       // value in the row, so we filter at the application layer below.
       where: { environmentId: envId, status: 'complete' },
       orderBy: { completedAt: 'desc' },
-      select: { projectionsCache: true },
+      select: { id: true, projectionsCache: true },
     });
     if (!row?.projectionsCache) return null;
-    return row.projectionsCache as unknown as CachedProjections;
+    const cached = row.projectionsCache as unknown as CachedProjections;
+
+    // Wave 18t-B continuation — prefer the Action table for the actions
+    // slice when it has rows for this cycle. The dual-write in
+    // apps/audit-runner/run-cycle.ts populates the table going-forward;
+    // legacy cycles (predating the table) still serve from the JSON blob
+    // unchanged. The action rows carry the same full ActionProjection
+    // payload in `projection` text, so the swap is purely cosmetic from
+    // the caller's perspective — just a more queryable source.
+    try {
+      const actionRows = await prisma.action.findMany({
+        where: { cycleId: row.id },
+        select: { projection: true, priorityScore: true },
+        orderBy: { priorityScore: 'desc' },
+      });
+      if (actionRows.length > 0) {
+        const parsed = actionRows
+          .map((r) => {
+            try {
+              return JSON.parse(r.projection) as CachedProjections['actions'][number];
+            } catch {
+              return null;
+            }
+          })
+          .filter((a): a is CachedProjections['actions'][number] => a != null);
+        if (parsed.length > 0) {
+          cached.actions = parsed;
+        }
+      }
+    } catch (err) {
+      // Table not migrated yet or query failed — leave JSON-backed actions
+      // alone, no regression vs pre-table behavior.
+      console.warn('[loadProjectionsCacheForEnv] action-table read failed, falling back to JSON:', err);
+    }
+
+    return cached;
   } catch (err) {
     console.warn('[loadProjectionsCacheForEnv] failed:', err);
     return null;

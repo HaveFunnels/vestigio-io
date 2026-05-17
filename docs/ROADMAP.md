@@ -2666,17 +2666,29 @@ Not bloated for this stack (Chromium + Debian + Prisma = ~480MB irreducible). Th
 
 Trigger to revisit: Railway image storage pricing becomes meaningful, or deploy time crosses ~3 min on web-only changes, or we ship lots of marketing/CMS updates that don't need a worker redeploy.
 
-### Audit-worker deploy interrupts in-flight cycles
+### Audit-worker deploy interrupts in-flight cycles — partially shipped
 
 Observed 2026-05-16: every `git push` to main triggers a Railway rolling deploy of `audit-worker`. The old container's running cycle gets SIGTERM mid-flight; the new worker (or heal cron) marks the cycle `status='failed'` with `lastError=null`. Three havefunnels hot cycles died this way during a single development session (cmp7q716h, cmp7slk7d, cmp7ubm6g — all ~12 min duration).
 
-Mitigations (priority by ROI):
+**Shipped 2026-05-17:**
 
-- **Increase Railway grace period** for `audit-worker` from default (30s) to 15-20 min so in-flight cycles have time to drain. Trade-off: longer deploys. Worth it because audit cycles are the product.
-- **Pre-stop hook**: Have the worker stop polling for new jobs as soon as SIGTERM arrives, finish the current one, then exit. (Partially in place via shutdownRequested, but doesn't extend the grace period.)
-- **Skip worker redeploys on web-only commits**: if Railway can be configured to only rebuild on changes touching `apps/audit-runner/**`, `workers/**`, or `packages/**`, every dashboard tweak stops killing audits.
+1. **Configurable graceful-shutdown drain** in `apps/audit-runner/worker-loop.ts`. SIGTERM / SIGINT / SIGUSR2 set `shutdownRequested=true` (existing), the main loop stops claiming new cycles, then the drain block awaits the in-flight `processCycle()` promises up to `WORKER_SHUTDOWN_GRACE_MS` (default 900_000 = 15 min, was hard-coded 5 min). The drain logs the running cycle IDs by name (`[worker] graceful shutdown: N cycle(s) still running, waiting up to 15 minute(s)...`) and emits a heartbeat every 30s so a long drain isn't silent in Railway's deploy log. If the deadline elapses, env locks are released best-effort so siblings can pick up immediately instead of waiting for the 15min Redis TTL.
 
-Companion fix already shipped (commit `db91331`): worker-loop catch now stamps `lastError = "worker-loop: <message>"` so the next time this happens we can read the cause from the DB instead of needing Railway logs.
+2. **Path-filtered Railway config** at `railway.worker.json`. Lists the paths that should trigger an audit-worker rebuild (`apps/audit-runner/**`, `workers/**`, `packages/**`, `prisma/**`, the handful of `src/libs/*` files the worker actually imports, plus `Dockerfile`, `nixpacks.toml`, `package.json`, `package-lock.json`, `tsconfig.json`, `railway.worker.json` itself). Web-only commits under `src/app/**`, `src/components/**`, etc. no longer trigger a worker redeploy. Also sets `drainingSeconds: "960"` (16 min — one minute longer than the in-process grace so the worker exits cleanly before Railway escalates to SIGKILL) and `restartPolicyType: "ON_FAILURE"` with 10 retries.
+
+3. **Companion fix already shipped** (commit `db91331`): worker-loop catch now stamps `lastError = "worker-loop: <message>"` so the next time a cycle dies we can read the cause from the DB instead of needing Railway logs.
+
+**Still requires manual Railway dashboard setup** (operator action):
+
+- **Point the audit-worker service at `railway.worker.json`**: Railway dashboard → audit-worker service → Settings → "Config-as-code" → set the config file path to `railway.worker.json`. Without this step, the JSON file in the repo is ignored and the existing dashboard config wins. Leave the web service pointed at its current config (or no config file) so its deploys aren't filtered.
+- **Confirm `drainingSeconds`**: the JSON sets 960s but some Railway plans cap this. Dashboard → audit-worker → Settings → "Healthcheck & Restart" → confirm the value is honored after the next deploy. If capped, the JSON value silently falls back to the plan max; raise a support ticket if the cap is below 600s.
+- **Set `WORKER_SHUTDOWN_GRACE_MS` env var** on the audit-worker service if you want a non-default grace (e.g. 20 min). Default (15 min) is the right starting point for havefunnels-class workloads. Should always be SHORTER than Railway's `drainingSeconds` so the worker exits via the in-process path, not SIGKILL.
+
+**Caveats / what's NOT solved:**
+
+- Railway's watchPatterns is path-based on the commit diff; a commit that touches both `src/app/**` AND `packages/**` still triggers a worker rebuild. That's correct (the `packages/**` change is real), but means mixed commits can't be selectively skipped.
+- A cycle that exceeds 15 min still dies on deploy. Empirically p99 is ~12 min for havefunnels; if a customer's cycles routinely exceed this we'll need to raise the grace or split the cycle into checkpointable stages (much larger refactor — defer until friction shows up).
+- Race window remains: a cycle that's about to be claimed (in-flight in the queue but not yet in `inFlightCycleIds`) can still be lost on SIGTERM. The heal cron's "stuck pending" pass picks these up within 15 min, which is acceptable.
 
 ### Catalog translation long-tail (Wave 18t-C continuation)
 

@@ -2678,6 +2678,17 @@ Mitigations (priority by ROI):
 
 Companion fix already shipped (commit `db91331`): worker-loop catch now stamps `lastError = "worker-loop: <message>"` so the next time this happens we can read the cause from the DB instead of needing Railway logs.
 
+### Action-pack translations: complete en/de coverage for 13 packs
+
+Wave 18r audited tr() key coverage in `packages/decision/engine.ts` across 18 pack action builders. pt-BR and es have good coverage (only payment_health + 2 stray keys were missing, now fixed). en.json and de.json are missing whole packs:
+
+- en: 13 packs without dictionary entries (copy_alignment, brand_integrity, saas_growth_readiness, channel_integrity, friction_tax, content_freshness, mobile_revenue_exposure, trust_revenue_gap, first_impression_revenue, action_value_map, acquisition_integrity, path_efficiency, and now-partial discoverability)
+- de: same 13 packs
+
+Functional impact: zero today — the engine's `tr(key, fallback)` returns the English fallback when the dict key is missing, which is what runs in production for those locales. This is a tidiness/maintainability gap, not a customer-facing bug. Trigger to fix: any en/de customer reports inconsistent translations, OR we want a single source of truth for engine output text.
+
+Quick win when revisited: extract every `tr('key', 'fallback')` literal from engine.ts via AST or grep, write to en.json directly (no translation effort needed since they're already English). The de.json fills are a real translation pass.
+
 ### Audit-driven backlog (Wave 18m audit pass, 2026-05-16)
 
 Broader audit run after the `bv_1` PK collision exposed a class of latent bugs. Most shipped in Waves 18d-18m. Remaining items deferred here:

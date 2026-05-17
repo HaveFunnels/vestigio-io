@@ -4154,6 +4154,29 @@
 				"optimize_verify": "Prüfen Sie die Sicherheitslage alle paar Monate, um Regressionen zu erkennen.",
 				"observe_primary": "Ihre Sicherheit ist in gutem Zustand. Keine nennenswerten Expositionen im Moment.",
 				"observe_verify": "Planen Sie eine regelmäßige Sicherheitsprüfung, um das sauber zu halten."
+			},
+			"payment_health": {
+				"incident_primary": "Your payment infrastructure is actively losing revenue. Failed payments and churn require immediate intervention.",
+				"incident_failed_payments": "Activate card updater and smart retry in Stripe. Send dunning emails on first failure with a direct link to update payment method.",
+				"incident_churn": "Implement cancellation survey and retention offers (pause, downgrade, extension) before final cancellation.",
+				"incident_diversity": "Add a secondary payment gateway with automatic failover to prevent single-point-of-failure outages.",
+				"incident_verify": "Re-pull Stripe data after 30 days to confirm failed payment rate dropped below 5%.",
+				"fix_primary": "Payment health has issues that will compound as you grow. Fix before scaling subscriber acquisition.",
+				"fix_failed_payments": "Configure dunning automation with progressive retry and customer notification.",
+				"fix_churn": "Analyze churn cohorts by tenure to identify the month where most subscribers cancel.",
+				"fix_verify": "Re-pull Stripe data after implementing changes to track improvement.",
+				"optimize_primary": "Payment health is acceptable but has room for improvement.",
+				"optimize_dunning": "Consider adding grace periods before access suspension on failed payments.",
+				"optimize_diversity": "Consider adding a backup payment gateway for resilience.",
+				"optimize_verify": "Monitor payment health metrics monthly via Stripe integration.",
+				"stable_primary": "Payment health is stable. Failed payment and churn rates are within acceptable ranges.",
+				"stable_verify": "Continue monitoring payment health through Stripe integration."
+			},
+			"discoverability": {
+				"claim_g2": "Claim your G2 listing and complete the profile (logo, description, screenshots, pricing tier)."
+			},
+			"path_efficiency": {
+				"default_summary": "Path efficiency analysis completed."
 			}
 		},
 		"summaries": {

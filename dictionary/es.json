@@ -5533,7 +5533,8 @@
 				"expose_commercial_pages": "Las páginas comerciales (pricing, producto, entrada del checkout) pueden no estar indexadas por motores de búsqueda. Verifica que robots.txt permita crawling, agrega al sitemap y enlaza desde la homepage.",
 				"compound_invisible_unclear": "CROSS-PACK: Fuga doble — el comprador de la categoría no te encuentra, y cuando lo hace, la propuesta de valor está enterrada. Secuencia: clarifica la propuesta de valor sobre la fold PRIMERO (1 semana), luego impulsa SEO/SEM de categoría. Saltarse el paso 1 desperdicia cada clic pagado.",
 				"compound_ai_invisibility": "CROSS-PACK: Los agentes de IA comparando productos no pueden parsearte en llms.txt + Product schema + pricing machine-readable. Acción única de 30min cubre los tres. Mayor lift de 2026 en jornadas de compra mediadas por IA.",
-				"compound_category_authority": "CROSS-PACK: Visibilidad bottom-of-stack — invisible en SERP de categoría Y sin autoridad Wikipedia. Las IAs prefieren citar marcas con ambos. Dos jugadas paralelas: (1) listicle 'best <categoría>' en propio dominio; (2) artículo Wikipedia vía WP:AfC con refs de prensa independientes."
+				"compound_category_authority": "CROSS-PACK: Visibilidad bottom-of-stack — invisible en SERP de categoría Y sin autoridad Wikipedia. Las IAs prefieren citar marcas con ambos. Dos jugadas paralelas: (1) listicle 'best <categoría>' en propio dominio; (2) artículo Wikipedia vía WP:AfC con refs de prensa independientes.",
+				"claim_g2": "Reclama tu perfil en G2 y completa los campos (logo, descripción, capturas, rango de precios)."
 			},
 			"brand_integrity": {
 				"incident_primary": "La integridad de la marca está críticamente comprometida. Reputación negativa, búsqueda secuestrada o exposición a phishing están costando compradores y revenue activamente. Resuelve antes de cualquier gasto de adquisición.",
@@ -5680,7 +5681,25 @@
 				"verify": "Re-audita funnel en 30 días; rastrea time-to-conversion + drop-off por paso.",
 				"path_length": "El camino a la compra tiene demasiados pasos. Audita cada paso: ¿es esencial o está pidiendo info que podría venir post-compra?",
 				"intent_absorber": "Una página específica está absorbiendo intención de compra sin convertirla (ej. FAQ, soporte). Agrega un CTA claro 'listo para comprar?' al final de esa página.",
-				"intent_decay": "El tiempo de intención-expresada a conversión es demasiado largo. Dispara un follow-up: modal de exit-intent + email reminder en 24h para cart abandoners."
+				"intent_decay": "El tiempo de intención-expresada a conversión es demasiado largo. Dispara un follow-up: modal de exit-intent + email reminder en 24h para cart abandoners.",
+				"default_summary": "Análisis de eficiencia del camino completado."
+			},
+			"payment_health": {
+				"incident_primary": "Tu infraestructura de pagos está perdiendo ingresos activamente. Los pagos fallidos y el churn requieren intervención inmediata.",
+				"incident_failed_payments": "Activa Card Updater y Smart Retry en Stripe. Envía correos de dunning ante el primer fallo con un enlace directo para actualizar el método de pago.",
+				"incident_churn": "Implementa una encuesta de cancelación y ofertas de retención (pausa, downgrade, extensión) antes de la cancelación final.",
+				"incident_diversity": "Añade una pasarela de pago secundaria con failover automático para evitar caídas por punto único de fallo.",
+				"incident_verify": "Vuelve a extraer datos de Stripe después de 30 días para confirmar que la tasa de pagos fallidos cayó por debajo del 5%.",
+				"fix_primary": "La salud de pagos tiene problemas que se agravarán al crecer. Corrige antes de escalar la captación de suscriptores.",
+				"fix_failed_payments": "Configura automatización de dunning con reintentos progresivos y notificación al cliente.",
+				"fix_churn": "Analiza las cohortes de churn por antigüedad para identificar el mes en que cancela la mayoría.",
+				"fix_verify": "Vuelve a extraer datos de Stripe tras implementar los cambios para medir la mejora.",
+				"optimize_primary": "La salud de pagos es aceptable pero tiene margen de mejora.",
+				"optimize_dunning": "Considera añadir periodos de gracia antes de suspender el acceso ante pagos fallidos.",
+				"optimize_diversity": "Considera añadir una pasarela de pago de respaldo para mayor resiliencia.",
+				"optimize_verify": "Monitoriza mensualmente las métricas de salud de pagos vía integración con Stripe.",
+				"stable_primary": "La salud de pagos es estable. Las tasas de pago fallido y churn están en rangos aceptables.",
+				"stable_verify": "Continúa monitorizando la salud de pagos vía la integración de Stripe."
 			}
 		},
 		"summaries": {

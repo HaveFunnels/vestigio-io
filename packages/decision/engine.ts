@@ -179,8 +179,8 @@ function resolveDecisionOutcome(
     if (risk.decision_impact === DecisionImpact.Optimize) {
       return {
         decision_key: 'ready_with_risks',
-        category: DecisionClass.State,
-        primary_outcome: 'observation',
+        category: DecisionClass.Opportunity,
+        primary_outcome: 'opportunity',
       };
     }
     return {
@@ -208,8 +208,8 @@ function resolveDecisionOutcome(
     if (risk.decision_impact === DecisionImpact.Optimize) {
       return {
         decision_key: 'revenue_path_fragile',
-        category: DecisionClass.State,
-        primary_outcome: 'observation',
+        category: DecisionClass.Opportunity,
+        primary_outcome: 'opportunity',
       };
     }
     return {
@@ -237,8 +237,8 @@ function resolveDecisionOutcome(
     if (risk.decision_impact === DecisionImpact.Optimize) {
       return {
         decision_key: 'low_chargeback_risk',
-        category: DecisionClass.State,
-        primary_outcome: 'observation',
+        category: DecisionClass.Opportunity,
+        primary_outcome: 'opportunity',
       };
     }
     return {
@@ -258,7 +258,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'first_session_conversion_below_benchmark', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'first_session_conversion_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'first_session_conversion_improvable', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'first_session_conversion_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -271,7 +271,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'action_value_misaligned', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'action_value_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'action_value_improvable', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'action_value_aligned', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -284,7 +284,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'paid_traffic_friction_high', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'paid_traffic_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'paid_traffic_improvable', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'acquisition_integrity_strong', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -297,7 +297,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'mobile_revenue_gap_significant', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'mobile_revenue_gap_moderate', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'mobile_revenue_gap_moderate', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'mobile_experience_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -310,7 +310,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'friction_tax_elevated', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'friction_tax_moderate', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'friction_tax_moderate', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'friction_tax_low', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -323,7 +323,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'trust_gap_significant', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'trust_gap_moderate', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'trust_gap_moderate', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'trust_confidence_strong', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -336,7 +336,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'path_inefficiency_high', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'path_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'path_improvable', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'path_efficiency_good', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -351,7 +351,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'copy_significant_gaps', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'copy_minor_gaps', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'copy_minor_gaps', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'copy_aligned', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -366,7 +366,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'channel_integrity_elevated', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'channel_integrity_weak', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'channel_integrity_weak', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'channel_integrity_strong', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -381,7 +381,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'discoverability_gaps_significant', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'discoverability_improvable', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'discoverability_improvable', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'discoverability_adequate', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -396,7 +396,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'brand_integrity_elevated', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'brand_integrity_weak', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'brand_integrity_weak', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'brand_integrity_strong', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -411,7 +411,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'payment_health_at_risk', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'payment_health_at_risk', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'payment_health_at_risk', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'payment_health_stable', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -426,7 +426,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'content_freshness_at_risk', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'content_freshness_at_risk', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'content_freshness_at_risk', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'content_freshness_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -441,7 +441,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'security_posture_elevated', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'security_posture_weak', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'security_posture_weak', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'security_posture_adequate', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -460,7 +460,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'funnel_journey_significant_gaps', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'funnel_journey_minor_gaps', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'funnel_journey_minor_gaps', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'funnel_journey_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
   }
@@ -474,7 +474,7 @@ function resolveDecisionOutcome(
       return { decision_key: 'vertical_significant_gaps', category: DecisionClass.Risk, primary_outcome: 'incident' };
     }
     if (risk.decision_impact === DecisionImpact.Optimize) {
-      return { decision_key: 'vertical_minor_gaps', category: DecisionClass.State, primary_outcome: 'observation' };
+      return { decision_key: 'vertical_minor_gaps', category: DecisionClass.Opportunity, primary_outcome: 'opportunity' };
     }
     return { decision_key: 'vertical_healthy', category: DecisionClass.State, primary_outcome: 'observation' };
   }

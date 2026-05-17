@@ -1522,18 +1522,18 @@ Feature-flag gated rollout with a kill switch. Order:
 
 ---
 
-### 7.3 Batch Evidence/Finding Persistence (Scaling)
+### 7.3 Batch Evidence/Finding Persistence (Scaling) — ✅ SHIPPED
 
 | | |
 |---|---|
 | **Tag** | `infra` |
 | **Priority** | P1 |
-| **Status** | Not started |
-| **Effort** | ~2-3 days |
+| **Status** | **✅ Shipped (verified 2026-05-17)** — `packages/evidence/prisma-store.ts:137-220` implements `addMany()` via batched INSERT ON CONFLICT DO UPDATE. Batch size 80 (1600 params per statement, well under Postgres' 65535 limit). Deduplicates by `(cycleRef, evidenceKey)` before the INSERT to avoid 21000 errors. Comment in source explicitly cites Wave 7.3 with the achieved improvement (~10-15s → <500ms for 300 items, 10-50x). |
+| **Effort** | ~2-3 days (delivered earlier — exact wave undocumented but commit history points to ~Wave 7.x) |
 
-**Problem:** `PrismaEvidenceStore.addMany()` loops individual upserts — N round-trips for N evidence items. With 300+ evidence items per cycle, persistence takes 10-15s. PostgreSQL `INSERT ... ON CONFLICT DO UPDATE` would be 1 round-trip.
+**Problem (solved):** `PrismaEvidenceStore.addMany()` previously looped individual upserts — N round-trips for N evidence items. With 300+ evidence items per cycle, persistence took 10-15s. Replaced with batched raw SQL.
 
-**Fix:** Replace sequential upserts with batched `$executeRawUnsafe()` using `INSERT ... ON CONFLICT DO UPDATE` with VALUES list. Batch size: 50-100 items. Expected: 10-50x faster persistence.
+**Implementation:** `$executeRawUnsafe()` with `INSERT INTO "Evidence" (...20 cols...) VALUES (...) ON CONFLICT ("cycleRef", "evidenceKey") DO UPDATE SET ...`. Chunked at 80 rows per statement. Dedup pass before insert. Identical pattern applied to Findings + Actions stores (also shipped).
 
 ---
 

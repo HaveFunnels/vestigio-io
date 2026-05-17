@@ -2226,6 +2226,20 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 30,
 	},
 
+	mrr_contraction_detected: {
+		remediation_steps: [
+			'Identifique se a contração vem de pagamentos falhos (involuntary churn) ou cancelamentos (voluntary churn) via cohort no Stripe.',
+			'Para involuntary: ative Card Updater + Smart Retries + dunning emails na primeira falha — recupera 30-50% dos casos.',
+			'Para voluntary: implemente cancellation survey + retention offers (pausa, downgrade, extensão) antes do cancel final.',
+			'Configure alerta semanal de MRR delta para detectar contração antes que compõe 3+ ciclos.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Vamos re-puxar dados Stripe no próximo ciclo e confirmar se MRR voltou a crescer ou estabilizou.',
+		verification_eta_seconds: 30,
+	},
+
 	// ─────────────────────────────────────────────
 	// Behavioral (Phase 4B — pixel-dependent)
 	// ─────────────────────────────────────────────

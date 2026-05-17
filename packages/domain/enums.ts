@@ -552,6 +552,7 @@ export enum InferenceCategory {
   FailedPaymentRevenueDrain = 'failed_payment_revenue_drain',
   SubscriberChurnUnsustainable = 'subscriber_churn_unsustainable',
   PaymentDiversityInsufficient = 'payment_diversity_insufficient',
+  MrrContractionDetected = 'mrr_contraction_detected',
   // Wave 4.1: Cybersecurity Phase 2
   InformationDisclosure = 'information_disclosure',
   ScriptSupplyChainRisk = 'script_supply_chain_risk',

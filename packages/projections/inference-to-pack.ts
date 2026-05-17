@@ -305,6 +305,7 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   failed_payment_revenue_drain: 'payment_health',
   subscriber_churn_unsustainable: 'payment_health',
   payment_diversity_insufficient: 'payment_health',
+  mrr_contraction_detected: 'payment_health',
   // Triple-source cross-domain findings
   brand_trust_cliff_at_payment: 'revenue_integrity',
   ad_landing_experience_disconnect: 'revenue_integrity',

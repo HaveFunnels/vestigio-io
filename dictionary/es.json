@@ -6378,6 +6378,15 @@
 				],
 				"verification_notes": "Revisaremos la lista de integraciones y confirmaremos que al menos dos pasarelas de pago activas estén configuradas."
 			},
+			"mrr_contraction_detected": {
+				"remediation_steps": [
+					"Identifica si la contracción viene de pagos fallidos (involuntary churn) o cancelaciones (voluntary churn) vía cohorte en Stripe.",
+					"Para involuntary churn: activa Card Updater + Smart Retries + emails de dunning ante el primer fallo — recupera 30-50% de los casos.",
+					"Para voluntary churn: implementa encuesta de cancelación + ofertas de retención (pausa, downgrade, extensión) antes del cancel final.",
+					"Configura una alerta semanal de delta de MRR para detectar contracción antes de que se componga durante 3+ ciclos."
+				],
+				"verification_notes": "Volveremos a extraer datos de Stripe en el próximo ciclo y confirmaremos si el MRR retomó el crecimiento o se estabilizó."
+			},
 			"checkout_integrity": {
 				"remediation_steps": [
 					"Ejecuta el checkout end-to-end en al menos 3 navegadores (Chrome, Safari, mobile) y anota cada error / redirect inesperado.",

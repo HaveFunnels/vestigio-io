@@ -269,6 +269,7 @@ export function computeInferences(
   inferences.push(...inferFailedPaymentRevenueDrain(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferSubscriberChurnUnsustainable(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferPaymentDiversityInsufficient(byKey, scoping, cycle_ref, ids));
+  inferences.push(...inferMrrContraction(byKey, scoping, cycle_ref, ids));
 
   // Wave 4.1: Cybersecurity Phase 2
   inferences.push(...inferInformationDisclosure(first, byKey, scoping, cycle_ref, ids));
@@ -4435,5 +4436,25 @@ function inferPaymentDiversityInsufficient(byKey: Map<string, Signal>, scoping: 
     evidence_refs: sig.evidence_refs,
     reasoning: `${sig.numeric_value}% of payment volume flows through a single gateway. A single provider outage, rate limit change, or policy update halts all recurring revenue collection. Payment infrastructure diversity is a prerequisite for subscription business resilience — without a fallback gateway, any disruption converts a technical issue into a mass involuntary churn event.`,
     reasoning_slots: { severity },
+  })];
+}
+
+function inferMrrContraction(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('mrr_contraction_detected');
+  if (!sig) return [];
+  const deltaPct = sig.numeric_value ?? 0; // negative integer percent, e.g. -8
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'mrr_contraction_detected',
+    category: InferenceCategory.MrrContractionDetected,
+    conclusion: 'mrr_contraction_detected',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `MRR is contracting at ${deltaPct}% cycle-over-cycle. This is the leading indicator that failed_payment_rate or subscriber_churn_rate is no longer being offset by new subscriber growth. Dunning recovery, retention offers, and churn diagnosis all need to ramp before the decline compounds across the next renewal cycle.`,
+    reasoning_slots: { severity, delta_pct: deltaPct },
   })];
 }

@@ -6585,6 +6585,15 @@
 				],
 				"verification_notes": "We will check the integration list and confirm at least two active payment gateways are configured."
 			},
+			"mrr_contraction_detected": {
+				"remediation_steps": [
+					"Identify whether the contraction comes from failed payments (involuntary churn) or cancellations (voluntary churn) via a Stripe cohort.",
+					"For involuntary churn: enable Card Updater + Smart Retries + dunning emails on first failure — recovers 30-50% of cases.",
+					"For voluntary churn: implement a cancellation survey + retention offers (pause, downgrade, extension) before final cancel.",
+					"Configure a weekly MRR delta alert to catch contraction before it compounds across 3+ cycles."
+				],
+				"verification_notes": "We will re-pull Stripe data on the next cycle and confirm whether MRR resumed growth or stabilized."
+			},
 			"checkout_integrity": {
 				"remediation_steps": [
 					"Run the checkout end-to-end in at least 3 browsers (Chrome, Safari, mobile) and note every error / unexpected redirect.",

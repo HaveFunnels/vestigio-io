@@ -10,10 +10,12 @@ import {
   SuppressionRule,
   BusinessProfile,
   IdGenerator,
+  SignalCategory,
   makeRef,
 } from '../domain';
 import { buildGraph } from '../graph';
 import { extractSignals } from '../signals';
+import { createSignal } from '../signals/create';
 import { computeInferences } from '../inference';
 import { produceDecision, DecisionResult } from '../decision';
 import { INFERENCE_TO_PACK } from '../projections/inference-to-pack';
@@ -363,6 +365,45 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   const graph = buildGraph(evidence, root_domain, cycle_ref, integrationSnapshots);
   const graphStats = summarizeGraph(graph);
   const rawSignals = extractSignals(evidence, graph, scoping, cycle_ref, commerceContext);
+
+  // ── Wave 8.1 — MRR contraction (cycle-over-cycle from snapshot store) ──
+  // Computed here (not inside extractSignals) because it requires the
+  // previous_snapshot's `mrr_available` numeric_value as a baseline,
+  // which extractSignals doesn't have access to. First-ever audits
+  // (no previous_snapshot) are no-ops — the signal only fires when
+  // we have a prior MRR reading to compare against.
+  if (
+    commerceContext?.mrr != null &&
+    commerceContext.mrr > 0 &&
+    input.previous_snapshot?.signals
+  ) {
+    const priorMrrSignal = input.previous_snapshot.signals.find(
+      (s) => s.signal_key === 'mrr_available',
+    );
+    const priorMrr = priorMrrSignal?.numeric_value ?? null;
+    if (priorMrr != null && priorMrr > 0) {
+      const delta = (commerceContext.mrr - priorMrr) / priorMrr;
+      if (delta < -0.05) {
+        const severity =
+          delta < -0.15 ? 'high' : delta < -0.10 ? 'medium' : 'low';
+        rawSignals.push(
+          createSignal({
+            signal_key: 'mrr_contraction_detected',
+            category: SignalCategory.Commerce,
+            attribute: 'commerce.mrr_delta',
+            value: severity,
+            numeric_value: Math.round(delta * 100), // negative integer percent
+            confidence: 95,
+            scoping,
+            cycle_ref,
+            ids: new IdGenerator('sig'),
+            evidence_refs: [],
+            description: `MRR contracted from $${priorMrr.toLocaleString()}/mo to $${Math.round(commerceContext.mrr).toLocaleString()}/mo — a ${(delta * 100).toFixed(1)}% decline cycle-over-cycle. Without intervention, the trend compounds across renewals: dunning-recoverable failures, voluntary cancels, and downgrades all stack into MRR erosion that's harder to reverse than to prevent.`,
+          }),
+        );
+      }
+    }
+  }
 
   yield "graph_and_signals"; // ── phase boundary
 

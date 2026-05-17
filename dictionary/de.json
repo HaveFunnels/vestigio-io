@@ -4855,6 +4855,15 @@
 				],
 				"verification_notes": "Wir prüfen die Integrationsliste und bestätigen, dass mindestens zwei aktive Payment-Gateways konfiguriert sind."
 			},
+			"mrr_contraction_detected": {
+				"remediation_steps": [
+					"Identifiziere via Stripe-Kohorte, ob die Kontraktion aus fehlgeschlagenen Zahlungen (Involuntary Churn) oder Kündigungen (Voluntary Churn) stammt.",
+					"Aktiviere bei Involuntary Churn Card Updater + Smart Retries + Dunning-E-Mails beim ersten Fehler — das recovered 30-50 % der Fälle.",
+					"Implementiere bei Voluntary Churn eine Kündigungsumfrage + Retention-Angebote (Pause, Downgrade, Verlängerung) vor der finalen Kündigung.",
+					"Konfiguriere einen wöchentlichen MRR-Delta-Alert, um Kontraktion zu erkennen, bevor sie sich über 3+ Zyklen aufschaukelt."
+				],
+				"verification_notes": "Wir ziehen Stripe-Daten im nächsten Zyklus erneut und bestätigen, ob das MRR wieder wächst oder sich stabilisiert hat."
+			},
 			"checkout_integrity": {
 				"remediation_steps": [
 					"Fuehre den Checkout end-to-end in mindestens 3 Browsern (Chrome, Safari, Mobile) aus und notiere jeden Fehler / unerwarteten Redirect.",

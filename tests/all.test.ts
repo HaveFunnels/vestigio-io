@@ -550,12 +550,15 @@ runSuite('Signal Engine', () => {
     assertEqual(sig, undefined);
   });
 
-  test('signals have deterministic IDs', () => {
+  test('signals have stable ID format (sig_ + UUID v4)', () => {
     const evidence = [httpResponseEvidence('https://example.com/')];
     const graph = buildGraph(evidence, 'example.com', cycleRef);
     const s1 = extractSignals(evidence, graph, scoping, cycleRef);
     const s2 = extractSignals(evidence, graph, scoping, cycleRef);
-    assertEqual(s1[0].id, s2[0].id, 'IDs should be deterministic across calls');
+    const uuidV4Pattern = /^sig_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+    assert(uuidV4Pattern.test(s1[0].id), `s1 id should match sig_ + UUID v4 pattern, got ${s1[0].id}`);
+    assert(uuidV4Pattern.test(s2[0].id), `s2 id should match sig_ + UUID v4 pattern, got ${s2[0].id}`);
+    assert(s1[0].id !== s2[0].id, 'IDs should be unique across calls (UUIDs)');
   });
 
   test('empty evidence produces minimal signals', () => {
@@ -631,11 +634,14 @@ runSuite('Inference Engine', () => {
     assertEqual(inf, undefined, 'should not infer checkout_integrity without checkout');
   });
 
-  test('inferences have deterministic IDs', () => {
+  test('inferences have stable ID format (inf_ + UUID v4)', () => {
     const signals = [testSignal({ attribute: 'checkout.detected', value: 'false' })];
     const i1 = computeInferences(signals, scoping, cycleRef);
     const i2 = computeInferences(signals, scoping, cycleRef);
-    assertEqual(i1[0].id, i2[0].id);
+    const uuidV4Pattern = /^inf_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+    assert(uuidV4Pattern.test(i1[0].id), `i1 id should match inf_ + UUID v4 pattern, got ${i1[0].id}`);
+    assert(uuidV4Pattern.test(i2[0].id), `i2 id should match inf_ + UUID v4 pattern, got ${i2[0].id}`);
+    assert(i1[0].id !== i2[0].id, 'IDs should be unique across calls (UUIDs)');
   });
 
   test('each inference has non-empty reasoning', () => {

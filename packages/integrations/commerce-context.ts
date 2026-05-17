@@ -29,6 +29,13 @@ export interface CommerceContext {
   // Ad platforms
   total_ad_spend_monthly: number | null;
   ad_spend_by_platform: Record<string, number>;
+  // Wave 6.1 — Revenue Attribution Integrity. Sum of `attributed_revenue_30d`
+  // across all connected ad platforms (Meta + Google). Compared against
+  // actual transaction revenue (Stripe MRR for SaaS, ecommerce gross for
+  // ecommerce) to detect overattribution from last-click windows. `null`
+  // when no ad platform has shipped attributed-revenue data yet — keeps
+  // the downstream signal silent until pollers are upgraded.
+  ad_attributed_revenue_monthly: number | null;
 
   // Nuvemshop-exclusive extended data (Wave 7.11)
   coupon_stacking_enabled: boolean | null;

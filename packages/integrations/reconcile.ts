@@ -205,6 +205,7 @@ function reconcileCommerceContext(
     // Ad platform defaults
     total_ad_spend_monthly: null,
     ad_spend_by_platform: {},
+    ad_attributed_revenue_monthly: null,
 
     // Nuvemshop-exclusive extended data (Wave 7.11)
     coupon_stacking_enabled: null,
@@ -289,6 +290,25 @@ function reconcileCommerceContext(
   }
   if (totalAdSpend > 0) {
     context.total_ad_spend_monthly = totalAdSpend;
+  }
+
+  // Wave 6.1 — Sum platform-reported attributed revenue across connected
+  // ad platforms. We gate on at least one non-null contribution so the
+  // downstream overattribution signal stays silent until pollers populate
+  // the field. Snapshots collected before the Phase 2 poller upgrade will
+  // report `attributed_revenue_30d === null` and won't contribute.
+  let totalAttributedRevenue = 0;
+  let hasAttributedRevenueData = false;
+  if (metaAds && metaAds.data.attributed_revenue_30d != null) {
+    totalAttributedRevenue += metaAds.data.attributed_revenue_30d;
+    hasAttributedRevenueData = true;
+  }
+  if (googleAds && googleAds.data.attributed_revenue_30d != null) {
+    totalAttributedRevenue += googleAds.data.attributed_revenue_30d;
+    hasAttributedRevenueData = true;
+  }
+  if (hasAttributedRevenueData) {
+    context.ad_attributed_revenue_monthly = totalAttributedRevenue;
   }
 
   return context;

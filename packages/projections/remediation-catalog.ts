@@ -2240,6 +2240,28 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 30,
 	},
 
+	// ─────────────────────────────────────────────
+	// Wave 6.1: Revenue Attribution Integrity
+	// Detecta overattribution: ad platforms reportam mais receita
+	// atribuída do que as transações realmente confirmam (Stripe/Shopify).
+	// Quase sempre é artefato de last-click attribution — Meta/Google
+	// contam toques como conversões mesmo quando a compra teria acontecido.
+	// ─────────────────────────────────────────────
+
+	revenue_attribution_mismatch: {
+		remediation_steps: [
+			'Ajuste a attribution window no Meta Ads Manager e Google Ads de 7-day-click/1-day-view para 1-day-click — corta a maior parte do overcounting de last-click.',
+			'Rode um holdout test: pause 20-30% dos campaigns por 14 dias e meça a queda real de receita no Stripe vs a perda projetada pelo platform — a diferença é o lift incremental verdadeiro.',
+			'Configure multi-touch attribution (data-driven no GA4 ou Triple Whale/Northbeam) e compare o ROAS atribuído por modelo data-driven vs last-click — re-tier o ad spend pelo modelo mais conservador.',
+			'Reconcilie receita atribuída do GA4/Meta vs receita confirmada no Stripe semanalmente. Decisões de CPC bid devem ser ancoradas no transaction-confirmed revenue, não no platform-reported.',
+		],
+		estimated_effort_hours: 10,
+		verification_strategy: 'integration_pull',
+		verification_notes:
+			'Vamos re-puxar Meta + Google + Stripe no próximo ciclo e verificar se o delta entre attributed_revenue_30d e MRR real caiu abaixo de 30%.',
+		verification_eta_seconds: 30,
+	},
+
 	// Wave 7.11M — pixel coverage gap (measurement integrity)
 	pixel_coverage_gap: {
 		remediation_steps: [

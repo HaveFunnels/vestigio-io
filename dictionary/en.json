@@ -6558,6 +6558,15 @@
 				],
 				"verification_notes": "We will re-pull Stripe metrics 30 days after the fixes and confirm whether the failed payment rate dropped below 5%."
 			},
+			"revenue_attribution_mismatch": {
+				"remediation_steps": [
+					"Tighten the attribution window in Meta Ads Manager and Google Ads from 7-day-click/1-day-view to 1-day-click — this removes most of the last-click overcounting.",
+					"Run a holdout test: pause 20-30% of campaigns for 14 days and measure the actual revenue drop in Stripe versus the loss projected by the ad platform — the gap is the real incremental lift.",
+					"Configure multi-touch attribution (data-driven model in GA4, or Triple Whale / Northbeam) and compare its ROAS to last-click — re-tier ad spend against the more conservative model.",
+					"Reconcile attributed revenue (GA4 / Meta / Google) against transaction-confirmed revenue (Stripe) weekly. CPC bid decisions should anchor to actual revenue, not platform-reported revenue."
+				],
+				"verification_notes": "We will re-pull Meta, Google, and Stripe in the next cycle and verify whether the gap between attributed_revenue_30d and real MRR fell below 30%."
+			},
 			"subscriber_churn_unsustainable": {
 				"remediation_steps": [
 					"Implement a cancellation survey to capture why subscribers leave.",

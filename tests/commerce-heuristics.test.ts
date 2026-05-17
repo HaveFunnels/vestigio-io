@@ -62,6 +62,7 @@ function emptyCommerceContext(
 		failed_payment_rate: null,
 		total_ad_spend_monthly: null,
 		ad_spend_by_platform: {},
+		ad_attributed_revenue_monthly: null,
 		coupon_stacking_enabled: null,
 		expired_coupons_active: null,
 		avg_shipping_days: null,

@@ -6477,6 +6477,45 @@ function extractCommerceContextSignals(
       description: `Stripe payment health data is available. Failed payment rate${commerce.failed_payment_rate != null ? `: ${(commerce.failed_payment_rate * 100).toFixed(1)}%` : ': unavailable'}, subscriber churn rate${commerce.subscriber_churn_rate != null ? `: ${(commerce.subscriber_churn_rate * 100).toFixed(1)}%` : ': unavailable'}.`,
     }));
   }
+
+  // ── Wave 6.1: Revenue Attribution Integrity ──
+  //
+  // 15. Ad-revenue overattribution detected. Compares the sum of
+  //     `attributed_revenue_30d` reported by Meta + Google against the
+  //     transaction-confirmed revenue reference (Stripe MRR for SaaS).
+  //     Fires only when BOTH values are non-null and attributed > 0, so
+  //     the signal stays silent until pollers ship the new field (Phase 2)
+  //     AND a real revenue source is connected. Threshold: > 30% over-
+  //     report triggers; >= 50% escalates to high severity. The pattern
+  //     is almost always a last-click attribution artifact — platforms
+  //     claim conversions on visits that would have purchased anyway,
+  //     inflating ROAS and justifying CPC bids the actual revenue can't
+  //     sustain.
+  const attributedAdRevenue = commerce.ad_attributed_revenue_monthly;
+  const actualRevenue = commerce.mrr;
+  if (
+    attributedAdRevenue != null &&
+    attributedAdRevenue > 0 &&
+    actualRevenue != null &&
+    actualRevenue > 0
+  ) {
+    const overReport = attributedAdRevenue - actualRevenue;
+    const pct = overReport / actualRevenue;
+    if (pct > 0.30) {
+      const severity = pct > 0.50 ? 'high' : 'medium';
+      signals.push(createSignal({
+        signal_key: 'ad_revenue_overattribution_detected',
+        category: SignalCategory.Commerce,
+        attribute: 'commerce.ad_attribution_delta',
+        value: severity,
+        numeric_value: Math.round(pct * 100),
+        confidence: 90,
+        scoping, cycle_ref, ids,
+        evidence_refs: integrationRefs,
+        description: `Ad platforms report ~$${Math.round(attributedAdRevenue).toLocaleString()}/mo in attributed revenue, but Stripe transactions show $${Math.round(actualRevenue).toLocaleString()}/mo — a ${Math.round(pct * 100)}% over-report. This usually means last-click attribution counts visits ads merely "touched" as conversions, inflating ROAS and justifying CPC bids the actual revenue can't sustain.`,
+      }));
+    }
+  }
 }
 
 // ──────────────────────────────────────────────

@@ -270,6 +270,8 @@ export function computeInferences(
   inferences.push(...inferSubscriberChurnUnsustainable(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferPaymentDiversityInsufficient(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferMrrContraction(byKey, scoping, cycle_ref, ids));
+  // Wave 6.1: Revenue Attribution Integrity (ad-platform overattribution)
+  inferences.push(...inferRevenueAttributionMismatch(byKey, scoping, cycle_ref, ids));
 
   // Wave 7.11M: Pixel coverage gap (measurement integrity)
   inferences.push(...inferPixelCoverageGap(byKey, scoping, cycle_ref, ids));
@@ -4459,6 +4461,36 @@ function inferMrrContraction(byKey: Map<string, Signal>, scoping: Scoping, cycle
     evidence_refs: sig.evidence_refs,
     reasoning: `MRR is contracting at ${deltaPct}% cycle-over-cycle. This is the leading indicator that failed_payment_rate or subscriber_churn_rate is no longer being offset by new subscriber growth. Dunning recovery, retention offers, and churn diagnosis all need to ramp before the decline compounds across the next renewal cycle.`,
     reasoning_slots: { severity, delta_pct: deltaPct },
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Wave 6.1 — Revenue Attribution Integrity
+//
+// Consumes the `ad_revenue_overattribution_detected` signal emitted by
+// extractCommerceContextSignals when ad-platform-reported attributed
+// revenue exceeds Stripe transaction revenue by > 30%. The signal is
+// already gated on both inputs being non-null, so this inference only
+// fires when ad pollers AND a revenue source (Stripe) are both wired.
+// Maps to the `revenue_integrity` pack via inference-to-pack.ts.
+// ──────────────────────────────────────────────
+function inferRevenueAttributionMismatch(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('ad_revenue_overattribution_detected');
+  if (!sig) return [];
+  const overReportPct = sig.numeric_value ?? 0;
+  const severity = sig.value;
+  return [createInference({
+    inference_key: 'revenue_attribution_mismatch',
+    category: InferenceCategory.RevenueAttributionMismatch,
+    conclusion: 'revenue_attribution_mismatch',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `Ad platforms are reporting ${overReportPct}% more attributed revenue than transactions actually show. This is typically a last-click attribution artifact — Meta and Google count touches as conversions even when the conversion would have happened anyway. The gap suggests you're paying CPC against inflated ROAS estimates. The fix is to compare cohort ROAS against a holdout group (campaign pause test) and re-tier ad spend based on the actual transaction-confirmed return — not the platform-reported one.`,
+    reasoning_slots: { severity, over_report_pct: overReportPct },
   })];
 }
 

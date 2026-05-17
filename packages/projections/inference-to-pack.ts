@@ -306,6 +306,8 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   subscriber_churn_unsustainable: 'payment_health',
   payment_diversity_insufficient: 'payment_health',
   mrr_contraction_detected: 'payment_health',
+  // Wave 6.1: Revenue Attribution Integrity
+  revenue_attribution_mismatch: 'revenue_integrity',
   // Wave 7.11M: pixel coverage gap (measurement integrity for revenue path)
   pixel_coverage_gap: 'revenue_integrity',
   // Triple-source cross-domain findings

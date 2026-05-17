@@ -6351,6 +6351,15 @@
 				],
 				"verification_notes": "Volveremos a extraer métricas de Stripe 30 días después de las correcciones y confirmaremos si la tasa de pagos fallidos cayó por debajo del 5%."
 			},
+			"revenue_attribution_mismatch": {
+				"remediation_steps": [
+					"Ajusta la ventana de atribución en Meta Ads Manager y Google Ads de 7-day-click/1-day-view a 1-day-click — esto elimina la mayor parte del sobrerrecuento de last-click.",
+					"Ejecuta un holdout test: pausa el 20-30% de las campañas durante 14 días y mide la caída real de ingresos en Stripe frente a la pérdida proyectada por la plataforma — la diferencia es el lift incremental real.",
+					"Configura atribución multi-touch (modelo data-driven en GA4, o Triple Whale / Northbeam) y compara su ROAS con last-click — re-prioriza el ad spend según el modelo más conservador.",
+					"Reconcilia los ingresos atribuidos (GA4 / Meta / Google) contra los ingresos confirmados por transacción (Stripe) semanalmente. Las decisiones de CPC bid deben anclarse en los ingresos reales, no en los reportados por la plataforma."
+				],
+				"verification_notes": "Volveremos a extraer Meta, Google y Stripe en el próximo ciclo y verificaremos si la brecha entre attributed_revenue_30d y MRR real cayó por debajo del 30%."
+			},
 			"subscriber_churn_unsustainable": {
 				"remediation_steps": [
 					"Implementa una encuesta de cancelación para capturar por qué se van los suscriptores.",

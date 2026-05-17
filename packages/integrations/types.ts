@@ -94,10 +94,22 @@ export interface MetaAdsSnapshotData {
   ad_spend_30d: number;
   currency: string;
   creatives: { id: string; headline: string; body: string; cta: string; destination_url: string; status: string; spend_30d: number }[];
+  // Wave 6.1 — Revenue Attribution Integrity. Total platform-reported
+  // attributed revenue over the trailing 30d window. Used to cross-check
+  // against actual transaction revenue (Stripe MRR or Shopify gross) so
+  // we can flag overattribution from last-click windows. `null` when the
+  // poller hasn't shipped the field yet (Phase 2 backfill).
+  attributed_revenue_30d: number | null;
 }
 
 export interface GoogleAdsSnapshotData {
   ad_spend_30d: number;
   currency: string;
   campaigns: { id: string; name: string; headlines: string[]; descriptions: string[]; final_url: string; spend_30d: number }[];
+  // Wave 6.1 — Revenue Attribution Integrity. Total platform-reported
+  // attributed revenue over the trailing 30d window. Used to cross-check
+  // against actual transaction revenue (Stripe MRR or Shopify gross) so
+  // we can flag overattribution from last-click windows. `null` when the
+  // poller hasn't shipped the field yet (Phase 2 backfill).
+  attributed_revenue_30d: number | null;
 }

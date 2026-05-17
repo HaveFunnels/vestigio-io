@@ -553,6 +553,11 @@ export enum InferenceCategory {
   SubscriberChurnUnsustainable = 'subscriber_churn_unsustainable',
   PaymentDiversityInsufficient = 'payment_diversity_insufficient',
   MrrContractionDetected = 'mrr_contraction_detected',
+  // Wave 6.1: Revenue Attribution Integrity (ad-platform overattribution
+  // detection). Fires when Meta/Google report substantially more attributed
+  // revenue than transaction-confirmed revenue (Stripe MRR or Shopify gross),
+  // exposing inflated ROAS that ad bids are anchored against.
+  RevenueAttributionMismatch = 'revenue_attribution_mismatch',
   // Wave 7.11M: Pixel coverage gap (measurement integrity)
   PixelCoverageGap = 'pixel_coverage_gap',
   // Wave 4.1: Cybersecurity Phase 2

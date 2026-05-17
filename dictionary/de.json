@@ -1487,7 +1487,7 @@
 				"verification": "Verifizierung",
 				"change": "Änderung",
 				"type": "__TODO__",
-				"pack": "__TODO__",
+				"pack": "Kategorie",
 				"surface": "__TODO__",
 				"action": "__TODO__",
 				"scope": "__TODO__",
@@ -1842,6 +1842,8 @@
 					"not_detected": "Nicht erkannt",
 					"passing": "Bestanden ({count})",
 					"failing": "Nicht bestanden ({count})",
+					"score_label": "Note",
+					"checks_summary": "{passing} ok · {failing} mit Problemen",
 					"pillars": {
 						"pre_transaction": "Prä-Transaktionsprävention",
 						"transaction_security": "Transaktionssicherheit",

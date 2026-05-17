@@ -1547,7 +1547,7 @@
 				"verification": "Verification",
 				"change": "Change",
 				"type": "Type",
-				"pack": "Pack",
+				"pack": "Category",
 				"surface": "Surface",
 				"action": "Action",
 				"scope": "Scope",
@@ -2079,6 +2079,8 @@
 					"not_detected": "Not detected",
 					"passing": "Passing ({count})",
 					"failing": "Failing ({count})",
+					"score_label": "Score",
+					"checks_summary": "{passing} ok · {failing} with issues",
 					"pillars": {
 						"pre_transaction": "Pre-transaction Prevention",
 						"transaction_security": "Transaction Security",

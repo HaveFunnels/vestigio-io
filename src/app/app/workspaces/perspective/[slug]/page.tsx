@@ -331,6 +331,83 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
         <PulseSummary perspective={slug} />
       </div>
 
+      {/* Workspace breakdown — pulled up to mirror the panorama page so users
+          land on the workspace grid right after the pulse card, before the
+          deeper lenses. */}
+      {perspectiveWorkspaces.length > 1 && (
+        <section className="mt-5">
+          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+            {t("workspaces_in_perspective")}
+          </h2>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {perspectiveWorkspaces.map((ws) => {
+              const wsSpark = synthesizeSparklineData(ws.change_summary, ws.summary.issue_count);
+              return (
+                <button
+                  key={ws.id}
+                  onClick={() => router.push(`/app/workspaces/${ws.id}`)}
+                  className={`group relative overflow-hidden rounded-2xl border border-edge bg-surface-card px-5 py-4 text-left shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:border-content-faint hover:shadow-xl`}
+                >
+                  {/* Accent gradient overlay matching the perspective */}
+                  <div className={`pointer-events-none absolute inset-0 rounded-2xl ${meta.barColor} bg-gradient-to-br from-current via-transparent to-transparent opacity-[0.10] transition-opacity duration-200 group-hover:opacity-[0.20]`} />
+
+                  {/* Header row: icon + name + severity. "observe" badges
+                      visually collided with the hover arrow and added no
+                      signal, so they're hidden — the arrow takes the
+                      top-right slot instead. */}
+                  <div className="relative flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <svg
+                        className={`h-4 w-4 ${meta.accentColor} opacity-60`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d={meta.icon} />
+                      </svg>
+                      <span className="text-[13px] font-semibold text-content">{ws.name}</span>
+                    </div>
+                    {ws.decision_impact !== "observe" && (
+                      <SeverityBadge value={ws.decision_impact} />
+                    )}
+                  </div>
+
+                  {/* Stats row */}
+                  <div className="relative mt-3 flex items-end justify-between gap-4">
+                    <div>
+                      <div className="font-mono text-2xl font-medium tabular-nums leading-none text-content">
+                        {ws.summary.issue_count}
+                      </div>
+                      <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
+                        {t("issues")}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-1.5">
+                      {ws.summary.total_loss_mid > 0 && (
+                        <span className={`font-mono text-sm font-medium tabular-nums ${meta.accentColor}`}>
+                          {fmtCurrency(ws.summary.total_loss_mid, currency)}
+                        </span>
+                      )}
+                      {wsSpark.length >= 2 && new Set(wsSpark).size > 1 && (
+                        <TrendSparkline data={wsSpark} width={64} height={20} />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Hover arrow */}
+                  <div className="absolute top-4 right-4 text-content-faint opacity-0 transition-opacity group-hover:opacity-100">
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {/* Perspective-level enrichment (3.11B Fase 4) — no card wrappers, components self-style */}
       {slug === "revenue" && allFindings.length > 0 && (
         <div className="mt-5 space-y-4">
@@ -370,76 +447,6 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
           </div>
         </div>
       </div>
-
-      {/* Workspace breakdown */}
-      {perspectiveWorkspaces.length > 1 && (
-        <section className="mt-6">
-          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
-            {t("workspaces_in_perspective")}
-          </h2>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            {perspectiveWorkspaces.map((ws) => {
-              const wsSpark = synthesizeSparklineData(ws.change_summary, ws.summary.issue_count);
-              return (
-                <button
-                  key={ws.id}
-                  onClick={() => router.push(`/app/workspaces/${ws.id}`)}
-                  className={`group relative overflow-hidden rounded-2xl border border-edge bg-surface-card px-5 py-4 text-left shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:border-content-faint hover:shadow-xl`}
-                >
-                  {/* Accent gradient overlay matching the perspective */}
-                  <div className={`pointer-events-none absolute inset-0 rounded-2xl ${meta.barColor} bg-gradient-to-br from-current via-transparent to-transparent opacity-[0.10] transition-opacity duration-200 group-hover:opacity-[0.20]`} />
-
-                  {/* Header row: icon + name + severity */}
-                  <div className="relative flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <svg
-                        className={`h-4 w-4 ${meta.accentColor} opacity-60`}
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={1.5}
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" d={meta.icon} />
-                      </svg>
-                      <span className="text-[13px] font-semibold text-content">{ws.name}</span>
-                    </div>
-                    <SeverityBadge value={ws.decision_impact} />
-                  </div>
-
-                  {/* Stats row */}
-                  <div className="relative mt-3 flex items-end justify-between gap-4">
-                    <div>
-                      <div className="font-mono text-2xl font-medium tabular-nums leading-none text-content">
-                        {ws.summary.issue_count}
-                      </div>
-                      <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
-                        {t("issues")}
-                      </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-1.5">
-                      {ws.summary.total_loss_mid > 0 && (
-                        <span className={`font-mono text-sm font-medium tabular-nums ${meta.accentColor}`}>
-                          {fmtCurrency(ws.summary.total_loss_mid, currency)}
-                        </span>
-                      )}
-                      {wsSpark.length >= 2 && new Set(wsSpark).size > 1 && (
-                        <TrendSparkline data={wsSpark} width={64} height={20} />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Hover arrow */}
-                  <div className="absolute top-4 right-4 text-content-faint opacity-0 transition-opacity group-hover:opacity-100">
-                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-                    </svg>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
 
       {/* Findings table — last section */}
       {allFindings.length > 0 && (

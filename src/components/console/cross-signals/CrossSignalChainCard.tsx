@@ -29,6 +29,7 @@ interface Props {
 	temporalPattern: "sequential" | "simultaneous" | null;
 	firstDetectedAt: string | null;
 	currency?: string;
+	headline?: string | null;
 }
 
 // Locale hint for Intl.NumberFormat — ensures R$ for BRL, $ for USD, etc.
@@ -72,6 +73,7 @@ export default function CrossSignalChainCard({
 	totalImpactCents,
 	temporalPattern,
 	currency = "USD",
+	headline,
 }: Props) {
 	const t = useTranslations("console.cross_signals");
 	const tc = useTranslations("console.common");
@@ -88,14 +90,24 @@ export default function CrossSignalChainCard({
 				className="flex w-full items-start gap-3 p-4 text-left"
 			>
 				<div className="min-w-0 flex-1">
-					{/* Surface URL */}
-					<div className="flex items-center gap-2">
+					{/* Surface URL + impact + headline */}
+					<div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
 						<span className="truncate font-mono text-xs text-content-secondary">
 							{surface}
 						</span>
 						<span className="shrink-0 font-mono text-xs tabular-nums text-red-400">
 							−{formatCurrency(totalImpactCents, currency)}{tc("per_month_short")}
 						</span>
+						{headline && (
+							<span className="min-w-0 truncate text-xs text-content-muted">
+								· {headline}
+								{links.length > 1 && (
+									<span className="ml-1 text-content-faint">
+										+{links.length - 1}
+									</span>
+								)}
+							</span>
+						)}
 					</div>
 
 					{/* Pack flow */}

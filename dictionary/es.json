@@ -1514,7 +1514,7 @@
 				"est_impact": "Impacto Est.",
 				"impact": "Impacto",
 				"type": "Tipo",
-				"pack": "Pack",
+				"pack": "Categoría",
 				"surface": "Superficie",
 				"action": "Acción",
 				"scope": "Alcance",
@@ -1986,6 +1986,8 @@
 					"not_detected": "No detectado",
 					"passing": "Aprobado ({count})",
 					"failing": "Fallido ({count})",
+					"score_label": "Nota",
+					"checks_summary": "{passing} ok · {failing} con problemas",
 					"pillars": {
 						"pre_transaction": "Prevención Pre-transacción",
 						"transaction_security": "Seguridad de Transacción",

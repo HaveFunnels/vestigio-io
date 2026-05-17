@@ -101,6 +101,13 @@ function ChainRow({ chain, editing, currency }: { chain: CrossSignalChain; editi
 		? "..." + chain.surface.slice(-32)
 		: chain.surface;
 
+	// Top-impact link drives the surface click — opens the finding drawer
+	// directly instead of dumping the user on a filtered list.
+	const topLink = [...chain.links].sort((a, b) => b.impactCents - a.impactCents)[0];
+	const surfaceHref = topLink
+		? `/app/findings?finding=${topLink.findingId}`
+		: `/app/findings?chain=${encodeURIComponent(chain.surface)}`;
+
 	return (
 		<li className="group flex items-start gap-3 py-1.5">
 			{/* Surface + impact */}
@@ -109,7 +116,7 @@ function ChainRow({ chain, editing, currency }: { chain: CrossSignalChain; editi
 					<button
 						type="button"
 						disabled={editing}
-						onClick={() => !editing && router.push(`/app/findings?chain=${encodeURIComponent(chain.surface)}`)}
+						onClick={() => !editing && router.push(surfaceHref)}
 						className="truncate font-mono text-[10px] text-content-faint transition-colors hover:text-content-secondary disabled:cursor-default"
 					>
 						{surface}
@@ -117,6 +124,11 @@ function ChainRow({ chain, editing, currency }: { chain: CrossSignalChain; editi
 					<span className="shrink-0 font-mono text-[10px] tabular-nums text-red-400">
 						−{formatCurrency(chain.totalImpactCents, currency)}/mo
 					</span>
+					{chain.headline && (
+						<span className="min-w-0 truncate text-[10px] text-content-muted">
+							· {chain.headline}
+						</span>
+					)}
 				</div>
 
 				{/* Chain links — inline flow */}

@@ -42,11 +42,17 @@ export default function TrustScoreCard({ findings, filterPacks }: Props) {
 
 	return (
 		<div className="rounded-lg border border-edge bg-surface-card/40 p-3">
-			{/* Grade + score */}
+			{/* Grade + score. The "/10" used to read as a checklist counter
+			    ("0 of 10 items") even though it's a quality score derived
+			    from passing÷total. Now explicitly labeled, with the real
+			    count of evaluated items spelled out below it. */}
 			<div className="flex items-center gap-3 mb-3">
 				<div className={`text-2xl font-bold ${color}`}>{letter}</div>
 				<div className="flex-1">
-					<div className="flex items-baseline gap-1">
+					<div className="flex items-baseline gap-1.5">
+						<span className="text-[10px] uppercase tracking-wider text-content-faint">
+							{t("score_label")}
+						</span>
 						<span className="text-sm font-semibold text-content">{score}</span>
 						<span className="text-[10px] text-content-faint">/10</span>
 					</div>
@@ -56,17 +62,21 @@ export default function TrustScoreCard({ findings, filterPacks }: Props) {
 							style={{ width: `${barWidth}%` }}
 						/>
 					</div>
+					<div className="mt-1 text-[10px] text-content-faint">
+						{t("checks_summary", { passing: passing.length, failing: failing.length })}
+					</div>
 				</div>
 			</div>
 
-			{/* Passing checks */}
+			{/* Passing checks — show all so the score doesn't imply there
+			    are extra hidden items the user can't see. */}
 			{passing.length > 0 && (
 				<div className="mb-2">
 					<span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400">
 						{t("passing", { count: passing.length })}
 					</span>
 					<ul className="mt-1 space-y-0.5">
-						{passing.slice(0, 5).map((f) => (
+						{passing.map((f) => (
 							<li key={f.id} className="flex items-center gap-1.5 text-[11px] text-content-muted">
 								<svg className="h-2.5 w-2.5 text-emerald-500" viewBox="0 0 16 16" fill="none">
 									<path d="M13.25 4.75L6 12 2.75 8.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -85,7 +95,7 @@ export default function TrustScoreCard({ findings, filterPacks }: Props) {
 						{t("failing", { count: failing.length })}
 					</span>
 					<ul className="mt-1 space-y-0.5">
-						{failing.slice(0, 5).map((f) => (
+						{failing.map((f) => (
 							<li key={f.id} className="flex items-center gap-1.5 text-[11px] text-content-muted">
 								<svg className="h-2.5 w-2.5 text-red-500" viewBox="0 0 16 16" fill="none">
 									<path d="M4.75 4.75l6.5 6.5M11.25 4.75l-6.5 6.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />

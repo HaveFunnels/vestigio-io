@@ -28,7 +28,10 @@ const DEFAULT_VIEWS = [
 		name: "on_fire",
 		icon: "Flame",
 		color: "#ef4444",
-		filters: { severity: ["critical", "high"], polarity: "negative", change: ["new_issue", "regression"] },
+		// "Pegando fogo" — any active critical/high negative finding.
+		// Removed the change-class restriction (new_issue/regression) so
+		// ongoing high-impact problems don't fall off after the first cycle.
+		filters: { severity: ["critical", "high"], polarity: "negative" },
 		sortBy: "impact_desc",
 		groupBy: null,
 		order: 0,
@@ -164,6 +167,24 @@ export async function GET(request: Request) {
 			})
 		);
 		views = await Promise.all(creates);
+	} else {
+		// Migrate already-seeded default `on_fire` views to drop the legacy
+		// `change` filter. Existing users had it baked in at first GET and
+		// the filter caused critical findings to disappear after cycle 1.
+		const onFireDefault = views.find(
+			(v) => v.isDefault && v.name === "on_fire",
+		);
+		if (onFireDefault) {
+			const f = (onFireDefault.filters as Record<string, unknown>) || {};
+			if (Array.isArray(f.change)) {
+				const { change: _drop, ...rest } = f;
+				const updated = await prisma.savedView.update({
+					where: { id: onFireDefault.id },
+					data: { filters: rest as any },
+				});
+				views = views.map((v) => (v.id === updated.id ? updated : v));
+			}
+		}
 	}
 
 	return NextResponse.json({ views, currentUserId: userId });

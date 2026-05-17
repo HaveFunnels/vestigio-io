@@ -111,6 +111,7 @@ export function compoundFindingsToChains(
 			firstSeenAt: null,
 		}));
 
+		const topLink = [...links].sort((a, b) => b.impactCents - a.impactCents)[0];
 		return {
 			surface: cf.affected_surfaces[0] || "/",
 			links,
@@ -118,6 +119,7 @@ export function compoundFindingsToChains(
 			temporalPattern: "sequential" as const,
 			narrative: cf.narrative,
 			firstDetectedAt: null,
+			headline: topLink?.title ?? null,
 		};
 	});
 }

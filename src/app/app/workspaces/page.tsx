@@ -209,6 +209,7 @@ function CrossSignalSection() {
             temporalPattern={chain.temporalPattern}
             firstDetectedAt={chain.firstDetectedAt}
             currency={currency}
+            headline={chain.headline}
           />
         ))}
         {!expanded && chains.length > 2 && (

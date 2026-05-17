@@ -165,6 +165,13 @@ export interface CrossSignalChain {
 	narrative: string;
 	/** Earliest finding in this chain */
 	firstDetectedAt: string | null;
+	/**
+	 * Top-impact link's title — used as a one-line, in-the-eye summary
+	 * inline with the surface row in cross-signal cards. Pre-computed
+	 * server-side so the dashboard widget and the chain card share the
+	 * same headline without duplicating logic.
+	 */
+	headline?: string | null;
 }
 
 /**

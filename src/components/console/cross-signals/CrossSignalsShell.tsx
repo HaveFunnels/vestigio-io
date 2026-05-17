@@ -254,6 +254,7 @@ export default function CrossSignalsShell({ chains, currency = "USD" }: Props) {
 						temporalPattern={chain.temporalPattern}
 						firstDetectedAt={chain.firstDetectedAt}
 						currency={currency}
+						headline={chain.headline}
 					/>
 				))}
 			</div>

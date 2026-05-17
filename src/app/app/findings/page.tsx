@@ -10,7 +10,7 @@ import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import VerificationBadge from "@/components/console/VerificationBadge";
-import ChangeBadge from "@/components/console/ChangeBadge";
+import { getPackStyle } from "@/lib/pack-colors";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
@@ -582,12 +582,6 @@ export default function FindingsPage() {
 			render: (row) => <VerificationBadge value={row.verification_maturity} />,
 		},
 		{
-			key: "change",
-			label: t("filters.change_class.label"),
-			className: "w-28",
-			render: (row) => <ChangeBadge value={row.change_class} />,
-		},
-		{
 			key: "impact",
 			label: tc("columns.est_impact"),
 			className: "w-44",
@@ -607,12 +601,17 @@ export default function FindingsPage() {
 		{
 			key: "pack",
 			label: tc("columns.pack"),
-			className: "w-20",
-			render: (row) => (
-				<span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
-					{packLabels[row.pack] || row.pack}
-				</span>
-			),
+			className: "w-32",
+			render: (row) => {
+				const style = getPackStyle(row.pack);
+				const label = packLabels[row.pack] || row.pack.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+				return (
+					<span className={`inline-flex items-center gap-1.5 rounded-full border border-edge px-2 py-0.5 text-xs ${style.text}`}>
+						<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
+						<span className="truncate">{label}</span>
+					</span>
+				);
+			},
 		},
 		{
 			key: "surface",

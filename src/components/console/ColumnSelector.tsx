@@ -25,7 +25,6 @@ export const AVAILABLE_COLUMNS: ColumnConfig[] = [
 	{ key: "impact", labelKey: "impact", defaultOn: true },
 	{ key: "pack", labelKey: "pack", defaultOn: true },
 	{ key: "surface", labelKey: "surface", defaultOn: true },
-	{ key: "change", labelKey: "change", defaultOn: true },
 	{ key: "verification", labelKey: "verification", defaultOn: false },
 	{ key: "root_cause", labelKey: "root_cause", defaultOn: false },
 	{ key: "confidence_tier", labelKey: "confidence_tier", defaultOn: false },

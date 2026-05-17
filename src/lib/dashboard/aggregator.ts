@@ -1077,6 +1077,11 @@ function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalC
 		const dates = group.map((f) => f.createdAt).filter(Boolean).sort((a, b) => a.getTime() - b.getTime());
 		const firstDetectedAt = dates.length > 0 ? dates[0].toISOString() : null;
 
+		// Headline = top-impact link's title. Gives the user a one-line
+		// reason "why this surface is here" alongside the impact amount.
+		const topLink = [...links].sort((a, b) => b.impactCents - a.impactCents)[0];
+		const headline = topLink?.title ?? null;
+
 		const chain: CrossSignalChain = {
 			surface,
 			links,
@@ -1084,6 +1089,7 @@ function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalC
 			temporalPattern,
 			narrative: "", // filled by narrative generator
 			firstDetectedAt,
+			headline,
 		};
 
 		// Generate narrative inline (avoid circular import)

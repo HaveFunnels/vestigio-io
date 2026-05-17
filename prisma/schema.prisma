@@ -347,6 +347,15 @@ model AuditCycle {
   lastError      String?
   lastErrorAt    DateTime?
   retryCount     Int       @default(0)
+  // Wave 18z — heartbeat-on-claim model for orphan re-dispatch.
+  // The worker writes NOW() here every WORKER_HEARTBEAT_MS while the
+  // cycle is running. The heal cron uses heartbeat freshness instead
+  // of createdAt to decide if a cycle is truly orphaned, eliminating
+  // the race where a slow worker is about to claim a pending cycle
+  // while the heal cron concurrently re-dispatches it.
+  // Null for cycles created before this column existed — those fall
+  // back to the legacy createdAt-based cutoff.
+  lastHeartbeatAt DateTime?
   // Wave 16 — cached ProjectionResult (findings + actions + workspaces +
   // change_report + maps) serialized to JSONB. Written by audit-runner
   // after projectAll completes. /api/projections + layout.tsx read this
@@ -372,6 +381,10 @@ model AuditCycle {
   //   findMany({ status: 'running', createdAt: { lt: cutoff } })
   //   findMany({ status: 'pending', createdAt: { lt: cutoff } })
   @@index([status, createdAt])
+  // Wave 18z — heal cron now also filters by heartbeat freshness for
+  // running cycles. Compound index covers
+  //   findMany({ status: 'running', lastHeartbeatAt: { lt: hbCutoff } }).
+  @@index([status, lastHeartbeatAt])
   // Per-org dashboards / billing rollups.
   @@index([organizationId, createdAt])
 }

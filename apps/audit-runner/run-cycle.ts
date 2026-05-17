@@ -234,11 +234,44 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		};
 	}
 
-	// 2. Mark running
+	// 2. Mark running + seed heartbeat so the heal cron immediately
+	// sees this row as alive instead of having to wait for the first
+	// 30s tick. Without the seed the cycle would be heartbeat-NULL
+	// for up to WORKER_HEARTBEAT_MS, during which a heal pass could
+	// (in theory) re-dispatch it via the legacy createdAt path.
 	await prisma.auditCycle.update({
 		where: { id: cycleId },
-		data: { status: "running" },
+		data: { status: "running", lastHeartbeatAt: new Date() },
 	});
+
+	// Wave 18z — heartbeat timer. Writes NOW() to lastHeartbeatAt
+	// every WORKER_HEARTBEAT_MS so healStuckCycles can detect a
+	// truly-orphaned cycle (worker died, DB connection lost) within
+	// STUCK_RUNNING_HEARTBEAT_MS instead of the 25min legacy window,
+	// while never re-dispatching an actively-running cycle.
+	// Defensive: a stale connection during the heartbeat write must
+	// not crash the worker — the legacy createdAt cutoff is still a
+	// safety net.
+	const heartbeatIntervalMs = Number(process.env.WORKER_HEARTBEAT_MS) || 30_000;
+	const heartbeatTimer = setInterval(() => {
+		prisma.auditCycle
+			.update({
+				where: { id: cycleId },
+				data: { lastHeartbeatAt: new Date() },
+			})
+			.catch((err) => {
+				console.warn(
+					`[audit-runner ${cycleId}] heartbeat write failed (non-fatal):`,
+					err instanceof Error ? err.message : err,
+				);
+			});
+	}, heartbeatIntervalMs);
+	// Don't hold the event loop open if the cycle exits without
+	// clearing — Node will already exit when runCycle returns and
+	// the worker-loop awaits, but this is belt-and-suspenders.
+	if (typeof heartbeatTimer.unref === "function") {
+		heartbeatTimer.unref();
+	}
 
 	try {
 		const env = cycle.environment;
@@ -2008,6 +2041,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			durationMs: Date.now() - startedAt,
 			error: errorMsg,
 		};
+	} finally {
+		// Always stop the heartbeat timer when runCycle returns,
+		// regardless of success or failure. Otherwise the timer
+		// keeps writing to a completed/failed row forever and
+		// pins the process.
+		clearInterval(heartbeatTimer);
 	}
 }
 
@@ -2026,6 +2065,14 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 // catching truly hung cycles (process killed mid-flight, never
 // resumed) within an acceptable window.
 const STUCK_RUNNING_AFTER_MS = 25 * 60 * 1000; // 25 minutes
+// Wave 18z — heartbeat-staleness cutoff for running cycles. Six×
+// the default WORKER_HEARTBEAT_MS (30s) so a worker that loses its
+// DB connection mid-cycle gets re-dispatched within 3min instead
+// of waiting 25min. Only applies to cycles that have written at
+// least one heartbeat — legacy in-flight cycles (lastHeartbeatAt
+// IS NULL) fall back to the createdAt-based cutoff above.
+const STUCK_RUNNING_HEARTBEAT_MS =
+	Number(process.env.STUCK_RUNNING_HEARTBEAT_MS) || 3 * 60 * 1000; // 3 minutes
 // Wave 18m — bumped 5→15 min. The previous 5min cutoff was too
 // aggressive for a latency-sensitive queue: a transient Redis hiccup
 // or a worker scaling event could leave a pending cycle untouched
@@ -2047,13 +2094,27 @@ const ORPHANED_PENDING_AFTER_MS = 15 * 60 * 1000; // 15 minutes
  * before stampCycleError could write.
  */
 export async function healStuckCycles(): Promise<number> {
-	const cutoff = new Date(Date.now() - STUCK_RUNNING_AFTER_MS);
+	const createdAtCutoff = new Date(Date.now() - STUCK_RUNNING_AFTER_MS);
+	const heartbeatCutoff = new Date(Date.now() - STUCK_RUNNING_HEARTBEAT_MS);
+	// Wave 18z — heartbeat-on-claim predicate. Two branches:
+	//   1. lastHeartbeatAt IS NULL AND createdAt < createdAtCutoff
+	//      (legacy / pre-column cycles or never-heartbeated)
+	//   2. lastHeartbeatAt < heartbeatCutoff
+	//      (heartbeated at some point but now stale → worker died)
+	// An actively-heartbeating cycle matches NEITHER branch and is
+	// safe from re-dispatch even if createdAt is older than 25min.
 	const result = await prisma.auditCycle.updateMany({
-		where: { status: "running", createdAt: { lt: cutoff } },
+		where: {
+			status: "running",
+			OR: [
+				{ lastHeartbeatAt: null, createdAt: { lt: createdAtCutoff } },
+				{ lastHeartbeatAt: { lt: heartbeatCutoff } },
+			],
+		},
 		data: {
 			status: "failed",
 			completedAt: new Date(),
-			lastError: `heal-cron: auto-failed after ${Math.round(STUCK_RUNNING_AFTER_MS / 60000)}min stuck in running state`,
+			lastError: `heal-cron: auto-failed (heartbeat stale >${Math.round(STUCK_RUNNING_HEARTBEAT_MS / 60000)}min or createdAt >${Math.round(STUCK_RUNNING_AFTER_MS / 60000)}min without heartbeat)`,
 			lastErrorAt: new Date(),
 		},
 	});

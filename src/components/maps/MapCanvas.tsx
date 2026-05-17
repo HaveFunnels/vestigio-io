@@ -10,7 +10,6 @@ import {
 	MiniMap,
 	useReactFlow,
 	type NodeMouseHandler,
-	type Node,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { AnimatePresence, motion } from "motion/react";
@@ -678,7 +677,10 @@ function MapCanvasInner({ mapDef }: { mapDef: MapDefinition }) {
 								proOptions={{ hideAttribution: true }}
 								defaultEdgeOptions={{ type: "default" }}
 								onPaneClick={() => setHighlightedPath(null)}
-							panOnDrag={isMobile ? [1, 2] : undefined}
+								panOnDrag={isMobile ? [0, 1, 2] : undefined}
+								panOnScroll={!isMobile}
+								zoomOnPinch
+								zoomOnDoubleClick={!isMobile}
 							>
 								<Background
 									color='var(--color-border-edge, #27272a)'

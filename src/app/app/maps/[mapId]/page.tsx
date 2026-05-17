@@ -229,7 +229,7 @@ function MapCanvasHeader({
   const copilot = useCopilot();
   const tp = useTranslations("console.copilot.shared_prompts");
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-edge px-6 py-4">
+    <div className="flex items-center justify-between gap-3 border-b border-edge px-3 py-3 sm:gap-4 sm:px-6 sm:py-4">
       <div className="flex min-w-0 items-center gap-3">
         <Link
           href="/app/maps"

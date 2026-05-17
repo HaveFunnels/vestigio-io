@@ -28,6 +28,7 @@ import {
 } from './types';
 import type { DecisionChange, CycleChangeReport } from '../change-detection/types';
 import { lookupRemediation, lookupRemediationForAction } from './remediation-catalog';
+import { splitTitleIntoSteps } from './split-title';
 
 // ──────────────────────────────────────────────
 // Projection Engine
@@ -1527,13 +1528,27 @@ export function projectActions(
       // (set by the Action deriver when a catalog entry exists for
       // the source decision). Fall back to a catalog lookup by
       // action_key so actions whose deriver path doesn't populate
-      // directly still get content. Nulls all the way down only
-      // when the catalog has no entry for this inference_key.
+      // directly still get content.
+      //
+      // Wave 18s — when neither the carried-through value nor the
+      // catalog has remediation_steps (which is the common case for
+      // derived secondary actions, since their action_key strips to
+      // a decision_key that almost never matches a catalog entry
+      // keyed by inference_key), split the action title into 1–5
+      // steps. The title is already locale-resolved at projection
+      // time (engine.tr() translated it), so the resulting steps
+      // inherit the user's locale automatically — no new i18n keys
+      // needed. This lights up the drawer's "Como Corrigir" section
+      // for every action that previously rendered nothing.
       ...(() => {
         const fallback = lookupRemediationForAction(action.action_key);
+        const carried = action.remediation_steps ?? fallback?.remediation_steps ?? null;
+        const remediation_steps =
+          carried && carried.length > 0
+            ? carried
+            : splitTitleIntoSteps(action.title);
         return {
-          remediation_steps:
-            action.remediation_steps ?? fallback?.remediation_steps ?? null,
+          remediation_steps,
           estimated_effort_hours:
             action.estimated_effort_hours ??
             fallback?.estimated_effort_hours ??

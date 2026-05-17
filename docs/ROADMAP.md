@@ -2678,6 +2678,21 @@ Mitigations (priority by ROI):
 
 Companion fix already shipped (commit `db91331`): worker-loop catch now stamps `lastError = "worker-loop: <message>"` so the next time this happens we can read the cause from the DB instead of needing Railway logs.
 
+### Per-secondary impact attribution
+
+Wave 18s shipped a projection-layer fallback that splits derived secondary action titles into `remediation_steps`, lighting up the "Como Corrigir" + "Fix with AI" sections that were previously hidden. But the drawer's *Impact Breakdown* section still hides for secondaries because each one lacks an honest impact estimate — the engine emits secondaries as plain strings, and the deriver/projection can't attribute money to them without double-counting against the parent decision.
+
+Deeper fix when revisited:
+
+- **Engine output structural change**: replace `DecisionActions.secondary: string[]` with `secondary: SecondaryAction[]`, where `SecondaryAction = { title: string; inference_keys: string[] }`. The `inference_keys` carry which firing inferences triggered the prescription. Touches all 18 builders in `packages/decision/engine.ts`.
+- **Persist `inference_key` on `Action`**: pipe it through `packages/actions/deriver.ts` into the DB schema (new column on Action).
+- **Projection lookup**: replace `lookupRemediationForAction(action_key)` (which strips suffix to decision_key — almost never matches a catalog entry, since the catalog is keyed by inference_key) with `lookupRemediation(action.inference_key)`. Unlocks all 304 catalog entries for derived actions.
+- **Impact attribution**: each secondary's impact = sum of its `inference_keys`' evidence-based impact contributions. No double-counting against parent.
+
+Estimated work: 1–2 days for the structural change, plus another day to backfill the catalog with secondary-specific entries where the engine emits prescriptions that don't have a 1-to-1 inference mapping.
+
+Trigger to revisit: any customer asks "why doesn't this action show impact?" or we want the existing catalog (pt-BR remediation_steps for 304 inference_keys) to actually drive actions instead of only findings.
+
 ### Action-pack translations: complete en/de coverage for 13 packs
 
 Wave 18r audited tr() key coverage in `packages/decision/engine.ts` across 18 pack action builders. pt-BR and es have good coverage (only payment_health + 2 stray keys were missing, now fixed). en.json and de.json are missing whole packs:

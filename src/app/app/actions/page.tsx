@@ -1199,8 +1199,14 @@ function ActionDrawerContent({
 				</DrawerSection>
 			)}
 
-			{/* Fix with AI — vibecoding bridge */}
-			{action.remediation_steps && action.remediation_steps.length > 0 && (
+			{/* Fix with AI — vibecoding bridge.
+			    Wave 18s: now that derived secondaries get title-split
+			    remediation_steps, we additionally gate on category so
+			    verification actions (which aren't "fixes") don't surface
+			    the AI bridge. */}
+			{action.category !== "verification" &&
+				action.remediation_steps &&
+				action.remediation_steps.length > 0 && (
 				<FixWithAiSection action={action} />
 			)}
 

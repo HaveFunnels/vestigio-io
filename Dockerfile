@@ -59,23 +59,36 @@ COPY --from=deps /root/.cache/ms-playwright /root/.cache/ms-playwright
 COPY . .
 
 # Wave 18z — schema push moved from boot CMD to build phase so the runtime
-# image no longer needs the ~43MB `prisma` CLI npm package. Operator action:
-# set DATABASE_URL as a build-time variable on the Railway web service
-# (Settings → Variables → "Add Build Variable") so Docker exposes it as the
-# ARG below. Without the arg, the push is skipped — local `docker build`
-# without DB access still succeeds, and CI can opt in by passing
-# `--build-arg DATABASE_URL=...`. `db push --skip-generate` is idempotent
-# (no-op when schema matches), so re-running on every image build is safe.
+# image no longer needs the ~43MB `prisma` CLI npm package.
+#
+# Two ARGs in play:
+#   - DATABASE_URL: the service's runtime URL (Railway auto-passes to ARG of
+#     same name). On Railway this points to *.railway.internal hosts which
+#     are NOT resolvable from the build sandbox. So we can't push against it.
+#   - BUILD_DATABASE_URL: the operator-set build-time URL using Postgres's
+#     PUBLIC proxy (Railway exposes it on the Postgres service as
+#     `DATABASE_PUBLIC_URL`, e.g. `interchange.proxy.rlwy.net:26390`).
+#     This DOES resolve at build time.
+#
+# The push runs when BUILD_DATABASE_URL is set; otherwise skipped (local
+# docker-build with no DB access still succeeds, and the operator can run
+# `prisma db push` once manually if they ever skip the build-time path).
+# `db push --skip-generate` is idempotent (no-op when schema matches), so
+# re-running on every image build is safe.
 ARG DATABASE_URL
+ARG BUILD_DATABASE_URL
 
 # Generate Prisma client and build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
-RUN if [ -n "$DATABASE_URL" ]; then \
-      echo "[build] Running prisma db push against build-time DATABASE_URL"; \
+RUN if [ -n "$BUILD_DATABASE_URL" ]; then \
+      echo "[build] Running prisma db push against BUILD_DATABASE_URL (public proxy)"; \
+      DATABASE_URL="$BUILD_DATABASE_URL" npx prisma db push --skip-generate; \
+    elif [ -n "$DATABASE_URL" ] && ! echo "$DATABASE_URL" | grep -q ".railway.internal"; then \
+      echo "[build] Running prisma db push against DATABASE_URL"; \
       npx prisma db push --skip-generate; \
     else \
-      echo "[build] DATABASE_URL build arg not set — skipping prisma db push (runtime must reconcile schema another way)"; \
+      echo "[build] No build-reachable DB URL set — skipping prisma db push (operator must reconcile schema manually if migration is required)"; \
     fi
 RUN npm run build
 

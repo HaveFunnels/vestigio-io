@@ -2617,7 +2617,9 @@
 					"new_findings": "new findings",
 					"regressions": "regressions",
 					"resolved": "resolved",
-					"verifications_confirmed": "verifications confirmed"
+					"verifications_confirmed": "verifications confirmed",
+					"stable_title": "Site stable this cycle",
+					"stable_subtitle": "No regressions, new issues, or resolutions since the last scan."
 				},
 				"ad_spend": {
 					"name": "Ad Spend",

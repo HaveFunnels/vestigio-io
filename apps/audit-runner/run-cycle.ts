@@ -1800,14 +1800,27 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			// /api/inventory with a single bulk update right after the
 			// findings are written. Best-effort: failure logs but doesn't
 			// fail the cycle (inventory falls back to 0 on null aggregates).
+			//
+			// Wave 18g+ fix: previous version keyed off `f.surface` (the
+			// engine-emitted INFERENCE_SURFACES string like
+			// "/checkout, /payment (clickjack protection)") and matched
+			// against `PageInventoryItem.normalizedUrl` (a canonical URL
+			// like "https://havefunnels.com/checkout"). They never match
+			// → 0 inventory rows ever got `findingCount > 0` on
+			// havefunnels (60 rows, 0 with count, despite 22 findings).
+			// The reliable attribution is `f.source_url`, which is the
+			// actual URL we crawled when the finding was inferred. About
+			// half of findings carry it; the rest are sitewide or
+			// behavioral aggregates with no single source page, which is
+			// the correct semantic for "leave it off the per-page count".
 			try {
-				const findingCountBySurface = new Map<string, number>();
+				const findingCountByUrl = new Map<string, number>();
 				for (const f of projections.findings) {
 					// Mirror the polarity filter used by the old groupBy.
 					if (f.polarity === 'positive') continue;
-					const surface = f.surface;
-					if (!surface) continue;
-					findingCountBySurface.set(surface, (findingCountBySurface.get(surface) ?? 0) + 1);
+					const url = f.source_url;
+					if (!url || !/^https?:\/\//.test(url)) continue;
+					findingCountByUrl.set(url, (findingCountByUrl.get(url) ?? 0) + 1);
 				}
 				const now = new Date();
 				// Reset all rows for this env to 0, then bump matched ones.
@@ -1817,11 +1830,16 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					where: { environmentRef: env.id },
 					data: { findingCount: 0 },
 				});
-				for (const [surface, count] of findingCountBySurface) {
+				for (const [url, count] of findingCountByUrl) {
 					await prisma.pageInventoryItem.updateMany({
-						where: { environmentRef: env.id, normalizedUrl: surface },
+						where: { environmentRef: env.id, normalizedUrl: url },
 						data: { findingCount: count, aggregatesUpdatedAt: now },
 					});
+				}
+				if (findingCountByUrl.size > 0) {
+					console.log(
+						`[audit-runner ${cycleId}] findingCount denorm: ${findingCountByUrl.size} URL(s) updated`,
+					);
 				}
 			} catch (err) {
 				console.warn(`[audit-runner ${cycleId}] findingCount denorm failed:`, err);

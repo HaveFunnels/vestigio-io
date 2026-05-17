@@ -1528,7 +1528,35 @@ export function projectActions(
     const operationalStatus = resolveOperationalStatus(action.source_decisions, category, opportunityByDecisionRef);
 
     // Phase 1B: Resolve effort_hint from domain actions via merged_from
-    const effortHint = resolveEffortHint(action.merged_from, domainActionByRef);
+    let effortHint = resolveEffortHint(action.merged_from, domainActionByRef);
+    // Wave 18g+ fallback: domain actions almost never carry an
+    // effort_hint today, so resolveEffortHint returns null for ~100% of
+    // actions. The /app/actions scatter plot defaults every dot to
+    // x=0.5 (medium effort) in that case, which means the "Vitórias
+    // Rápidas" quadrant (left side = low effort + high impact) is
+    // empty by construction even when fast wins exist.
+    //
+    // When the catalog ships an estimated_effort_hours instead, bucket
+    // it into the 5-point hint scale the scatter plot consumes. Keeps
+    // the existing domain-action source winning when it ever fires.
+    if (!effortHint) {
+      const hours =
+        action.estimated_effort_hours ??
+        lookupRemediationForAction(action.action_key)?.estimated_effort_hours ??
+        null;
+      if (hours != null) {
+        effortHint =
+          hours < 4
+            ? 'trivial'
+            : hours < 12
+              ? 'low'
+              : hours < 40
+                ? 'medium'
+                : hours < 100
+                  ? 'high'
+                  : 'very_high';
+      }
+    }
 
     // Phase 1B: Change class from change report (cross-reference via action_key)
     const changeClass = buildActionChangeClass(action.action_key, result);

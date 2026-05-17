@@ -21,6 +21,7 @@ import {
 	CheckCircleIcon as CheckCircle,
 	PlusIcon as Plus,
 	SealCheckIcon as ShieldCheck,
+	ShieldCheckIcon as Shield,
 } from "@phosphor-icons/react/dist/ssr";
 import { useTranslations } from "next-intl";
 import {
@@ -122,6 +123,17 @@ function WhatChangedCardComponent({ data }: WidgetProps) {
 		caption,
 	} = data.changeReport;
 
+	// When the site has been genuinely stable across cycles, the four
+	// sections all show 0 and the card reads as "broken / empty" to the
+	// user. Switch to a celebratory stable-state panel so stability
+	// looks intentional, not absent. The grid view returns the moment
+	// anything moves.
+	const isAllStable =
+		newFindings.length === 0 &&
+		regressions.length === 0 &&
+		resolved.length === 0 &&
+		verificationsConfirmed === 0;
+
 	return (
 		<div className='flex h-full flex-col p-5'>
 			{/* Eyebrow */}
@@ -130,36 +142,50 @@ function WhatChangedCardComponent({ data }: WidgetProps) {
 				<span className='text-content-faint'>{t("period")}</span>
 			</div>
 
-			{/* Four sections in a 2x2 grid */}
-			<div className='mt-3 grid flex-1 grid-cols-1 gap-3 md:grid-cols-2'>
-				<Section
-					icon={<Plus size={12} weight='bold' />}
-					label={t("new_findings")}
-					count={newFindings.length}
-					tone='added'
-					entries={newFindings}
-				/>
-				<Section
-					icon={<ArrowsClockwise size={12} weight='bold' />}
-					label={t("regressions")}
-					count={regressions.length}
-					tone='regressed'
-					entries={regressions}
-				/>
-				<Section
-					icon={<CheckCircle size={12} weight='bold' />}
-					label={t("resolved")}
-					count={resolved.length}
-					tone='resolved'
-					entries={resolved}
-				/>
-				<Section
-					icon={<ShieldCheck size={12} weight='bold' />}
-					label={t("verifications_confirmed")}
-					count={verificationsConfirmed}
-					tone='verified'
-				/>
-			</div>
+			{isAllStable ? (
+				<div className='mt-3 flex flex-1 flex-col items-center justify-center gap-2 text-center'>
+					<span className='flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400'>
+						<Shield size={16} weight='bold' />
+					</span>
+					<p className='text-sm font-medium text-content'>
+						{t("stable_title")}
+					</p>
+					<p className='max-w-[28ch] text-[11px] leading-snug text-content-secondary'>
+						{t("stable_subtitle")}
+					</p>
+				</div>
+			) : (
+				/* Four sections in a 2x2 grid */
+				<div className='mt-3 grid flex-1 grid-cols-1 gap-3 md:grid-cols-2'>
+					<Section
+						icon={<Plus size={12} weight='bold' />}
+						label={t("new_findings")}
+						count={newFindings.length}
+						tone='added'
+						entries={newFindings}
+					/>
+					<Section
+						icon={<ArrowsClockwise size={12} weight='bold' />}
+						label={t("regressions")}
+						count={regressions.length}
+						tone='regressed'
+						entries={regressions}
+					/>
+					<Section
+						icon={<CheckCircle size={12} weight='bold' />}
+						label={t("resolved")}
+						count={resolved.length}
+						tone='resolved'
+						entries={resolved}
+					/>
+					<Section
+						icon={<ShieldCheck size={12} weight='bold' />}
+						label={t("verifications_confirmed")}
+						count={verificationsConfirmed}
+						tone='verified'
+					/>
+				</div>
+			)}
 
 			{/* Caption strip */}
 			<p className='mt-2 line-clamp-1 border-t border-edge/40 pt-2 text-[11px] leading-snug text-content-secondary'>

@@ -13,6 +13,19 @@ import type { EvidenceQuery } from './store';
 /**
  * Map a domain Evidence object to a Prisma row for upsert.
  */
+/**
+ * Engine cycle refs are stored as "audit_cycle:<cuid>". The AuditCycle
+ * FK (auditCycleId) needs the bare cuid. Strip the prefix safely.
+ * Returns null when the ref doesn't follow the expected shape so a
+ * malformed ref can't bind to a non-existent FK.
+ */
+function extractAuditCycleId(cycleRef: string): string | null {
+  const PREFIX = 'audit_cycle:';
+  if (!cycleRef.startsWith(PREFIX)) return null;
+  const id = cycleRef.slice(PREFIX.length);
+  return id || null;
+}
+
 function toPrismaData(e: Evidence): Record<string, unknown> {
   return {
     id: e.id,
@@ -23,6 +36,11 @@ function toPrismaData(e: Evidence): Record<string, unknown> {
     environmentRef: e.scoping.environment_ref,
     pathScope: e.scoping.path_scope ?? null,
     cycleRef: e.cycle_ref,
+    // FK derived from cycleRef. Pre-fix this column was never set in
+    // the raw SQL INSERT path, so every Evidence→AuditCycle join by
+    // FK returned zero (admin org-detail "evidence count" column,
+    // future cascade prune). Now derived from the engine's string ref.
+    auditCycleId: extractAuditCycleId(e.cycle_ref),
     observedAt: e.freshness.observed_at,
     freshUntil: e.freshness.fresh_until ?? null,
     freshnessState: e.freshness.freshness_state,
@@ -113,7 +131,7 @@ export class PrismaEvidenceStore {
    * chunked raw SQL (ceil(N/80) round-trips). For 300 evidence items this
    * reduces persistence from ~10-15s to <500ms (10-50x improvement).
    *
-   * Batch size 80: each row has 19 columns → 80 × 19 = 1520 params per
+   * Batch size 80: each row has 20 columns → 80 × 20 = 1600 params per
    * statement, well within PostgreSQL's 65535 parameter limit.
    */
   async addMany(items: Evidence[]): Promise<void> {
@@ -162,8 +180,9 @@ export class PrismaEvidenceStore {
           data.contentHash,       // $baseIdx+17
           data.createdAt,         // $baseIdx+18
           data.updatedAt,         // $baseIdx+19
+          data.auditCycleId,      // $baseIdx+20
         );
-        const placeholders = Array.from({ length: 19 }, (_, i) => `$${baseIdx + i + 1}`);
+        const placeholders = Array.from({ length: 20 }, (_, i) => `$${baseIdx + i + 1}`);
         valueRows.push(`(${placeholders.join(', ')})`);
       }
 
@@ -173,7 +192,7 @@ export class PrismaEvidenceStore {
           "workspaceRef", "environmentRef", "pathScope", "cycleRef",
           "observedAt", "freshUntil", "freshnessState", "stalenessReason",
           "sourceKind", "collectionMethod", "qualityScore", "payload",
-          "contentHash", "createdAt", "updatedAt"
+          "contentHash", "createdAt", "updatedAt", "auditCycleId"
         )
         VALUES ${valueRows.join(',\n               ')}
         ON CONFLICT ("cycleRef", "evidenceKey") DO UPDATE SET
@@ -191,6 +210,7 @@ export class PrismaEvidenceStore {
           "qualityScore"     = EXCLUDED."qualityScore",
           "payload"          = EXCLUDED."payload",
           "contentHash"      = EXCLUDED."contentHash",
+          "auditCycleId"     = COALESCE(EXCLUDED."auditCycleId", "Evidence"."auditCycleId"),
           "updatedAt"        = NOW()
       `;
 

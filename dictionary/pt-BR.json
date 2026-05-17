@@ -2636,7 +2636,9 @@
 					"new_findings": "novas descobertas",
 					"regressions": "regressões",
 					"resolved": "resolvidas",
-					"verifications_confirmed": "verificações confirmadas"
+					"verifications_confirmed": "verificações confirmadas",
+					"stable_title": "Site estável neste ciclo",
+					"stable_subtitle": "Nenhuma regressão, novo problema ou resolução desde a última varredura."
 				},
 				"ad_spend": {
 					"name": "Ad Spend",

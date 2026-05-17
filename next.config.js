@@ -13,6 +13,19 @@ const nextConfig = {
 		// Skip type checking during builds — check separately in CI
 		ignoreBuildErrors: true,
 	},
+	// Tree-shake icon and date libraries at import time. Without this, every
+	// `import { Foo } from "@phosphor-icons/react"` pulls the full barrel
+	// export into the standalone bundle (~57MB phosphor, ~38MB lucide, ~24MB
+	// date-fns locally). Next.js rewrites these to direct module-level imports
+	// per the optimizePackageImports allowlist — see Wave 18z (docs/ROADMAP.md)
+	// for the ~80-100MB image-size win this targets.
+	experimental: {
+		optimizePackageImports: [
+			"@phosphor-icons/react",
+			"lucide-react",
+			"date-fns",
+		],
+	},
 	// Exclude Node.js-only modules from client bundles.
 	// playwright/playwright-core are transitively imported via:
 	//   "use client" page → console-data → mcp-client → McpServer → workers/verification → playwright

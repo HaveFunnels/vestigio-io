@@ -58,9 +58,25 @@ RUN npm ci --legacy-peer-deps
 COPY --from=deps /root/.cache/ms-playwright /root/.cache/ms-playwright
 COPY . .
 
+# Wave 18z — schema push moved from boot CMD to build phase so the runtime
+# image no longer needs the ~43MB `prisma` CLI npm package. Operator action:
+# set DATABASE_URL as a build-time variable on the Railway web service
+# (Settings → Variables → "Add Build Variable") so Docker exposes it as the
+# ARG below. Without the arg, the push is skipped — local `docker build`
+# without DB access still succeeds, and CI can opt in by passing
+# `--build-arg DATABASE_URL=...`. `db push --skip-generate` is idempotent
+# (no-op when schema matches), so re-running on every image build is safe.
+ARG DATABASE_URL
+
 # Generate Prisma client and build Next.js
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
+RUN if [ -n "$DATABASE_URL" ]; then \
+      echo "[build] Running prisma db push against build-time DATABASE_URL"; \
+      npx prisma db push --skip-generate; \
+    else \
+      echo "[build] DATABASE_URL build arg not set — skipping prisma db push (runtime must reconcile schema another way)"; \
+    fi
 RUN npm run build
 
 # ── Runner ───────────────────────────────────
@@ -93,11 +109,10 @@ COPY --from=deps /app/node_modules ./node_modules
 # win (deps stage only has the unpopulated client package).
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-# Prisma CLI (devDep, not in deps stage). Needed at runtime for the
-# auto-migrate step in the web CMD (`prisma db push`). Without this,
-# `npx prisma` would fetch the latest CLI from npm on each boot and
-# pull breaking-change versions (Prisma 7 dropped schema `url`).
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+# Wave 18z — Prisma CLI dropped from the runtime image (~43MB saved). Schema
+# reconciliation moved to the builder stage (`prisma db push` runs there when
+# DATABASE_URL build arg is set). The Prisma client (@prisma/client + .prisma)
+# still ships at runtime — only the standalone CLI package is gone.
 COPY --from=builder /root/.cache/ms-playwright /root/.cache/ms-playwright
 
 # Worker source files — imported at runtime by tsx.
@@ -121,13 +136,9 @@ EXPOSE 3000 3001
 # Unified entry point:
 #   SERVICE_ROLE=worker  →  audit-runner worker loop (queue consumer).
 #   anything else (including unset)  →  Next.js standalone server.
-# Web service runs `prisma db push` on boot so Prisma schema changes
-# land without a separate migration step (fixes drift like wave-5
-# `Environment.activated` that previously required manual intervention).
-# `db push` is idempotent — a no-op when schema already matches, so
-# replica races are safe. Without `--accept-data-loss`, destructive
-# changes (dropped cols) fail the start and Railway rolls back; this
-# is the intended safety net.
+# Wave 18z — schema reconciliation moved from boot to the Docker builder
+# stage (see ARG DATABASE_URL above). The runtime no longer carries the
+# Prisma CLI, so this CMD is a pure `node server.js` for the web role.
 # `exec` ensures the child process becomes PID 1 so SIGTERM from Railway
 # reaches Next.js / worker directly for graceful drain.
-CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else node node_modules/prisma/build/index.js db push && exec node server.js; fi"]
+CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else exec node server.js; fi"]

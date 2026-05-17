@@ -79,7 +79,6 @@ These are env vars or external setups that the codebase can't ship for you. Each
 | ~~24 Additional Bugs (Deep Code Review)~~ | **✅ All 24 fixed 2026-05-02** — 6 CRITICAL (trust score clickjack, formExcessive, coherence penalty, MCP tenant isolation, Nuvemshop OAuth, chat actions ownership), 10 HIGH (conversion_proximity, impact retention/loss, handoff_returned, pre-penalty actions, integration source detection, admin params, Stripe bulk-decrypt, config secret clearing, invite accept, SSE cache), 8 MEDIUM (coherence normalization, asymmetric uncertainty, policy abandon, revenue recovery gate, trust max_score, HMAC timing, fork author, budget TOCTOU). | Wave 7.11+ |
 | ~~Activate Declared-but-Unimplemented Packs~~ | **✅ Shipped 2026-05-03** — Channel Integrity (`is_channel_integrity_compromised`), Discoverability (`is_discoverability_limiting_growth`), Brand Integrity (`is_brand_integrity_at_risk`): 3 `produceDecision()` calls added, 12 decision keys, workspace projections, perspective assignments, i18n (4 langs). Fixed missing `INFERENCE_TO_PACK` entries for `open_redirect_indicator` + Wave 4.1 cybersecurity findings. | Wave 7.12 |
 | ~~Payment Health & Involuntary Churn Pack~~ | **✅ Shipped 2026-05-03** — 4 signals (`failed_payment_rate_elevated`, `subscriber_churn_rate_elevated`, `mrr_available`, `payment_health_data_present`), 3 inferences + 3 `InferenceCategory` enum values, 3 impact baselines, 2 root causes (`payment_infrastructure_weakness`, `subscriber_retention_failure`), 3 remediation entries, `INFERENCE_TO_PACK` mappings, pack decision gated on Stripe data, pack eligibility, question key `is_payment_health_creating_revenue_risk` with 3 outcomes, i18n (en + pt-BR). | Wave 8.1 |
-| Dark Pattern & Compliance Risk Pack | **Not started** — `urgency_dark_pattern` signal exists as foundation. DSA Art. 25 enforcement ramping 2026. Fines up to 4% global revenue. | Wave 8.2 |
 | Content Freshness & Decay Pack | **Not started** — `copy_staleness` enrichment exists (Wave 3.10), `asyncGetNthRecent()` built but never called. Content half-life collapsed to 6 months in AI era. | Wave 8.3 |
 | ~~Inventory backend — race & resilience bugs~~ | **✅ Shipped 2026-05-12** — `evidence_key` now UUID-backed (no Date.now()+counter collisions). Classification + edge-scoring chunked loops track rejections explicitly; >50% chunk failure stamps `AuditCycle.lastError`. Outer classification catch also stamps the error instead of swallowing it. | Wave 9.1 |
 | Inventory backend — state-of-truth refactors | **Not started** — Residual from 2026-05-12 inventory hardening sweep. (a) 3 sources of truth for page state: `pageType` (regex), `classifiedPageType` (multi-signal), `freshnessState` — pick one as authoritative. (b) Carry-forward without source-hash verify — clones evidence rows without checking original cycle hash. (c) `Evidence.payload` is `@db.Text` JSON, re-parsed on every lookup — migrate to `Json` column. (d) Regex-first classification — regex is the always-available signal so it became primary instead of tiebreaker; rebalance the voter. | Wave 9.2 |
@@ -1467,7 +1466,7 @@ Feature-flag gated rollout with a kill switch. Order:
 | **5** | Continuous Incremental Engine | Redis queue, worker service, leader election, activation flow, incremental engine, scheduler | ✅ Fases 1-3 shipped |
 | **—** | Marketing/SEO | Homepage, /lp funnel, structured data, OG images, hreflang | ✅ All shipped |
 | **7** | Scaling & Moat Deepening | ✅ 7.11 critical fixes (15+24 bugs), ✅ 7.12 activate 3 packs. Open: batch writes, CWV, trends, recovery, webhooks, maps | **Active** |
-| **8** | New Analysis Packs | ✅ 8.1 Payment Health. Open: Dark Pattern & Compliance, Content Freshness | **Active** |
+| **8** | New Analysis Packs | ✅ 8.1 Payment Health, ✅ 8.3 Content Freshness. Open: TBD | **Active** |
 | **10** | Workspaces UI/UX Audit | 7 fixes: Cross-Signal i18n, perspective breadcrumb, unified card styling, Resumo Rápido fallback layout, workspace content depth, Pulse truncation, hardcoded locale | ✅ All shipped 2026-05-13 |
 | **11** | Workspaces Feature Depth | ~35 widget ideas across 6 workspaces + 4 cross-cutting, each tagged with availability (🟢/🟡/🔵/🟣/🔴/⚪) and locked-state UX | **Active** |
 
@@ -1968,49 +1967,6 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 
 ---
 
-### 8.2 Dark Pattern & Compliance Risk Pack ⭐
-
-| | |
-|---|---|
-| **Tag** | `engine` `collection` `frontend` `mcp` |
-| **Priority** | P1 |
-| **Status** | Not started — `urgency_scarcity` enrichment + `urgency_dark_pattern` signal already exist as foundation |
-| **Effort** | ~1-2 weeks |
-
-**Problem:** EU Digital Services Act Article 25 bans dark patterns explicitly. CPPA (California) uses automated detection tools since Feb 2026. Fines up to 4% of global revenue. E-commerce is the #1 target (70% of ADA lawsuits). No audit tool quantifies dark pattern risk in dollars.
-
-**Question key:** `are_dark_patterns_creating_legal_and_trust_risk`
-
-**Gate:** Always eligible (dark patterns are universally detectable from crawl evidence)
-
-**Existing foundation:**
-
-| Signal/Enrichment | Status |
-|-------------------|--------|
-| `urgency_scarcity` enrichment type (authentic vs manipulative) | ✅ Exists |
-| `urgency_dark_pattern` signal | ✅ Exists |
-| `urgency_authentic_absent` signal | ✅ Exists |
-| Form field analysis (pre-checked, hidden fields) | ✅ Parser extracts |
-| Copy analysis with 80+ psychology models | ✅ Guidelines KB |
-| Cancel flow analysis (Wave 3.19 cancel flow) | ✅ Flow exists |
-
-| # | Part | Description | Effort |
-|---|------|-------------|--------|
-| A | **Dark pattern detector** | New enrichment pass or extension of `semanticEnrichmentPass`. Detect: pre-checked checkboxes, confirmshaming language ("No thanks, I don't want to save money"), forced account creation before checkout, hidden cost reveals, subscription traps (>3 steps to cancel), misleading countdown timers. Haiku-based classification: `manipulative / borderline / authentic`. | High |
-| B | **Compliance risk scoring** | Map detected patterns to regulatory frameworks (DSA Art. 25, FTC Act §5, CPPA). Risk tiers: `critical` (explicit ban violation), `elevated` (borderline), `advisory`. Financial risk = revenue × fine % × likelihood. | Medium |
-| C | **Behavioral confirmation** | Cross-reference dark patterns with behavioral data: users who abandon after hidden cost reveal, sessions that backtrack after pre-checked upsell, abandon rate at forced signup wall. Upgrades confidence from `structural` to `confirmed`. | Medium |
-| D | **Commerce quantification** | Hidden cost reveals: compare cart value at product page vs checkout (Shopify data). Forced signup: behavioral abandon rate × traffic × AOV. Timer urgency: compare conversion with/without timer (behavioral A/B proxy). | Medium |
-| E | **Inference rules** | `inferHiddenCostManipulation`, `inferForcedAccountCreation`, `inferConfirmshamingLanguage`, `inferSubscriptionTrapDetected`, `inferUrgencyManipulative` (extends existing), `inferPreCheckedUpsell` | Medium |
-| F | **Pack decision + workspace** | `produceDecision()`, workspace creator, compliance risk dashboard with regulatory mapping | Medium |
-| G | **MCP integration** | `analyze_compliance_risk` tool, `compliance_audit` playbook | Low |
-| H | **i18n** | 4 languages. Compliance terminology per jurisdiction. | Low |
-
-**Compound value:** Crawl detects patterns + LLM classifies intent + Behavioral confirms impact + Commerce quantifies cost + Regulatory framework quantifies legal risk. 5-source compound finding.
-
-**Market validation:** DSA enforcement ramping in 2026, CPPA Audits Division operational since Feb 2026, 4% global revenue penalties. No competitor frames dark patterns as financial risk.
-
----
-
 ### 8.3 Content Freshness & Decay Pack ✅ COMPLETE
 
 | | |
@@ -2057,14 +2013,10 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 
 | Item | Priority | Effort | Status |
 |------|----------|--------|--------|
-| **8.1** ~~Payment Health Pack~~ | P0 | 3-5 days | **✅ Mostly shipped (Wave 18r-18u)** — MRR contraction + MCP `composePaymentHealthAnswer` in flight |
-| **8.2** Dark Pattern & Compliance Pack | P1 | 1-2 weeks | Not started — only `urgency_dark_pattern` signal exists (foundation); hidden_cost, forced_account, confirmshaming, subscription_trap, pre_checked_upsell broad coverage NOT shipped |
+| **8.1** ~~Payment Health Pack~~ | P0 | 3-5 days | **✅ Shipped (Wave 18r-18u)** |
 | **8.3** ~~Content Freshness Pack~~ | P1 | 1 week | **✅ Shipped (verified 2026-05-17)** |
 
-**Implementation order:**
-1. **8.1** Payment Health (highest ROI — Stripe data already in CommerceContext)
-2. **8.3** Content Freshness (reuses 7.1 trend engine + existing enrichment)
-3. **8.2** Dark Pattern & Compliance (most complex but highest market urgency)
+**Wave 8.2 (Dark Pattern & Compliance Pack) removed 2026-05-17** — out of customer scope.
 
 **Dependency:** ~~7.11G (Consume Stripe data in signal engine) should ship before 8.1, or be merged into 8.1A.~~ — Resolved: 7.11G shipped alongside 8.1A in Wave 18r.
 

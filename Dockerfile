@@ -154,4 +154,14 @@ EXPOSE 3000 3001
 # Prisma CLI, so this CMD is a pure `node server.js` for the web role.
 # `exec` ensures the child process becomes PID 1 so SIGTERM from Railway
 # reaches Next.js / worker directly for graceful drain.
-CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else exec node server.js; fi"]
+# Wave 18z post-mortem: Wave 18u's "drop Prisma CLI for ~43MB savings" was
+# misled — `@prisma/client` (in dependencies) has `prisma` as a transitive
+# dependency, so `npm ci --omit=dev` installs prisma at the deps stage
+# regardless of its devDependencies classification. Verified via runtime
+# `ls /app/node_modules/prisma` showing the 27MB CLI present. Since the
+# CLI is at runtime anyway, restoring the boot-time `prisma db push` as a
+# belt-and-suspenders fallback to the build-time push: if BUILD_DATABASE_URL
+# was set and the build push succeeded, this boot-time push is an
+# idempotent no-op; if the build push was skipped (BUILD_DATABASE_URL
+# unset, local docker build, etc.), this catches the schema drift.
+CMD ["sh", "-c", "if [ \"$SERVICE_ROLE\" = \"worker\" ]; then exec npm run start:worker; else node node_modules/prisma/build/index.js db push && exec node server.js; fi"]

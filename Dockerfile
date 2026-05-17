@@ -83,10 +83,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 RUN if [ -n "$BUILD_DATABASE_URL" ]; then \
       echo "[build] Running prisma db push against BUILD_DATABASE_URL (public proxy)"; \
-      DATABASE_URL="$BUILD_DATABASE_URL" npx prisma db push --skip-generate; \
+      DATABASE_URL="$BUILD_DATABASE_URL" DIRECT_URL="$BUILD_DATABASE_URL" npx prisma db push --skip-generate; \
     elif [ -n "$DATABASE_URL" ] && ! echo "$DATABASE_URL" | grep -q ".railway.internal"; then \
       echo "[build] Running prisma db push against DATABASE_URL"; \
-      npx prisma db push --skip-generate; \
+      DIRECT_URL="$DATABASE_URL" npx prisma db push --skip-generate; \
     else \
       echo "[build] No build-reachable DB URL set — skipping prisma db push (operator must reconcile schema manually if migration is required)"; \
     fi

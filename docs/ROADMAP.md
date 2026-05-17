@@ -5,6 +5,8 @@
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
 
+> **2026-05-17 audit note**: A systematic audit on this date verified that ~30 P0/P1 items previously marked "Not started" or "Data flows but no signals" had actually been shipped silently across waves 18r-18u and earlier. Status markers have been corrected in-place. The pattern: implementation often shipped without roadmap maintenance. Future audits should grep before assuming "not started" claims are accurate.
+
 ---
 
 ## How to read this document
@@ -1162,9 +1164,11 @@ Power-user features. Opt-in, never forced.
 
 ---
 
-### 4.6 Neglected Findings — Data Collected, Findings Missing
+### 4.6 Neglected Findings — Data Collected, Findings Missing ✅ COMPLETE
 
 **Goal:** Extract high-impact findings from evidence the system already collects but doesn't use. Zero new collection infrastructure needed — only signal extraction + inference functions.
+
+> **Status (2026-05-17 audit):** All six neglected-finding waves (A-F) verified shipped via grep on signal + inference engines. Spec preserved below for historical context.
 
 ---
 
@@ -1176,7 +1180,7 @@ Power-user features. Opt-in, never forced.
 | **Priority** | P1 |
 | **Effort** | Low (~1 day) |
 | **Data source** | `BehavioralSessionPayload.handoff_without_return_count`, `handoff_without_confirmation_count` |
-| **Status** | Fields collected, no signal extraction, no inference |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/signals/engine.ts:4013` emits `payment_handoff_incomplete` |
 
 | # | Finding | Signal | Impact |
 |---|---------|--------|--------|
@@ -1193,7 +1197,7 @@ Power-user features. Opt-in, never forced.
 | **Priority** | P1 |
 | **Effort** | Medium (~3-5 days) |
 | **Data source** | `AuthenticatedPageView`, `ActivationStepObserved`, `UpgradeSurfaceObserved`, `EmptyStateObserved`, `NavigationStructureObserved` |
-| **Status** | All evidence types collected, all InferenceCategory values exist in enum, 0% signal/inference implemented |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/signals/engine.ts:4028` emits `saas_activation_gap_heuristic`, inference at `packages/inference/engine.ts:4291` |
 
 | # | Finding | Signal | Impact |
 |---|---------|--------|--------|
@@ -1215,7 +1219,7 @@ Power-user features. Opt-in, never forced.
 | **Priority** | P2 |
 | **Effort** | Low-Medium (~2 days) |
 | **Data source** | `BehavioralSessionPayload.surface_oscillation_top_pairs` |
-| **Status** | Detailed pair data collected, only basic oscillation rate used |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/signals/engine.ts:3927` emits `surface_oscillation_before_dropoff` |
 
 | # | Finding | Signal | Impact |
 |---|---------|--------|--------|
@@ -1232,7 +1236,7 @@ Power-user features. Opt-in, never forced.
 | **Priority** | P2 |
 | **Effort** | Low (~1 day) |
 | **Data source** | `BrowserFailureEvent.network_errors[]`, `NetworkAnalysis` payment/trust/measurement breakdown |
-| **Status** | Errors captured without commercial impact classification |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/inference/engine.ts:4312` emits inference `network_error_weighted` with payment×3/measurement×2 weighting |
 
 | # | Finding | Signal | Impact |
 |---|---------|--------|--------|
@@ -1249,7 +1253,7 @@ Power-user features. Opt-in, never forced.
 | **Priority** | P2 |
 | **Effort** | Low (~1 day) |
 | **Data source** | `MobileVerificationResult.trust_degraded_vs_desktop` + desktop trust signal count |
-| **Status** | Boolean flag exists, no quantification |
+| **Status** | ✅ Shipped (verified 2026-05-17) — dual-source signals at `packages/signals/engine.ts:1877` (verification) + `:3161` (network), unified inference at `packages/inference/engine.ts:4329` |
 
 | # | Finding | Signal | Impact |
 |---|---------|--------|--------|
@@ -1266,6 +1270,7 @@ Power-user features. Opt-in, never forced.
 | **Priority** | P2 |
 | **Effort** | Low (~1-2 days) |
 | **Data source** | `BehavioralSessionPayload` fields with partial or no usage |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/signals/engine.ts:4067` + inference `packages/inference/engine.ts:4333` |
 
 | # | Finding | Signal | Impact |
 |---|---------|--------|--------|
@@ -1275,11 +1280,13 @@ Power-user features. Opt-in, never forced.
 
 ---
 
-### 4.7 Cross-Domain Compound Findings
+### 4.7 Cross-Domain Compound Findings ✅ COMPLETE
 
 **Goal:** Produce findings that are **only possible** because Vestigio sees data from 3+ sources simultaneously. These are the moat — no single-domain tool can replicate them.
 
 > Existing compounds (3.4) combine 2 signals within the same domain. These combine evidence from fundamentally different collection methods (crawl × pixel × integration × browser verification).
+
+> **Status (2026-05-17 audit):** All 5 compound finding types (A–E) verified shipped — `packages/composites/compound-findings.ts:494,587,667,758` covers `security_revenue_chain`, `ad_promise_reality_behavior`, `trust_hesitation_revenue`, `post_purchase_chain`, `brand_impersonation_revenue`. Detection wired into recompute + cross-signal narratives. Spec preserved below for historical context.
 
 ---
 
@@ -1472,13 +1479,13 @@ Feature-flag gated rollout with a kill switch. Order:
 
 ---
 
-### 7.1 Multi-Cycle Trend Analysis ⭐
+### 7.1 Multi-Cycle Trend Analysis ⭐ ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` `frontend` `mcp` |
 | **Priority** | P1 |
-| **Status** | Not started — spec ready |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/projections/trend-engine.ts:84` exposes `TrendAnalysis` type with pattern classification; MCP tool `get_trend_analysis` wired at `apps/mcp/tools.ts:240,695` |
 | **Effort** | ~1 week |
 
 **Problem:** Only current vs previous cycle comparison exists. Users can't see "my checkout has been degrading for 3 weeks." No competitor offers trend-based regression detection.
@@ -1494,13 +1501,13 @@ Feature-flag gated rollout with a kill switch. Order:
 
 ---
 
-### 7.2 Revenue Recovery Tracker ⭐
+### 7.2 Revenue Recovery Tracker ⭐ ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` `frontend` `mcp` |
 | **Priority** | P1 |
-| **Status** | Type scaffolded (`RevenueRecoveryEstimate`), attribution job exists, MoneyRecovered widget exists — needs cross-cycle revenue correlation |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/integrations/revenue-recovery.ts` exports `RevenueRecoveryEstimate` + `computeRevenueRecovery`; MCP tool `get_recovery_impact` at `apps/mcp/tools.ts:255,753`; widgets `MoneyRecoveredTicker.tsx` + `RecoveryBreakdown.tsx` render strong_correlation/correlation/inconclusive tiers |
 | **Effort** | ~1 week |
 
 **Problem:** When a finding is resolved, we don't track if revenue actually improved. No "before/after" proof. Proves ROI and justifies subscription renewal.
@@ -1688,40 +1695,43 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 
 ---
 
-### 7.11 Critical Fixes — Issues from Deep Analysis ⭐
+### 7.11 Critical Fixes — Issues from Deep Analysis ⭐ ✅ MOSTLY SHIPPED
 
 | | |
 |---|---|
 | **Tag** | `engine` `mcp` `collection` `infra` |
 | **Priority** | P0 |
-| **Status** | Not started — all issues identified in Deep Analysis Report (2026-05-01) |
+| **Status** | ✅ Mostly shipped (verified 2026-05-17) — 14 of 15 sub-fixes verified shipped. Only 7.11K (delete legacy `apps/platform/audit-scheduler.ts`) still pending; the file remains in the tree as DEPRECATED but uncalled. |
 | **Effort** | ~5-7 days total (15 fixes, 3 critical) |
 
 **Source:** [DEEP_ANALYSIS_REPORT.md](DEEP_ANALYSIS_REPORT.md) — comprehensive investigation of 5 core modules.
 
-| # | Fix | Module | What's Wrong | Effort |
+| # | Fix | Module | What's Wrong | Status |
 |---|-----|--------|-------------|--------|
-| A | **Fix `mobile_session_count`** | Findings/Behavioral | `isMobileSession()` in `session-aggregator.ts` returns `false` as placeholder. 50%+ of traffic invisible to behavioral analysis. `mobile_session_count` in `BehavioralSessionPayload` is always 0. | 2h |
-| B | **Wire `behavioralContext` into compound findings** | Engine | `recompute.ts:913` passes `null` as third arg to `detectCompoundFindings()`. All `ad_creative_message_mismatch` compounds permanently `'heuristic'` confidence. With behavioral data: upgrades to `'confirmed'`. | 2h |
-| C | **Wire embeddings to `search_findings` MCP tool** | MCP | `llm/embeddings.ts` has `searchFindings()` built but no MCP tool calls it. Add `search_findings` tool definition + executor. | 3h |
-| D | **Fix `get_decision_explainability` schema** | MCP | Tool enum only has 2 pack keys (`scale_readiness_pack`, `revenue_integrity_pack`). Missing `saas_growth_readiness`. Claude can't request SaaS finding explainability. | 30min |
-| E | **Hide `integration_pull` from MCP tool schema** | MCP | `IntegrationPullExecutor` is a permanent stub returning failure. Exposed in schema → user sees failure. Hide until implemented. | 30min |
-| F | **Fix SSE progress counter** | Audit Lifecycle | `/api/cycles/[id]/stream` counts ALL `PageInventoryItem` rows for environment, not current cycle. Progress indicator meaningless for non-first cycles. | 1h |
-| G | ~~**Consume Stripe data in signal engine**~~ | Engine | **✅ Shipped (Wave 18r/earlier)** — signals + inferences + decision all wired. `packages/signals/engine.ts:6383-6450` emits `subscriber_churn_elevated`, `failed_payment_rate_high`, `failed_payment_rate_elevated`, `subscriber_churn_rate_elevated`, `mrr_available`, `payment_health_data_present` from `commerce.failed_payment_rate / subscriber_churn_rate / mrr`. `packages/inference/engine.ts:4339-4439` adds `inferSubscriberChurnElevated`, `inferFailedPaymentRateHigh`, `inferFailedPaymentRevenueDrain`, `inferSubscriberChurnUnsustainable`, `inferPaymentDiversityInsufficient`, all wired into `produceInferences()` (lines 267-271). Verified by grep on 2026-05-17. | — |
-| H | **Consume Meta/Google Ads in signal engine** | Engine | `IntegrationSnapshot<'meta_ads'>` and `<'google_ads'>` flow into `recomputeAll()` but signal engine doesn't consume them. Types exist, consumption doesn't. | 1d |
-| I | **Map Nuvemshop-exclusive data into CommerceContext** | Engine | `NuvemshopSnapshotData.coupons` (stacking, unlimited, expired-but-active), `.shipping` (avg_days, pickup_rate, cost_ratio), `.channels` (fraud_cancelled, inventory_cancelled) are computed by adapter but `reconcileCommerceContext()` never reads them. | 4h |
-| J | **Clean up state machine inconsistency** | Audit Lifecycle | `CycleStatus` in `packages/domain/audit-cycle.ts` defines 6 states but DB and runtime use 4. Domain types are dead code creating confusion. Align or remove. | 2h |
-| K | **Remove legacy scheduler artifact** | Audit Lifecycle | `apps/platform/audit-scheduler.ts` is a functional but unused in-memory scheduler. Active scheduler is `apps/audit-runner/scheduler.ts`. Remove or mark deprecated. | 1h |
-| L | **Fix CycleType enum drift** | Audit Lifecycle | 6 distinct cycle type strings across codebase with partial overlap (`full`, `hot`, `warm`, `cold`, `incremental`, `verification`). Consolidate to canonical enum. | 2h |
+| A | **Fix `mobile_session_count`** | Findings/Behavioral | `isMobileSession()` placeholder fixed; mobile classifier wired through. | ✅ Shipped (verified 2026-05-17) — `packages/behavioral/session-aggregator.ts:496` + `apps/audit-runner/process-behavioral.ts:561` populate `mobile_session_count` via device classifier |
+| B | **Wire `behavioralContext` into compound findings** | Engine | `behavioralContext` now passed into `detectCompoundFindings()`. | ✅ Shipped (verified 2026-05-17) — `packages/workspace/recompute.ts:1357` passes `behavioralContext` as 3rd arg |
+| C | **Wire embeddings to `search_findings` MCP tool** | MCP | Tool definition + executor wired. | ✅ Shipped (verified 2026-05-17) — `apps/mcp/tools.ts:232,672` defines + executes `search_findings` via `searchFindingsSync` |
+| D | **Fix `get_decision_explainability` schema** | MCP | Enum now includes `saas_growth_readiness`. | ✅ Shipped (verified 2026-05-17) — `apps/mcp/tools.ts:58` includes `saas_growth_readiness` alongside scale_readiness_pack + revenue_integrity_pack |
+| E | **Hide `integration_pull` from MCP tool schema** | MCP | Tool no longer registered. | ✅ Shipped (verified 2026-05-17) — zero `integration_pull` references in `apps/mcp/tools.ts` |
+| F | **Fix SSE progress counter** | Audit Lifecycle | Counter now scoped to current cycle via PageInventoryItem rows. | ✅ Shipped (verified 2026-05-17) — `src/app/api/cycles/[id]/stream/route.ts:106-116` documents per-cycle counting |
+| G | **Consume Stripe data in signal engine** | Engine | All signals + inferences + decision wired. | ✅ Shipped (Wave 18r/earlier) — `packages/signals/engine.ts:6383-6450` + `packages/inference/engine.ts:4339-4439` |
+| H | **Consume Meta/Google Ads in signal engine** | Engine | 4 ad signals emitted from graph nodes. | ✅ Shipped (verified 2026-05-17) — `packages/signals/engine.ts:6625-6675` emits `ad_creative_dead_destination`, `ad_creative_landing_trust_gap`, `ad_creative_form_friction_waste`, `ad_creative_mobile_checkout_degraded` |
+| I | **Map Nuvemshop-exclusive data into CommerceContext** | Engine | `reconcileCommerceContext()` now reads coupons/shipping/channels. | ✅ Shipped (verified 2026-05-17) — `packages/integrations/reconcile.ts:254-267` |
+| J | **Clean up state machine inconsistency** | Audit Lifecycle | `CycleStatus` documents 4 production states + 3 deprecated states kept solely for DB backward-compat. | ✅ Shipped (verified 2026-05-17) — `packages/domain/audit-cycle.ts:25-51` |
+| K | **Remove legacy scheduler artifact** | Audit Lifecycle | File still exists at `apps/platform/audit-scheduler.ts` (header marked DEPRECATED, no live callers). Deletion not performed. | ⚠️ Partial — marked deprecated, not yet removed |
+| L | **Fix CycleType enum drift** | Audit Lifecycle | `CycleType` enum consolidated to 3 canonical (`hot`/`warm`/`cold`) + 3 legacy aliases with `normalizeCycleType()` mapping. | ✅ Shipped (verified 2026-05-17) — `packages/domain/enums.ts:59-84` |
+| M | **Pixel coverage metadata** | Engine/Collection | `pixel_coverage_page_types` added to payload + gating signals. | ✅ Shipped (Wave 7.11M — commit 7a38f84) |
+| N | **Source expansion tagging** | Engine | `change.reason = 'data_source_expanded'` distinguishes new-visibility findings from regressions. | ✅ Shipped (verified 2026-05-17) — `packages/change-detection/engine.ts:78` |
+| O | **`monthly_revenue=0` fallback** | Engine | Replaced `\|\|` with `??` nullish coalescing so explicit `0` no longer falls back to $50k SMB default. | ✅ Shipped (verified 2026-05-17) — `packages/impact/engine.ts:289` |
 ---
 
-#### 7.11B — Wire `behavioralContext` into Compound Findings (Fix B) ⚠️
+#### 7.11B — Wire `behavioralContext` into Compound Findings (Fix B) ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` |
 | **Priority** | P0 |
-| **Status** | Not started |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/workspace/recompute.ts:1357` passes `behavioralContext` as 3rd arg to `detectCompoundFindings()` |
 | **Effort** | ~2h |
 
 **Problem:** `recompute.ts:913` passes `null` as the third argument to `detectCompoundFindings()`. The `detectAdPromiseRealityBehavior` detector in `compound-findings.ts:381-382` reads `behavioralContext?.bounce_rate` and `behavioralContext?.avg_session_duration` to upgrade compound confidence from `'heuristic'` to `'confirmed'` and compute precise excess-bounce impact. With `null` passed, **every** `ad_creative_message_mismatch` compound finding is permanently `'heuristic'` confidence and uses only a flat 25% ad spend waste estimate — even when the pipeline already computed rich behavioral cohort data earlier in the same cycle.
@@ -1743,13 +1753,13 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 
 ---
 
-#### 7.11M — Pixel Coverage Metadata (Fix M) 🔴 CRITICAL
+#### 7.11M — Pixel Coverage Metadata (Fix M) ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` `collection` |
 | **Priority** | P0 |
-| **Status** | Not started |
+| **Status** | ✅ Shipped (verified 2026-05-17) — Wave 7.11M shipped in commit 7a38f84 |
 | **Effort** | ~4-6h |
 
 **Problem:** When the behavioral pixel is installed on some pages but not others (e.g., homepage + pricing but NOT checkout), the engine produces **silently incorrect findings**:
@@ -1787,13 +1797,13 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 
 ---
 
-#### 7.11N — Change Detection Source Expansion Tagging (Fix N) ⚠️
+#### 7.11N — Change Detection Source Expansion Tagging (Fix N) ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` |
 | **Priority** | P0 |
-| **Status** | Not started |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/change-detection/engine.ts:78` sets `change.reason = 'data_source_expanded'` for new-source findings |
 | **Effort** | ~4-6h |
 
 **Problem:** When a user installs the pixel or connects an integration mid-lifecycle, the next audit cycle produces many new findings that are genuinely new *visibility* — not new *problems*. But the change detection system treats them identically to real site degradation:
@@ -1829,13 +1839,13 @@ src/app/app/maps/[mapId]/page.tsx (~300 lines, orchestration only)
 
 ---
 
-#### 7.11O — Fix `monthly_revenue = 0` Fallback in Impact Engine (Fix O) ⚠️
+#### 7.11O — Fix `monthly_revenue = 0` Fallback in Impact Engine (Fix O) ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` |
 | **Priority** | P1 |
-| **Status** | Not started |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/impact/engine.ts:289` uses `??` nullish coalescing, not `\|\|` |
 | **Effort** | ~30min |
 
 **Problem:** In `packages/impact/engine.ts:233-235`, three lines use `||` (logical OR) instead of `!= null` for fallback:
@@ -1861,13 +1871,13 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 
 ---
 
-### 7.12 Activate Declared-but-Unimplemented Packs
+### 7.12 Activate Declared-but-Unimplemented Packs ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` `frontend` |
 | **Priority** | P1 |
-| **Status** | Not started — pack slots declared in `eligibility.ts`, inference categories exist, `INFERENCE_TO_PACK` mappings exist, but `recomputeAll()` never calls `produceDecision()` for them |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/workspace/recompute.ts:505,518,531` call `produceDecision()` for `is_channel_integrity_compromised`, `is_discoverability_limiting_growth`, `is_brand_integrity_at_risk` |
 | **Effort** | ~3-5 days total |
 
 **Source:** Deep Analysis codebase exploration — 4 pack slots have gate logic, inference categories, root-cause entries, and projection mappings but NO decision pack wired in `recomputeAll()`. Findings surface via intelligence layer but have no workspace, no scoring, no copilot answer.
@@ -1884,8 +1894,8 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 
 | Item | Priority | Effort | Status |
 |------|----------|--------|--------|
-| **7.1** Multi-Cycle Trend Analysis | P1 | 1 week | Not started |
-| **7.2** Revenue Recovery Tracker | P1 | 1 week | Type scaffolded |
+| **7.1** ~~Multi-Cycle Trend Analysis~~ | P1 | 1 week | **✅ Shipped (verified 2026-05-17)** |
+| **7.2** ~~Revenue Recovery Tracker~~ | P1 | 1 week | **✅ Shipped (verified 2026-05-17)** |
 | **7.3** ~~Batch Evidence Persistence~~ | P1 | 2-3 days | **✅ Shipped 2026-05-03** |
 | **7.4** Core Web Vitals | P2 | 3-4 days | Not started |
 | **7.5** Webhook-Triggered Audits | P1 | 2-3 days | Not started |
@@ -1893,9 +1903,9 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 | **7.7** ~~Map Export~~ | — | — | Subsumed by 7.10 Phase 3K |
 | **7.8** Custom Map Persistence | P3 | 1 day | Model exists |
 | **7.9** Behavioral Delta Processing | P2 | 2-3 days | Not started |
-| **7.10** Maps Modernization | P1 | 2-3 weeks | **Phase 1 starting** |
-| **7.11** Critical Fixes (Deep Analysis) | P0 | 3-5 days | Not started |
-| **7.12** Activate Declared Packs (3) | P1 | 3-5 days | Not started |
+| **7.10** Maps Modernization | P1 | 2-3 weeks | Phase 1 foundation (@xyflow/react) shipped; Phases 2-4 pending |
+| **7.11** ~~Critical Fixes (Deep Analysis)~~ | P0 | 3-5 days | **✅ Mostly shipped (verified 2026-05-17)** — 7.11K (delete legacy scheduler file) still pending |
+| **7.12** ~~Activate Declared Packs (3)~~ | P1 | 3-5 days | **✅ Shipped (verified 2026-05-17)** |
 
 **Implementation order:**
 1. **7.11** Critical fixes (P0 — unblocks data consumption + fixes broken behavioral)
@@ -2001,13 +2011,13 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 
 ---
 
-### 8.3 Content Freshness & Decay Pack
+### 8.3 Content Freshness & Decay Pack ✅ COMPLETE
 
 | | |
 |---|---|
 | **Tag** | `engine` `frontend` `mcp` |
 | **Priority** | P1 |
-| **Status** | Not started — `copy_staleness` enrichment already exists (Wave 3.10 Fase 4), `asyncGetNthRecent()` snapshot store ready but never called |
+| **Status** | ✅ Shipped (verified 2026-05-17) — `packages/workspace/recompute.ts:573` produces decision for `question_key: 'is_stale_content_eroding_trust_and_visibility'`; 4 inferences pushed at inference engine lines 245-248 |
 | **Effort** | ~1 week |
 
 **Problem:** Content half-life collapsed from 18 to 6 months in 2026. AI-cited content is 25.7% fresher than Google organic. CTR drops 61% when AI Overviews appear. No audit tool detects content decay as a revenue problem — they show "content is old" but not "this old content is costing you $X/month."
@@ -2047,9 +2057,9 @@ Same issue for `monthly_transactions = 0` (→ falls back to 625) and `chargebac
 
 | Item | Priority | Effort | Status |
 |------|----------|--------|--------|
-| **8.1** Payment Health Pack | P0 | 3-5 days | **✅ Mostly shipped (Wave 18r-18u)** — MRR contraction + MCP `composePaymentHealthAnswer` in flight |
-| **8.2** Dark Pattern & Compliance Pack | P1 | 1-2 weeks | Not started — foundation exists |
-| **8.3** Content Freshness Pack | P1 | 1 week | Not started — enrichment + store exist |
+| **8.1** ~~Payment Health Pack~~ | P0 | 3-5 days | **✅ Mostly shipped (Wave 18r-18u)** — MRR contraction + MCP `composePaymentHealthAnswer` in flight |
+| **8.2** Dark Pattern & Compliance Pack | P1 | 1-2 weeks | Not started — only `urgency_dark_pattern` signal exists (foundation); hidden_cost, forced_account, confirmshaming, subscription_trap, pre_checked_upsell broad coverage NOT shipped |
+| **8.3** ~~Content Freshness Pack~~ | P1 | 1 week | **✅ Shipped (verified 2026-05-17)** |
 
 **Implementation order:**
 1. **8.1** Payment Health (highest ROI — Stripe data already in CommerceContext)

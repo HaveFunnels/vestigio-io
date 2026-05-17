@@ -41,6 +41,7 @@ import ImpactBadge from "@/components/console/ImpactBadge";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import FixWithAiSection from "@/components/console/actions/FixWithAiSection";
+import { translateEngineCopy } from "@/lib/engine-i18n";
 
 export interface FindingDetailPanelProps {
 	finding: FindingProjection;
@@ -69,6 +70,7 @@ export default function FindingDetailPanel({
 	const tc = useTranslations("console.common");
 	const tp = useTranslations("console.copilot.shared_prompts");
 	const tFix = useTranslations("console.actions.fix_with_ai");
+	const tEngine = useTranslations("engine");
 	const locale = useLocale();
 	const router = useRouter();
 	const copilot = useCopilot();
@@ -156,7 +158,7 @@ export default function FindingDetailPanel({
 		<div className="space-y-5">
 			{/* Summary + badges */}
 			<DrawerSection title={td("summary")} accent={severityAccent}>
-				<p className="text-sm text-content-secondary">{renderRichText(finding.cause)}</p>
+				<p className="text-sm text-content-secondary">{renderRichText(translateEngineCopy(finding.inference_key, finding.cause, tEngine))}</p>
 				<div className="mt-2 flex flex-wrap items-center gap-2">
 					{finding.polarity === "positive" ? (
 						<span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400">

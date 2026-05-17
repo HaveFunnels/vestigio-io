@@ -28,6 +28,7 @@ import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces } from "@/lib/console-data";
+import { translateEngineCopy } from "@/lib/engine-i18n";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type {
   WorkspaceProjection,
@@ -299,14 +300,14 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
               <div className="font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
                 {negativeFindings.length}
               </div>
-              <div className="text-[10px] text-zinc-400 dark:text-zinc-600">{t("issues")}</div>
+              <div className="text-[10px] text-zinc-500 dark:text-zinc-400">{t("issues")}</div>
             </div>
             {totalLoss > 0 && (
               <div className="text-right">
                 <div className={`font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums ${meta.accentColor}`}>
                   {fmtCurrency(totalLoss, currency)}
                 </div>
-                <div className="text-[10px] text-zinc-400 dark:text-zinc-600">/mo</div>
+                <div className="text-[10px] text-zinc-500 dark:text-zinc-400">/mo</div>
               </div>
             )}
           </div>
@@ -336,7 +337,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
           deeper lenses. */}
       {perspectiveWorkspaces.length > 1 && (
         <section className="mt-5">
-          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
             {t("workspaces_in_perspective")}
           </h2>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -451,7 +452,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
       {/* Findings table — last section */}
       {allFindings.length > 0 && (
         <section className="mt-6">
-          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+          <h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
             {t("perspective_findings")}
           </h2>
           <div className="overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-lg">
@@ -480,16 +481,17 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
   const td = useTranslations("console.finding_drawer");
   const tc = useTranslations("console.common");
   const tp = useTranslations("console.copilot.shared_prompts");
+  const tEngine = useTranslations("engine");
   const router = useRouter();
   const copilot = useCopilot();
 
   return (
     <div className="space-y-6">
       <section>
-        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
           {td("summary")}
         </h3>
-        <p className="text-[13px] leading-relaxed text-zinc-400">{finding.cause}</p>
+        <p className="text-[13px] leading-relaxed text-zinc-400">{translateEngineCopy(finding.inference_key, finding.cause, tEngine)}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {finding.polarity === "positive" ? (
             <span className="rounded-sm bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-400">{tc("healthy")}</span>
@@ -503,7 +505,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
       {finding.effect && (
         <section>
-          <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+          <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
             {td("effect")}
           </h3>
           <p className="text-[13px] text-zinc-500">{finding.effect}</p>
@@ -512,7 +514,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
       {finding.polarity !== "positive" && (
         <section>
-          <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+          <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
             {td("impact_breakdown")}
           </h3>
           <div className="flex items-center justify-between rounded border border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-white/[0.04] dark:bg-white/[0.015]">
@@ -523,14 +525,14 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
       )}
 
       <section>
-        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
           {finding.polarity === "positive" ? td("why_good") : td("reasoning")}
         </h3>
         <p className="text-[13px] leading-relaxed text-zinc-500">{finding.reasoning}</p>
       </section>
 
       <section>
-        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+        <h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
           {td("verification")}
         </h3>
         <VerificationPanel

@@ -274,7 +274,7 @@ export default function CopyFrameworkLens() {
 	if (pagesLoading) {
 		return (
 			<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-				<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+				<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 					{t("label")}
 				</h2>
 				<p className="text-[12px] text-content-muted">{t("loading_scores")}</p>
@@ -313,7 +313,7 @@ export default function CopyFrameworkLens() {
 			{/* Top header — title + subtitle on the left, page selector on the right. */}
 			<div className="mb-4 flex flex-wrap items-start justify-between gap-3">
 				<div className="min-w-0">
-					<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+					<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 						{t("label")}
 					</h2>
 					<p className="mt-1 text-[12px] text-content-muted">{t("subtitle")}</p>

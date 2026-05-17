@@ -2040,6 +2040,13 @@
 				"no_findings": "No findings in this workspace.",
 				"coherence": "Coherence",
 				"coherence_score": "Coherence Score",
+				"coherence_notes": {
+					"note_severity_gap_high": "Note: while {lower_key} suggests {lower_impact}, {higher_key} requires {higher_impact} action first.",
+					"note_severity_gap_medium": "{lower_key} assessment is conditional on resolving {higher_key} first.",
+					"desc_severity_divergence": "Same evidence evaluated as {severity_a} by {key_a} but {severity_b} by {key_b}.",
+					"desc_impact_contradiction": "{key_a} says {impact_a} but {key_b} says {impact_b}.",
+					"note_confidence_low": "Confidence in {key} is low ({score}%). Consider verification before acting."
+				},
 				"suppressed_by_pack": "This workspace is suppressed by a higher-priority pack.",
 				"quick_stats": "Quick Stats",
 				"negative_findings": "Issues",
@@ -2071,6 +2078,9 @@
 					"findings_singular": "finding",
 					"findings_plural": "findings",
 					"resilience_checklist": "Resilience Checklist",
+					"chargeback_empty_label": "Chargeback Resilience",
+					"chargeback_empty_title": "No chargeback risk signals detected this cycle.",
+					"chargeback_empty_description": "When refund policy gaps, checkout friction, or dispute patterns surface, they'll appear here with their estimated revenue impact.",
 					"trust_score": "Trust Score",
 					"security_checklist": "Security Checklist",
 					"security_score": "Security Score",
@@ -2139,7 +2149,7 @@
 					"total_lost": "Already lost",
 					"daily_burn": "/ day",
 					"days_open": "Open for ~{days} days",
-					"top_burners": "Top burners",
+					"top_burners": "Top leaks",
 					"per_finding_lost": "−{amount} already lost",
 					"empty": "No open findings with monetary impact."
 				},

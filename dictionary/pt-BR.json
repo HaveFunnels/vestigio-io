@@ -2018,6 +2018,13 @@
 				"no_findings": "Nenhum finding neste workspace.",
 				"coherence": "Coerência",
 				"coherence_score": "Score de Coerência",
+				"coherence_notes": {
+					"note_severity_gap_high": "Atenção: embora {lower_key} indique {lower_impact}, {higher_key} exige ação de {higher_impact} primeiro.",
+					"note_severity_gap_medium": "A avaliação de {lower_key} depende de resolver {higher_key} antes.",
+					"desc_severity_divergence": "Mesma evidência avaliada como {severity_a} por {key_a} mas {severity_b} por {key_b}.",
+					"desc_impact_contradiction": "{key_a} aponta {impact_a} mas {key_b} aponta {impact_b}.",
+					"note_confidence_low": "A confiança em {key} está baixa ({score}%). Considere verificar antes de agir."
+				},
 				"suppressed_by_pack": "Este workspace está suprimido por um pack de maior prioridade.",
 				"quick_stats": "Resumo Rápido",
 				"negative_findings": "Problemas",
@@ -2049,6 +2056,9 @@
 					"findings_singular": "finding",
 					"findings_plural": "findings",
 					"resilience_checklist": "Checklist de Resiliência",
+					"chargeback_empty_label": "Resiliência a Chargeback",
+					"chargeback_empty_title": "Nenhum sinal de risco de chargeback detectado neste ciclo.",
+					"chargeback_empty_description": "Quando políticas de reembolso, fricção de checkout ou padrões de disputa aparecerem, eles vão ser listados aqui com o impacto estimado em faturamento.",
 					"trust_score": "Score de Confiança",
 					"security_checklist": "Checklist de Segurança",
 					"security_score": "Score de Segurança",
@@ -2117,7 +2127,7 @@
 					"total_lost": "Já perdido",
 					"daily_burn": "/ dia",
 					"days_open": "Aberto há ~{days} dias",
-					"top_burners": "Maiores queimadores",
+					"top_burners": "Maiores Vazamentos",
 					"per_finding_lost": "−{amount} já perdido",
 					"empty": "Sem findings com impacto monetário em aberto."
 				},

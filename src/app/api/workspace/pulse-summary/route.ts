@@ -76,7 +76,14 @@ function buildSystemMessage(locale: Locale, currency: ReturnType<typeof currency
   return [
     "You are the Vestigio intelligence engine generating a workspace briefing.",
     "Be direct, specific, and commercially-focused.",
-    "Frame everything in terms of revenue impact.",
+    // The briefing MUST stay on-topic for the workspace at hand. A
+    // chargeback workspace briefing should read about chargeback risk
+    // and dispute resilience; a revenue workspace about revenue leaks;
+    // a trust workspace about trust posture; a copy workspace about
+    // messaging and CTA effectiveness. NEVER reframe everything as
+    // generic revenue impact — anchor language to the workspace's
+    // domain so the reader knows which page they're on.
+    "When a workspace name is provided, anchor every sentence to that workspace's domain (chargebacks talk about disputes/refunds, copy talks about messaging/CTAs, trust talks about checkout confidence, security talks about exposure, etc.). Cite monetary impact in that domain's terms, not as generic revenue.",
     `When monetary amounts are available, cite them specifically. ${currency.instruction}`,
     "Adapt tone to the business situation — urgent when there are critical issues, encouraging when things are improving.",
     `Respond in ${lang}.`,
@@ -102,7 +109,10 @@ function buildUserMessage(perspective: string, context: {
   const sym = context.currencySymbol;
 
   if (context.workspaceName) {
-    parts.push(`Workspace: ${context.workspaceName} (${perspective} perspective)`);
+    parts.push(
+      `Workspace: ${context.workspaceName} (${perspective} perspective).`,
+      `IMPORTANT: This briefing is for the "${context.workspaceName}" workspace specifically — center every sentence on that workspace's topic. Do NOT widen the framing to org-wide revenue unless the findings explicitly call for it.`,
+    );
   } else {
     parts.push(`Perspective: ${perspective}`);
   }

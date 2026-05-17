@@ -170,13 +170,13 @@ export default function CopyAlignment({ findings }: Props) {
 		<div className="space-y-4">
 			{/* ── Copy Health Strip ── */}
 			<div className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-				<h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+				<h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 					{t("copy_health")}
 				</h3>
 				<div className="grid grid-cols-3 gap-4">
 					{/* Overall Grade */}
 					<div className="rounded-xl border border-edge bg-surface-card/50 px-4 py-3 text-center">
-						<div className="text-[10px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
+						<div className="text-[10px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
 							{t("grade_labels.overall")}
 						</div>
 						<div
@@ -190,7 +190,7 @@ export default function CopyAlignment({ findings }: Props) {
 					</div>
 					{/* Pages Analysed */}
 					<div className="rounded-xl border border-edge bg-surface-card/50 px-4 py-3 text-center">
-						<div className="text-[10px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
+						<div className="text-[10px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
 							{t("pages_analyzed")}
 						</div>
 						<div className="mt-1 font-[family-name:var(--font-jetbrains-mono)] text-[28px] font-bold tabular-nums text-zinc-700 dark:text-zinc-200">
@@ -199,7 +199,7 @@ export default function CopyAlignment({ findings }: Props) {
 					</div>
 					{/* Top Issue */}
 					<div className="rounded-xl border border-edge bg-surface-card/50 px-4 py-3 text-center">
-						<div className="text-[10px] font-medium uppercase tracking-wider text-zinc-400 dark:text-zinc-600">
+						<div className="text-[10px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
 							{t("top_issues")}
 						</div>
 						<div className="mt-2 text-[13px] font-medium text-zinc-700 dark:text-zinc-300">
@@ -218,7 +218,7 @@ export default function CopyAlignment({ findings }: Props) {
 				{/* Left: CRO Dimension Scores (60%) */}
 				<div className="lg:col-span-3">
 					<div className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-						<h3 className="mb-4 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+						<h3 className="mb-4 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 							{t("dimensions_heading")}
 						</h3>
 						<div className="space-y-3">
@@ -248,7 +248,7 @@ export default function CopyAlignment({ findings }: Props) {
 				<div className="space-y-4 lg:col-span-2">
 					{/* Top Issues */}
 					<div className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-						<h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+						<h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 							{t("top_issues")}
 						</h3>
 						{issuesByRootCause.length > 0 ? (
@@ -263,7 +263,7 @@ export default function CopyAlignment({ findings }: Props) {
 										</span>
 										<span className="text-zinc-600 dark:text-zinc-400">
 											{(() => { try { return t(`root_causes.${rc}`); } catch { return rc.replace(/_/g, " "); } })()}
-											<span className="ml-1 text-zinc-400 dark:text-zinc-600">
+											<span className="ml-1 text-zinc-500 dark:text-zinc-400">
 												({items.length})
 											</span>
 										</span>
@@ -271,7 +271,7 @@ export default function CopyAlignment({ findings }: Props) {
 								))}
 							</ul>
 						) : (
-							<p className="text-[12px] text-zinc-400 dark:text-zinc-600">
+							<p className="text-[12px] text-zinc-500 dark:text-zinc-400">
 								--
 							</p>
 						)}
@@ -279,7 +279,7 @@ export default function CopyAlignment({ findings }: Props) {
 
 					{/* Strengths */}
 					<div className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-						<h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+						<h3 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 							{t("strengths")}
 						</h3>
 						{positiveFindings.length > 0 ? (
@@ -299,7 +299,7 @@ export default function CopyAlignment({ findings }: Props) {
 								))}
 							</ul>
 						) : (
-							<p className="text-[12px] text-zinc-400 dark:text-zinc-600">
+							<p className="text-[12px] text-zinc-500 dark:text-zinc-400">
 								--
 							</p>
 						)}

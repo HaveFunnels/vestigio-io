@@ -42,6 +42,7 @@ import CostOfInaction from "@/components/console/workspace/CostOfInaction";
 import TrendDelta from "@/components/console/workspace/TrendDelta";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
+import { translateConflictNote, translateEngineCopy } from "@/lib/engine-i18n";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type {
 	WorkspaceProjection,
@@ -143,6 +144,8 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 	const mcpData = useMcpData();
 	const t = useTranslations("console.workspaces");
 	const tc = useTranslations("console.common");
+	const tCoherenceNotes = useTranslations("console.workspaces.detail.coherence_notes");
+	const tBadge = useTranslations("console.common.badge_labels");
 	const { track } = useTrack();
 	const [selectedFinding, setSelectedFinding] = useState<FindingProjection | null>(null);
 
@@ -228,7 +231,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			render: (row) => (
 				<div>
 					<div className="text-[13px] text-zinc-700 dark:text-zinc-300">{row.title}</div>
-					{row.root_cause && <div className="mt-0.5 text-[11px] text-zinc-400 dark:text-zinc-600">{row.root_cause}</div>}
+					{row.root_cause && <div className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">{row.root_cause}</div>}
 				</div>
 			),
 		},
@@ -309,40 +312,42 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 						</div>
 					</div>
 					<div className="flex items-center gap-6">
-						<div className="text-right">
-							<div className="inline-flex items-baseline justify-end gap-1.5">
+						<div className="flex flex-col items-center">
+							<div className="inline-flex items-baseline justify-center gap-1.5">
 								<span className="font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums text-zinc-800 dark:text-zinc-200">
 									{workspace.summary.issue_count}
 								</span>
 								{/* Wave 11.7b — inline net delta vs last cycle */}
 								<TrendDelta summary={workspace.change_summary} />
 							</div>
-							<div className="text-[10px] text-zinc-400 dark:text-zinc-600">{t("issues")}</div>
+							<div className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">{t("issues")}</div>
 						</div>
 						{workspace.summary.total_loss_mid > 0 && (
-							<div className="text-right">
+							<div className="flex flex-col items-center">
 								<div className={`font-[family-name:var(--font-jetbrains-mono)] text-[20px] font-bold tabular-nums ${perspective.color}`}>
 									{fmtCurrency(workspace.summary.total_loss_mid, mcpData.currency)}
 								</div>
-								<div className="text-[10px] text-zinc-400 dark:text-zinc-600">/mo</div>
+								<div className="mt-0.5 text-[10px] uppercase tracking-[0.14em] text-zinc-500 dark:text-zinc-400">{tc("per_month_short")}</div>
 							</div>
 						)}
 					</div>
 				</div>
 			</div>
 
-			{/* ── Wave 11.7a — Next Action Strip (universal CTA) ── */}
-			<div className="mt-5">
-				<NextActionStrip findings={workspace.findings} />
-			</div>
-
-			{/* ── Vestigio Pulse — workspace-scoped briefing ── */}
+			{/* ── Vestigio Pulse — workspace-scoped briefing.
+			    Moved above the action strip so the user reads the
+			    situation first, then the recommended next move. ── */}
 			<div className="mt-5">
 				<PulseSummary
 					perspective={perspective.slug}
 					workspaceName={workspace.name}
 					findingIds={workspace.findings.map((f) => f.id)}
 				/>
+			</div>
+
+			{/* ── Wave 11.7a — Next Action Strip (universal CTA) ── */}
+			<div className="mt-5">
+				<NextActionStrip findings={workspace.findings} />
 			</div>
 
 			{/* ── Wave 11.7c — Cost of inaction strip ── */}
@@ -357,7 +362,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 					<div className={`mt-5 grid grid-cols-1 gap-5 ${hasChangeContent ? "lg:grid-cols-[3fr_2fr]" : ""}`}>
 						{hasChangeContent && (
 							<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-								<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+								<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 									{t("detail.change_summary")}
 								</h2>
 								{workspace.change_summary && <TrendHeadline summary={workspace.change_summary} />}
@@ -371,7 +376,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 
 						{/* Quick Stats */}
 						<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-							<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+							<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 								{t("detail.quick_stats")}
 							</h2>
 							<div className="grid grid-cols-3 gap-3">
@@ -476,7 +481,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			{/* ── Coherence (only if conflicts exist) ── */}
 			{workspace.coherence && workspace.coherence.has_conflicts && (
 				<section className="mt-5 rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-					<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+					<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 						{t("detail.coherence")}
 					</h2>
 					<div className="space-y-3">
@@ -504,7 +509,9 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 							<div className="space-y-1.5">
 								{workspace.coherence.conflict_annotations.map((note, i) => (
 									<div key={i} className="rounded border-l-2 border-l-amber-500/60 bg-amber-50 px-3 py-2 dark:bg-amber-500/[0.04]">
-										<p className="text-[11px] text-amber-700 dark:text-amber-300/90">{note}</p>
+										<p className="text-[11px] text-amber-700 dark:text-amber-300/90">
+											{translateConflictNote(note, tCoherenceNotes, tBadge, tBadge)}
+										</p>
 									</div>
 								))}
 							</div>
@@ -521,7 +528,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			{/* ── Findings table (full width) ── */}
 			<section className="mt-5 w-full rounded-2xl border border-edge bg-surface-card shadow-lg">
 				<div className="px-5 pt-5 pb-2">
-					<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+					<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 						{isPreflight ? t("detail.preflight_checklist") : t("detail.findings")}
 					</h2>
 				</div>
@@ -634,14 +641,15 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 	const td = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
 	const tp = useTranslations("console.copilot.shared_prompts");
+	const tEngine = useTranslations("engine");
 	const router = useRouter();
 	const copilot = useCopilot();
 
 	return (
 		<div className="space-y-6">
 			<section>
-				<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">{td("summary")}</h3>
-				<p className="text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-400">{finding.cause}</p>
+				<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">{td("summary")}</h3>
+				<p className="text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-400">{translateEngineCopy(finding.inference_key, finding.cause, tEngine)}</p>
 				<div className="mt-2 flex flex-wrap items-center gap-2">
 					{finding.polarity === "positive" ? (
 						<span className="rounded-sm bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-600 dark:text-emerald-400">{tc("healthy")}</span>
@@ -674,14 +682,14 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
 			{finding.effect && (
 				<section>
-					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">{td("effect")}</h3>
+					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">{td("effect")}</h3>
 					<p className="text-[13px] text-zinc-500">{finding.effect}</p>
 				</section>
 			)}
 
 			{finding.root_cause && (
 				<section>
-					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">{td("root_cause")}</h3>
+					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">{td("root_cause")}</h3>
 					<div className="rounded-xl border border-edge bg-surface-card px-4 py-2.5">
 						<span className="text-[13px] font-medium text-zinc-700 dark:text-zinc-300">{finding.root_cause}</span>
 					</div>
@@ -690,7 +698,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
 			{finding.polarity !== "positive" && (
 				<section>
-					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">{td("impact_breakdown")}</h3>
+					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">{td("impact_breakdown")}</h3>
 					<div className="space-y-1.5">
 						<div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card/50 px-4 py-2">
 							<span className="text-[11px] text-zinc-500">{td("monthly_range")}</span>
@@ -710,7 +718,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 
 			{finding.evidence_quality && (
 				<section>
-					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">{td("evidence_quality")}</h3>
+					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">{td("evidence_quality")}</h3>
 					<div className="space-y-2 rounded-xl border border-edge bg-surface-card/50 px-4 py-3">
 						<EvidenceQualityBar label={td("source_reliability")} value={finding.evidence_quality.source_reliability} />
 						<EvidenceQualityBar label={td("completeness")} value={finding.evidence_quality.completeness} />
@@ -721,7 +729,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 			)}
 
 			<section>
-				<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">{td("verification")}</h3>
+				<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">{td("verification")}</h3>
 				<VerificationPanel
 					maturity={finding.verification_maturity}
 					method={finding.verification_method}
@@ -738,7 +746,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 			<VerificationSufficiencyWarning severity={finding.severity} maturity={finding.verification_maturity} />
 
 			<section>
-				<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+				<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 					{finding.polarity === "positive" ? td("why_good") : td("reasoning")}
 				</h3>
 				<p className="text-[13px] leading-relaxed text-zinc-500">{finding.reasoning}</p>
@@ -799,7 +807,7 @@ function TrendHeadline({ summary }: { summary: NonNullable<WorkspaceProjection["
 			{summary.improvement_count > 0 && <span className="text-emerald-600 dark:text-emerald-400">{t("detail.trend.improvements", { count: summary.improvement_count })}</span>}
 			{summary.resolved_count > 0 && <span className="text-emerald-600 dark:text-emerald-400">{t("detail.trend.resolved", { count: summary.resolved_count })}</span>}
 			{summary.regression_count === 0 && summary.improvement_count === 0 && summary.resolved_count === 0 && (
-				<span className="text-zinc-400 dark:text-zinc-600">{t("detail.trend.no_significant_changes")}</span>
+				<span className="text-zinc-500 dark:text-zinc-400">{t("detail.trend.no_significant_changes")}</span>
 			)}
 		</div>
 	);
@@ -808,7 +816,7 @@ function TrendHeadline({ summary }: { summary: NonNullable<WorkspaceProjection["
 function StatCard({ label, value, color }: { label: string; value: string | number; color: string }) {
 	return (
 		<div className="rounded-xl border border-edge bg-surface-card/50 px-3 py-2.5">
-			<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+			<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 				{label}
 			</div>
 			<div className={`mt-1 font-[family-name:var(--font-jetbrains-mono)] text-[16px] font-bold tabular-nums ${color}`}>

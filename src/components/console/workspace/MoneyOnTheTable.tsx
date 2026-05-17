@@ -123,7 +123,7 @@ export default function MoneyOnTheTable({ findings, onFindingClick }: Props) {
 	if (losses.length === 0 || totalLoss <= 0) {
 		return (
 			<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-				<h2 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+				<h2 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 					{t("label")}
 				</h2>
 				<p className="text-[13px] text-content-muted">{t("empty")}</p>
@@ -158,7 +158,7 @@ export default function MoneyOnTheTable({ findings, onFindingClick }: Props) {
 			{/* Decomposition */}
 			{buckets.length > 0 && (
 				<div className="relative mt-5">
-					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 						{t("breakdown_heading")}
 					</h3>
 					<div className="space-y-1.5">
@@ -190,7 +190,7 @@ export default function MoneyOnTheTable({ findings, onFindingClick }: Props) {
 			{/* Top 3 fixes */}
 			{top3.length > 0 && (
 				<div className="relative mt-5">
-					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+					<h3 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 						{t("top_fixes_heading")}
 					</h3>
 					<div className="space-y-2">

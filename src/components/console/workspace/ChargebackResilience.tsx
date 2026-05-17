@@ -57,9 +57,28 @@ interface Props {
 export default function ChargebackResilience({ findings }: Props) {
 	const t = useTranslations("console.workspaces.detail.enrichment");
 
-	// Hide when no chargeback findings exist
+	// Render a positive empty state when no chargeback findings exist —
+	// silent null left chargeback workspaces looking abandoned even when
+	// the audit had simply not flagged anything in that pack yet.
 	const hasChargebackData = findings.some((f) => f.pack === "chargeback_resilience" || f.pack === "chargeback");
-	if (!hasChargebackData) return null;
+	if (!hasChargebackData) {
+		return (
+			<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
+				<div className="flex items-center gap-2">
+					<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+					<h3 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold uppercase tracking-[0.15em] text-content-muted">
+						{t("chargeback_empty_label")}
+					</h3>
+				</div>
+				<p className="mt-2 text-[13px] font-medium text-content">
+					{t("chargeback_empty_title")}
+				</p>
+				<p className="mt-1 text-[12px] text-content-muted">
+					{t("chargeback_empty_description")}
+				</p>
+			</section>
+		);
+	}
 
 	const pillars: ChecklistPillar[] = CHARGEBACK_PILLAR_DEFS.map((d) => ({
 		id: d.id,

@@ -84,7 +84,7 @@ export default function SpofMap() {
 	if (loading) {
 		return (
 			<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-				<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+				<h2 className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 					{t("label")}
 				</h2>
 				<p className="text-[12px] text-content-muted">{t("loading")}</p>
@@ -95,7 +95,7 @@ export default function SpofMap() {
 	if (!stack || stack.total_detected === 0) {
 		return (
 			<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
-				<h2 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+				<h2 className="mb-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 					{t("label")}
 				</h2>
 				<p className="text-[13px] font-medium text-content">{t("empty_title")}</p>
@@ -107,7 +107,7 @@ export default function SpofMap() {
 	return (
 		<section className="rounded-2xl border border-edge bg-surface-card p-5 shadow-lg">
 			<div className="mb-4">
-				<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-400 dark:text-zinc-600">
+				<h2 className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
 					{t("label")}
 				</h2>
 				<p className="mt-1 text-[12px] text-content-muted">{t("subtitle")}</p>

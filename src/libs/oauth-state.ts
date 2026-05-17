@@ -41,14 +41,14 @@ function b64urlDecode(input: string): string {
 
 export interface OAuthStatePayload {
 	environmentId: string;
-	provider: "meta_ads" | "google_ads" | "stripe";
+	provider: "meta_ads" | "google_ads" | "stripe" | "shopify";
 	timestamp: number;
 	nonce: string;
 }
 
 export function encodeOAuthState(
 	environmentId: string,
-	provider: "meta_ads" | "google_ads" | "stripe",
+	provider: "meta_ads" | "google_ads" | "stripe" | "shopify",
 ): string {
 	const payload: OAuthStatePayload = {
 		environmentId,

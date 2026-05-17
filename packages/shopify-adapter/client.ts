@@ -24,8 +24,46 @@ import {
 // - Timeout enforced
 // ──────────────────────────────────────────────
 
-const API_VERSION = '2024-01';
+// ──────────────────────────────────────────────
+// Shopify API version policy
+//
+// Shopify ships a new stable API version each quarter (YYYY-01,
+// YYYY-04, YYYY-07, YYYY-10) and supports each for 12 months. Calls
+// to a deprecated version still work but Shopify returns the header
+// `X-Shopify-API-Deprecated-Reason` — we detect and surface it.
+//
+// Bump checklist when raising API_VERSION:
+//   1. Read https://shopify.dev/docs/api/release-notes for breaking changes
+//   2. Update API_VERSION_SUPPORTED_UNTIL (current + 12 months)
+//   3. Run the full adapter test suite
+//   4. Watch the next prod cycle for deprecation warnings in logs
+// ──────────────────────────────────────────────
+
+export const API_VERSION = '2026-01';
+export const API_VERSION_SUPPORTED_UNTIL = '2027-01';
 const REQUEST_TIMEOUT = 10000; // 10s
+
+/**
+ * Default safety cap on pagination. With Shopify limit=250 per page,
+ * 10 pages = up to 2,500 records per call. Raise via `maxPages`
+ * argument for initial syncs against large stores. When the cap is
+ * hit, the return value carries `truncated: true` so callers can
+ * decide whether to widen the window or page further.
+ */
+const DEFAULT_MAX_PAGES = 10;
+
+/**
+ * Inspect Shopify response headers for deprecation warnings.
+ * Returns a human-readable warning string if the API version we
+ * called is being phased out, otherwise null. Surface this in
+ * caller errors[] so it bubbles to the connection card + logs.
+ */
+export function detectDeprecationWarning(headers: Headers): string | null {
+  const reason = headers.get('x-shopify-api-deprecated-reason');
+  const version = headers.get('x-shopify-api-version');
+  if (!reason) return null;
+  return `Shopify API version ${version || API_VERSION} is deprecated: ${reason}. Bump API_VERSION in packages/shopify-adapter/client.ts.`;
+}
 
 /**
  * Verify connection and scopes.
@@ -53,13 +91,14 @@ export async function verifyConnection(
     }
 
     const data = await response.json();
+    const deprecation = detectDeprecationWarning(response.headers);
     return {
       status: 'connected',
       shop_domain: credentials.shop_domain,
       shop_name: data.shop?.name || null,
       last_sync_at: new Date(),
       last_successful_sync_at: new Date(),
-      last_error: null,
+      last_error: deprecation, // non-blocking; just a warning surfaced to UI
       error_type: null,
       scopes_verified: true,
       initial_sync_complete: false, // set true after first full poll
@@ -110,7 +149,8 @@ export async function fetchOrders(
   since: Date,
   until: Date,
   limit: number = 250,
-): Promise<{ orders: ShopifyRawOrder[]; errors: string[] }> {
+  maxPages: number = DEFAULT_MAX_PAGES,
+): Promise<{ orders: ShopifyRawOrder[]; errors: string[]; truncated: boolean }> {
   const errors: string[] = [];
   const allOrders: ShopifyRawOrder[] = [];
 
@@ -121,9 +161,9 @@ export async function fetchOrders(
     `/orders.json?status=any&created_at_min=${sinceISO}&created_at_max=${untilISO}&limit=${Math.min(limit, 250)}&fields=id,created_at,total_price,currency,financial_status,fulfillment_status,cancelled_at,landing_site,referring_site,total_discounts,discount_codes,gateway,refunds,transactions,line_items`;
 
   let pageCount = 0;
-  const MAX_PAGES = 10; // safety limit
+  let truncated = false;
 
-  while (pageUrl && pageCount < MAX_PAGES) {
+  while (pageUrl && pageCount < maxPages) {
     try {
       const response = await shopifyFetch(credentials, pageUrl);
       if (!response.ok) {
@@ -134,6 +174,12 @@ export async function fetchOrders(
       const data = await response.json();
       const orders: ShopifyRawOrder[] = data.orders || [];
       allOrders.push(...orders);
+
+      // Deprecation warning bubbles up once (first page only — same version on every page)
+      if (pageCount === 0) {
+        const deprecation = detectDeprecationWarning(response.headers);
+        if (deprecation) errors.push(deprecation);
+      }
 
       // Pagination: check Link header for next page
       const linkHeader = response.headers.get('link');
@@ -148,7 +194,15 @@ export async function fetchOrders(
     }
   }
 
-  return { orders: allOrders, errors };
+  // Hit the cap while there were still more pages to fetch
+  if (pageUrl && pageCount >= maxPages) {
+    truncated = true;
+    errors.push(
+      `Orders pagination truncated at ${maxPages} pages (~${maxPages * 250} records). Raise maxPages or narrow the date window.`,
+    );
+  }
+
+  return { orders: allOrders, errors, truncated };
 }
 
 /**
@@ -194,7 +248,8 @@ export async function fetchOrdersSinceCursor(
 export async function fetchAbandonedCheckouts(
   credentials: ShopifyCredentials,
   since: Date,
-): Promise<{ checkouts: ShopifyCheckout[]; errors: string[] }> {
+  maxPages: number = DEFAULT_MAX_PAGES,
+): Promise<{ checkouts: ShopifyCheckout[]; errors: string[]; truncated: boolean }> {
   const errors: string[] = [];
   const allCheckouts: ShopifyCheckout[] = [];
 
@@ -203,9 +258,9 @@ export async function fetchAbandonedCheckouts(
     `/checkouts.json?created_at_min=${sinceISO}&status=open&limit=250`;
 
   let pageCount = 0;
-  const MAX_PAGES = 10;
+  let truncated = false;
 
-  while (pageUrl && pageCount < MAX_PAGES) {
+  while (pageUrl && pageCount < maxPages) {
     try {
       const response = await shopifyFetch(credentials, pageUrl);
       if (!response.ok) {
@@ -235,7 +290,12 @@ export async function fetchAbandonedCheckouts(
     }
   }
 
-  return { checkouts: allCheckouts, errors };
+  if (pageUrl && pageCount >= maxPages) {
+    truncated = true;
+    errors.push(`Checkouts pagination truncated at ${maxPages} pages.`);
+  }
+
+  return { checkouts: allCheckouts, errors, truncated };
 }
 
 /**
@@ -245,7 +305,8 @@ export async function fetchAbandonedCheckouts(
 export async function fetchCustomers(
   credentials: ShopifyCredentials,
   since: Date,
-): Promise<{ customers: ShopifyCustomer[]; errors: string[] }> {
+  maxPages: number = DEFAULT_MAX_PAGES,
+): Promise<{ customers: ShopifyCustomer[]; errors: string[]; truncated: boolean }> {
   const errors: string[] = [];
   const allCustomers: ShopifyCustomer[] = [];
 
@@ -254,9 +315,9 @@ export async function fetchCustomers(
     `/customers.json?created_at_min=${sinceISO}&limit=250&fields=id,orders_count,total_spent,created_at,currency`;
 
   let pageCount = 0;
-  const MAX_PAGES = 10;
+  let truncated = false;
 
-  while (pageUrl && pageCount < MAX_PAGES) {
+  while (pageUrl && pageCount < maxPages) {
     try {
       const response = await shopifyFetch(credentials, pageUrl);
       if (!response.ok) {
@@ -285,7 +346,12 @@ export async function fetchCustomers(
     }
   }
 
-  return { customers: allCustomers, errors };
+  if (pageUrl && pageCount >= maxPages) {
+    truncated = true;
+    errors.push(`Customers pagination truncated at ${maxPages} pages.`);
+  }
+
+  return { customers: allCustomers, errors, truncated };
 }
 
 /**
@@ -294,7 +360,8 @@ export async function fetchCustomers(
  */
 export async function fetchProducts(
   credentials: ShopifyCredentials,
-): Promise<{ products: ShopifyProduct[]; errors: string[] }> {
+  maxPages: number = DEFAULT_MAX_PAGES,
+): Promise<{ products: ShopifyProduct[]; errors: string[]; truncated: boolean }> {
   const errors: string[] = [];
   const allProducts: ShopifyProduct[] = [];
 
@@ -302,9 +369,9 @@ export async function fetchProducts(
     `/products.json?status=active&limit=250&fields=id,title,handle,status,variants`;
 
   let pageCount = 0;
-  const MAX_PAGES = 10;
+  let truncated = false;
 
-  while (pageUrl && pageCount < MAX_PAGES) {
+  while (pageUrl && pageCount < maxPages) {
     try {
       const response = await shopifyFetch(credentials, pageUrl);
       if (!response.ok) {
@@ -337,7 +404,12 @@ export async function fetchProducts(
     }
   }
 
-  return { products: allProducts, errors };
+  if (pageUrl && pageCount >= maxPages) {
+    truncated = true;
+    errors.push(`Products pagination truncated at ${maxPages} pages.`);
+  }
+
+  return { products: allProducts, errors, truncated };
 }
 
 /**

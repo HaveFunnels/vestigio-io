@@ -129,14 +129,17 @@ export async function pollShopifyData(
   const checkoutResult = await fetchAbandonedCheckouts(credentials, since).catch(err => ({
     checkouts: [] as any[],
     errors: [err instanceof Error ? err.message : String(err)],
+    truncated: false,
   }));
   const customerResult = await fetchCustomers(credentials, since).catch(err => ({
     customers: [] as any[],
     errors: [err instanceof Error ? err.message : String(err)],
+    truncated: false,
   }));
   const productResult = await fetchProducts(credentials).catch(err => ({
     products: [] as any[],
     errors: [err instanceof Error ? err.message : String(err)],
+    truncated: false,
   }));
 
   errors.push(...checkoutResult.errors);

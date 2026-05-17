@@ -4465,19 +4465,30 @@ function inferMrrContraction(byKey: Map<string, Signal>, scoping: Scoping, cycle
 }
 
 // ──────────────────────────────────────────────
-// Wave 6.1 — Revenue Attribution Integrity
+// Wave 6.1 — Revenue Attribution Integrity (reframed)
 //
-// Consumes the `ad_revenue_overattribution_detected` signal emitted by
-// extractCommerceContextSignals when ad-platform-reported attributed
-// revenue exceeds Stripe transaction revenue by > 30%. The signal is
-// already gated on both inputs being non-null, so this inference only
-// fires when ad pollers AND a revenue source (Stripe) are both wired.
-// Maps to the `revenue_integrity` pack via inference-to-pack.ts.
+// Consumes the `ad_revenue_attribution_gap` signal. We CAN'T claim
+// over-attribution as a conclusion because Stripe doesn't see the
+// customer's full revenue picture — boleto, PIX, MercadoPago, bank
+// transfer, in-person payments, PayPal, alternative gateways all live
+// outside Stripe. The factual delta IS interesting, but the cause is
+// ambiguous: (a) ads correctly attributing revenue collected through
+// channels Stripe doesn't see, (b) genuine over-attribution from
+// last-click ROAS inflation, or (c) attribution windows too generous.
+// So this inference surfaces a neutral "data sources disagree —
+// investigate" finding rather than asserting overattribution. The fix
+// always starts with reconciling total transaction revenue across
+// every collection channel.
+//
+// Signal threshold (ratio > 2x) is intentionally conservative because
+// gaps under 2x can plausibly be explained by off-Stripe channels
+// alone in many Brazilian + LATAM markets.
 // ──────────────────────────────────────────────
 function inferRevenueAttributionMismatch(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('ad_revenue_overattribution_detected');
+  const sig = byKey.get('ad_revenue_attribution_gap');
   if (!sig) return [];
-  const overReportPct = sig.numeric_value ?? 0;
+  const ratioPct = sig.numeric_value ?? 0; // e.g. 250 = 2.5x ad/stripe
+  const ratioX = (ratioPct / 100).toFixed(1);
   const severity = sig.value;
   return [createInference({
     inference_key: 'revenue_attribution_mismatch',
@@ -4489,8 +4500,8 @@ function inferRevenueAttributionMismatch(byKey: Map<string, Signal>, scoping: Sc
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Ad platforms are reporting ${overReportPct}% more attributed revenue than transactions actually show. This is typically a last-click attribution artifact — Meta and Google count touches as conversions even when the conversion would have happened anyway. The gap suggests you're paying CPC against inflated ROAS estimates. The fix is to compare cohort ROAS against a holdout group (campaign pause test) and re-tier ad spend based on the actual transaction-confirmed return — not the platform-reported one.`,
-    reasoning_slots: { severity, over_report_pct: overReportPct },
+    reasoning: `Two of your revenue data sources disagree by a factor of ${ratioX}x — Meta/Google report substantially more attributed revenue than Stripe shows transacted. Three plausible causes, each with a different fix: (a) you collect significant revenue OUTSIDE Stripe (boleto, PIX, MercadoPago, bank transfer, PayPal, in-person) — the ad platforms may be attributing correctly to revenue Stripe simply doesn't see; (b) last-click attribution is over-claiming touches as conversions, inflating ROAS; (c) attribution windows are too generous. Start with reconciliation: pull your full month's revenue across EVERY collection channel and compare against the ad-platform totals. Only adjust ad budget after the gap is explained by (a) or confirmed as (b/c).`,
+    reasoning_slots: { severity, ratio_pct: ratioPct },
   })];
 }
 

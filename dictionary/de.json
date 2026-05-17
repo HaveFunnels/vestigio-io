@@ -4830,12 +4830,12 @@
 			},
 			"revenue_attribution_mismatch": {
 				"remediation_steps": [
-					"Verenge das Attributionsfenster in Meta Ads Manager und Google Ads von 7-day-click/1-day-view auf 1-day-click — das eliminiert den Großteil des Last-Click-Overcountings.",
-					"Führe einen Holdout-Test durch: pausiere 20-30 % der Kampagnen für 14 Tage und miss den tatsächlichen Umsatzrückgang in Stripe gegenüber dem von der Plattform prognostizierten Verlust — die Differenz ist der echte inkrementelle Lift.",
-					"Konfiguriere Multi-Touch-Attribution (datengetriebenes Modell in GA4 oder Triple Whale / Northbeam) und vergleiche deren ROAS mit Last-Click — staffele die Ad-Ausgaben nach dem konservativeren Modell.",
-					"Gleiche zugeordnete Umsätze (GA4 / Meta / Google) wöchentlich mit transaktionsbestätigten Umsätzen (Stripe) ab. CPC-Bid-Entscheidungen müssen sich am tatsächlichen Umsatz orientieren, nicht am plattformgemeldeten."
+					"Konsolidiere den Monatsumsatz, indem du JEDEN Zahlungseingangskanal summierst — Stripe, SEPA, Klarna, Sofort, banküberweisung, persönliche Zahlung, PayPal und sonstige Gateways. Vergleiche diese Summe mit dem von Meta + Google attribuierten Wert.",
+					"Stimmt die Summe ALLER Kanäle mit dem plattformattribuierten Wert überein: die Diskrepanz war nur, dass Stripe die anderen Kanäle nicht sieht. Keine Over-Attribution. Nächster Schritt: diese Off-Stripe-Kanäle in Vestigio integrieren (Wave 6.x), damit der Vergleich in zukünftigen Cycles ehrlich bleibt.",
+					"Liegt die Summe ALLER Kanäle weiterhin deutlich unter dem attribuierten Wert: dann liegt echte Over-Attribution vor. Führe einen Holdout-Test durch — pausiere 20-30 % der Kampagnen für 14 Tage und miss den realen Gesamtumsatzrückgang gegen den plattformseitig projizierten Verlust. Die Differenz ist der echte inkrementelle Lift.",
+					"Konfiguriere Multi-Touch-Attribution (data-driven in GA4 oder Triple Whale/Northbeam) und vergleiche ROAS unter data-driven vs. last-click. Re-tiere die Werbeausgaben am konservativeren Modell NUR nach der oben beschriebenen Kanal-Konsolidierung."
 				],
-				"verification_notes": "Wir ziehen Meta, Google und Stripe im nächsten Zyklus erneut und prüfen, ob die Lücke zwischen attributed_revenue_30d und tatsächlichem MRR unter 30 % gefallen ist."
+				"verification_notes": "Wir ziehen Meta + Google + Stripe im nächsten Cycle erneut. Das Finding verschwindet, sobald der Gap zwischen attribuiertem Wert und Stripe MRR unter 2x fällt (Schwelle, ab der Off-Stripe-Kanäle keine plausible Erklärung mehr darstellen)."
 			},
 			"subscriber_churn_unsustainable": {
 				"remediation_steps": [

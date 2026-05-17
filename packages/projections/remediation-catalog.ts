@@ -2250,15 +2250,15 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	revenue_attribution_mismatch: {
 		remediation_steps: [
-			'Ajuste a attribution window no Meta Ads Manager e Google Ads de 7-day-click/1-day-view para 1-day-click — corta a maior parte do overcounting de last-click.',
-			'Rode um holdout test: pause 20-30% dos campaigns por 14 dias e meça a queda real de receita no Stripe vs a perda projetada pelo platform — a diferença é o lift incremental verdadeiro.',
-			'Configure multi-touch attribution (data-driven no GA4 ou Triple Whale/Northbeam) e compare o ROAS atribuído por modelo data-driven vs last-click — re-tier o ad spend pelo modelo mais conservador.',
-			'Reconcilie receita atribuída do GA4/Meta vs receita confirmada no Stripe semanalmente. Decisões de CPC bid devem ser ancoradas no transaction-confirmed revenue, não no platform-reported.',
+			'Reconcilie a receita total do mês somando TODOS os canais de cobrança — Stripe, boleto, PIX, MercadoPago, transferência bancária, pagamento presencial, PayPal e quaisquer outros gateways. Compare o total com o que Meta + Google estão reportando como atribuído.',
+			'Se a soma de TODOS os canais bate com o atribuído pelas plataformas: a divergência era só Stripe não enxergando os outros canais. Não há overattribution. Próximo passo é puxar essa receita off-Stripe pro Vestigio (Wave 6.x: integrar MercadoPago, gateway de boleto, etc.) pra a comparação ficar honesta nos próximos ciclos.',
+			'Se a soma de TODOS os canais ainda for substancialmente menor que o atribuído: aí sim é overattribution real. Rode um holdout test (pause 20-30% dos campaigns por 14 dias) e meça a queda real de receita total vs a perda projetada pela plataforma — a diferença é o lift incremental verdadeiro.',
+			'Configure multi-touch attribution (data-driven no GA4 ou Triple Whale/Northbeam) e compare ROAS por modelo data-driven vs last-click. Re-tier o ad spend pelo modelo mais conservador APENAS depois da reconciliação total.',
 		],
-		estimated_effort_hours: 10,
+		estimated_effort_hours: 6,
 		verification_strategy: 'integration_pull',
 		verification_notes:
-			'Vamos re-puxar Meta + Google + Stripe no próximo ciclo e verificar se o delta entre attributed_revenue_30d e MRR real caiu abaixo de 30%.',
+			'Vamos re-puxar Meta + Google + Stripe no próximo ciclo. O finding some quando o gap entre attributed e Stripe MRR cai abaixo de 2x (limite após o qual canais off-Stripe deixam de ser explicação plausível).',
 		verification_eta_seconds: 30,
 	},
 

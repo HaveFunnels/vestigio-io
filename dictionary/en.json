@@ -6560,12 +6560,12 @@
 			},
 			"revenue_attribution_mismatch": {
 				"remediation_steps": [
-					"Tighten the attribution window in Meta Ads Manager and Google Ads from 7-day-click/1-day-view to 1-day-click — this removes most of the last-click overcounting.",
-					"Run a holdout test: pause 20-30% of campaigns for 14 days and measure the actual revenue drop in Stripe versus the loss projected by the ad platform — the gap is the real incremental lift.",
-					"Configure multi-touch attribution (data-driven model in GA4, or Triple Whale / Northbeam) and compare its ROAS to last-click — re-tier ad spend against the more conservative model.",
-					"Reconcile attributed revenue (GA4 / Meta / Google) against transaction-confirmed revenue (Stripe) weekly. CPC bid decisions should anchor to actual revenue, not platform-reported revenue."
+					"Reconcile the month's total revenue by summing EVERY collection channel — Stripe, boleto, PIX, MercadoPago, bank transfer, in-person payment, PayPal, and any other gateway. Compare that total against what Meta + Google are reporting as attributed.",
+					"If the sum of ALL channels matches the platform-attributed total: the discrepancy was just Stripe not seeing the other channels. No over-attribution. Next step is to wire those off-Stripe channels into Vestigio (Wave 6.x: MercadoPago, boleto gateway, etc.) so the comparison stays honest on future cycles.",
+					"If the sum of ALL channels is still substantially lower than the platform-attributed total: NOW you have real over-attribution. Run a holdout test — pause 20-30% of campaigns for 14 days and measure the real total-revenue drop vs the platform-projected loss. The difference is the actual incremental lift.",
+					"Set up multi-touch attribution (data-driven in GA4 or Triple Whale/Northbeam) and compare ROAS under data-driven vs last-click. Only re-tier ad spend by the more conservative model AFTER the channel reconciliation above is complete."
 				],
-				"verification_notes": "We will re-pull Meta, Google, and Stripe in the next cycle and verify whether the gap between attributed_revenue_30d and real MRR fell below 30%."
+				"verification_notes": "We'll re-pull Meta + Google + Stripe in the next cycle. The finding disappears when the attributed-vs-Stripe-MRR gap falls below 2x (the threshold under which off-Stripe channels stop being a plausible explanation)."
 			},
 			"subscriber_churn_unsustainable": {
 				"remediation_steps": [

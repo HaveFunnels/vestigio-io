@@ -6478,41 +6478,48 @@ function extractCommerceContextSignals(
     }));
   }
 
-  // ── Wave 6.1: Revenue Attribution Integrity ──
+  // ── Wave 6.1: Revenue Attribution Integrity (reframed) ──
   //
-  // 15. Ad-revenue overattribution detected. Compares the sum of
-  //     `attributed_revenue_30d` reported by Meta + Google against the
-  //     transaction-confirmed revenue reference (Stripe MRR for SaaS).
-  //     Fires only when BOTH values are non-null and attributed > 0, so
-  //     the signal stays silent until pollers ship the new field (Phase 2)
-  //     AND a real revenue source is connected. Threshold: > 30% over-
-  //     report triggers; >= 50% escalates to high severity. The pattern
-  //     is almost always a last-click attribution artifact — platforms
-  //     claim conversions on visits that would have purchased anyway,
-  //     inflating ROAS and justifying CPC bids the actual revenue can't
-  //     sustain.
+  // 15. Ad-platform vs. Stripe revenue disagreement. We CANNOT assert
+  //     over-attribution from this delta alone because Stripe doesn't
+  //     see the customer's full transaction picture — there's likely
+  //     boleto, PIX, bank transfer, MercadoPago, in-person payments,
+  //     PayPal, or other gateways outside Stripe. So a gap of
+  //     "ad_attributed > stripe_mrr" can mean:
+  //       (a) Real over-attribution (last-click ROAS inflation), OR
+  //       (b) Customer collects revenue through channels Stripe doesn't
+  //           see (offline, multi-gateway, alternative payment methods)
+  //     Both are real, and we can't distinguish them without total
+  //     transaction revenue from every source. So this signal fires
+  //     ONLY when the gap is huge enough (>100%, attributed at least
+  //     2x Stripe) that no plausible mix of off-Stripe channels fully
+  //     explains it, AND we surface it as a neutral "data sources
+  //     disagree — worth investigating" finding rather than asserting
+  //     a conclusion. Confidence stays moderate.
   const attributedAdRevenue = commerce.ad_attributed_revenue_monthly;
-  const actualRevenue = commerce.mrr;
+  const stripeRevenue = commerce.mrr;
   if (
     attributedAdRevenue != null &&
     attributedAdRevenue > 0 &&
-    actualRevenue != null &&
-    actualRevenue > 0
+    stripeRevenue != null &&
+    stripeRevenue > 0
   ) {
-    const overReport = attributedAdRevenue - actualRevenue;
-    const pct = overReport / actualRevenue;
-    if (pct > 0.30) {
-      const severity = pct > 0.50 ? 'high' : 'medium';
+    const ratio = attributedAdRevenue / stripeRevenue;
+    if (ratio > 2.0) {
+      // Severity escalates with how implausibly large the gap is.
+      // 2x-3x → medium, 3x+ → high (very few off-Stripe channel mixes
+      // can explain 3x+ deltas).
+      const severity = ratio > 3.0 ? 'high' : 'medium';
       signals.push(createSignal({
-        signal_key: 'ad_revenue_overattribution_detected',
+        signal_key: 'ad_revenue_attribution_gap',
         category: SignalCategory.Commerce,
         attribute: 'commerce.ad_attribution_delta',
         value: severity,
-        numeric_value: Math.round(pct * 100),
-        confidence: 90,
+        numeric_value: Math.round(ratio * 100), // basis: percent of stripe (e.g. 250 = 2.5x)
+        confidence: 65, // heuristic — off-Stripe channels remain a plausible alternate explanation
         scoping, cycle_ref, ids,
         evidence_refs: integrationRefs,
-        description: `Ad platforms report ~$${Math.round(attributedAdRevenue).toLocaleString()}/mo in attributed revenue, but Stripe transactions show $${Math.round(actualRevenue).toLocaleString()}/mo — a ${Math.round(pct * 100)}% over-report. This usually means last-click attribution counts visits ads merely "touched" as conversions, inflating ROAS and justifying CPC bids the actual revenue can't sustain.`,
+        description: `Meta + Google report ~$${Math.round(attributedAdRevenue).toLocaleString()}/mo in attributed revenue, while Stripe transactions show $${Math.round(stripeRevenue).toLocaleString()}/mo (${ratio.toFixed(1)}x gap). Three plausible causes: (a) revenue collected outside Stripe — boleto, PIX, MercadoPago, bank transfer, in-person, PayPal — that the ad platform IS attributing correctly; (b) last-click attribution inflating ROAS by claiming conversions ads merely "touched"; (c) attribution windows too generous. The fix is to reconcile total transaction revenue across all channels before adjusting ad budget.`,
       }));
     }
   }

@@ -6353,12 +6353,12 @@
 			},
 			"revenue_attribution_mismatch": {
 				"remediation_steps": [
-					"Ajusta la ventana de atribución en Meta Ads Manager y Google Ads de 7-day-click/1-day-view a 1-day-click — esto elimina la mayor parte del sobrerrecuento de last-click.",
-					"Ejecuta un holdout test: pausa el 20-30% de las campañas durante 14 días y mide la caída real de ingresos en Stripe frente a la pérdida proyectada por la plataforma — la diferencia es el lift incremental real.",
-					"Configura atribución multi-touch (modelo data-driven en GA4, o Triple Whale / Northbeam) y compara su ROAS con last-click — re-prioriza el ad spend según el modelo más conservador.",
-					"Reconcilia los ingresos atribuidos (GA4 / Meta / Google) contra los ingresos confirmados por transacción (Stripe) semanalmente. Las decisiones de CPC bid deben anclarse en los ingresos reales, no en los reportados por la plataforma."
+					"Reconcilia los ingresos totales del mes sumando TODOS los canales de cobranza — Stripe, boleto, PIX, MercadoPago, transferencia bancaria, pago presencial, PayPal y cualquier otro gateway. Compara ese total con lo que Meta + Google están reportando como atribuido.",
+					"Si la suma de TODOS los canales coincide con el atribuido por las plataformas: la discrepancia era solo Stripe no viendo los otros canales. No hay over-attribution. El próximo paso es conectar esos canales off-Stripe en Vestigio (Wave 6.x: MercadoPago, gateway de boleto, etc.) para que la comparación se mantenga honesta en próximos ciclos.",
+					"Si la suma de TODOS los canales sigue siendo sustancialmente menor que el atribuido: ahora SÍ es over-attribution real. Ejecuta un holdout test — pausa 20-30% de los campaigns por 14 días y mide la caída real de ingresos totales vs la pérdida proyectada por la plataforma. La diferencia es el lift incremental real.",
+					"Configura multi-touch attribution (data-driven en GA4 o Triple Whale/Northbeam) y compara ROAS bajo modelo data-driven vs last-click. Re-tier el ad spend por el modelo más conservador SOLO después de la reconciliación por canales arriba."
 				],
-				"verification_notes": "Volveremos a extraer Meta, Google y Stripe en el próximo ciclo y verificaremos si la brecha entre attributed_revenue_30d y MRR real cayó por debajo del 30%."
+				"verification_notes": "Volveremos a extraer Meta + Google + Stripe en el próximo ciclo. El finding desaparece cuando el gap entre atribuido y Stripe MRR cae por debajo de 2x (umbral bajo el cual los canales off-Stripe dejan de ser una explicación plausible)."
 			},
 			"subscriber_churn_unsustainable": {
 				"remediation_steps": [

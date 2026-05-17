@@ -271,6 +271,9 @@ export function computeInferences(
   inferences.push(...inferPaymentDiversityInsufficient(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferMrrContraction(byKey, scoping, cycle_ref, ids));
 
+  // Wave 7.11M: Pixel coverage gap (measurement integrity)
+  inferences.push(...inferPixelCoverageGap(byKey, scoping, cycle_ref, ids));
+
   // Wave 4.1: Cybersecurity Phase 2
   inferences.push(...inferInformationDisclosure(first, byKey, scoping, cycle_ref, ids));
   inferences.push(...inferScriptSupplyChainRisk(first, byKey, scoping, cycle_ref, ids));
@@ -4456,5 +4459,42 @@ function inferMrrContraction(byKey: Map<string, Signal>, scoping: Scoping, cycle
     evidence_refs: sig.evidence_refs,
     reasoning: `MRR is contracting at ${deltaPct}% cycle-over-cycle. This is the leading indicator that failed_payment_rate or subscriber_churn_rate is no longer being offset by new subscriber growth. Dunning recovery, retention offers, and churn diagnosis all need to ramp before the decline compounds across the next renewal cycle.`,
     reasoning_slots: { severity, delta_pct: deltaPct },
+  })];
+}
+
+// ──────────────────────────────────────────────
+// Wave 7.11M — Pixel coverage gap (measurement integrity)
+//
+// Surfaces partial-pixel-installation as a high-confidence finding so the
+// user understands WHY checkout-dependent findings are absent or muted.
+// Signal-layer gating (in extractBehavioralSignals) already prevents
+// emitting false positives like `high_intent_detour`/`checkout_abandon`
+// when checkout coverage is missing — this inference closes the loop by
+// telling the user the gap exists. Maps to revenue_integrity pack because
+// missing pixel coverage on checkout/thank_you directly distorts revenue
+// path visibility.
+// ──────────────────────────────────────────────
+function inferPixelCoverageGap(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
+  const sig = byKey.get('pixel_coverage_gap');
+  if (!sig) return [];
+  // signal.value is a comma-separated list of missing page types (e.g. "checkout" or "checkout,thank_you")
+  const missingTypes = String(sig.value || '').split(',').filter(Boolean);
+  const checkoutMissing = missingTypes.includes('checkout');
+  // Severity: missing checkout is high (no revenue funnel visibility),
+  // missing only thank_you is medium (conversion attribution lost, but
+  // pre-conversion behavior still visible).
+  const severity: 'high' | 'medium' = checkoutMissing ? 'high' : 'medium';
+  return [createInference({
+    inference_key: 'pixel_coverage_gap',
+    category: InferenceCategory.PixelCoverageGap,
+    conclusion: 'pixel_coverage_gap',
+    conclusion_value: severity,
+    severity_hint: severity,
+    confidence: sig.confidence,
+    scoping, cycle_ref, ids,
+    signal_refs: [makeRef('signal', sig.id)],
+    evidence_refs: sig.evidence_refs,
+    reasoning: `The behavioral pixel is not installed on ${missingTypes.join(' and ')}. Behavioral findings about ${missingTypes.join('/')} are being suppressed to avoid false positives (otherwise "zero conversions" gets misread as "no conversions happen" when the real cause is "no pixel sees them"). Install the pixel on the missing page types to surface checkout abandonment, retry friction, and conversion-rate findings that are currently invisible.`,
+    reasoning_slots: { severity, missing_types: missingTypes.join(',') },
   })];
 }

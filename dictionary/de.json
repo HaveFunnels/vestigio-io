@@ -7456,6 +7456,15 @@
 					"Die Bearbeitung steigert die Markenautorität in KI-Antworten — Wikipedia macht ca. 7,8 % der ChatGPT-Zitate aus."
 				],
 				"verification_notes": "Wir überprüfen den Wikipedia-Artikel der Marke erneut und bestätigen, dass die Extract-Länge > 800 Zeichen und die letzte Bearbeitung < 18 Monate alt ist."
+			},
+			"pixel_coverage_gap": {
+				"remediation_steps": [
+					"Identifiziere, welchen kritischen Seiten (Checkout, Thank-You, Cart) das Pixel-Snippet fehlt — prüfe den HTML im Inkognito-Modus auf das <script src=\"/snippet/vestigio.js\">.",
+					"Installiere das Snippet im <head> dieser Seiten. Falls deine Plattform ein gemeinsames Template nutzt (Shopify, Nuvemshop, etc.), genügt eine globale Theme-Änderung.",
+					"Bestätige, dass das page_view-Event auf jeder installierten Seite feuert, via DevTools > Network mit Filter \"vestigio.js\".",
+					"Starte einen neuen Audit-Cycle: das pixel_coverage_gap-Signal sollte verschwinden und Checkout-Abbruch / Conversion-Rate-Findings tauchen mit echten Daten auf."
+				],
+				"verification_notes": "Wir starten einen Headless-Browser auf jeder als fehlend markierten Seite und prüfen, ob das Pixel-Snippet vorhanden ist und das page_view-Event feuert."
 			}
 		}
 	},

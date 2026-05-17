@@ -9186,6 +9186,15 @@
 					"Editing increases brand authority in AI responses — Wikipedia is ~7.8% of ChatGPT citations."
 				],
 				"verification_notes": "We will re-check the brand's Wikipedia article and confirm that extract length > 800 chars and the last edit is < 18 months."
+			},
+			"pixel_coverage_gap": {
+				"remediation_steps": [
+					"Identify which critical pages (checkout, thank_you, cart) are missing the pixel snippet — inspect the HTML in incognito mode looking for the <script src=\"/snippet/vestigio.js\">.",
+					"Install the snippet in the <head> of those pages. If your platform uses a shared template (Shopify, Nuvemshop, etc.), a single theme-wide edit covers it.",
+					"Confirm the page_view event fires on each installed page via DevTools > Network filtering for \"vestigio.js\".",
+					"Run a new audit cycle: the pixel_coverage_gap signal should disappear and checkout-abandonment / conversion-rate findings will surface with real data."
+				],
+				"verification_notes": "We'll run a headless browser against each page flagged as missing and verify the pixel snippet is present + fires the page_view event."
 			}
 		}
 	},

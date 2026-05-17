@@ -8979,6 +8979,15 @@
 					"La edición incrementa la autoridad de la marca en respuestas de IA — Wikipedia es ~7,8% de las citas ChatGPT."
 				],
 				"verification_notes": "Vamos a re-chequear el artículo Wikipedia de la marca y confirmar que extract length > 800 chars y última edición < 18 meses."
+			},
+			"pixel_coverage_gap": {
+				"remediation_steps": [
+					"Identifica qué páginas críticas (checkout, thank_you, cart) están sin el snippet del pixel — inspecciona el HTML en modo incógnito buscando el <script src=\"/snippet/vestigio.js\">.",
+					"Instala el snippet en el <head> de esas páginas. Si tu plataforma usa un template compartido (Shopify, Nuvemshop, etc.), una edición global del theme cubre todo.",
+					"Confirma que el evento page_view dispara en cada página instalada vía DevTools > Network filtrando por \"vestigio.js\".",
+					"Ejecuta un nuevo audit cycle: el sinal pixel_coverage_gap debería desaparecer y los findings de abandono de checkout / tasa de conversión van a aparecer con datos reales."
+				],
+				"verification_notes": "Ejecutaremos un navegador headless en cada página marcada como faltante y verificaremos si el snippet del pixel está presente + dispara el evento page_view."
 			}
 		}
 	},

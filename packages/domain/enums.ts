@@ -553,6 +553,8 @@ export enum InferenceCategory {
   SubscriberChurnUnsustainable = 'subscriber_churn_unsustainable',
   PaymentDiversityInsufficient = 'payment_diversity_insufficient',
   MrrContractionDetected = 'mrr_contraction_detected',
+  // Wave 7.11M: Pixel coverage gap (measurement integrity)
+  PixelCoverageGap = 'pixel_coverage_gap',
   // Wave 4.1: Cybersecurity Phase 2
   InformationDisclosure = 'information_disclosure',
   ScriptSupplyChainRisk = 'script_supply_chain_risk',

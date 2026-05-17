@@ -2240,6 +2240,21 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 30,
 	},
 
+	// Wave 7.11M — pixel coverage gap (measurement integrity)
+	pixel_coverage_gap: {
+		remediation_steps: [
+			'Identifique quais páginas críticas (checkout, thank_you, cart) estão sem o snippet do pixel — inspecione o HTML em modo anônimo procurando o <script src="/snippet/vestigio.js">.',
+			'Instale o snippet no <head> dessas páginas. Se sua plataforma usa template comum (Shopify, Nuvemshop, etc), basta uma edição global no theme.',
+			'Confirme que o evento page_view dispara em cada página instalada via DevTools > Network filtrando "vestigio.js".',
+			'Rode um audit cycle novo: o sinal pixel_coverage_gap deve sumir e os findings de checkout abandono / conversion rate vão aparecer com dados reais.',
+		],
+		estimated_effort_hours: 1,
+		verification_strategy: 'browser_runtime',
+		verification_notes:
+			'Vamos rodar um navegador headless em cada página apontada como missing e verificar se o snippet do pixel está presente + dispara o evento de page_view.',
+		verification_eta_seconds: 45,
+	},
+
 	// ─────────────────────────────────────────────
 	// Behavioral (Phase 4B — pixel-dependent)
 	// ─────────────────────────────────────────────

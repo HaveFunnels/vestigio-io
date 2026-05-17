@@ -36,16 +36,6 @@ import {
 } from '../apps/platform/cost-guardrails';
 
 import {
-  scheduleAudit,
-  startAudit,
-  completeAudit,
-  failAudit,
-  getPendingAudits,
-  isAuditDue,
-  resetScheduler,
-} from '../apps/platform/audit-scheduler';
-
-import {
   CrawlSession,
   DEFAULT_CONSTRAINTS,
   hashContent,
@@ -295,78 +285,14 @@ async function runAllTests() {
   });
 
   // ═══════════════════════════════════════════════
-  // 3. Audit Scheduler
+  // 3. Audit Scheduler — removed 2026-05-17
+  //
+  // The legacy in-memory scheduler (`apps/platform/audit-scheduler.ts`)
+  // was deleted as part of Wave 7.11K cleanup. The production scheduler
+  // is `apps/audit-runner/scheduler.ts` which has its own integration
+  // tests. The 9 tests removed here exercised dead code that no
+  // production path called.
   // ═══════════════════════════════════════════════
-  console.log('\n── Audit Scheduler ──');
-
-  test('vestigio plan cannot schedule time-based audits', () => {
-    resetScheduler();
-    const result = scheduleAudit('env_1', 'time_based', 'vestigio');
-    assertEqual(result.scheduled, false, 'should not schedule');
-    assert(result.reason !== null, 'should have reason');
-  });
-
-  test('pro plan can schedule time-based audits', () => {
-    resetScheduler();
-    const result = scheduleAudit('env_1', 'time_based', 'pro');
-    assertEqual(result.scheduled, true, 'should schedule');
-    assert(result.audit !== null, 'should have audit');
-    assertEqual(result.audit!.audit_type, 'incremental', 'default is incremental');
-  });
-
-  test('max plan can schedule time-based audits', () => {
-    resetScheduler();
-    const result = scheduleAudit('env_1', 'time_based', 'max');
-    assertEqual(result.scheduled, true, 'should schedule');
-  });
-
-  test('onboarding trigger always works', () => {
-    resetScheduler();
-    const result = scheduleAudit('env_1', 'onboarding_complete', 'vestigio');
-    assertEqual(result.scheduled, true, 'onboarding always allowed');
-  });
-
-  test('manual refresh always works', () => {
-    resetScheduler();
-    const result = scheduleAudit('env_1', 'manual_refresh', 'vestigio');
-    assertEqual(result.scheduled, true, 'manual always allowed');
-  });
-
-  test('audit lifecycle: pending → running → complete', () => {
-    resetScheduler();
-    const result = scheduleAudit('env_lc', 'onboarding_complete', 'pro');
-    assert(result.audit !== null, 'should create audit');
-    assertEqual(result.audit!.status, 'pending', 'starts pending');
-    startAudit(result.audit!.id);
-    completeAudit(result.audit!.id);
-  });
-
-  test('audit lifecycle: pending → running → failed', () => {
-    resetScheduler();
-    const result = scheduleAudit('env_fail', 'onboarding_complete', 'pro');
-    startAudit(result.audit!.id);
-    failAudit(result.audit!.id);
-  });
-
-  test('isAuditDue returns false for vestigio', () => {
-    resetScheduler();
-    assertEqual(isAuditDue('env_1', 'vestigio'), false, 'vestigio never due');
-  });
-
-  test('isAuditDue returns true when never audited', () => {
-    resetScheduler();
-    assertEqual(isAuditDue('env_1', 'pro'), true, 'pro due when never audited');
-  });
-
-  test('daily limit respected for time-based audits', () => {
-    resetScheduler();
-    const r1 = scheduleAudit('env_dl', 'time_based', 'pro');
-    const r2 = scheduleAudit('env_dl', 'time_based', 'pro');
-    const r3 = scheduleAudit('env_dl', 'time_based', 'pro');
-    assertEqual(r1.scheduled, true, 'first');
-    assertEqual(r2.scheduled, true, 'second');
-    assertEqual(r3.scheduled, false, 'third blocked (daily limit 2)');
-  });
 
   // ═══════════════════════════════════════════════
   // 4. Collection Hardening

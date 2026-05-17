@@ -50,7 +50,14 @@ interface SearchStreamChunk {
 
 interface GaqlRow {
 	campaign?: { id?: string; name?: string };
-	metrics?: { costMicros?: string };
+	metrics?: {
+		costMicros?: string;
+		// Google Ads returns conversions_value in the account's currency,
+		// NOT in micros (unlike cost_micros). The metric itself is a
+		// plain double in the JSON response. Source: Google Ads API ref
+		// for `metrics.conversions_value`.
+		conversionsValue?: number | string;
+	};
 	customer?: { currencyCode?: string };
 	adGroupAd?: {
 		ad?: {
@@ -62,6 +69,14 @@ interface GaqlRow {
 		};
 	};
 }
+
+// Currencies we accept without conversion. The signal/inference layer
+// compares ad-attributed revenue against Stripe MRR; if currencies
+// don't match the org primary, the comparison is meaningless.
+// Cross-currency conversion is a follow-up — for now we only emit a
+// value when currency is in this allowlist AND the engine layer is
+// responsible for the org-currency match check + skipping mismatches.
+const GOOGLE_ADS_SUPPORTED_CURRENCIES = new Set<string>(["USD", "BRL", "EUR"]);
 
 async function exchangeRefreshToken(
 	credentials: GoogleAdsCredentials,
@@ -162,7 +177,7 @@ export async function pollGoogleAdsData(
 			errorMsg.includes("invalid_grant") ||
 			errorMsg.includes("Token has been expired or revoked");
 		return {
-			data: { ad_spend_30d: 0, currency: "USD", campaigns: [] },
+			data: { ad_spend_30d: 0, attributed_revenue_30d: null, currency: "USD", campaigns: [] },
 			errors,
 			duration_ms: Date.now() - started,
 			token_revoked: isRevoked || undefined,
@@ -178,6 +193,7 @@ export async function pollGoogleAdsData(
 			campaign.name,
 			customer.currency_code,
 			metrics.cost_micros,
+			metrics.conversions_value,
 			ad_group_ad.ad.final_urls,
 			ad_group_ad.ad.responsive_search_ad.headlines,
 			ad_group_ad.ad.responsive_search_ad.descriptions
@@ -192,7 +208,7 @@ export async function pollGoogleAdsData(
 	if (!gaqlRes.ok || !gaqlRes.rows) {
 		errors.push(`gaql: ${gaqlRes.error ?? "unknown"}`);
 		return {
-			data: { ad_spend_30d: 0, currency: "USD", campaigns: [] },
+			data: { ad_spend_30d: 0, attributed_revenue_30d: null, currency: "USD", campaigns: [] },
 			errors,
 			duration_ms: Date.now() - started,
 		};
@@ -206,11 +222,27 @@ export async function pollGoogleAdsData(
 	>();
 	let currency = "USD";
 	let totalCostMicros = 0;
+	// Track whether ANY row carried a conversions_value field. If none
+	// did, conversion tracking probably isn't configured and we should
+	// return null (not 0) to mean "unknown" rather than "zero sales".
+	let sawConversionsValue = false;
+	let totalConversionsValue = 0;
 	for (const row of gaqlRes.rows) {
 		const campaignId = row.campaign?.id;
 		if (!campaignId) continue;
 		const costMicros = parseInt(row.metrics?.costMicros ?? "0", 10) || 0;
 		totalCostMicros += costMicros;
+
+		// conversions_value comes through as a JSON number OR string
+		// depending on REST gateway behavior; tolerate both. Unlike
+		// cost_micros, it is already in the account's currency unit.
+		const rawCv = row.metrics?.conversionsValue;
+		if (rawCv !== undefined && rawCv !== null) {
+			sawConversionsValue = true;
+			const cv = typeof rawCv === "number" ? rawCv : parseFloat(rawCv);
+			if (Number.isFinite(cv)) totalConversionsValue += cv;
+		}
+
 		if (row.customer?.currencyCode) currency = row.customer.currencyCode;
 
 		const existing = byCampaign.get(campaignId);
@@ -246,9 +278,21 @@ export async function pollGoogleAdsData(
 		}))
 		.sort((a, b) => b.spend_30d - a.spend_30d);
 
+	// Only emit attributed revenue when:
+	//   (a) at least one row carried conversions_value (i.e. conversion
+	//       tracking is wired up), and
+	//   (b) currency is in our supported allowlist (no FX conversion yet).
+	// Otherwise leave null so the engine layer can skip the overattribution
+	// comparison instead of falsely seeing 0 reported revenue.
+	const attributedRevenue30d =
+		sawConversionsValue && GOOGLE_ADS_SUPPORTED_CURRENCIES.has(currency)
+			? totalConversionsValue
+			: null;
+
 	return {
 		data: {
 			ad_spend_30d: totalCostMicros / 1_000_000,
+			attributed_revenue_30d: attributedRevenue30d,
 			currency,
 			campaigns,
 		},

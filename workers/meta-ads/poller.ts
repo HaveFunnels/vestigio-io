@@ -45,7 +45,45 @@ interface InsightsResponse {
 		impressions?: string;
 		clicks?: string;
 		account_currency?: string;
+		actions?: { action_type?: string; value?: string }[];
+		action_values?: { action_type?: string; value?: string }[];
 	}[];
+}
+
+// Meta reports "purchase" attribution under several action_type aliases
+// depending on how the pixel/CAPI is wired:
+//   - "purchase"            → standard pixel event
+//   - "omni_purchase"       → unified pixel + offline + app
+//   - "onsite_web_purchase" → on-Facebook checkout (Shops)
+// We sum across all three because a single account can mix sources;
+// using only "purchase" undercounts Shops/CAPI revenue. Meta dedupes
+// these server-side, so we won't double-count from the same event.
+const META_PURCHASE_ACTION_TYPES = new Set<string>([
+	"purchase",
+	"omni_purchase",
+	"onsite_web_purchase",
+]);
+
+// Currencies we accept without conversion. The signal/inference layer
+// compares ad-attributed revenue against Stripe MRR; if currencies
+// don't match the org primary, the comparison is meaningless.
+// Cross-currency conversion is a follow-up — for now we only emit a
+// value when currency is in this allowlist AND the engine layer is
+// responsible for the org-currency match check + skipping mismatches.
+const META_SUPPORTED_CURRENCIES = new Set<string>(["USD", "BRL", "EUR"]);
+
+function sumPurchaseActionValues(
+	actionValues: { action_type?: string; value?: string }[] | undefined,
+): number {
+	if (!actionValues) return 0;
+	let total = 0;
+	for (const av of actionValues) {
+		if (!av.action_type) continue;
+		if (!META_PURCHASE_ACTION_TYPES.has(av.action_type)) continue;
+		const v = parseFloat(av.value ?? "0");
+		if (Number.isFinite(v)) total += v;
+	}
+	return total;
 }
 
 interface AdsListResponse {
@@ -155,20 +193,34 @@ export async function pollMetaAdsData(
 
 	const accountId = normaliseAccountId(credentials.ad_account_id);
 
-	// 1. Account insights — total spend 30d + currency
+	// 1. Account insights — total spend 30d + currency + purchase attribution.
+	// `actions` and `action_values` are free additions to the field mask and
+	// give us per-event purchase counts + revenue for the same 30d window.
 	const insightsRes = await graphGet<InsightsResponse>(
-		`/${accountId}/insights?fields=spend,impressions,clicks,account_currency&date_preset=last_30d&level=account`,
+		`/${accountId}/insights?fields=spend,impressions,clicks,account_currency,actions,action_values&date_preset=last_30d&level=account`,
 		activeToken,
 	);
 
 	let adSpend30d = 0;
 	let currency = "USD";
+	// null = "we don't know" (field absent, request failed, or conversion
+	// tracking not configured). 0 with no errors = "tracking on, no sales".
+	let attributedRevenue30d: number | null = null;
 	if (!insightsRes.ok) {
 		errors.push(`insights: ${insightsRes.error ?? "unknown"}`);
 	} else {
 		const rec = insightsRes.data?.data?.[0];
 		adSpend30d = parseFloat(rec?.spend ?? "0") || 0;
 		currency = rec?.account_currency ?? "USD";
+
+		// Only populate attributed revenue when:
+		//   (a) Meta returned an action_values array (i.e. pixel/CAPI is
+		//       wired and the account has conversion events configured),
+		//   (b) currency is in our supported allowlist (no FX conversion yet).
+		// Otherwise leave as null so the engine layer can skip the signal.
+		if (rec?.action_values && META_SUPPORTED_CURRENCIES.has(currency)) {
+			attributedRevenue30d = sumPurchaseActionValues(rec.action_values);
+		}
 	}
 
 	// 2. Top ads with creative + per-ad spend. Cap at 20 to keep payload
@@ -220,6 +272,7 @@ export async function pollMetaAdsData(
 	return {
 		data: {
 			ad_spend_30d: adSpend30d,
+			attributed_revenue_30d: attributedRevenue30d,
 			currency,
 			creatives,
 		},

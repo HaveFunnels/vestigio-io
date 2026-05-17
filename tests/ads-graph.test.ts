@@ -46,7 +46,7 @@ function metaSnapshot(creatives: MetaAdsSnapshotData["creatives"]): IntegrationS
 		provider: "meta_ads",
 		fetched_at: new Date().toISOString(),
 		window: "30d",
-		data: { ad_spend_30d: creatives.reduce((s, c) => s + c.spend_30d, 0), currency: "BRL", creatives },
+		data: { ad_spend_30d: creatives.reduce((s, c) => s + c.spend_30d, 0), attributed_revenue_30d: null, currency: "BRL", creatives },
 	};
 }
 
@@ -55,7 +55,7 @@ function googleSnapshot(campaigns: GoogleAdsSnapshotData["campaigns"]): Integrat
 		provider: "google_ads",
 		fetched_at: new Date().toISOString(),
 		window: "30d",
-		data: { ad_spend_30d: campaigns.reduce((s, c) => s + c.spend_30d, 0), currency: "BRL", campaigns },
+		data: { ad_spend_30d: campaigns.reduce((s, c) => s + c.spend_30d, 0), attributed_revenue_30d: null, currency: "BRL", campaigns },
 	};
 }
 

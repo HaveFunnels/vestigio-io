@@ -6295,6 +6295,89 @@
 			"checkout_performance_critical": "Cada 100ms de latencia en el checkout reduce la conversión en ~0.7%.",
 			"cookie_consent_missing": "El cumplimiento de cookies es obligatorio en la UE, cada vez más fiscalizado en Latinoamérica.",
 			"ad_creative_message_mismatch": "Desconexión promesa-contenido: {severity}. ${totalSpend}/mes de inversión en ads dirigiendo tráfico a páginas donde la promesa del anuncio no coincide con el contenido de la LP. La desconexión entre lo que el anuncio promete y lo que la página entrega suprime la conversión."
+		},
+		"remediation": {
+			"trust_boundary_crossed": {
+				"remediation_steps": [
+					"Mueve el formulario de pago al mismo dominio de la tienda, o usa el checkout embebido del gateway.",
+					"Si el cambio de dominio es inevitable, añade el logotipo de la tienda y un sello de seguridad en la página externa.",
+					"Garantiza HTTPS y certificado válido en ambos dominios — verifica en navegadores en modo incógnito.",
+					"Añade texto en el botón de checkout explicando que el siguiente paso es una página segura del procesador de pago."
+				],
+				"verification_notes": "Ejecutaremos el checkout en un navegador headless, seguiremos los redirects hasta la página de pago y verificaremos si la URL permanece en tu dominio o si hay logotipo + sello en la página externa."
+			},
+			"policy_gap": {
+				"remediation_steps": [
+					"Publica páginas separadas para política de privacidad, términos de uso y política de reembolso.",
+					"Enlaza las tres políticas en el footer y también en el checkout cerca de los campos de pago.",
+					"Incluye como mínimo: plazo de reembolso, proceso de devolución, cumplimiento LGPD/RGPD y canal de contacto.",
+					"Menciona explícitamente la política de reembolso en la página del producto cerca del botón de compra."
+				],
+				"verification_notes": "Volveremos a rastrear el sitio y verificaremos si existen páginas dedicadas de política, están enlazadas desde el footer y son accesibles desde el checkout."
+			},
+			"measurement_blindspot": {
+				"remediation_steps": [
+					"Instala analytics (GA4, Plausible o similar) en todas las páginas comerciales.",
+					"Verifica que el evento page-view se dispare en homepage, pricing, producto, checkout y thank-you.",
+					"Confirma que el banner de consentimiento no bloquee el script de medición principal.",
+					"Configura eventos de conversión (compra, registro) y valídalos en la herramienta de debug de la plataforma."
+				],
+				"verification_notes": "Cargaremos las páginas comerciales en un navegador e inspeccionaremos la pestaña Network + dataLayer en busca de eventos de analytics disparados en cada una."
+			},
+			"unclear_conversion_intent": {
+				"remediation_steps": [
+					"Define un único CTA principal por página comercial sobre el pliegue.",
+					"Mueve los CTAs secundarios (newsletter, blog, social) bajo el pliegue principal.",
+					"Usa el mismo texto de CTA principal en pricing, producto y homepage para reforzar el reconocimiento.",
+					"Elimina o esconde acciones competidoras en el mismo viewport que el CTA principal."
+				],
+				"verification_notes": "Analizaremos el layout above-the-fold de cada página comercial buscando claridad de CTA y contaremos acciones competidoras en el viewport principal."
+			},
+			"commercial_pages_disconnected": {
+				"remediation_steps": [
+					"Añade un enlace CTA directo desde la homepage hacia /pricing o /product.",
+					"Añade un CTA directo de /pricing hacia /checkout (o la acción principal de compra).",
+					"Añade un CTA directo de /product de vuelta a /pricing o /checkout.",
+					"Verifica que cada página comercial enlace al SIGUIENTE paso del funnel en un solo clic."
+				],
+				"verification_notes": "Volveremos a rastrear las páginas comerciales y verificaremos si cada una tiene al menos un CTA al siguiente paso del funnel."
+			},
+			"failed_payment_revenue_drain": {
+				"remediation_steps": [
+					"Activa Stripe Card Updater y Smart Retries para reintentar pagos fallidos automáticamente.",
+					"Envía emails de dunning ante el primer fallo con un enlace directo para actualizar el método de pago.",
+					"Añade un periodo de gracia de 3 días antes de suspender el acceso en renovaciones fallidas.",
+					"Monitoriza la tasa de pagos fallidos semanalmente y mantela por debajo del 5%."
+				],
+				"verification_notes": "Volveremos a extraer métricas de Stripe 30 días después de las correcciones y confirmaremos si la tasa de pagos fallidos cayó por debajo del 5%."
+			},
+			"subscriber_churn_unsustainable": {
+				"remediation_steps": [
+					"Implementa una encuesta de cancelación para capturar por qué se van los suscriptores.",
+					"Ofrece rutas de retención antes del cancel final: pausar suscripción, bajar plan o extender prueba.",
+					"Dispara un email de recuperación 14 días tras la cancelación con una oferta personalizada.",
+					"Analiza cohortes de churn por antigüedad para identificar el mes con más cancelaciones."
+				],
+				"verification_notes": "Volveremos a extraer datos de suscripción de Stripe 60 días tras la implementación para comparar la tasa de churn con la cohorte anterior."
+			},
+			"security_header_weakness": {
+				"remediation_steps": [
+					"Añade Content-Security-Policy con fuentes explícitas permitidas para scripts, frames y conexiones.",
+					"Añade Strict-Transport-Security con max-age=31536000 y includeSubDomains.",
+					"Añade X-Content-Type-Options: nosniff y Referrer-Policy: strict-origin-when-cross-origin.",
+					"Añade Permissions-Policy para restringir cámara, micrófono y geolocalización por defecto."
+				],
+				"verification_notes": "Volveremos a hacer fetch de la homepage y checkout y analizaremos los headers de respuesta para confirmar que cada política está configurada con las directivas esperadas."
+			},
+			"payment_diversity_insufficient": {
+				"remediation_steps": [
+					"Añade una pasarela de pago secundaria (Adyen, Braintree o un proveedor local) como failover de Stripe.",
+					"Configura el ruteo automático de failover cuando la pasarela principal devuelva errores 5xx.",
+					"Prueba el failover con una caída deliberada de la pasarela principal en staging.",
+					"Documenta el playbook de failover para el ingeniero de on-call."
+				],
+				"verification_notes": "Revisaremos la lista de integraciones y confirmaremos que al menos dos pasarelas de pago activas estén configuradas."
+			}
 		}
 	},
 	"privacy_policy": {

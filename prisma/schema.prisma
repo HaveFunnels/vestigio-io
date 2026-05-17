@@ -295,6 +295,7 @@ model Environment {
   organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   auditCycles      AuditCycle[]
   findings         Finding[]
+  actions          Action[]
   saasAccessConfig SaasAccessConfig?
   integrations     IntegrationConnection[]
   // Wave 0.2: Raw behavioral events from the snippet for this env
@@ -358,6 +359,7 @@ model AuditCycle {
   environment  Environment     @relation(fields: [environmentId], references: [id], onDelete: Cascade)
   evidence     Evidence[]
   findings     Finding[]
+  actions      Action[]
   snapshots    CycleSnapshot[]
 
   // Hottest read pattern: layout cache fast-path
@@ -469,6 +471,63 @@ model Finding {
   @@index([environmentId, surface])
   @@index([environmentId, severity])
   @@index([cycleRef, inferenceKey])
+}
+
+// ──────────────────────────────────────────────
+// Wave 18t-B — Action as a relational table
+//
+// Mirrors the Finding pattern: indexed columns for SQL queries
+// (severity / category / surface / cycle range filters, server-side
+// pagination), plus a `projection` text column carrying the full
+// ActionProjection JSON for cheap rehydration when the drawer opens.
+//
+// Before this wave, Actions lived only inside AuditCycle.projectionsCache,
+// which meant /app/actions had to deserialize the whole cache blob
+// per request and filter in JavaScript. Now both layers coexist:
+// projectionsCache stays as a complete snapshot of the cycle, the
+// `Action` table powers fast cross-cycle queries.
+//
+// Backward compat: cycles predating this table have no Action rows.
+// API readers fall through to projectionsCache when the table is
+// empty for a given cycleId.
+// ──────────────────────────────────────────────
+
+model Action {
+  id              String   @id @default(cuid())
+  cycleId         String
+  environmentId   String
+  cycleRef        String // engine cycle_ref for cross-cycle matching
+  actionKey       String // ${decision_key}_primary | _secondary_N | _verify_N | compound chain ids
+  // ${decision_key} stripped of the _primary/_secondary_N/_verify_N suffix.
+  // Lets the dashboard dedupe MAX(impact) per group via a single SQL
+  // GROUP BY (instead of the JS reduce in /app/actions/page.tsx).
+  decisionKey     String
+  category        String // incident | opportunity | verification | observation
+  actionType      String // risk_mitigation | opportunity_capture | verification | observation
+  severity        String // critical | high | medium | low | none
+  impactMin       Float?
+  impactMax       Float?
+  impactMidpoint  Float?
+  priorityScore   Int      @default(0)
+  surface         String? // primary affected surface, if any (denormalized for index)
+  // JSON-serialized string[] — the inferences that triggered this
+  // action's hasActive(...) condition. Used by the projection layer
+  // to look up per-secondary impact + catalog remediation_steps.
+  inferenceKeysJson String? @db.Text
+  // Full ActionProjection JSON for cheap rehydration on drawer open
+  projection      String   @db.Text
+  createdAt       DateTime @default(now())
+
+  cycle       AuditCycle   @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  environment Environment  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([cycleId, actionKey])
+  @@index([environmentId, cycleId])
+  @@index([environmentId, severity])
+  @@index([environmentId, category])
+  @@index([environmentId, surface])
+  @@index([environmentId, decisionKey])
+  @@index([cycleRef, actionKey])
 }
 
 // ──────────────────────────────────────────────

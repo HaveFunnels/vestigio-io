@@ -2678,23 +2678,16 @@ Mitigations (priority by ROI):
 
 Companion fix already shipped (commit `db91331`): worker-loop catch now stamps `lastError = "worker-loop: <message>"` so the next time this happens we can read the cause from the DB instead of needing Railway logs.
 
-### Action as a relational table (Wave 18t-B candidate)
+### Catalog translation long-tail (Wave 18t-C continuation)
 
-Wave 18t-A shipped per-secondary impact attribution and the inference_keys plumbing end-to-end. Actions still live ONLY inside `projectionsCache` JSON (mirroring CycleSnapshot.projection). The Finding pattern — a real Prisma model with indexed columns + a `projection String @db.Text` blob for cheap rehydration — would unlock:
+Wave 18t-C shipped the i18n infrastructure for action remediation steps — `engine.remediation.<inference_key>` block in en/es/de dictionaries, read via `translations?.remediation?.[k]` in the projection layer's catalog-lookup chain. 9 high-priority entries translated for all 3 locales (trust_boundary_crossed, policy_gap, measurement_blindspot, unclear_conversion_intent, commercial_pages_disconnected, failed_payment_revenue_drain, subscriber_churn_unsustainable, security_header_weakness, payment_diversity_insufficient). The remaining 295 entries fall through to the existing pt-BR REMEDIATION_CATALOG, which is no worse than current behavior for any locale.
 
-- SQL-driven /app/actions listing with native pagination + index filters (severity, category, surface, cycle range)
-- `UserAction.actionRef` as a real FK instead of a pointer-by-string
-- Cross-cycle telemetry (e.g. "all critical actions in the last 10 cycles")
-- Dashboard dedupe-by-decision via SQL group-by instead of JS reduce
+When revisited:
 
-Migration plan when revisited:
-
-- Add `model Action` mirroring `model Finding` (cycleId, environmentId, cycleRef, actionKey, decisionKey, category, severity, impactMidpoint, surface, inferenceKeysJson, projection text, indexes).
-- Dual-write in `apps/audit-runner/run-cycle.ts` at the same tx that writes `projectionsCache` (~line 1718).
-- Migrate API consumers in `src/app/api/actions/*` and `/app/app/actions/page.tsx` to read from the table.
-- Backward-compat reader that falls through to projectionsCache for cycles predating the table.
-
-Trigger to revisit: /app/actions listing latency becomes noticeable, OR we want a "show all critical actions across this org's cycles" surface, OR we want to attach more user state to actions (read/dismissed/snoozed) without expanding UserAction.
+- Generate translations for the remaining 295 entries × 3 locales × ~5 strings each = ~4,500 translations.
+- Approach: extract via `/tmp/translate-catalog.py` (already written), batch-translate via LLM or human translators, inject via the same `add_or_replace_block` Python helper.
+- Priority order: revenue_integrity & payment_health (customer-visible) → chargeback → security → copy_alignment → behavioral → long tail.
+- Trigger to revisit: first non-pt-BR customer onboards, OR Vestigio's content team has translation bandwidth, OR a customer reports mixed-locale action drawer text.
 
 ### Per-secondary impact attribution (shipped — Wave 18t-A)
 

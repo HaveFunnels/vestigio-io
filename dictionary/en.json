@@ -6305,6 +6305,89 @@
 				"support": "How customers reach you",
 				"trust": "Trust signals"
 			}
+		},
+		"remediation": {
+			"trust_boundary_crossed": {
+				"remediation_steps": [
+					"Move the payment form to the same domain as the store, or use the gateway's embedded checkout.",
+					"If the domain switch is unavoidable, add the store logo and a security badge to the external page.",
+					"Ensure HTTPS and a valid certificate on both domains — verify in incognito browsers.",
+					"Add copy to the checkout button explaining that the next page is the payment processor's secure page."
+				],
+				"verification_notes": "We will run checkout in a headless browser, follow redirects to the payment page, and check whether the URL stays on your domain or whether there's a logo + badge on the external page."
+			},
+			"policy_gap": {
+				"remediation_steps": [
+					"Publish separate pages for privacy policy, terms of use, and refund policy.",
+					"Link all three policies in the footer and also in checkout near the payment fields.",
+					"Include at minimum: refund window, return process, GDPR compliance, and a contact channel.",
+					"Mention the refund policy explicitly on the product page near the buy button."
+				],
+				"verification_notes": "We will re-crawl the site and check whether dedicated policy pages exist, are linked from the footer, and are accessible from checkout."
+			},
+			"measurement_blindspot": {
+				"remediation_steps": [
+					"Install analytics (GA4, Plausible, or similar) on every commercial page.",
+					"Verify the page-view event fires on homepage, pricing, product, checkout, and thank-you.",
+					"Confirm the consent banner doesn't block the primary measurement script.",
+					"Set up conversion events (purchase, signup) and validate them in the platform's debug tool."
+				],
+				"verification_notes": "We will fetch the commercial pages in a browser and inspect the network tab + dataLayer for analytics events fired on each."
+			},
+			"unclear_conversion_intent": {
+				"remediation_steps": [
+					"Define one primary CTA per commercial page above the fold.",
+					"Move supporting CTAs (newsletter, blog, social) below the primary fold.",
+					"Use the same primary CTA copy across pricing, product, and homepage to compound recognition.",
+					"Remove or hide competing actions in the same viewport as the primary CTA."
+				],
+				"verification_notes": "We will analyze each commercial page's above-the-fold layout for CTA clarity and count competing actions in the primary viewport."
+			},
+			"commercial_pages_disconnected": {
+				"remediation_steps": [
+					"Add a direct CTA link from the homepage to /pricing or /product.",
+					"Add a direct CTA from /pricing to /checkout (or the primary buy action).",
+					"Add a direct CTA from /product back to /pricing or /checkout.",
+					"Verify each commercial page links to the NEXT step in the funnel within one click."
+				],
+				"verification_notes": "We will re-crawl the commercial pages and check whether each has at least one CTA link to the next funnel stage."
+			},
+			"failed_payment_revenue_drain": {
+				"remediation_steps": [
+					"Activate Stripe Card Updater and Smart Retries to automatically retry failed payments.",
+					"Send dunning emails on first failure with a direct link to update the payment method.",
+					"Add a 3-day grace period before suspending access on failed renewals.",
+					"Monitor failed payment rate weekly and aim to keep it below 5%."
+				],
+				"verification_notes": "We will re-pull Stripe metrics 30 days after the fixes and confirm whether the failed payment rate dropped below 5%."
+			},
+			"subscriber_churn_unsustainable": {
+				"remediation_steps": [
+					"Implement a cancellation survey to capture why subscribers leave.",
+					"Offer retention paths before final cancel: pause subscription, downgrade plan, or extend trial.",
+					"Trigger a win-back email 14 days after cancellation with a personalized offer.",
+					"Analyze churn cohorts by tenure to identify the month where most cancellations happen."
+				],
+				"verification_notes": "We will re-pull Stripe subscription data 60 days post-implementation to compare churn rate against the prior cohort."
+			},
+			"security_header_weakness": {
+				"remediation_steps": [
+					"Add Content-Security-Policy with explicit allowed sources for scripts, frames, and connections.",
+					"Add Strict-Transport-Security with max-age=31536000 and includeSubDomains.",
+					"Add X-Content-Type-Options: nosniff and Referrer-Policy: strict-origin-when-cross-origin.",
+					"Add Permissions-Policy to restrict camera, microphone, and geolocation defaults."
+				],
+				"verification_notes": "We will re-fetch the homepage and checkout and parse the response headers to confirm each policy is set with the expected directives."
+			},
+			"payment_diversity_insufficient": {
+				"remediation_steps": [
+					"Add a secondary payment gateway (Adyen, Braintree, or local provider) as failover to Stripe.",
+					"Configure automatic failover routing when the primary gateway returns 5xx errors.",
+					"Test the failover with a deliberate primary-gateway outage on staging.",
+					"Document the failover playbook for the on-call engineer."
+				],
+				"verification_notes": "We will check the integration list and confirm at least two active payment gateways are configured."
+			}
 		}
 	},
 	"privacy_policy": {

@@ -4772,6 +4772,89 @@
 			"checkout_performance_critical": "Jede 100 ms Checkout-Latenz senkt die Konversion um ca. 0,7 %.",
 			"cookie_consent_missing": "Cookie-Compliance ist in der EU verpflichtend und wird zunehmend durchgesetzt.",
 			"ad_creative_message_mismatch": "Versprechen-Inhalt-Diskrepanz: {severity}. ${totalSpend}/Monat Werbeausgaben leiten Traffic auf Seiten, wo das Anzeigenversprechen nicht mit dem LP-Inhalt übereinstimmt. Die Diskrepanz zwischen dem, was die Anzeige verspricht, und dem, was die Seite liefert, senkt die Konversionsrate."
+		},
+		"remediation": {
+			"trust_boundary_crossed": {
+				"remediation_steps": [
+					"Verschiebe das Zahlungsformular in dieselbe Domain wie den Shop, oder nutze das Embedded Checkout des Gateways.",
+					"Falls der Domain-Wechsel unvermeidbar ist, füge das Shop-Logo und ein Sicherheitssiegel auf der externen Seite hinzu.",
+					"Stelle HTTPS und gültiges Zertifikat auf beiden Domains sicher — prüfe im Inkognito-Modus.",
+					"Ergänze den Checkout-Button-Text mit Hinweis, dass die nächste Seite eine sichere Seite des Zahlungsdienstleisters ist."
+				],
+				"verification_notes": "Wir starten das Checkout in einem Headless-Browser, folgen den Redirects bis zur Zahlungsseite und prüfen, ob die URL in deiner Domain bleibt oder ob Logo + Siegel auf der externen Seite vorhanden sind."
+			},
+			"policy_gap": {
+				"remediation_steps": [
+					"Veröffentliche separate Seiten für Datenschutz, AGB und Rückgaberichtlinie.",
+					"Verlinke alle drei Richtlinien im Footer und auch im Checkout neben den Zahlungsfeldern.",
+					"Enthalte mindestens: Rückerstattungsfrist, Rückgabeprozess, DSGVO-Konformität und einen Kontaktkanal.",
+					"Erwähne die Rückerstattungsrichtlinie explizit auf der Produktseite neben dem Kaufen-Button."
+				],
+				"verification_notes": "Wir crawlen die Seite erneut und prüfen, ob dedizierte Policy-Seiten existieren, im Footer verlinkt sind und vom Checkout aus erreichbar."
+			},
+			"measurement_blindspot": {
+				"remediation_steps": [
+					"Installiere Analytics (GA4, Plausible oder ähnlich) auf jeder kommerziellen Seite.",
+					"Prüfe, ob das page-view Event auf Homepage, Pricing, Produkt, Checkout und Thank-You feuert.",
+					"Bestätige, dass das Consent-Banner das primäre Mess-Script nicht blockiert.",
+					"Richte Conversion-Events (Kauf, Registrierung) ein und validiere sie im Debug-Tool der Plattform."
+				],
+				"verification_notes": "Wir laden die kommerziellen Seiten im Browser und prüfen Network-Tab + dataLayer auf Analytics-Events, die auf jeder Seite gefeuert werden."
+			},
+			"unclear_conversion_intent": {
+				"remediation_steps": [
+					"Definiere einen primären CTA pro kommerzieller Seite oberhalb der Falz.",
+					"Verschiebe sekundäre CTAs (Newsletter, Blog, Social) unter die Hauptfalz.",
+					"Verwende denselben primären CTA-Text auf Pricing, Produkt und Homepage, um Wiedererkennung zu verstärken.",
+					"Entferne oder verstecke konkurrierende Aktionen im selben Viewport wie der primäre CTA."
+				],
+				"verification_notes": "Wir analysieren das Above-the-Fold-Layout jeder kommerziellen Seite auf CTA-Klarheit und zählen konkurrierende Aktionen im primären Viewport."
+			},
+			"commercial_pages_disconnected": {
+				"remediation_steps": [
+					"Füge einen direkten CTA-Link von der Homepage zu /pricing oder /product hinzu.",
+					"Füge einen direkten CTA von /pricing zu /checkout (oder der primären Kaufaktion) hinzu.",
+					"Füge einen direkten CTA von /product zurück zu /pricing oder /checkout hinzu.",
+					"Stelle sicher, dass jede kommerzielle Seite mit einem Klick zum NÄCHSTEN Funnel-Schritt verlinkt."
+				],
+				"verification_notes": "Wir crawlen die kommerziellen Seiten erneut und prüfen, ob jede mindestens einen CTA zum nächsten Funnel-Schritt hat."
+			},
+			"failed_payment_revenue_drain": {
+				"remediation_steps": [
+					"Aktiviere Stripe Card Updater und Smart Retries, um fehlgeschlagene Zahlungen automatisch zu wiederholen.",
+					"Sende Dunning-E-Mails beim ersten Fehler mit direktem Link zur Aktualisierung der Zahlungsmethode.",
+					"Füge eine 3-tägige Karenzfrist hinzu, bevor der Zugang bei fehlgeschlagenen Verlängerungen ausgesetzt wird.",
+					"Überwache die Quote fehlgeschlagener Zahlungen wöchentlich und halte sie unter 5 %."
+				],
+				"verification_notes": "Wir ziehen Stripe-Metriken 30 Tage nach den Korrekturen erneut und bestätigen, ob die Quote fehlgeschlagener Zahlungen unter 5 % gefallen ist."
+			},
+			"subscriber_churn_unsustainable": {
+				"remediation_steps": [
+					"Implementiere eine Kündigungsumfrage, um zu erfassen, warum Abonnenten gehen.",
+					"Biete Retention-Pfade vor der endgültigen Kündigung an: Abo pausieren, Plan downgraden oder Testphase verlängern.",
+					"Löse eine Win-Back-E-Mail 14 Tage nach Kündigung mit personalisiertem Angebot aus.",
+					"Analysiere Churn-Kohorten nach Bestandsdauer, um den Monat mit den meisten Kündigungen zu identifizieren."
+				],
+				"verification_notes": "Wir ziehen Stripe-Abodaten 60 Tage nach Umsetzung erneut, um die Churn-Quote mit der vorherigen Kohorte zu vergleichen."
+			},
+			"security_header_weakness": {
+				"remediation_steps": [
+					"Füge Content-Security-Policy mit explizit erlaubten Quellen für Skripte, Frames und Verbindungen hinzu.",
+					"Füge Strict-Transport-Security mit max-age=31536000 und includeSubDomains hinzu.",
+					"Füge X-Content-Type-Options: nosniff und Referrer-Policy: strict-origin-when-cross-origin hinzu.",
+					"Füge Permissions-Policy hinzu, um Kamera, Mikrofon und Standortzugriff standardmäßig zu beschränken."
+				],
+				"verification_notes": "Wir fetchen Homepage und Checkout erneut und parsen die Response-Header, um zu bestätigen, dass jede Richtlinie mit den erwarteten Direktiven gesetzt ist."
+			},
+			"payment_diversity_insufficient": {
+				"remediation_steps": [
+					"Füge ein sekundäres Payment-Gateway (Adyen, Braintree oder lokaler Anbieter) als Failover für Stripe hinzu.",
+					"Konfiguriere automatisches Failover-Routing, wenn das primäre Gateway 5xx-Fehler zurückgibt.",
+					"Teste das Failover mit einem absichtlichen Ausfall des primären Gateways auf Staging.",
+					"Dokumentiere das Failover-Playbook für den On-Call-Engineer."
+				],
+				"verification_notes": "Wir prüfen die Integrationsliste und bestätigen, dass mindestens zwei aktive Payment-Gateways konfiguriert sind."
+			}
 		}
 	},
 	"privacy_policy": {

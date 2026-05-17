@@ -599,13 +599,13 @@ function buildScaleReadinessActions(
     let primary = ts?.block_primary ?? 'Do not scale traffic until critical issues are resolved.';
 
     if (checkoutIntegrity?.conclusion_value === 'weak') {
-      secondary.push(sec(ts?.block_fix_checkout ?? 'Fix checkout integrity: ensure checkout flow stays on-domain or uses a verified provider.'));
+      secondary.push(sec(ts?.block_fix_checkout ?? 'Fix checkout integrity: ensure checkout flow stays on-domain or uses a verified provider.', ['checkout_integrity']));
     }
     if (trustBoundary?.conclusion_value === 'true') {
-      secondary.push(sec(ts?.block_resolve_trust ?? 'Resolve trust boundary issues: reduce off-domain handoffs or verify external providers.'));
+      secondary.push(sec(ts?.block_resolve_trust ?? 'Resolve trust boundary issues: reduce off-domain handoffs or verify external providers.', ['trust_boundary_crossed']));
     }
     if (policyGap?.conclusion_value === 'high') {
-      secondary.push(sec(ts?.block_add_policies ?? 'Add missing policies: privacy, terms, and refund policies are required for commercial sites.'));
+      secondary.push(sec(ts?.block_add_policies ?? 'Add missing policies: privacy, terms, and refund policies are required for commercial sites.', ['policy_gap']));
     }
 
     verification.push(ts?.block_verify_full ?? 'Re-run full analysis after fixes to confirm readiness.');
@@ -618,13 +618,13 @@ function buildScaleReadinessActions(
     let primary = ts?.fix_primary ?? 'Address high-priority issues before increasing traffic significantly.';
 
     if (policyGap && policyGap.conclusion_value !== 'none') {
-      secondary.push(sec(ts?.fix_improve_policy ?? 'Improve policy coverage to reduce compliance risk.'));
+      secondary.push(sec(ts?.fix_improve_policy ?? 'Improve policy coverage to reduce compliance risk.', ['policy_gap']));
     }
     if (measurementCoverage?.conclusion_value === 'false') {
-      secondary.push(sec(ts?.fix_install_analytics ?? 'Install analytics tools to enable proper attribution and optimization.'));
+      secondary.push(sec(ts?.fix_install_analytics ?? 'Install analytics tools to enable proper attribution and optimization.', ['measurement_coverage']));
     }
     if (revenueFragility?.conclusion_value === 'high' || revenueFragility?.conclusion_value === 'medium') {
-      secondary.push(sec(ts?.fix_strengthen_revenue ?? 'Strengthen revenue path: reduce redirects and friction in the conversion flow.'));
+      secondary.push(sec(ts?.fix_strengthen_revenue ?? 'Strengthen revenue path: reduce redirects and friction in the conversion flow.', ['revenue_path_fragile']));
     }
 
     verification.push(ts?.fix_verify ?? 'Re-run analysis after implementing changes.');
@@ -666,10 +666,10 @@ function buildRevenueIntegrityActions(
 
   // Wave 14 — Cross-pack compound insights (surface FIRST; encode order-of-operations)
   if (has('compound_funnel_triple_leak')) {
-    secondary.push(sec(tr('compound_funnel_triple', 'CROSS-PACK: Revenue leaks at top (cart) + middle (failed payments) + bottom (churn). Fixing only cart while feeding the middle/bottom leaks wastes acquisition. Order: (1) failed payments first (Stripe Smart Retries + dunning = 30-50% recovery, 1 wk); (2) cancel-flow + retention (2 wks); (3) THEN attack cart with retention engine in place.')));
+    secondary.push(sec(tr('compound_funnel_triple', 'CROSS-PACK: Revenue leaks at top (cart) + middle (failed payments) + bottom (churn). Fixing only cart while feeding the middle/bottom leaks wastes acquisition. Order: (1) failed payments first (Stripe Smart Retries + dunning = 30-50% recovery, 1 wk); (2) cancel-flow + retention (2 wks); (3) THEN attack cart with retention engine in place.'), ['compound_funnel_triple_leak']));
   }
   if (has('compound_pricing_unclear_and_unparseable')) {
-    secondary.push(sec(tr('compound_pricing', 'CROSS-PACK: Pricing fails on both humans AND AI agents. Single rewrite covers both: (a) /pricing with exact monthly + annual prices visible without interaction, "what\'s included" table, recommended-plan badge; (b) /pricing.md mirroring same structure. 2-3 hours, double-layer impact.')));
+    secondary.push(sec(tr('compound_pricing', 'CROSS-PACK: Pricing fails on both humans AND AI agents. Single rewrite covers both: (a) /pricing with exact monthly + annual prices visible without interaction, "what\'s included" table, recommended-plan badge; (b) /pricing.md mirroring same structure. 2-3 hours, double-layer impact.'), ['compound_pricing_unclear_and_unparseable']));
   }
 
   // ── Core structural revenue findings ──
@@ -895,13 +895,13 @@ function buildChargebackActions(
     const primary = ts?.block_primary ?? 'High chargeback exposure. Add refund policy, support channels, and trust signals immediately.';
 
     if (refundGap && refundGap.conclusion_value !== 'low') {
-      secondary.push(sec(ts?.block_refund_policy ?? 'Add a clear, accessible refund/return policy. This is the single most effective chargeback prevention measure.'));
+      secondary.push(sec(ts?.block_refund_policy ?? 'Add a clear, accessible refund/return policy. This is the single most effective chargeback prevention measure.', ['refund_policy_gap']));
     }
     if (supportGap && supportGap.conclusion_value !== 'low') {
-      secondary.push(sec(ts?.block_add_support ?? 'Add visible support channels (email, phone, or chat). Customers who can reach support resolve issues without disputes.'));
+      secondary.push(sec(ts?.block_add_support ?? 'Add visible support channels (email, phone, or chat). Customers who can reach support resolve issues without disputes.', ['support_unreachable']));
     }
     if (expectation && expectation.conclusion_value !== 'low') {
-      secondary.push(sec(ts?.block_clarify_pricing ?? 'Clarify pricing and add order confirmation. Expectation misalignment drives "unauthorized charge" disputes.'));
+      secondary.push(sec(ts?.block_clarify_pricing ?? 'Clarify pricing and add order confirmation. Expectation misalignment drives "unauthorized charge" disputes.', ['expectation_misalignment']));
     }
 
     verification.push(ts?.block_verify_policies ?? 'Re-run analysis after adding policies and support channels.');
@@ -913,13 +913,13 @@ function buildChargebackActions(
     const primary = ts?.fix_primary ?? 'Moderate chargeback risk. Strengthen policies and support before scaling.';
 
     if (refundGap && refundGap.conclusion_value !== 'low') {
-      secondary.push(sec(ts?.fix_refund ?? 'Improve refund policy clarity and accessibility.'));
+      secondary.push(sec(ts?.fix_refund ?? 'Improve refund policy clarity and accessibility.', ['refund_policy_gap']));
     }
     if (supportGap && supportGap.conclusion_value !== 'low') {
-      secondary.push(sec(ts?.fix_support ?? 'Add additional support channels for better customer accessibility.'));
+      secondary.push(sec(ts?.fix_support ?? 'Add additional support channels for better customer accessibility.', ['support_unreachable']));
     }
     if (expectation && expectation.conclusion_value !== 'low') {
-      secondary.push(sec(ts?.fix_confirmation ?? 'Add order confirmation and pricing transparency.'));
+      secondary.push(sec(ts?.fix_confirmation ?? 'Add order confirmation and pricing transparency.', ['expectation_misalignment']));
     }
 
     verification.push(ts?.fix_verify ?? 'Re-run analysis after improvements.');
@@ -968,16 +968,16 @@ function buildSecurityPostureActions(
     const primary = tr('incident_primary', 'You have critical security holes that buyers can see. Fix these before taking another payment.');
 
     if (sensitiveEndpoint && sensitiveEndpoint.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_sensitive_endpoint', 'Lock down or remove the admin pages, config files, and backups that are currently public.')));
+      secondary.push(sec(tr('incident_sensitive_endpoint', 'Lock down or remove the admin pages, config files, and backups that are currently public.'), ['sensitive_endpoint_exposed']));
     }
     if (mixedContent && mixedContent.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_mixed_content', 'Stop loading insecure content on your sale pages — every resource needs to come over HTTPS or buyers see broken padlocks.')));
+      secondary.push(sec(tr('incident_mixed_content', 'Stop loading insecure content on your sale pages — every resource needs to come over HTTPS or buyers see broken padlocks.'), ['mixed_content_exposure']));
     }
     if (openRedirect && openRedirect.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_open_redirect', 'Close the open redirects on your site — attackers can use them to send your customers to fake checkout pages.')));
+      secondary.push(sec(tr('incident_open_redirect', 'Close the open redirects on your site — attackers can use them to send your customers to fake checkout pages.'), ['open_redirect_indicator']));
     }
     if (headerWeak && headerWeak.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_security_headers', 'Add the basic security headers (CSP, HSTS, X-Frame-Options) so the browser stops flagging your site as risky.')));
+      secondary.push(sec(tr('incident_security_headers', 'Add the basic security headers (CSP, HSTS, X-Frame-Options) so the browser stops flagging your site as risky.'), ['security_header_weakness']));
     }
 
     verification.push(tr('incident_verify_rerun', 'Run a new audit after the fixes so we can confirm the holes are closed.'));
@@ -989,10 +989,10 @@ function buildSecurityPostureActions(
     const primary = tr('fix_primary', 'Your security has gaps that will hurt you at scale. Close them before pushing more traffic.');
 
     if (headerWeak && headerWeak.conclusion_value !== 'low') {
-      secondary.push(sec(tr('fix_security_headers', 'Tighten your security headers so the site is less exposed to injection and clickjacking attacks.')));
+      secondary.push(sec(tr('fix_security_headers', 'Tighten your security headers so the site is less exposed to injection and clickjacking attacks.'), ['security_header_weakness']));
     }
     if (openRedirect && openRedirect.conclusion_value !== 'low') {
-      secondary.push(sec(tr('fix_open_redirect', 'Fix the open redirect endpoints — they are easy to abuse.')));
+      secondary.push(sec(tr('fix_open_redirect', 'Fix the open redirect endpoints — they are easy to abuse.'), ['open_redirect_indicator']));
     }
 
     verification.push(tr('fix_verify_rerun', 'Run a new audit after the changes to confirm they took effect.'));
@@ -1039,16 +1039,16 @@ function buildCopyAlignmentActions(
     const primary = tr('incident_primary', 'Your copy is actively losing revenue. The messaging fails to convert high-intent visitors.');
 
     if (vpBuried && vpBuried.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_vp_buried', 'Rewrite your hero section: the value proposition is buried below the fold or hidden behind generic language.')));
+      secondary.push(sec(tr('incident_vp_buried', 'Rewrite your hero section: the value proposition is buried below the fold or hidden behind generic language.'), ['value_proposition_buried']));
     }
     if (ctaUnclear && ctaUnclear.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_cta_unclear', 'Consolidate competing CTAs: visitors see too many actions and choose none. Pick one primary CTA per page.')));
+      secondary.push(sec(tr('incident_cta_unclear', 'Consolidate competing CTAs: visitors see too many actions and choose none. Pick one primary CTA per page.'), ['cta_competing_or_unclear']));
     }
     if (trustCopy && trustCopy.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_trust_copy', 'Add trust copy at the decision point: testimonials, guarantees, and security language near your checkout or signup.')));
+      secondary.push(sec(tr('incident_trust_copy', 'Add trust copy at the decision point: testimonials, guarantees, and security language near your checkout or signup.'), ['trust_copy_absent_at_decision']));
     }
     if (objection && objection.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_objection', 'Address buyer objections on the page: missing FAQ, no risk-reversal language, unaddressed pricing concerns.')));
+      secondary.push(sec(tr('incident_objection', 'Address buyer objections on the page: missing FAQ, no risk-reversal language, unaddressed pricing concerns.'), ['objection_unaddressed']));
     }
 
     verification.push(tr('incident_verify_rerun', 'Re-run copy analysis after rewriting to confirm alignment improves.'));
@@ -1060,13 +1060,13 @@ function buildCopyAlignmentActions(
     const primary = tr('fix_primary', 'Your copy has structural gaps that will bleed revenue at scale. Fix before increasing ad spend.');
 
     if (funnelMismatch && funnelMismatch.conclusion_value !== 'low') {
-      secondary.push(sec(tr('fix_funnel_mismatch', 'Align copy to funnel stage: awareness pages should educate, decision pages should reassure and convert.')));
+      secondary.push(sec(tr('fix_funnel_mismatch', 'Align copy to funnel stage: awareness pages should educate, decision pages should reassure and convert.'), ['copy_funnel_misalignment']));
     }
     if (socialProof && socialProof.conclusion_value !== 'low') {
-      secondary.push(sec(tr('fix_social_proof', 'Strengthen social proof: add specific numbers, named testimonials, and logos instead of generic claims.')));
+      secondary.push(sec(tr('fix_social_proof', 'Strengthen social proof: add specific numbers, named testimonials, and logos instead of generic claims.'), ['social_proof_ineffective']));
     }
     if (crossPage && crossPage.conclusion_value !== 'low') {
-      secondary.push(sec(tr('fix_cross_page', 'Harmonize messaging across pages: your landing page promises one thing, but pricing and checkout say another.')));
+      secondary.push(sec(tr('fix_cross_page', 'Harmonize messaging across pages: your landing page promises one thing, but pricing and checkout say another.'), ['copy_cross_page_inconsistent']));
     }
 
     verification.push(tr('fix_verify', 'Re-run copy analysis after changes to confirm gaps are closed.'));
@@ -1110,13 +1110,13 @@ function buildPaymentHealthActions(
     const primary = tr('incident_primary', 'Your payment infrastructure is actively losing revenue. Failed payments and churn require immediate intervention.');
 
     if (failedPayment && failedPayment.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_failed_payments', 'Activate card updater and smart retry in Stripe. Send dunning emails on first failure with a direct link to update payment method.')));
+      secondary.push(sec(tr('incident_failed_payments', 'Activate card updater and smart retry in Stripe. Send dunning emails on first failure with a direct link to update payment method.'), ['failed_payment_revenue_drain']));
     }
     if (churnUnsustainable && churnUnsustainable.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_churn', 'Implement cancellation survey and retention offers (pause, downgrade, extension) before final cancellation.')));
+      secondary.push(sec(tr('incident_churn', 'Implement cancellation survey and retention offers (pause, downgrade, extension) before final cancellation.'), ['subscriber_churn_unsustainable']));
     }
     if (diversityInsufficient && diversityInsufficient.conclusion_value !== 'low') {
-      secondary.push(sec(tr('incident_diversity', 'Add a secondary payment gateway with automatic failover to prevent single-point-of-failure outages.')));
+      secondary.push(sec(tr('incident_diversity', 'Add a secondary payment gateway with automatic failover to prevent single-point-of-failure outages.'), ['payment_diversity_insufficient']));
     }
 
     verification.push(tr('incident_verify', 'Re-pull Stripe data after 30 days to confirm failed payment rate dropped below 5%.'));
@@ -1127,10 +1127,10 @@ function buildPaymentHealthActions(
     const primary = tr('fix_primary', 'Payment health has issues that will compound as you grow. Fix before scaling subscriber acquisition.');
 
     if (failedPayment) {
-      secondary.push(sec(tr('fix_failed_payments', 'Configure dunning automation with progressive retry and customer notification.')));
+      secondary.push(sec(tr('fix_failed_payments', 'Configure dunning automation with progressive retry and customer notification.'), ['failed_payment_revenue_drain']));
     }
     if (churnUnsustainable) {
-      secondary.push(sec(tr('fix_churn', 'Analyze churn cohorts by tenure to identify the month where most subscribers cancel.')));
+      secondary.push(sec(tr('fix_churn', 'Analyze churn cohorts by tenure to identify the month where most subscribers cancel.'), ['subscriber_churn_unsustainable']));
     }
 
     verification.push(tr('fix_verify', 'Re-pull Stripe data after implementing changes to track improvement.'));
@@ -1189,21 +1189,21 @@ function buildDiscoverabilityActions(
 
   // Wave 14 — Cross-pack compound insights (surface FIRST; they encode order-of-operations)
   if (has('compound_invisible_and_unclear')) {
-    secondary.push(sec(tr('compound_invisible_unclear', 'CROSS-PACK: Double leak — buyers shopping your category can\'t find you, and when the rare visitor lands, the value prop is buried. Sequence: clarify value prop above the fold FIRST (1 week), then drive category-intent SEO/SEM. Skipping step 1 wastes every paid click.')));
+    secondary.push(sec(tr('compound_invisible_unclear', 'CROSS-PACK: Double leak — buyers shopping your category can\'t find you, and when the rare visitor lands, the value prop is buried. Sequence: clarify value prop above the fold FIRST (1 week), then drive category-intent SEO/SEM. Skipping step 1 wastes every paid click.'), ['compound_invisible_and_unclear']));
   }
   if (has('compound_ai_agent_invisibility')) {
-    secondary.push(sec(tr('compound_ai_invisibility', 'CROSS-PACK: AI agents comparing products can\'t parse you on llms.txt + Product schema + machine-readable pricing. Single 30-minute action covers all three. Highest 2026 lift in AI-mediated buying.')));
+    secondary.push(sec(tr('compound_ai_invisibility', 'CROSS-PACK: AI agents comparing products can\'t parse you on llms.txt + Product schema + machine-readable pricing. Single 30-minute action covers all three. Highest 2026 lift in AI-mediated buying.'), ['compound_ai_agent_invisibility']));
   }
   if (has('compound_category_invisible_and_authority_thin')) {
-    secondary.push(sec(tr('compound_category_authority', 'CROSS-PACK: Bottom-of-stack visibility — invisible in category SERP AND no Wikipedia authority. AI assistants preferentially cite brands with both. Two parallel moves: (1) "best <category>" listicle on own domain; (2) Wikipedia article via WP:AfC with independent press refs.')));
+    secondary.push(sec(tr('compound_category_authority', 'CROSS-PACK: Bottom-of-stack visibility — invisible in category SERP AND no Wikipedia authority. AI assistants preferentially cite brands with both. Two parallel moves: (1) "best <category>" listicle on own domain; (2) Wikipedia article via WP:AfC with independent press refs.'), ['compound_category_invisible_and_authority_thin']));
   }
 
   // Wave 13 AI Visibility — quickest wins first (high ROI / low effort)
   if (has('no_llms_txt')) {
-    secondary.push(sec(tr('publish_llms_txt', 'Publish /llms.txt at the site root with a one-page summary of what the product does, who it is for, and links to /pricing + /docs. 15-minute action with measurable AI Overview citation lift in 30-60 days.')));
+    secondary.push(sec(tr('publish_llms_txt', 'Publish /llms.txt at the site root with a one-page summary of what the product does, who it is for, and links to /pricing + /docs. 15-minute action with measurable AI Overview citation lift in 30-60 days.'), ['no_llms_txt']));
   }
   if (has('no_machine_readable_pricing')) {
-    secondary.push(sec(tr('publish_pricing_md', 'Publish /pricing.md (or /pricing.txt) at the site root with plan names, monthly prices, key limits, and what is included per tier. AI agents comparing tools programmatically depend on parseable pricing.')));
+    secondary.push(sec(tr('publish_pricing_md', 'Publish /pricing.md (or /pricing.txt) at the site root with plan names, monthly prices, key limits, and what is included per tier. AI agents comparing tools programmatically depend on parseable pricing.'), ['no_machine_readable_pricing']));
   }
   {
     const inf = has('ai_bots_blocked');
@@ -1214,63 +1214,63 @@ function buildDiscoverabilityActions(
       const botNames = botsMatch?.[1] ?? null;
       secondary.push(sec(count != null && botNames
         ? `${count} AI crawler(s) bloqueado(s) no robots.txt: ${botNames}. Cada bot bloqueado é uma plataforma que fisicamente não te cita. Remova Disallow ou adicione stanzas explícitas permissivas pra cada um.`
-        : tr('unblock_ai_bots', 'Edit robots.txt to allow GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and Bingbot. Each blocked crawler is a platform that physically cannot cite the brand.')));
+        : tr('unblock_ai_bots', 'Edit robots.txt to allow GPTBot, ClaudeBot, PerplexityBot, Google-Extended, and Bingbot. Each blocked crawler is a platform that physically cannot cite the brand.'), ['ai_bots_blocked']));
     }
   }
   if (has('schema_markup_missing_for_product') || has('schema_priority_list')) {
-    secondary.push(sec(tr('add_product_schema', 'Add Product (or SoftwareApplication) + Offer JSON-LD to /pricing first, then Organization on homepage, then FAQPage on any page with Q&A content. AI assistants prefer schema-rich content for citation.')));
+    secondary.push(sec(tr('add_product_schema', 'Add Product (or SoftwareApplication) + Offer JSON-LD to /pricing first, then Organization on homepage, then FAQPage on any page with Q&A content. AI assistants prefer schema-rich content for citation.'), ['schema_markup_missing_for_product', 'schema_priority_list']));
   }
   if (has('wikipedia_article_thin_or_outdated') || has('wikipedia_gap_to_fill')) {
-    secondary.push(sec(tr('improve_wikipedia', 'Strengthen Wikipedia presence: collect 3-5 independent press references about the brand, then either expand the existing article or submit a new article via WP:AfC. Do not author your own edits — recruit independent editors with the sourced material.')));
+    secondary.push(sec(tr('improve_wikipedia', 'Strengthen Wikipedia presence: collect 3-5 independent press references about the brand, then either expand the existing article or submit a new article via WP:AfC. Do not author your own edits — recruit independent editors with the sourced material.'), ['wikipedia_article_thin_or_outdated', 'wikipedia_gap_to_fill']));
   }
 
   // Wave 12 Brand Echo — industry listings + SERP visibility
   if (has('g2_listing_void')) {
-    secondary.push(sec(tr('claim_g2', 'Claim your G2 profile (free). Add product description, screenshots, integrations, and seed 10-15 honest reviews from happy customers in the first 30 days. G2 review count >50 unlocks AI assistant preference for category queries.')));
+    secondary.push(sec(tr('claim_g2', 'Claim your G2 profile (free). Add product description, screenshots, integrations, and seed 10-15 honest reviews from happy customers in the first 30 days. G2 review count >50 unlocks AI assistant preference for category queries.'), ['g2_listing_void']));
   }
   if (has('capterra_listing_void')) {
-    secondary.push(sec(tr('claim_capterra', 'Claim Capterra/GetApp/SoftwareAdvice profiles (all owned by Gartner, single onboarding). B2B buyers research here before vendor calls.')));
+    secondary.push(sec(tr('claim_capterra', 'Claim Capterra/GetApp/SoftwareAdvice profiles (all owned by Gartner, single onboarding). B2B buyers research here before vendor calls.'), ['capterra_listing_void']));
   }
   if (has('producthunt_listing_void')) {
-    secondary.push(sec(tr('claim_producthunt', 'Submit the product to Product Hunt with a coordinated launch (community pre-warming + day-of hunter outreach). Even without #1 placement, the page becomes a persistent third-party citation asset.')));
+    secondary.push(sec(tr('claim_producthunt', 'Submit the product to Product Hunt with a coordinated launch (community pre-warming + day-of hunter outreach). Even without #1 placement, the page becomes a persistent third-party citation asset.'), ['producthunt_listing_void']));
   }
   if (has('branded_serp_invisible')) {
-    secondary.push(sec(tr('fix_branded_serp', 'Branded SERP fix: ensure homepage <title> includes the brand name, canonical points to root, and the H1 uses the brand verbatim. Submit a Google Search Console "site:" query with the brand to detect indexation gaps.')));
+    secondary.push(sec(tr('fix_branded_serp', 'Branded SERP fix: ensure homepage <title> includes the brand name, canonical points to root, and the H1 uses the brand verbatim. Submit a Google Search Console "site:" query with the brand to detect indexation gaps.'), ['branded_serp_invisible']));
   }
   if (has('competitor_brand_hijack_serp')) {
-    secondary.push(sec(tr('reclaim_branded_serp', 'Competitors are outranking you on your own brand name. Publish a brand "vs alternatives" page on your own domain that owns the comparison narrative; file trademark complaints on competitor pages using your trademark in ad copy.')));
+    secondary.push(sec(tr('reclaim_branded_serp', 'Competitors are outranking you on your own brand name. Publish a brand "vs alternatives" page on your own domain that owns the comparison narrative; file trademark complaints on competitor pages using your trademark in ad copy.'), ['competitor_brand_hijack_serp']));
   }
   if (has('affiliate_outranks_own')) {
-    secondary.push(sec(tr('reclaim_affiliate_traffic', 'Affiliate/review sites earn commission on your branded traffic. Build stronger branded landing pages, partner directly with the highest-volume affiliates instead of paying via networks, and pursue trademark enforcement on misleading review pages.')));
+    secondary.push(sec(tr('reclaim_affiliate_traffic', 'Affiliate/review sites earn commission on your branded traffic. Build stronger branded landing pages, partner directly with the highest-volume affiliates instead of paying via networks, and pursue trademark enforcement on misleading review pages.'), ['affiliate_outranks_own']));
   }
   if (has('category_intent_invisible') || has('high_leverage_query_unowned')) {
-    secondary.push(sec(tr('own_category_query', 'Buyers shopping the category never see you. Publish a "best [category] [year]" listicle on your own domain, target the alternatives keyword cluster with 1,500-word landing pages, and outreach to 3-5 independent "best of" listicle authors for inclusion.')));
+    secondary.push(sec(tr('own_category_query', 'Buyers shopping the category never see you. Publish a "best [category] [year]" listicle on your own domain, target the alternatives keyword cluster with 1,500-word landing pages, and outreach to 3-5 independent "best of" listicle authors for inclusion.'), ['category_intent_invisible', 'high_leverage_query_unowned']));
   }
   if (has('competitor_owns_comparison') || has('unfindable_in_comparison_searches')) {
-    secondary.push(sec(tr('own_vs_query', 'Competitors author the "<brand> vs them" pages — they shape how AI describes you. Publish fair side-by-side comparison pages on your own domain for the top 3 competitors, with criteria buyers actually use.')));
+    secondary.push(sec(tr('own_vs_query', 'Competitors author the "<brand> vs them" pages — they shape how AI describes you. Publish fair side-by-side comparison pages on your own domain for the top 3 competitors, with criteria buyers actually use.'), ['competitor_owns_comparison', 'unfindable_in_comparison_searches']));
   }
   if (has('hn_tech_audience_invisible')) {
-    secondary.push(sec(tr('hn_engagement', 'Tech early-adopters have never discussed you on Hacker News. Plan a "Show HN" launch with a real engineering story OR publish one deep-dive technical post that earns front-page traction. Either creates a persistent HN citation surface.')));
+    secondary.push(sec(tr('hn_engagement', 'Tech early-adopters have never discussed you on Hacker News. Plan a "Show HN" launch with a real engineering story OR publish one deep-dive technical post that earns front-page traction. Either creates a persistent HN citation surface.'), ['hn_tech_audience_invisible']));
   }
   if (has('reddit_forum_absence') || has('reddit_category_demand_unmet')) {
-    secondary.push(sec(tr('reddit_authentic_presence', 'Reddit recommendation threads never mention you while buyers ask for tools in your category. Identify 2-3 active subreddits, seed authentic founder presence over 30+ days, and respond helpfully to existing recommendation threads. Avoid promotional posts — Reddit moderation penalizes them.')));
+    secondary.push(sec(tr('reddit_authentic_presence', 'Reddit recommendation threads never mention you while buyers ask for tools in your category. Identify 2-3 active subreddits, seed authentic founder presence over 30+ days, and respond helpfully to existing recommendation threads. Avoid promotional posts — Reddit moderation penalizes them.'), ['reddit_category_demand_unmet', 'reddit_forum_absence']));
   }
   if (has('third_party_citation_target')) {
-    secondary.push(sec(tr('expand_third_party', 'Claim missing third-party listings and seed reviews. AI assistants are 6.5× more likely to cite via third-party sources than via your own domain — this is structural moat.')));
+    secondary.push(sec(tr('expand_third_party', 'Claim missing third-party listings and seed reviews. AI assistants are 6.5× more likely to cite via third-party sources than via your own domain — this is structural moat.'), ['third_party_citation_target']));
   }
 
   // Phase 3E discoverability findings (pre-existing)
   if (has('commercial_pages_weak_search_representation')) {
-    secondary.push(sec(tr('improve_search_representation', 'Commercial pages have weak search representation. Add proper <title>, meta description, and OpenGraph tags that match buying-intent queries.')));
+    secondary.push(sec(tr('improve_search_representation', 'Commercial pages have weak search representation. Add proper <title>, meta description, and OpenGraph tags that match buying-intent queries.'), ['commercial_pages_weak_search_representation']));
   }
   if (has('social_previews_fail_commercial_value')) {
-    secondary.push(sec(tr('improve_social_previews', 'Social previews fail to communicate commercial value. Add OG image, og:title with value prop, and og:description with the offer for every commercial page.')));
+    secondary.push(sec(tr('improve_social_previews', 'Social previews fail to communicate commercial value. Add OG image, og:title with value prop, and og:description with the offer for every commercial page.'), ['social_previews_fail_commercial_value']));
   }
   if (has('brand_inconsistent_across_surfaces')) {
-    secondary.push(sec(tr('unify_brand_surfaces', 'Brand name appears inconsistently across pages (e.g., capitalization, abbreviations). Standardize across <title>, H1, OG tags, and copy.')));
+    secondary.push(sec(tr('unify_brand_surfaces', 'Brand name appears inconsistently across pages (e.g., capitalization, abbreviations). Standardize across <title>, H1, OG tags, and copy.'), ['brand_inconsistent_across_surfaces']));
   }
   if (has('commercial_pages_not_exposed_for_discovery') || has('commercial_pages_unlikely_indexed')) {
-    secondary.push(sec(tr('expose_commercial_pages', 'Commercial pages (pricing, product, checkout entry) may not be indexed by search engines. Verify robots.txt allows crawling, add them to the sitemap, and link from the homepage.')));
+    secondary.push(sec(tr('expose_commercial_pages', 'Commercial pages (pricing, product, checkout entry) may not be indexed by search engines. Verify robots.txt allows crawling, add them to the sitemap, and link from the homepage.'), ['commercial_pages_not_exposed_for_discovery', 'commercial_pages_unlikely_indexed']));
   }
 
   // Wave 15.5 — interpolate current AI Visibility Score into primary text.
@@ -1332,10 +1332,10 @@ function buildBrandIntegrityActions(
 
   // Wave 14 — Cross-pack compound insights (surface first, they encode order-of-operations)
   if (has('compound_reputation_blocks_ai_citation')) {
-    secondary.push(sec(tr('compound_reputation_ai', 'CROSS-PACK: Your reputation problem is actively blocking AI search citation. Schema markup + llms.txt won\'t fix this — AI assistants route around brands with public unresolved complaints. ORDER MATTERS: respond to outstanding reviews FIRST (1-2 weeks), then invest in AI visibility infrastructure.')));
+    secondary.push(sec(tr('compound_reputation_ai', 'CROSS-PACK: Your reputation problem is actively blocking AI search citation. Schema markup + llms.txt won\'t fix this — AI assistants route around brands with public unresolved complaints. ORDER MATTERS: respond to outstanding reviews FIRST (1-2 weeks), then invest in AI visibility infrastructure.'), ['compound_reputation_blocks_ai_citation']));
   }
   if (has('compound_brand_authority_crisis')) {
-    secondary.push(sec(tr('compound_brand_crisis', 'CROSS-PACK: Brand authority crisis on multiple fronts (branded SERP + competitor hijack + affiliate dominance). Three-prong response in parallel: (a) SEO/technical — fix title/canonical/schema; (b) IP enforcement — file Google Ads Trademark Complaints; (c) affiliate partnership — convert top affiliate domains from commission-takers to direct partners.')));
+    secondary.push(sec(tr('compound_brand_crisis', 'CROSS-PACK: Brand authority crisis on multiple fronts (branded SERP + competitor hijack + affiliate dominance). Three-prong response in parallel: (a) SEO/technical — fix title/canonical/schema; (b) IP enforcement — file Google Ads Trademark Complaints; (c) affiliate partnership — convert top affiliate domains from commission-takers to direct partners.'), ['compound_brand_authority_crisis']));
   }
 
   // Wave 12 Brand Echo — reputation review platforms.
@@ -1348,7 +1348,7 @@ function buildBrandIntegrityActions(
       const count = inferenceConcreteCount(inf);
       secondary.push(sec(count != null
         ? `Você tem ${count} reviews 1-2★ sem resposta no Trustpilot — comprador EU/US confere antes de pagar. Responda dentro de 48h, mesmo as antigas (resposta a review de 5 meses ainda recupera credibilidade).`
-        : tr('respond_trustpilot_complaints', 'Negative Trustpilot reviews are sitting unanswered for prospects to read. Assign someone to respond within 48 hours of each new review with an empathetic acknowledgment + concrete next step. Reply to existing unanswered negatives now — even a 5-month-old reply restores credibility.')));
+        : tr('respond_trustpilot_complaints', 'Negative Trustpilot reviews are sitting unanswered for prospects to read. Assign someone to respond within 48 hours of each new review with an empathetic acknowledgment + concrete next step. Reply to existing unanswered negatives now — even a 5-month-old reply restores credibility.'), ['trustpilot_complaint_cluster']));
     }
   }
   {
@@ -1357,7 +1357,7 @@ function buildBrandIntegrityActions(
       const rate = inferenceConcreteCount(inf); // numeric_value carries % response rate
       secondary.push(sec(rate != null && rate < 70
         ? `Owner response rate no Trustpilot está em ${rate}% (industry benchmark >70%). Configure alerta pra cada review nova e mire sub-48h — silêncio é razão #1 de comprador escolher concorrente com features parecidas mas cuidado visível.`
-        : tr('trustpilot_response_cadence', 'Set up a Trustpilot alert that pages someone for any new review. Target sub-48h response rate above 70% — silence is the #1 reason high-intent prospects pick a competitor with similar features but visible care.')));
+        : tr('trustpilot_response_cadence', 'Set up a Trustpilot alert that pages someone for any new review. Target sub-48h response rate above 70% — silence is the #1 reason high-intent prospects pick a competitor with similar features but visible care.'), ['trustpilot_response_silence']));
     }
   }
   {
@@ -1370,7 +1370,7 @@ function buildBrandIntegrityActions(
       const idx = indexMatch?.[1] ?? null;
       secondary.push(sec(label || idx
         ? `Reclame Aqui marca a marca como "${label ?? 'crítica'}"${idx ? ` (índice ${idx}/10)` : ''}. Comprador BR confere RA antes de pagar — resolva reclamações pendentes publicamente (status = Resolvido), responda novas em ≤5 dias úteis, mire índice >7/10 em 90 dias.`
-        : tr('reclame_aqui_recovery', 'Reclame Aqui flags the brand as critical — BR buyers verify before paying. Resolve pending complaints publicly (status = Resolvido), respond to every new complaint within 5 business days, and target index acima de 7/10 within 90 days.')));
+        : tr('reclame_aqui_recovery', 'Reclame Aqui flags the brand as critical — BR buyers verify before paying. Resolve pending complaints publicly (status = Resolvido), respond to every new complaint within 5 business days, and target index acima de 7/10 within 90 days.'), ['reclame_aqui_reputation_critical']));
     }
   }
 
@@ -1385,7 +1385,7 @@ function buildBrandIntegrityActions(
       const domains = domainsMatch?.[1]?.trim().slice(0, 80) ?? null;
       secondary.push(sec(count != null
         ? `${count} domínios não-brand rankeiam acima do seu domínio no nome da sua marca${domains ? ` (top: ${domains})` : ''}. Pra concorrentes rodando Google Ads no seu trademark, abra Google Ads Trademark Complaints + Meta brand reports. Reforce sinais de marca (press kit + Wikipedia + Organization schema).`
-        : tr('competitor_hijack_enforcement', 'Competitors outrank your own domain on your brand name. Publish a press kit + about page that aggressively owns brand signal. For repeat offenders running paid ads on your trademark, file Google Ads Trademark Complaints + Meta brand reports.')));
+        : tr('competitor_hijack_enforcement', 'Competitors outrank your own domain on your brand name. Publish a press kit + about page that aggressively owns brand signal. For repeat offenders running paid ads on your trademark, file Google Ads Trademark Complaints + Meta brand reports.'), ['competitor_brand_hijack_serp']));
     }
   }
   {
@@ -1396,28 +1396,28 @@ function buildBrandIntegrityActions(
       const domains = domainsMatch?.[1]?.trim().slice(0, 80) ?? null;
       secondary.push(sec(count != null
         ? `${count} sites afiliados ganhando comissão no seu tráfego branded${domains ? ` (${domains})` : ''}. Negocie deals diretos com os 3 maiores (melhor margem que comissão de rede), faça enforcement de trademark em páginas enganosas, invista nas suas próprias branded landing pages.`
-        : tr('affiliate_traffic_recovery', 'Affiliate/review sites earn commission on traffic that should be direct. Negotiate direct deals with the top 3 affiliate sites (better margin than network commissions), file trademark enforcement on misleading review pages, and invest in your own branded landing pages.')));
+        : tr('affiliate_traffic_recovery', 'Affiliate/review sites earn commission on traffic that should be direct. Negotiate direct deals with the top 3 affiliate sites (better margin than network commissions), file trademark enforcement on misleading review pages, and invest in your own branded landing pages.'), ['affiliate_outranks_own']));
     }
   }
 
   // Phase 3E — Brand impersonation / typosquats
   if (has('lookalike_domain_competing_for_traffic')) {
-    secondary.push(sec(tr('lookalike_domain_response', 'A lookalike domain is competing for branded traffic. File a UDRP complaint with the relevant registrar, or buy the domain directly if it is for sale and redirects to a competitor.')));
+    secondary.push(sec(tr('lookalike_domain_response', 'A lookalike domain is competing for branded traffic. File a UDRP complaint with the relevant registrar, or buy the domain directly if it is for sale and redirects to a competitor.'), ['lookalike_domain_competing_for_traffic']));
   }
   if (has('external_sites_mimicking_brand') || has('customers_exposed_to_phishing_surfaces')) {
-    secondary.push(sec(tr('phishing_response', 'External sites are mimicking the brand — phishing exposure for customers. Submit takedown requests via Google Safe Browsing + Microsoft Defender, notify affected customers via email, and monitor for new lookalikes weekly.')));
+    secondary.push(sec(tr('phishing_response', 'External sites are mimicking the brand — phishing exposure for customers. Submit takedown requests via Google Safe Browsing + Microsoft Defender, notify affected customers via email, and monitor for new lookalikes weekly.'), ['customers_exposed_to_phishing_surfaces', 'external_sites_mimicking_brand']));
   }
   if (has('brand_traffic_exposed_to_deceptive_surfaces') || has('suspicious_domains_capturing_purchase_intent')) {
-    secondary.push(sec(tr('deceptive_surface_audit', 'Suspicious domains are capturing brand-intent traffic. Run brand monitoring queries weekly, file trademark complaints on confirmed bad actors, and create a "report a fake site" link on the footer.')));
+    secondary.push(sec(tr('deceptive_surface_audit', 'Suspicious domains are capturing brand-intent traffic. Run brand monitoring queries weekly, file trademark complaints on confirmed bad actors, and create a "report a fake site" link on the footer.'), ['brand_traffic_exposed_to_deceptive_surfaces', 'suspicious_domains_capturing_purchase_intent']));
   }
   if (has('brand_presence_diluted_across_variants')) {
-    secondary.push(sec(tr('unify_brand_presence', 'Brand presence is diluted across name variants (.com, .io, country TLDs). Consolidate to one canonical domain with 301 redirects from variants, and unify brand spelling across all surfaces.')));
+    secondary.push(sec(tr('unify_brand_presence', 'Brand presence is diluted across name variants (.com, .io, country TLDs). Consolidate to one canonical domain with 301 redirects from variants, and unify brand spelling across all surfaces.'), ['brand_presence_diluted_across_variants']));
   }
 
   // Wave 13 AI Visibility (brand-integrity adjacent) — handled mostly in
   // discoverability actions, but a few high-severity ones bleed here too
   if (has('branded_query_ai_overview_competitor')) {
-    secondary.push(sec(tr('branded_ai_overview_recover', 'When AI summarizes searches for your brand, it cites competitors first. Publish a definitive brand page (homepage + /about + press kit) with consistent entity signals + Wikipedia + Organization schema. AI Overview rebalances within 60-90 days.')));
+    secondary.push(sec(tr('branded_ai_overview_recover', 'When AI summarizes searches for your brand, it cites competitors first. Publish a definitive brand page (homepage + /about + press kit) with consistent entity signals + Wikipedia + Organization schema. AI Overview rebalances within 60-90 days.'), ['branded_query_ai_overview_competitor']));
   }
 
   // Build primary by impact level
@@ -1497,41 +1497,41 @@ function buildSaasGrowthReadinessActions(
 
   // Wave 14 — Cross-pack compound
   if (has('compound_saas_activation_to_expansion_blocked')) {
-    secondary.push(sec(tr('compound_saas_loop', 'CROSS-PACK: SaaS loop broken — users don\'t activate, those who do don\'t see upgrade, those on paid have no expansion path. Paid acquisition is a leaky bucket. Fix in order: (1) cut activation to 3 steps + 60-second quick win; (2) add usage-triggered upgrade prompts (not in billing); (3) build seat expansion or premium add-ons.')));
+    secondary.push(sec(tr('compound_saas_loop', 'CROSS-PACK: SaaS loop broken — users don\'t activate, those who do don\'t see upgrade, those on paid have no expansion path. Paid acquisition is a leaky bucket. Fix in order: (1) cut activation to 3 steps + 60-second quick win; (2) add usage-triggered upgrade prompts (not in billing); (3) build seat expansion or premium add-ons.'), ['compound_saas_activation_to_expansion_blocked']));
   }
 
   if (has('activation_blocked')) {
-    secondary.push(sec(tr('activation_blocked', 'New users cannot complete activation — empty screens, missing data, or blocked next step. Identify the FIRST point where the user hits a wall and ship a workaround within 7 days.')));
+    secondary.push(sec(tr('activation_blocked', 'New users cannot complete activation — empty screens, missing data, or blocked next step. Identify the FIRST point where the user hits a wall and ship a workaround within 7 days.'), ['activation_blocked']));
   }
   if (has('activation_friction_high')) {
-    secondary.push(sec(tr('activation_friction', 'Activation has too many steps before first value. Cut to 3 essential steps; defer everything else to in-app prompts.')));
+    secondary.push(sec(tr('activation_friction', 'Activation has too many steps before first value. Cut to 3 essential steps; defer everything else to in-app prompts.'), ['activation_friction_high']));
   }
   if (has('unclear_next_step')) {
-    secondary.push(sec(tr('next_step', 'Users land on the app and do not know what to do. Add a persistent "next step" prompt in the dashboard until first activation milestone is hit.')));
+    secondary.push(sec(tr('next_step', 'Users land on the app and do not know what to do. Add a persistent "next step" prompt in the dashboard until first activation milestone is hit.'), ['unclear_next_step']));
   }
   if (has('empty_state_without_guidance')) {
-    secondary.push(sec(tr('empty_state', 'Empty screens leave users stuck. Every empty state needs: explanation of what would appear here + sample data button + CTA to create real data.')));
+    secondary.push(sec(tr('empty_state', 'Empty screens leave users stuck. Every empty state needs: explanation of what would appear here + sample data button + CTA to create real data.'), ['empty_state_without_guidance']));
   }
   if (has('navigation_overcomplex')) {
-    secondary.push(sec(tr('nav_complex', 'Navigation has too many top-level items. Flatten to 5-7 max, group secondary items under settings/profile.')));
+    secondary.push(sec(tr('nav_complex', 'Navigation has too many top-level items. Flatten to 5-7 max, group secondary items under settings/profile.'), ['navigation_overcomplex']));
   }
   if (has('feature_discovery_poor')) {
-    secondary.push(sec(tr('feature_discovery', 'Users cannot find features they pay for. Add a feature-tour modal on first login OR a search bar in the app shell that surfaces features.')));
+    secondary.push(sec(tr('feature_discovery', 'Users cannot find features they pay for. Add a feature-tour modal on first login OR a search bar in the app shell that surfaces features.'), ['feature_discovery_poor']));
   }
   if (has('upgrade_invisible')) {
-    secondary.push(sec(tr('upgrade_visible', 'Upgrade path is hidden. Show plan limits + upgrade CTA at the moment the user hits the limit (in-context, not just in billing).')));
+    secondary.push(sec(tr('upgrade_visible', 'Upgrade path is hidden. Show plan limits + upgrade CTA at the moment the user hits the limit (in-context, not just in billing).'), ['upgrade_invisible']));
   }
   if (has('upgrade_timing_wrong')) {
-    secondary.push(sec(tr('upgrade_timing', 'Upgrade prompts fire before users see value. Delay the first upsell until the user has completed 3 core actions, then prompt with usage-justified copy.')));
+    secondary.push(sec(tr('upgrade_timing', 'Upgrade prompts fire before users see value. Delay the first upsell until the user has completed 3 core actions, then prompt with usage-justified copy.'), ['upgrade_timing_wrong']));
   }
   if (has('no_expansion_path')) {
-    secondary.push(sec(tr('expansion_path', 'Existing customers have no upgrade path beyond their plan. Add: seat expansion, premium feature add-ons, or annual prepay discount.')));
+    secondary.push(sec(tr('expansion_path', 'Existing customers have no upgrade path beyond their plan. Add: seat expansion, premium feature add-ons, or annual prepay discount.'), ['no_expansion_path']));
   }
   if (has('landing_app_mismatch')) {
-    secondary.push(sec(tr('landing_mismatch', 'Marketing landing promises X, in-app delivers Y. Align: every feature mentioned on the landing must appear in the trial onboarding within 10 minutes.')));
+    secondary.push(sec(tr('landing_mismatch', 'Marketing landing promises X, in-app delivers Y. Align: every feature mentioned on the landing must appear in the trial onboarding within 10 minutes.'), ['landing_app_mismatch']));
   }
   if (has('onboarding_no_quick_win')) {
-    secondary.push(sec(tr('quick_win', 'Onboarding has no quick win. Engineer a 60-second activation: user signs up → sees one tangible result within a minute.')));
+    secondary.push(sec(tr('quick_win', 'Onboarding has no quick win. Engineer a 60-second activation: user signs up → sees one tangible result within a minute.'), ['onboarding_no_quick_win']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {
@@ -1566,46 +1566,46 @@ function buildChannelIntegrityActions(
   const verification: string[] = [];
 
   if (has('payment_surface_compromised')) {
-    secondary.push(sec(tr('payment_surface', 'Payment surface has tampering exposure — third-party scripts on checkout, missing CSP. Lock down scripts on /checkout to a known allowlist with SRI hashes.')));
+    secondary.push(sec(tr('payment_surface', 'Payment surface has tampering exposure — third-party scripts on checkout, missing CSP. Lock down scripts on /checkout to a known allowlist with SRI hashes.'), ['payment_surface_compromised']));
   }
   if (has('channel_traffic_divertible')) {
-    secondary.push(sec(tr('traffic_diversion', 'Traffic on commercial pages can be diverted (open redirects, weak referrer policy). Audit redirect handlers + set Referrer-Policy: strict-origin-when-cross-origin.')));
+    secondary.push(sec(tr('traffic_diversion', 'Traffic on commercial pages can be diverted (open redirects, weak referrer policy). Audit redirect handlers + set Referrer-Policy: strict-origin-when-cross-origin.'), ['channel_traffic_divertible']));
   }
   if (has('commerce_operations_exposed') || has('promotion_logic_exposed')) {
-    secondary.push(sec(tr('commerce_exposed', 'Promotion / discount logic is exposed in client-side code. Move price + discount calculation server-side; never trust client-submitted prices.')));
+    secondary.push(sec(tr('commerce_exposed', 'Promotion / discount logic is exposed in client-side code. Move price + discount calculation server-side; never trust client-submitted prices.'), ['commerce_operations_exposed', 'promotion_logic_exposed']));
   }
   if (has('traffic_landing_low_trust_posture')) {
-    secondary.push(sec(tr('landing_trust', 'Paid traffic lands on pages with weak technical trust posture (missing HTTPS strict, weak headers). Run securityheaders.com on every paid landing and fix every red.')));
+    secondary.push(sec(tr('landing_trust', 'Paid traffic lands on pages with weak technical trust posture (missing HTTPS strict, weak headers). Run securityheaders.com on every paid landing and fix every red.'), ['traffic_landing_low_trust_posture']));
   }
   if (has('checkout_trust_brittle_infrastructure') || has('checkout_brittle_third_party')) {
-    secondary.push(sec(tr('checkout_infra', 'Checkout depends on third parties that fail under load. Identify the slowest 2 third-party scripts and async-defer or self-host them.')));
+    secondary.push(sec(tr('checkout_infra', 'Checkout depends on third parties that fail under load. Identify the slowest 2 third-party scripts and async-defer or self-host them.'), ['checkout_brittle_third_party', 'checkout_trust_brittle_infrastructure']));
   }
   if (has('cart_variant_weak_control') || has('alternate_pricing_safeguard_bypass') || has('alternate_variant_control_breakdown')) {
-    secondary.push(sec(tr('cart_variant', 'Cart accepts variants with weak price safeguards (negative quantity, alternative price). Add server-side validation: minimum price per SKU, max quantity per cart.')));
+    secondary.push(sec(tr('cart_variant', 'Cart accepts variants with weak price safeguards (negative quantity, alternative price). Add server-side validation: minimum price per SKU, max quantity per cart.'), ['alternate_pricing_safeguard_bypass', 'alternate_variant_control_breakdown', 'cart_variant_weak_control']));
   }
   if (has('hidden_discount_refund_route')) {
-    secondary.push(sec(tr('hidden_routes', 'Hidden discount/refund routes are accessible to anyone who guesses the URL. Move behind auth or behind a one-time signed token.')));
+    secondary.push(sec(tr('hidden_routes', 'Hidden discount/refund routes are accessible to anyone who guesses the URL. Move behind auth or behind a one-time signed token.'), ['hidden_discount_refund_route']));
   }
   if (has('guessable_business_endpoint') || has('dynamic_route_weak_control')) {
-    secondary.push(sec(tr('endpoint_guessable', 'Business endpoints (orders, billing, admin) follow guessable patterns. Switch to UUIDs and audit access logs for enumeration attempts.')));
+    secondary.push(sec(tr('endpoint_guessable', 'Business endpoints (orders, billing, admin) follow guessable patterns. Switch to UUIDs and audit access logs for enumeration attempts.'), ['dynamic_route_weak_control', 'guessable_business_endpoint']));
   }
   if (has('deep_commerce_exploitation_risk')) {
-    secondary.push(sec(tr('deep_exploitation', 'Deep crawl found buying-flow variants with weak guards. Treat every URL returned by Katana as a candidate for the same auth + rate-limit + validation as the main flow.')));
+    secondary.push(sec(tr('deep_exploitation', 'Deep crawl found buying-flow variants with weak guards. Treat every URL returned by Katana as a candidate for the same auth + rate-limit + validation as the main flow.'), ['deep_commerce_exploitation_risk']));
   }
   if (has('trust_surfaces_unstable_deps')) {
-    secondary.push(sec(tr('trust_deps', 'Trust signals (badges, testimonials) depend on third-party widgets that fail. Self-host or remove fragile widgets; trust must not flicker.')));
+    secondary.push(sec(tr('trust_deps', 'Trust signals (badges, testimonials) depend on third-party widgets that fail. Self-host or remove fragile widgets; trust must not flicker.'), ['trust_surfaces_unstable_deps']));
   }
   if (has('discount_abuse_pattern')) {
-    secondary.push(sec(tr('discount_abuse', 'Discount codes are being abused (mass redemption from same IP/email pattern). Add per-customer use limits + IP rate-limiting on coupon endpoint.')));
+    secondary.push(sec(tr('discount_abuse', 'Discount codes are being abused (mass redemption from same IP/email pattern). Add per-customer use limits + IP rate-limiting on coupon endpoint.'), ['discount_abuse_pattern']));
   }
   if (has('ad_spend_platform_concentration_risk')) {
-    secondary.push(sec(tr('ad_concentration', 'Ad spend is concentrated on one platform — a policy change kills your revenue. Diversify: split spend between Meta + Google + a third channel.')));
+    secondary.push(sec(tr('ad_concentration', 'Ad spend is concentrated on one platform — a policy change kills your revenue. Diversify: split spend between Meta + Google + a third channel.'), ['ad_spend_platform_concentration_risk']));
   }
   if (has('whatsapp_channel_disconnected')) {
-    secondary.push(sec(tr('whatsapp_channel', 'WhatsApp channel exists but is disconnected from main funnel. Add WhatsApp CTA to /pricing + /checkout for buyers who hesitate.')));
+    secondary.push(sec(tr('whatsapp_channel', 'WhatsApp channel exists but is disconnected from main funnel. Add WhatsApp CTA to /pricing + /checkout for buyers who hesitate.'), ['whatsapp_channel_disconnected']));
   }
   if (has('economic_exploitation_active')) {
-    secondary.push(sec(tr('economic_exploit', 'Active economic exploitation detected (coupon abuse, price manipulation, refund fraud). Escalate to security team + freeze affected accounts within 24h.')));
+    secondary.push(sec(tr('economic_exploit', 'Active economic exploitation detected (coupon abuse, price manipulation, refund fraud). Escalate to security team + freeze affected accounts within 24h.'), ['economic_exploitation_active']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {
@@ -1640,13 +1640,13 @@ function buildFrictionTaxActions(
   const verification: string[] = [];
 
   if (has('funnel_step_friction_cost')) {
-    secondary.push(sec(tr('step_friction', 'One specific funnel step is costing the most friction. Identify the step (via funnel analytics) and run usability test focused exclusively on it.')));
+    secondary.push(sec(tr('step_friction', 'One specific funnel step is costing the most friction. Identify the step (via funnel analytics) and run usability test focused exclusively on it.'), ['funnel_step_friction_cost']));
   }
   if (has('oscillation_decision_cost')) {
-    secondary.push(sec(tr('oscillation', 'Buyers bounce between 2 pages before deciding (e.g. pricing ↔ FAQ). Embed the answers on the decision page so they do not need to leave.')));
+    secondary.push(sec(tr('oscillation', 'Buyers bounce between 2 pages before deciding (e.g. pricing ↔ FAQ). Embed the answers on the decision page so they do not need to leave.'), ['oscillation_decision_cost']));
   }
   if (has('checkout_entry_friction')) {
-    secondary.push(sec(tr('checkout_entry', 'Checkout entry has visible friction (gate, login wall, account required). Allow guest checkout + remove pre-payment account creation.')));
+    secondary.push(sec(tr('checkout_entry', 'Checkout entry has visible friction (gate, login wall, account required). Allow guest checkout + remove pre-payment account creation.'), ['checkout_entry_friction']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {
@@ -1681,16 +1681,16 @@ function buildContentFreshnessActions(
   const verification: string[] = [];
 
   if (has('commercial_page_stale')) {
-    secondary.push(sec(tr('commercial_stale', 'Commercial pages have stale content (old year, outdated copy). Add a quarterly review calendar — every /product and /pricing page touched at least once per quarter.')));
+    secondary.push(sec(tr('commercial_stale', 'Commercial pages have stale content (old year, outdated copy). Add a quarterly review calendar — every /product and /pricing page touched at least once per quarter.'), ['commercial_page_stale']));
   }
   if (has('pricing_page_outdated')) {
-    secondary.push(sec(tr('pricing_outdated', 'Pricing page is outdated — old prices, old plan names, dated comparison points. Update immediately; outdated pricing is the #1 reason buyers email sales asking "is this still accurate?"')));
+    secondary.push(sec(tr('pricing_outdated', 'Pricing page is outdated — old prices, old plan names, dated comparison points. Update immediately; outdated pricing is the #1 reason buyers email sales asking "is this still accurate?"'), ['pricing_page_outdated']));
   }
   if (has('social_proof_expired')) {
-    secondary.push(sec(tr('social_proof_stale', 'All testimonials and case studies are dated >18 months. Refresh: collect 3 new customer quotes this quarter + add a date to every testimonial.')));
+    secondary.push(sec(tr('social_proof_stale', 'All testimonials and case studies are dated >18 months. Refresh: collect 3 new customer quotes this quarter + add a date to every testimonial.'), ['social_proof_expired']));
   }
   if (has('content_decay_progression')) {
-    secondary.push(sec(tr('content_decay', 'Content staleness is increasing audit-over-audit. Hire a part-time content owner OR add a "last reviewed" auto-prompt that nags after 90 days.')));
+    secondary.push(sec(tr('content_decay', 'Content staleness is increasing audit-over-audit. Hire a part-time content owner OR add a "last reviewed" auto-prompt that nags after 90 days.'), ['content_decay_progression']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {
@@ -1726,17 +1726,17 @@ function buildMobileRevenueExposureActions(
 
   // Wave 14 — Cross-pack compound
   if (has('compound_mobile_commerce_broken')) {
-    secondary.push(sec(tr('compound_mobile_broken', 'CROSS-PACK: Mobile commerce broken on multiple dimensions (conversion + form + CTA timing). This is structural mobile UX failure leaking the majority of paid traffic. Walk through signup-to-checkout on a real Android + iOS device — not DevTools mobile mode (it lies about font, keyboard, tap zones). Consider shipping a separate mobile-first /checkout.')));
+    secondary.push(sec(tr('compound_mobile_broken', 'CROSS-PACK: Mobile commerce broken on multiple dimensions (conversion + form + CTA timing). This is structural mobile UX failure leaking the majority of paid traffic. Walk through signup-to-checkout on a real Android + iOS device — not DevTools mobile mode (it lies about font, keyboard, tap zones). Consider shipping a separate mobile-first /checkout.'), ['compound_mobile_commerce_broken']));
   }
 
   if (has('mobile_conversion_gap')) {
-    secondary.push(sec(tr('conversion_gap', 'Mobile conversion is materially lower than desktop. Audit /checkout on a real mobile device (not DevTools): viewport, font size, input keyboard types, submit button reach zone.')));
+    secondary.push(sec(tr('conversion_gap', 'Mobile conversion is materially lower than desktop. Audit /checkout on a real mobile device (not DevTools): viewport, font size, input keyboard types, submit button reach zone.'), ['mobile_conversion_gap']));
   }
   if (has('mobile_form_friction_elevated')) {
-    secondary.push(sec(tr('form_friction', 'Mobile forms cause more friction than desktop. Each input needs the right inputmode (tel, email, decimal); add autocomplete=cc-number on payment fields.')));
+    secondary.push(sec(tr('form_friction', 'Mobile forms cause more friction than desktop. Each input needs the right inputmode (tel, email, decimal); add autocomplete=cc-number on payment fields.'), ['mobile_form_friction_elevated']));
   }
   if (has('mobile_cta_timing_degraded')) {
-    secondary.push(sec(tr('cta_timing', 'Mobile CTA renders late, delaying clicks. Inline-load button HTML so it is paint-ready in <1s on slow 3G; defer JS that powers it.')));
+    secondary.push(sec(tr('cta_timing', 'Mobile CTA renders late, delaying clicks. Inline-load button HTML so it is paint-ready in <1s on slow 3G; defer JS that powers it.'), ['mobile_cta_timing_degraded']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {
@@ -1772,17 +1772,17 @@ function buildTrustRevenueGapActions(
 
   // Wave 14 — Cross-pack compound
   if (has('compound_trust_journey_collapse')) {
-    secondary.push(sec(tr('compound_trust_collapse', 'CROSS-PACK: Trust collapses progressively — weak first impression → weaker mobile → broken at checkout. Place the single most powerful trust signal (named customer testimonial with photo OR specific outcome number) adjacent to primary CTA on homepage AND adjacent to Buy button on checkout. Then audit mobile-specific trust placement.')));
+    secondary.push(sec(tr('compound_trust_collapse', 'CROSS-PACK: Trust collapses progressively — weak first impression → weaker mobile → broken at checkout. Place the single most powerful trust signal (named customer testimonial with photo OR specific outcome number) adjacent to primary CTA on homepage AND adjacent to Buy button on checkout. Then audit mobile-specific trust placement.'), ['compound_trust_journey_collapse']));
   }
 
   if (has('trust_deficit_conversion_drag')) {
-    secondary.push(sec(tr('trust_deficit', 'Buyers hesitate at conversion because trust signals are missing AT the decision moment. Add testimonials + guarantee + security badge directly adjacent to the Buy button.')));
+    secondary.push(sec(tr('trust_deficit', 'Buyers hesitate at conversion because trust signals are missing AT the decision moment. Add testimonials + guarantee + security badge directly adjacent to the Buy button.'), ['trust_deficit_conversion_drag']));
   }
   if (has('reassurance_seeking_elevated')) {
-    secondary.push(sec(tr('reassurance', 'Buyers seek reassurance (FAQ, policies) before converting. Surface the top 3 buying objections on the conversion page as inline FAQ — they should not have to leave.')));
+    secondary.push(sec(tr('reassurance', 'Buyers seek reassurance (FAQ, policies) before converting. Surface the top 3 buying objections on the conversion page as inline FAQ — they should not have to leave.'), ['reassurance_seeking_elevated']));
   }
   if (has('sensitive_input_trust_gap')) {
-    secondary.push(sec(tr('sensitive_trust', 'Sensitive fields (CPF, card, address) lack trust framing. Add a brief "why we need this" note + visible HTTPS/security indicator next to each sensitive input.')));
+    secondary.push(sec(tr('sensitive_trust', 'Sensitive fields (CPF, card, address) lack trust framing. Add a brief "why we need this" note + visible HTTPS/security indicator next to each sensitive input.'), ['sensitive_input_trust_gap']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {
@@ -1817,13 +1817,13 @@ function buildFirstImpressionRevenueActions(
   const verification: string[] = [];
 
   if (has('first_session_milestone_stall')) {
-    secondary.push(sec(tr('milestone_stall', 'First-session visitors stall before hitting the first conversion milestone. Audit homepage above-fold: is the value prop clear in 5 seconds? Is there one obvious next step?')));
+    secondary.push(sec(tr('milestone_stall', 'First-session visitors stall before hitting the first conversion milestone. Audit homepage above-fold: is the value prop clear in 5 seconds? Is there one obvious next step?'), ['first_session_milestone_stall']));
   }
   if (has('first_session_trust_barrier')) {
-    secondary.push(sec(tr('trust_barrier', 'First-time visitors hit a trust barrier early. Move social proof (customer logos, testimonial snippet) above the fold; remove anything that signals "early stage" or "experimental".')));
+    secondary.push(sec(tr('trust_barrier', 'First-time visitors hit a trust barrier early. Move social proof (customer logos, testimonial snippet) above the fold; remove anything that signals "early stage" or "experimental".'), ['first_session_trust_barrier']));
   }
   if (has('first_session_cta_timing_gap')) {
-    secondary.push(sec(tr('cta_timing', 'First-session visitors do not see the CTA in time. Primary CTA should be visible in the first paint, not behind a scroll or after JS hydration.')));
+    secondary.push(sec(tr('cta_timing', 'First-session visitors do not see the CTA in time. Primary CTA should be visible in the first paint, not behind a scroll or after JS hydration.'), ['first_session_cta_timing_gap']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {
@@ -1858,13 +1858,13 @@ function buildActionValueMapActions(
   const verification: string[] = [];
 
   if (has('low_value_action_dominates')) {
-    secondary.push(sec(tr('low_value_dominates', 'Most user actions are low-value (newsletter signup, blog reads) while high-value paths get fewer clicks. Re-prioritize CTA placement: high-value actions in primary positions, low-value in footer.')));
+    secondary.push(sec(tr('low_value_dominates', 'Most user actions are low-value (newsletter signup, blog reads) while high-value paths get fewer clicks. Re-prioritize CTA placement: high-value actions in primary positions, low-value in footer.'), ['low_value_action_dominates']));
   }
   if (has('high_value_action_underexposed')) {
-    secondary.push(sec(tr('high_value_hidden', 'High-value actions (pricing, demo, signup) are underexposed. Audit homepage + key pages: each should have ≥1 visible high-value CTA above the fold.')));
+    secondary.push(sec(tr('high_value_hidden', 'High-value actions (pricing, demo, signup) are underexposed. Audit homepage + key pages: each should have ≥1 visible high-value CTA above the fold.'), ['high_value_action_underexposed']));
   }
   if (has('dead_weight_surface_traffic')) {
-    secondary.push(sec(tr('dead_weight', 'Some pages get traffic but produce zero conversions. Either redirect them to higher-value pages, add conversion paths, or remove from primary navigation.')));
+    secondary.push(sec(tr('dead_weight', 'Some pages get traffic but produce zero conversions. Either redirect them to higher-value pages, add conversion paths, or remove from primary navigation.'), ['dead_weight_surface_traffic']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {
@@ -1900,20 +1900,20 @@ function buildAcquisitionIntegrityActions(
 
   // Wave 14 — Cross-pack compound (acquisition_integrity hosts two compounds)
   if (has('compound_dead_ad_spend')) {
-    secondary.push(sec(tr('compound_dead_spend', 'CROSS-PACK: DARK WASTE — ads sending traffic to dead pages AND no conversion tracking to see it. STOP all paid spend NOW until (1) every active ad destination returns 200 + loads as expected AND (2) conversion events fire correctly in Meta/Google. 4-hour fix blocking accurate ROI on last 90 days of spend.')));
+    secondary.push(sec(tr('compound_dead_spend', 'CROSS-PACK: DARK WASTE — ads sending traffic to dead pages AND no conversion tracking to see it. STOP all paid spend NOW until (1) every active ad destination returns 200 + loads as expected AND (2) conversion events fire correctly in Meta/Google. 4-hour fix blocking accurate ROI on last 90 days of spend.'), ['compound_dead_ad_spend']));
   }
   if (has('compound_paid_acquisition_burn')) {
-    secondary.push(sec(tr('compound_paid_burn', 'CROSS-PACK: Paid acquisition compounding waste across friction + trust + mobile. CR is multiplicative across layers — small losses compound to 50%+ effective waste. Pause OR ship a separate paid-only landing page (sub-2s mobile load, single CTA, no nav, message-match headline, trust strip above fold).')));
+    secondary.push(sec(tr('compound_paid_burn', 'CROSS-PACK: Paid acquisition compounding waste across friction + trust + mobile. CR is multiplicative across layers — small losses compound to 50%+ effective waste. Pause OR ship a separate paid-only landing page (sub-2s mobile load, single CTA, no nav, message-match headline, trust strip above fold).'), ['compound_paid_acquisition_burn']));
   }
 
   if (has('paid_traffic_friction_elevated')) {
-    secondary.push(sec(tr('paid_friction', 'Paid traffic hits more friction than organic. Match landing page promise to ad copy verbatim + cut form fields to email-only.')));
+    secondary.push(sec(tr('paid_friction', 'Paid traffic hits more friction than organic. Match landing page promise to ad copy verbatim + cut form fields to email-only.'), ['paid_traffic_friction_elevated']));
   }
   if (has('paid_traffic_trust_gap')) {
-    secondary.push(sec(tr('paid_trust', 'Paid traffic lands on pages without the trust signals organic visitors get. Audit: testimonials, customer logos, security badges, money-back guarantee — all should be on paid landings.')));
+    secondary.push(sec(tr('paid_trust', 'Paid traffic lands on pages without the trust signals organic visitors get. Audit: testimonials, customer logos, security badges, money-back guarantee — all should be on paid landings.'), ['paid_traffic_trust_gap']));
   }
   if (has('paid_mobile_compounding_waste')) {
-    secondary.push(sec(tr('paid_mobile', 'Paid mobile traffic compounds friction + trust issues = burnt spend. Build mobile-first paid landings (separate from desktop) — sub-2s load, single primary CTA, no nav.')));
+    secondary.push(sec(tr('paid_mobile', 'Paid mobile traffic compounds friction + trust issues = burnt spend. Build mobile-first paid landings (separate from desktop) — sub-2s load, single primary CTA, no nav.'), ['paid_mobile_compounding_waste']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {
@@ -1948,13 +1948,13 @@ function buildPathEfficiencyActions(
   const verification: string[] = [];
 
   if (has('path_length_exceeds_efficient')) {
-    secondary.push(sec(tr('path_length', 'Path to purchase has too many steps. Audit each step: is it essential or is it asking for info that could come post-purchase?')));
+    secondary.push(sec(tr('path_length', 'Path to purchase has too many steps. Audit each step: is it essential or is it asking for info that could come post-purchase?'), ['path_length_exceeds_efficient']));
   }
   if (has('intent_absorber_detected')) {
-    secondary.push(sec(tr('intent_absorber', 'One specific page is absorbing buying intent without converting it (e.g. FAQ, support). Add a clear "ready to buy?" CTA at the end of that page.')));
+    secondary.push(sec(tr('intent_absorber', 'One specific page is absorbing buying intent without converting it (e.g. FAQ, support). Add a clear "ready to buy?" CTA at the end of that page.'), ['intent_absorber_detected']));
   }
   if (has('intent_decay_time_excessive')) {
-    secondary.push(sec(tr('intent_decay', 'Time from intent-expressed to conversion is too long. Trigger a follow-up: exit-intent modal + email reminder within 24h for cart abandoners.')));
+    secondary.push(sec(tr('intent_decay', 'Time from intent-expressed to conversion is too long. Trigger a follow-up: exit-intent modal + email reminder within 24h for cart abandoners.'), ['intent_decay_time_excessive']));
   }
 
   const primary = packPrimary(risk.decision_impact, tr, {

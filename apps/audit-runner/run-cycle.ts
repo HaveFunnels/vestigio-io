@@ -25,7 +25,7 @@ import { prisma } from "@/libs/prismaDb";
 import { runStagedPipeline, type PipelineEvent } from "../../workers/ingestion/staged-pipeline";
 import { PrismaEvidenceStore } from "../../packages/evidence";
 import { PrismaSnapshotStore } from "../../packages/change-detection";
-import { PrismaFindingStore, projectAll } from "../../packages/projections";
+import { PrismaActionStore, PrismaFindingStore, projectAll } from "../../packages/projections";
 import { recomputeWithPool } from "./recompute-pool";
 import { loadEngineTranslationsForLocale } from "@/lib/engine-translations";
 import { processBehavioralEventsForEnv } from "./process-behavioral";
@@ -1688,6 +1688,38 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					console.log(
 						`[audit-runner ${cycleId}] persisted ${saveResult.written}/${saveResult.attempted} findings`,
 					);
+
+					// Wave 18t-B — dual-write actions to the new relational table.
+					// Best-effort: a failure here logs loud but doesn't fail the
+					// cycle. /app/actions readers fall through to projectionsCache
+					// when the table is empty, so a partial write degrades to
+					// the legacy code path rather than breaking the page.
+					try {
+						const actionStore = new PrismaActionStore(prisma);
+						const actionResult = await actionStore.saveForCycle(
+							{
+								cycleId,
+								environmentId: env.id,
+								cycleRef: cycleRefStr,
+								actions: projections.actions,
+							},
+							tx,
+						);
+						if (actionResult.failed.length > 0) {
+							console.error(
+								`[audit-runner ${cycleId}] actions persistence had ${actionResult.failed.length}/${actionResult.attempted} failures`,
+								actionResult.failed.slice(0, 5),
+							);
+						}
+						console.log(
+							`[audit-runner ${cycleId}] persisted ${actionResult.written}/${actionResult.attempted} actions`,
+						);
+					} catch (actionErr) {
+						console.error(
+							`[audit-runner ${cycleId}] actions persistence threw — continuing with projectionsCache only:`,
+							actionErr,
+						);
+					}
 
 					// Wave 16 — serialize ProjectionResult (findings, actions,
 					// workspaces, change_report, maps) into the cycle row so

@@ -1,5 +1,6 @@
 export { projectAll, projectFindings, projectActions, projectWorkspaces, projectChangeReport, groupByPerspective, buildRevenueMap, buildCycleDelta, buildBraggingRights } from './engine';
 export { PrismaFindingStore, type SaveForCycleResult } from './prisma-finding-store';
+export { PrismaActionStore, type SaveActionsResult } from './prisma-action-store';
 export {
 	REMEDIATION_CATALOG,
 	lookupRemediation,

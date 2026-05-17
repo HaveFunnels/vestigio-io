@@ -201,7 +201,7 @@ export function createBehavioralWorkspace(
   const whatIsHappening = keyIssues.map(i => i.title);
   const whatToFix: string[] = [];
   if (decision.actions.primary) whatToFix.push(decision.actions.primary);
-  for (const s of decision.actions.secondary.slice(0, 3)) whatToFix.push(s);
+  for (const s of decision.actions.secondary.slice(0, 3)) whatToFix.push(s.title);
 
   const summary: BehavioralWorkspaceSummary = {
     what_is_happening: whatIsHappening,

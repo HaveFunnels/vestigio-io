@@ -137,6 +137,34 @@ const opportunitySteps = [
 ];
 
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", BRL: "R$", EUR: "€" };
+
+// Wave 18t — sum actions' monthly impact midpoints WITHOUT double-counting
+// primary + its secondaries. The deriver mints action_keys as
+// `${decision_key}_primary | _secondary_N | _verify_N`; we strip that suffix
+// to group siblings, then sum the MAX impact per group. Primary actions
+// carry the umbrella RootCause impact (always >= each secondary's per-
+// inference slice under our MAX attribution model), so the group max
+// resolves to the umbrella value exactly once per decision. Actions that
+// don't follow the deriver convention (compound chains keyed by cf.id)
+// land in their own singleton group and contribute once.
+function sumActionImpactDedupedByDecision(
+	list: ReadonlyArray<{ id: string; impact: { midpoint: number } | null }>,
+): number {
+	const byDecisionKey = new Map<string, number>();
+	for (const a of list) {
+		const decisionKey = a.id
+			.replace(/_secondary_\d+$/, "")
+			.replace(/_verify_\d+$/, "")
+			.replace(/_primary$/, "");
+		const current = byDecisionKey.get(decisionKey) ?? 0;
+		const candidate = a.impact?.midpoint ?? 0;
+		if (candidate > current) byDecisionKey.set(decisionKey, candidate);
+	}
+	let total = 0;
+	for (const v of byDecisionKey.values()) total += v;
+	return total;
+}
+
 function formatCurrency(value: number, sym: string = "$"): string {
 	if (value >= 1000000) return `${sym}${(value / 1000000).toFixed(1)}M`;
 	if (value >= 1000) return `${sym}${(value / 1000).toFixed(1)}k`;
@@ -456,9 +484,16 @@ function ActionsContent({
 		return result;
 	}, [actions, typeFilter, severityFilter, effortFilter, surfaceFilter]);
 
-	// Total addressable impact
+	// Total addressable impact.
+	// Wave 18t: group by decision_key (extracted from action_key) and take
+	// the MAX impact within each group. The primary action carries the
+	// RootCause umbrella value; its secondaries each get a slice of the
+	// same money. Summing across all actions would double-count, so we
+	// reduce each decision to its single highest-impact action (usually
+	// the primary). Compound actions live in their own group (id format
+	// differs) and contribute once each.
 	const totalImpact = useMemo(() => {
-		return actions.reduce((sum, a) => sum + (a.impact?.midpoint || 0), 0);
+		return sumActionImpactDedupedByDecision(actions);
 	}, [actions]);
 
 	// Wave 0.6: POST /api/verification/run and refresh server data on success.
@@ -535,7 +570,7 @@ function ActionsContent({
 			a.operational_status === "archived" ||
 			a.decision_status === "resolved"
 		);
-		return resolved.reduce((sum, a) => sum + (a.impact?.midpoint || 0), 0);
+		return sumActionImpactDedupedByDecision(resolved);
 	}, [actions]);
 
 	// Reconcile change report counts and detail arrays with actual action

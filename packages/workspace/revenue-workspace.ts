@@ -136,7 +136,7 @@ export function createRevenueWorkspace(
     whatToFix.push(decision.actions.primary);
   }
   for (const s of decision.actions.secondary.slice(0, 3)) {
-    whatToFix.push(s);
+    whatToFix.push(s.title);
   }
 
   const summary: RevenueSummary = {

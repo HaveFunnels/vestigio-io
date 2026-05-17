@@ -22,6 +22,16 @@ export interface Action extends Timestamped {
   status: ActionStatus;
 
   /**
+   * Inferences whose firing triggered this action. Empty for actions
+   * that aren't tied to a specific inference (primary action of a
+   * decision, tier-level "block_primary" strings, verification
+   * actions). Drives both the catalog lookup (lookupRemediation by
+   * inference_key) and per-secondary impact attribution at projection
+   * time — see Wave 18t.
+   */
+  inference_keys: string[];
+
+  /**
    * Ordered, actionable remediation steps. Phase 1 ships the field
    * null-default; Phase 2 backfills content per action_key (see
    * docs/REMEDIATION_FORMAT.md). Each step is a short verb-led

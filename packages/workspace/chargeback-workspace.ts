@@ -114,7 +114,7 @@ export function createChargebackWorkspace(
   }
 
   if (decision.actions.primary) refundPressure.push(decision.actions.primary);
-  for (const s of decision.actions.secondary.slice(0, 3)) refundPressure.push(s);
+  for (const s of decision.actions.secondary.slice(0, 3)) refundPressure.push(s.title);
 
   const summary: ChargebackSummary = {
     where_disputes_happen: whereDisputes,

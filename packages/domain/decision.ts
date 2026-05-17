@@ -57,9 +57,28 @@ export interface DecisionWhy {
   summary: string;
 }
 
+/**
+ * A secondary action is a discrete prescription the engine emits
+ * when one or more inferences fire. `inference_keys` captures the
+ * triggering inferences so downstream layers can:
+ *   1. Look up evidence-based remediation_steps + verification meta
+ *      via the inference-keyed REMEDIATION_CATALOG.
+ *   2. Compute per-secondary impact attribution from each fired
+ *      inference's QuantifiedValueCase (we use MAX of fired triggers,
+ *      not sum — see Wave 18t).
+ *
+ * `inference_keys` is empty when the secondary isn't tied to specific
+ * inferences (e.g. tier-level "block_primary" strings that depend on
+ * decision_impact, not a single firing inference).
+ */
+export interface SecondaryAction {
+  title: string;
+  inference_keys: string[];
+}
+
 export interface DecisionActions {
   primary: string;
-  secondary: string[];
+  secondary: SecondaryAction[];
   verification: string[];
 }
 

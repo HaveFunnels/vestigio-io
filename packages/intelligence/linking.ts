@@ -243,6 +243,13 @@ export function prioritizeActions(
     const mergedVerificationEta =
       verificationEtas.length === 0 ? null : Math.max(...verificationEtas);
 
+    // Wave 18t — union of triggering inference_keys across merged
+    // source actions. Deduplicated so a key appearing in multiple
+    // pack-level secondaries doesn't double-count downstream.
+    const mergedInferenceKeys = Array.from(
+      new Set(group.flatMap((g) => g.action.inference_keys ?? [])),
+    );
+
     globalActions.push({
       id: ids.next(),
       action_key: first.action.action_key,
@@ -262,6 +269,7 @@ export function prioritizeActions(
       verification_strategy: mergedVerificationStrategy,
       verification_notes: mergedVerificationNotes,
       verification_eta_seconds: mergedVerificationEta,
+      inference_keys: mergedInferenceKeys,
     });
   }
 

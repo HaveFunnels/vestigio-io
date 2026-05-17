@@ -191,6 +191,8 @@ export interface DecisionExplainabilityView {
   why_evidence_count: number;
   actions: {
     primary: string;
+    /** title-only view of secondaries — the MCP surface doesn't expose
+     *  inference_keys, those are an internal projection-layer concern. */
     secondary: string[];
     verification: string[];
   };

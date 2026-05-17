@@ -114,7 +114,11 @@ export function getDecisionExplainability(
     why_signals: decision.why.signals,
     why_inferences: decision.why.inferences,
     why_evidence_count: decision.why.evidence_refs.length,
-    actions: decision.actions,
+    actions: {
+      primary: decision.actions.primary,
+      secondary: decision.actions.secondary.map((s) => s.title),
+      verification: decision.actions.verification,
+    },
     root_causes: linkedRCs,
   };
 }

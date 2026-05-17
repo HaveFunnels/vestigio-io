@@ -130,6 +130,15 @@ export interface GlobalAction {
   verification_notes: string | null;
   /** ETA in seconds for the verification. See Action.verification_eta_seconds. */
   verification_eta_seconds: number | null;
+
+  /**
+   * Wave 18t — triggering inference_keys carried through from the
+   * source Action(s) during the merge. Union of all merged actions'
+   * inference_keys, deduplicated. Empty for primary actions and
+   * verification actions which aren't tied to specific inferences.
+   * Drives per-secondary impact attribution + catalog lookups.
+   */
+  inference_keys: string[];
 }
 
 // ──────────────────────────────────────────────

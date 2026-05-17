@@ -43,7 +43,7 @@ export function deriveActions(decision: Decision): Action[] {
   const now = new Date();
   const cleanDescription = stripDiagnosticScores(decision.why.summary);
 
-  // Primary action
+  // Primary action — no triggering inference_keys (it's the umbrella).
   if (decision.actions.primary) {
     actions.push(createAction(ids, {
       action_key: `${decision.decision_key}_primary`,
@@ -57,23 +57,28 @@ export function deriveActions(decision: Decision): Action[] {
       severity: decision.effective_severity,
       decision_impact: decision.decision_impact,
       evidence_refs: decision.why.evidence_refs,
+      inference_keys: [],
     }));
   }
 
-  // Secondary actions
+  // Secondary actions — each carries the inference_keys that fired its
+  // triggering condition. Empty when the prescription isn't tied to a
+  // specific inference (tier-level "block_primary"-style strings).
   for (let i = 0; i < decision.actions.secondary.length; i++) {
+    const s = decision.actions.secondary[i];
     actions.push(createAction(ids, {
       action_key: `${decision.decision_key}_secondary_${i}`,
       scoping: decision.scoping,
       cycle_ref: decision.cycle_ref,
       decision_ref: makeRef('decision', decision.id),
       action_type: decisionToActionType(decision),
-      title: decision.actions.secondary[i],
+      title: s.title,
       description: cleanDescription,
       priority: impactToPriority(decision.decision_impact) + i + 1,
       severity: downgrade(decision.effective_severity),
       decision_impact: decision.decision_impact,
       evidence_refs: [],
+      inference_keys: s.inference_keys,
     }));
   }
 
@@ -94,6 +99,7 @@ export function deriveActions(decision: Decision): Action[] {
       severity: EffectiveSeverity.Low,
       decision_impact: DecisionImpact.Observe,
       evidence_refs: [],
+      inference_keys: [],
     }));
   }
 
@@ -148,6 +154,7 @@ function createAction(
     severity: EffectiveSeverity;
     decision_impact: DecisionImpact;
     evidence_refs: string[];
+    inference_keys: string[];
   },
 ): Action {
   const now = new Date();

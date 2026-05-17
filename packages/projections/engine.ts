@@ -1319,6 +1319,21 @@ export function projectActions(
   // Build map: root_cause_ref → sum of value case impacts
   const rcImpact = computeRootCauseImpact(rootCauses, valueCases, inferences);
 
+  // Wave 18t — per-inference impact map for secondary action attribution.
+  // Each ValueCase carries an evidence-based monetary range for its
+  // inference; secondaries triggered by N inferences take the MAX of
+  // those impacts (per user's product choice — soma double-counts vs
+  // parent decision, max is conservative).
+  const impactByInferenceKey = new Map<string, { min: number; max: number; midpoint: number }>();
+  for (const vc of valueCases) {
+    const range = vc.estimated_impact.range;
+    impactByInferenceKey.set(vc.inference_key, {
+      min: range.min,
+      max: range.max,
+      midpoint: Math.round((range.min + range.max) / 2),
+    });
+  }
+
   // Phase 1B: Build decision lookup by ref for decision_status
   const decisionsByRef = new Map<string, { status: string; decision_key: string }>();
   const allDecisions = [
@@ -1460,9 +1475,36 @@ export function projectActions(
     }
     const affectedSurfaces = Array.from(surfaceSet).sort();
 
-    const impact = rc && rcImpact.has(rc.root_cause_key)
-      ? rcImpact.get(rc.root_cause_key)!
-      : null;
+    // Wave 18t — impact attribution model:
+    //   1. Secondaries (action.inference_keys non-empty) → MAX of triggering
+    //      inferences' value_case impacts. Per the product decision, this
+    //      is conservative: it picks the most expensive fired trigger
+    //      rather than summing all triggers (which would inflate when a
+    //      single prescription addresses multiple inferences).
+    //   2. Primary / verification / compound actions → fall back to the
+    //      RootCause aggregate (existing behavior). The primary card is
+    //      the umbrella; dashboards dedupe by decision_ref so summing
+    //      doesn't double-count secondaries against parent.
+    let impact: { range: { min: number; max: number }; midpoint: number } | null = null;
+    if (action.inference_keys && action.inference_keys.length > 0) {
+      const triggered = action.inference_keys
+        .map((k) => impactByInferenceKey.get(k))
+        .filter((v): v is { min: number; max: number; midpoint: number } => v != null);
+      if (triggered.length > 0) {
+        const winner = triggered.reduce((best, v) =>
+          v.midpoint > best.midpoint ? v : best,
+        triggered[0]);
+        impact = {
+          range: { min: Math.round(winner.min), max: Math.round(winner.max) },
+          midpoint: Math.round(winner.midpoint),
+        };
+      }
+    }
+    if (!impact) {
+      impact = rc && rcImpact.has(rc.root_cause_key)
+        ? rcImpact.get(rc.root_cause_key)!
+        : null;
+    }
 
     // Compute priority score: impact midpoint × (confidence/100) × cross-pack multiplier
     // Phase 27: Coherence affects action priority — incoherent actions are less reliable
@@ -1541,8 +1583,25 @@ export function projectActions(
       // needed. This lights up the drawer's "Como Corrigir" section
       // for every action that previously rendered nothing.
       ...(() => {
-        const fallback = lookupRemediationForAction(action.action_key);
-        const carried = action.remediation_steps ?? fallback?.remediation_steps ?? null;
+        // Wave 18t — prefer catalog lookup by inference_key (now that
+        // secondaries carry their triggering inferences). Falls back to
+        // the legacy action_key-based lookup for primary/verification
+        // actions. If neither yields steps, the Wave 18s title splitter
+        // produces locale-correct steps from the prose title.
+        const inferenceEntry =
+          action.inference_keys && action.inference_keys.length > 0
+            ? action.inference_keys.map((k) => lookupRemediation(k)).find((e) => e != null) ?? null
+            : null;
+        const legacyEntry = inferenceEntry ?? lookupRemediationForAction(action.action_key);
+        const tRemed =
+          translations?.remediation && action.inference_keys
+            ? action.inference_keys.map((k) => translations.remediation?.[k]).find((t) => t != null) ?? null
+            : null;
+        const carried =
+          tRemed?.remediation_steps ??
+          action.remediation_steps ??
+          legacyEntry?.remediation_steps ??
+          null;
         const remediation_steps =
           carried && carried.length > 0
             ? carried
@@ -1551,17 +1610,20 @@ export function projectActions(
           remediation_steps,
           estimated_effort_hours:
             action.estimated_effort_hours ??
-            fallback?.estimated_effort_hours ??
+            legacyEntry?.estimated_effort_hours ??
             null,
           verification_strategy:
             action.verification_strategy ??
-            fallback?.verification_strategy ??
+            legacyEntry?.verification_strategy ??
             null,
           verification_notes:
-            action.verification_notes ?? fallback?.verification_notes ?? null,
+            tRemed?.verification_notes ??
+            action.verification_notes ??
+            legacyEntry?.verification_notes ??
+            null,
           verification_eta_seconds:
             action.verification_eta_seconds ??
-            fallback?.verification_eta_seconds ??
+            legacyEntry?.verification_eta_seconds ??
             null,
         };
       })(),
@@ -1580,6 +1642,9 @@ export function projectActions(
       linked_findings: linkedFindings,
       // Wave 15.2: specific URLs where this action applies
       affected_surfaces: affectedSurfaces,
+      // Wave 18t: triggering inference keys carried through from
+      // the engine→deriver path. Empty for primary actions.
+      inference_keys: action.inference_keys ?? [],
     };
   });
 
@@ -1650,6 +1715,11 @@ export function projectActions(
         // CompoundFinding's affected_surfaces array (already aggregated
         // by the compound builder at composite time).
         affected_surfaces: Array.isArray(cf.affected_surfaces) ? cf.affected_surfaces : [],
+        // Wave 18t: compound chains aggregate multiple inferences; carry
+        // them so the projection layer can dedupe at dashboard sums.
+        inference_keys: Array.isArray(cf.chain)
+          ? cf.chain.map((c: { finding_key?: string }) => c.finding_key).filter((k: string | undefined): k is string => Boolean(k))
+          : [],
       };
       actions.push(compoundAction);
     }

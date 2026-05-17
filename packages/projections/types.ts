@@ -371,6 +371,15 @@ export interface ActionProjection {
    * which pages a fix needs to be applied to.
    */
   affected_surfaces: string[];
+
+  /**
+   * Inferences whose firing triggered this action. Empty for primary
+   * actions and verification actions which aren't tied to a single
+   * inference. Used to (a) look up remediation_steps via the
+   * inference-keyed catalog, (b) attribute per-secondary impact from
+   * each inference's QuantifiedValueCase. See Wave 18t.
+   */
+  inference_keys: string[];
 }
 
 export type WorkspaceProjectionType =

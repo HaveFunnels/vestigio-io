@@ -267,6 +267,16 @@ export function validateDecision(d: Decision): void {
   if (!Array.isArray(d.actions.secondary)) {
     throw new ValidationError(e, 'actions.secondary', 'must be an array');
   }
+  // Wave 18t — secondary items are SecondaryAction objects (title + inference_keys).
+  // Legacy projections may carry `string[]`; validateDecision is called on freshly-
+  // built Decisions only, so we require the new shape here. Cache readers in the
+  // projection layer normalize legacy shapes before validation runs.
+  for (let i = 0; i < d.actions.secondary.length; i++) {
+    const s = d.actions.secondary[i];
+    if (s == null || typeof s !== 'object' || typeof s.title !== 'string' || !Array.isArray(s.inference_keys)) {
+      throw new ValidationError(e, `actions.secondary[${i}]`, 'must be { title: string; inference_keys: string[] }');
+    }
+  }
   if (!Array.isArray(d.actions.verification)) {
     throw new ValidationError(e, 'actions.verification', 'must be an array');
   }

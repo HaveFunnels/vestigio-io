@@ -26,15 +26,23 @@ export async function syncUserLocale(orgLocale?: string, userLocale?: string): P
     const cookieStore = await cookies();
     const currentCookie = cookieStore.get("locale")?.value;
 
-    // (1) Explicit user choice in the cookie wins — never clobber it.
-    if (currentCookie && SUPPORTED_LOCALES.includes(currentCookie)) {
+    // (1) For logged-in users the User.locale row is the source of truth —
+    // overwrite the cookie when it drifts so client-side reads of the
+    // cookie (e.g. analytics, the language selector UI) match the DB.
+    // The selector writes BOTH DB and cookie on change, so this only kicks
+    // in when an inherited bootstrap cookie disagrees with a more recent
+    // DB update.
+    if (userLocale && SUPPORTED_LOCALES.includes(userLocale)) {
+      if (currentCookie !== userLocale) {
+        cookieStore.set("locale", userLocale, { maxAge: 60 * 60 * 24 * 30 });
+      }
       return;
     }
 
-    // (2) Restore the user's saved preference (e.g. after a fresh login
-    // that cleared cookies).
-    if (userLocale && SUPPORTED_LOCALES.includes(userLocale)) {
-      cookieStore.set("locale", userLocale, { maxAge: 60 * 60 * 24 * 30 });
+    // (2) Anonymous visitor or user without an explicit preference: a
+    // valid cookie (set earlier by the language selector or geo bootstrap)
+    // stays in place.
+    if (currentCookie && SUPPORTED_LOCALES.includes(currentCookie)) {
       return;
     }
 

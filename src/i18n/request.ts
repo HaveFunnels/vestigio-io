@@ -1,6 +1,8 @@
 import deepmerge from "deepmerge";
 import { getRequestConfig } from "next-intl/server";
 import { cookies, headers } from "next/headers";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/auth";
 import { integrations } from "../../integrations.config";
 import { SUPPORTED_LOCALES } from "./supported-locales";
 
@@ -100,18 +102,52 @@ function detectLocaleFromHeaders(headerStore: Headers): string {
 	return "en";
 }
 
+/**
+ * Resolve a locale from the authenticated user's session, if any.
+ *
+ * The JWT carries `user.locale` populated from the DB at sign-in time
+ * (and again on `trigger:"update"` from the language selector). When a
+ * user is logged in the DB is the source of truth — beats stale cookies
+ * left over from the bootstrap default or a pre-locale-aware sign-up.
+ *
+ * Returns null when there's no session or the stored locale is not
+ * supported (e.g. user.locale is an old/garbage value).
+ */
+async function detectLocaleFromSession(): Promise<string | null> {
+	try {
+		const session = await getServerSession(authOptions);
+		const userLocale = (session?.user as { locale?: string } | undefined)?.locale;
+		if (userLocale && SUPPORTED_LOCALES.includes(userLocale)) {
+			return userLocale;
+		}
+		return null;
+	} catch {
+		// Session decode failed (logged out, expired, malformed cookie) —
+		// fall through to the anonymous-visitor signals below.
+		return null;
+	}
+}
+
 export default getRequestConfig(async () => {
 	const cookieStore = await cookies();
 	const headerStore = await headers();
 	const cookieLocale = cookieStore.get("locale")?.value || "";
 
-	// Priority: explicit cookie (user choice via language selector or
-	// settings page, kept in sync with the DB) > IP geolocation >
-	// browser Accept-Language > default "en".
+	// Priority chain (highest first):
+	//   1. Authenticated user's locale (JWT mirrors DB user.locale + org.locale
+	//      bootstrap). Always wins for logged-in users so a stale cookie can't
+	//      override the explicit profile preference.
+	//   2. Locale cookie — covers anonymous visitors and pre-login screens.
+	//   3. IP geolocation header (Vercel/Cloudflare/x-country-code).
+	//   4. Browser Accept-Language.
+	//   5. Fallback "en".
 	let locale = "en";
 
 	if (integrations.isI18nEnabled) {
-		if (SUPPORTED_LOCALES.includes(cookieLocale)) {
+		const sessionLocale = await detectLocaleFromSession();
+		if (sessionLocale) {
+			locale = sessionLocale;
+		} else if (SUPPORTED_LOCALES.includes(cookieLocale)) {
 			locale = cookieLocale;
 		} else {
 			locale = detectLocaleFromHeaders(headerStore);

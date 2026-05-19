@@ -33,7 +33,7 @@ import "@/lib/dashboard/init"; // side-effect: registers all widgets
 import { isDemoOrg } from "@/lib/demo-account";
 import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
-import { cookies } from "next/headers";
+import { resolveCurrentLocale } from "@/i18n/resolve-locale";
 import { loadCaptionTranslations } from "@/lib/dashboard/load-caption-translations";
 import type { DashboardData } from "@/lib/dashboard/types";
 
@@ -115,9 +115,11 @@ async function loadDashboard(): Promise<LoadResult> {
 			select: { id: true },
 		});
 
-		// Load locale-aware caption translations
-		const cookieStore = await cookies();
-		const locale = cookieStore.get("locale")?.value || "";
+		// Load locale-aware caption translations. Use the same priority
+		// chain as next-intl (DB > cookie) so the captions match the
+		// shell — otherwise a logged-in pt-BR user with a stale "en"
+		// cookie sees Portuguese widget shells with English captions.
+		const locale = await resolveCurrentLocale();
 		const captionT = loadCaptionTranslations(locale);
 
 		if (!environment) {

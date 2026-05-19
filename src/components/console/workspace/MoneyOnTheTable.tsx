@@ -16,6 +16,7 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { fmtCurrency } from "@/lib/format-currency";
+import { translateEngineCopy } from "@/lib/engine-i18n";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import type { FindingProjection } from "../../../../packages/projections/types";
 
@@ -29,14 +30,6 @@ interface CauseBucket {
 	label: string;
 	total: number;
 	count: number;
-}
-
-// Pick a sensible human-readable label for a root_cause bucket.
-// Findings carry `root_cause` as a free-form string today, so we use
-// it directly. When null we fall back to the i18n "uncategorized" tag.
-function bucketLabel(rootCause: string | null, fallback: string): string {
-	if (!rootCause || rootCause.trim().length === 0) return fallback;
-	return rootCause;
 }
 
 // Effort tier → i18n key + formatted argument.
@@ -58,6 +51,7 @@ function formatEffort(
 export default function MoneyOnTheTable({ findings, onFindingClick }: Props) {
 	const t = useTranslations("console.workspaces.detail.money_on_table");
 	const tc = useTranslations("console.common");
+	const tEngine = useTranslations("engine");
 	const { currency } = useMcpData();
 
 	// Filter: only negative findings with loss role contribute. Retention
@@ -89,9 +83,17 @@ export default function MoneyOnTheTable({ findings, onFindingClick }: Props) {
 				existing.total += f.impact.midpoint;
 				existing.count += 1;
 			} else {
+				// Bucket label: prefer the locale-translated inference title
+				// over the raw English `root_cause` text baked into the
+				// projection by the engine. Falls back to "uncategorized"
+				// when both are missing.
+				const translated = f.inference_key
+					? translateEngineCopy(f.inference_key, f.root_cause, tEngine)
+					: f.root_cause;
+				const label = translated && translated.trim().length > 0 ? translated : uncategorizedLabel;
 				map.set(key, {
 					key,
-					label: bucketLabel(f.root_cause, uncategorizedLabel),
+					label,
 					total: f.impact.midpoint,
 					count: 1,
 				});

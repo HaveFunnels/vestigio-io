@@ -304,7 +304,9 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 							)}
 						</div>
 						<div className="mt-1.5 flex flex-wrap items-center gap-2">
-							<SeverityBadge value={workspace.decision_impact} />
+							{workspace.decision_impact !== "observe" && (
+								<SeverityBadge value={workspace.decision_impact} />
+							)}
 							<WorkspaceChangeTrend summary={workspace.change_summary} />
 							{sparklineData.length >= 2 && (
 								<TrendSparkline data={sparklineData} width={64} height={20} />

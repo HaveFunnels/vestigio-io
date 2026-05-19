@@ -59,40 +59,7 @@ function pickPrimaryPack(links: Array<{ pack: string }>): string {
 	return best;
 }
 
-// Locale hint for Intl.NumberFormat — ensures R$ for BRL, $ for USD, etc.
-const CURRENCY_LOCALE: Record<string, string> = {
-	BRL: "pt-BR",
-	EUR: "de-DE",
-	USD: "en-US",
-};
-
-function formatCurrency(cents: number, currency: string = "USD"): string {
-	const locale = CURRENCY_LOCALE[currency] || "en-US";
-	const dollars = Math.abs(cents) / 100;
-	if (dollars >= 1_000_000) {
-		return (
-			new Intl.NumberFormat(locale, {
-				style: "currency",
-				currency,
-				maximumFractionDigits: 1,
-			}).format(dollars / 1_000_000) + "M"
-		);
-	}
-	if (dollars >= 1_000) {
-		return (
-			new Intl.NumberFormat(locale, {
-				style: "currency",
-				currency,
-				maximumFractionDigits: 1,
-			}).format(dollars / 1_000) + "k"
-		);
-	}
-	return new Intl.NumberFormat(locale, {
-		style: "currency",
-		currency,
-		maximumFractionDigits: 0,
-	}).format(dollars);
-}
+import { fmtCurrencyCents as formatCurrency } from "@/lib/format-currency";
 
 function ChainRow({ chain, editing, currency }: { chain: CrossSignalChain; editing?: boolean; currency: string }) {
 	const router = useRouter();

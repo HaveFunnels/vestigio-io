@@ -1,7 +1,7 @@
 import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { resolveCurrentLocale } from "@/i18n/resolve-locale";
 import { getTranslations } from "next-intl/server";
 import { withErrorTracking } from "@/libs/error-tracker";
 import {
@@ -78,9 +78,9 @@ export const GET = withErrorTracking(
 		});
 
 		// Load locale-aware caption translations so dashboard text renders
-		// in the user's language instead of hardcoded English.
-		const cookieStore = await cookies();
-		const locale = cookieStore.get("locale")?.value || "";
+		// in the user's language instead of hardcoded English. DB locale
+		// wins over cookie — mirrors src/i18n/request.ts.
+		const locale = await resolveCurrentLocale();
 		const captionT = loadCaptionTranslations(locale);
 
 		if (!environment) {

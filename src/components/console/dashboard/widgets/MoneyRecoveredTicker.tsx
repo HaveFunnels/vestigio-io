@@ -25,26 +25,11 @@ import {
 	type WidgetProps,
 } from "@/lib/dashboard/widget-registry";
 
-const CURRENCY_LOCALE: Record<string, string> = {
-	BRL: "pt-BR",
-	EUR: "de-DE",
-	USD: "en-US",
-};
-
-function formatCurrency(cents: number, currency: string): string {
-	const locale = CURRENCY_LOCALE[currency] || "en-US";
-	const dollars = cents / 100;
-	return new Intl.NumberFormat(locale, {
-		style: "currency",
-		currency,
-		minimumFractionDigits: 0,
-		maximumFractionDigits: 0,
-	}).format(dollars);
-}
+import { fmtCurrencyCents } from "@/lib/format-currency";
 
 function formatSignedCents(cents: number, currency: string): string {
 	const sign = cents >= 0 ? "+" : "−";
-	const formatted = formatCurrency(Math.abs(cents), currency);
+	const formatted = fmtCurrencyCents(Math.abs(cents), currency);
 	return `${sign}${formatted}`;
 }
 
@@ -82,7 +67,7 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 			    finding is still present. */}
 			<div className='relative mt-2 flex items-end gap-3'>
 				<span className='font-mono text-5xl font-medium tabular-nums leading-none tracking-tight text-emerald-400'>
-					{formatCurrency(confirmedCents, currency)}
+					{fmtCurrencyCents(confirmedCents, currency)}
 				</span>
 			</div>
 
@@ -92,7 +77,7 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 			{hasClaimed && (
 				<div className='relative mt-1.5 flex items-center gap-1.5 text-[11px] text-amber-500/80'>
 					<span className='font-mono tabular-nums'>
-						+{formatCurrency(claimedCents, currency)}
+						+{fmtCurrencyCents(claimedCents, currency)}
 					</span>
 					<span>{t("awaiting_confirmation")}</span>
 				</div>

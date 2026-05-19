@@ -1,7 +1,7 @@
 import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { resolveCurrentLocale } from "@/i18n/resolve-locale";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { computeAllCrossSignals, computeJourneyForEnv } from "@/lib/dashboard/aggregator";
 import { loadCaptionTranslations } from "@/lib/dashboard/load-caption-translations";
@@ -74,8 +74,7 @@ export const GET = withErrorTracking(
 		// so the narrative always fell back to English templates with
 		// "$" regardless of org locale — producing the mixed-language
 		// blob the customer reported.
-		const cookieStore = await cookies();
-		const locale = cookieStore.get("locale")?.value || "";
+		const locale = await resolveCurrentLocale();
 		const captionT = loadCaptionTranslations(locale);
 		const [chains, journey] = await Promise.all([
 			computeAllCrossSignals(prisma, environment.id, resolvedCurrency, captionT),

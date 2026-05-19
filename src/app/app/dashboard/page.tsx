@@ -92,7 +92,13 @@ async function loadDashboard(): Promise<LoadResult> {
 
 		const membership = await prisma.membership.findFirst({
 			where: { userId: user.id },
-			include: { organization: { select: { id: true, orgType: true } } },
+			include: {
+				// Pull `currency` so the resolver below can pick BRL/EUR/…
+				// without falling back to USD. Without this field in the
+				// select, every pt-BR org rendered "$60.6k" because the
+				// undefined currency fell through to the USD default.
+				organization: { select: { id: true, orgType: true, currency: true } },
+			},
 		});
 
 		if (!membership?.organization) {

@@ -225,7 +225,11 @@ export async function POST(request: Request) {
   const wsScope = workspaceName && workspaceFindingIds
     ? `ws:${workspaceName}:${workspaceFindingIds.slice().sort().join(",").slice(0, 200)}`
     : perspective;
-  const cacheKey = `${env.id}_${wsScope}_${cycleRef}`;
+  // Locale MUST be part of the key — a previous pt-BR briefing was being
+  // served to en-US requesters (and vice versa) because the cache was
+  // env+scope+cycle-only. Same finding set, different language → distinct
+  // cache entries.
+  const cacheKey = `${env.id}_${wsScope}_${cycleRef}_${locale}`;
   const cached = getCached(cacheKey);
   if (cached) {
     return NextResponse.json({ summary: cached });

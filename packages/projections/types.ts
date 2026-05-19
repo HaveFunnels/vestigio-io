@@ -614,6 +614,25 @@ export interface EngineTranslations {
   positive_checks: Record<string, { title: string; description: string }>;
   field_kind_labels: Record<string, string>;
   parametric_titles: Record<string, string>;
+  /**
+   * Templates for inference keys that the engine constructs at runtime
+   * (funnel_missing_stage_X, funnel_broken_path_X_to_Y, etc.). Each
+   * template carries placeholders the engine substitutes with stage /
+   * page-type names which the dictionary also translates separately
+   * under `funnel_stage_names`.
+   */
+  dynamic_titles?: {
+    funnel_missing_stage?: string;     // "Missing funnel stage: {stage}"
+    funnel_broken_path?: string;       // "No CTA path: {from} → {to}"
+    funnel_weak_connection?: string;   // "Weak connection: {from} → {to}"
+    funnel_dead_end_page?: string;     // "Dead-end commercial page (no CTA to next stage)"
+  };
+  /**
+   * Friendly labels for the funnel stage tokens that get spliced into
+   * dynamic_titles. Keys mirror the snake_case the engine emits, values
+   * are the locale-native names ("Awareness" → "Conscientização" etc.).
+   */
+  funnel_stage_names?: Record<string, string>;
   actions: {
     default_primary: string;
     default_verification: string;

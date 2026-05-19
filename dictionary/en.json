@@ -5434,6 +5434,32 @@
 		}
 	},
 	"engine": {
+		"dynamic_titles": {
+			"funnel_missing_stage": "Missing funnel stage: {stage}",
+			"funnel_broken_path": "No CTA path: {from} → {to}",
+			"funnel_weak_connection": "Weak connection: {from} → {to}",
+			"funnel_dead_end_page": "Dead-end commercial page (no CTA to next stage)"
+		},
+		"funnel_stage_names": {
+			"awareness": "Awareness",
+			"consideration": "Consideration",
+			"decision": "Decision",
+			"conversion": "Conversion",
+			"post_conversion": "Post-conversion",
+			"homepage": "Homepage",
+			"landing": "Landing page",
+			"blog": "Blog",
+			"category": "Category",
+			"product": "Product",
+			"pricing": "Pricing",
+			"cart": "Cart",
+			"checkout": "Checkout",
+			"thank_you": "Thank you page",
+			"account": "Account",
+			"support": "Support",
+			"policy": "Policy",
+			"onboarding": "Onboarding"
+		},
 		"inference_titles": {
 			"trust_boundary_crossed": "Buyers get sent to a different domain at checkout",
 			"policy_gap": "Your store has no visible refund or privacy policy",

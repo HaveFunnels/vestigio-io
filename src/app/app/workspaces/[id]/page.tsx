@@ -271,7 +271,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			{/* ── Breadcrumb ── */}
 			<nav className="flex items-center gap-1.5 text-[12px]">
 				<Link href="/app/workspaces" className="text-zinc-400 transition-colors hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-400">
-					Workspaces
+					{t("title")}
 				</Link>
 				<span className="text-zinc-300 dark:text-zinc-700">/</span>
 				<Link

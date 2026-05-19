@@ -5068,6 +5068,32 @@
 		}
 	},
 	"engine": {
+		"dynamic_titles": {
+			"funnel_missing_stage": "Etapa del funnel ausente: {stage}",
+			"funnel_broken_path": "Sin ruta de CTA: {from} → {to}",
+			"funnel_weak_connection": "Conexión débil: {from} → {to}",
+			"funnel_dead_end_page": "Página comercial sin salida (sin CTA a la siguiente etapa)"
+		},
+		"funnel_stage_names": {
+			"awareness": "Conciencia",
+			"consideration": "Consideración",
+			"decision": "Decisión",
+			"conversion": "Conversión",
+			"post_conversion": "Post-conversión",
+			"homepage": "Página de inicio",
+			"landing": "Landing page",
+			"blog": "Blog",
+			"category": "Categoría",
+			"product": "Producto",
+			"pricing": "Precios",
+			"cart": "Carrito",
+			"checkout": "Checkout",
+			"thank_you": "Página de agradecimiento",
+			"account": "Mi cuenta",
+			"support": "Soporte",
+			"policy": "Política",
+			"onboarding": "Onboarding"
+		},
 		"inference_titles": {
 			"trust_boundary_crossed": "Los compradores son enviados a otro dominio en el checkout",
 			"policy_gap": "Faltan políticas de protección al consumidor o están incompletas",

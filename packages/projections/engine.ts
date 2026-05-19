@@ -727,21 +727,33 @@ const FIELD_KIND_LABELS: Record<string, string> = {
 };
 
 /** Resolve titles for dynamic inference keys (funnel-gap, etc.) */
-function resolveDynamicTitle(key: string): string | null {
+function resolveDynamicTitle(key: string, translations?: EngineTranslations): string | null {
+  const dt = translations?.dynamic_titles;
+  const stageNames = translations?.funnel_stage_names;
+  const friendly = (token: string): string =>
+    stageNames?.[token] ?? token.replace(/_/g, ' ');
+
   if (key.startsWith('funnel_missing_stage_')) {
-    const stage = key.replace('funnel_missing_stage_', '').replace(/_/g, ' ');
-    return `Missing funnel stage: ${stage}`;
+    const stage = friendly(key.replace('funnel_missing_stage_', ''));
+    const tpl = dt?.funnel_missing_stage ?? 'Missing funnel stage: {stage}';
+    return tpl.replace('{stage}', stage);
   }
   if (key.startsWith('funnel_broken_path_')) {
     const parts = key.replace('funnel_broken_path_', '').split('_to_');
-    return `No CTA path: ${parts[0]?.replace(/_/g, ' ')} → ${parts[1]?.replace(/_/g, ' ')}`;
+    const from = friendly(parts[0] ?? '');
+    const to = friendly(parts[1] ?? '');
+    const tpl = dt?.funnel_broken_path ?? 'No CTA path: {from} → {to}';
+    return tpl.replace('{from}', from).replace('{to}', to);
   }
   if (key.startsWith('funnel_weak_connection_')) {
     const parts = key.replace('funnel_weak_connection_', '').split('_to_');
-    return `Weak connection: ${parts[0]?.replace(/_/g, ' ')} → ${parts[1]?.replace(/_/g, ' ')}`;
+    const from = friendly(parts[0] ?? '');
+    const to = friendly(parts[1] ?? '');
+    const tpl = dt?.funnel_weak_connection ?? 'Weak connection: {from} → {to}';
+    return tpl.replace('{from}', from).replace('{to}', to);
   }
   if (key === 'funnel_dead_end_page') {
-    return 'Dead-end commercial page (no CTA to next stage)';
+    return dt?.funnel_dead_end_page ?? 'Dead-end commercial page (no CTA to next stage)';
   }
   return null;
 }
@@ -1108,7 +1120,7 @@ export function projectFindings(
     const evidenceQualityCtx = buildFindingEvidenceQuality(inf, result);
 
     // Parameterize titles for findings that carry concrete parameters
-    let title = translations?.inference_titles?.[vc.inference_key] ?? INFERENCE_TITLES[vc.inference_key] ?? resolveDynamicTitle(vc.inference_key) ?? vc.cause;
+    let title = translations?.inference_titles?.[vc.inference_key] ?? INFERENCE_TITLES[vc.inference_key] ?? resolveDynamicTitle(vc.inference_key, translations) ?? vc.cause;
     if (inf.conclusion_value) {
       title = resolveParameterizedTitle(vc.inference_key, inf.conclusion_value, title, translations);
     }

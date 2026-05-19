@@ -1,5 +1,5 @@
-import { cookies } from "next/headers";
 import { SUPPORTED_LOCALES } from "@/i18n/supported-locales";
+import { resolveCurrentLocale } from "@/i18n/resolve-locale";
 import { integrations } from "../../integrations.config";
 import type { EngineTranslations } from "../../packages/projections/types";
 
@@ -38,20 +38,18 @@ export function loadEngineTranslationsForLocale(locale: string | null | undefine
 
 /**
  * Loads the engine translations for the current request locale.
- * Priority: locale cookie > Accept-Language header > undefined (English).
- * Returns undefined if i18n is disabled or locale is English (no translation needed).
+ *
+ * Priority chain (handled by resolveCurrentLocale):
+ *   1. Authenticated user's DB locale (User.locale via JWT) — wins so a
+ *      stale cookie can't force English on a pt-BR profile.
+ *   2. Locale cookie — covers anonymous visitors.
+ *   3. Default "en".
+ *
+ * Returns undefined if i18n is disabled or the resolved locale is English
+ * (engine code paths already default to English literals).
  */
 export async function loadEngineTranslations(): Promise<EngineTranslations | undefined> {
   if (!integrations.isI18nEnabled) return undefined;
-
-  const cookieStore = await cookies();
-  let locale = cookieStore.get("locale")?.value || "";
-
-  // Fallback: if no cookie, try to detect from Accept-Language header
-  // via the NEXT_LOCALE cookie that the i18n middleware sets
-  if (!locale || locale === "en") {
-    locale = cookieStore.get("NEXT_LOCALE")?.value || "";
-  }
-
+  const locale = await resolveCurrentLocale();
   return loadEngineTranslationsForLocale(locale);
 }

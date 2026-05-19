@@ -515,11 +515,19 @@ export interface InventoryPayload {
  * in progress (data will arrive shortly) or there genuinely isn't any.
  */
 export async function loadInventory(params?: { limit?: number; offset?: number }): Promise<DataState<InventoryPayload>> {
+  // Bounded fetch so a hung server (Prisma deadlock, audit-runner pegged
+  // on CPU, upstream outage) never leaves the inventory page spinning
+  // forever. After 45s we surface an error state with a retry button
+  // instead of an infinite "Carregando inventário…".
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 45_000);
   try {
     const qs = new URLSearchParams();
     if (params?.limit) qs.set('limit', String(params.limit));
     if (params?.offset) qs.set('offset', String(params.offset));
-    const res = await fetch('/api/inventory' + (qs.size > 0 ? `?${qs}` : ''));
+    const res = await fetch('/api/inventory' + (qs.size > 0 ? `?${qs}` : ''), {
+      signal: controller.signal,
+    });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       if (res.status === 401) {
@@ -542,7 +550,17 @@ export async function loadInventory(params?: { limit?: number; offset?: number }
     }
     return { status: 'ready', data: { surfaces, audit_status, pagination, deltas, lookups } };
   } catch (err) {
-    return { status: 'error', message: err instanceof Error ? err.message : 'Unknown error loading inventory' };
+    const aborted = (err as { name?: string } | null)?.name === 'AbortError';
+    return {
+      status: 'error',
+      message: aborted
+        ? 'Tempo limite atingido carregando o inventário. Tente novamente em alguns segundos.'
+        : err instanceof Error
+          ? err.message
+          : 'Unknown error loading inventory',
+    };
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

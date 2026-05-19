@@ -28,11 +28,18 @@ export default function PulseSummary({ perspective, workspaceName, findingIds }:
 
   useEffect(() => {
     let cancelled = false;
+    // Hard timeout for the briefing fetch. The endpoint calls Haiku
+    // server-side; if Anthropic is slow or the LLM is disabled and the
+    // route forgets to fall back, we don't want the skeleton to spin
+    // forever. After 20s we treat it as no-result so the card hides.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20_000);
     async function fetchPulse() {
       try {
         const res = await fetch("/api/workspace/pulse-summary", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
           body: JSON.stringify({
             perspective: perspective || "panorama",
             locale,
@@ -44,9 +51,10 @@ export default function PulseSummary({ perspective, workspaceName, findingIds }:
         const data = await res.json();
         if (!cancelled) { setText(data.fallback || !data.summary ? null : data.summary); setLoading(false); }
       } catch { if (!cancelled) { setLoading(false); setText(null); } }
+      finally { clearTimeout(timeoutId); }
     }
     fetchPulse();
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(timeoutId); controller.abort(); };
   }, [perspective, locale, workspaceName, findingIdsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {

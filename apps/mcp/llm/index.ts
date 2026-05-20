@@ -10,7 +10,7 @@ export { checkAndRecordRateLimit, cleanupStaleWindows } from './rate-limiter';
 export { buildSystemPrompt, buildCacheableSystemPrompt } from './system-prompt';
 export { buildClaudeTools, executeToolCall, isExpensiveTool } from './tool-adapter';
 export { buildMessagesArray, addMessageToConversation, createEmptyConversation } from './context-manager';
-export { buildEmbeddingIndex, buildEmbeddingIndexSync, searchFindings, searchFindingsSync, hasEmbeddings, hasVectorEmbeddings, clearEmbeddings, getEmbeddingMode } from './embeddings';
+export { buildEmbeddingIndexSync, searchFindingsSync, hasEmbeddings, clearEmbeddings } from './embeddings';
 export { getOrgMemory, saveOrgMemory, updateMemoryFromTurn, buildMemoryContext } from './conversation-memory';
 export { fastGuard } from './fast-guard';
 

@@ -2988,8 +2988,8 @@
 			"stop_generating": "Stop generating",
 			"jump_to_latest": "Jump to latest",
 			"session_downgraded": {
-				"title": "Running on the lighter model",
-				"body": "You've used a lot of analysis in the last few hours. We've switched to the lighter model so you can keep working — your usual model will be back automatically."
+				"title": "We're experiencing some difficulties",
+				"body": "Responses may be a little slower or shorter for a while. You can keep going — things will recover on their own."
 			}
 		},
 		"organization_selector": {

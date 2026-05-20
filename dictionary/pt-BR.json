@@ -3072,8 +3072,8 @@
 			"stop_generating": "Parar geração",
 			"jump_to_latest": "Ir para a última",
 			"session_downgraded": {
-				"title": "Usando o modelo mais leve",
-				"body": "Você usou bastante análise nas últimas horas. Mudamos para o modelo mais leve para você seguir trabalhando — seu modelo de costume volta automaticamente."
+				"title": "Estamos com algumas dificuldades",
+				"body": "As respostas podem ficar um pouco mais lentas ou curtas por um tempo. Pode continuar — vai voltar ao normal sozinho."
 			}
 		},
 		"organization_selector": {

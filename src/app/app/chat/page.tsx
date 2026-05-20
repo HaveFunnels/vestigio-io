@@ -1267,28 +1267,39 @@ export default function ChatPage() {
 							/>
 						)}
 
-						{/* 5h session-cap downgrade hint. Sticky until full reload —
-						    the user just needs to know once that they're on Haiku
-						    for a while, not be reminded on every keystroke. */}
+						{/* Soft hint when the chat backend has had to slow down
+						    for this user (5h rolling cap kicked in).
+						    Intentionally vague — no model names, no provider,
+						    no "lighter model" wording — just a quiet
+						    acknowledgement so they aren't surprised by
+						    shorter or slower replies. Sticky for the rest of
+						    the session. */}
 						{sessionDowngraded && (
-							<div className='mb-2 flex items-start gap-2 rounded-md border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-[12px] text-amber-200'>
+							<div className='mb-2 flex items-start gap-2 rounded-md border border-edge bg-surface-inset px-3 py-2 text-[12px] text-content-muted'>
 								<svg
-									className='mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400'
+									className='mt-[3px] h-3 w-3 flex-shrink-0 text-content-muted'
 									viewBox='0 0 16 16'
 									fill='none'
 								>
-									<path
-										d='M8 3v5m0 2.5v.5M8 14A6 6 0 108 2a6 6 0 000 12z'
+									<circle
+										cx='8'
+										cy='8'
+										r='6'
 										stroke='currentColor'
-										strokeWidth='1.5'
+										strokeWidth='1.25'
+									/>
+									<path
+										d='M8 5v3.5M8 10.5h.01'
+										stroke='currentColor'
+										strokeWidth='1.25'
 										strokeLinecap='round'
 									/>
 								</svg>
 								<div className='leading-snug'>
-									<div className='font-medium'>
+									<div className='text-content-secondary'>
 										{t("session_downgraded.title")}
 									</div>
-									<div className='text-amber-300/80'>
+									<div className='text-content-muted'>
 										{t("session_downgraded.body")}
 									</div>
 								</div>

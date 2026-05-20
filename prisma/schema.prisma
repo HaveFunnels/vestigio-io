@@ -305,6 +305,7 @@ model Environment {
   savedViews           SavedView[]
   copyFrameworkAudits  CopyFrameworkAudit[]
   llmResultCache       LlmResultCache[]
+  contentEnrichmentCache ContentEnrichmentCache[]
 
   @@index([activated, continuousPaused])
   @@index([lastAccessedAt])
@@ -1810,4 +1811,54 @@ model LlmResultCache {
   @@unique([environmentId, cycleId, purpose, keyHash, locale])
   @@index([environmentId, purpose, locale])
   @@index([cycleId])
+}
+
+/// Cross-cycle cache for LLM-derived analyses of page content (Wave
+/// 19c). When an enricher (copy-micro-copy, copy-seo-tension,
+/// pricing-psychology, etc.) processes a page and the underlying
+/// copy hasn't changed since the prior cycle, the parsed assessment
+/// is identical. This table keys on a content hash instead of a
+/// cycleId, so the next cold cycle on havefunnels.com reuses the
+/// $0.0001 Haiku call from last week instead of paying again.
+///
+/// Differs from LlmResultCache: that table is per-cycle dedupe (warm
+/// reads within one audit window). This one is per-content-fingerprint
+/// reuse across cycles — same input copy, same output, no LLM call.
+///
+/// The payload is the parsed assessment (the same JSON the enricher
+/// would have written to Evidence.payload). The caller re-stamps it
+/// with the current cycle's evidence keys before persisting.
+model ContentEnrichmentCache {
+  id            String   @id @default(cuid())
+  environmentId String
+  /// Stable label, same vocabulary as LlmCallContext.purpose +
+  /// TokenCostLedger.purpose. e.g. "micro_copy", "copy_seo_tension",
+  /// "pricing_psychology", "ad_message_match", "copy_localization".
+  purpose       String
+  /// Sha256 (hex) of the normalized prompt input. Each enricher owns
+  /// its own normalization: typically a concatenation of extracted
+  /// copy elements + truncated body text + any page-meta fields the
+  /// prompt depends on. Whitespace and case are normalized so cosmetic
+  /// edits don't bust the cache.
+  contentHash   String
+  locale        String   @default("en")
+  /// Page URL the enrichment was computed for. Optional — multi-page
+  /// enrichers (cross_page_copy) can omit it. Used for debugging and
+  /// occasional manual eviction.
+  pageUrl       String?
+  /// Parsed assessment JSON, ready to drop into ContentEnrichmentPayload.
+  payload       Json
+  modelId       String? // 'haiku_4_5' typically
+  costCents     Float    @default(0)
+  /// Bumped on every cache hit so we can later identify high-value
+  /// rows and tune eviction policy (currently: keep forever).
+  hitCount      Int      @default(0)
+  createdAt     DateTime @default(now())
+  lastHitAt     DateTime @default(now())
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([environmentId, purpose, contentHash, locale])
+  @@index([environmentId, purpose])
+  @@index([lastHitAt])
 }

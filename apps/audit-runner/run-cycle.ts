@@ -28,6 +28,7 @@ import { PrismaSnapshotStore } from "../../packages/change-detection";
 import { PrismaActionStore, PrismaFindingStore, projectAll } from "../../packages/projections";
 import { recomputeWithPool } from "./recompute-pool";
 import { loadEngineTranslationsForLocale } from "@/lib/engine-translations";
+import { runFrameworkLensForCycle } from "./run-framework-lens";
 import { processBehavioralEventsForEnv } from "./process-behavioral";
 import { pollShopifyData } from "../../workers/shopify/poller";
 import { mapPollResultToSnapshotData as mapShopifyPollResult } from "../../packages/shopify-adapter/snapshot-mapper";
@@ -1873,6 +1874,43 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				}
 			} catch (err) {
 				console.warn(`[audit-runner ${cycleId}] sessionCount30d denorm failed:`, err);
+			}
+
+			// Wave 19a Phase 2 — pre-populate Copy Framework Lens audits
+			// for the org's locale, ONLY on cold cycles. Warm/hot cycles
+			// skip this step (see run-framework-lens.ts header for the
+			// cost rationale). Best-effort: a Haiku timeout or rate-
+			// limit must not block the cycle from being marked complete.
+			try {
+				// Resolve the locale we'll write under. Same priority as
+				// the engine-translations resolver above: org.locale wins,
+				// owner.locale is the legacy fallback, English when both
+				// are unset.
+				let lensLocale = (cycle.organization as { locale?: string }).locale ?? "";
+				if (!lensLocale) {
+					const owner = await prisma.user
+						.findUnique({ where: { id: cycle.organization.ownerId }, select: { locale: true } })
+						.catch(() => null);
+					lensLocale = owner?.locale ?? "en";
+				}
+				const lensResult = await runFrameworkLensForCycle({
+					prisma,
+					envId: env.id,
+					cycleId,
+					cycleMode,
+					locale: lensLocale,
+				});
+				if (lensResult.skipped) {
+					console.log(
+						`[audit-runner ${cycleId}] framework-lens skipped: ${lensResult.reason}`,
+					);
+				} else {
+					console.log(
+						`[audit-runner ${cycleId}] framework-lens persisted ${lensResult.written}/${lensResult.attempted} cells`,
+					);
+				}
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] framework-lens failed:`, err);
 			}
 
 			// (f) Retention prune — best-effort, outside the transaction

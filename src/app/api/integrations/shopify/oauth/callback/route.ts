@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { prisma } from "@/libs/prismaDb";
 import { encryptConfig } from "@/libs/integration-crypto";
 import { decodeOAuthState } from "@/libs/oauth-state";
+import { verifyShopifyCallbackHmac } from "@/libs/shopify-hmac";
 
 // ──────────────────────────────────────────────
 // Shopify OAuth — Callback
@@ -41,50 +42,10 @@ function redirect(path: string): NextResponse {
 	return NextResponse.redirect(`${getBaseUrl()}${path}`);
 }
 
-/**
- * Verify the HMAC query parameter Shopify attaches to the callback.
- *
- * Algorithm:
- *   - Take every query param EXCEPT `hmac` and `signature`
- *   - Sort by key, join `key=value` pairs with `&`
- *   - HMAC-SHA256 the result with client secret
- *   - Compare to the `hmac` param (hex) using timing-safe equality
- *
- * Exported for unit testing.
- */
-export function verifyShopifyCallbackHmac(
-	searchParams: URLSearchParams,
-	secret: string,
-): boolean {
-	if (!secret) return false;
-	const hmacFromShopify = searchParams.get("hmac");
-	if (!hmacFromShopify) return false;
-
-	const entries: [string, string][] = [];
-	searchParams.forEach((value, key) => {
-		if (key === "hmac" || key === "signature") return;
-		entries.push([key, value]);
-	});
-	entries.sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
-
-	const message = entries
-		.map(([k, v]) => `${k}=${v}`)
-		.join("&");
-
-	const expected = crypto
-		.createHmac("sha256", secret)
-		.update(message, "utf8")
-		.digest("hex");
-
-	try {
-		const a = Buffer.from(expected, "hex");
-		const b = Buffer.from(hmacFromShopify, "hex");
-		if (a.length !== b.length) return false;
-		return crypto.timingSafeEqual(a, b);
-	} catch {
-		return false;
-	}
-}
+// verifyShopifyCallbackHmac moved to @/libs/shopify-hmac so Next.js 15's
+// strict route-file export rule (only HTTP handlers + config flags
+// allowed) doesn't fail typegen on the named export. Tests import
+// from the new location.
 
 export async function GET(request: Request) {
 	const { searchParams } = new URL(request.url);

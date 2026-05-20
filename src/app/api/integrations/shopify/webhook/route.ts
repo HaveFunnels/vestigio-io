@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import crypto from "node:crypto";
 import { prisma } from "@/libs/prismaDb";
 import { decryptConfig } from "@/libs/integration-crypto";
+import { verifyShopifySignature } from "@/libs/shopify-hmac";
 
 // ──────────────────────────────────────────────
 // Shopify Webhook Receiver
@@ -30,39 +30,10 @@ import { decryptConfig } from "@/libs/integration-crypto";
 
 const WEBHOOK_SECRET = process.env.SHOPIFY_WEBHOOK_SECRET || "";
 
-/**
- * Verify Shopify webhook signature.
- *
- * Shopify signs the raw request body with HMAC-SHA256 and sends the
- * base64-encoded digest in the `X-Shopify-Hmac-Sha256` header. The
- * signing key is the app's shared secret.
- *
- * Comparison must be timing-safe to avoid signature-leak side channels.
- */
-export function verifyShopifySignature(
-	rawBody: string,
-	sigHeader: string | null,
-	secret: string,
-): { valid: boolean; error?: string } {
-	if (!secret) return { valid: false, error: "webhook_secret_not_configured" };
-	if (!sigHeader) return { valid: false, error: "missing_signature" };
-
-	const expected = crypto
-		.createHmac("sha256", secret)
-		.update(rawBody, "utf8")
-		.digest("base64");
-
-	try {
-		const a = Buffer.from(expected, "base64");
-		const b = Buffer.from(sigHeader, "base64");
-		if (a.length !== b.length) return { valid: false, error: "signature_mismatch" };
-		return crypto.timingSafeEqual(a, b)
-			? { valid: true }
-			: { valid: false, error: "signature_mismatch" };
-	} catch {
-		return { valid: false, error: "signature_decode_failed" };
-	}
-}
+// verifyShopifySignature moved to @/libs/shopify-hmac so Next.js 15's
+// strict route-file export rule (only HTTP handlers + config flags
+// allowed) doesn't fail typegen on the named export. Tests now import
+// from the new location.
 
 /**
  * Find the IntegrationConnection for a given shop_domain.

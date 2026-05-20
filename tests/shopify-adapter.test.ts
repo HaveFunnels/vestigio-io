@@ -35,8 +35,7 @@ import {
 	determineBasisType,
 } from "../packages/shopify-adapter/mapper";
 
-import { verifyShopifySignature } from "../src/app/api/integrations/shopify/webhook/route";
-import { verifyShopifyCallbackHmac } from "../src/app/api/integrations/shopify/oauth/callback/route";
+import { verifyShopifySignature, verifyShopifyCallbackHmac } from "../src/libs/shopify-hmac";
 
 import {
 	shopifyGraphQL,

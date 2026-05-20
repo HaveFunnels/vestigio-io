@@ -3070,7 +3070,11 @@
 				"save": "Salvar como ação"
 			},
 			"stop_generating": "Parar geração",
-			"jump_to_latest": "Ir para a última"
+			"jump_to_latest": "Ir para a última",
+			"session_downgraded": {
+				"title": "Usando o modelo mais leve",
+				"body": "Você usou bastante análise nas últimas horas. Mudamos para o modelo mais leve para você seguir trabalhando — seu modelo de costume volta automaticamente."
+			}
 		},
 		"organization_selector": {
 			"no_organization": "Nenhuma organização"

@@ -129,6 +129,11 @@ export default function ChatPage() {
 	const [verificationPlan, setVerificationPlan] =
 		useState<VerificationPlanState | null>(null);
 	const [creatingAction, setCreatingAction] = useState(false);
+	// Latches once the backend reports the 5h session cap kicked in
+	// and downgraded us to Haiku. Stays sticky until the user reloads
+	// (server clears it implicitly when their window slides and the
+	// next message comes back without the flag).
+	const [sessionDowngraded, setSessionDowngraded] = useState(false);
 	// Smart auto-scroll: only follow the bottom when the user is
 	// already near the bottom. The pre-fix behaviour was an
 	// unconditional `scrollIntoView({ behavior: "smooth" })` on every
@@ -149,6 +154,14 @@ export default function ChatPage() {
 			onDone: (data) => {
 				// Refresh usage after each message
 				fetchUsage();
+				// Stickiness rationale: once we hit the 5h cap, the next
+				// message could still be on Haiku without the flag (if
+				// budget logic returns under-cap during that one call due
+				// to a window slide). We keep the badge on so the user
+				// has continuity — the alternative is a flickering hint.
+				if (data?.session_downgraded === true) {
+					setSessionDowngraded(true);
+				}
 				// Process question queue
 				setQuestionQueue((prev) => {
 					if (prev.length > 0) {
@@ -1252,6 +1265,34 @@ export default function ChatPage() {
 								onRemove={handleRemoveContextItem}
 								onClearAll={handleClearAllContext}
 							/>
+						)}
+
+						{/* 5h session-cap downgrade hint. Sticky until full reload —
+						    the user just needs to know once that they're on Haiku
+						    for a while, not be reminded on every keystroke. */}
+						{sessionDowngraded && (
+							<div className='mb-2 flex items-start gap-2 rounded-md border border-amber-700/40 bg-amber-950/30 px-3 py-2 text-[12px] text-amber-200'>
+								<svg
+									className='mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-amber-400'
+									viewBox='0 0 16 16'
+									fill='none'
+								>
+									<path
+										d='M8 3v5m0 2.5v.5M8 14A6 6 0 108 2a6 6 0 000 12z'
+										stroke='currentColor'
+										strokeWidth='1.5'
+										strokeLinecap='round'
+									/>
+								</svg>
+								<div className='leading-snug'>
+									<div className='font-medium'>
+										{t("session_downgraded.title")}
+									</div>
+									<div className='text-amber-300/80'>
+										{t("session_downgraded.body")}
+									</div>
+								</div>
+							</div>
 						)}
 
 						{/* Input */}

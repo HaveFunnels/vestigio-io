@@ -2986,7 +2986,11 @@
 				"save": "Save as action"
 			},
 			"stop_generating": "Stop generating",
-			"jump_to_latest": "Jump to latest"
+			"jump_to_latest": "Jump to latest",
+			"session_downgraded": {
+				"title": "Running on the lighter model",
+				"body": "You've used a lot of analysis in the last few hours. We've switched to the lighter model so you can keep working — your usual model will be back automatically."
+			}
 		},
 		"organization_selector": {
 			"no_organization": "No organization"

@@ -2858,7 +2858,11 @@
 				"save": "Guardar como acción"
 			},
 			"stop_generating": "Detener generación",
-			"jump_to_latest": "Ir al último"
+			"jump_to_latest": "Ir al último",
+			"session_downgraded": {
+				"title": "Usando el modelo más liviano",
+				"body": "Has usado mucho análisis en las últimas horas. Cambiamos al modelo más liviano para que sigas trabajando — tu modelo habitual vuelve automáticamente."
+			}
 		},
 		"organization_selector": {
 			"no_organization": "Sin organización"

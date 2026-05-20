@@ -509,6 +509,10 @@ export async function POST(request: Request) {
           request_id: result.request_id,
           response: result.response_text,
           model_tier: result.model_tier_used,
+          // Forwarded straight from the pipeline. The chat composer reads
+          // this to show a "running on the lighter model" hint once the
+          // user's 5h session budget pushed Sonnet/Opus down to Haiku.
+          session_downgraded: result.session_downgraded === true,
           cost_cents: costCents,
           mcp_remaining: mcpRemaining,
           findings_data: findingsMap,

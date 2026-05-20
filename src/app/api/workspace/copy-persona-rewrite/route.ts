@@ -4,6 +4,7 @@ import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { isLlmEnabled, callModel } from "../../../../../apps/mcp/llm/client";
+import { readLlmCache, writeLlmCache } from "@/lib/llm-result-cache";
 
 // ──────────────────────────────────────────────
 // Persona Rewrite — Wave 11.5d
@@ -26,15 +27,8 @@ interface PersonaVariant {
 	subhead: string;
 }
 
-const cache = new Map<string, { variants: PersonaVariant[] }>();
-const MAX_CACHE = 200;
-function setCached(key: string, value: { variants: PersonaVariant[] }) {
-	cache.set(key, value);
-	if (cache.size > MAX_CACHE) {
-		const first = cache.keys().next().value;
-		if (first) cache.delete(first);
-	}
-}
+// Cache lives in LlmResultCache (DB) via src/lib/llm-result-cache.ts —
+// previous module-scoped Map evaporated on every deploy.
 
 function buildPrompt(
 	currentH1: string,
@@ -121,8 +115,12 @@ export const GET = withErrorTracking(
 		});
 		if (!latestCycle) return NextResponse.json({ variants: [], fallback: true });
 
-		const cacheKey = `${env.id}_${latestCycle.id}_${locale}`;
-		const cached = cache.get(cacheKey);
+		const cached = await readLlmCache<{ variants: PersonaVariant[] }>({
+			environmentId: env.id,
+			cycleId: latestCycle.id,
+			purpose: "persona_rewrite",
+			locale,
+		});
 		if (cached) return NextResponse.json({ variants: cached.variants });
 
 		if (!isLlmEnabled()) {
@@ -219,7 +217,16 @@ export const GET = withErrorTracking(
 				headline: typeof v.headline === "string" ? v.headline : "",
 				subhead: typeof v.subhead === "string" ? v.subhead : "",
 			}));
-			setCached(cacheKey, { variants });
+			await writeLlmCache(
+				{
+					environmentId: env.id,
+					cycleId: latestCycle.id,
+					purpose: "persona_rewrite",
+					locale,
+				},
+				{ variants },
+				{ modelId: "haiku_4_5" },
+			);
 			return NextResponse.json({
 				variants,
 				source: { h1: bestH1, meta: bestMeta },

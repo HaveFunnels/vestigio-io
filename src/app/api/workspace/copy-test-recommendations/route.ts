@@ -4,6 +4,7 @@ import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { isLlmEnabled, callModel } from "../../../../../apps/mcp/llm/client";
+import { readLlmCache, writeLlmCache } from "@/lib/llm-result-cache";
 
 // ──────────────────────────────────────────────
 // Copy Test Recommendations — Wave 11.5c
@@ -27,16 +28,9 @@ interface CacheEntry {
 	source_finding_count: number;
 }
 
-const cache = new Map<string, CacheEntry>();
-const MAX_CACHE = 200;
-
-function setCached(key: string, value: CacheEntry) {
-	cache.set(key, value);
-	if (cache.size > MAX_CACHE) {
-		const first = cache.keys().next().value;
-		if (first) cache.delete(first);
-	}
-}
+// Cache lives in LlmResultCache (DB) + readLlmCache's in-process
+// layer — see src/lib/llm-result-cache.ts. Pre-fix this was a
+// module-scoped Map that vanished on every Railway deploy.
 
 function buildPrompt(findings: Array<{ title: string; rootCause: string | null; severity: string }>, locale: string): string {
 	const lang =
@@ -109,8 +103,12 @@ export const GET = withErrorTracking(
 		});
 		if (!latestCycle) return NextResponse.json({ tests: [], fallback: true });
 
-		const cacheKey = `${env.id}_${latestCycle.id}_${locale}`;
-		const cached = cache.get(cacheKey);
+		const cached = await readLlmCache<CacheEntry>({
+			environmentId: env.id,
+			cycleId: latestCycle.id,
+			purpose: "test_recommendations",
+			locale,
+		});
 		if (cached) return NextResponse.json({ tests: cached.tests });
 
 		if (!isLlmEnabled()) {
@@ -187,7 +185,16 @@ export const GET = withErrorTracking(
 					priority:
 						t.priority === "high" || t.priority === "low" ? t.priority : "medium",
 				}));
-			setCached(cacheKey, { tests, source_finding_count: findings.length });
+			await writeLlmCache(
+				{
+					environmentId: env.id,
+					cycleId: latestCycle.id,
+					purpose: "test_recommendations",
+					locale,
+				},
+				{ tests, source_finding_count: findings.length } satisfies CacheEntry,
+				{ modelId: "haiku_4_5" },
+			);
 			return NextResponse.json({ tests });
 		} catch {
 			return NextResponse.json({ tests: [], fallback: true });

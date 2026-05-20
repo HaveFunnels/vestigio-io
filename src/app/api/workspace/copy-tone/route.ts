@@ -4,6 +4,7 @@ import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { isLlmEnabled, callModel } from "../../../../../apps/mcp/llm/client";
+import { readLlmCache, writeLlmCache } from "@/lib/llm-result-cache";
 
 // ──────────────────────────────────────────────
 // Tone Consistency — Wave 11.5f
@@ -44,14 +45,13 @@ interface PageTone {
 	tone: ToneTag;
 }
 
-const cache = new Map<string, { pages: PageTone[]; consistency: number; dominant: ToneTag | null }>();
-const MAX_CACHE = 200;
-function setCached(key: string, value: { pages: PageTone[]; consistency: number; dominant: ToneTag | null }) {
-	cache.set(key, value);
-	if (cache.size > MAX_CACHE) {
-		const first = cache.keys().next().value;
-		if (first) cache.delete(first);
-	}
+// Cache lives in LlmResultCache (DB) + the short-TTL in-process layer
+// inside readLlmCache. The previous module-scoped Map evaporated on
+// every Railway deploy and forced a fresh Haiku call per visit.
+interface CopyToneResult {
+	pages: PageTone[];
+	consistency: number;
+	dominant: ToneTag | null;
 }
 
 function buildPrompt(samples: Array<{ url: string; copy: string }>): string {
@@ -100,8 +100,11 @@ export const GET = withErrorTracking(
 		});
 		if (!latestCycle) return NextResponse.json({ pages: [], fallback: true });
 
-		const cacheKey = `${env.id}_${latestCycle.id}`;
-		const cached = cache.get(cacheKey);
+		const cached = await readLlmCache<CopyToneResult>({
+			environmentId: env.id,
+			cycleId: latestCycle.id,
+			purpose: "copy_tone",
+		});
 		if (cached) return NextResponse.json(cached);
 
 		if (!isLlmEnabled()) {
@@ -188,8 +191,16 @@ export const GET = withErrorTracking(
 			}
 			const consistency = pages.length > 0 ? Math.round((max / pages.length) * 100) : 0;
 
-			const out = { pages, consistency, dominant };
-			setCached(cacheKey, out);
+			const out: CopyToneResult = { pages, consistency, dominant };
+			await writeLlmCache(
+				{
+					environmentId: env.id,
+					cycleId: latestCycle.id,
+					purpose: "copy_tone",
+				},
+				out,
+				{ modelId: "haiku_4_5" },
+			);
 			return NextResponse.json(out);
 		} catch {
 			return NextResponse.json({ pages: [], fallback: true });

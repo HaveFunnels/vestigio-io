@@ -1,6 +1,6 @@
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   // PgBouncer mode: DATABASE_URL points to the pool (transaction mode);
   // DIRECT_URL points to Postgres directly. Prisma uses DIRECT_URL for
   // migrations + introspection (operations PgBouncer can't proxy
@@ -70,57 +70,57 @@ model Invitation {
 }
 
 model User {
-  id                    String                  @id @default(cuid())
-  name                  String?
-  email                 String?                 @unique
-  emailVerified         DateTime?
-  image                 String?
-  password              String?
-  passwordResetToken    String?                 @unique
-  passwordResetTokenExp DateTime?
-  role                  String?                 @default("USER")
-  adminRole             String? // super_admin, support, marketing, viewer, billing
-  customerId            String?                 @unique @map(name: "customer_id")
-  subscriptionId        String?                 @unique @map(name: "subscription_id")
-  priceId               String?                 @map(name: "price_id")
-  currentPeriodEnd      DateTime?               @map(name: "current_period_end")
-  locale                String?                 @default("en") // en | de | pt-BR | es
-  phone                 String? // E.164 format e.g. +5511999999999
-  phoneVerified         DateTime?
+  id                       String                  @id @default(cuid())
+  name                     String?
+  email                    String?                 @unique
+  emailVerified            DateTime?
+  image                    String?
+  password                 String?
+  passwordResetToken       String?                 @unique
+  passwordResetTokenExp    DateTime?
+  role                     String?                 @default("USER")
+  adminRole                String? // super_admin, support, marketing, viewer, billing
+  customerId               String?                 @unique @map(name: "customer_id")
+  subscriptionId           String?                 @unique @map(name: "subscription_id")
+  priceId                  String?                 @map(name: "price_id")
+  currentPeriodEnd         DateTime?               @map(name: "current_period_end")
+  locale                   String?                 @default("en") // en | de | pt-BR | es
+  phone                    String? // E.164 format e.g. +5511999999999
+  phoneVerified            DateTime?
   // ─── Paddle activation flow ───────────────────
   // billingEmail is the Paddle customer email and is set on /lp
   // conversion (promote-lead.ts). It's separate from `email` so the
   // customer can later link an OAuth account with a DIFFERENT email
   // without losing the invoicing address. Think of `email` as
   // "login email" and `billingEmail` as "invoice email".
-  billingEmail          String?
+  billingEmail             String?
   // activationToken is minted by promote-lead.ts on /lp conversion.
   // The user is "pending" until they visit /activate/:token and pick
   // an auth method (Google, GitHub, or password). Token is consumed
   // (set to null) on activation. One-time use.
-  activationToken       String?                 @unique
+  activationToken          String?                 @unique
   activationTokenExpiresAt DateTime?
-  activatedAt           DateTime?
+  activatedAt              DateTime?
   // Product telemetry — feature adoption timestamps (3.16)
-  firstChatAt           DateTime?
-  firstActionAt         DateTime?
-  firstVerifyAt         DateTime?
-  firstWorkspaceDrillAt DateTime?
-  createdAt             DateTime                @default(now())
-  accounts              Account[]
-  sessions              Session[]
-  apiKeys               ApiKey[]
-  invitation            Invitation[]
-  memberships           Membership[]
-  supportTickets        SupportTicket[]
-  ticketReplies         TicketReply[]
-  feedbacks             Feedback[]
-  notificationPrefs     NotificationPreference?
-  prospectScans         ProspectScan[]
-  dashboardLayouts      DashboardLayout[]
-  userActions           UserAction[]
-  customMaps            CustomMap[]
-  savedViews            SavedView[]
+  firstChatAt              DateTime?
+  firstActionAt            DateTime?
+  firstVerifyAt            DateTime?
+  firstWorkspaceDrillAt    DateTime?
+  createdAt                DateTime                @default(now())
+  accounts                 Account[]
+  sessions                 Session[]
+  apiKeys                  ApiKey[]
+  invitation               Invitation[]
+  memberships              Membership[]
+  supportTickets           SupportTicket[]
+  ticketReplies            TicketReply[]
+  feedbacks                Feedback[]
+  notificationPrefs        NotificationPreference?
+  prospectScans            ProspectScan[]
+  dashboardLayouts         DashboardLayout[]
+  userActions              UserAction[]
+  customMaps               CustomMap[]
+  savedViews               SavedView[]
 }
 
 // ──────────────────────────────────────────────
@@ -128,23 +128,23 @@ model User {
 // ──────────────────────────────────────────────
 
 model NotificationPreference {
-  id                   String   @id @default(cuid())
-  userId               String   @unique
+  id                      String   @id @default(cuid())
+  userId                  String   @unique
   // Channel toggles
-  emailEnabled         Boolean  @default(true)
-  smsEnabled           Boolean  @default(false)
-  whatsappEnabled      Boolean  @default(false)
+  emailEnabled            Boolean  @default(true)
+  smsEnabled              Boolean  @default(false)
+  whatsappEnabled         Boolean  @default(false)
   // Event toggles
-  alertOnPageDown      Boolean  @default(true)
-  alertOnIncident      Boolean  @default(true)
-  alertOnRegression    Boolean  @default(true)
-  alertOnImprovement   Boolean  @default(false)
-  newsletterSubscribed   Boolean  @default(true)
-  productUpdates         Boolean  @default(true)
-  alertOnVerifiedResolved Boolean @default(true)
-  alertOnDigest          Boolean  @default(true)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  alertOnPageDown         Boolean  @default(true)
+  alertOnIncident         Boolean  @default(true)
+  alertOnRegression       Boolean  @default(true)
+  alertOnImprovement      Boolean  @default(false)
+  newsletterSubscribed    Boolean  @default(true)
+  productUpdates          Boolean  @default(true)
+  alertOnVerifiedResolved Boolean  @default(true)
+  alertOnDigest           Boolean  @default(true)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -221,8 +221,8 @@ model Organization {
   plan        String    @default("vestigio") // vestigio | pro | max
   status      String    @default("pending") // pending | active | suspended
   orgType     String    @default("customer") // customer | demo | trial
-  locale      String?   // Platform language: en | pt-BR | es | de. Single source of truth for the org.
-  currency    String?   // ISO 4217: USD, BRL, EUR. Null = auto from org locale
+  locale      String? // Platform language: en | pt-BR | es | de. Single source of truth for the org.
+  currency    String? // ISO 4217: USD, BRL, EUR. Null = auto from org locale
   trialEndsAt DateTime? // only set when orgType="trial"
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -276,34 +276,35 @@ model OrgInvite {
 }
 
 model Environment {
-  id             String   @id @default(cuid())
-  organizationId String
-  domain         String
-  landingUrl     String
-  isProduction   Boolean  @default(true)
+  id                   String    @id @default(cuid())
+  organizationId       String
+  domain               String
+  landingUrl           String
+  isProduction         Boolean   @default(true)
   // Wave 5 Fase 2: activation lifecycle
-  activated        Boolean   @default(false) // true once the first cold full cycle has been dispatched
-  lastAccessedAt   DateTime? // updated (1h-debounced) when an owner/member loads /app/*; drives inactivity pause
-  continuousPaused Boolean   @default(false) // true when >14d without access; cleared on next access, triggers catch-up cycle
-  engagementScore  Int       @default(0) // 0-100, computed hourly by product telemetry cron (3.16)
+  activated            Boolean   @default(false) // true once the first cold full cycle has been dispatched
+  lastAccessedAt       DateTime? // updated (1h-debounced) when an owner/member loads /app/*; drives inactivity pause
+  continuousPaused     Boolean   @default(false) // true when >14d without access; cleared on next access, triggers catch-up cycle
+  engagementScore      Int       @default(0) // 0-100, computed hourly by product telemetry cron (3.16)
   // User-supplied glob patterns to exclude from crawl (e.g. "/admin/*", "/staging/*", "*.pdf").
   // Applied at discovery + per-URL crawl gate. Empty array = no exclusions.
-  crawlExcludePatterns String[] @default([])
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  crawlExcludePatterns String[]  @default([])
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  organization     Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  auditCycles      AuditCycle[]
-  findings         Finding[]
-  actions          Action[]
-  saasAccessConfig SaasAccessConfig?
-  integrations     IntegrationConnection[]
+  organization         Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  auditCycles          AuditCycle[]
+  findings             Finding[]
+  actions              Action[]
+  saasAccessConfig     SaasAccessConfig?
+  integrations         IntegrationConnection[]
   // Wave 0.2: Raw behavioral events from the snippet for this env
-  behavioralEvents RawBehavioralEvent[]
-  userActions      UserAction[]
+  behavioralEvents     RawBehavioralEvent[]
+  userActions          UserAction[]
   opportunityTrackings OpportunityTracking[]
-  savedViews       SavedView[]
-  copyFrameworkAudits CopyFrameworkAudit[]
+  savedViews           SavedView[]
+  copyFrameworkAudits  CopyFrameworkAudit[]
+  llmResultCache       LlmResultCache[]
 
   @@index([activated, continuousPaused])
   @@index([lastAccessedAt])
@@ -323,9 +324,9 @@ model BusinessProfile {
 
   // Wave 3.10: ICP (Ideal Customer Profile) fields — optional, system
   // falls back to heuristic detection from site content when absent.
-  icpDescription       String?   // Free text: "CTOs at mid-market SaaS companies"
-  targetIndustry       String?   // "saas", "ecommerce", "fintech", "healthcare", etc.
-  buyerSophistication  String?   // "technical" | "non_technical" | "mixed"
+  icpDescription      String? // Free text: "CTOs at mid-market SaaS companies"
+  targetIndustry      String? // "saas", "ecommerce", "fintech", "healthcare", etc.
+  buyerSophistication String? // "technical" | "non_technical" | "mixed"
 
   // Timestamp the owner ticked "I own this domain" during onboarding.
   // Captured for legal/abuse posture if a domain is ever disputed.
@@ -335,19 +336,19 @@ model BusinessProfile {
 }
 
 model AuditCycle {
-  id             String    @id @default(cuid())
-  organizationId String
-  environmentId  String
-  status         String    @default("pending") // pending | running | complete | failed
-  cycleType      String    @default("full") // full | incremental | verification
-  createdAt      DateTime  @default(now())
-  completedAt    DateTime?
+  id               String    @id @default(cuid())
+  organizationId   String
+  environmentId    String
+  status           String    @default("pending") // pending | running | complete | failed
+  cycleType        String    @default("full") // full | incremental | verification
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
   // Partial-failure visibility. Set when a write step inside the cycle
   // throws — the heal cron and admin debugging UIs read this to know
   // *where* the run got stuck instead of just "running > 10min".
-  lastError      String?
-  lastErrorAt    DateTime?
-  retryCount     Int       @default(0)
+  lastError        String?
+  lastErrorAt      DateTime?
+  retryCount       Int       @default(0)
   // Wave 18z — heartbeat-on-claim model for orphan re-dispatch.
   // The worker writes NOW() here every WORKER_HEARTBEAT_MS while the
   // cycle is running. The heal cron uses heartbeat freshness instead
@@ -356,7 +357,7 @@ model AuditCycle {
   // while the heal cron concurrently re-dispatches it.
   // Null for cycles created before this column existed — those fall
   // back to the legacy createdAt-based cutoff.
-  lastHeartbeatAt DateTime?
+  lastHeartbeatAt  DateTime?
   // Wave 16 — cached ProjectionResult (findings + actions + workspaces +
   // change_report + maps) serialized to JSONB. Written by audit-runner
   // after projectAll completes. /api/projections + layout.tsx read this
@@ -409,27 +410,27 @@ model AuditCycle {
 // ──────────────────────────────────────────────
 
 model CycleSnapshot {
-  id             String   @id @default(cuid())
-  cycleRef       String // matches AuditCycle.id-derived ref string
-  cycleId        String? // FK to AuditCycle when known
-  workspaceRef   String
-  environmentRef String
-  schemaVersion  Int      @default(1)
+  id                   String   @id @default(cuid())
+  cycleRef             String // matches AuditCycle.id-derived ref string
+  cycleId              String? // FK to AuditCycle when known
+  workspaceRef         String
+  environmentRef       String
+  schemaVersion        Int      @default(1)
   // JSON: { cycle_ref, decisions: Decision[], signals: Signal[] }
   // Stored as text instead of Json column to keep cross-DB compat.
-  snapshot       String   @db.Text
-  decisionCount  Int
-  signalCount    Int
-  auditMode      String   @default("full") // full | incremental
-  recomputeMs    Int? // duration of the recompute that produced this snapshot
-  contentHash    String? // optional integrity check
-  isBaseline     Boolean  @default(false)
+  snapshot             String   @db.Text
+  decisionCount        Int
+  signalCount          Int
+  auditMode            String   @default("full") // full | incremental
+  recomputeMs          Int? // duration of the recompute that produced this snapshot
+  contentHash          String? // optional integrity check
+  isBaseline           Boolean  @default(false)
   // Wave 7.2: Monthly revenue (in cents) from integration data at this cycle.
   // Null when no integration is connected. Used for cross-cycle revenue
   // correlation in the Revenue Recovery Tracker.
   revenueSnapshotCents Int?
   revenueSource        String? // shopify | stripe | nuvemshop | null
-  createdAt      DateTime @default(now())
+  createdAt            DateTime @default(now())
 
   cycle AuditCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
 
@@ -507,33 +508,33 @@ model Finding {
 // ──────────────────────────────────────────────
 
 model Action {
-  id              String   @id @default(cuid())
-  cycleId         String
-  environmentId   String
-  cycleRef        String // engine cycle_ref for cross-cycle matching
-  actionKey       String // ${decision_key}_primary | _secondary_N | _verify_N | compound chain ids
+  id                String   @id @default(cuid())
+  cycleId           String
+  environmentId     String
+  cycleRef          String // engine cycle_ref for cross-cycle matching
+  actionKey         String // ${decision_key}_primary | _secondary_N | _verify_N | compound chain ids
   // ${decision_key} stripped of the _primary/_secondary_N/_verify_N suffix.
   // Lets the dashboard dedupe MAX(impact) per group via a single SQL
   // GROUP BY (instead of the JS reduce in /app/actions/page.tsx).
-  decisionKey     String
-  category        String // incident | opportunity | verification | observation
-  actionType      String // risk_mitigation | opportunity_capture | verification | observation
-  severity        String // critical | high | medium | low | none
-  impactMin       Float?
-  impactMax       Float?
-  impactMidpoint  Float?
-  priorityScore   Int      @default(0)
-  surface         String? // primary affected surface, if any (denormalized for index)
+  decisionKey       String
+  category          String // incident | opportunity | verification | observation
+  actionType        String // risk_mitigation | opportunity_capture | verification | observation
+  severity          String // critical | high | medium | low | none
+  impactMin         Float?
+  impactMax         Float?
+  impactMidpoint    Float?
+  priorityScore     Int      @default(0)
+  surface           String? // primary affected surface, if any (denormalized for index)
   // JSON-serialized string[] — the inferences that triggered this
   // action's hasActive(...) condition. Used by the projection layer
   // to look up per-secondary impact + catalog remediation_steps.
-  inferenceKeysJson String? @db.Text
+  inferenceKeysJson String?  @db.Text
   // Full ActionProjection JSON for cheap rehydration on drawer open
-  projection      String   @db.Text
-  createdAt       DateTime @default(now())
+  projection        String   @db.Text
+  createdAt         DateTime @default(now())
 
-  cycle       AuditCycle   @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  environment Environment  @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  cycle       AuditCycle  @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 
   @@unique([cycleId, actionKey])
   @@index([environmentId, cycleId])
@@ -649,18 +650,18 @@ model SaasAccessConfig {
 // ──────────────────────────────────────────────
 
 model IntegrationConnection {
-  id              String    @id @default(cuid())
-  environmentId   String
-  environment     Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
-  provider        String    // shopify | stripe | meta_ads | google_ads
-  config          String    @db.Text // encrypted JSON (store URL, access token, etc.)
-  status          String    @default("pending") // pending | connected | error | disconnected
-  syncError       String?   // last sync error message
-  syncMetadata    String?   @db.Text // non-sensitive JSON cached by poller (ad_spend_30d, currency, creative_count, etc.)
-  installedAt     DateTime  @default(now())
-  lastSyncedAt    DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String      @id @default(cuid())
+  environmentId String
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  provider      String // shopify | stripe | meta_ads | google_ads
+  config        String      @db.Text // encrypted JSON (store URL, access token, etc.)
+  status        String      @default("pending") // pending | connected | error | disconnected
+  syncError     String? // last sync error message
+  syncMetadata  String?     @db.Text // non-sensitive JSON cached by poller (ad_spend_30d, currency, creative_count, etc.)
+  installedAt   DateTime    @default(now())
+  lastSyncedAt  DateTime?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@unique([environmentId, provider])
   @@index([environmentId])
@@ -911,44 +912,44 @@ model Website {
 }
 
 model PageInventoryItem {
-  id             String   @id @default(cuid())
-  websiteRef     String
-  environmentRef String
-  normalizedUrl  String
-  path           String
-  pathScope      String?
-  pageType       String // landing | product | category | checkout | cart | policy | support | blog | account | app | other
-  tier           String   @default("secondary") // primary | secondary | tertiary | excluded
-  priority       Int      @default(0)
-  criticality    Int      @default(0)
-  title          String?
-  statusCode     Int?
-  freshnessState String   @default("unknown") // fresh | stale | expired | unknown
-  freshnessAge   Int? // seconds since last check
+  id                       String    @id @default(cuid())
+  websiteRef               String
+  environmentRef           String
+  normalizedUrl            String
+  path                     String
+  pathScope                String?
+  pageType                 String // landing | product | category | checkout | cart | policy | support | blog | account | app | other
+  tier                     String    @default("secondary") // primary | secondary | tertiary | excluded
+  priority                 Int       @default(0)
+  criticality              Int       @default(0)
+  title                    String?
+  statusCode               Int?
+  freshnessState           String    @default("unknown") // fresh | stale | expired | unknown
+  freshnessAge             Int? // seconds since last check
   // Multi-signal classification (User Journey Intelligence Layer)
-  classifiedPageType       String?  // resolved type from multi-signal voter (overrides pageType)
-  classificationConfidence Int      @default(0) // 0-100 agreement ratio
-  classificationSignals    String   @default("[]") @db.Text // JSON: [{ source, vote, weight }]
+  classifiedPageType       String? // resolved type from multi-signal voter (overrides pageType)
+  classificationConfidence Int       @default(0) // 0-100 agreement ratio
+  classificationSignals    String    @default("[]") @db.Text // JSON: [{ source, vote, weight }]
   // Orphan tracking: lastSeenCycleId is updated on every successful fetch.
   // removedAt is set when the page hasn't been seen for > 14 days (across
   // multiple cycles) — soft-delete marker. Re-discovery clears it.
-  lastSeenCycleId String?
-  removedAt       DateTime?
+  lastSeenCycleId          String?
+  removedAt                DateTime?
   // Wave 9.3 — per-URL audit trail. discoverySource records where the
   // URL was first surfaced (homepage_link, sitemap, critical_path, …).
   // skipReason is set when we discovered the URL but decided not to
   // persist a fetch result; the UI renders it next to the status so
   // the customer can tell "we never got there" apart from "the page
   // is broken".
-  discoverySource String?
-  skipReason      String?
+  discoverySource          String?
+  skipReason               String?
   // Wave 9.3 — detected A/B test platform on this page (optimizely,
   // vwo, google_optimize, …). null when none detected.
-  abTestPlatform  String?
+  abTestPlatform           String?
   // Wave 9.3 — locale advertised by the page (from <html lang="…">).
   // E.g. "en", "en-US", "pt-BR". Lets the inventory group/filter
   // multi-locale variants surfaced via hreflang.
-  localeCode      String?
+  localeCode               String?
   // Wave 15.3 — denormalized aggregates so /api/inventory doesn't have
   // to run 3 separate groupBy/scan queries (Evidence response_times,
   // Finding count, RawBehavioralEvent session_count). Each is updated
@@ -959,12 +960,12 @@ model PageInventoryItem {
   //   - sessionCount30d: bulk-updated by behavioral aggregation cron
   //   - aggregatesUpdatedAt: timestamp of last aggregate write — null
   //     means aggregates haven't been computed for this row yet
-  lastResponseTimeMs Int?
-  findingCount       Int      @default(0)
-  sessionCount30d    Int      @default(0)
-  aggregatesUpdatedAt DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  lastResponseTimeMs       Int?
+  findingCount             Int       @default(0)
+  sessionCount30d          Int       @default(0)
+  aggregatesUpdatedAt      DateTime?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   website Website @relation(fields: [websiteRef], references: [id], onDelete: Cascade)
 
@@ -1001,7 +1002,7 @@ model SurfaceRelation {
 model FunnelModel {
   id               String   @id @default(cuid())
   environmentRef   String   @unique
-  modelType        String   // ecommerce | saas | lead_gen | services | hybrid
+  modelType        String // ecommerce | saas | lead_gen | services | hybrid
   stageDefinitions String   @db.Text // JSON: [{ key, label, order, pageTypes[], color }]
   isAutoDetected   Boolean  @default(true)
   createdAt        DateTime @default(now())
@@ -1429,7 +1430,7 @@ model AnonymousLead {
   // Browser locale captured from Accept-Language header at lead creation.
   // Propagated to User.locale on promotion so findings are generated in
   // the customer's language from the very first audit cycle.
-  locale          String?
+  locale String?
 
   // Anti-abuse signals (collected for the heuristic stack — no captcha)
   ipAddress       String?
@@ -1581,19 +1582,19 @@ model DashboardLayout {
 // via conversation N on date D" and reopen that thread.
 // ──────────────────────────────────────────────
 model UserAction {
-  id                        String    @id @default(cuid())
-  organizationId            String
-  environmentId             String
-  findingId                 String
-  createdByUserId           String
+  id              String @id @default(cuid())
+  organizationId  String
+  environmentId   String
+  findingId       String
+  createdByUserId String
 
-  title                     String
-  description               String?   @db.Text
+  title                String
+  description          String? @db.Text
   // JSON string[] — numbered remediation steps copied from the plan
-  remediationSteps          String?   @db.Text
-  estimatedEffortHours      Float?
+  remediationSteps     String? @db.Text
+  estimatedEffortHours Float?
 
-  status                    String    @default("pending") // pending | in_progress | done | dismissed
+  status String @default("pending") // pending | in_progress | done | dismissed
 
   verifiedViaConversationId String?
   verifiedAt                DateTime?
@@ -1602,10 +1603,10 @@ model UserAction {
 
   // Attribution baseline — snapshotted at creation so later cycles
   // can compute the delta ("this Action recovered $X/mo").
-  baselineImpactMidpoint    Float?
-  baselineImpactMin         Float?
-  baselineImpactMax         Float?
-  baselineCycleRef          String?
+  baselineImpactMidpoint Float?
+  baselineImpactMin      Float?
+  baselineImpactMax      Float?
+  baselineCycleRef       String?
 
   // Attribution confirmation — stamped by the post-cycle job when a
   // later cycle confirms the linked finding is resolved (either
@@ -1614,11 +1615,11 @@ model UserAction {
   // "confirmed recovered" in the money_recovered widget so the
   // headline doesn't inflate when a done status doesn't match
   // reality.
-  verifiedResolvedAt        DateTime?
-  verificationCycleRef      String?
+  verifiedResolvedAt   DateTime?
+  verificationCycleRef String?
 
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   environment  Environment   @relation(fields: [environmentId], references: [id], onDelete: Cascade)
@@ -1642,10 +1643,10 @@ model ProductEvent {
   userId        String
   orgId         String
   environmentId String?
-  event         String   // page_view, feature_first_use, workspace_drill, finding_action, drawer_open, playbook_run
-  properties    Json?    // event-specific payload: { from, to, time_on_previous_ms, feature, finding_id, ... }
+  event         String // page_view, feature_first_use, workspace_drill, finding_action, drawer_open, playbook_run
+  properties    Json? // event-specific payload: { from, to, time_on_previous_ms, feature, finding_id, ... }
   pathname      String
-  sessionId     String   // client-generated per-tab
+  sessionId     String // client-generated per-tab
   createdAt     DateTime @default(now())
 
   @@index([orgId, event, createdAt])
@@ -1663,13 +1664,13 @@ model ProductEvent {
 // ──────────────────────────────────────────────
 model OpportunityTracking {
   id            String   @id @default(cuid())
-  actionKey     String   // matches ActionProjection.id (opportunity_key)
+  actionKey     String // matches ActionProjection.id (opportunity_key)
   environmentId String
-  status        String   // identified | sized | accepted | implemented | verified | archived
+  status        String // identified | sized | accepted | implemented | verified | archived
   updatedAt     DateTime @updatedAt
-  updatedBy     String?  // userId who last changed status
+  updatedBy     String? // userId who last changed status
 
-  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 
   @@unique([actionKey, environmentId])
   @@index([environmentId])
@@ -1685,16 +1686,16 @@ model OpportunityTracking {
 // ──────────────────────────────────────────────
 
 model CancelSurvey {
-  id              String    @id @default(cuid())
-  organizationId  String
-  reason          String    // too_expensive | not_using | missing_feature | switching | technical | temporary | other
-  freeText        String?
-  offeredSave     String?   // discount | pause | downgrade | support | roadmap | none
-  acceptedSave    Boolean   @default(false)
-  cancelledAt     DateTime?
-  createdAt       DateTime  @default(now())
+  id             String    @id @default(cuid())
+  organizationId String
+  reason         String // too_expensive | not_using | missing_feature | switching | technical | temporary | other
+  freeText       String?
+  offeredSave    String? // discount | pause | downgrade | support | roadmap | none
+  acceptedSave   Boolean   @default(false)
+  cancelledAt    DateTime?
+  createdAt      DateTime  @default(now())
 
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([organizationId])
   @@index([createdAt])
@@ -1714,21 +1715,21 @@ model SavedView {
   userId        String
   environmentId String
   name          String
-  icon          String?         // Phosphor icon name: "Flame", "SealCheck", "SquaresFour", "ShieldCheck"
-  color         String?         // hex for tab accent
-  filters       Json            // { severity?, pack?, polarity?, verification?, change?, impact?, surface?, rootCause?, columns? }
-  groupBy       String?         // "workspace" | "severity" | "root_cause" | "surface" | "pack"
-  sortBy        String  @default("impact_desc")
-  layout        String  @default("table")
-  isDefault     Boolean @default(false)
-  isShared      Boolean @default(false)
-  isPinned      Boolean @default(false)
-  order         Int     @default(0)
+  icon          String? // Phosphor icon name: "Flame", "SealCheck", "SquaresFour", "ShieldCheck"
+  color         String? // hex for tab accent
+  filters       Json // { severity?, pack?, polarity?, verification?, change?, impact?, surface?, rootCause?, columns? }
+  groupBy       String? // "workspace" | "severity" | "root_cause" | "surface" | "pack"
+  sortBy        String   @default("impact_desc")
+  layout        String   @default("table")
+  isDefault     Boolean  @default(false)
+  isShared      Boolean  @default(false)
+  isPinned      Boolean  @default(false)
+  order         Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 
   @@index([userId, environmentId])
   @@index([environmentId, isShared])
@@ -1751,20 +1752,62 @@ model SavedView {
 model CopyFrameworkAudit {
   id            String   @id @default(cuid())
   environmentId String
-  cycleId       String   // cycle that produced this audit
-  frameworkId   String   // copy-frameworks.ts id: aida | pas | 4ps | bab | spin | fab | dos | pixar | quest | 4cs
-  pageUrl       String   // exact crawled URL the audit was run against
-  pageSlot      String   // computed page slot: home | pricing | features | about — denormalized so a UI hit can filter without re-running detectPageSlot
-  locale        String   // pt-BR | en | es | de
-  criteria      Json     // CriterionVerdict[] — { id, status, evidence, fix }
-  scorePct      Int      // 0–100 computed from criteria (pass=1, warn=0.5, fail=0, not_evaluated excluded)
-  modelId       String?  // which LLM produced the row (e.g. "haiku_4_5") for future replay/audit
+  cycleId       String // cycle that produced this audit
+  frameworkId   String // copy-frameworks.ts id: aida | pas | 4ps | bab | spin | fab | dos | pixar | quest | 4cs
+  pageUrl       String // exact crawled URL the audit was run against
+  pageSlot      String // computed page slot: home | pricing | features | about — denormalized so a UI hit can filter without re-running detectPageSlot
+  locale        String // pt-BR | en | es | de
+  criteria      Json // CriterionVerdict[] — { id, status, evidence, fix }
+  scorePct      Int // 0–100 computed from criteria (pass=1, warn=0.5, fail=0, not_evaluated excluded)
+  modelId       String? // which LLM produced the row (e.g. "haiku_4_5") for future replay/audit
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 
   @@unique([environmentId, cycleId, frameworkId, pageUrl, locale])
   @@index([environmentId, locale]) // serve-latest-cycle-by-env-and-locale lookup
-  @@index([cycleId])               // bulk read for a single cycle (audit-runner Phase 2)
+  @@index([cycleId]) // bulk read for a single cycle (audit-runner Phase 2)
+}
+
+/// Generic LLM result cache for any on-demand workspace LLM endpoint
+/// that doesn't merit its own typed table. One row per
+/// (env, cycle, purpose, keyHash, locale) — the keyHash is whatever
+/// extra discriminator the caller needs (page URL, persona id, etc.)
+/// hashed so the column stays bounded.
+///
+/// Used by pulse-summary, copy-tone, persona-rewrite,
+/// test-recommendations. Each pre-fix kept its own in-memory Map
+/// that evaporated on every Railway deploy — a customer's first
+/// page view after a deploy paid for a fresh Haiku call instead of
+/// reading the result the previous request had already produced.
+/// Persisting here makes each (env, cycle, locale, key) bucket cost
+/// exactly one Haiku call until a new cycle ships.
+model LlmResultCache {
+  id            String   @id @default(cuid())
+  environmentId String
+  cycleId       String // cycle this result was computed against
+  /// Stable label for the LLM endpoint (e.g. "pulse_summary",
+  /// "copy_tone", "persona_rewrite", "test_recommendations").
+  /// Mirrors TokenCostLedger.purpose so observability can correlate.
+  purpose       String
+  /// Sha256 (hex) of the per-call discriminator: workspace name +
+  /// finding-id-set for pulse, persona-id for rewrite, page URL for
+  /// per-page calls, etc. Empty string when the (env, cycle, purpose,
+  /// locale) tuple is sufficient.
+  keyHash       String   @default("")
+  locale        String   @default("en")
+  /// Opaque JSON blob returned by the LLM endpoint. Shape is owned by
+  /// the consumer — this column is intentionally untyped.
+  payload       Json
+  modelId       String? // 'haiku_4_5' | 'sonnet_4_6' | 'opus_4_6'
+  costCents     Float    @default(0) // best-effort, derived from the same call's ledger entry when available
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([environmentId, cycleId, purpose, keyHash, locale])
+  @@index([environmentId, purpose, locale])
+  @@index([cycleId])
 }

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { isLlmEnabled, callModel } from "../../../../../apps/mcp/llm/client";
 import { prisma } from "@/libs/prismaDb";
+import { readLlmCache, writeLlmCache, hashCacheDiscriminator } from "@/lib/llm-result-cache";
 
 // ──────────────────────────────────────────────
 // Pulse Summary API — POST /api/workspace/pulse-summary
@@ -22,26 +23,9 @@ type Locale = "en" | "pt-BR" | "es" | "de";
 const VALID_PERSPECTIVES = new Set<Perspective>(["panorama", "revenue", "trust", "behavior", "copy"]);
 const VALID_LOCALES = new Set<Locale>(["en", "pt-BR", "es", "de"]);
 
-// ── In-memory cache (1h TTL) ──────────────────
-
-// Cache keyed by env+perspective+cycleId — valid until a new cycle completes.
-// No TTL: the cycleRef in the key changes when a new audit finishes,
-// which naturally invalidates stale entries. Max 1000 entries with LRU eviction.
-const MAX_CACHE = 1000;
-const cache = new Map<string, string>();
-
-function getCached(key: string): string | null {
-  return cache.get(key) ?? null;
-}
-
-function setCache(key: string, summary: string): void {
-  cache.set(key, summary);
-  if (cache.size > MAX_CACHE) {
-    // Evict oldest (first inserted)
-    const firstKey = cache.keys().next().value;
-    if (firstKey) cache.delete(firstKey);
-  }
-}
+// Cache lives in LlmResultCache (DB) + a short-TTL in-process map for
+// burst dedup. See src/lib/llm-result-cache.ts. The previous
+// module-scoped Map evaporated on every Railway deploy.
 
 // ── Perspective classification ────────────────
 
@@ -221,18 +205,26 @@ export async function POST(request: Request) {
 
   const cycleRef = latestCycle?.id || "none";
   // Workspace-scoped cache uses workspaceName + finding-ID-set hash so
-  // briefings stay distinct between sibling workspaces in the same cycle.
+  // briefings stay distinct between sibling workspaces in the same
+  // cycle. The hash is stable across requests so two clients fetching
+  // the same workspace's briefing inside the same cycle get the same
+  // cache row.
   const wsScope = workspaceName && workspaceFindingIds
     ? `ws:${workspaceName}:${workspaceFindingIds.slice().sort().join(",").slice(0, 200)}`
     : perspective;
-  // Locale MUST be part of the key — a previous pt-BR briefing was being
-  // served to en-US requesters (and vice versa) because the cache was
-  // env+scope+cycle-only. Same finding set, different language → distinct
-  // cache entries.
-  const cacheKey = `${env.id}_${wsScope}_${cycleRef}_${locale}`;
-  const cached = getCached(cacheKey);
-  if (cached) {
-    return NextResponse.json({ summary: cached });
+  const keyHash = hashCacheDiscriminator([wsScope]);
+
+  if (cycleRef !== "none") {
+    const cached = await readLlmCache<{ summary: string }>({
+      environmentId: env.id,
+      cycleId: cycleRef,
+      purpose: "pulse_summary",
+      keyHash,
+      locale,
+    });
+    if (cached?.summary) {
+      return NextResponse.json({ summary: cached.summary });
+    }
   }
 
   // ── LLM check ──
@@ -350,7 +342,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ summary: null, fallback: true });
     }
 
-    setCache(cacheKey, summary);
+    if (cycleRef !== "none") {
+      await writeLlmCache(
+        {
+          environmentId: env.id,
+          cycleId: cycleRef,
+          purpose: "pulse_summary",
+          keyHash,
+          locale,
+        },
+        { summary },
+        { modelId: "haiku_4_5" },
+      );
+    }
     return NextResponse.json({ summary });
   } catch (err: any) {
     console.error("[pulse-summary] Haiku call failed:", err?.message || err);

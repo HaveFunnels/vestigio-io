@@ -1,7 +1,7 @@
 import AppSidebarLayout from "@/components/app/AppSidebarLayout";
 import { McpDataProvider, type McpDataSnapshot } from "@/components/app/McpDataProvider";
 import { resolveOrgContext } from "@/libs/resolve-org";
-import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps, loadProjectionsCacheForEnv, hasRunningCycleForEnv } from "@/lib/console-data";
+import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps, loadProjectionsCacheForEnv, loadInventoryForEnv, hasRunningCycleForEnv } from "@/lib/console-data";
 import { AppProviders } from "./providers";
 import { syncUserLocale } from "@/libs/sync-locale";
 import { loadEngineTranslations } from "@/lib/engine-translations";
@@ -49,6 +49,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 	// ~1GB evidence transfer + full recompute.
 	let mcpData: McpDataSnapshot;
 	let usedCacheFastPath = false;
+	// Kick off inventory preload in parallel with the projection cache.
+	// loadInventoryForEnv hits the same Prisma pool, so doing it
+	// concurrently amortizes the connection cost. Result is grafted onto
+	// mcpData below — admin routes skip it. See loadInventoryForEnv for
+	// why: it lets /app/inventory render on first paint instead of
+	// sitting on "Carregando inventário…" while the route compiles in
+	// dev or the cold-start chain plays out.
+	const inventoryPromise =
+		!orgCtx.isAdmin && orgCtx.envId ? loadInventoryForEnv(orgCtx.envId) : null;
+
 	if (!orgCtx.isAdmin) {
 		const cached = orgCtx.envId ? await loadProjectionsCacheForEnv(orgCtx.envId) : null;
 		if (cached) {
@@ -151,6 +161,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 			maps: { status: "not_ready", reason: "Admin route — no MCP context." },
 			currency: orgCtx.currency,
 		};
+	}
+
+	// Stitch the inventory preload result in once everything else is
+	// settled. Awaiting here is essentially free — the query was kicked
+	// off earlier and has been running while the cache + ensureContext
+	// path executed.
+	if (inventoryPromise) {
+		mcpData.inventory = await inventoryPromise;
 	}
 
 	if (usedCacheFastPath) {

@@ -6,7 +6,7 @@
  */
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import type { ChatMessage, ContentBlock, ToolCallBlock } from "@/lib/chat-types";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { fmtCurrency } from "@/lib/format-currency";
@@ -38,14 +38,14 @@ interface ChatMessageRendererProps {
 // Currency formatting moved to shared fmtCurrency util
 
 // Smart timestamp formatter — short and contextual:
-//   - same day  → "2:34 PM"
-//   - yesterday → "Yesterday 2:34 PM"
-//   - older     → "Apr 5, 2:34 PM"
-// Pre-fix the chat showed no timestamps at all on messages (only
-// the per-conversation date grouping in the sidebar), so a long
-// thread had no anchor for "when did I ask this" / "is this
-// recent". This shows a small subtle line under each bubble.
-function formatMessageTime(d: Date): string {
+//   - same day  → "14:34"
+//   - yesterday → "Ontem 14:34"
+//   - older     → "5 de mai, 14:34"
+// Locale-aware: the `locale` arg drives both the time format AND
+// the "Yesterday" / "Ontem" / "Ayer" / "Gestern" wording. Without
+// this the chat showed US-style "2:34 PM" + "Yesterday" to every
+// org regardless of the user's settings.
+function formatMessageTime(d: Date, locale: string, yesterdayLabel: string): string {
   const now = new Date();
   const sameDay =
     d.getFullYear() === now.getFullYear() &&
@@ -58,10 +58,10 @@ function formatMessageTime(d: Date): string {
     d.getMonth() === yesterday.getMonth() &&
     d.getDate() === yesterday.getDate();
 
-  const time = d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  const time = d.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
   if (sameDay) return time;
-  if (isYesterday) return `Yesterday ${time}`;
-  return `${d.toLocaleDateString([], { month: "short", day: "numeric" })} ${time}`;
+  if (isYesterday) return `${yesterdayLabel} ${time}`;
+  return `${d.toLocaleDateString(locale, { month: "short", day: "numeric" })} ${time}`;
 }
 
 export function ChatMessageRenderer({
@@ -76,13 +76,19 @@ export function ChatMessageRenderer({
   onFork,
 }: ChatMessageRendererProps) {
   const { currency } = useMcpData();
+  const locale = useLocale();
+  const tChat = useTranslations("console.chat");
 
   // Thinking state: streaming with no blocks yet
   if (message.streaming && message.blocks.length === 0) {
     return <ThinkingIndicator />;
   }
 
-  const timestamp = formatMessageTime(message.createdAt);
+  const timestamp = formatMessageTime(
+    message.createdAt,
+    locale,
+    tChat.has("yesterday") ? tChat("yesterday") : "Yesterday",
+  );
 
   if (message.role === "user") {
     const voiceBlock = message.blocks.find((b) => b.type === "voice_message");

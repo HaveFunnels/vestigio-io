@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { DataState } from "@/lib/console-data";
+import type { DataState, InventoryPayload } from "@/lib/console-data";
 import type { FindingProjection, ActionProjection, WorkspaceProjection, ChangeReportProjection } from "../../../packages/projections";
 import type { MapDefinition } from "../../../packages/maps";
 
@@ -20,6 +20,12 @@ export interface McpDataSnapshot {
   changeReport: DataState<ChangeReportProjection>;
   workspaces: DataState<WorkspaceProjection[]>;
   maps: DataState<MapDefinition[]>;
+  /**
+   * First-paint inventory snapshot. Optional because the layout only
+   * preloads it for /app/inventory routes; other pages get `undefined`
+   * and pay the /api/inventory fetch cost when (if) they need it.
+   */
+  inventory?: DataState<InventoryPayload>;
   /** ISO 4217 currency code for the current org (e.g. "BRL", "USD", "EUR") */
   currency: string;
 }
@@ -48,6 +54,7 @@ export function useMcpData(): McpDataSnapshot {
       changeReport: { status: "not_ready", reason: "No data provider." },
       workspaces: { status: "not_ready", reason: "No data provider." },
       maps: { status: "not_ready", reason: "No data provider." },
+      inventory: undefined,
       currency: "USD",
     };
   }

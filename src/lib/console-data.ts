@@ -509,6 +509,184 @@ export interface InventoryPayload {
 }
 
 /**
+ * Server-side inventory loader. Mirrors GET /api/inventory but skips the
+ * auth/membership/active_env steps the API route does (the layout's
+ * resolveOrgContext already handed us the envId). Use this from server
+ * components to preload inventory into McpDataProvider on first paint —
+ * avoids the dev-mode cold-compile hang on /api/inventory where the
+ * page would sit on "Carregando inventário…" for 30+ seconds even
+ * though the underlying query takes under a second.
+ *
+ * Keep this in sync with the route at src/app/api/inventory/route.ts.
+ */
+export async function loadInventoryForEnv(envId: string): Promise<DataState<InventoryPayload>> {
+  const limit = 200;
+  const offset = 0;
+  try {
+    const { prisma } = await import('@/libs/prismaDb');
+    const { isCommercialPageType } = await import('@/lib/page-type-colors');
+
+    const latestCycle = await prisma.auditCycle.findFirst({
+      where: { environmentId: envId },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, status: true, createdAt: true, completedAt: true },
+    });
+    const audit_status: InventoryAuditStatus | null = latestCycle
+      ? {
+          cycle_id: latestCycle.id,
+          status: latestCycle.status as InventoryAuditStatus['status'],
+          started_at: latestCycle.createdAt.toISOString(),
+          completed_at: latestCycle.completedAt?.toISOString() ?? null,
+        }
+      : null;
+
+    const website = await prisma.website.findFirst({
+      where: { environmentRef: envId },
+      select: { id: true },
+    });
+    if (!website) {
+      return {
+        status: 'empty',
+      };
+    }
+
+    // Same orphan + speculative-critical-path filter as the API route.
+    // Keep these in sync by hand for now; the alternative is exporting
+    // the where clause from the route, which couples server vs route
+    // imports in ways that have caused subtle bugs.
+    const inventoryWhere: Record<string, unknown> = {
+      websiteRef: website.id,
+      removedAt: null,
+      NOT: {
+        AND: [
+          { discoverySource: 'critical_path' },
+          {
+            OR: [
+              { statusCode: null },
+              { statusCode: 0 },
+              { statusCode: { gte: 400 } },
+            ],
+          },
+        ],
+      },
+    };
+
+    const [total, items] = await Promise.all([
+      prisma.pageInventoryItem.count({ where: inventoryWhere as never }),
+      prisma.pageInventoryItem.findMany({
+        where: inventoryWhere as never,
+        orderBy: { updatedAt: 'desc' },
+        take: limit,
+        skip: offset,
+      }),
+    ]);
+
+    const hasFindingData =
+      items.some((it) => it.aggregatesUpdatedAt !== null) &&
+      latestCycle?.status === 'complete' &&
+      latestCycle.completedAt !== null;
+    const hasSessionData = items.some(
+      (it) => it.aggregatesUpdatedAt !== null && it.sessionCount30d > 0,
+    );
+
+    const prevCycle = await prisma.auditCycle.findFirst({
+      where: {
+        environmentId: envId,
+        status: 'complete',
+        NOT: latestCycle ? { id: latestCycle.id } : undefined,
+      },
+      orderBy: { completedAt: 'desc' },
+      select: { id: true, completedAt: true },
+    });
+
+    let deltas: InventoryDeltas | null = null;
+    if (prevCycle?.completedAt) {
+      try {
+        const [newPages, newFindings] = await Promise.all([
+          prisma.pageInventoryItem.count({
+            where: { websiteRef: website.id, createdAt: { gt: prevCycle.completedAt } },
+          }),
+          prisma.finding.count({
+            where: { environmentId: envId, createdAt: { gt: prevCycle.completedAt } },
+          }),
+        ]);
+        deltas = { total: newPages, findings: newFindings };
+      } catch (err) {
+        console.warn('[loadInventoryForEnv] deltas computation failed:', err);
+      }
+    }
+
+    const surfaces: InventorySurface[] = items.map((item) => {
+      let host = '';
+      try {
+        host = new URL(item.normalizedUrl).hostname;
+      } catch {
+        host = item.normalizedUrl.split('/')[0] || '';
+      }
+      const effectiveType = item.classifiedPageType || item.pageType;
+      return {
+        surface_id: item.id,
+        label: item.title || item.path,
+        normalized_path: item.normalizedUrl,
+        path: item.path,
+        host,
+        page_type: effectiveType,
+        classified_page_type: item.classifiedPageType ?? null,
+        classification_confidence: item.classificationConfidence ?? null,
+        classification_signals: (() => {
+          if (!item.classificationSignals) return [];
+          try {
+            const parsed = JSON.parse(item.classificationSignals);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch {
+            return [];
+          }
+        })(),
+        is_commercial: isCommercialPageType(effectiveType),
+        is_live: item.freshnessState === 'fresh',
+        last_seen_at: item.updatedAt.toISOString(),
+        freshness_age: item.freshnessAge ?? null,
+        session_count: hasSessionData ? item.sessionCount30d : null,
+        finding_count: hasFindingData ? item.findingCount : null,
+        discovery_source: item.discoverySource ?? null,
+        skip_reason: item.skipReason ?? null,
+        ab_test_platform: item.abTestPlatform ?? null,
+        locale_code: item.localeCode ?? null,
+        http_status: item.statusCode ?? null,
+        title: item.title ?? null,
+        description: null,
+        response_time_ms: item.lastResponseTimeMs ?? null,
+        tier: item.tier,
+      };
+    });
+
+    if (
+      surfaces.length === 0 &&
+      (!audit_status || audit_status.status === 'complete' || audit_status.status === 'failed')
+    ) {
+      return { status: 'empty' };
+    }
+
+    return {
+      status: 'ready',
+      data: {
+        surfaces,
+        audit_status,
+        pagination: { total, limit, offset },
+        deltas,
+        lookups: { findings: true, sessions: true },
+      },
+    };
+  } catch (err) {
+    console.warn('[loadInventoryForEnv] failed:', err);
+    return {
+      status: 'error',
+      message: err instanceof Error ? err.message : 'Unknown error preloading inventory',
+    };
+  }
+}
+
+/**
  * Fetch inventory surfaces + the latest audit_status for the live banner.
  * Returns a promise-based DataState. Even when `surfaces` is empty, the
  * caller can still inspect `audit_status` to know whether the audit is

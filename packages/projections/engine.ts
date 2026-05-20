@@ -1163,8 +1163,28 @@ export function projectFindings(
       }
     }
 
+    // Disambiguate the finding id when the same inference_key fires
+    // multiple times in a cycle. Funnel inferences are the canonical
+    // example — `funnel_dead_end_page`, `funnel_broken_path_*`, and
+    // `funnel_weak_connection_*` each produce one inference per page
+    // pair, and pre-fix they all shared id=`finding_funnel_dead_end_page`.
+    // React surfaced this as "Encountered two children with the same key"
+    // and silently dropped duplicates from finding lists.
+    //
+    // inf.conclusion_value carries the parameter that distinguishes
+    // sibling inferences (the URL, the page-type pair, etc.). When
+    // absent we fall back to a slugified source URL — there's always at
+    // least one of the two for repeating-key inferences. Single-firing
+    // inferences keep their original id shape for backward-compatibility
+    // with deep-link URLs (?finding=finding_trust_boundary_crossed).
+    const idSuffix = (() => {
+      if (inf.conclusion_value) {
+        return `_${inf.conclusion_value.toString().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 60)}`;
+      }
+      return '';
+    })();
     findings.push({
-      id: `finding_${vc.inference_key}`,
+      id: `finding_${vc.inference_key}${idSuffix}`,
       title,
       root_cause: rootCauseTitle,
       severity: mapSeverityFromInference(inf),

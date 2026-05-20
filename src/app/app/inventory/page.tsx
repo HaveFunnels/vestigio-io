@@ -18,6 +18,7 @@ import {
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { getPageTypeStyle } from "@/lib/page-type-colors";
 import { DownloadSimple, Flask } from "@phosphor-icons/react/dist/ssr";
+import { useMcpData } from "@/components/app/McpDataProvider";
 
 // ──────────────────────────────────────────────
 // Inventory Page — Surface-Level Intelligence
@@ -732,6 +733,7 @@ function SelectionBar({
 export default function InventoryPage() {
 	const router = useRouter();
 	const copilot = useCopilot();
+	const mcpData = useMcpData();
 	const t = useTranslations("console.inventory");
 	const tc = useTranslations("console.common.columns");
 	const tTooltip = useTranslations("console.common");
@@ -785,9 +787,16 @@ export default function InventoryPage() {
 			setSortDir("desc");
 		}
 	}
-	const [dataState, setDataState] = useState<DataState<InventoryPayload>>({
-		status: "loading",
-	});
+	// Pull the server-preloaded inventory from McpDataProvider. Layout
+	// kicks off loadInventoryForEnv in parallel with the projection
+	// cache, so by the time this component mounts the inventory is
+	// almost always already populated — no "Carregando inventário…"
+	// spinner on first paint. Falls back to "loading" only when the
+	// layout couldn't preload (admin routes, missing envId).
+	const preloaded = mcpData.inventory;
+	const [dataState, setDataState] = useState<DataState<InventoryPayload>>(
+		preloaded ?? { status: "loading" },
+	);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [drawerSurface, setDrawerSurface] = useState<InventorySurface | null>(
 		null
@@ -795,6 +804,11 @@ export default function InventoryPage() {
 
 	// Initial load + polling while audit is pending/running.
 	// Polls every 3s; stops once status is `complete` or `failed` (or page unmounts).
+	//
+	// We always re-fetch on mount even when the preload populated us so
+	// the polling loop has a fresh audit_status to react to. If the
+	// preloaded snapshot already shows status === "complete", the first
+	// tick is essentially a no-op (same shape, no UI flicker).
 	useEffect(() => {
 		let cancelled = false;
 		let timer: ReturnType<typeof setTimeout> | null = null;

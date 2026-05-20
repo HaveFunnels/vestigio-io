@@ -458,9 +458,18 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
                 {/* Stats row */}
                 <div className="relative mt-3 flex items-end justify-between">
                   {isLocked ? (
-                    <span className="text-[11px] text-amber-500">
-                      {t("pixel_required")}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[11px] text-amber-500">
+                        {t("pixel_required")}
+                      </span>
+                      <Link
+                        href="/app/settings/data-sources"
+                        onClick={(e) => e.stopPropagation()}
+                        className="self-start text-[10px] font-medium text-amber-400 underline-offset-2 transition-colors hover:text-amber-300 hover:underline"
+                      >
+                        {t("pixel_required_cta")} &rarr;
+                      </Link>
+                    </div>
                   ) : hasData ? (
                     <>
                       <div>

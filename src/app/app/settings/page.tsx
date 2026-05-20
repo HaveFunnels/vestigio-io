@@ -497,17 +497,26 @@ function CancelSubscriptionButton() {
 function LanguageSelector() {
 	const t = useTranslations("console.settings.language");
 	const router = useRouter();
-	const { update: updateSession } = useSession();
+	const { data: session, update: updateSession } = useSession();
 	const [selectedCode, setSelectedCode] = useState("en");
 	const [isOpen, setIsOpen] = useState(false);
 
+	// Source-of-truth ordering matches src/i18n/request.ts: prefer the
+	// authenticated user's DB locale (carried on the JWT) so the chip
+	// reflects the user's profile, not a stale "en" cookie left over
+	// from sign-up. Cookie is the anonymous-visitor fallback.
 	useEffect(() => {
+		const sessionLocale = (session?.user as { locale?: string } | undefined)?.locale;
+		if (sessionLocale && SUPPORTED_LANGUAGES.some((l) => l.code === sessionLocale)) {
+			setSelectedCode(sessionLocale);
+			return;
+		}
 		getSelectedLangCode().then((code) => {
 			if (code && SUPPORTED_LANGUAGES.some((l) => l.code === code)) {
 				setSelectedCode(code);
 			}
 		});
-	}, []);
+	}, [session?.user]);
 
 	const selectedLang = SUPPORTED_LANGUAGES.find((l) => l.code === selectedCode);
 

@@ -303,6 +303,7 @@ model Environment {
   userActions      UserAction[]
   opportunityTrackings OpportunityTracking[]
   savedViews       SavedView[]
+  copyFrameworkAudits CopyFrameworkAudit[]
 
   @@index([activated, continuousPaused])
   @@index([lastAccessedAt])
@@ -1728,4 +1729,39 @@ model SavedView {
 
   @@index([userId, environmentId])
   @@index([environmentId, isShared])
+}
+
+/// Persisted Copy Framework Lens audit result. One row per
+/// (env, cycle, framework, pageUrl, locale) combination.
+///
+/// Pre-fix the audit results lived in an in-memory Map inside the API
+/// route, which meant every dev restart and every Railway deploy
+/// invalidated all 10 cached frameworks. Each first page open after a
+/// deploy paid 10× Haiku calls (~10s of perceived loading). Persisting
+/// here makes results survive process boundaries and lets multiple
+/// server instances share the same cache via the DB.
+///
+/// Phase 1: written on-demand by the API route when an audit is generated.
+/// Phase 2: pre-populated by audit-runner on COLD cycle completion only,
+///          so warm/hot cycles don't pay the LLM cost. Stays stable for
+///          a week between cold cycles.
+model CopyFrameworkAudit {
+  id            String   @id @default(cuid())
+  environmentId String
+  cycleId       String   // cycle that produced this audit
+  frameworkId   String   // copy-frameworks.ts id: aida | pas | 4ps | bab | spin | fab | dos | pixar | quest | 4cs
+  pageUrl       String   // exact crawled URL the audit was run against
+  pageSlot      String   // computed page slot: home | pricing | features | about — denormalized so a UI hit can filter without re-running detectPageSlot
+  locale        String   // pt-BR | en | es | de
+  criteria      Json     // CriterionVerdict[] — { id, status, evidence, fix }
+  scorePct      Int      // 0–100 computed from criteria (pass=1, warn=0.5, fail=0, not_evaluated excluded)
+  modelId       String?  // which LLM produced the row (e.g. "haiku_4_5") for future replay/audit
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([environmentId, cycleId, frameworkId, pageUrl, locale])
+  @@index([environmentId, locale]) // serve-latest-cycle-by-env-and-locale lookup
+  @@index([cycleId])               // bulk read for a single cycle (audit-runner Phase 2)
 }

@@ -182,17 +182,26 @@ export default function CopyFrameworkLens() {
 		return ordered.filter((s) => slots.has(s));
 	}, [pages]);
 
-	// Whenever the selected slot has a matching page, fire 10 parallel audit
-	// requests (one per framework). Each cell is cached server-side per
-	// (framework, pageUrl) so re-selecting a previously-visited slot is
-	// instant. An AbortController is used so rapid slot-switching cancels
-	// in-flight requests instead of accumulating Haiku calls for pages the
-	// user already navigated away from.
+	// Whenever the selected page changes, do ONE batch read against
+	// /copy-framework-audits to hydrate every framework that's already
+	// in the DB cache. For any framework missing from that response
+	// (cold cycle just landed, new framework just shipped in code), fire
+	// the per-framework generation route to fill the gap — Haiku runs,
+	// the result lands in the DB, next page open picks it up from the
+	// batch read in <50ms.
+	//
+	// Pre-fix this useEffect fanned out 10 parallel /copy-framework-audit
+	// calls, and the in-memory cache evaporated on every Railway deploy,
+	// so each first page open after a deploy paid 10× Haiku ≈ 10s of
+	// loading. With the DB cache now in place, the batch path returns in
+	// one query for most visits.
 	useEffect(() => {
 		if (!selectedPage) return;
 		const controller = new AbortController();
 
-		// Mark all frameworks as loading for this page
+		// Mark all frameworks as loading for this page up front so
+		// the chips render skeletons instead of the previous page's
+		// scores while we hydrate.
 		setAudits((prev) => {
 			const next = new Map(prev);
 			for (const fw of COPY_FRAMEWORKS) {
@@ -202,45 +211,82 @@ export default function CopyFrameworkLens() {
 		});
 
 		const pageUrl = selectedPage.url;
-		Promise.allSettled(
-			COPY_FRAMEWORKS.map((fw) =>
-				fetch(
-					`/api/workspace/copy-framework-audit?framework=${encodeURIComponent(fw.id)}&pageUrl=${encodeURIComponent(pageUrl)}&locale=${encodeURIComponent(locale)}`,
+
+		async function hydrate() {
+			// L1 — batch read from DB cache. Resolves instantly for any
+			// (env, cycle, pageUrl, locale) bucket that has cached rows.
+			let cached: Record<string, { criteria: CriterionVerdict[]; score_pct: number }> = {};
+			try {
+				const r = await fetch(
+					`/api/workspace/copy-framework-audits?pageUrl=${encodeURIComponent(pageUrl)}&locale=${encodeURIComponent(locale)}`,
 					{ signal: controller.signal },
-				)
-					.then((r) => (r.ok ? r.json() : null))
-					.then((data) => ({ id: fw.id, data })),
-			),
-		).then((results) => {
+				);
+				if (r.ok) {
+					const data = await r.json();
+					if (data && typeof data === "object" && data.frameworks) {
+						cached = data.frameworks as typeof cached;
+					}
+				}
+			} catch {
+				// network / abort — fall through to per-framework path
+				if (controller.signal.aborted) return;
+			}
+			if (controller.signal.aborted) return;
+
+			// Apply cached results immediately so the user sees something
+			// the instant the DB query returns, before any LLM call.
+			setAudits((prev) => {
+				const next = new Map(prev);
+				for (const [id, audit] of Object.entries(cached)) {
+					next.set(`${id}::${pageUrl}`, audit);
+				}
+				return next;
+			});
+
+			// L2 — fire individual generation requests for frameworks not
+			// in the batch. Each one triggers Haiku server-side and
+			// persists the result; subsequent visits skip this step.
+			const missing = COPY_FRAMEWORKS.filter((fw) => !(fw.id in cached));
+			if (missing.length === 0) return;
+
+			const results = await Promise.allSettled(
+				missing.map((fw) =>
+					fetch(
+						`/api/workspace/copy-framework-audit?framework=${encodeURIComponent(fw.id)}&pageUrl=${encodeURIComponent(pageUrl)}&locale=${encodeURIComponent(locale)}`,
+						{ signal: controller.signal },
+					)
+						.then((r) => (r.ok ? r.json() : null))
+						.then((data) => ({ id: fw.id, data })),
+				),
+			);
 			if (controller.signal.aborted) return;
 			setAudits((prev) => {
 				const next = new Map(prev);
 				for (const r of results) {
-					if (r.status === "fulfilled") {
-						const { id, data } = r.value;
-						// Wave 18g — when the API returns { criteria: [],
-						// score_pct: 0, fallback: true }, the previous code
-						// treated it as a valid result and showed 0% with an
-						// empty checklist. That looked like "the framework
-						// failed every criterion" when in fact the audit
-						// could not run (no LLM, no body, no env, etc.).
-						// Now we surface those as "error" so the UI renders
-						// the unavailable state instead of a misleading 0.
-						const isFallback = data && (data.fallback === true || (Array.isArray(data.criteria) && data.criteria.length === 0));
-						if (data && Array.isArray(data.criteria) && typeof data.score_pct === "number" && !isFallback) {
-							next.set(`${id}::${pageUrl}`, {
-								criteria: data.criteria,
-								score_pct: data.score_pct,
-							});
-						} else {
-							next.set(`${id}::${pageUrl}`, "error");
-						}
+					if (r.status !== "fulfilled") continue;
+					const { id, data } = r.value;
+					// Wave 18g — when the API returns { criteria: [],
+					// score_pct: 0, fallback: true }, the previous code
+					// treated it as a valid result and showed 0% with an
+					// empty checklist. That looked like "the framework
+					// failed every criterion" when in fact the audit
+					// could not run (no LLM, no body, no env, etc.).
+					const isFallback =
+						data && (data.fallback === true || (Array.isArray(data.criteria) && data.criteria.length === 0));
+					if (data && Array.isArray(data.criteria) && typeof data.score_pct === "number" && !isFallback) {
+						next.set(`${id}::${pageUrl}`, {
+							criteria: data.criteria,
+							score_pct: data.score_pct,
+						});
+					} else {
+						next.set(`${id}::${pageUrl}`, "error");
 					}
 				}
 				return next;
 			});
-		});
+		}
 
+		hydrate();
 		return () => {
 			controller.abort();
 		};

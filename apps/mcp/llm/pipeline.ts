@@ -34,6 +34,7 @@ import {
 import { buildClaudeTools, executeToolCall, buildToolCallRecord, isExpensiveTool, isCacheableTool } from './tool-adapter';
 import { buildMessagesArray } from './context-manager';
 import { callModel } from './client';
+import { getUserSessionBudget } from '../../platform/llm-cost-cap';
 import { getOrgMemory, updateMemoryFromTurn, buildMemoryContext } from './conversation-memory';
 import { fastGuard } from './fast-guard';
 
@@ -112,7 +113,30 @@ export async function executePipeline(
 ): Promise<PipelineResponse> {
   const pipelineStart = Date.now();
   const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const modelId: ModelId = TIER_TO_MODEL[request.model_tier];
+  let modelId: ModelId = TIER_TO_MODEL[request.model_tier];
+
+  // Rolling 5h session budget — mirrors the Claude consumer-plan
+  // cadence. When a single user blows past their 5h cap (e.g. running
+  // an Opus chat in a loop), we soft-downgrade their next messages to
+  // Haiku until the window slides. The org-monthly cap inside
+  // callModel still hard-blocks if it triggers, so this is the
+  // "smooth fallback" layer above the hard kill-switch.
+  let sessionDowngraded = false;
+  try {
+    const budget = await getUserSessionBudget(request.user_id);
+    if (budget.overSoftCap && modelId !== 'haiku_4_5') {
+      modelId = 'haiku_4_5';
+      sessionDowngraded = true;
+      console.warn(
+        `[chat-session-cap] user=${request.user_id} spent=${budget.spentCents}c cap=${budget.capCents}c — downgrading to Haiku for this message`,
+      );
+    }
+  } catch (err) {
+    console.warn(
+      `[chat-session-cap] budget lookup failed (failing open):`,
+      err instanceof Error ? err.message : err,
+    );
+  }
 
   let guardTokens = { input: 0, output: 0 };
   let classifierTokens = { input: 0, output: 0 };
@@ -182,7 +206,18 @@ export async function executePipeline(
         'haiku_4_5',
         [{ role: 'user', content: sanitized }],
         {
-          system: GUARD_SYSTEM_PROMPT,
+          // Prompt-cache the static GUARD_SYSTEM_PROMPT block. With
+          // the standard 5-minute Anthropic cache TTL, a customer
+          // chatting multiple messages in succession only pays full
+          // input tokens on the first guard call; subsequent calls
+          // hit the 0.1× cache-read rate.
+          system: [
+            {
+              type: 'text' as const,
+              text: GUARD_SYSTEM_PROMPT,
+              cache_control: { type: 'ephemeral' as const },
+            },
+          ] as any,
           max_tokens: 200,
           temperature: 0,
         },
@@ -537,7 +572,17 @@ export async function executePipeline(
         },
       ],
       {
-        system: CLASSIFIER_SYSTEM_PROMPT,
+        // Cache the static CLASSIFIER_SYSTEM_PROMPT block. Same idea
+        // as the guard call above — a chat user firing several
+        // messages in succession only pays full input tokens once per
+        // ~5min cache window.
+        system: [
+          {
+            type: 'text' as const,
+            text: CLASSIFIER_SYSTEM_PROMPT,
+            cache_control: { type: 'ephemeral' as const },
+          },
+        ] as any,
         max_tokens: 300,
         temperature: 0,
       },
@@ -610,6 +655,7 @@ export async function executePipeline(
     guard_tokens: guardTokens,
     classifier_tokens: classifierTokens,
     latency_ms: Date.now() - pipelineStart,
+    session_downgraded: sessionDowngraded || undefined,
   };
 }
 

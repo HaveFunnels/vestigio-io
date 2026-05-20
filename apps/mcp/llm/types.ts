@@ -149,6 +149,10 @@ export interface PipelineResponse {
   guard_tokens: { input: number; output: number };
   classifier_tokens: { input: number; output: number };
   latency_ms: number;
+  /** True when the rolling 5h user-session cap forced this message
+   *  onto Haiku regardless of the requested model_tier. UI uses it to
+   *  show "running on the lighter model for a few hours" hint. */
+  session_downgraded?: boolean;
 }
 
 // ── LLM Errors ───────────────────────────────

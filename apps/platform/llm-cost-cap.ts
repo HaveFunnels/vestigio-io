@@ -103,3 +103,99 @@ export function bustLlmCostCapCache(organizationId?: string): void {
   if (organizationId) cache.delete(organizationId);
   else cache.clear();
 }
+
+// ──────────────────────────────────────────────
+// Rolling user-session cap — mirrors the Claude consumer plan cadence.
+//
+// In addition to the monthly org cap, every user has a rolling 5-hour
+// chat budget. This catches the runaway scenario the monthly cap can't:
+// a single user firing 200 Opus-grade messages in two hours, blowing
+// $40 before the next-day billing report would even surface it.
+//
+// Soft-cap by default: when reached, the chat path falls back to
+// Haiku-only and the UI tells the user they're temporarily on the
+// lighter model. Hard-cap option (return true) can be flipped if
+// abuse is observed.
+// ──────────────────────────────────────────────
+
+const USER_SESSION_WINDOW_MS = 5 * 60 * 60 * 1000; // 5 hours
+const USER_SESSION_CAP_CENTS_BY_PLAN: Record<string, number> = {
+  starter: 100,  // $1 / 5h
+  pro: 250,      // $2.50 / 5h
+  max: 500,      // $5 / 5h
+  ultra: 1500,   // $15 / 5h
+};
+const FALLBACK_USER_SESSION_CAP_CENTS = 500;
+
+interface SessionCacheEntry {
+  spentCents: number;
+  capCents: number;
+  expiresAt: number;
+}
+const sessionCache = new Map<string, SessionCacheEntry>();
+const SESSION_CACHE_TTL_MS = 30_000;
+
+export interface UserSessionBudget {
+  spentCents: number;
+  capCents: number;
+  overSoftCap: boolean;
+  windowSeconds: number;
+}
+
+/**
+ * Lookup the user's spend in the last 5h against their plan-aware cap.
+ * Returns enough info for the chat path to decide whether to:
+ *   - serve normally (under cap),
+ *   - downgrade to Haiku (over soft cap), or
+ *   - refuse entirely (admin policy flag, off by default).
+ *
+ * The window is plan-customizable later by reading
+ * Organization.llmSessionWindowSeconds if/when that column exists;
+ * today it's a hard 5h matching the Claude consumer cadence.
+ */
+export async function getUserSessionBudget(userId: string): Promise<UserSessionBudget> {
+  const now = Date.now();
+  const cached = sessionCache.get(userId);
+  if (cached && cached.expiresAt > now) {
+    return {
+      spentCents: cached.spentCents,
+      capCents: cached.capCents,
+      overSoftCap: cached.spentCents >= cached.capCents,
+      windowSeconds: USER_SESSION_WINDOW_MS / 1000,
+    };
+  }
+
+  try {
+    // Find the user's primary org to pick the right cap tier.
+    const membership = await prisma.membership.findFirst({
+      where: { userId },
+      select: { organization: { select: { plan: true } } },
+      orderBy: { createdAt: "desc" },
+    });
+    const planTier = (membership?.organization?.plan ?? "max").toLowerCase();
+    const capCents = USER_SESSION_CAP_CENTS_BY_PLAN[planTier] ?? FALLBACK_USER_SESSION_CAP_CENTS;
+
+    const since = new Date(now - USER_SESSION_WINDOW_MS);
+    const spend = await prisma.tokenCostLedger.aggregate({
+      where: { userId, createdAt: { gte: since } },
+      _sum: { costCents: true },
+    });
+    const spentCents = Number(spend._sum.costCents ?? 0);
+
+    sessionCache.set(userId, { spentCents, capCents, expiresAt: now + SESSION_CACHE_TTL_MS });
+    return {
+      spentCents,
+      capCents,
+      overSoftCap: spentCents >= capCents,
+      windowSeconds: USER_SESSION_WINDOW_MS / 1000,
+    };
+  } catch (err) {
+    console.warn("[llm-cost-cap] session lookup failed — failing open:", err instanceof Error ? err.message : err);
+    return { spentCents: 0, capCents: FALLBACK_USER_SESSION_CAP_CENTS, overSoftCap: false, windowSeconds: USER_SESSION_WINDOW_MS / 1000 };
+  }
+}
+
+export function bustUserSessionBudgetCache(userId?: string): void {
+  if (userId) sessionCache.delete(userId);
+  else sessionCache.clear();
+}

@@ -45,7 +45,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	incident: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] {count} problema(s) critico(s) em {domain}: {headline}. Veja em app.vestigio.io",
+				body: "{count} problema(s) critico(s) em {domain}: {headline}. Veja em app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Incidente: {headline}",
@@ -58,7 +58,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] {count} critical issue(s) on {domain}: {headline}. View at app.vestigio.io",
+				body: "{count} critical issue(s) on {domain}: {headline}. View at app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Incident: {headline}",
@@ -72,7 +72,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copies of English
 		es: {
 			sms: {
-				body: "[Vestigio] {count} problema(s) critico(s) en {domain}: {headline}. Ver en app.vestigio.io",
+				body: "{count} problema(s) critico(s) en {domain}: {headline}. Ver en app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Incidente: {headline}",
@@ -86,7 +86,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] {count} kritische(s) Problem(e) auf {domain}: {headline}. Ansehen auf app.vestigio.io",
+				body: "{count} kritische(s) Problem(e) auf {domain}: {headline}. Ansehen auf app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Vorfall: {headline}",
@@ -102,7 +102,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	regression: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] Regressão em {domain}: {headline}. {count} finding(s) pioraram. Veja em app.vestigio.io",
+				body: "Regressão em {domain}: {headline}. {count} finding(s) pioraram. Veja em app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Regressão: {headline}",
@@ -115,7 +115,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] Regression on {domain}: {headline}. {count} finding(s) worsened. View at app.vestigio.io",
+				body: "Regression on {domain}: {headline}. {count} finding(s) worsened. View at app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Regression: {headline}",
@@ -129,7 +129,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		es: {
 			sms: {
-				body: "[Vestigio] Regresion en {domain}: {headline}. {count} hallazgo(s) empeoraron. Ver en app.vestigio.io",
+				body: "Regresion en {domain}: {headline}. {count} hallazgo(s) empeoraron. Ver en app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Regresion: {headline}",
@@ -143,7 +143,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] Regression auf {domain}: {headline}. {count} Ergebnis(se) verschlechtert. Ansehen auf app.vestigio.io",
+				body: "Regression auf {domain}: {headline}. {count} Ergebnis(se) verschlechtert. Ansehen auf app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Regression: {headline}",
@@ -159,7 +159,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	improvement: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] Melhoria em {domain}: {headline} foi resolvido. Veja em app.vestigio.io",
+				body: "Melhoria em {domain}: {headline} foi resolvido. Veja em app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Melhoria: {headline}",
@@ -172,7 +172,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] Improvement on {domain}: {headline} was resolved. View at app.vestigio.io",
+				body: "Improvement on {domain}: {headline} was resolved. View at app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Improvement: {headline}",
@@ -186,7 +186,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		es: {
 			sms: {
-				body: "[Vestigio] Mejora en {domain}: {headline} fue resuelto. Ver en app.vestigio.io",
+				body: "Mejora en {domain}: {headline} fue resuelto. Ver en app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Mejora: {headline}",
@@ -200,7 +200,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] Verbesserung auf {domain}: {headline} wurde behoben. Ansehen auf app.vestigio.io",
+				body: "Verbesserung auf {domain}: {headline} wurde behoben. Ansehen auf app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Verbesserung: {headline}",
@@ -216,7 +216,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	page_down: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] Pagina fora do ar: {pageUrl}{statusSuffix}. Verifique agora.",
+				body: "Pagina fora do ar: {pageUrl}{statusSuffix}. Verifique agora.",
 			},
 			email: {
 				subject: "[Vestigio] Pagina fora do ar: {pageUrl}",
@@ -229,7 +229,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] Page down: {pageUrl}{statusSuffix}. Check now.",
+				body: "Page down: {pageUrl}{statusSuffix}. Check now.",
 			},
 			email: {
 				subject: "[Vestigio] Page down: {pageUrl}",
@@ -243,7 +243,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		es: {
 			sms: {
-				body: "[Vestigio] Pagina caida: {pageUrl}{statusSuffix}. Verifique ahora.",
+				body: "Pagina caida: {pageUrl}{statusSuffix}. Verifique ahora.",
 			},
 			email: {
 				subject: "[Vestigio] Pagina caida: {pageUrl}",
@@ -257,7 +257,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] Seite nicht erreichbar: {pageUrl}{statusSuffix}. Jetzt pruefen.",
+				body: "Seite nicht erreichbar: {pageUrl}{statusSuffix}. Jetzt pruefen.",
 			},
 			email: {
 				subject: "[Vestigio] Seite nicht erreichbar: {pageUrl}",
@@ -273,7 +273,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	magic_link: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] Seu link de acesso: {link} — expira em 10 minutos.",
+				body: "Seu link de acesso: {link} — expira em 10 minutos.",
 			},
 			email: {
 				subject: "Entrar na Vestigio",
@@ -286,7 +286,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] Your access link: {link} — expires in 10 minutes.",
+				body: "Your access link: {link} — expires in 10 minutes.",
 			},
 			email: {
 				subject: "Sign in to Vestigio",
@@ -300,7 +300,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		es: {
 			sms: {
-				body: "[Vestigio] Tu enlace de acceso: {link} — expira en 10 minutos.",
+				body: "Tu enlace de acceso: {link} — expira en 10 minutos.",
 			},
 			email: {
 				subject: "Ingresar a Vestigio",
@@ -314,7 +314,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] Ihr Zugangslink: {link} — laeuft in 10 Minuten ab.",
+				body: "Ihr Zugangslink: {link} — laeuft in 10 Minuten ab.",
 			},
 			email: {
 				subject: "Bei Vestigio anmelden",
@@ -330,7 +330,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	activation_link: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] Seu diagnóstico de {domain} está pronto. Ative sua conta: {link}",
+				body: "Seu diagnóstico de {domain} está pronto. Ative sua conta: {link}",
 			},
 			email: {
 				subject: "Seu diagnóstico de {domain} está pronto — ative sua conta",
@@ -343,7 +343,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] Your {domain} diagnosis is ready. Activate your account: {link}",
+				body: "Your {domain} diagnosis is ready. Activate your account: {link}",
 			},
 			email: {
 				subject: "Your {domain} diagnosis is ready — activate your account",
@@ -357,7 +357,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly ��� currently stub copy of English
 		es: {
 			sms: {
-				body: "[Vestigio] Tu diagnostico de {domain} esta listo. Activa tu cuenta: {link}",
+				body: "Tu diagnostico de {domain} esta listo. Activa tu cuenta: {link}",
 			},
 			email: {
 				subject: "Tu diagnostico de {domain} esta listo — activa tu cuenta",
@@ -371,7 +371,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] Ihre Diagnose fuer {domain} ist bereit. Aktivieren Sie Ihr Konto: {link}",
+				body: "Ihre Diagnose fuer {domain} ist bereit. Aktivieren Sie Ihr Konto: {link}",
 			},
 			email: {
 				subject: "Ihre Diagnose fuer {domain} ist bereit — aktivieren Sie Ihr Konto",
@@ -387,7 +387,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	password_reset: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] Redefinição de senha: {link} — expira em 1 hora.",
+				body: "Redefinição de senha: {link} — expira em 1 hora.",
 			},
 			email: {
 				subject: "Redefinir senha da Vestigio",
@@ -400,7 +400,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] Password reset: {link} — expires in 1 hour.",
+				body: "Password reset: {link} — expires in 1 hour.",
 			},
 			email: {
 				subject: "Reset your Vestigio password",
@@ -414,7 +414,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		es: {
 			sms: {
-				body: "[Vestigio] Restablecer contrasena: {link} — expira en 1 hora.",
+				body: "Restablecer contrasena: {link} — expira en 1 hora.",
 			},
 			email: {
 				subject: "Restablecer contrasena de Vestigio",
@@ -428,7 +428,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] Passwort zuruecksetzen: {link} — laeuft in 1 Stunde ab.",
+				body: "Passwort zuruecksetzen: {link} — laeuft in 1 Stunde ab.",
 			},
 			email: {
 				subject: "Vestigio-Passwort zuruecksetzen",
@@ -444,7 +444,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	verified_resolved: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] {headline} foi resolvido em {domain}. Impacto recuperado: {impact}. Veja em app.vestigio.io",
+				body: "{headline} foi resolvido em {domain}. Impacto recuperado: {impact}. Veja em app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Resolvido: {headline}",
@@ -457,7 +457,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] {headline} resolved on {domain}. Recovered impact: {impact}. View at app.vestigio.io",
+				body: "{headline} resolved on {domain}. Recovered impact: {impact}. View at app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Resolved: {headline}",
@@ -471,7 +471,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		es: {
 			sms: {
-				body: "[Vestigio] {headline} resuelto en {domain}. Impacto recuperado: {impact}. Ver en app.vestigio.io",
+				body: "{headline} resuelto en {domain}. Impacto recuperado: {impact}. Ver en app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Resuelto: {headline}",
@@ -485,7 +485,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] {headline} behoben auf {domain}. Wiederhergestellte Auswirkung: {impact}. Ansehen auf app.vestigio.io",
+				body: "{headline} behoben auf {domain}. Wiederhergestellte Auswirkung: {impact}. Ansehen auf app.vestigio.io",
 			},
 			email: {
 				subject: "[Vestigio] Behoben: {headline}",
@@ -501,7 +501,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	mini_audit_complete: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] Diagnóstico de {domain}: {count} vazamentos, {impact}/mês em risco. Veja: {resultUrl}",
+				body: "Diagnóstico de {domain}: {count} vazamentos, {impact}/mês em risco. Veja: {resultUrl}",
 			},
 			email: {
 				subject: "Diagnóstico de {domain}: {count} vazamentos — {impact}/mês em risco",
@@ -514,7 +514,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] Diagnosis for {domain}: {count} leaks, {impact}/mo at risk. View: {resultUrl}",
+				body: "Diagnosis for {domain}: {count} leaks, {impact}/mo at risk. View: {resultUrl}",
 			},
 			email: {
 				subject: "Diagnosis for {domain}: {count} leaks — {impact}/mo at risk",
@@ -528,7 +528,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		es: {
 			sms: {
-				body: "[Vestigio] Diagnostico de {domain}: {count} fugas, {impact}/mes en riesgo. Ver: {resultUrl}",
+				body: "Diagnostico de {domain}: {count} fugas, {impact}/mes en riesgo. Ver: {resultUrl}",
 			},
 			email: {
 				subject: "Diagnostico de {domain}: {count} fugas — {impact}/mes en riesgo",
@@ -542,7 +542,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] Diagnose fuer {domain}: {count} Lecks, {impact}/Monat gefaehrdet. Ansehen: {resultUrl}",
+				body: "Diagnose fuer {domain}: {count} Lecks, {impact}/Monat gefaehrdet. Ansehen: {resultUrl}",
 			},
 			email: {
 				subject: "Diagnose fuer {domain}: {count} Lecks — {impact}/Monat gefaehrdet",
@@ -558,7 +558,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	inactivity_pause: {
 		"pt-BR": {
 			sms: {
-				body: "[Vestigio] Suas auditorias de {domain} foram pausadas por inatividade. Acesse app.vestigio.io para retomar.",
+				body: "Suas auditorias de {domain} foram pausadas por inatividade. Acesse app.vestigio.io para retomar.",
 			},
 			email: {
 				subject: "Auditorias pausadas para {domain}",
@@ -571,7 +571,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "[Vestigio] Your {domain} audits have been paused due to inactivity. Visit app.vestigio.io to resume.",
+				body: "Your {domain} audits have been paused due to inactivity. Visit app.vestigio.io to resume.",
 			},
 			email: {
 				subject: "Audits paused for {domain}",
@@ -585,7 +585,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly ��� currently stub copy of English
 		es: {
 			sms: {
-				body: "[Vestigio] Tus auditorias de {domain} fueron pausadas por inactividad. Visita app.vestigio.io para retomarlas.",
+				body: "Tus auditorias de {domain} fueron pausadas por inactividad. Visita app.vestigio.io para retomarlas.",
 			},
 			email: {
 				subject: "Auditorias pausadas para {domain}",
@@ -599,7 +599,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		// TODO: Translate properly — currently stub copy of English
 		de: {
 			sms: {
-				body: "[Vestigio] Ihre {domain}-Audits wurden wegen Inaktivitaet pausiert. Besuchen Sie app.vestigio.io zum Fortsetzen.",
+				body: "Ihre {domain}-Audits wurden wegen Inaktivitaet pausiert. Besuchen Sie app.vestigio.io zum Fortsetzen.",
 			},
 			email: {
 				subject: "Audits pausiert fuer {domain}",

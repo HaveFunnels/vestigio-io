@@ -1,5 +1,10 @@
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
 import { buildEnrichmentLlmContext } from "./llm-context";
+import {
+  hashContentInput,
+  readContentEnrichmentCache,
+  writeContentEnrichmentCache,
+} from "./content-cache";
 import type {
   Evidence,
   ContentEnrichmentPayload,
@@ -398,44 +403,86 @@ export async function runLocalizationQualityEnrichment(
     try {
       const primaryText = serializeCopyForComparison(pair.primaryCopy);
       const translatedText = serializeCopyForComparison(pair.translatedCopy);
+      const sourceUrl = pair.translatedCopy.url;
 
-      const result = await callModel(
-        "haiku_4_5",
-        [{
-          role: "user",
-          content: buildLocalizationPrompt(
-            pair.primaryLocale,
-            pair.comparedLocale,
-            primaryText,
-            translatedText,
-          ),
-        }],
-        {
-          max_tokens: 1500,
-          temperature: 0.1,
-          system: SYSTEM_PROMPT,
-        },
-        buildEnrichmentLlmContext("copy_localization", ctx.scoping, ctx.cycle_ref),
+      // Cross-cycle cache — fingerprint includes both locales and
+      // both copy serializations. Localization quality assessment is
+      // deterministic given identical source + translation pair.
+      // We pin locale to a synthetic "<primary>__<compared>" so the
+      // cache row matches the locale-comparison purpose semantics.
+      const envId = ctx.scoping.environment_ref.startsWith("environment:")
+        ? ctx.scoping.environment_ref.slice("environment:".length)
+        : null;
+      const cacheLocale = `${pair.primaryLocale}__${pair.comparedLocale}`;
+      const contentHash = hashContentInput(
+        `${primaryText}\n===\n${translatedText}`,
       );
+      const cached = envId
+        ? await readContentEnrichmentCache<{
+            assessment: LocalizationQualityAnalysis;
+            model: string;
+          }>(envId, "copy_localization", contentHash, cacheLocale)
+        : null;
 
-      const textBlock = result.content.find((b) => b.type === "text");
-      if (!textBlock || textBlock.type !== "text") {
-        console.warn(`[copy-localization ${ctx.cycle_ref}] no text in LLM response`);
-        continue;
-      }
+      let assessment: LocalizationQualityAnalysis | null = null;
+      let modelUsed: string;
+      let fromCache = false;
 
-      const assessment = parseAssessment(
-        textBlock.text,
-        pair.primaryLocale,
-        pair.comparedLocale,
-      );
-      if (!assessment) {
-        console.warn(`[copy-localization ${ctx.cycle_ref}] failed to parse LLM response`);
-        continue;
+      if (cached) {
+        assessment = cached.payload.assessment;
+        modelUsed = cached.payload.model;
+        fromCache = true;
+      } else {
+        const result = await callModel(
+          "haiku_4_5",
+          [{
+            role: "user",
+            content: buildLocalizationPrompt(
+              pair.primaryLocale,
+              pair.comparedLocale,
+              primaryText,
+              translatedText,
+            ),
+          }],
+          {
+            max_tokens: 1500,
+            temperature: 0.1,
+            system: SYSTEM_PROMPT,
+          },
+          buildEnrichmentLlmContext("copy_localization", ctx.scoping, ctx.cycle_ref),
+        );
+
+        const textBlock = result.content.find((b) => b.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          console.warn(`[copy-localization ${ctx.cycle_ref}] no text in LLM response`);
+          continue;
+        }
+
+        assessment = parseAssessment(
+          textBlock.text,
+          pair.primaryLocale,
+          pair.comparedLocale,
+        );
+        if (!assessment) {
+          console.warn(`[copy-localization ${ctx.cycle_ref}] failed to parse LLM response`);
+          continue;
+        }
+
+        modelUsed = result.model;
+
+        if (envId) {
+          writeContentEnrichmentCache(
+            envId,
+            "copy_localization",
+            contentHash,
+            cacheLocale,
+            { assessment, model: modelUsed },
+            { modelId: "haiku_4_5", pageUrl: sourceUrl },
+          ).catch(() => {});
+        }
       }
 
       const now = new Date();
-      const sourceUrl = pair.translatedCopy.url;
 
       const enrichmentPayload: ContentEnrichmentPayload = {
         type: "content_enrichment",
@@ -462,8 +509,8 @@ export async function runLocalizationQualityEnrichment(
           issues: assessment.issues,
         },
         confidence: assessment.confidence,
-        model_used: result.model,
-        cached: false,
+        model_used: modelUsed,
+        cached: fromCache,
       };
 
       const evidence: Evidence = {
@@ -490,7 +537,7 @@ export async function runLocalizationQualityEnrichment(
       evidenceAdded.push(evidence);
 
       console.log(
-        `[copy-localization ${ctx.cycle_ref}] ${pair.primaryLocale} vs ${pair.comparedLocale}: score=${assessment.quality_score}/100, preserved=${assessment.preserved.length}, lost=${assessment.lost_in_translation.length}`,
+        `[copy-localization ${ctx.cycle_ref}] ${pair.primaryLocale} vs ${pair.comparedLocale}: score=${assessment.quality_score}/100, preserved=${assessment.preserved.length}, lost=${assessment.lost_in_translation.length}${fromCache ? " (cache-hit)" : ""}`,
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

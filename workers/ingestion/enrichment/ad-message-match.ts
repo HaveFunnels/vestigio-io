@@ -2,6 +2,11 @@ import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
 import { buildEnrichmentLlmContext } from "./llm-context";
+import {
+  hashContentInput,
+  readContentEnrichmentCache,
+  writeContentEnrichmentCache,
+} from "./content-cache";
 import type {
   Evidence,
   ContentEnrichmentPayload,
@@ -266,43 +271,76 @@ export async function analyzeAdMessageMatch(
         .toLowerCase();
       const pageContent = pageContentByUrl.get(normalizedUrl);
 
-      // Call Haiku
-      const result = await callModel(
-        "haiku_4_5",
-        [
-          {
-            role: "user",
-            content: buildUserPrompt(
-              pair,
-              pageContent?.title ?? null,
-              pageContent?.h1 ?? null,
-              pageContent?.meta_description ?? null,
-              truncatedText,
-            ),
-          },
-        ],
-        {
-          max_tokens: 1024,
-          temperature: 0.1,
-          system: SYSTEM_PROMPT,
-        },
-        buildEnrichmentLlmContext("ad_message_match", scoping, cycleRef),
+      // Cross-cycle cache — fingerprint is the (ad, LP) pair. Ads
+      // generally outlive the audit cadence (Meta/Google campaigns run
+      // for weeks unchanged), so re-running this assessment every
+      // cycle on the same pair is pure waste.
+      const envId = scoping.environment_ref.startsWith("environment:")
+        ? scoping.environment_ref.slice("environment:".length)
+        : null;
+      const userPrompt = buildUserPrompt(
+        pair,
+        pageContent?.title ?? null,
+        pageContent?.h1 ?? null,
+        pageContent?.meta_description ?? null,
+        truncatedText,
       );
+      const contentHash = hashContentInput(userPrompt);
+      const cached = envId
+        ? await readContentEnrichmentCache<{
+            assessment: MessageMatchAssessment;
+            model: string;
+          }>(envId, "ad_message_match", contentHash, "en")
+        : null;
 
-      const textBlock = result.content.find((b) => b.type === "text");
-      if (!textBlock || textBlock.type !== "text") {
-        console.warn(
-          `[ad-message-match ${cycleRef}] no text in LLM response for ${pair.destination_url}`,
-        );
-        continue;
-      }
+      let assessment: MessageMatchAssessment | null = null;
+      let modelUsed: string;
+      let fromCache = false;
 
-      const assessment = parseAssessment(textBlock.text);
-      if (!assessment) {
-        console.warn(
-          `[ad-message-match ${cycleRef}] failed to parse LLM response for ${pair.destination_url}`,
+      if (cached) {
+        assessment = cached.payload.assessment;
+        modelUsed = cached.payload.model;
+        fromCache = true;
+      } else {
+        const result = await callModel(
+          "haiku_4_5",
+          [{ role: "user", content: userPrompt }],
+          {
+            max_tokens: 1024,
+            temperature: 0.1,
+            system: SYSTEM_PROMPT,
+          },
+          buildEnrichmentLlmContext("ad_message_match", scoping, cycleRef),
         );
-        continue;
+
+        const textBlock = result.content.find((b) => b.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          console.warn(
+            `[ad-message-match ${cycleRef}] no text in LLM response for ${pair.destination_url}`,
+          );
+          continue;
+        }
+
+        assessment = parseAssessment(textBlock.text);
+        if (!assessment) {
+          console.warn(
+            `[ad-message-match ${cycleRef}] failed to parse LLM response for ${pair.destination_url}`,
+          );
+          continue;
+        }
+
+        modelUsed = result.model;
+
+        if (envId) {
+          writeContentEnrichmentCache(
+            envId,
+            "ad_message_match",
+            contentHash,
+            "en",
+            { assessment, model: modelUsed },
+            { modelId: "haiku_4_5", pageUrl: pair.destination_url },
+          ).catch(() => {});
+        }
       }
 
       // Build ContentEnrichmentPayload evidence
@@ -337,8 +375,8 @@ export async function analyzeAdMessageMatch(
           currency: pair.currency,
         },
         confidence: assessment.confidence,
-        model_used: result.model,
-        cached: false,
+        model_used: modelUsed,
+        cached: fromCache,
       };
 
       const evidence: Evidence = {
@@ -366,7 +404,7 @@ export async function analyzeAdMessageMatch(
       pairsProcessed++;
 
       console.log(
-        `[ad-message-match ${cycleRef}] ${pair.platform} → ${pair.destination_url}: alignment=${assessment.alignment_score}/100, spend=$${pair.spend_30d.toFixed(0)}/mo`,
+        `[ad-message-match ${cycleRef}] ${pair.platform} → ${pair.destination_url}: alignment=${assessment.alignment_score}/100, spend=$${pair.spend_30d.toFixed(0)}/mo${fromCache ? " (cache-hit)" : ""}`,
       );
     } catch (pairErr) {
       const message =

@@ -1,5 +1,10 @@
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
 import { buildEnrichmentLlmContext } from "./llm-context";
+import {
+  hashContentInput,
+  readContentEnrichmentCache,
+  writeContentEnrichmentCache,
+} from "./content-cache";
 import type {
   Evidence,
   ContentEnrichmentPayload,
@@ -222,36 +227,74 @@ export async function analyzeCrossPageConsistency(
     .join("\n\n");
 
   try {
-    const result = await callModel(
-      "haiku_4_5",
-      [
+    // Cross-cycle cache — fingerprint is the joined page summaries.
+    // Single call across N pages, so a one-line edit on any page
+    // legitimately busts the cache; that's the right behaviour
+    // since the assessment compares pages against each other.
+    const envId = scoping.environment_ref.startsWith("environment:")
+      ? scoping.environment_ref.slice("environment:".length)
+      : null;
+    const contentHash = hashContentInput(pageSummaries);
+    const cached = envId
+      ? await readContentEnrichmentCache<{
+          assessment: CrossPageAnalysis & { confidence: number };
+          model: string;
+        }>(envId, "cross_page_copy", contentHash, "en")
+      : null;
+
+    let assessment: (CrossPageAnalysis & { confidence: number }) | null = null;
+    let modelUsed: string;
+    let fromCache = false;
+
+    if (cached) {
+      assessment = cached.payload.assessment;
+      modelUsed = cached.payload.model;
+      fromCache = true;
+    } else {
+      const result = await callModel(
+        "haiku_4_5",
+        [
+          {
+            role: "user",
+            content: buildCrossPagePrompt(pageSummaries, entries.length),
+          },
+        ],
         {
-          role: "user",
-          content: buildCrossPagePrompt(pageSummaries, entries.length),
+          max_tokens: 1500,
+          temperature: 0.1,
+          system: SYSTEM_PROMPT,
         },
-      ],
-      {
-        max_tokens: 1500,
-        temperature: 0.1,
-        system: SYSTEM_PROMPT,
-      },
-      buildEnrichmentLlmContext("cross_page_copy", scoping, cycleRef),
-    );
-
-    const textBlock = result.content.find((b) => b.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      console.warn(
-        `[cross-page-copy ${cycleRef}] no text in LLM response`,
+        buildEnrichmentLlmContext("cross_page_copy", scoping, cycleRef),
       );
-      return [];
-    }
 
-    const assessment = parseAssessment(textBlock.text);
-    if (!assessment) {
-      console.warn(
-        `[cross-page-copy ${cycleRef}] failed to parse LLM response`,
-      );
-      return [];
+      const textBlock = result.content.find((b) => b.type === "text");
+      if (!textBlock || textBlock.type !== "text") {
+        console.warn(
+          `[cross-page-copy ${cycleRef}] no text in LLM response`,
+        );
+        return [];
+      }
+
+      assessment = parseAssessment(textBlock.text);
+      if (!assessment) {
+        console.warn(
+          `[cross-page-copy ${cycleRef}] failed to parse LLM response`,
+        );
+        return [];
+      }
+
+      modelUsed = result.model;
+
+      if (envId) {
+        writeContentEnrichmentCache(
+          envId,
+          "cross_page_copy",
+          contentHash,
+          "en",
+          { assessment, model: modelUsed },
+          { modelId: "haiku_4_5" },
+        ).catch(() => {});
+      }
     }
 
     // Build ContentEnrichmentPayload evidence
@@ -282,8 +325,8 @@ export async function analyzeCrossPageConsistency(
         page_count: entries.length,
       },
       confidence: assessment.confidence,
-      model_used: result.model,
-      cached: false,
+      model_used: modelUsed,
+      cached: fromCache,
     };
 
     const evidence: Evidence = {
@@ -308,7 +351,7 @@ export async function analyzeCrossPageConsistency(
     };
 
     console.log(
-      `[cross-page-copy ${cycleRef}] consistency=${assessment.consistency_score}/100, contradictions=${assessment.contradictions.length}, tone=${assessment.overall_tone}`,
+      `[cross-page-copy ${cycleRef}] consistency=${assessment.consistency_score}/100, contradictions=${assessment.contradictions.length}, tone=${assessment.overall_tone}${fromCache ? " (cache-hit)" : ""}`,
     );
 
     return [evidence];

@@ -1,5 +1,10 @@
 import { callModel } from "../../../apps/mcp/llm/client";
 import { buildEnrichmentLlmContext } from "./llm-context";
+import {
+  hashContentInput,
+  readContentEnrichmentCache,
+  writeContentEnrichmentCache,
+} from "./content-cache";
 import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { extractCopyElements } from "./copy-elements-extractor";
@@ -227,27 +232,66 @@ export async function runSeoConversionTensionEnrichment(
       const copyElementsText = serializeCopyElementsForPrompt(copyElements);
       const truncatedText = bodyText.slice(0, MAX_TEXT_CHARS);
 
-      const result = await callModel(
-        "haiku_4_5",
-        [{ role: "user", content: buildSeoConversionPrompt(copyElementsText, truncatedText) }],
-        {
-          max_tokens: 1024,
-          temperature: 0.1,
-          system: SYSTEM_PROMPT,
-        },
-        buildEnrichmentLlmContext("copy_seo_tension", ctx.scoping, ctx.cycle_ref),
+      // Cross-cycle cache — same recipe as copy-micro-copy.ts. Prompt
+      // depends entirely on (copy elements, truncated body); if those
+      // are byte-identical to a prior cycle we reuse the assessment.
+      const envId = ctx.scoping.environment_ref.startsWith("environment:")
+        ? ctx.scoping.environment_ref.slice("environment:".length)
+        : null;
+      const contentHash = hashContentInput(
+        `${copyElementsText}\n---\n${truncatedText}`,
       );
+      const cached = envId
+        ? await readContentEnrichmentCache<{
+            assessment: SeoConversionTension;
+            model: string;
+          }>(envId, "copy_seo_tension", contentHash, "en")
+        : null;
 
-      const textBlock = result.content.find((b) => b.type === "text");
-      if (!textBlock || textBlock.type !== "text") {
-        console.warn(`[copy-seo-tension ${ctx.cycle_ref}] no text in LLM response for ${p.url}`);
-        continue;
-      }
+      let assessment: SeoConversionTension | null = null;
+      let modelUsed: string;
+      let fromCache = false;
 
-      const assessment = parseAssessment(textBlock.text);
-      if (!assessment) {
-        console.warn(`[copy-seo-tension ${ctx.cycle_ref}] failed to parse LLM response for ${p.url}`);
-        continue;
+      if (cached) {
+        assessment = cached.payload.assessment;
+        modelUsed = cached.payload.model;
+        fromCache = true;
+      } else {
+        const result = await callModel(
+          "haiku_4_5",
+          [{ role: "user", content: buildSeoConversionPrompt(copyElementsText, truncatedText) }],
+          {
+            max_tokens: 1024,
+            temperature: 0.1,
+            system: SYSTEM_PROMPT,
+          },
+          buildEnrichmentLlmContext("copy_seo_tension", ctx.scoping, ctx.cycle_ref),
+        );
+
+        const textBlock = result.content.find((b) => b.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          console.warn(`[copy-seo-tension ${ctx.cycle_ref}] no text in LLM response for ${p.url}`);
+          continue;
+        }
+
+        assessment = parseAssessment(textBlock.text);
+        if (!assessment) {
+          console.warn(`[copy-seo-tension ${ctx.cycle_ref}] failed to parse LLM response for ${p.url}`);
+          continue;
+        }
+
+        modelUsed = result.model;
+
+        if (envId) {
+          writeContentEnrichmentCache(
+            envId,
+            "copy_seo_tension",
+            contentHash,
+            "en",
+            { assessment, model: modelUsed },
+            { modelId: "haiku_4_5", pageUrl: p.url },
+          ).catch(() => {});
+        }
       }
 
       const now = new Date();
@@ -274,8 +318,8 @@ export async function runSeoConversionTensionEnrichment(
           issues: assessment.issues,
         },
         confidence: assessment.confidence,
-        model_used: result.model,
-        cached: false,
+        model_used: modelUsed,
+        cached: fromCache,
       };
 
       const evidence: Evidence = {
@@ -302,7 +346,7 @@ export async function runSeoConversionTensionEnrichment(
       evidenceAdded.push(evidence);
 
       console.log(
-        `[copy-seo-tension ${ctx.cycle_ref}] ${p.url}: tension=${assessment.tension_score}/100, h1=${assessment.h1_optimized_for}, keyword_stuffing=${assessment.keyword_stuffing_detected}, issues=${assessment.issues.length}`,
+        `[copy-seo-tension ${ctx.cycle_ref}] ${p.url}: tension=${assessment.tension_score}/100, h1=${assessment.h1_optimized_for}, keyword_stuffing=${assessment.keyword_stuffing_detected}, issues=${assessment.issues.length}${fromCache ? " (cache-hit)" : ""}`,
       );
     } catch (pageErr) {
       const message = pageErr instanceof Error ? pageErr.message : String(pageErr);

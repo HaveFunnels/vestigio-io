@@ -9,6 +9,11 @@ import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
 import { buildEnrichmentLlmContext } from "./llm-context";
+import {
+  hashContentInput,
+  readContentEnrichmentCache,
+  writeContentEnrichmentCache,
+} from "./content-cache";
 import type { Evidence, ContentEnrichmentPayload, PolicyPagePayload, FormPayload, PageContentPayload } from "../../../packages/domain";
 import {
   EvidenceType,
@@ -478,29 +483,65 @@ async function runCopyAnalysisEnrichment(
       const truncatedText = bodyText.slice(0, MAX_TEXT_CHARS);
       const userPrompt = buildPrompt(copyElementsText, truncatedText);
 
-      // 5. Call Haiku
-      const result = await callModel(
-        "haiku_4_5",
-        [{ role: "user", content: userPrompt }],
-        {
-          max_tokens: 1024,
-          temperature: 0.1,
-          system: systemPrompt,
-        },
-        buildEnrichmentLlmContext(`semantic_enrichment.${enrichmentType}`, ctx.scoping, ctx.cycle_ref),
-      );
+      // 5. Cache lookup / Haiku call. Purpose is namespaced per
+      // enrichmentType so two different enrichers on the same page
+      // never collide on a hash.
+      const envId = ctx.scoping.environment_ref.startsWith("environment:")
+        ? ctx.scoping.environment_ref.slice("environment:".length)
+        : null;
+      const purpose = `semantic_enrichment.${enrichmentType}`;
+      const contentHash = hashContentInput(`${systemPrompt}\n===\n${userPrompt}`);
+      const cached = envId
+        ? await readContentEnrichmentCache<{
+            assessment: any;
+            model: string;
+          }>(envId, purpose, contentHash, "en")
+        : null;
 
-      const textBlock = result.content.find((b) => b.type === "text");
-      if (!textBlock || textBlock.type !== "text") {
-        console.warn(`[semantic-enrichment ${ctx.cycle_ref}] no text in LLM response for ${label} on ${p.url}`);
-        continue;
-      }
+      let assessment: any = null;
+      let modelUsed: string;
+      let fromCache = false;
 
-      // 6. Parse JSON response
-      const assessment = parseJsonResponse(textBlock.text);
-      if (!assessment) {
-        console.warn(`[semantic-enrichment ${ctx.cycle_ref}] failed to parse LLM response for ${label} on ${p.url}`);
-        continue;
+      if (cached) {
+        assessment = cached.payload.assessment;
+        modelUsed = cached.payload.model;
+        fromCache = true;
+      } else {
+        const result = await callModel(
+          "haiku_4_5",
+          [{ role: "user", content: userPrompt }],
+          {
+            max_tokens: 1024,
+            temperature: 0.1,
+            system: systemPrompt,
+          },
+          buildEnrichmentLlmContext(purpose, ctx.scoping, ctx.cycle_ref),
+        );
+
+        const textBlock = result.content.find((b) => b.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          console.warn(`[semantic-enrichment ${ctx.cycle_ref}] no text in LLM response for ${label} on ${p.url}`);
+          continue;
+        }
+
+        assessment = parseJsonResponse(textBlock.text);
+        if (!assessment) {
+          console.warn(`[semantic-enrichment ${ctx.cycle_ref}] failed to parse LLM response for ${label} on ${p.url}`);
+          continue;
+        }
+
+        modelUsed = result.model;
+
+        if (envId) {
+          writeContentEnrichmentCache(
+            envId,
+            purpose,
+            contentHash,
+            "en",
+            { assessment, model: modelUsed },
+            { modelId: "haiku_4_5", pageUrl: p.url },
+          ).catch(() => {});
+        }
       }
 
       // 7. Build evidence
@@ -515,8 +556,8 @@ async function runCopyAnalysisEnrichment(
         missing_elements: [],
         results: assessment as Record<string, unknown>,
         confidence: assessment.confidence,
-        model_used: result.model,
-        cached: false,
+        model_used: modelUsed,
+        cached: fromCache,
       };
 
       const evidence: Evidence = {
@@ -930,34 +971,73 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
         // 3. Truncate to MAX_TEXT_CHARS for cost control
         const truncatedText = bodyText.slice(0, MAX_TEXT_CHARS);
 
-        // 4. Call Haiku for policy quality assessment
-        const result = await callModel(
-          "haiku_4_5",
-          [{ role: "user", content: buildUserPrompt(payload.policy_type, truncatedText) }],
-          {
-            max_tokens: 1024,
-            temperature: 0.1,
-            system: SYSTEM_PROMPT,
-          },
-          buildEnrichmentLlmContext("semantic_enrichment.policy_quality", ctx.scoping, ctx.cycle_ref),
+        // 4. Cache lookup / Haiku call. Policy text changes very
+        // rarely (terms of service, privacy policy etc.), so this
+        // is one of the highest-leverage cache hits.
+        const envId = ctx.scoping.environment_ref.startsWith("environment:")
+          ? ctx.scoping.environment_ref.slice("environment:".length)
+          : null;
+        const userPrompt = buildUserPrompt(payload.policy_type, truncatedText);
+        const contentHash = hashContentInput(
+          `${payload.policy_type}\n===\n${truncatedText}`,
         );
+        const cached = envId
+          ? await readContentEnrichmentCache<{
+              assessment: ReturnType<typeof parseAssessment> extends infer A
+                ? Exclude<A, null>
+                : never;
+              model: string;
+            }>(envId, "semantic_enrichment.policy_quality", contentHash, "en")
+          : null;
 
-        // 5. Extract text from response
-        const textBlock = result.content.find((b) => b.type === "text");
-        if (!textBlock || textBlock.type !== "text") {
-          console.warn(
-            `[semantic-enrichment ${ctx.cycle_ref}] no text in LLM response for ${payload.url}`,
-          );
-          continue;
-        }
+        let assessment: ReturnType<typeof parseAssessment> = null;
+        let modelUsed: string;
+        let fromCache = false;
 
-        // 6. Parse structured response
-        const assessment = parseAssessment(textBlock.text);
-        if (!assessment) {
-          console.warn(
-            `[semantic-enrichment ${ctx.cycle_ref}] failed to parse LLM response for ${payload.url}`,
+        if (cached) {
+          assessment = cached.payload.assessment;
+          modelUsed = cached.payload.model;
+          fromCache = true;
+        } else {
+          const result = await callModel(
+            "haiku_4_5",
+            [{ role: "user", content: userPrompt }],
+            {
+              max_tokens: 1024,
+              temperature: 0.1,
+              system: SYSTEM_PROMPT,
+            },
+            buildEnrichmentLlmContext("semantic_enrichment.policy_quality", ctx.scoping, ctx.cycle_ref),
           );
-          continue;
+
+          const textBlock = result.content.find((b) => b.type === "text");
+          if (!textBlock || textBlock.type !== "text") {
+            console.warn(
+              `[semantic-enrichment ${ctx.cycle_ref}] no text in LLM response for ${payload.url}`,
+            );
+            continue;
+          }
+
+          assessment = parseAssessment(textBlock.text);
+          if (!assessment) {
+            console.warn(
+              `[semantic-enrichment ${ctx.cycle_ref}] failed to parse LLM response for ${payload.url}`,
+            );
+            continue;
+          }
+
+          modelUsed = result.model;
+
+          if (envId) {
+            writeContentEnrichmentCache(
+              envId,
+              "semantic_enrichment.policy_quality",
+              contentHash,
+              "en",
+              { assessment, model: modelUsed },
+              { modelId: "haiku_4_5", pageUrl: payload.url },
+            ).catch(() => {});
+          }
         }
 
         // 7. Build ContentEnrichmentPayload evidence
@@ -978,8 +1058,8 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
           missing_elements: assessment.missing_elements,
           results: {},
           confidence: assessment.confidence,
-          model_used: result.model,
-          cached: false,
+          model_used: modelUsed,
+          cached: fromCache,
         };
 
         const evidence: Evidence = {
@@ -1079,27 +1159,67 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
 
           const truncatedText = bodyText.slice(0, MAX_TEXT_CHARS);
 
-          const result = await callModel(
-            "haiku_4_5",
-            [{ role: "user", content: buildPrompt(truncatedText) }],
-            {
-              max_tokens: 1024,
-              temperature: 0.1,
-              system: systemPrompt,
-            },
-            buildEnrichmentLlmContext(`semantic_enrichment.${enrichmentType}`, ctx.scoping, ctx.cycle_ref),
+          // Cache lookup — same shape as the earlier semantic site.
+          // System prompt is included in the hash so a prompt rev
+          // forces a re-call.
+          const envId = ctx.scoping.environment_ref.startsWith("environment:")
+            ? ctx.scoping.environment_ref.slice("environment:".length)
+            : null;
+          const purpose = `semantic_enrichment.${enrichmentType}`;
+          const contentHash = hashContentInput(
+            `${systemPrompt}\n===\n${truncatedText}`,
           );
+          const cached = envId
+            ? await readContentEnrichmentCache<{
+                assessment: any;
+                model: string;
+              }>(envId, purpose, contentHash, "en")
+            : null;
 
-          const textBlock = result.content.find((b) => b.type === "text");
-          if (!textBlock || textBlock.type !== "text") {
-            console.warn(`[semantic-enrichment ${ctx.cycle_ref}] no text in LLM response for ${label} on ${p.url}`);
-            continue;
-          }
+          let assessment: any = null;
+          let modelUsed: string;
+          let fromCache = false;
 
-          const assessment = parseJsonResponse(textBlock.text);
-          if (!assessment) {
-            console.warn(`[semantic-enrichment ${ctx.cycle_ref}] failed to parse LLM response for ${label} on ${p.url}`);
-            continue;
+          if (cached) {
+            assessment = cached.payload.assessment;
+            modelUsed = cached.payload.model;
+            fromCache = true;
+          } else {
+            const result = await callModel(
+              "haiku_4_5",
+              [{ role: "user", content: buildPrompt(truncatedText) }],
+              {
+                max_tokens: 1024,
+                temperature: 0.1,
+                system: systemPrompt,
+              },
+              buildEnrichmentLlmContext(purpose, ctx.scoping, ctx.cycle_ref),
+            );
+
+            const textBlock = result.content.find((b) => b.type === "text");
+            if (!textBlock || textBlock.type !== "text") {
+              console.warn(`[semantic-enrichment ${ctx.cycle_ref}] no text in LLM response for ${label} on ${p.url}`);
+              continue;
+            }
+
+            assessment = parseJsonResponse(textBlock.text);
+            if (!assessment) {
+              console.warn(`[semantic-enrichment ${ctx.cycle_ref}] failed to parse LLM response for ${label} on ${p.url}`);
+              continue;
+            }
+
+            modelUsed = result.model;
+
+            if (envId) {
+              writeContentEnrichmentCache(
+                envId,
+                purpose,
+                contentHash,
+                "en",
+                { assessment, model: modelUsed },
+                { modelId: "haiku_4_5", pageUrl: p.url },
+              ).catch(() => {});
+            }
           }
 
           const now = new Date();
@@ -1113,8 +1233,8 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
             missing_elements: [],
             results: assessment as Record<string, unknown>,
             confidence: assessment.confidence,
-            model_used: result.model,
-            cached: false,
+            model_used: modelUsed,
+            cached: fromCache,
           };
 
           const evidence: Evidence = {

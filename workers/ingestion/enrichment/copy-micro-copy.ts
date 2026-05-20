@@ -1,5 +1,10 @@
 import { callModel } from "../../../apps/mcp/llm/client";
 import { buildEnrichmentLlmContext } from "./llm-context";
+import {
+  hashContentInput,
+  readContentEnrichmentCache,
+  writeContentEnrichmentCache,
+} from "./content-cache";
 import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { extractCopyElements } from "./copy-elements-extractor";
@@ -227,27 +232,71 @@ export async function runMicroCopyEnrichment(
       const copyElementsText = serializeCopyElementsForPrompt(copyElements);
       const truncatedText = bodyText.slice(0, MAX_TEXT_CHARS);
 
-      const result = await callModel(
-        "haiku_4_5",
-        [{ role: "user", content: buildMicroCopyPrompt(copyElementsText, truncatedText) }],
-        {
-          max_tokens: 1024,
-          temperature: 0.1,
-          system: SYSTEM_PROMPT,
-        },
-        buildEnrichmentLlmContext("micro_copy", ctx.scoping, ctx.cycle_ref),
+      // Cross-cycle cache lookup. The fingerprint covers everything
+      // the prompt actually depends on: the serialized copy elements
+      // (h1, CTAs, nav, etc.) + the truncated body. Whitespace and
+      // case are normalized by hashContentInput so cosmetic edits
+      // don't bust the cache.
+      const envId = ctx.scoping.environment_ref.startsWith("environment:")
+        ? ctx.scoping.environment_ref.slice("environment:".length)
+        : null;
+      const contentHash = hashContentInput(
+        `${copyElementsText}\n---\n${truncatedText}`,
       );
+      const cached = envId
+        ? await readContentEnrichmentCache<{
+            assessment: MicroCopyAnalysis;
+            model: string;
+          }>(envId, "micro_copy", contentHash, "en")
+        : null;
 
-      const textBlock = result.content.find((b) => b.type === "text");
-      if (!textBlock || textBlock.type !== "text") {
-        console.warn(`[copy-micro-copy ${ctx.cycle_ref}] no text in LLM response for ${p.url}`);
-        continue;
-      }
+      let assessment: MicroCopyAnalysis | null = null;
+      let modelUsed: string;
+      let fromCache = false;
 
-      const assessment = parseAssessment(textBlock.text);
-      if (!assessment) {
-        console.warn(`[copy-micro-copy ${ctx.cycle_ref}] failed to parse LLM response for ${p.url}`);
-        continue;
+      if (cached) {
+        assessment = cached.payload.assessment;
+        modelUsed = cached.payload.model;
+        fromCache = true;
+      } else {
+        const result = await callModel(
+          "haiku_4_5",
+          [{ role: "user", content: buildMicroCopyPrompt(copyElementsText, truncatedText) }],
+          {
+            max_tokens: 1024,
+            temperature: 0.1,
+            system: SYSTEM_PROMPT,
+          },
+          buildEnrichmentLlmContext("micro_copy", ctx.scoping, ctx.cycle_ref),
+        );
+
+        const textBlock = result.content.find((b) => b.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          console.warn(`[copy-micro-copy ${ctx.cycle_ref}] no text in LLM response for ${p.url}`);
+          continue;
+        }
+
+        assessment = parseAssessment(textBlock.text);
+        if (!assessment) {
+          console.warn(`[copy-micro-copy ${ctx.cycle_ref}] failed to parse LLM response for ${p.url}`);
+          continue;
+        }
+
+        modelUsed = result.model;
+
+        // Fire-and-forget persistence. A failure here just means the
+        // next cycle will pay for the same call again — not the end
+        // of the world.
+        if (envId) {
+          writeContentEnrichmentCache(
+            envId,
+            "micro_copy",
+            contentHash,
+            "en",
+            { assessment, model: modelUsed },
+            { modelId: "haiku_4_5", pageUrl: p.url },
+          ).catch(() => {});
+        }
       }
 
       const now = new Date();
@@ -277,8 +326,8 @@ export async function runMicroCopyEnrichment(
           issues: assessment.issues,
         },
         confidence: assessment.confidence,
-        model_used: result.model,
-        cached: false,
+        model_used: modelUsed,
+        cached: fromCache,
       };
 
       const evidence: Evidence = {
@@ -305,7 +354,7 @@ export async function runMicroCopyEnrichment(
       evidenceAdded.push(evidence);
 
       console.log(
-        `[copy-micro-copy ${ctx.cycle_ref}] ${p.url}: score=${assessment.microcopy_score}/100, labels=${assessment.form_labels_quality}, buttons=${assessment.button_text_quality}, fields=${assessment.field_count}`,
+        `[copy-micro-copy ${ctx.cycle_ref}] ${p.url}: score=${assessment.microcopy_score}/100, labels=${assessment.form_labels_quality}, buttons=${assessment.button_text_quality}, fields=${assessment.field_count}${fromCache ? " (cache-hit)" : ""}`,
       );
     } catch (pageErr) {
       const message = pageErr instanceof Error ? pageErr.message : String(pageErr);

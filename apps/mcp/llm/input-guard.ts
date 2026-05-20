@@ -31,13 +31,17 @@ export async function guardInput(sanitizedInput: string): Promise<InputGuardResu
   }
 
   try {
+    // NOTE: this function is currently dead (pipeline.ts inlines its
+    // own guard). If resurrected, callers MUST pass org/user context so
+    // the ledger entry attributes correctly — defaulting to 'system'
+    // here means orphan calls won't pollute org-keyed aggregates.
     const result = await callModel('haiku_4_5', [
       { role: 'user', content: sanitizedInput },
     ], {
       system: GUARD_SYSTEM_PROMPT,
       max_tokens: 200,
       temperature: 0,
-    });
+    }, { purpose: 'input_guard.standalone' });
 
     // Extract text from response
     const textBlock = result.content.find((b) => b.type === 'text');

@@ -34,8 +34,6 @@ import {
 import { buildClaudeTools, executeToolCall, buildToolCallRecord, isExpensiveTool, isCacheableTool } from './tool-adapter';
 import { buildMessagesArray } from './context-manager';
 import { callModel } from './client';
-import { getTokenLedgerStore } from '../../platform/token-ledger';
-import { createLedgerEntry, type ClaudeUsageReport } from '../../platform/token-cost';
 import { getOrgMemory, updateMemoryFromTurn, buildMemoryContext } from './conversation-memory';
 import { fastGuard } from './fast-guard';
 
@@ -180,19 +178,26 @@ export async function executePipeline(
   } else {
     // Ambiguous — escalate to Haiku for classification
     try {
-      const guardResponse = await callModel('haiku_4_5', [
-        { role: 'user', content: sanitized },
-      ], {
-        system: GUARD_SYSTEM_PROMPT,
-        max_tokens: 200,
-        temperature: 0,
-      });
+      const guardResponse = await callModel(
+        'haiku_4_5',
+        [{ role: 'user', content: sanitized }],
+        {
+          system: GUARD_SYSTEM_PROMPT,
+          max_tokens: 200,
+          temperature: 0,
+        },
+        {
+          purpose: 'input_guard',
+          organizationId: request.org_context.org_id,
+          userId: request.user_id,
+          conversationId: request.conversation_id !== 'ephemeral' ? request.conversation_id : null,
+        },
+      );
 
       guardTokens = {
         input: guardResponse.usage.input_tokens,
         output: guardResponse.usage.output_tokens,
       };
-      recordToLedger('haiku_4_5', 'input_guard', guardResponse.usage, request, requestId);
 
       const textBlock = guardResponse.content.find((b) => b.type === 'text');
       guardResult = parseGuardResultStrict(textBlock) || fallbackGuardResult(sanitized);
@@ -328,17 +333,26 @@ export async function executePipeline(
     }, STILL_WORKING_THRESHOLD_MS);
 
     try {
-      const result = await callModel(modelId, currentMessages, {
-        max_tokens: 4096,
-        temperature: 0.3,
-        system: systemPrompt as any,
-        tools,
-        signal: options?.signal,
-      });
+      const result = await callModel(
+        modelId,
+        currentMessages,
+        {
+          max_tokens: 4096,
+          temperature: 0.3,
+          system: systemPrompt as any,
+          tools,
+          signal: options?.signal,
+        },
+        {
+          purpose: 'core_chat',
+          organizationId: request.org_context.org_id,
+          userId: request.user_id,
+          conversationId: request.conversation_id !== 'ephemeral' ? request.conversation_id : null,
+        },
+      );
 
       coreTokens.input += result.usage.input_tokens;
       coreTokens.output += result.usage.output_tokens;
-      recordToLedger(modelId, 'core_chat', result.usage, request, requestId);
 
       const toolUseBlocks: Anthropic.ContentBlock[] = [];
       const textParts: string[] = [];
@@ -474,17 +488,26 @@ export async function executePipeline(
   // ── Safety: if tool rounds exhausted with no text, ask for final output ──
   if (!finalText.trim() && allToolCalls.length > 0 && !options?.signal?.aborted) {
     try {
-      const followUp = await callModel(modelId, [
-        ...currentMessages,
-        { role: 'user', content: 'Now produce the final response using all the data you gathered from the tools above.' },
-      ], {
-        max_tokens: 4096,
-        temperature: 0.3,
-        system: systemPrompt as any,
-      });
+      const followUp = await callModel(
+        modelId,
+        [
+          ...currentMessages,
+          { role: 'user', content: 'Now produce the final response using all the data you gathered from the tools above.' },
+        ],
+        {
+          max_tokens: 4096,
+          temperature: 0.3,
+          system: systemPrompt as any,
+        },
+        {
+          purpose: 'core_chat.follow_up',
+          organizationId: request.org_context.org_id,
+          userId: request.user_id,
+          conversationId: request.conversation_id !== 'ephemeral' ? request.conversation_id : null,
+        },
+      );
       coreTokens.input += followUp.usage.input_tokens;
       coreTokens.output += followUp.usage.output_tokens;
-      recordToLedger(modelId, 'core_chat', followUp.usage, request, requestId);
       for (const block of followUp.content) {
         if (block.type === 'text') {
           finalText += block.text;
@@ -505,22 +528,31 @@ export async function executePipeline(
   let classifierResult: OutputClassifierResult;
 
   try {
-    const classifierResponse = await callModel('haiku_4_5', [
+    const classifierResponse = await callModel(
+      'haiku_4_5',
+      [
+        {
+          role: 'user',
+          content: `User: "${sanitized.slice(0, 200)}"\nAssistant: "${finalText.slice(0, 1500)}"\nTools: ${toolSummaries.join('; ').slice(0, 500)}`,
+        },
+      ],
       {
-        role: 'user',
-        content: `User: "${sanitized.slice(0, 200)}"\nAssistant: "${finalText.slice(0, 1500)}"\nTools: ${toolSummaries.join('; ').slice(0, 500)}`,
+        system: CLASSIFIER_SYSTEM_PROMPT,
+        max_tokens: 300,
+        temperature: 0,
       },
-    ], {
-      system: CLASSIFIER_SYSTEM_PROMPT,
-      max_tokens: 300,
-      temperature: 0,
-    });
+      {
+        purpose: 'output_classifier',
+        organizationId: request.org_context.org_id,
+        userId: request.user_id,
+        conversationId: request.conversation_id !== 'ephemeral' ? request.conversation_id : null,
+      },
+    );
 
     classifierTokens = {
       input: classifierResponse.usage.input_tokens,
       output: classifierResponse.usage.output_tokens,
     };
-    recordToLedger('haiku_4_5', 'output_classifier', classifierResponse.usage, request, requestId);
 
     const textBlock = classifierResponse.content.find((b) => b.type === 'text');
     if (textBlock && textBlock.type === 'text') {
@@ -581,38 +613,9 @@ export async function executePipeline(
   };
 }
 
-// ── Token Ledger — log errors, never crash ───
-
-function recordToLedger(
-  model: ModelId,
-  purpose: string,
-  usage: { input_tokens: number; output_tokens: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number },
-  request: PipelineRequest,
-  requestId: string,
-): void {
-  try {
-    const report: ClaudeUsageReport = {
-      model,
-      input_tokens: usage.input_tokens,
-      output_tokens: usage.output_tokens,
-      cache_creation_input_tokens: usage.cache_creation_input_tokens ?? 0,
-      cache_read_input_tokens: usage.cache_read_input_tokens ?? 0,
-    };
-    const entry = createLedgerEntry(report, {
-      organizationId: request.org_context.org_id,
-      userId: request.user_id,
-      conversationId: request.conversation_id !== 'ephemeral' ? request.conversation_id : null,
-      purpose,
-      latencyMs: null,
-      isToolUse: purpose === 'core_chat',
-    });
-    getTokenLedgerStore().record(entry).catch((err) => {
-      console.error(`[llm:ledger:ERROR] ${requestId} Failed to record ${purpose}:`, err instanceof Error ? err.message : err);
-    });
-  } catch (err) {
-    console.error(`[llm:ledger:ERROR] ${requestId} Entry creation failed:`, err instanceof Error ? err.message : err);
-  }
-}
+// Ledger writes used to live here (recordToLedger) — the LLM client
+// now records every call automatically via the LlmCallContext arg, so
+// this file no longer needs its own ledger helper.
 
 // ── Guard JSON Parsing — strict first-object only ──
 

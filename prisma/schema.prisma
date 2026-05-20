@@ -1076,7 +1076,10 @@ model ConversationMessage {
 model TokenCostLedger {
   id                       String   @id @default(cuid())
   organizationId           String
-  userId                   String
+  /// Null for cycle-time/audit-runner LLM calls that don't run in a
+  /// user-facing request context. Chat path still always populates
+  /// userId; null is reserved for engine-side enrichments.
+  userId                   String?
   conversationId           String?
   model                    String // haiku_4_5 | sonnet_4_6 | opus_4_6
   purpose                  String // input_guard | core_chat | output_classifier | context_summary

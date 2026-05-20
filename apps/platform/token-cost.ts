@@ -17,7 +17,10 @@ export interface ClaudeUsageReport {
 
 export interface TokenLedgerEntry {
   organizationId: string;
-  userId: string;
+  /** Null for cycle-time/audit-runner LLM calls that don't run in a
+   *  request context — those still belong to an org but no specific
+   *  user triggered them. */
+  userId: string | null;
   conversationId: string | null;
   model: LlmModel;
   purpose: string;
@@ -62,7 +65,7 @@ export function createLedgerEntry(
   report: ClaudeUsageReport,
   metadata: {
     organizationId: string;
-    userId: string;
+    userId: string | null;
     conversationId: string | null;
     purpose: string;
     latencyMs: number | null;

@@ -87,6 +87,7 @@ async function loadLensPagesForCycle(
  */
 async function auditOneCell(
 	prisma: PrismaClient,
+	organizationId: string,
 	envId: string,
 	cycleId: string,
 	locale: string,
@@ -107,6 +108,12 @@ async function auditOneCell(
 			"haiku_4_5",
 			[{ role: "user", content: buildAuditPrompt(framework, page, locale) }],
 			{ max_tokens: 1200, temperature: 0.3, system: AUDIT_SYSTEM_PROMPT },
+			{
+				purpose: "framework_lens.cold_cycle",
+				organizationId,
+				environmentId: envId,
+				cycleId,
+			},
 		);
 		const textBlock = result.content.find((b) => b.type === "text");
 		raw = textBlock && "text" in textBlock ? textBlock.text.trim() : "";
@@ -164,6 +171,7 @@ async function auditOneCell(
 
 interface RunFrameworkLensInput {
 	prisma: PrismaClient;
+	organizationId: string;
 	envId: string;
 	cycleId: string;
 	cycleMode: "hot" | "warm" | "cold";
@@ -189,7 +197,7 @@ export async function runFrameworkLensForCycle(input: RunFrameworkLensInput): Pr
 	written: number;
 	attempted: number;
 }> {
-	const { prisma, envId, cycleId, cycleMode, locale } = input;
+	const { prisma, organizationId, envId, cycleId, cycleMode, locale } = input;
 
 	if (cycleMode !== "cold") {
 		return { skipped: true, reason: `cycle-mode=${cycleMode}`, written: 0, attempted: 0 };
@@ -232,7 +240,7 @@ export async function runFrameworkLensForCycle(input: RunFrameworkLensInput): Pr
 			const next = queue.shift();
 			if (!next) break;
 			attempted++;
-			const ok = await auditOneCell(prisma, envId, cycleId, locale, next.frameworkId, next.page);
+			const ok = await auditOneCell(prisma, organizationId, envId, cycleId, locale, next.frameworkId, next.page);
 			if (ok) written++;
 		}
 	}

@@ -1,4 +1,5 @@
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
+import { buildEnrichmentLlmContext } from "./llm-context";
 import type {
   Evidence,
   ContentEnrichmentPayload,
@@ -414,6 +415,7 @@ export async function runLocalizationQualityEnrichment(
           temperature: 0.1,
           system: SYSTEM_PROMPT,
         },
+        buildEnrichmentLlmContext("copy_localization", ctx.scoping, ctx.cycle_ref),
       );
 
       const textBlock = result.content.find((b) => b.type === "text");

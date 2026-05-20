@@ -1895,6 +1895,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				}
 				const lensResult = await runFrameworkLensForCycle({
 					prisma,
+					organizationId: cycle.organizationId,
 					envId: env.id,
 					cycleId,
 					cycleMode,

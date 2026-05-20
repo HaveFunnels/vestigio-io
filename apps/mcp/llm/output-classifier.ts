@@ -41,6 +41,9 @@ export async function classifyOutput(
       ? `Tool results used:\n${toolCallsSummary.join('\n')}`
       : 'No tools were called for this response.';
 
+    // Dead code today (pipeline.ts inlines its own classifier). If
+    // resurrected, the caller signature should grow an LlmCallContext
+    // so org/user attribution stays correct.
     const result = await callModel('haiku_4_5', [
       {
         role: 'user',
@@ -50,7 +53,7 @@ export async function classifyOutput(
       system: CLASSIFIER_SYSTEM_PROMPT,
       max_tokens: 300,
       temperature: 0,
-    });
+    }, { purpose: 'output_classifier.standalone' });
 
     const textBlock = result.content.find((b) => b.type === 'text');
     if (!textBlock || textBlock.type !== 'text') {

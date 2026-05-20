@@ -150,6 +150,13 @@ export const GET = withErrorTracking(
 					temperature: 0.2,
 					system: "You output only valid JSON matching the requested schema. No markdown, no preamble.",
 				},
+				{
+					purpose: "copy_tone",
+					organizationId: membership!.organization.id,
+					userId,
+					environmentId: env.id,
+					cycleId: latestCycle.id,
+				},
 			);
 			const textBlock = result.content.find((b) => b.type === "text");
 			const raw = textBlock && "text" in textBlock ? textBlock.text.trim() : "";

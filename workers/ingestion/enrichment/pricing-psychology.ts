@@ -1,4 +1,5 @@
 import { callModel } from "../../../apps/mcp/llm/client";
+import { buildEnrichmentLlmContext } from "./llm-context";
 import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { extractCopyElements } from "./copy-elements-extractor";
@@ -300,6 +301,7 @@ export async function runPricingPsychologyEnrichment(
           temperature: 0.1,
           system: systemPrompt,
         },
+        buildEnrichmentLlmContext("pricing_psychology", ctx.scoping, ctx.cycle_ref),
       );
 
       const textBlock = result.content.find((b) => b.type === "text");

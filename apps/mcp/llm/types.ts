@@ -159,7 +159,11 @@ export type LlmErrorCategory =
   | 'timeout'
   | 'auth_error'
   | 'content_filtered'
-  | 'invalid_response';
+  | 'invalid_response'
+  /** Org's monthly LLM budget exceeded — the cost circuit-breaker
+   *  blocked the call before it hit Anthropic. Caller should fall
+   *  back to the same path used when VESTIGIO_LLM_ENABLED is false. */
+  | 'cost_cap_exceeded';
 
 export class LlmError extends Error {
   constructor(

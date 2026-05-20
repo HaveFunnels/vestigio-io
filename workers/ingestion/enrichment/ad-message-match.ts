@@ -1,6 +1,7 @@
 import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
+import { buildEnrichmentLlmContext } from "./llm-context";
 import type {
   Evidence,
   ContentEnrichmentPayload,
@@ -285,6 +286,7 @@ export async function analyzeAdMessageMatch(
           temperature: 0.1,
           system: SYSTEM_PROMPT,
         },
+        buildEnrichmentLlmContext("ad_message_match", scoping, cycleRef),
       );
 
       const textBlock = result.content.find((b) => b.type === "text");

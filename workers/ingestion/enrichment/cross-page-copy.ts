@@ -1,4 +1,5 @@
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
+import { buildEnrichmentLlmContext } from "./llm-context";
 import type {
   Evidence,
   ContentEnrichmentPayload,
@@ -234,6 +235,7 @@ export async function analyzeCrossPageConsistency(
         temperature: 0.1,
         system: SYSTEM_PROMPT,
       },
+      buildEnrichmentLlmContext("cross_page_copy", scoping, cycleRef),
     );
 
     const textBlock = result.content.find((b) => b.type === "text");

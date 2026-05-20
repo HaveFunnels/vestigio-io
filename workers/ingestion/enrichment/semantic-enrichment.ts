@@ -8,6 +8,7 @@ import { buildFailedResult } from "./types";
 import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
+import { buildEnrichmentLlmContext } from "./llm-context";
 import type { Evidence, ContentEnrichmentPayload, PolicyPagePayload, FormPayload, PageContentPayload } from "../../../packages/domain";
 import {
   EvidenceType,
@@ -478,13 +479,16 @@ async function runCopyAnalysisEnrichment(
       const userPrompt = buildPrompt(copyElementsText, truncatedText);
 
       // 5. Call Haiku
-      const result = await callModel("haiku_4_5", [
-        { role: "user", content: userPrompt },
-      ], {
-        max_tokens: 1024,
-        temperature: 0.1,
-        system: systemPrompt,
-      });
+      const result = await callModel(
+        "haiku_4_5",
+        [{ role: "user", content: userPrompt }],
+        {
+          max_tokens: 1024,
+          temperature: 0.1,
+          system: systemPrompt,
+        },
+        buildEnrichmentLlmContext(`semantic_enrichment.${enrichmentType}`, ctx.scoping, ctx.cycle_ref),
+      );
 
       const textBlock = result.content.find((b) => b.type === "text");
       if (!textBlock || textBlock.type !== "text") {
@@ -927,16 +931,16 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
         const truncatedText = bodyText.slice(0, MAX_TEXT_CHARS);
 
         // 4. Call Haiku for policy quality assessment
-        const result = await callModel("haiku_4_5", [
+        const result = await callModel(
+          "haiku_4_5",
+          [{ role: "user", content: buildUserPrompt(payload.policy_type, truncatedText) }],
           {
-            role: "user",
-            content: buildUserPrompt(payload.policy_type, truncatedText),
+            max_tokens: 1024,
+            temperature: 0.1,
+            system: SYSTEM_PROMPT,
           },
-        ], {
-          max_tokens: 1024,
-          temperature: 0.1,
-          system: SYSTEM_PROMPT,
-        });
+          buildEnrichmentLlmContext("semantic_enrichment.policy_quality", ctx.scoping, ctx.cycle_ref),
+        );
 
         // 5. Extract text from response
         const textBlock = result.content.find((b) => b.type === "text");
@@ -1075,13 +1079,16 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
 
           const truncatedText = bodyText.slice(0, MAX_TEXT_CHARS);
 
-          const result = await callModel("haiku_4_5", [
-            { role: "user", content: buildPrompt(truncatedText) },
-          ], {
-            max_tokens: 1024,
-            temperature: 0.1,
-            system: systemPrompt,
-          });
+          const result = await callModel(
+            "haiku_4_5",
+            [{ role: "user", content: buildPrompt(truncatedText) }],
+            {
+              max_tokens: 1024,
+              temperature: 0.1,
+              system: systemPrompt,
+            },
+            buildEnrichmentLlmContext(`semantic_enrichment.${enrichmentType}`, ctx.scoping, ctx.cycle_ref),
+          );
 
           const textBlock = result.content.find((b) => b.type === "text");
           if (!textBlock || textBlock.type !== "text") {

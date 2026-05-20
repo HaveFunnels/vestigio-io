@@ -334,6 +334,13 @@ export async function POST(request: Request) {
         temperature: 0.4,
         system: buildSystemMessage(locale, currency),
       },
+      {
+        purpose: "pulse_summary",
+        organizationId: membership.organization.id,
+        userId,
+        environmentId: env.id,
+        cycleId: latestCycle?.id ?? null,
+      },
     );
 
     const textBlock = result.content.find((b) => b.type === "text");

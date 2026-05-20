@@ -105,6 +105,13 @@ export interface OrgContext {
   finding_count: number;
   top_findings_summary: string;
   locale: string; // 'en' | 'pt-BR' | 'es' | 'de'
+  /** From DomainFingerprint — slow-changing identity facts about the
+   *  domain that we snapshotted on the first cold cycle. The chat
+   *  agent reads these every turn so it doesn't have to re-infer
+   *  industry from the domain name. Null while still pending the
+   *  first cold cycle. */
+  industry?: string | null;
+  detected_platforms?: string[];
 }
 
 export interface AttachedFile {

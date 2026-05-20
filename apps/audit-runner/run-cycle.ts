@@ -29,6 +29,7 @@ import { PrismaActionStore, PrismaFindingStore, projectAll } from "../../package
 import { recomputeWithPool } from "./recompute-pool";
 import { loadEngineTranslationsForLocale } from "@/lib/engine-translations";
 import { runFrameworkLensForCycle } from "./run-framework-lens";
+import { populateDomainFingerprint } from "./populate-domain-fingerprint";
 import { processBehavioralEventsForEnv } from "./process-behavioral";
 import { pollShopifyData } from "../../workers/shopify/poller";
 import { mapPollResultToSnapshotData as mapShopifyPollResult } from "../../packages/shopify-adapter/snapshot-mapper";
@@ -1912,6 +1913,34 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				}
 			} catch (err) {
 				console.warn(`[audit-runner ${cycleId}] framework-lens failed:`, err);
+			}
+
+			// Wave 19c — snapshot the slow-changing domain identity into
+			// DomainFingerprint. Cold-only, 90-day freshness gate inside
+			// the populator so back-to-back cold cycles don't repeatedly
+			// re-classify the same domain. Best-effort: failures (Haiku
+			// down, homepage fetch flaky) just leave the prior row in
+			// place and let the next cycle retry.
+			try {
+				const fpResult = await populateDomainFingerprint({
+					prisma,
+					organizationId: cycle.organizationId,
+					envId: env.id,
+					cycleId,
+					cycleMode,
+					domain: env.domain,
+				});
+				if (fpResult.skipped) {
+					console.log(
+						`[audit-runner ${cycleId}] domain-fingerprint skipped: ${fpResult.reason}`,
+					);
+				} else {
+					console.log(
+						`[audit-runner ${cycleId}] domain-fingerprint refreshed (industry-classified=${fpResult.classified})`,
+					);
+				}
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] domain-fingerprint failed:`, err);
 			}
 
 			// (f) Retention prune — best-effort, outside the transaction

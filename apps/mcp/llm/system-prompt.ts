@@ -85,6 +85,10 @@ export function buildSystemPrompt(orgContext: OrgContext): string {
   const businessCtx = [
     `Domain: ${orgContext.domain}`,
     `Business model: ${orgContext.business_model}`,
+    orgContext.industry ? `Industry: ${orgContext.industry}` : null,
+    orgContext.detected_platforms && orgContext.detected_platforms.length > 0
+      ? `Platforms: ${orgContext.detected_platforms.slice(0, 5).join(', ')}`
+      : null,
     `Plan: ${orgContext.plan}`,
     orgContext.monthly_revenue ? `Monthly revenue: $${orgContext.monthly_revenue.toLocaleString()}` : null,
     `Evidence freshness: ${orgContext.freshness_state}`,
@@ -108,6 +112,10 @@ export function buildCacheableSystemPrompt(orgContext: OrgContext): Array<{ type
   const businessCtx = [
     `Domain: ${orgContext.domain}`,
     `Business model: ${orgContext.business_model}`,
+    orgContext.industry ? `Industry: ${orgContext.industry}` : null,
+    orgContext.detected_platforms && orgContext.detected_platforms.length > 0
+      ? `Platforms: ${orgContext.detected_platforms.slice(0, 5).join(', ')}`
+      : null,
     `Plan: ${orgContext.plan}`,
     orgContext.monthly_revenue ? `Monthly revenue: $${orgContext.monthly_revenue.toLocaleString()}` : null,
     `Evidence freshness: ${orgContext.freshness_state}`,

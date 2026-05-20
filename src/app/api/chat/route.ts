@@ -249,6 +249,17 @@ export async function POST(request: Request) {
       llmOrgContext.business_model = profile.businessModel;
       llmOrgContext.monthly_revenue = profile.monthlyRevenue;
     }
+    // Wave 19c — DomainFingerprint. Populated on the first cold cycle.
+    // Falls back silently if missing so chat keeps working on
+    // newly-onboarded envs that haven't completed a cold cycle yet.
+    const fingerprint = await prisma.domainFingerprint.findUnique({
+      where: { environmentId: envId },
+      select: { industry: true, detectedPlatforms: true },
+    });
+    if (fingerprint) {
+      llmOrgContext.industry = fingerprint.industry;
+      llmOrgContext.detected_platforms = fingerprint.detectedPlatforms;
+    }
   } catch {
     // Continue with defaults
   }

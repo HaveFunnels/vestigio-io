@@ -306,6 +306,7 @@ model Environment {
   copyFrameworkAudits  CopyFrameworkAudit[]
   llmResultCache       LlmResultCache[]
   contentEnrichmentCache ContentEnrichmentCache[]
+  domainFingerprint    DomainFingerprint?
 
   @@index([activated, continuousPaused])
   @@index([lastAccessedAt])
@@ -1861,4 +1862,56 @@ model ContentEnrichmentCache {
   @@unique([environmentId, purpose, contentHash, locale])
   @@index([environmentId, purpose])
   @@index([lastHitAt])
+}
+
+/// One row per environment, populated on the FIRST cold cycle and
+/// (almost) never re-written. Holds the slow-changing "identity" of
+/// the domain so the chat agent and downstream consumers can read a
+/// few invariant facts without re-deriving them every cycle.
+///
+/// Wave 19c. Distinct from BusinessProfile (which is user-edited via
+/// onboarding) and from PlatformIndicator evidence (which is a
+/// per-cycle audit artifact). DomainFingerprint is the consolidated
+/// "what do we know about this domain at large" snapshot.
+///
+/// Refresh policy: quarterly at most. The audit pipeline only writes
+/// here when refreshedAt is null or older than ~90 days. Manual
+/// refresh (e.g. customer migrated platforms) is supported by
+/// clearing the row.
+model DomainFingerprint {
+  id            String   @id @default(cuid())
+  environmentId String   @unique
+  /// Deterministic regex hits from staged-pipeline.detectPlatforms.
+  /// Saves a tiny amount of work on hot/warm cycles where this would
+  /// otherwise re-run for no behavior change. Mostly here so the
+  /// chat agent can answer "what platform are they on?" without
+  /// querying Evidence.
+  detectedPlatforms String[] @default([])
+  /// Primary locale of the homepage at first audit. Derived from
+  /// homepageParsed.lang. Stable for the lifetime of the site
+  /// barring an explicit re-launch.
+  primaryLocale String?
+  /// Summary of robots.txt AI-bot directives at first audit. Shape:
+  /// { allows: string[], blocks: string[], unknown_directives: string[] }.
+  /// Already 7d-gated upstream, this row is just for chat access.
+  aiBotPolicy   Json?
+  /// LLM-classified industry vertical. Single Haiku call on first
+  /// cold cycle; never re-run unless refreshedAt is bumped. The cost
+  /// budget here is bounded — at most a few cents per customer per
+  /// quarter — but the chat agent reads it on EVERY turn, so the
+  /// per-turn savings (no inference from the domain name) repay it
+  /// many times over.
+  industry      String?
+  industryConfidence Int? // 0-100 from the Haiku classifier
+  /// When the industry classifier last ran. Null while still
+  /// pending the first cold cycle.
+  industryClassifiedAt DateTime?
+  /// Wall-clock first cycle that ever populated this row. Used by
+  /// the audit pipeline to decide "first ever" vs "refresh."
+  firstAuditAt  DateTime @default(now())
+  /// Bumped when any field in this row is rewritten. Quarterly
+  /// refresh policy is enforced by comparing against this.
+  refreshedAt   DateTime @default(now())
+
+  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 }

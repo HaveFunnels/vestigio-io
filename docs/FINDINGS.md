@@ -2,6 +2,15 @@
 
 > Last updated: 2026-04-05 (root cause inventory added)
 > Grounded in: current codebase inspection (packages/, workers/, apps/, tests/)
+>
+> ## ⚠️ Document status — 2026-05-21
+>
+> **The "What counts as a finding" framing remains accurate.** `FindingProjection` (built by the projection engine) is still the user-facing artifact. However, the engine map this document references has drifted since April. Specifically:
+> - Findings are built from `QuantifiedValueCase[]` (impact engine output), **not** from `Decision.projections.findings[]` as the original [DECISION_ENGINE.md](DECISION_ENGINE.md) implied.
+> - The `domain/Finding` type (`packages/domain/finding.ts:10`) is **never instantiated** in production — only `FindingProjection` (`packages/projections/types.ts:104`) reaches the DB and UI.
+> - Suppression context is **annotation-only** in current code — `visibility: 'hidden'` findings are still persisted and returned; they are not filtered out at write time.
+>
+> For the canonical end-to-end pipeline, see [ENGINE_MAP.md](ENGINE_MAP.md). The finding inventory below (the catalogued inference_keys, their packs, their reasoning) remains valid and is the most reliable reference for what individual findings mean.
 
 ---
 

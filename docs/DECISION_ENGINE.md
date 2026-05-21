@@ -1,5 +1,17 @@
 # Decision Engine
 
+> ## ⚠️ Document status — 2026-05-21
+>
+> **This document describes the aspirational architecture from April 2025. Substantial parts of it have NOT been implemented as written. For the current code reality, read [ENGINE_MAP.md](ENGINE_MAP.md) first.**
+>
+> Specifically:
+> - The `DecisionStatus` lifecycle described below (`created → confirmed → stale → resolved → regressed`) is **dormant**. In production, every decision is born `Created` and stays `Created` forever. Cross-cycle state lives on `FindingProjection.change_class`, not on the decision.
+> - "Decision projects findings" is **not** how the engine works. `Decision.projections.findings[]` is always empty. `FindingProjection[]` is built by iterating `QuantifiedValueCase[]` from `packages/impact/engine.ts`.
+> - `Incident` and `Opportunity` are not implemented as first-class operational entities. `Decision.category` carries the flag, but there is no separate Prisma model or lifecycle.
+> - The "Implementation Status (2026-04-02)" section near the end is six weeks stale.
+>
+> This document is preserved as historical record of the design intent. It will be rewritten after the Wave 20 engine consolidation lands.
+
 ## Purpose
 
 Transformar Vestigio de:

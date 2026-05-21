@@ -2,6 +2,16 @@
 
 > **Verified 2026-04-02:** This document remains accurate as a reference for legacy heuristic patterns and rewrite guidance. The rewrite has refactored overlapping responsibilities into shared services as recommended (route classification, checkout/provider inference, trust boundary evaluation, policy coverage, confidence/gate evaluation). Duplicated concepts (checkout_mode in multiple modules, off-domain logic in multiple modules) have been consolidated into the canonical pipeline.
 
+> ## ⚠️ Re-audit — 2026-05-21
+>
+> The April claim of "consolidated into the canonical pipeline" is partially true and partially aspirational:
+> - Checkout/provider inference IS consolidated into `packages/signals/engine.ts` and `packages/inference/engine.ts`. ✓
+> - But three implementations of `createSignal` still exist (`packages/signals/create.ts`, `packages/signals/engine.ts`, and `workers/ingestion/stages/static-checks.ts:822`) — see [ENGINE_MAP.md §C](ENGINE_MAP.md#c-triple-implementation--overlapping-responsibilities).
+> - `computeClassification` is called **three times per cycle** from different orchestration points (`staged-pipeline.ts`, `recompute.ts` implicit, `recompute.ts` explicit).
+> - `triple-source-inference.ts` is dead code — exported but never imported (~7 inference functions never fire).
+>
+> The Wave 20 engine consolidation (see [ROADMAP.md](ROADMAP.md)) targets these specifically. After it lands, this document should be promoted from "review" to "current heuristic catalog."
+
 ## Scope
 
 This document validates the current heuristics in four major areas:

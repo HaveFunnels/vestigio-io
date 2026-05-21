@@ -1,5 +1,16 @@
 # Domain Model
 
+> ## ⚠️ Document status — 2026-05-21
+>
+> **Partially out of sync with code.** For the canonical types in production, read [ENGINE_MAP.md](ENGINE_MAP.md) which lists every type with file:line references.
+>
+> Key divergences:
+> - `finding` is described here as a projection — true in spirit, but the `Finding` interface in `packages/domain/finding.ts` is **never instantiated in production**. The real runtime type is `FindingProjection` in `packages/projections/types.ts:104`.
+> - `incident` and `opportunity` are described as canonical operational entities. There is no Prisma model for either. `Decision.category` carries the classification but no separate lifecycle entity exists.
+> - `decision` lifecycle (`status`) is dormant — only the `Created` state is ever assigned in production code.
+>
+> The ontology table below remains conceptually correct; the implementation details that follow are partially stale.
+
 ## NorthStar
 
 Vestigio V2 deve ser modelado como:

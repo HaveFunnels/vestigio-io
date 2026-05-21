@@ -1,6 +1,7 @@
 # ROADMAP.md — Vestigio Development Roadmap
 
-> Last updated: 2026-05-13 (Wave 11 🟢 tier complete on workspace-specific + cross-cutting — Revenue 1/1, Preflight 4/4, Security 4/4, Copy 5/5, Cross-cutting 3/3 shipped. 17 widgets total. Behavioral 🟡 and 11.7d remain integration-gated.)
+> Last updated: 2026-05-21 (Wave 20 + Wave 21 added — engine consolidation as forcing function for the always-on revenue protection layer. Grounded in the engine map at [ENGINE_MAP.md](ENGINE_MAP.md). Strategic context: "always-on revenue protection" thesis chosen, see memory.)
+> Previously: 2026-05-13 (Wave 11 🟢 tier complete on workspace-specific + cross-cutting — Revenue 1/1, Preflight 4/4, Security 4/4, Copy 5/5, Cross-cutting 3/3 shipped. 17 widgets total. Behavioral 🟡 and 11.7d remain integration-gated.)
 > Companion to: [NORTHSTAR.md](NORTHSTAR.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [FINDINGS_OPPORTUNITIES.md](FINDINGS_OPPORTUNITIES.md), [COLLECT_OPPORTUNITIES.md](COLLECT_OPPORTUNITIES.md)
 >
 > **For completed work** (Waves 0, 1, 2.1–2.5, 3.1–3.20, 4.1, 4.2, 4.4, 4.6, 4.7, 5 Fases 1–3, Marketing/SEO polish), see [COMPLETED_ROADMAP.md](COMPLETED_ROADMAP.md).
@@ -2627,6 +2628,191 @@ Not bloated for this stack (Chromium + Debian + Prisma = ~480MB irreducible). Th
 1. ~~**`experimental.optimizePackageImports`** in next.config.js for `@phosphor-icons/react` (57MB local), `lucide-react` (38MB), `date-fns` (24MB). One config line, low risk, probably ~80-100MB off the standalone bundle.~~ **Shipped 2026-05-17.** Added to `next.config.js` covering all three packages; Next.js now rewrites barrel imports to direct module-level imports, tree-shaking the unused icon/date code out of the standalone bundle. Estimated saving: ~80-100MB.
 2. ~~**Drop Prisma CLI from runtime** (~43MB) — move `prisma db push` from the boot CMD to a pre-deploy step (Railway hook or GitHub Action) so the runtime image doesn't need the CLI at all.~~ **Shipped 2026-05-17.** `prisma db push` moved from the boot CMD to the Docker builder stage (gated on a `DATABASE_URL` build arg). The runner stage no longer copies `node_modules/prisma`, and the runtime CMD is now a pure `node server.js` for the web role. Estimated saving: ~43MB. **Operator action required**: set `DATABASE_URL` as a *build-time* variable on the Railway web service (Settings → Variables → "Add Build Variable"). Until that's done, the build still completes (the push step prints `[build] DATABASE_URL build arg not set — skipping prisma db push`) but the deploy will boot against whatever schema is already in the DB — manually run `npm run db:push:dev` against the prod DB once before the first deploy of any schema change. Nixpacks fallback (`nixpacks.toml`) was intentionally left alone — only the Dockerfile path optimized.
 3. **Split into two images** — web (no Chromium, ~200MB) and worker (full, ~700MB). Cuts web image by ~70% but doubles Railway deploy ops. Only worth doing if web deploy cadence diverges from worker, or if cold-start latency becomes a customer complaint. **Not shipped** — defer per Wave 18z scope.
+
+---
+
+## Wave 20 — Engine Consolidation + Always-On Layer
+
+> **Strategic context (2026-05-21):** The Vestigio thesis is being formalized around **"always-on revenue protection"** — continuous monitoring of conversion-critical surfaces, alerts when changes break revenue, and a monthly "value caught" report that makes the product feel inevitable (vs. the current "log in once a week to review findings" pattern). The engineering work to support this divides cleanly into two waves with a hard dependency: Wave 20 (engine consolidation) is the forcing function and prerequisite; Wave 21 (the always-on layer itself) plugs into Wave 20's clean API surface.
+>
+> See [ENGINE_MAP.md](ENGINE_MAP.md) for the current engine map that motivates this wave. See the [inevitability thesis memory](../.claude/projects/-Users-luisgall-Downloads-Vestigio-io-vestigio-io/memory/project_inevitability_thesis.md) and [always-on cost analysis memory](../.claude/projects/-Users-luisgall-Downloads-Vestigio-io-vestigio-io/memory/project_always_on_cost_analysis.md) for the strategic backing.
+
+### Wave 20 — Goals
+
+1. **Eliminate the 5 bypass paths** so every signal/inference flows through the canonical pipeline (`engine.run() → harmonize → quality-adjust → inference → decision → projection`).
+2. **Delete the 6 pieces of dead code** that pretend to be live (catalogued in [ENGINE_MAP.md §B](ENGINE_MAP.md#b-dead-code-defined-exported-never-imported)).
+3. **Resolve the 4 triple-implementations / public-API inconsistencies** (catalogued in [ENGINE_MAP.md §C](ENGINE_MAP.md#c-triple-implementation--overlapping-responsibilities)).
+4. **Split the 11k-line `inference/engine.ts` monolith** into pack-scoped sub-modules so adding a new pack doesn't grow the central file.
+5. **Expose a single `engine.run()` entry point** that supports both `scope: "full_cycle"` and `scope: { url, enrichers }` — the latter is what Wave 21's diff-triggered re-analysis needs.
+
+### Wave 20 — Sequence
+
+This is the order; each step gates the next.
+
+**Step 20.1 — Audit + target API design (2-3 days, no code changes yet)**
+
+- Read [ENGINE_MAP.md](ENGINE_MAP.md) in full.
+- Write `docs/ENGINE_TARGET_API.md` capturing:
+  - The single `engine.run(input: EngineRunInput): EngineRunOutput` signature.
+  - Where each currently-bypassed path is to be re-rooted.
+  - The pack-decomposition plan for `inference/engine.ts` (recommended: `inference/packs/{revenue,security,copy,behavioral,brand,chargeback,scale,channel,discoverability}/`).
+  - Decision lifecycle policy: keep the enum, implement the transitions, OR delete the unused states. **Recommendation: keep + implement** — the Confirmed/Stale states are the foundation for "value caught" tracking in Wave 21.
+- Output of this step: a 1-page API contract that the next steps work against. **Reviewable + approvable before any code moves.**
+
+**Step 20.2 — Delete dead code (½ day)**
+
+Surgical deletions. No behavior change, just less surface:
+
+- `packages/inference/triple-source-inference.ts` — file + export line in `inference/index.ts:8`. Confirmed zero importers.
+- `packages/composites/compound-findings.ts` — either wire `CompoundFinding[]` into projections (preferred) or delete the unreached output path. Decide in 20.1.
+- `domain/Finding` interface (`packages/domain/finding.ts:10`) — never instantiated. Move its docblock to `FindingProjection` and delete.
+- `DecisionStatus.{Confirmed,Stale,Resolved,Regressed}` — either implement (20.4) or delete.
+- `Decision.projections.findings[]` field (`packages/decision/engine.ts:158-163`) — always empty. Delete the field.
+- `assertTruthResolved` (`packages/truth/consistency-guard.ts:195`) — either call it from production (`recompute.ts:419` is the right insertion point) or delete the function.
+
+**Step 20.3 — Consolidate triples (1 day)**
+
+- Single `createSignal` factory in `packages/signals/create.ts`. Delete the local copy in `workers/ingestion/stages/static-checks.ts:822-856` (import from package).
+- Single `computeClassification` call per cycle. Compute once in `staged-pipeline.ts`, pass result through `MultiPackInput`. Delete redundant invocations in `recompute.ts`.
+- Export `computeCrossPackSynthesis` and `computeExternalReconInferences` from `packages/inference/index.ts` so all inference modules use the same public surface.
+
+**Step 20.4 — Implement DecisionStatus transitions (1-2 days, optional based on 20.1 decision)**
+
+- New service: `packages/decision/lifecycle.ts` — takes `Decision[]` from current cycle + `Decision[]` from previous cycle, computes status transitions:
+  - First time seen → `Created`
+  - Confidence rises above threshold X cycles in a row → `Confirmed`
+  - Confidence drops below threshold → `Stale`
+  - No longer in current cycle's decisions OR `decision_impact: 'resolved'` → `Resolved`
+  - Was `Resolved` last cycle, present again this cycle → `Regressed`
+- Hook into `recompute.ts` after `detectChanges` runs.
+- Persist `Decision.status` to `CycleSnapshot.decisions[]` (already JSON, no schema change).
+- This unlocks: Wave 21's "value caught" report (resolved decisions = captured value) and the chat agent's ability to say "you confirmed this 3 cycles ago" instead of treating every finding as new.
+
+**Step 20.5 — Re-root the bypass paths (2-3 days)**
+
+In priority order (highest blast radius first):
+
+1. **`additional_signals` from static-checks** → fold `runStaticChecks` into `extractSignals` as one of the sub-extractor branches, or move it to a separate evidence producer that emits typed evidence consumed by `extractSignals`. Goal: every signal flows through `harmonizeSignals` + `adjustConfidenceByQuality`.
+2. **`additional_inferences` from funnel-gap + form-flow** → either move these into `inference/engine.ts` (if they can be made pure functions over signals) or convert them into evidence producers that feed `extractSignals`. Document the design choice in 20.1.
+3. **MRR contraction signal manual push** → move to a dedicated `extractDeltaSignals(previousSnapshot, currentEvidence)` step that runs alongside `extractSignals`. Has a clean place to live without breaking the main flow.
+4. **Regression-inference manual construction** → move to a `computeChangeInferences(changeReport): Inference[]` function in `packages/change-detection/`. Treats change-driven inferences as a first-class category.
+
+**Step 20.6 — Split the inference monolith (3-5 days)**
+
+- New structure: `packages/inference/packs/{revenue, security, chargeback, copy, behavioral, brand, channel, discoverability, scale}/`.
+- Each pack file is < 800 lines, owns its own `IdGenerator` namespace, owns its own `forPack()` early-return.
+- Top-level `inference/engine.ts` becomes the orchestrator that fans in/out per-pack modules.
+- Migrate one pack at a time, run tests after each, keep the old monolith functions until the migration is complete (parallel-run for one full cycle to verify identical outputs).
+
+**Step 20.7 — Expose `engine.run()`** (1 day)
+
+- New file: `packages/workspace/engine.ts` exporting `run(input: EngineRunInput): EngineRunOutput`.
+- This wraps `recomputeAllAsync` + `estimateImpact` + `projectAll` into one entry point.
+- `apps/audit-runner/run-cycle.ts` shrinks to a thin orchestrator that just calls `engine.run({ scope: 'full_cycle', ... })` and handles persistence.
+- This is the API surface Wave 21 depends on.
+
+### Wave 20 — Acceptance criteria
+
+A cycle run end-to-end on havefunnels.com produces the same `FindingProjection[]` + `ActionProjection[]` as the pre-Wave-20 version (regression-tested via snapshot comparison), AND:
+
+- `grep -r "additional_signals\|additional_inferences" packages/ apps/` returns zero matches.
+- `grep -r "createSignal" packages/ workers/` returns matches only in `packages/signals/create.ts`.
+- `packages/inference/triple-source-inference.ts` no longer exists.
+- `engine.run({ scope: { url: '...', enrichers: ['copy_micro_copy'] }, ... })` runs and returns a partial `EngineRunOutput`.
+- Every `Decision.status` reflects its actual cross-cycle state (not all `Created`).
+
+### Wave 20 — Estimated effort
+
+~8-12 days of focused work. Reviewable in PRs of 1-2 days each. Risk profile: medium — the engine is well-tested at the recompute level, so regressions surface quickly via snapshot diffs.
+
+### Wave 20 — Out of scope
+
+- New inference rules. No.
+- New packs. No.
+- Performance optimization beyond what falls out of the consolidation. The goal is coherence, not speed.
+
+---
+
+## Wave 21 — Always-On Revenue Protection Layer
+
+**Depends on Wave 20.7** (the `engine.run({ scope: targeted })` API).
+
+Strategy + cost analysis: see the [always-on cost analysis memory](../.claude/projects/-Users-luisgall-Downloads-Vestigio-io-vestigio-io/memory/project_always_on_cost_analysis.md). Incremental LLM cost estimated at **~$0.03/mo/env** with event-driven design. Infra cost (probe workers + ingestion scaling) is the larger line item at ~$5-15/mo/env.
+
+### Wave 21 — Goals
+
+Make the Vestigio product feel like infrastructure (sticky, recurring value visible monthly) rather than a tool (episodic, low retention). Three mechanisms:
+
+1. **Lightweight probes** — detect material changes on the customer's site without paying audit cost.
+2. **Anomaly alerts** — push (Slack, email, webhook, WhatsApp) when revenue-relevant metrics move.
+3. **Monthly "value caught" report** — explicit ROI to the customer at end of each month.
+
+### Wave 21 — Sequence
+
+**Step 21.1 — Behavioral events server-side proxy (2-3 days, can start in parallel with Wave 20)**
+
+This is on the user's blocker list independent of always-on — adblocker brittleness means today's behavioral findings are based on ~60-70% of real traffic.
+
+- New endpoint subdomain per env: `evt.<customer-domain>` via CNAME → Cloudflare for SaaS / Fly.io custom domain / Caddy on Vestigio edge.
+- Customer onboarding flow: two copy-paste steps (1 DNS CNAME record + 1 `<script>` tag).
+- Self-serve validation page: polls until DNS propagates + first event arrives, shows green check.
+- The existing snippet stays — just points at the first-party hostname instead of `vestigio.io/track`. Adblockers (uBlock, Brave Shields, Safari ITP) defer to first-party policy.
+
+**Step 21.2 — Probe scheduler (3-5 days)**
+
+- New worker app: `apps/probe-runner/`.
+- Cron-style loop every 5-15 min (configurable per plan: Max=5min, Pro=15min, Starter=hourly).
+- For each active env, fetches the configured "critical pages" (initially: homepage + pricing + checkout/signup). Computes content hash. Persists `PageProbe` row.
+- On hash diff: enqueue `TargetedReanalysis` job referencing the diffed URL + affected enrichers.
+- The diffed URL gets re-fetched + re-enriched via `engine.run({ scope: { url, enrichers } })` from Wave 20.7. ContentEnrichmentCache (Wave 19c) already covers cosmetic changes — only semantic changes pay Haiku.
+
+**Step 21.3 — Revenue-anomaly rules in alert-evaluator (5-7 days)**
+
+- Extend `src/libs/alert-evaluator.ts` with new metrics:
+  - `conversion_drop` — rolling 24h conversion rate dropped >X% vs prior 7d baseline.
+  - `page_change_detected` — fired by 21.2 when a critical page hashes differently.
+  - `error_rate_per_page` — already exists, extend to surface page-scoped alerts.
+  - `funnel_dropoff_anomaly` — step in tracked funnel dropped >X%.
+- Each rule type owns its own threshold logic + LLM-narration template (1 Haiku call per alert, bounded ~5/mo/env).
+- Alert routing config per env: `alertChannels: { slack?, email?, webhook?, whatsapp? }`.
+
+**Step 21.4 — Notification dispatcher (3-4 days)**
+
+- Slack: incoming-webhook (1 line URL config).
+- Email: extend the existing `brevo` integration (`src/libs/notifications.ts`).
+- Webhook: HTTP POST signed with HMAC.
+- WhatsApp (optional): start with [unofficial lib](../.claude/projects/-Users-luisgall-Downloads-Vestigio-io-vestigio-io/memory/) (Baileys / whatsapp-web.js via Playwright) for early-stage. Plan migration to Meta Cloud API after ~50 customers receiving alerts.
+
+**Step 21.5 — Monthly "value caught" report (3-5 days)**
+
+This is the stickiness lever. Without it, always-on is "fica vigiando." With it, it's "tô te poupando $X/mês."
+
+- Cron: monthly per env on the 1st (or on subscription anniversary).
+- Source of truth: `Decision.status` transitions from Wave 20.4 (`Resolved` decisions = captured value, computed from their `value_case.range_mid` at resolution time).
+- Aggregation: sum of `value_case.range_mid` for all decisions that transitioned to `Resolved` during the month + alert count + diff count.
+- Delivery: email PDF with the explicit framing "Vestigio caught $X this month."
+- Dashboard widget: same data, always visible.
+
+### Wave 21 — Acceptance criteria
+
+- A copy change on havefunnels.com homepage triggers a targeted re-analysis within 15 minutes and a Slack alert within 30 minutes.
+- The monthly value-caught email lands on the 1st of each month with non-zero captured value once at least one finding has been resolved across cycles.
+- The customer can disable always-on per env and the audit cycle continues to work (the layer is additive).
+
+### Wave 21 — Estimated effort
+
+~20-30 days of focused work, parallelizable. Step 21.1 (behavioral proxy) is independent and can start now.
+
+---
+
+## What is NOT on this roadmap (Wave 20/21 specific)
+
+- Replacing the LLM provider. Anthropic / Haiku 4.5 / Sonnet 4.6 / Opus 4.7 stay.
+- Adding new finding packs. Wave 20 is about coherence; new packs come in Wave 22+ on the clean engine.
+- Marketing / acquisition work. Premature pre-PMF — see [marketing premature memory](../.claude/projects/-Users-luisgall-Downloads-Vestigio-io-vestigio-io/memory/feedback_marketing_premature_pre_pmf.md).
+- Enterprise SSO / SAML scaffolding. Comes after Wave 21 ships and the SMB ICP is validated by retention.
+- Mobile optimization beyond what we have. Operator audience uses desktop.
+- The PostHog Code-style "autonomous code PR" feature. Wrong audience for the SMB ICP — see [PostHog positioning memory](../.claude/projects/-Users-luisgall-Downloads-Vestigio-io-vestigio-io/memory/project_posthog_code_positioning.md).
 
 Trigger to revisit: Railway image storage pricing becomes meaningful, or deploy time crosses ~3 min on web-only changes, or we ship lots of marketing/CMS updates that don't need a worker redeploy.
 

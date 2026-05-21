@@ -1773,6 +1773,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						maps,
 						coherence_score: projections.coherence_score,
 						system_health: projections.system_health,
+						// Wave 19d — bridge CompoundFinding[] into the cache so the
+						// /cross-signals surface can render real causal chains
+						// instead of the heuristic URL-co-occurrence fallback.
+						// Without this, compoundFindingsToChains() has nothing to
+						// convert because the data never reaches the readback path.
+						compound_findings: multiPackResult.composites?.compound_findings ?? [],
 						cached_at: new Date().toISOString(),
 						cycle_ref: cycleRefStr,
 					};

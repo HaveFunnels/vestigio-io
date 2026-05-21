@@ -62,6 +62,7 @@ let _currency: string = DEFAULT_CURRENCY;
 // client components). Duplicated here because the aggregator runs
 // server-side and returns the class strings in the JSON payload.
 import { getPackBg } from "../pack-colors";
+import { compoundFindingsToChains } from "./cross-signal-narrative";
 
 function colorForPack(pack: string): string {
 	return getPackBg(pack);
@@ -1090,6 +1091,11 @@ function buildCrossSignalChains(findings: CrossSignalFindingRow[]): CrossSignalC
 			narrative: "", // filled by narrative generator
 			firstDetectedAt,
 			headline,
+			// Wave 19d — these are URL-co-occurrence heuristic chains
+			// (multiple packs hit the same URL → assumed connected).
+			// Real causal chains come from CompoundFinding via
+			// compoundFindingsToChains() in cross-signal-narrative.ts.
+			chainType: 'co-occurrence',
 		};
 
 		// Generate narrative inline (avoid circular import)
@@ -1303,7 +1309,13 @@ async function computeCrossSignal(
 			select: CROSS_SIGNAL_SELECT,
 		});
 
-		const allChains = buildCrossSignalChains(findings);
+		// Wave 19d — same merge logic as computeAllCrossSignals: pull
+		// real causal chains from projectionsCache, prepend to heuristic
+		// co-occurrence chains so the dashboard top-5 surfaces the
+		// strongest evidence first.
+		const heuristicChains = buildCrossSignalChains(findings);
+		const compoundChains = await loadCompoundChainsForCycle(prisma, cycleId);
+		const allChains = [...compoundChains, ...heuristicChains];
 		const topChains = allChains.slice(0, 5);
 		const journey = buildJourneyChains(findings);
 
@@ -1367,7 +1379,46 @@ export async function computeAllCrossSignals(
 		where: CROSS_SIGNAL_WHERE(envId, cycleId),
 		select: CROSS_SIGNAL_SELECT,
 	});
-	return buildCrossSignalChains(findings).slice(0, 50);
+	const heuristicChains = buildCrossSignalChains(findings);
+	const compoundChains = await loadCompoundChainsForCycle(prisma, cycleId);
+
+	// Merge with compounds first — they carry stronger evidence + real
+	// narrative. Heuristic co-occurrence chains follow as supporting
+	// material. Cap at 50 to keep the response bounded.
+	return [...compoundChains, ...heuristicChains].slice(0, 50);
+}
+
+/**
+ * Wave 19d — load CompoundFinding-derived causal chains from the
+ * latest cycle's projectionsCache. Returns an empty array on missing
+ * cache, missing field, or any read failure — callers fall back to
+ * heuristic chains in that case rather than breaking the surface.
+ */
+async function loadCompoundChainsForCycle(
+	prisma: PrismaClient,
+	cycleId: string | null,
+): Promise<CrossSignalChain[]> {
+	if (!cycleId) return [];
+	try {
+		const cycle = await prisma.auditCycle.findUnique({
+			where: { id: cycleId },
+			select: { projectionsCache: true },
+		});
+		const cache = cycle?.projectionsCache as
+			| { compound_findings?: unknown[] }
+			| null;
+		const rawCompounds = Array.isArray(cache?.compound_findings)
+			? (cache!.compound_findings as Parameters<typeof compoundFindingsToChains>[0])
+			: [];
+		if (rawCompounds.length === 0) return [];
+		return compoundFindingsToChains(rawCompounds);
+	} catch (err) {
+		console.warn(
+			`[cross-signals] failed to load compound_findings for cycle=${cycleId}:`,
+			err instanceof Error ? err.message : err,
+		);
+		return [];
+	}
 }
 
 /**

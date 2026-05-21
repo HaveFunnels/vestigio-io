@@ -120,6 +120,11 @@ export function compoundFindingsToChains(
 			narrative: cf.narrative,
 			firstDetectedAt: null,
 			headline: topLink?.title ?? null,
+			// Wave 19d — mark these as real causal chains so the UI can
+			// visually differentiate them from co-occurrence heuristics
+			// emitted by buildCrossSignalChains() in the aggregator.
+			chainType: 'compound' as const,
+			chainConfidence: cf.confidence,
 		};
 	});
 }

@@ -2631,6 +2631,32 @@ Not bloated for this stack (Chromium + Debian + Prisma = ~480MB irreducible). Th
 
 ---
 
+## Wave 19d — Cross Signal Insights wired to CompoundFinding (quick win, ~1h)
+
+> **Context (2026-05-21):** The `/cross-signals` page is supposed to surface **causal chains** ("checkout off-domain → missing trust badges → unknown payment provider, $X/mo combined exposure") but currently shows a much weaker heuristic — "findings grouped by URL when ≥2 packs co-occur." This is why the page feels disconnected. The wiring exists; the wire isn't connected.
+
+The full data layer is in place:
+
+- `packages/composites/compound-findings.ts:detectCompoundFindings()` — runs every cycle, produces `CompoundFinding[]` with real causal chains + narratives + combined impact
+- `src/lib/dashboard/cross-signal-narrative.ts:101:compoundFindingsToChains()` — converts `CompoundFinding[]` → `CrossSignalChain[]` (the format the UI consumes)
+- `MultiPackResult.composites.compound_findings` — already serialized into `AuditCycle.projectionsCache`
+
+**What's missing:** `compoundFindingsToChains()` has zero call sites. Today's `/cross-signals` page reads `buildCrossSignalChains()` which builds chains from URL co-occurrence only.
+
+**Fix (3 changes):**
+
+1. In `src/lib/dashboard/aggregator.ts:computeAllCrossSignals()`: also load `compound_findings` from `AuditCycle.projectionsCache` of the latest complete cycle.
+2. Run `compoundFindingsToChains(compoundFindings)` to convert.
+3. Merge with the existing heuristic chains, sort compound-first (they carry real causal narratives + higher confidence), then heuristic co-occurrence chains below.
+
+Bonus: add a `chain_type: 'compound' | 'co-occurrence'` field on `CrossSignalChain` so the UI can visually differentiate the two (a small badge or different card style).
+
+**Acceptance criteria:** open `/cross-signals` on a havefunnels.com cycle and see the compound chains at the top with their pre-written narratives (e.g. `cf.narrative`) instead of the generic template-generated text.
+
+**Why this can't wait for Wave 20:** Wave 21 alerts depend on having CompoundFinding chains reach the surface — see Wave 21.3. And the customer's UX problem ("cross signal insights são meio desconexos") resolves immediately with this change.
+
+---
+
 ## Wave 20 — Engine Consolidation + Always-On Layer
 
 > **Strategic context (2026-05-21):** The Vestigio thesis is being formalized around **"always-on revenue protection"** — continuous monitoring of conversion-critical surfaces, alerts when changes break revenue, and a monthly "value caught" report that makes the product feel inevitable (vs. the current "log in once a week to review findings" pattern). The engineering work to support this divides cleanly into two waves with a hard dependency: Wave 20 (engine consolidation) is the forcing function and prerequisite; Wave 21 (the always-on layer itself) plugs into Wave 20's clean API surface.
@@ -2676,17 +2702,23 @@ Surgical deletions. No behavior change, just less surface:
 - Single `computeClassification` call per cycle. Compute once in `staged-pipeline.ts`, pass result through `MultiPackInput`. Delete redundant invocations in `recompute.ts`.
 - Export `computeCrossPackSynthesis` and `computeExternalReconInferences` from `packages/inference/index.ts` so all inference modules use the same public surface.
 
-**Step 20.4 — Implement DecisionStatus transitions (1-2 days, optional based on 20.1 decision)**
+**Step 20.4 — Implement Finding lifecycle (1-2 days)**
 
-- New service: `packages/decision/lifecycle.ts` — takes `Decision[]` from current cycle + `Decision[]` from previous cycle, computes status transitions:
+Updated 2026-05-21 — original draft put lifecycle on Decision. Per the **Modelo B** decision (see [ENGINE_MAP.md](ENGINE_MAP.md#modelo-b-decision-2026-05-21--decision-collapses-into-finding)), lifecycle moves to **Finding** because Decision is being collapsed into a transient internal computation.
+
+- New service: `packages/projections/lifecycle.ts` — takes `FindingProjection[]` from current cycle + previous cycle, computes status transitions per finding (matched by `inference_key + surface`):
   - First time seen → `Created`
-  - Confidence rises above threshold X cycles in a row → `Confirmed`
+  - Same finding present X cycles in a row with stable/improving confidence → `Confirmed`
   - Confidence drops below threshold → `Stale`
-  - No longer in current cycle's decisions OR `decision_impact: 'resolved'` → `Resolved`
+  - No longer present in current cycle's findings → `Resolved`
   - Was `Resolved` last cycle, present again this cycle → `Regressed`
-- Hook into `recompute.ts` after `detectChanges` runs.
-- Persist `Decision.status` to `CycleSnapshot.decisions[]` (already JSON, no schema change).
-- This unlocks: Wave 21's "value caught" report (resolved decisions = captured value) and the chat agent's ability to say "you confirmed this 3 cycles ago" instead of treating every finding as new.
+- Add `Finding.status` + `Finding.status_changed_at` + `Finding.cycles_seen` to `FindingProjection` (`packages/projections/types.ts`) and to the Prisma `Finding` table.
+- Migration: `ALTER TABLE Finding ADD COLUMN status TEXT, status_changed_at TIMESTAMP, cycles_seen INT DEFAULT 1`.
+- Hook into `run-cycle.ts` after `projectAll` returns, before `PrismaFindingStore.saveForCycle`.
+- Backfill: existing findings start as `Created` with `cycles_seen = 1`. After 1-2 cycles, lifecycle data accumulates naturally.
+- Also migrate `Decision.category` and `Decision.decision_impact` onto `Finding` (computed at projection time from the inference's decision context).
+- **Delete `Decision.projections.findings[]` field** (`packages/decision/engine.ts:158-163`) — always empty, no longer makes sense.
+- This unlocks: Wave 21.5 "value caught" report (count of `Resolved` findings × their `value_case.range_mid` = captured value), and the chat agent's ability to say "you confirmed this 3 cycles ago" instead of treating every finding as new.
 
 **Step 20.5 — Re-root the bypass paths (2-3 days)**
 
@@ -2775,6 +2807,7 @@ This is on the user's blocker list independent of always-on — adblocker brittl
   - `funnel_dropoff_anomaly` — step in tracked funnel dropped >X%.
 - Each rule type owns its own threshold logic + LLM-narration template (1 Haiku call per alert, bounded ~5/mo/env).
 - Alert routing config per env: `alertChannels: { slack?, email?, webhook?, whatsapp? }`.
+- **Prefer CompoundFinding chains over individual findings when composing alerts.** When multiple findings sharing a causal root trigger simultaneously, surface as a single consolidated alert ("Your checkout has 3 connected issues totalling $X/mo at risk: off-domain handoff → missing trust badges → unknown payment provider") instead of 3 spammy alerts. This requires Wave 19d (wire-compound-findings-to-cross-signals) to land first so the CompoundFinding data is already reaching the surface layer.
 
 **Step 21.4 — Notification dispatcher (3-4 days)**
 

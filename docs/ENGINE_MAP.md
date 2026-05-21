@@ -156,8 +156,8 @@ The user's claim is verifiable. Here are the actual bypasses, dead paths, and di
 | 2 | `assertTruthResolved` — supposed enforcement gate | `packages/truth/consistency-guard.ts:195-203` | **Only called from tests** (`tests/behavioral-audit.test.ts:350`). Production code never enforces that signals entering inference carry truth_metadata. The contract is documented but unenforced. |
 | 3 | `domain/Finding` type | `packages/domain/finding.ts:10` | Defined, well-documented, **never instantiated in production code**. `FindingProjection` is the real runtime type. |
 | 4 | `DecisionStatus.{Confirmed,Stale,Resolved,Regressed}` | `packages/domain/enums.ts:21-27` | Enum has 5 states; only `Created` is ever assigned. The other 4 exist only in tests. |
-| 5 | `Decision.projections.findings[]` | `packages/decision/engine.ts:158-163` | Always initialized empty, never populated. Decisions don't project findings — the impact engine does. |
-| 6 | `packages/composites/compound-findings.ts` output (`CompoundFinding[]`) | `recompute.ts:1340-1357` | Computed and stored on `MultiPackResult.composites`, but never converted to `Inference`, `Finding`, or `Action`. Reaches no UI surface. |
+| 5 | `Decision.projections.findings[]` | `packages/decision/engine.ts:158-163` | Always initialized empty. **Verdict (2026-05-21): DELETE the field — Modelo B confirmed.** The whole Decision-as-separate-entity concept collapses: Decision becomes transient during inference (still computed for correlated-max scoring), but lifecycle/severity/category attributes move onto Finding. See "Modelo B decision" below. |
+| 6 | `packages/composites/compound-findings.ts` output (`CompoundFinding[]`) | `recompute.ts:1340-1357` | Computed and stored on `MultiPackResult.composites`. **Verdict (2026-05-21): RESGATAR — quick-win wire.** The bridge function `compoundFindingsToChains()` exists at `src/lib/dashboard/cross-signal-narrative.ts:101` but has zero call sites. The `/cross-signals` page is supposed to surface these as the primary cross-signal layer — instead it falls back to a weak "findings grouped by URL" heuristic in `buildCrossSignalChains()` at `aggregator.ts:1020`. **Fix is ~1h of code, see [ROADMAP.md Wave 19d](ROADMAP.md).** |
 
 ### C. Triple-implementation / overlapping responsibilities
 
@@ -203,6 +203,40 @@ This document focuses on coherence gaps, but the engine has real strengths worth
 - **Suppression governance** — well-modeled at the data layer, even if currently underused at the filtering layer.
 
 The architecture is **not bad**, it is **incomplete and undisciplined at the seams**. The fix is consolidation, not rewrite.
+
+---
+
+## Modelo B decision (2026-05-21) — Decision collapses into Finding
+
+The original DECISION_ENGINE.md framing (Workspace > Decision > Findings > Actions) was elegant but never made it to the UI. After review with the product owner, we're consolidating to **Modelo B**:
+
+```
+Workspace
+   └── Finding (carries severity, impact, status, decision_impact, category)
+          └── Action (prescription that addresses N findings)
+```
+
+Decision is **not deleted** — it becomes a **transient internal computation** during inference that drives correlated-max scoring (`packages/decision/engine.ts:produceDecision`). What changes:
+
+- **`DecisionStatus` lifecycle moves to Finding** (Wave 20.4). `Finding.status: 'created' | 'confirmed' | 'stale' | 'resolved' | 'regressed'`. This is what makes "value caught" reports possible — see Wave 21.5.
+- **`Decision.category` (`risk | gate | opportunity | state`) moves to Finding** as `Finding.category`.
+- **`Decision.decision_impact` moves to Finding** as `Finding.decision_impact`.
+- **`Decision.projections.findings[]` is deleted entirely** — no longer needed since the relationship inverts (findings carry their own decision-attributes, not the reverse).
+- **Pack-level verdicts become computed views**, not persisted entities. "Scale Readiness: at_risk" is `packVerdict('scale_readiness', findings)` — a function over findings, not a row in the DB.
+- **The chat agent still answers `is_it_safe_to_scale_traffic?`**, just by aggregating findings in the scale_readiness pack instead of looking up a pre-computed Decision row.
+
+### Why Modelo B vs the original A
+
+1. **The UI already treats findings as primary.** Trying to surface Decision now means redesigning UX for a layer users never asked for.
+2. **"Value caught" maps naturally to findings.** "You had 5 findings open last month, 3 are now resolved, $X recaptured" is direct. "Your scale_readiness Decision transitioned from unsafe to safe" requires teaching what a decision is first.
+3. **Simpler mental model** = onboarding cheaper, docs shorter, fewer places to introduce bugs.
+4. **The pack-level rollup that Decision provided is trivially a computed view** — no entity needed.
+
+### What's preserved
+
+- Correlated-max severity scoring (`packages/risk/evaluator.ts`)
+- Per-pack rule grouping (each pack still has its own inference module → finding generators)
+- The 8 question-keys (`is_it_safe_to_scale_traffic`, etc.) — they're computed views now, not pre-stored answers
 
 ---
 

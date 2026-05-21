@@ -172,6 +172,20 @@ export interface CrossSignalChain {
 	 * same headline without duplicating logic.
 	 */
 	headline?: string | null;
+	/**
+	 * Wave 19d — distinguishes real CompoundFinding-derived chains
+	 * (causal, multi-step, narrated by the composites engine) from
+	 * URL-co-occurrence heuristic chains (multiple packs hit the same
+	 * URL). 'compound' chains carry stronger evidence and should sort
+	 * above 'co-occurrence' in the UI.
+	 */
+	chainType?: 'compound' | 'co-occurrence';
+	/**
+	 * Wave 19d — confidence tier from CompoundFinding. Only set for
+	 * `chainType: 'compound'`. Useful for the UI to gray out 'heuristic'
+	 * compounds vs highlight 'confirmed' ones.
+	 */
+	chainConfidence?: 'confirmed' | 'likely' | 'heuristic';
 }
 
 /**

@@ -430,44 +430,74 @@ const MiniCalculator = ({
 									{" "}⚡
 								</p>
 
-								<div className='mx-auto flex max-w-[540px] flex-col items-center gap-4'>
-									{/* Domain input */}
-									<div className='w-full'>
-										<input
-											type='text'
-											value={url}
-											onChange={(e) => { setUrl(e.target.value); setUrlNudge(false); }}
-											onKeyDown={handleKeyDown}
-											placeholder={t("url_placeholder")}
-											className={domainInputClass}
-										/>
-										{urlNudge && (
-											<p className='mt-2 text-center text-xs text-amber-400/80'>{t("url_nudge")}</p>
-										)}
-									</div>
-
-									{/* CTA — always visible below input */}
+								<div className='mx-auto flex max-w-[640px] flex-col items-center gap-4'>
+									{/* Domain step — inline pill: input + ShinyButton
+									    sit inside one shiny-input shell. Outer
+									    container keeps the existing emerald conic
+									    border (continuity with the previous design)
+									    and the ShinyButton retains its own shimmer
+									    + dots animation inside on the right. The
+									    input field itself is transparent so only the
+									    outer shell paints the dark fill. */}
 									{!showExtra && (
-										<div className='relative w-full'>
-											{domainReady && (
-												<span className='absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5'>
-													<span className='absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60' style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
-													<span className='relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.6)]'>
-														<svg className='h-2.5 w-2.5 text-white' fill='none' viewBox='0 0 24 24' strokeWidth={3} stroke='currentColor'>
-															<path strokeLinecap='round' strokeLinejoin='round' d='M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59' />
-														</svg>
-													</span>
-												</span>
-											)}
-											<ShinyButton
-												onClick={() => {
-													if (!domainReady) { setUrlNudge(true); return; }
-													handleSubmit();
-												}}
-												className='w-full text-base sm:w-auto sm:text-sm'
+										<div className='w-full'>
+											<div
+												className={`shiny-input relative flex w-full items-center gap-2 !rounded-2xl !p-1.5 pl-4 sm:pl-5 ${
+													domainReady ? "!ring-1 !ring-emerald-500/40" : ""
+												}`}
 											>
-												{t("cta_audit")}
-											</ShinyButton>
+												{domainReady && (
+													<span className='absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5'>
+														<span className='absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-60' style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
+														<span className='relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.6)]'>
+															<svg className='h-2.5 w-2.5 text-white' fill='none' viewBox='0 0 24 24' strokeWidth={3} stroke='currentColor'>
+																<path strokeLinecap='round' strokeLinejoin='round' d='M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59' />
+															</svg>
+														</span>
+													</span>
+												)}
+												<input
+													type='text'
+													value={url}
+													onChange={(e) => { setUrl(e.target.value); setUrlNudge(false); }}
+													onKeyDown={handleKeyDown}
+													placeholder={t("url_placeholder")}
+													className='min-w-0 flex-1 bg-transparent py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none'
+												/>
+												<ShinyButton
+													onClick={() => {
+														if (!domainReady) { setUrlNudge(true); return; }
+														handleSubmit();
+													}}
+													className='!min-h-0 !w-auto shrink-0 !rounded-xl !px-3.5 !py-2.5 !text-xs sm:!px-6 sm:!text-sm'
+												>
+													{t("cta_audit")}
+												</ShinyButton>
+											</div>
+											{urlNudge && (
+												<p className='mt-2 text-center text-xs text-amber-400/80'>{t("url_nudge")}</p>
+											)}
+										</div>
+									)}
+
+									{/* Revenue + Business Type — fade in from right.
+									    The original domain input stays visible as a
+									    full-width readout so the user remembers what
+									    they typed; the inline pill collapses back
+									    into a column once the form expands. */}
+									{showExtra && (
+										<div className='w-full'>
+											<input
+												type='text'
+												value={url}
+												onChange={(e) => { setUrl(e.target.value); setUrlNudge(false); }}
+												onKeyDown={handleKeyDown}
+												placeholder={t("url_placeholder")}
+												className={domainInputClass}
+											/>
+											{urlNudge && (
+												<p className='mt-2 text-center text-xs text-amber-400/80'>{t("url_nudge")}</p>
+											)}
 										</div>
 									)}
 

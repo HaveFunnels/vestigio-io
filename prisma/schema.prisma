@@ -780,6 +780,8 @@ model PixCharge {
   mpPaymentId       String?   @unique @map(name: "mp_payment_id") // MP payment.id; null only between create-call and webhook-confirm
   amountCents       Int       @map(name: "amount_cents")
   currency          String    @default("BRL")
+  planKey           String    @map(name: "plan_key") // "vestigio" | "pro" | "max" — what the user is renewing
+  cycle             String    @default("monthly") @map(name: "cycle") // "monthly" | "annually"
   qrCode            String?   @map(name: "qr_code") @db.Text // copy-paste text (BR Code EMV)
   qrCodeBase64      String?   @map(name: "qr_code_base64") @db.Text // PNG, inline-image friendly
   ticketUrl         String?   @map(name: "ticket_url")

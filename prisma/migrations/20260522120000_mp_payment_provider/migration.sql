@@ -18,6 +18,8 @@ CREATE TABLE "PixCharge" (
   "mp_payment_id"      TEXT,
   "amount_cents"       INTEGER NOT NULL,
   "currency"           TEXT NOT NULL DEFAULT 'BRL',
+  "plan_key"           TEXT NOT NULL,
+  "cycle"              TEXT NOT NULL DEFAULT 'monthly',
   "qr_code"            TEXT,
   "qr_code_base64"     TEXT,
   "ticket_url"         TEXT,

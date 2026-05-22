@@ -7,6 +7,8 @@ import {
   IdGenerator,
   makeRef,
 } from '../domain';
+// Wave 20.6 — shared inference builders extracted from this file.
+import { createInference, inferCohort } from './shared/builders';
 
 // ──────────────────────────────────────────────
 // Inference Engine — composite interpretations from signals
@@ -3130,11 +3132,7 @@ function inferSensitiveInputPerceivedRiskDropoff(byKey: Map<string, Signal>, sco
 // Behavioral Cohort Inferences (Pixel-Dependent Workspaces)
 // ──────────────────────────────────────────────
 
-function inferCohort(sig: Signal | undefined, key: string, cat: InferenceCategory, reasoning: string, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: key, category: cat, conclusion: key, conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning, reasoning_slots: { severity } })];
-}
+// Wave 20.6 — local inferCohort removed. Imported from ./shared/builders.
 
 // First Impression Revenue
 function inferFirstSessionMilestoneStall(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
@@ -3328,47 +3326,7 @@ function inferPricingPageFramingUnclear(byKey: Map<string, Signal>, scoping: Sco
   })];
 }
 
-function createInference(params: {
-  inference_key: string;
-  category: InferenceCategory;
-  conclusion: string;
-  conclusion_value: string;
-  severity_hint?: string;
-  confidence: number;
-  scoping: Scoping;
-  cycle_ref: string;
-  ids: IdGenerator;
-  signal_refs: string[];
-  evidence_refs: string[];
-  reasoning: string;
-  reasoning_slots?: Record<string, string | number>;
-}): Inference {
-  const now = new Date();
-  return {
-    id: params.ids.next(),
-    inference_key: params.inference_key,
-    category: params.category,
-    scoping: params.scoping,
-    cycle_ref: params.cycle_ref,
-    freshness: {
-      observed_at: now,
-      fresh_until: new Date(now.getTime() + 24 * 60 * 60 * 1000),
-      freshness_state: FreshnessState.Fresh,
-      staleness_reason: null,
-    },
-    conclusion: params.conclusion,
-    conclusion_value: params.conclusion_value,
-    severity_hint: params.severity_hint || null,
-    confidence: params.confidence,
-    signal_refs: params.signal_refs,
-    evidence_refs: params.evidence_refs,
-    reasoning: params.reasoning,
-    reasoning_slots: params.reasoning_slots,
-    description: null,
-    created_at: now,
-    updated_at: now,
-  };
-}
+// Wave 20.6 — local createInference removed. Imported from ./shared/builders.
 
 // ──────────────────────────────────────────────
 // Wave 3.1 Tier 2: LLM Enrichment Inferences

@@ -12,6 +12,7 @@ import { createInference, inferCohort } from './shared/builders';
 import type { PackInput } from './shared/types';
 // Wave 20.6 — pack files migrated from inline definitions in this file.
 import { computeFirstImpressionRevenuePack } from './packs/first-impression-revenue';
+import { computeActionValueMapPack } from './packs/action-value-map';
 
 // ──────────────────────────────────────────────
 // Inference Engine — composite interpretations from signals
@@ -193,9 +194,8 @@ export function computeInferences(
   // Behavioral cohort inferences (pixel-dependent workspaces)
   // Wave 20.6 — first-impression-revenue migrated to packs/first-impression-revenue.ts
   inferences.push(...computeFirstImpressionRevenuePack(packInput));
-  inferences.push(...inferLowValueActionDominates(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferHighValueActionUnderexposed(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferDeadWeightSurfaceTraffic(byKey, scoping, cycle_ref, ids));
+  // Wave 20.6 — action-value-map migrated to packs/action-value-map.ts
+  inferences.push(...computeActionValueMapPack(packInput));
   inferences.push(...inferPaidTrafficFrictionElevated(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferPaidTrafficTrustGap(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferPaidMobileCompoundingWaste(byKey, scoping, cycle_ref, ids));
@@ -3148,18 +3148,7 @@ function inferSensitiveInputPerceivedRiskDropoff(byKey: Map<string, Signal>, sco
 // Wave 20.6 — First Impression Revenue inferences migrated to
 // packs/first-impression-revenue.ts
 
-// Action Value Map
-function inferLowValueActionDominates(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  return inferCohort(byKey.get('low_value_action_dominates'), 'low_value_action_dominates', InferenceCategory.LowValueActionDominates, 'The most visible user actions (CTAs, interactive elements) have very low engagement rates and poor correlation with conversion. Users see these actions but do not interact — the actions are occupying attention without driving revenue. The root cause is typically misplaced CTAs, weak copy, or actions that do not match user intent at that stage of the journey.', scoping, cycle_ref, ids);
-}
-
-function inferHighValueActionUnderexposed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  return inferCohort(byKey.get('high_value_action_underexposed'), 'high_value_action_underexposed', InferenceCategory.HighValueActionUnderexposed, 'Conversions are happening but CTA engagement across all cohorts is very low, suggesting the conversion path exists but is not easy to find. Revenue-positive actions are underexposed — users who do convert find their way despite the UX, not because of it. Increasing visibility of the proven conversion path would amplify revenue.', scoping, cycle_ref, ids);
-}
-
-function inferDeadWeightSurfaceTraffic(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  return inferCohort(byKey.get('dead_weight_surface_traffic'), 'dead_weight_surface_traffic', InferenceCategory.DeadWeightSurfaceTraffic, 'The vast majority of sessions that reach the site never progress beyond awareness toward conversion. Surfaces are receiving traffic but not converting it into commercial progression. This represents dead-weight traffic — pageviews that consume server resources and ad spend without contributing to revenue.', scoping, cycle_ref, ids);
-}
+// Wave 20.6 — Action Value Map inferences migrated to packs/action-value-map.ts
 
 // Acquisition Integrity
 function inferPaidTrafficFrictionElevated(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {

@@ -29,7 +29,9 @@ import { getPlanByKey } from "@/libs/plan-config";
 // ──────────────────────────────────────────────
 
 const bodySchema = z.object({
-	planKey: z.enum(["pro", "max"]), // vestigio = free tier, no subscription
+	// All three are PAID tiers; `free` is reserved for lapsed/pending
+	// state and has no checkout.
+	planKey: z.enum(["vestigio", "pro", "max"]),
 	cycle: z.enum(["monthly", "annually"]).default("monthly"),
 	cardTokenId: z.string().optional(),
 });

@@ -67,7 +67,7 @@ async function resolvePlan(priceId: string): Promise<string> {
 		const { resolvePlanFromPriceId } = await import("@/libs/plan-config");
 		return await resolvePlanFromPriceId(priceId);
 	} catch {
-		return "vestigio";
+		return "free";
 	}
 }
 
@@ -283,7 +283,7 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 				if (org) {
 					await prisma.organization.update({
 						where: { id: org.id },
-						data: { plan: "vestigio", status: "active" },
+						data: { plan: "free", status: "active" },
 					});
 					logEvent(eventType, `Org ${org.id} downgraded to free (canceled)`);
 				}
@@ -314,7 +314,7 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 
 			if (user) {
 				const priceId = items?.[0]?.price?.id || items?.[0]?.price_id;
-				const plan = priceId ? await resolvePlan(priceId) : "vestigio";
+				const plan = priceId ? await resolvePlan(priceId) : "free";
 				const org = await findUserOrg(user.id);
 				if (org) {
 					await prisma.organization.update({

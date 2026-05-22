@@ -29,7 +29,8 @@ interface MpCheckoutModalProps {
 	open: boolean;
 	onClose: () => void;
 	onSuccess: () => void;
-	planKey: "pro" | "max";
+	/** Three paid tiers. `free` is the lapsed sentinel, not a checkout target. */
+	planKey: "vestigio" | "pro" | "max";
 	planLabel: string;
 	cycle: Cycle;
 	amountCentsBrl: number;

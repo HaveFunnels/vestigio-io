@@ -89,7 +89,7 @@ async function handlePreapprovalEvent(preapprovalId: string) {
 	const sub = await getPreapproval(preapprovalId);
 	const planKey = sub.preapproval_plan_id
 		? await resolvePlanFromPriceId(sub.preapproval_plan_id)
-		: "vestigio";
+		: "free";
 
 	// Locate the user: external_reference is canonical when we set it
 	// at create-time (preapproval:<userId>:...). Fall back to email +
@@ -145,11 +145,14 @@ async function handlePreapprovalEvent(preapprovalId: string) {
 		});
 		log("preapproval.paused", `org=${org.id}`);
 	} else if (sub.status === "cancelled") {
+		// Downgrade to `free` (lapsed). org stays "active" so the UI
+		// renders the upgrade prompt — `suspended` is reserved for the
+		// post-D+14 grace expiry and chargeback paths.
 		await prisma.organization.update({
 			where: { id: org.id },
-			data: { plan: "vestigio", status: "active" },
+			data: { plan: "free", status: "active" },
 		});
-		log("preapproval.cancelled", `org=${org.id} downgraded`);
+		log("preapproval.cancelled", `org=${org.id} downgraded to free`);
 	} else {
 		log("preapproval.pending", `org=${org.id} sub=${sub.id} status=${sub.status}`);
 	}

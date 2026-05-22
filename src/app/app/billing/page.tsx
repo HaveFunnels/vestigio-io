@@ -97,10 +97,11 @@ export default function BillingPage() {
   const [showCreditsModal, setShowCreditsModal] = useState(false);
   // MP checkout state — opens with a target plan/cycle when the user
   // clicks a plan in the comparison grid (and the active provider is MP).
+  // All three are paid tiers; "free" is the lapsed status, no checkout.
   const [mpCheckout, setMpCheckout] = useState<
     | null
     | {
-        planKey: "pro" | "max";
+        planKey: "vestigio" | "pro" | "max";
         planLabel: string;
         cycle: BillingCycle;
         amountCentsBrl: number;
@@ -160,7 +161,7 @@ export default function BillingPage() {
     fetchCredits();
   }, [fetchCredits]);
 
-  const currentPlanId = billing?.plan || "vestigio";
+  const currentPlanId = billing?.plan || "free";
   const basePlans = fetchedPlans || FALLBACK_PLANS;
 
   // Mark the current plan in the plans array
@@ -286,7 +287,7 @@ export default function BillingPage() {
   const handlePlanSelect = useCallback(
     (planId: string, billingCycle: BillingCycle) => {
       if (planId === currentPlanId) return;
-      if (planId !== "pro" && planId !== "max") return; // Starter has no checkout
+      if (planId !== "vestigio" && planId !== "pro" && planId !== "max") return;
 
       const targetPlan = pricingPlans.find((p) => p.key === planId);
       if (!targetPlan) {
@@ -316,7 +317,7 @@ export default function BillingPage() {
             ? (targetPlan.monthlyPriceCentsBrl ?? 0) * 10
             : targetPlan.monthlyPriceCentsBrl ?? 0;
         setMpCheckout({
-          planKey: planId,
+          planKey: planId as "vestigio" | "pro" | "max",
           planLabel: targetPlan.label,
           cycle: billingCycle,
           amountCentsBrl,
@@ -368,7 +369,8 @@ export default function BillingPage() {
 
   const planLabel = (key: string) => {
     const labels: Record<string, string> = {
-      vestigio: "Vestigio",
+      free: "Free",
+      vestigio: "Vestigio Starter",
       pro: "Vestigio Pro",
       max: "Vestigio Max",
     };

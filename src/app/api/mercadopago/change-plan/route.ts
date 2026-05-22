@@ -31,7 +31,7 @@ import { getPlanByKey } from "@/libs/plan-config";
 // ──────────────────────────────────────────────
 
 const bodySchema = z.object({
-	planKey: z.enum(["pro", "max"]),
+	planKey: z.enum(["vestigio", "pro", "max"]),
 	cycle: z.enum(["monthly", "annually"]).default("monthly"),
 	cardTokenId: z.string().optional(),
 });

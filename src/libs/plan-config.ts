@@ -109,6 +109,14 @@ export function getCadenceForPlan(planKey: string): CycleCadence {
 }
 
 const DEFAULT_FEATURES: Record<string, PlanFeature[]> = {
+  free: [
+    { name: "Read-only access to last cycle", included: true },
+    { name: "0 environments", included: true },
+    { name: "0 team members", included: true },
+    { name: "No audit cycles", included: false },
+    { name: "Agentic insights", included: false },
+    { name: "Email support", included: false },
+  ],
   vestigio: [
     { name: "1 environment", included: true },
     { name: "1 team member", included: true },
@@ -150,7 +158,16 @@ const DEFAULT_FEATURES: Record<string, PlanFeature[]> = {
   ],
 };
 
+// `free` is the fallback status. Users land here when they haven't
+// paid yet (just signed up) or after a lapse (PIX missed, chargeback,
+// cancellation). It has no MP plan and no checkout — to leave `free`
+// the user has to pick Starter/Pro/Max via the billing page.
+//
+// `vestigio` is the Starter PAID tier (R$ 99 / mo). Historical naming
+// — the key kept its original brand name to avoid a destructive
+// rename across DB rows. Label is "Starter" in the UI.
 const DEFAULT_PLANS: PlanConfig[] = [
+  { key: "free", label: "Free", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 0, monthlyPriceCentsBrl: 0, mpPreapprovalPlanId: "", mpAnnualPreapprovalPlanId: "", maxMcpCalls: 0, continuousAudits: false, creditsEnabled: false, maxEnvironments: 0, maxMembers: 0, features: DEFAULT_FEATURES.free },
   { key: "vestigio", label: "Starter", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 9900, monthlyPriceCentsBrl: 9900, mpPreapprovalPlanId: "", mpAnnualPreapprovalPlanId: "", maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1, features: DEFAULT_FEATURES.vestigio },
   { key: "pro", label: "Pro", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 19900, monthlyPriceCentsBrl: 19900, mpPreapprovalPlanId: "", mpAnnualPreapprovalPlanId: "", maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3, features: DEFAULT_FEATURES.pro },
   { key: "max", label: "Max", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 39900, monthlyPriceCentsBrl: 39900, mpPreapprovalPlanId: "", mpAnnualPreapprovalPlanId: "", maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10, features: DEFAULT_FEATURES.max },
@@ -178,7 +195,10 @@ export async function getPlanConfigs(): Promise<PlanConfig[]> {
   return DEFAULT_PLANS;
 }
 
-/** Resolve plan key from any provider's price ID (monthly or annual) */
+/** Resolve plan key from any provider's price ID (monthly or annual).
+ *  Falls back to "free" — the lapsed-status sentinel — when no match
+ *  exists. This is safer than falling back to a paid tier: an
+ *  unrecognized price id never accidentally grants Starter access. */
 export async function resolvePlanFromPriceId(priceId: string): Promise<string> {
   const plans = await getPlanConfigs();
   const match = plans.find(
@@ -190,7 +210,7 @@ export async function resolvePlanFromPriceId(priceId: string): Promise<string> {
       p.mpPreapprovalPlanId === priceId ||
       p.mpAnnualPreapprovalPlanId === priceId,
   );
-  return match?.key || "vestigio";
+  return match?.key || "free";
 }
 
 /** Get plan config for a specific plan key */

@@ -36,7 +36,9 @@ import { getPlanByKey } from "@/libs/plan-config";
 // ──────────────────────────────────────────────
 
 const bodySchema = z.object({
-	planKey: z.enum(["vestigio", "pro", "max"]).optional(), // defaults to user's current plan
+	// All three paid tiers are valid for PIX renewal. `free` is the
+	// lapsed sentinel — no charge to issue.
+	planKey: z.enum(["vestigio", "pro", "max"]).optional(),
 	cycle: z.enum(["monthly", "annually"]).default("monthly"),
 });
 
@@ -77,12 +79,14 @@ const POST = withErrorTracking(
 			return NextResponse.json({ message: "User has no organization" }, { status: 400 });
 		}
 
-		// Default planKey from org's current plan; reject "vestigio" since
-		// the free tier has no PIX charge to issue (no money owed).
+		// Default planKey from the org's current plan. Reject "free"
+		// because it's the lapsed/pending sentinel (no charge owed).
+		// Starter (`vestigio`) is a PAID tier here — R$ 99 — so PIX is
+		// valid for it.
 		const planKey = parsed.data.planKey || membership.organization.plan;
-		if (planKey === "vestigio") {
+		if (planKey === "free") {
 			return NextResponse.json(
-				{ message: "Starter is free — no PIX charge needed" },
+				{ message: "Pick a paid plan first — free has no PIX charge to issue" },
 				{ status: 400 },
 			);
 		}

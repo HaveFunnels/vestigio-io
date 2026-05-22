@@ -56,6 +56,13 @@ export async function findPackByPriceId(
 	return packs.find((p) => p.priceId === priceId) ?? null;
 }
 
+/** Resolve a pack by its key. MP webhook uses this since the external
+ *  reference carries the packKey, not a provider-specific priceId. */
+export async function findPackByKey(packKey: string): Promise<CreditPack | null> {
+	const packs = await getCreditPacks();
+	return packs.find((p) => p.key === packKey) ?? null;
+}
+
 export function invalidateCreditPackCache(): void {
 	cached = null;
 	cacheTime = 0;

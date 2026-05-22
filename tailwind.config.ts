@@ -12,11 +12,16 @@ const config: Config = {
 	darkMode: "class",
 	theme: {
 		fontFamily: {
-			satoshi: ["Satoshi", "sans-serif"],
+			// Satoshi self-hosted via next/font/local → CSS var. The
+			// previous "Satoshi" literal needed the satoshi.css stylesheet
+			// loaded and parsed before the font could be discovered;
+			// next/font/local emits <link rel="preload"> automatically,
+			// shaving LCP on the homepage body text.
+			satoshi: ["var(--font-satoshi)", "sans-serif"],
 			inter: ["Inter", "sans-serif"],
-			sans: ['"Satoshi"', ...defaultTheme.fontFamily.sans],
+			sans: ["var(--font-satoshi)", ...defaultTheme.fontFamily.sans],
 			// Geist — sharp grotesk display face for hero headlines (taste-skill rec).
-			display: ["var(--font-display)", "Satoshi", "sans-serif"],
+			display: ["var(--font-display)", "var(--font-satoshi)", "sans-serif"],
 			// JetBrains Mono CSS var injected by next/font in src/app/layout.tsx.
 			// Used exclusively for numerics on the dashboard so financial data
 			// reads as financial data instead of UI prose.

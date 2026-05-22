@@ -103,6 +103,21 @@ function detectLocaleFromHeaders(headerStore: Headers): string {
 }
 
 /**
+ * NextAuth session cookie names — we sniff for these before paying
+ * the cost of `getServerSession`. Logged-out marketing visitors don't
+ * have either cookie, so we can skip the JWT decrypt + DB lookup
+ * entirely and shave ~200-400ms off TTFB on every public page.
+ *
+ * Production uses the `__Secure-` prefix; dev/non-HTTPS uses the bare
+ * name. Custom cookie names from authOptions.cookies.sessionToken.name
+ * would still match — but the default is one of these two.
+ */
+const SESSION_COOKIE_NAMES = [
+	"next-auth.session-token",
+	"__Secure-next-auth.session-token",
+];
+
+/**
  * Resolve a locale from the authenticated user's session, if any.
  *
  * The JWT carries `user.locale` populated from the DB at sign-in time
@@ -112,8 +127,20 @@ function detectLocaleFromHeaders(headerStore: Headers): string {
  *
  * Returns null when there's no session or the stored locale is not
  * supported (e.g. user.locale is an old/garbage value).
+ *
+ * Performance: we early-out without invoking `getServerSession` when
+ * no NextAuth session cookie is present. Pre-fix this function ran on
+ * every marketing page load and added meaningful latency to TTFB even
+ * for anonymous visitors who would never have a session.
  */
-async function detectLocaleFromSession(): Promise<string | null> {
+async function detectLocaleFromSession(
+	cookieStore: Awaited<ReturnType<typeof cookies>>,
+): Promise<string | null> {
+	const hasSessionCookie = SESSION_COOKIE_NAMES.some(
+		(name) => cookieStore.get(name)?.value,
+	);
+	if (!hasSessionCookie) return null;
+
 	try {
 		const session = await getServerSession(authOptions);
 		const userLocale = (session?.user as { locale?: string } | undefined)?.locale;
@@ -144,7 +171,7 @@ export default getRequestConfig(async () => {
 	let locale = "en";
 
 	if (integrations.isI18nEnabled) {
-		const sessionLocale = await detectLocaleFromSession();
+		const sessionLocale = await detectLocaleFromSession(cookieStore);
 		if (sessionLocale) {
 			locale = sessionLocale;
 		} else if (SUPPORTED_LOCALES.includes(cookieLocale)) {

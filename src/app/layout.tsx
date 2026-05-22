@@ -2,18 +2,46 @@ import { BrandingProvider } from "@/components/BrandingProvider";
 import JsonLd from "@/components/SEO/JsonLd";
 import { Metadata, Viewport } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import "../styles/globals.css";
-import "../styles/satoshi.css";
+
+// Satoshi — body face. Previously loaded via a hand-written
+// satoshi.css with 10 @font-face declarations. That pattern doesn't
+// emit <link rel="preload">, so the browser only discovers the font
+// AFTER parsing the CSS, which pushes LCP later. Switching to
+// next/font/local gives us:
+//   1. Automatic preload hints in <head> (LCP-critical body text)
+//   2. Self-hosted with content-hash URLs (cache-friendly)
+//   3. font-display: swap so text never hides behind invisible glyphs
+// The CSS variable hooks into Tailwind's font-satoshi/font-sans.
+const satoshi = localFont({
+	src: [
+		{ path: "../fonts/Satoshi-Light.woff2",       weight: "300", style: "normal" },
+		{ path: "../fonts/Satoshi-LightItalic.woff2", weight: "300", style: "italic" },
+		{ path: "../fonts/Satoshi-Regular.woff2",     weight: "400", style: "normal" },
+		{ path: "../fonts/Satoshi-Italic.woff2",      weight: "400", style: "italic" },
+		{ path: "../fonts/Satoshi-Medium.woff2",      weight: "500", style: "normal" },
+		{ path: "../fonts/Satoshi-MediumItalic.woff2",weight: "500", style: "italic" },
+		{ path: "../fonts/Satoshi-Bold.woff2",        weight: "700", style: "normal" },
+		{ path: "../fonts/Satoshi-BoldItalic.woff2",  weight: "700", style: "italic" },
+		{ path: "../fonts/Satoshi-Black.woff2",       weight: "900", style: "normal" },
+		{ path: "../fonts/Satoshi-BlackItalic.woff2", weight: "900", style: "italic" },
+	],
+	variable: "--font-satoshi",
+	display: "swap",
+	preload: true,
+	fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
+});
 
 // JetBrains Mono — used exclusively for numbers across the dashboard
 // (counters, deltas, percentages, durations). Loaded via next/font so
 // the file lives on the same domain as the app, FOIT is suppressed
 // during swap, and the resulting CSS variable hooks straight into the
-// Tailwind `font-mono` family. Adding a Google font here intentionally
-// — Satoshi (loaded via the satoshi.css file above) stays the default
-// sans for prose; this is the second face for tabular numbers.
+// Tailwind `font-mono` family. Satoshi (loaded above via
+// next/font/local) stays the default sans for prose; this is the
+// second face for tabular numbers.
 const jetbrainsMono = JetBrains_Mono({
 	subsets: ["latin"],
 	variable: "--font-jetbrains-mono",
@@ -95,7 +123,7 @@ export default async function RootLayout({
 	const messages = await getMessages();
 
 	return (
-		<html lang={locale} className={`dark ${jetbrainsMono.variable} ${geist.variable}`} suppressHydrationWarning={true}>
+		<html lang={locale} className={`dark ${satoshi.variable} ${jetbrainsMono.variable} ${geist.variable}`} suppressHydrationWarning={true}>
 			<head>
 				{/* Preconnect to CDN — eliminates DNS+TLS on first video/image load */}
 				{process.env.NEXT_PUBLIC_CDN_URL && (

@@ -110,6 +110,10 @@ function mockFinding(key: string, polarity: 'negative' | 'positive' | 'neutral' 
     change_class: null,
     trend_pattern: null,
     trend_streak: null,
+    // Wave 20.4 — lifecycle defaults in test fixture
+    status: 'created',
+    status_changed_at: new Date().toISOString(),
+    cycles_seen: 1,
     evidence_quality: null,
     remediation_steps: null,
     estimated_effort_hours: null,

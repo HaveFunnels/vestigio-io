@@ -108,6 +108,11 @@ const BASE: Omit<
 	verification_eta_seconds: null,
 	trend_pattern: null,
 	trend_streak: null,
+	// Wave 20.4 — lifecycle defaults for demo data. Demo findings
+	// don't accumulate across cycles, so they stay 'created'.
+	status: 'created',
+	status_changed_at: new Date().toISOString(),
+	cycles_seen: 1,
 	workspace_refs: [],
 	action_refs: [],
 	opportunity_ref: null,

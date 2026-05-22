@@ -210,6 +210,28 @@ export interface FindingProjection {
   trend_pattern: 'consecutive_regressions' | 'gradual_degradation' | 'sudden_spike' | 'improving' | 'oscillating' | 'stable' | null;
   /** Wave 7.1: Number of consecutive cycles the current trend has held */
   trend_streak: number | null;
+  /**
+   * Wave 20.4 (Modelo B) — multi-cycle lifecycle state.
+   *
+   * Distinct from `change_class` which is a per-cycle delta. Status
+   * tracks the finding's lifetime across multiple cycles:
+   *
+   *   - created: first time seen, or cycles_seen < 3
+   *   - confirmed: present 3+ consecutive cycles, confidence stable/rising
+   *   - stale: still present but confidence dropped >20% vs prior peak
+   *   - resolved: was present in prior cycle, NOT present in current cycle.
+   *     Emitted as a "phantom" finding row carrying prior cycle's
+   *     impact data — powers Wave 21.5's "value caught" report via a
+   *     simple `WHERE status = 'resolved' AND statusChangedAt > X` query.
+   *   - regressed: was resolved last cycle, present again this cycle.
+   *
+   * Default for findings that pre-date Wave 20.4: 'created'.
+   */
+  status: 'created' | 'confirmed' | 'stale' | 'resolved' | 'regressed';
+  /** ISO timestamp of the last status transition. */
+  status_changed_at: string;
+  /** Number of consecutive cycles this finding has been observed (>=1). */
+  cycles_seen: number;
   /** Phase 0 UX: Aggregated evidence quality scores */
   evidence_quality: {
     source_reliability: number;

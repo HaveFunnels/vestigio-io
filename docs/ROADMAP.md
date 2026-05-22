@@ -2706,23 +2706,16 @@ All three sub-tasks landed in one wave:
 - ✅ **computeClassification — one invocation per cycle.** Added optional `classification?: ClassificationState` to `MultiPackInput`. `run-cycle.ts` now passes `result.classification` from `runStagedPipeline()` through to `recomputeWithPool`, and `recompute.ts:609` uses the input if provided, falls back to computing only when absent (so direct test callers still work). Net: one fewer compute pass per cycle on the same evidence.
 - ✅ **inference/index.ts public surface.** Added exports for `computeCrossPackSynthesis` and `computeExternalReconInferences` (previously imported directly from `recompute.ts`, bypassing the public surface). `recompute.ts` updated to use the package-level barrel import for all 10 inference modules consistently.
 
-**Step 20.4 — Implement Finding lifecycle (1-2 days)**
+**Step 20.4 — Implement Finding lifecycle (1-2 days) — SHIPPED 2026-05-22**
 
-Updated 2026-05-21 — original draft put lifecycle on Decision. Per the **Modelo B** decision (see [ENGINE_MAP.md](ENGINE_MAP.md#modelo-b-decision-2026-05-21--decision-collapses-into-finding)), lifecycle moves to **Finding** because Decision is being collapsed into a transient internal computation.
+- ✅ **Schema migration** (`prisma/migrations/20260522000000_finding_lifecycle/`): added `status` (default `'created'`), `statusChangedAt` (default NOW()), `cyclesSeen` (default 1) to `Finding`. New indices: `(environmentId, inferenceKey, surface)` for cross-cycle lookup and `(environmentId, status, statusChangedAt)` for Wave 21.5 value-caught queries.
+- ✅ **`packages/projections/lifecycle.ts`** — `applyLifecycle(current, prior)` with the 5-state transition table from ENGINE_TARGET_API.md §6. Pure function — no I/O. Phantom `'resolved'` rows are emitted for prior findings absent in current, carrying prior cycle's impact data for value-caught accounting.
+- ✅ **`FindingProjection` type extended** (`packages/projections/types.ts`): `status`, `status_changed_at`, `cycles_seen`. All construction sites (projectFindings, positive_check builder, demo data, test fixtures) updated with defaults.
+- ✅ **`PrismaFindingStore`** — `saveForCycle()` persists the 3 new columns via batch SQL + Prisma upsert fallback. New `loadPriorFindingStates(envId, excludingCycleId)` method returns `Map<identityKey, PriorFindingState>` for matching.
+- ✅ **Wired in `run-cycle.ts`** — after `projectAll` returns, lifecycle pass runs: loads prior states, applies transitions, appends phantom resolved rows to `projections.findings` before persistence. Best-effort: a failure leaves projections untouched (default `'created'`) and the next cycle retries.
+- ⏸️ **`Decision.category` + `Decision.decision_impact` migration to `Finding`** — deferred to a follow-up. Lifecycle work is sufficient to unlock Wave 21.5; the category/impact plumbing can land alongside the UI repointing of `ActionProjection.decision_status` (which is still using the dormant Decision-side enum).
 
-- New service: `packages/projections/lifecycle.ts` — takes `FindingProjection[]` from current cycle + previous cycle, computes status transitions per finding (matched by `inference_key + surface`):
-  - First time seen → `Created`
-  - Same finding present X cycles in a row with stable/improving confidence → `Confirmed`
-  - Confidence drops below threshold → `Stale`
-  - No longer present in current cycle's findings → `Resolved`
-  - Was `Resolved` last cycle, present again this cycle → `Regressed`
-- Add `Finding.status` + `Finding.status_changed_at` + `Finding.cycles_seen` to `FindingProjection` (`packages/projections/types.ts`) and to the Prisma `Finding` table.
-- Migration: `ALTER TABLE Finding ADD COLUMN status TEXT, status_changed_at TIMESTAMP, cycles_seen INT DEFAULT 1`.
-- Hook into `run-cycle.ts` after `projectAll` returns, before `PrismaFindingStore.saveForCycle`.
-- Backfill: existing findings start as `Created` with `cycles_seen = 1`. After 1-2 cycles, lifecycle data accumulates naturally.
-- Also migrate `Decision.category` and `Decision.decision_impact` onto `Finding` (computed at projection time from the inference's decision context).
-- **Delete `Decision.projections.findings[]` field** (`packages/decision/engine.ts:158-163`) — always empty, no longer makes sense.
-- This unlocks: Wave 21.5 "value caught" report (count of `Resolved` findings × their `value_case.range_mid` = captured value), and the chat agent's ability to say "you confirmed this 3 cycles ago" instead of treating every finding as new.
+This step unlocks Wave 21.5 "value caught" report: a simple `SELECT impactMidpoint FROM Finding WHERE status='resolved' AND statusChangedAt > start_of_month GROUP BY environmentId` query produces the monthly captured-value totals.
 
 **Step 20.5 — Re-root the bypass paths (2-3 days)**
 

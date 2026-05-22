@@ -475,6 +475,18 @@ model Finding {
   rootCause            String?
   changeClass          String? // regression | improvement | new_issue | resolved | stable_risk | null
   verificationMaturity String? // unverified | pending | partially | verified | degraded | stale | null
+  // Wave 20.4 — Modelo B Finding lifecycle. Tracks cross-cycle state
+  // transitions for the same (environmentId, inferenceKey, surface)
+  // identity. Powers the "value caught" monthly report (Wave 21.5) by
+  // making it a simple `WHERE status = 'resolved'` query.
+  /// Lifecycle state: created | confirmed | stale | resolved | regressed
+  status               String   @default("created")
+  /// Bumped whenever status transitions. Distinct from createdAt
+  /// (which marks when this row was persisted in this cycle).
+  statusChangedAt      DateTime @default(now())
+  /// Number of consecutive cycles this finding has been seen. Resets
+  /// on resolved → regressed. Drives created → confirmed transition.
+  cyclesSeen           Int      @default(1)
   // Full FindingProjection JSON for cheap rehydration on cold start
   projection           String   @db.Text
   createdAt            DateTime @default(now())
@@ -488,6 +500,11 @@ model Finding {
   @@index([environmentId, surface])
   @@index([environmentId, severity])
   @@index([cycleRef, inferenceKey])
+  // Wave 20.4 — supports loadPriorFindings(env, inferenceKey, surface)
+  // for cross-cycle lifecycle matching + status='resolved' value-caught
+  // queries.
+  @@index([environmentId, inferenceKey, surface])
+  @@index([environmentId, status, statusChangedAt])
 }
 
 // ──────────────────────────────────────────────

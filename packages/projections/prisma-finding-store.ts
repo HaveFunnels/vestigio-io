@@ -204,8 +204,13 @@ export class PrismaFindingStore {
 					f.change_class ?? null,            // $baseIdx+14
 					f.verification_maturity ?? null,   // $baseIdx+15
 					JSON.stringify(f),                 // $baseIdx+16
+					// Wave 20.4 — lifecycle. Defaults match applyLifecycle
+					// output for first-time findings (no prior).
+					f.status ?? 'created',                                  // $baseIdx+17
+					f.status_changed_at ?? new Date().toISOString(),        // $baseIdx+18
+					f.cycles_seen ?? 1,                                     // $baseIdx+19
 				);
-				const placeholders = Array.from({ length: 16 }, (_, i) => `$${baseIdx + i + 1}`);
+				const placeholders = Array.from({ length: 19 }, (_, i) => `$${baseIdx + i + 1}`);
 				valueRows.push(`(gen_random_uuid(), ${placeholders.join(', ')}, NOW())`);
 			}
 
@@ -215,7 +220,9 @@ export class PrismaFindingStore {
 					"pack", "severity", "polarity", "confidence",
 					"impactMin", "impactMax", "impactMidpoint",
 					"surface", "rootCause", "changeClass", "verificationMaturity",
-					"projection", "createdAt"
+					"projection",
+					"status", "statusChangedAt", "cyclesSeen",
+					"createdAt"
 				)
 				VALUES ${valueRows.join(',\n                       ')}
 				ON CONFLICT ("cycleId", "inferenceKey") DO UPDATE SET
@@ -230,7 +237,10 @@ export class PrismaFindingStore {
 					"rootCause"            = EXCLUDED."rootCause",
 					"changeClass"          = EXCLUDED."changeClass",
 					"verificationMaturity" = EXCLUDED."verificationMaturity",
-					"projection"           = EXCLUDED."projection"
+					"projection"           = EXCLUDED."projection",
+					"status"               = EXCLUDED."status",
+					"statusChangedAt"      = EXCLUDED."statusChangedAt",
+					"cyclesSeen"           = EXCLUDED."cyclesSeen"
 			`;
 
 			try {
@@ -267,6 +277,10 @@ export class PrismaFindingStore {
 								changeClass: f.change_class,
 								verificationMaturity: f.verification_maturity,
 								projection: JSON.stringify(f),
+								// Wave 20.4 — lifecycle (Modelo B)
+								status: f.status ?? 'created',
+								statusChangedAt: f.status_changed_at ? new Date(f.status_changed_at) : new Date(),
+								cyclesSeen: f.cycles_seen ?? 1,
 							},
 							update: {
 								pack: f.pack,
@@ -281,6 +295,10 @@ export class PrismaFindingStore {
 								changeClass: f.change_class,
 								verificationMaturity: f.verification_maturity,
 								projection: JSON.stringify(f),
+								// Wave 20.4 — lifecycle (Modelo B)
+								status: f.status ?? 'created',
+								statusChangedAt: f.status_changed_at ? new Date(f.status_changed_at) : new Date(),
+								cyclesSeen: f.cycles_seen ?? 1,
 							},
 						});
 						result.written++;
@@ -296,6 +314,77 @@ export class PrismaFindingStore {
 			}
 		}
 		return result;
+	}
+
+	// ── Wave 20.4 — Load prior cycle's finding states for lifecycle ──
+
+	/**
+	 * Load the prior cycle's findings indexed by lifecycle identity
+	 * (`${inferenceKey}::${normalizedSurface}`) so applyLifecycle()
+	 * can compute status transitions for the current cycle's
+	 * findings.
+	 *
+	 * "Prior cycle" = the latest cycle with status=complete that is
+	 * NOT the current cycle being projected. Returns an empty Map
+	 * when there's no prior — first-ever cycle for the env.
+	 *
+	 * Performance: returns only the columns lifecycle needs (status,
+	 * cycles_seen, confidence) + the full projection for materializing
+	 * phantom 'resolved' rows. Indexed by Finding_environmentId_
+	 * inferenceKey_surface_idx (Wave 20.4 migration).
+	 */
+	async loadPriorFindingStates(
+		environmentId: string,
+		excludingCycleId: string,
+	): Promise<Map<string, import("./lifecycle").PriorFindingState>> {
+		const out = new Map<string, import("./lifecycle").PriorFindingState>();
+
+		// Find the prior complete cycle (skip the current cycle).
+		const prior = await this.prisma.auditCycle.findFirst({
+			where: {
+				environmentId,
+				status: "complete",
+				id: { not: excludingCycleId },
+			},
+			orderBy: { completedAt: "desc" },
+			select: { id: true },
+		});
+		if (!prior) return out;
+
+		const rows = await this.prisma.finding.findMany({
+			where: { cycleId: prior.id },
+			select: {
+				inferenceKey: true,
+				surface: true,
+				status: true,
+				cyclesSeen: true,
+				confidence: true,
+				projection: true,
+			},
+		});
+
+		const { makeIdentityKey } = await import("./lifecycle");
+		for (const row of rows) {
+			try {
+				const parsed = JSON.parse(row.projection) as FindingProjection;
+				const key = makeIdentityKey({
+					inference_key: row.inferenceKey,
+					surface: row.surface,
+				});
+				out.set(key, {
+					inference_key: row.inferenceKey,
+					surface: row.surface,
+					status: row.status as FindingProjection["status"],
+					cycles_seen: row.cyclesSeen,
+					confidence: row.confidence,
+					projection: parsed,
+				});
+			} catch {
+				// Defensive — skip malformed projections rather than
+				// breaking the whole lifecycle pass.
+			}
+		}
+		return out;
 	}
 
 	// ── Load latest cycle for an environment ──

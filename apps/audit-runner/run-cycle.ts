@@ -1662,6 +1662,37 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			}
 			const projections = projectAll(multiPackResult, translations, { previousFindings });
 
+			// Wave 20.4 — Apply finding lifecycle (Modelo B). After
+			// projectAll produces the current cycle's findings, match
+			// each against the prior cycle's findings by
+			// (inferenceKey, surface) and compute status transitions
+			// (created → confirmed → stale → resolved → regressed).
+			// Phantom 'resolved' rows are appended so the value-caught
+			// query (Wave 21.5) is a simple WHERE status='resolved'.
+			//
+			// Best-effort: a lifecycle failure leaves the projections
+			// untouched (default status='created') so the cycle still
+			// completes. The next cycle re-tries.
+			try {
+				const { applyLifecycle } = await import("../../packages/projections/lifecycle");
+				const findingStoreForLifecycle = new PrismaFindingStore(prisma);
+				const priorStates = await findingStoreForLifecycle.loadPriorFindingStates(env.id, cycleId);
+				const { findings: stamped, resolved: phantoms } = applyLifecycle(
+					projections.findings,
+					priorStates,
+				);
+				projections.findings = [...stamped, ...phantoms];
+				const transitionCount = stamped.filter((f) => priorStates.has(`${f.inference_key}::${(f.surface || "").replace(/\/$/, "") || "/"}`)).length;
+				console.log(
+					`[audit-runner ${cycleId}] lifecycle: ${stamped.length} active findings, ${phantoms.length} resolved phantoms, ${transitionCount} cross-cycle matches`,
+				);
+			} catch (err) {
+				console.warn(
+					`[audit-runner ${cycleId}] lifecycle pass failed (using default status='created'):`,
+					err instanceof Error ? err.message : err,
+				);
+			}
+
 			// (d+e+complete) Transactional persistence.
 			//
 			// Before this block existed, snapshot save, findings save, and

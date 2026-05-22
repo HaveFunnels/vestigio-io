@@ -1223,6 +1223,12 @@ export function projectFindings(
       // aggregator when multi-cycle snapshots are loaded.
       trend_pattern: null,
       trend_streak: null,
+      // Wave 20.4 — lifecycle defaults at projection time. The real
+      // values come from applyLifecycle() which runs AFTER projectAll
+      // and overwrites these with the matched prior cycle state.
+      status: 'created',
+      status_changed_at: new Date().toISOString(),
+      cycles_seen: 1,
       evidence_quality: evidenceQualityCtx,
       // Phase 2.5: resolve remediation + verification from the
       // catalog keyed by inference_key. Null when the entry hasn't
@@ -2440,6 +2446,12 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         change_class: null,
         trend_pattern: null,
         trend_streak: null,
+        // Wave 20.4 — positive findings flow through lifecycle too;
+        // they typically stay 'created' since they're observations,
+        // not problems with degradation patterns.
+        status: 'created',
+        status_changed_at: new Date().toISOString(),
+        cycles_seen: 1,
         evidence_quality: null,
         // Positive findings skip remediation (nothing to fix) but
         // still get verification metadata from the catalog so users

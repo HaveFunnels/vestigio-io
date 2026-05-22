@@ -1634,6 +1634,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					return merged.length > 0 ? merged : undefined;
 				})(),
 				classified_pages: classifiedPageMap.size > 0 ? classifiedPageMap : undefined,
+				// Wave 20.3 — pass the classification staged-pipeline already
+				// computed so recompute doesn't run the same computation
+				// over the same evidence. result.classification is the
+				// canonical one (computed in buildResult with full evidence).
+				classification: result.classification,
 			});
 			const recomputeMs = Date.now() - recomputeStartMs;
 

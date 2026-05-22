@@ -7,11 +7,14 @@ import {
 } from "../domain";
 
 // ──────────────────────────────────────────────
-// createSignal helper — shared by the legacy engine.ts (which has its
-// own copy for historical reasons) and any new signal-extractor module
-// (e.g. off-site-recon-signals.ts). Both implementations are
-// behaviorally identical; this file exists so new modules don't need
-// to either re-implement the helper or import a private from engine.ts.
+// createSignal — THE canonical Signal factory (Wave 20.3).
+//
+// Previously triple-implemented: this file's export, a copy in
+// packages/signals/engine.ts:5710 ("historical reasons"), and a copy
+// in workers/ingestion/stages/static-checks.ts:822 ("local helper").
+// All three were behaviorally identical. The two copies were removed
+// in Wave 20.3 and now import from here. New signal-extractor
+// modules MUST import from here — no new local copies.
 // ──────────────────────────────────────────────
 
 export function createSignal(params: {

@@ -16,7 +16,19 @@ import {
 import { buildGraph } from '../graph';
 import { extractSignals } from '../signals';
 import { createSignal } from '../signals/create';
-import { computeInferences } from '../inference';
+import {
+  computeInferences,
+  computeSaasInferences,
+  computeVerticalInferences,
+  computeFunnelMomentInferences,
+  computeExternalReconInferences,
+  computeCrossPackSynthesis,
+  computeFunnelGapInferences,
+  computeCrossDomainInferences,
+  computeSubdomainCrossDomainInferences,
+  computeTripleSourceInferences,
+  type FunnelGapInput,
+} from '../inference';
 import { produceDecision, DecisionResult } from '../decision';
 import { INFERENCE_TO_PACK } from '../projections/inference-to-pack';
 import { resolveDecisionConflicts, ConflictReport } from '../decision/conflict-resolver';
@@ -28,14 +40,6 @@ import { computeClassification, extractClassificationInput, ClassificationState 
 import { computePackEligibility, PackEligibility } from '../classification/eligibility';
 import { detectMaturityStage, MaturityStage } from '../classification/maturity';
 import { extractSaasSignals } from '../signals/saas-signals';
-import { computeSaasInferences } from '../inference/saas-inference';
-import { computeVerticalInferences } from '../inference/vertical-inference';
-import { computeFunnelMomentInferences } from '../inference/funnel-moment-inference';
-import { computeExternalReconInferences } from '../inference/external-recon-inference';
-import { computeCrossPackSynthesis } from '../inference/cross-pack-synthesis';
-import { computeFunnelGapInferences, type FunnelGapInput } from '../inference/funnel-gap-inference';
-import { computeCrossDomainInferences, computeSubdomainCrossDomainInferences } from '../inference/cross-domain-inference';
-import { computeTripleSourceInferences } from '../inference/triple-source-inference';
 import { assessAllEvidenceQuality, EvidenceQuality } from '../evidence/quality';
 import { adjustConfidenceByQuality, QualityAdjustmentResult } from '../evidence/confidence-adjuster';
 import { harmonizeSignals, HarmonizationResult } from '../truth';
@@ -182,6 +186,12 @@ export interface MultiPackInput {
   /** Multi-signal classified page types (URL → classifiedPageType string).
    *  Used by funnel-moment inference to bucket evidence by page type. */
   classified_pages?: Map<string, string>;
+  /** Wave 20.3 — pre-computed classification from staged-pipeline.
+   *  When provided, recompute reuses it instead of recomputing
+   *  (which was wasteful — same inputs, same output). Falls back
+   *  to in-recompute computation when absent so direct callers
+   *  (tests, single-pack recompute) still work. */
+  classification?: ClassificationState;
   /** ISO 4217 currency code for financial impact values (default: 'USD') */
   currency?: string;
   /** Funnel stage multipliers from User Journey Intelligence Layer.
@@ -600,13 +610,19 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
     };
   }
 
-  // Classification — probabilistic business model + surface hypotheses
-  const classInput = extractClassificationInput(
-    evidence,
-    input.onboarding_business_model || null,
-    input.onboarding_conversion_model || null,
-  );
-  const classification = computeClassification(classInput);
+  // Classification — probabilistic business model + surface hypotheses.
+  // Wave 20.3 — if the orchestrator pre-computed classification (the
+  // staged-pipeline already does, since it needs the result for its
+  // emit events), reuse it instead of recomputing. Same inputs, same
+  // output — was just redundant CPU + risk of mismatch.
+  const classification = input.classification ?? (() => {
+    const classInput = extractClassificationInput(
+      evidence,
+      input.onboarding_business_model || null,
+      input.onboarding_conversion_model || null,
+    );
+    return computeClassification(classInput);
+  })();
 
   // Detect behavioral evidence + session count for the eligibility gate.
   // The pack-eligibility result drives both the projection layer's

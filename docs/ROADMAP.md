@@ -2698,11 +2698,13 @@ Surgical changes after thorough recon. Each item's verdict was revised based on 
 
 Net: 3 of 6 items shipped, 3 deferred to Wave 20.4 with concrete justifications. Wave 20.3 (consolidate triple `createSignal` + `computeClassification`) is next.
 
-**Step 20.3 — Consolidate triples (1 day)**
+**Step 20.3 — Consolidate triples (1 day) — SHIPPED 2026-05-22**
 
-- Single `createSignal` factory in `packages/signals/create.ts`. Delete the local copy in `workers/ingestion/stages/static-checks.ts:822-856` (import from package).
-- Single `computeClassification` call per cycle. Compute once in `staged-pipeline.ts`, pass result through `MultiPackInput`. Delete redundant invocations in `recompute.ts`.
-- Export `computeCrossPackSynthesis` and `computeExternalReconInferences` from `packages/inference/index.ts` so all inference modules use the same public surface.
+All three sub-tasks landed in one wave:
+
+- ✅ **createSignal — single factory.** Removed the historical copy at `packages/signals/engine.ts:5710` and the local copy at `workers/ingestion/stages/static-checks.ts:822`. Both now import from `packages/signals/create.ts` (also exported via `packages/signals/index.ts:8`). Verified via `grep -rn "^function createSignal" packages/ workers/` — returns 1 match (the canonical one).
+- ✅ **computeClassification — one invocation per cycle.** Added optional `classification?: ClassificationState` to `MultiPackInput`. `run-cycle.ts` now passes `result.classification` from `runStagedPipeline()` through to `recomputeWithPool`, and `recompute.ts:609` uses the input if provided, falls back to computing only when absent (so direct test callers still work). Net: one fewer compute pass per cycle on the same evidence.
+- ✅ **inference/index.ts public surface.** Added exports for `computeCrossPackSynthesis` and `computeExternalReconInferences` (previously imported directly from `recompute.ts`, bypassing the public surface). `recompute.ts` updated to use the package-level barrel import for all 10 inference modules consistently.
 
 **Step 20.4 — Implement Finding lifecycle (1-2 days)**
 

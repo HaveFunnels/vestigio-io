@@ -15,6 +15,9 @@ import {
   LinkPayload,
   StructuredDataItemPayload,
 } from '../../../packages/domain';
+// Wave 20.3 — canonical createSignal factory (was duplicated below
+// at line ~822 as a local copy — that copy is now removed).
+import { createSignal } from '../../../packages/signals';
 
 // ──────────────────────────────────────────────
 // Static Checks — Post-crawl signal extraction
@@ -815,44 +818,5 @@ function runConversionTrustChecks(
   }
 }
 
-// ───────────────────────��──────────────────────
-// Signal factory — mirrors packages/signals/engine.ts pattern
-// ─────────────���──────────────────────��─────────
-
-function createSignal(params: {
-  signal_key: string;
-  category: SignalCategory;
-  attribute: string;
-  value: string;
-  numeric_value?: number;
-  confidence: number;
-  scoping: Scoping;
-  cycle_ref: string;
-  evidence_refs: string[];
-  description: string;
-  ids: IdGenerator;
-}): Signal {
-  const now = new Date();
-  return {
-    id: params.ids.next(),
-    signal_key: params.signal_key,
-    category: params.category,
-    scoping: params.scoping,
-    cycle_ref: params.cycle_ref,
-    freshness: {
-      observed_at: now,
-      fresh_until: new Date(now.getTime() + 24 * 60 * 60 * 1000),
-      freshness_state: FreshnessState.Fresh,
-      staleness_reason: null,
-    },
-    attribute: params.attribute,
-    value: params.value,
-    numeric_value: params.numeric_value ?? null,
-    confidence: params.confidence,
-    evidence_refs: params.evidence_refs,
-    subject_label: null,
-    description: params.description,
-    created_at: now,
-    updated_at: now,
-  };
-}
+// Wave 20.3 — local createSignal copy removed. Use the canonical
+// factory imported from `packages/signals` at the top of this file.

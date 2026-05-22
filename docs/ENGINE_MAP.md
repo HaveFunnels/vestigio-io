@@ -163,10 +163,10 @@ The user's claim is verifiable. Here are the actual bypasses, dead paths, and di
 
 | # | Concept | Implementations | Note |
 |---|---------|-----------------|------|
-| 1 | `createSignal` factory | `packages/signals/create.ts` + `packages/signals/engine.ts` (historical copy per comment) + `workers/ingestion/stages/static-checks.ts:822-856` (local copy) | Three structurally identical implementations. Acknowledged tech debt in comments. |
-| 2 | `computeClassification` | Called from `staged-pipeline.ts`, `recompute.ts` (twice: implicit via eligibility + explicit) | Three invocations per cycle, same inputs, same computation — results stored in two different places (`result.classification` vs `MultiPackResult.classification`). |
-| 3 | Cross-pack / cross-domain semantics | `cross-domain-inference.ts` (evidence-level), `cross-pack-synthesis.ts` (inference-level), `triple-source-inference.ts` (dead — was evidence-level) | Two are layered (different inputs), one is orphaned. The naming is confusing. |
-| 4 | Public API consistency | All inference modules exported from `inference/index.ts` EXCEPT `cross-pack-synthesis` and `external-recon-inference` (imported directly by `recompute.ts`) | Two of nine inference modules bypass the package's public surface. |
+| 1 | `createSignal` factory | `packages/signals/create.ts` + `packages/signals/engine.ts` (historical copy) + `workers/ingestion/stages/static-checks.ts:822-856` (local copy) | ✅ **RESOLVED Wave 20.3** — both copies removed, all callers now use `packages/signals/create.ts` via `packages/signals/index.ts` re-export. |
+| 2 | `computeClassification` | Called from `staged-pipeline.ts` (Stage B emit + buildResult) + `recompute.ts:609` | ✅ **RESOLVED Wave 20.3** — added optional `classification` to `MultiPackInput`; `run-cycle.ts` passes the staged-pipeline result through; `recompute.ts` uses it when provided. Net: one redundant computation removed per cycle. Stage B emit-time classification is preserved (different inputs, different purpose). |
+| 3 | Cross-pack / cross-domain semantics | `cross-domain-inference.ts` (evidence-level), `cross-pack-synthesis.ts` (inference-level), `triple-source-inference.ts` (was orphan, now WIRED in Wave 20.2) | Layered semantics now correctly reflected in execution order (cross-domain → triple-source → synthesis). Naming still mildly confusing but no longer a coherence issue. |
+| 4 | Public API consistency | All inference modules now exported from `inference/index.ts` | ✅ **RESOLVED Wave 20.3** — `computeCrossPackSynthesis` + `computeExternalReconInferences` added to `inference/index.ts`. `recompute.ts` uses a single barrel import for all 10 inference modules. |
 
 ### D. The 260KB monolith
 

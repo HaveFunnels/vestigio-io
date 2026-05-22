@@ -6,3 +6,8 @@ export { computeFunnelGapInferences, type FunnelGapInput } from './funnel-gap-in
 export { computeFormFlowInferences, type FormFlowInput } from './form-flow-inference';
 export { computeCrossDomainInferences, computeSubdomainCrossDomainInferences } from './cross-domain-inference';
 export { computeTripleSourceInferences } from './triple-source-inference';
+// Wave 20.3 — added to inference/index.ts so all inference modules
+// route through the same public surface. Previously bypassed by
+// packages/workspace/recompute.ts which imported them directly.
+export { computeCrossPackSynthesis } from './cross-pack-synthesis';
+export { computeExternalReconInferences } from './external-recon-inference';

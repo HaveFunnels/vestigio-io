@@ -21,7 +21,13 @@ interface PlanConfig {
   paddlePriceId: string;
   paddleAnnualPriceId: string;
   lemonSqueezyPriceId: string;
+  // Mercado Pago PreApproval Plan ids — populated by the MP sync
+  // button below. MP has no dashboard UI for creating plans, so this
+  // is the only path. Empty until first sync.
+  mpPreapprovalPlanId?: string;
+  mpAnnualPreapprovalPlanId?: string;
   monthlyPriceCents: number;
+  monthlyPriceCentsBrl?: number;
   maxMcpCalls: number;
   continuousAudits: boolean;
   creditsEnabled: boolean;
@@ -51,6 +57,9 @@ export default function AdminPricingPage() {
   const [paddleSyncing, setPaddleSyncing] = useState(false);
   const [paddleSyncStatus, setPaddleSyncStatus] = useState<string | null>(null);
   const [paddleSyncError, setPaddleSyncError] = useState<string | null>(null);
+  const [mpSyncing, setMpSyncing] = useState(false);
+  const [mpSyncStatus, setMpSyncStatus] = useState<string | null>(null);
+  const [mpSyncError, setMpSyncError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/pricing")
@@ -167,6 +176,47 @@ export default function AdminPricingPage() {
       setPaddleSyncError(err.message);
     } finally {
       setPaddleSyncing(false);
+    }
+  };
+
+  const handleMpSync = async (force = false) => {
+    setMpSyncing(true);
+    setMpSyncError(null);
+    setMpSyncStatus(null);
+    try {
+      const res = await fetch("/api/admin/pricing/mp-sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ force }),
+      });
+      const data = await res.json();
+      if (res.status !== 200 && res.status !== 207) {
+        throw new Error(data.message || "MP sync failed");
+      }
+      if (data.plans) {
+        setPlans((prev) =>
+          prev.map((p) => {
+            const updated = data.plans.find((d: any) => d.key === p.key);
+            if (!updated) return p;
+            return {
+              ...p,
+              mpPreapprovalPlanId: updated.mpPreapprovalPlanId || p.mpPreapprovalPlanId,
+              mpAnnualPreapprovalPlanId:
+                updated.mpAnnualPreapprovalPlanId || p.mpAnnualPreapprovalPlanId,
+              monthlyPriceCentsBrl: updated.monthlyPriceCentsBrl ?? p.monthlyPriceCentsBrl,
+            };
+          }),
+        );
+      }
+      setMpSyncStatus(
+        `${data.message} — created=${data.created} skipped=${data.skipped}`,
+      );
+      if (data.errors?.length) setMpSyncError(data.errors.join("; "));
+      setTimeout(() => setMpSyncStatus(null), 5000);
+    } catch (err: any) {
+      setMpSyncError(err.message);
+    } finally {
+      setMpSyncing(false);
     }
   };
 
@@ -468,6 +518,88 @@ export default function AdminPricingPage() {
         {paddleSyncError && (
           <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm text-red-400">
             {paddleSyncError}
+          </div>
+        )}
+      </div>
+
+      {/* Mercado Pago Sync */}
+      <div className="rounded-lg border border-edge bg-surface-card p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold text-content">Mercado Pago sync</h2>
+          <p className="mt-1 text-xs text-content-faint">
+            MP has no dashboard UI for PreApproval Plans — they must be created via API.
+            This button provisions Starter/Pro/Max × Monthly/Annual (6 plans total).
+            Idempotent: skips plans that already have an id. Use "Force" to recreate.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => handleMpSync(false)}
+            disabled={mpSyncing}
+            className="rounded-lg border border-edge bg-surface-card px-4 py-2 text-sm font-medium text-content-secondary transition-colors hover:bg-surface-card-hover disabled:opacity-50"
+          >
+            {mpSyncing ? (
+              <span className="flex items-center gap-2">
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/10 border-t-emerald-500" />
+                Syncing…
+              </span>
+            ) : (
+              "Sync to Mercado Pago"
+            )}
+          </button>
+          <button
+            onClick={() => {
+              if (confirm("Force recreates ALL MP plans — old ids become orphaned in MP dashboard. Continue?")) {
+                handleMpSync(true);
+              }
+            }}
+            disabled={mpSyncing}
+            className="rounded-lg border border-amber-500/30 px-3 py-2 text-xs text-amber-400 transition-colors hover:bg-amber-500/5 disabled:opacity-50"
+          >
+            Force resync
+          </button>
+
+          {mpSyncStatus && (
+            <span className="inline-flex items-center gap-1.5 rounded bg-emerald-500/10 px-3 py-1 text-xs text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              {mpSyncStatus}
+            </span>
+          )}
+
+          {!mpSyncStatus && plans.length > 0 && (
+            plans.filter((p) => p.key !== "free").every((p) => p.mpPreapprovalPlanId && p.mpAnnualPreapprovalPlanId) ? (
+              <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                All MP plans synced
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-xs text-amber-400">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                {plans.filter((p) => p.key !== "free").filter((p) => !p.mpPreapprovalPlanId || !p.mpAnnualPreapprovalPlanId).length} plan(s) need sync
+              </span>
+            )
+          )}
+        </div>
+
+        {/* Show current MP ids for visibility */}
+        <div className="mt-4 space-y-1 text-xs font-mono text-content-faint">
+          {plans.filter((p) => p.key !== "free").map((p) => (
+            <div key={p.key} className="flex flex-wrap gap-x-4">
+              <span className="font-semibold text-content-secondary">{p.label}</span>
+              <span>
+                mensal: {p.mpPreapprovalPlanId || <em className="text-amber-400">missing</em>}
+              </span>
+              <span>
+                anual: {p.mpAnnualPreapprovalPlanId || <em className="text-amber-400">missing</em>}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {mpSyncError && (
+          <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/5 px-4 py-2 text-sm text-red-400">
+            {mpSyncError}
           </div>
         )}
       </div>

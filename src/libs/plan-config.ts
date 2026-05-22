@@ -28,6 +28,17 @@ export interface PlanConfig {
   paddleAnnualPriceId?: string;
   lemonSqueezyPriceId?: string;
   monthlyPriceCents: number;
+  /**
+   * BRL monthly price (centavos). Used by Mercado Pago billing when
+   * provider = "mercadopago". Distinct from monthlyPriceCents (USD)
+   * because the markets are priced independently — no FX conversion
+   * at runtime, no surprise rounding.
+   */
+  monthlyPriceCentsBrl?: number;
+  /** Mercado Pago PreApproval plan id (monthly cadence). */
+  mpPreapprovalPlanId?: string;
+  /** Mercado Pago PreApproval plan id (annual cadence). Optional. */
+  mpAnnualPreapprovalPlanId?: string;
   maxMcpCalls: number;
   continuousAudits: boolean;
   creditsEnabled: boolean;
@@ -140,9 +151,9 @@ const DEFAULT_FEATURES: Record<string, PlanFeature[]> = {
 };
 
 const DEFAULT_PLANS: PlanConfig[] = [
-  { key: "vestigio", label: "Starter", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1, features: DEFAULT_FEATURES.vestigio },
-  { key: "pro", label: "Pro", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3, features: DEFAULT_FEATURES.pro },
-  { key: "max", label: "Max", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10, features: DEFAULT_FEATURES.max },
+  { key: "vestigio", label: "Starter", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 9900, monthlyPriceCentsBrl: 9900, mpPreapprovalPlanId: "", mpAnnualPreapprovalPlanId: "", maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1, features: DEFAULT_FEATURES.vestigio },
+  { key: "pro", label: "Pro", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 19900, monthlyPriceCentsBrl: 19900, mpPreapprovalPlanId: "", mpAnnualPreapprovalPlanId: "", maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3, features: DEFAULT_FEATURES.pro },
+  { key: "max", label: "Max", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", monthlyPriceCents: 39900, monthlyPriceCentsBrl: 39900, mpPreapprovalPlanId: "", mpAnnualPreapprovalPlanId: "", maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10, features: DEFAULT_FEATURES.max },
 ];
 
 let cached: PlanConfig[] | null = null;
@@ -175,7 +186,9 @@ export async function resolvePlanFromPriceId(priceId: string): Promise<string> {
       p.priceId === priceId ||
       p.paddlePriceId === priceId ||
       p.paddleAnnualPriceId === priceId ||
-      p.lemonSqueezyPriceId === priceId,
+      p.lemonSqueezyPriceId === priceId ||
+      p.mpPreapprovalPlanId === priceId ||
+      p.mpAnnualPreapprovalPlanId === priceId,
   );
   return match?.key || "vestigio";
 }

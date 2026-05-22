@@ -84,6 +84,15 @@ model User {
   subscriptionId           String?                 @unique @map(name: "subscription_id")
   priceId                  String?                 @map(name: "price_id")
   currentPeriodEnd         DateTime?               @map(name: "current_period_end")
+  // Which billing gateway owns this user's subscription. Set ONLY by
+  // webhooks (paddle | mercadopago). Never accept this field from any
+  // client-facing endpoint — that would let a buyer forge a "paid"
+  // state by toggling provider. Read-only outside the webhook layer.
+  paymentProvider          String?                 @map(name: "payment_provider")
+  // Mercado Pago PreApproval (recurring subscription) id. Distinct from
+  // `subscriptionId` because Paddle's id and MP's id formats diverge,
+  // and a user can hypothetically migrate provider in the future.
+  mpPreapprovalId          String?                 @unique @map(name: "mp_preapproval_id")
   locale                   String?                 @default("en") // en | de | pt-BR | es
   phone                    String? // E.164 format e.g. +5511999999999
   phoneVerified            DateTime?
@@ -121,6 +130,7 @@ model User {
   userActions              UserAction[]
   customMaps               CustomMap[]
   savedViews               SavedView[]
+  pixCharges               PixCharge[]
 }
 
 // ──────────────────────────────────────────────
@@ -292,21 +302,21 @@ model Environment {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  organization         Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  auditCycles          AuditCycle[]
-  findings             Finding[]
-  actions              Action[]
-  saasAccessConfig     SaasAccessConfig?
-  integrations         IntegrationConnection[]
+  organization           Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  auditCycles            AuditCycle[]
+  findings               Finding[]
+  actions                Action[]
+  saasAccessConfig       SaasAccessConfig?
+  integrations           IntegrationConnection[]
   // Wave 0.2: Raw behavioral events from the snippet for this env
-  behavioralEvents     RawBehavioralEvent[]
-  userActions          UserAction[]
-  opportunityTrackings OpportunityTracking[]
-  savedViews           SavedView[]
-  copyFrameworkAudits  CopyFrameworkAudit[]
-  llmResultCache       LlmResultCache[]
+  behavioralEvents       RawBehavioralEvent[]
+  userActions            UserAction[]
+  opportunityTrackings   OpportunityTracking[]
+  savedViews             SavedView[]
+  copyFrameworkAudits    CopyFrameworkAudit[]
+  llmResultCache         LlmResultCache[]
   contentEnrichmentCache ContentEnrichmentCache[]
-  domainFingerprint    DomainFingerprint?
+  domainFingerprint      DomainFingerprint?
 
   @@index([activated, continuousPaused])
   @@index([lastAccessedAt])
@@ -738,6 +748,10 @@ model CreditTransaction {
   kind                String // "purchase" | "consume" | "refund" | "grant"
   amount              Int // positive delta; direction inferred from kind
   packKey             String? // "pack-50" | "pack-200" | "pack-500" — null for non-purchase rows
+  // External payment id from the gateway that funded the purchase. Named
+  // historically after Paddle but reused for any provider — MP payment
+  // ids and Paddle txn ids share zero format overlap, so a single
+  // unique column is enough to dedupe webhook retries across providers.
   paddleTransactionId String?  @unique
   note                String?
   createdAt           DateTime @default(now())
@@ -745,6 +759,47 @@ model CreditTransaction {
   orgCredits OrgCredits @relation(fields: [orgCreditsId], references: [id], onDelete: Cascade)
 
   @@index([orgCreditsId, createdAt])
+}
+
+// ──────────────────────────────────────────────
+// PixCharge — one row per PIX renewal request issued for an MP user.
+//
+// PIX has no native auto-recurrence on MP, so every billing cycle we
+// issue a fresh PIX charge (QR + copy-paste code), email the user
+// reminders (D-5, D-2, D-0), and only mark the cycle paid once the
+// matching `payment.id` lands in `approved` status via webhook.
+//
+// `dueAt` mirrors User.currentPeriodEnd at issue time so the cron can
+// reason about charge windows even if the period later moves.
+// Indexed on (status, dueAt) so the dunning cron can sweep cheaply.
+// ──────────────────────────────────────────────
+model PixCharge {
+  id                String    @id @default(cuid())
+  userId            String
+  organizationId    String
+  mpPaymentId       String?   @unique @map(name: "mp_payment_id") // MP payment.id; null only between create-call and webhook-confirm
+  amountCents       Int       @map(name: "amount_cents")
+  currency          String    @default("BRL")
+  qrCode            String?   @map(name: "qr_code") @db.Text // copy-paste text (BR Code EMV)
+  qrCodeBase64      String?   @map(name: "qr_code_base64") @db.Text // PNG, inline-image friendly
+  ticketUrl         String?   @map(name: "ticket_url")
+  status            String    @default("pending") // pending | approved | rejected | cancelled | expired
+  dueAt             DateTime  @map(name: "due_at")
+  expiresAt         DateTime? @map(name: "expires_at") // PIX charge TTL set by MP (typically 30 min, we extend to dueAt)
+  paidAt            DateTime? @map(name: "paid_at")
+  // External reference we put on the MP payment so the webhook can
+  // reconcile back to this row even if mpPaymentId hasn't been
+  // persisted yet (race between API response and webhook).
+  externalReference String    @unique @map(name: "external_reference")
+  remindersSent     String[]  @default([]) @map(name: "reminders_sent") // ["d5","d2","d0"] — append-only
+  createdAt         DateTime  @default(now()) @map(name: "created_at")
+  updatedAt         DateTime  @updatedAt @map(name: "updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, dueAt])
+  @@index([userId, createdAt])
+  @@index([organizationId, status])
 }
 
 // ──────────────────────────────────────────────
@@ -1896,39 +1951,39 @@ model ContentEnrichmentCache {
 /// refresh (e.g. customer migrated platforms) is supported by
 /// clearing the row.
 model DomainFingerprint {
-  id            String   @id @default(cuid())
-  environmentId String   @unique
+  id                   String    @id @default(cuid())
+  environmentId        String    @unique
   /// Deterministic regex hits from staged-pipeline.detectPlatforms.
   /// Saves a tiny amount of work on hot/warm cycles where this would
   /// otherwise re-run for no behavior change. Mostly here so the
   /// chat agent can answer "what platform are they on?" without
   /// querying Evidence.
-  detectedPlatforms String[] @default([])
+  detectedPlatforms    String[]  @default([])
   /// Primary locale of the homepage at first audit. Derived from
   /// homepageParsed.lang. Stable for the lifetime of the site
   /// barring an explicit re-launch.
-  primaryLocale String?
+  primaryLocale        String?
   /// Summary of robots.txt AI-bot directives at first audit. Shape:
   /// { allows: string[], blocks: string[], unknown_directives: string[] }.
   /// Already 7d-gated upstream, this row is just for chat access.
-  aiBotPolicy   Json?
+  aiBotPolicy          Json?
   /// LLM-classified industry vertical. Single Haiku call on first
   /// cold cycle; never re-run unless refreshedAt is bumped. The cost
   /// budget here is bounded — at most a few cents per customer per
   /// quarter — but the chat agent reads it on EVERY turn, so the
   /// per-turn savings (no inference from the domain name) repay it
   /// many times over.
-  industry      String?
-  industryConfidence Int? // 0-100 from the Haiku classifier
+  industry             String?
+  industryConfidence   Int? // 0-100 from the Haiku classifier
   /// When the industry classifier last ran. Null while still
   /// pending the first cold cycle.
   industryClassifiedAt DateTime?
   /// Wall-clock first cycle that ever populated this row. Used by
   /// the audit pipeline to decide "first ever" vs "refresh."
-  firstAuditAt  DateTime @default(now())
+  firstAuditAt         DateTime  @default(now())
   /// Bumped when any field in this row is rewritten. Quarterly
   /// refresh policy is enforced by comparing against this.
-  refreshedAt   DateTime @default(now())
+  refreshedAt          DateTime  @default(now())
 
-  environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 }

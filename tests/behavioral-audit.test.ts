@@ -135,7 +135,6 @@ function makeDecision(overrides: Partial<Decision> = {}): Decision {
     },
     actions: { primary: 'Fix it', secondary: [], verification: [] },
     value_case: null,
-    projections: { findings: [], incidents: [], opportunities: [], preflight_checks: [] },
     created_at: now,
     updated_at: now,
     ...overrides,

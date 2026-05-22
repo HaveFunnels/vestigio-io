@@ -2685,16 +2685,18 @@ This is the order; each step gates the next.
   - Decision lifecycle policy: keep the enum, implement the transitions, OR delete the unused states. **Recommendation: keep + implement** — the Confirmed/Stale states are the foundation for "value caught" tracking in Wave 21.
 - Output of this step: a 1-page API contract that the next steps work against. **Reviewable + approvable before any code moves.**
 
-**Step 20.2 — Delete dead code (½ day)**
+**Step 20.2 — Delete dead code (½ day) — SHIPPED 2026-05-21**
 
-Surgical deletions. No behavior change, just less surface:
+Surgical changes after thorough recon. Each item's verdict was revised based on actual usage, sometimes flipping the original plan:
 
-- `packages/inference/triple-source-inference.ts` — file + export line in `inference/index.ts:8`. Confirmed zero importers.
-- `packages/composites/compound-findings.ts` — either wire `CompoundFinding[]` into projections (preferred) or delete the unreached output path. Decide in 20.1.
-- `domain/Finding` interface (`packages/domain/finding.ts:10`) — never instantiated. Move its docblock to `FindingProjection` and delete.
-- `DecisionStatus.{Confirmed,Stale,Resolved,Regressed}` — either implement (20.4) or delete.
-- `Decision.projections.findings[]` field (`packages/decision/engine.ts:158-163`) — always empty. Delete the field.
-- `assertTruthResolved` (`packages/truth/consistency-guard.ts:195`) — either call it from production (`recompute.ts:419` is the right insertion point) or delete the function.
+- ✅ **`triple-source-inference.ts` — WIRED, not deleted.** Recon found all 7 inference keys have COMPLETE downstream pipeline support (root-causes, projections, remediation-catalog, decision/engine, compound-findings). The functions were dormant features, not dead code. Wired via 1 import + 1 line in `recompute.ts`. 7 new inferences start firing next cycle. See ENGINE_MAP.md item #1 verdict flip.
+- ✅ **`CompoundFinding[]` output — already wired in Wave 19d** (commit `2f8fb79`).
+- ⏸️ **`domain/Finding` interface — DEFERRED to Wave 20.4.** Recon found `packages/workspace/workspace.ts:154` actively constructs `Finding[]` as preflight workspace shape, consumed by `src/app/app/workspaces/[id]/page.tsx`. Two parallel types is a real design smell (UI reads fields not on the domain type), but deleting now would break preflight. Merge with FindingProjection in Wave 20.4 lifecycle work.
+- ⏸️ **`DecisionStatus` enum — DEFERRED to Wave 20.4.** UI in `actions/page.tsx:562,571,1337` + `NextActionStrip.tsx:68` filters by `decision_status === "confirmed" | "resolved"`. Today silently broken (engine only assigns `Created`), but deleting now converts silent breakage to visible breakage. Wave 20.4 replaces with `FindingProjection.status` and repoints UI in the same wave.
+- ✅ **`Decision.projections.findings[]` field — DELETED.** Removed the whole `DecisionProjections` interface (all 4 fields were unused, only referenced by validation). Updated `packages/decision/engine.ts:158-163`, `packages/domain/decision.ts:47,85`, `packages/domain/validation.ts:284-291`, `tests/behavioral-audit.test.ts:138`.
+- ✅ **`assertTruthResolved` — ACTIVATED in WARN mode.** Added `mode: 'throw' | 'warn'` parameter. Called from `recompute.ts:430` before `computeInferences`, mode=`'warn'`. Logs unresolved signals + top offenders without crashing. Will be upgraded to `'throw'` after Wave 20.5 fixes the static-checks bypass path.
+
+Net: 3 of 6 items shipped, 3 deferred to Wave 20.4 with concrete justifications. Wave 20.3 (consolidate triple `createSignal` + `computeClassification`) is next.
 
 **Step 20.3 — Consolidate triples (1 day)**
 

@@ -155,12 +155,6 @@ export function produceDecision(input: DecisionInput): DecisionResult {
     },
     actions,
     value_case: null,
-    projections: {
-      findings: [],
-      incidents: [],
-      opportunities: [],
-      preflight_checks: [],
-    },
     created_at: now,
     updated_at: now,
   };

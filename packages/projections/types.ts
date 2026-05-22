@@ -101,6 +101,27 @@ export function deriveConfidenceTier(confidence: number): ConfidenceTier {
   return 'low';
 }
 
+/**
+ * FindingProjection — the user-facing projected detail of an audit.
+ *
+ * Findings are NEVER source of truth: they are derived from
+ * QuantifiedValueCase[] produced by the impact engine, which is
+ * driven by Inferences over Signals over Evidence. They exist so
+ * the UI / MCP / chat / maps / reports have a stable per-issue
+ * shape with severity, impact, remediation, and lifecycle metadata.
+ *
+ * Modelo B (2026-05-21): Findings will carry decision-level
+ * attributes directly (severity, category, decision_impact, status)
+ * once Wave 20.4 lands. There is no separate Decision entity surfaced
+ * to users — pack-level verdicts are computed views over findings
+ * via packVerdict().
+ *
+ * NOTE: there is a second `Finding` type in `packages/domain/finding.ts`
+ * used internally by the preflight workspace as a transient shape
+ * before projection. The two types will be merged in Wave 20.4.
+ * FindingProjection is the canonical user-facing type; domain/Finding
+ * is the internal preflight shape.
+ */
 export interface FindingProjection {
   id: string;
   title: string;

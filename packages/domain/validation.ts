@@ -281,14 +281,8 @@ export function validateDecision(d: Decision): void {
     throw new ValidationError(e, 'actions.verification', 'must be an array');
   }
 
-  // DecisionProjections
-  if (d.projections == null || typeof d.projections !== 'object') {
-    throw new ValidationError(e, 'projections', 'must be a non-null object');
-  }
-  requireRefArray(e, 'projections.findings', d.projections.findings);
-  requireRefArray(e, 'projections.incidents', d.projections.incidents);
-  requireRefArray(e, 'projections.opportunities', d.projections.opportunities);
-  requireRefArray(e, 'projections.preflight_checks', d.projections.preflight_checks);
+  // Wave 20.2 — DecisionProjections interface deleted (was always-empty,
+  // never populated, only validated here). See packages/domain/decision.ts.
 
   validateScoping(d.scoping);
   validateFreshness(d.freshness);

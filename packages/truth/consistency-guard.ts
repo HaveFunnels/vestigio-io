@@ -189,18 +189,54 @@ export function guardTruthConsistency(
 }
 
 /**
- * Validate that no downstream component has signals without truth metadata.
- * Use as a guard at inference computation entry point.
+ * Validate that no downstream component has signals without truth
+ * metadata. Use as a guard at inference computation entry point.
+ *
+ * Modes:
+ * - `'throw'` (default) — throws on any unresolved signal. Use after
+ *   Wave 20.5 fixes the static-checks bypass path.
+ * - `'warn'` — logs a console.warn with the offending signal_keys.
+ *   Use during Wave 20.2 to surface bypass paths without crashing
+ *   the audit cycle. Returns the count of unresolved signals.
  */
-export function assertTruthResolved(signals: SignalWithTruth[]): void {
+export function assertTruthResolved(
+  // Accepts raw Signal[] — the whole point is to FIND signals that
+  // lack truth_metadata, so we can't require the type that already
+  // has it.
+  signals: Array<Partial<SignalWithTruth> & { id: string; signal_key: string }>,
+  mode: 'throw' | 'warn' = 'throw',
+): number {
+  const unresolved: typeof signals = [];
   for (const sig of signals) {
     if (!sig.truth_metadata) {
-      throw new Error(
-        `Signal ${sig.id} (${sig.signal_key}) missing truth_metadata. ` +
-        `All signals must pass through truth consistency guard before inference.`,
-      );
+      if (mode === 'throw') {
+        throw new Error(
+          `Signal ${sig.id} (${sig.signal_key}) missing truth_metadata. ` +
+          `All signals must pass through truth consistency guard before inference.`,
+        );
+      }
+      unresolved.push(sig);
     }
   }
+  if (unresolved.length > 0) {
+    // Group by signal_key for a readable warning. The first offender's
+    // source kind hints at which producer bypassed harmonization.
+    const byKey = new Map<string, number>();
+    for (const s of unresolved) {
+      byKey.set(s.signal_key, (byKey.get(s.signal_key) || 0) + 1);
+    }
+    const summary = Array.from(byKey.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([k, n]) => `${k}(${n})`)
+      .join(', ');
+    console.warn(
+      `[truth-guard:WARN] ${unresolved.length} signals missing truth_metadata before inference. ` +
+      `Top offenders: ${summary}. ` +
+      `These signals bypassed harmonization — likely static-checks (Wave 20.5 will fix).`,
+    );
+  }
+  return unresolved.length;
 }
 
 /**

@@ -42,9 +42,6 @@ export interface Decision extends Timestamped {
 
   // Value
   value_case: ValueCase | null;
-
-  // Projections
-  projections: DecisionProjections;
 }
 
 export type PrimaryOutcome = 'incident' | 'opportunity' | 'state' | 'observation';
@@ -82,12 +79,14 @@ export interface DecisionActions {
   verification: string[];
 }
 
-export interface DecisionProjections {
-  findings: Ref[];
-  incidents: Ref[];
-  opportunities: Ref[];
-  preflight_checks: Ref[];
-}
+// Wave 20.2 — Removed: DecisionProjections interface (was: { findings,
+// incidents, opportunities, preflight_checks: Ref[] }). Always
+// initialized empty in produceDecision(), never populated downstream,
+// only referenced by domain/validation.ts. The relationship between
+// decisions and their projected findings is now inverted under
+// Modelo B: FindingProjection carries the decision attributes
+// (category, decision_impact) directly, no need for a back-link.
+// See docs/ENGINE_MAP.md dead-code item #5.
 
 // ──────────────────────────────────────────────
 // Decision Pack — business question grouping

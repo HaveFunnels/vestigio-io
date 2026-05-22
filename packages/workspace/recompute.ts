@@ -35,10 +35,11 @@ import { computeExternalReconInferences } from '../inference/external-recon-infe
 import { computeCrossPackSynthesis } from '../inference/cross-pack-synthesis';
 import { computeFunnelGapInferences, type FunnelGapInput } from '../inference/funnel-gap-inference';
 import { computeCrossDomainInferences, computeSubdomainCrossDomainInferences } from '../inference/cross-domain-inference';
+import { computeTripleSourceInferences } from '../inference/triple-source-inference';
 import { assessAllEvidenceQuality, EvidenceQuality } from '../evidence/quality';
 import { adjustConfidenceByQuality, QualityAdjustmentResult } from '../evidence/confidence-adjuster';
 import { harmonizeSignals, HarmonizationResult } from '../truth';
-import { guardTruthConsistency, TruthConsistencyResult } from '../truth/consistency-guard';
+import { guardTruthConsistency, TruthConsistencyResult, assertTruthResolved } from '../truth/consistency-guard';
 import { applySuppressionEffects, SuppressionApplicationResult } from '../suppression';
 import { computeSuppressionGovernance, SuppressionGovernanceResult } from '../suppression/governance';
 import { detectChanges, CycleSnapshot, CycleChangeReport } from '../change-detection';
@@ -419,6 +420,18 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   const qualityAdjustment = adjustConfidenceByQuality(truthResolvedSignals, evidenceQuality);
   const signals = qualityAdjustment.signals;
 
+  // Wave 20.2 — Truth-resolved guard in WARN mode. Surfaces any
+  // signals that bypassed the harmonize step without crashing the
+  // cycle. After Wave 20.5 re-roots the static-checks bypass, this
+  // should be upgraded to 'throw' so contract violations are loud.
+  // For now we just log so the customer doesn't see audit failures.
+  try {
+    assertTruthResolved(signals, 'warn');
+  } catch {
+    // Defensive — should not throw in warn mode, but never let the
+    // guard itself break the cycle.
+  }
+
   // ─── Inferences from quality-adjusted, truth-resolved signals ───
   const inferences = computeInferences(signals, scoping, cycle_ref);
 
@@ -797,6 +810,19 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   // Cross-domain inferences (Static + LLM correlation)
   const crossDomainInferences = computeCrossDomainInferences(signals, [...inferences, ...saasInferences, ...verticalInferences, ...funnelMomentInferences], scoping, cycle_ref, evidence);
 
+  // Wave 20.2 — Triple-source inferences (Static + Browser + LLM
+  // correlation). 7 inference functions (brand_trust_cliff_at_payment,
+  // ad_landing_experience_disconnect, checkout_form_mobile_hostile,
+  // pricing_page_complexity_paralysis, support_promise_impossible_to_
+  // fulfill, trust_journey_inconsistency, multilingual_conversion_leak)
+  // were defined and fully wired downstream (root-causes, projections,
+  // remediation, decision/engine references) but had no call site —
+  // the 2026-04 cross-domain comment about "absorbing into heuristic
+  // fallback" was aspirational and the migration never happened. The
+  // 7 dormant features start firing here. See ENGINE_MAP.md dead-code
+  // item #1 verdict flip.
+  const tripleSourceInferences = computeTripleSourceInferences(signals, scoping, cycle_ref, evidence);
+
   // Wave 14 — Cross-pack synthesis. Runs LAST after every per-pack
   // engine has produced its findings; looks for combinations across
   // packs and emits compound insights. The combined inference array
@@ -809,6 +835,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
     ...externalReconInferences,
     ...subdomainInferences,
     ...crossDomainInferences,
+    ...tripleSourceInferences,
     ...(input.additional_inferences || []),
   ];
   const compoundInferences = computeCrossPackSynthesis({

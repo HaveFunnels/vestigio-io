@@ -477,7 +477,9 @@ A cycle run on havefunnels.com produces byte-identical `FindingProjection[]` + `
 
 ---
 
-## 11. Open questions (need product owner answer before Wave 20.5)
+## 11. Open questions — RESOLVED 2026-05-21
+
+All 5 questions answered by product owner. Recommendations accepted.
 
 ### Q1. Targeted cycles — same cycleId or new cycleId?
 
@@ -487,21 +489,33 @@ A cycle run on havefunnels.com produces byte-identical `FindingProjection[]` + `
 
 **Recommendation: Option B.** The probe history is valuable for the monthly "value caught" narrative ("we caught this change 3 hours after you deployed it"), and the readback query is a simple subquery added to existing finding loads.
 
+**✓ DECIDED: Option B.** Targeted cycles get their own `AuditCycle` row with `cycleType: 'targeted'`. Readback picks latest per `(envId, inferenceKey, surface)` across recent cycles. Wave 21 design will detail the readback query + the cleanup policy for old targeted cycles.
+
 ### Q2. Keep `DecisionStatus` enum or delete?
 
 If lifecycle moves entirely to `FindingProjection.status`, the `DecisionStatus` enum becomes single-valued (`Created`). **Recommendation: delete entirely.** Removes confusion when reading code; nothing is lost.
+
+**✓ DECIDED: delete.** Rationale: the only conceivable "use case" for a Decision-level lifecycle separate from Finding-level lifecycle would be pack-level state ("Scale Readiness pack went from at-risk to safe"), which is already computed as a view over findings via `packVerdict()` (§6). No persistent state needed at the Decision level.
+
+**⚠️ Revised execution plan (2026-05-21 recon)**: deletion of `DecisionStatus` enum + `Decision.status` field is DEFERRED from Wave 20.2 to Wave 20.4. Reason: UI in `src/app/app/actions/page.tsx:562,571,1337` and `src/components/console/workspace/NextActionStrip.tsx:68` actively filters by `ActionProjection.decision_status === "confirmed" | "resolved"`. These filters are silently broken today (engine only assigns `Created`), but deleting the enum now would convert silent breakage into TypeScript errors + visibly-empty UI. The right play: Wave 20.4 replaces the underlying source with `Finding.status` lifecycle, points `ActionProjection.decision_status` (or its replacement) at the Finding-derived value, then the enum can be removed without UI breakage. Wave 20.2 leaves the enum alive.
 
 ### Q3. `domain/Finding` interface — extend `FindingProjection` or delete?
 
 **Recommendation: delete `domain/Finding`**, migrate its JSDoc docblocks onto `FindingProjection`. Having two types for the same conceptual thing is the root cause of the "where do I look?" confusion this whole document tries to fix.
 
+**✓ DECIDED: delete.** Move the good docblocks from `domain/finding.ts` into `FindingProjection` in `packages/projections/types.ts`.
+
 ### Q4. Static-checks signals — keep authority=`Heuristic` or upgrade to `Structural`?
 
 Current `pixel` and `heartbeat` source kinds map to `Heuristic=2`. After consolidation, static-checks signals will participate in harmonization. They should be classified — **recommendation: `Structural=1`** (they read raw HTML, no interpretation). This means a browser-verified contradiction always wins, which is correct.
 
+**✓ DECIDED: `Structural`.** Static-checks read raw HTML deterministically — that's structural, not heuristic. Browser-observed contradictions still win in the truth ladder (correct), but static-checks now beat anything heuristic/probabilistic.
+
 ### Q5. Composite findings — keep computed-and-dropped if Wave 21 doesn't consume?
 
 Wave 19d already wired CompoundFindings into Cross Signal Insights. **Recommendation: keep, the consumption is now real.** This question is resolved by Wave 19d shipping.
+
+**✓ RESOLVED by Wave 19d (commit `2f8fb79`).** Keep computing CompoundFindings; they reach the UI via `compoundFindingsToChains()` now.
 
 ---
 
@@ -519,9 +533,9 @@ Wave 19d already wired CompoundFindings into Cross Signal Insights. **Recommenda
 
 Before Wave 20.2 begins (delete dead code):
 
-- [ ] Product owner reads §1-9, confirms the API surface
-- [ ] Product owner answers Q1-Q4 in §11
-- [ ] This document is updated with the answers
-- [ ] ROADMAP.md Wave 20 sequence is updated if any step's scope shifts based on the answers
+- [x] Product owner reads §1-9, confirms the API surface
+- [x] Product owner answers Q1-Q4 in §11 (resolved 2026-05-21)
+- [x] This document is updated with the answers
+- [x] ROADMAP.md Wave 20 sequence is updated if any step's scope shifts based on the answers
 
-After this is signed off, Wave 20.2 through 20.7 can be executed in order with clear targets.
+**Status: APPROVED 2026-05-21. Wave 20.2 (delete dead code) cleared to start.**

@@ -9,6 +9,9 @@ import {
 } from '../domain';
 // Wave 20.6 — shared inference builders extracted from this file.
 import { createInference, inferCohort } from './shared/builders';
+import type { PackInput } from './shared/types';
+// Wave 20.6 — pack files migrated from inline definitions in this file.
+import { computeFirstImpressionRevenuePack } from './packs/first-impression-revenue';
 
 // ──────────────────────────────────────────────
 // Inference Engine — composite interpretations from signals
@@ -42,6 +45,15 @@ export function computeInferences(
   for (const s of signals) {
     byKey.set(s.signal_key, s);
   }
+
+  // Wave 20.6 — PackInput is the uniform per-pack input shape.
+  // Constructed once, passed to every pack/<name>.ts module's
+  // entry function. Old inline inference functions still take the
+  // legacy (first, byKey, signals, scoping, cycle_ref, ids) tuple
+  // until they're migrated into pack files.
+  const packInput: PackInput = {
+    signals, byAttribute, byKey, first, scoping, cycle_ref, ids,
+  };
 
   // Existing inference rules (scale_readiness)
   inferences.push(...inferCommerceContext(first, byKey, signals, scoping, cycle_ref, ids));
@@ -179,9 +191,8 @@ export function computeInferences(
   inferences.push(...inferCheckoutAbandonNoFeedback(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferSensitiveInputPerceivedRiskDropoff(byKey, scoping, cycle_ref, ids));
   // Behavioral cohort inferences (pixel-dependent workspaces)
-  inferences.push(...inferFirstSessionMilestoneStall(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferFirstSessionTrustBarrier(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferFirstSessionCtaTimingGap(byKey, scoping, cycle_ref, ids));
+  // Wave 20.6 — first-impression-revenue migrated to packs/first-impression-revenue.ts
+  inferences.push(...computeFirstImpressionRevenuePack(packInput));
   inferences.push(...inferLowValueActionDominates(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferHighValueActionUnderexposed(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferDeadWeightSurfaceTraffic(byKey, scoping, cycle_ref, ids));
@@ -3134,18 +3145,8 @@ function inferSensitiveInputPerceivedRiskDropoff(byKey: Map<string, Signal>, sco
 
 // Wave 20.6 — local inferCohort removed. Imported from ./shared/builders.
 
-// First Impression Revenue
-function inferFirstSessionMilestoneStall(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  return inferCohort(byKey.get('first_session_milestone_stall'), 'first_session_milestone_stall', InferenceCategory.FirstSessionMilestoneStall, 'First-time visitors stall at early funnel stages at a significantly higher rate than returning visitors. New users are not finding enough reason to express purchase intent during their first visit. The root cause is typically insufficient value proposition, unclear navigation to commercial surfaces, or landing pages that fail to orient newcomers toward the conversion path.', scoping, cycle_ref, ids);
-}
-
-function inferFirstSessionTrustBarrier(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  return inferCohort(byKey.get('first_session_trust_barrier'), 'first_session_trust_barrier', InferenceCategory.FirstSessionTrustBarrier, 'First-time visitors exhibit significantly more hesitation behavior than returning visitors. New users lack the brand familiarity that returning visitors have already built through prior sessions. Trust signals (reviews, guarantees, security badges, brand recognition) are not compensating for the trust deficit that new visitors inherently carry.', scoping, cycle_ref, ids);
-}
-
-function inferFirstSessionCtaTimingGap(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  return inferCohort(byKey.get('first_session_cta_timing_gap'), 'first_session_cta_timing_gap', InferenceCategory.FirstSessionCtaTimingGap, 'First-time visitors take significantly longer to reach their first commercial action compared to returning visitors. The commercial entry point is optimized for users who already know the site, not for newcomers. CTAs, pricing links, or product browsing paths are not immediately discoverable for first-time visitors.', scoping, cycle_ref, ids);
-}
+// Wave 20.6 — First Impression Revenue inferences migrated to
+// packs/first-impression-revenue.ts
 
 // Action Value Map
 function inferLowValueActionDominates(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {

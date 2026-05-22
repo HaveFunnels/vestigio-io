@@ -26,7 +26,9 @@
  * at the end and exit code is non-zero so CI/automation can detect.
  */
 
-import "dotenv/config";
+// No dotenv import — the script reads env vars directly. Caller sets
+// MP_ACCESS_TOKEN, DATABASE_URL, SITE_URL (e.g. via .env.local sourced
+// into the shell, or `npm run db:migrate:deploy`-style invocation).
 
 import {
 	createPreapprovalPlan,

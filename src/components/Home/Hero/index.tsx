@@ -34,7 +34,6 @@
  */
 
 import { getTranslations } from "next-intl/server";
-import Link from "next/link";
 import HeroPills, { type Pill } from "./HeroPills";
 import TrustMicrocopy from "./TrustMicrocopy";
 import { ShinyButton } from "@/components/ui/shiny-button";
@@ -221,11 +220,13 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/lp/
 				<HeroPills pills={pills} />
 
 				{/* Primary CTA — visible above the fold, before the
-				    visitor scrolls into the Product Tour. */}
+				    visitor scrolls into the Product Tour. The button
+				    carries its own href so it renders as a single <a>;
+				    wrapping <ShinyButton> in <Link> previously produced
+				    <a><button>, which HTML5 forbids and SEO auditors
+				    flag as a closing-tag mismatch. */}
 				<div className="mt-8 sm:mt-10">
-					<Link href={primaryCtaHref} className="block sm:inline-block">
-						<ShinyButton>{t("cta_primary")}</ShinyButton>
-					</Link>
+					<ShinyButton href={primaryCtaHref}>{t("cta_primary")}</ShinyButton>
 					{/* Trust microcopy — subtle guarantee + platform signals */}
 					<TrustMicrocopy />
 				</div>

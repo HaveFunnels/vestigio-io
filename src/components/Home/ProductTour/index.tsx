@@ -13,7 +13,6 @@
  */
 
 import { useTranslations } from "next-intl";
-import Link from "next/link";
 import { useState, useRef, useCallback, useEffect, type ReactNode } from "react";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { ShoppingCart, MousePointerClick, ShieldCheck, SlidersHorizontal, CircleCheckBig } from "lucide-react";
@@ -480,11 +479,15 @@ function StepJourneyMap({ primaryCtaHref }: { primaryCtaHref: string }) {
 
 			{/* CTA */}
 			<div className="mt-4 flex flex-col items-center gap-2 border-t border-white/[0.06] pt-4" style={{ animation: "vptour-fade-in 0.5s ease-out 0.5s both" }}>
-				<Link href={primaryCtaHref} className="inline-block" style={{ animation: "vptour-glow 2.5s ease-in-out infinite" }}>
-					<ShinyButton className="w-full sm:w-auto">
+				{/* Glow animation moves to a wrapper div so the ShinyButton
+				    itself can render as the navigation anchor (avoids the
+				    forbidden <a><button> nesting that the previous
+				    <Link><ShinyButton> pattern produced). */}
+				<div className="inline-block" style={{ animation: "vptour-glow 2.5s ease-in-out infinite" }}>
+					<ShinyButton href={primaryCtaHref} className="w-full sm:w-auto">
 						{tg("step3_cta")}
 					</ShinyButton>
-				</Link>
+				</div>
 				<p className="text-[10px] text-zinc-400">{tg("step3_micro")}</p>
 			</div>
 		</div>

@@ -31,7 +31,14 @@ const geist = Geist({
 	display: "swap",
 });
 
+// Viewport — exported explicitly with width + initialScale so the
+// mobile-friendly meta tag always lands in the HTML, even if Next's
+// implicit default ever changes. The previous viewport export only
+// set `viewportFit: "cover"`, which made SEO auditors miss the
+// width=device-width hint and flag the site as not mobile-friendly.
 export const viewport: Viewport = {
+	width: "device-width",
+	initialScale: 1,
 	viewportFit: "cover",
 };
 

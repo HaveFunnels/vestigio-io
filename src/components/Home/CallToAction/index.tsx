@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
@@ -26,9 +25,7 @@ const CallToAction = async ({
 						{t("subtitle")}
 					</p>
 
-					<Link href={primaryCtaHref} className="block sm:inline-block">
-						<ShinyButton>{t("primary")}</ShinyButton>
-					</Link>
+					<ShinyButton href={primaryCtaHref}>{t("primary")}</ShinyButton>
 
 					<p className='mt-4 text-xs text-zinc-500'>
 						{t("micro")}

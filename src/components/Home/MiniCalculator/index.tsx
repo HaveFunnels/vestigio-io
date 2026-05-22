@@ -750,9 +750,9 @@ const MiniCalculator = ({
 										{t("cta_question")}
 									</p>
 									<div className='mb-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
-										<Link
+										<ShinyButton
 											href={domain ? `${primaryCtaHref}?domain=${encodeURIComponent(domain)}` : primaryCtaHref}
-											className='inline-block'
+											className='w-full sm:w-auto'
 											onClick={() => {
 												// Stash revenue + business type so the onboarding
 												// form can pre-fill the same values the visitor
@@ -778,10 +778,8 @@ const MiniCalculator = ({
 												}
 											}}
 										>
-											<ShinyButton className='w-full sm:w-auto'>
-												{t("cta_signup")}
-											</ShinyButton>
-										</Link>
+											{t("cta_signup")}
+										</ShinyButton>
 										<Link
 											href='/pricing'
 											className='rounded-[1rem] border border-zinc-700 px-7 py-3 text-center text-sm font-semibold text-zinc-100 transition-colors hover:border-zinc-600 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-600'

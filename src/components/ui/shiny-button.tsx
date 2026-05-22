@@ -6,6 +6,7 @@ import React from "react";
 // alongside variants/drag/etc.). The object we build below only uses the
 // animation-relevant keys — MotionProps is the right shape.
 import { motion, type MotionProps } from "framer-motion";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 // ──────────────────────────────────────────────
@@ -48,12 +49,23 @@ interface ShinyButtonProps
    * "console"  — sweep shimmer with emerald primary (Framer Motion, for /app)
    */
   variant?: "homepage" | "console";
+  /**
+   * If set on the homepage variant, the button renders as a Next.js
+   * <Link> (which emits a clean <a> tag) instead of a <button>. Use
+   * this for primary CTAs that navigate — wrapping <ShinyButton> in
+   * <Link> creates the <a><button> nesting that HTML5 forbids and
+   * SEO crawlers flag as a tag mismatch. Setting `href` here lets the
+   * button itself be the link, fixing the validation while keeping
+   * native keyboard/right-click behavior and Next prefetch.
+   */
+  href?: string;
 }
 
 export function ShinyButton({
   children,
   className,
   variant = "homepage",
+  href,
   ...props
 }: ShinyButtonProps) {
   if (variant === "console") {
@@ -87,6 +99,18 @@ export function ShinyButton({
   }
 
   // Homepage variant — CSS-only animation via globals.css .shiny-cta
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={cn("shiny-cta", className)}
+        {...(props as any)}
+      >
+        <span>{children}</span>
+      </Link>
+    );
+  }
+
   return (
     <button
       className={cn("shiny-cta", className)}

@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import { ShinyButton } from "@/components/ui/shiny-button";
-import Link from "next/link";
 
 // ── i18n labels ─────────────────────────────────────────────────────
 const LABELS = {
@@ -150,11 +149,10 @@ export function ROICalculator({
                 </p>
               </div>
 
-              {/* CTA */}
+              {/* CTA — ShinyButton renders as the anchor itself so we
+                  avoid <a><button> nesting (HTML5 invalid, SEO mismatch). */}
               <div className="mt-6 flex justify-center">
-                <Link href={ctaHref}>
-                  <ShinyButton>{resolvedCta}</ShinyButton>
-                </Link>
+                <ShinyButton href={ctaHref}>{resolvedCta}</ShinyButton>
               </div>
             </div>
           </div>

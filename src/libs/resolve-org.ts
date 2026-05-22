@@ -24,6 +24,11 @@ export interface OrgContext {
 	envId: string;
 	domain: string;
 	plan: string;
+	/** Lifecycle state: active | pending | suspended.
+	 *  suspended = past D+14 without payment, or chargeback. Layout
+	 *  redirects to /app/billing when suspended so the user can
+	 *  re-pay; everything else in /app/* is gated. */
+	status: string;
 	isAdmin: boolean;
 	environments: OrgEnvironment[];
 	maxEnvironments: number;
@@ -40,6 +45,7 @@ const DEMO_CONTEXT: OrgContext = {
 	envId: "env_1",
 	domain: "shop.com",
 	plan: "vestigio",
+	status: "active",
 	isAdmin: false,
 	environments: [{ id: "env_1", domain: "shop.com", isProduction: true, continuousPaused: false, activated: true }],
 	maxEnvironments: 1,
@@ -112,6 +118,7 @@ export async function resolveOrgContext(): Promise<OrgContext> {
 			envId: defaultEnv?.id || "default",
 			domain: defaultEnv?.domain || "unknown",
 			plan: org.plan || "vestigio",
+			status: org.status || "active",
 			isAdmin,
 			locale: orgLocale,
 			environments: allEnvs.map(e => ({

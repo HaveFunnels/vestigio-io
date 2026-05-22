@@ -393,6 +393,30 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	setInterval(runScheduler, SCHEDULER_INTERVAL_MS);
 	console.log("✓ Audit scheduler cron registered (1h interval)");
 
+	// ── MP PIX dunning cron ──
+	// Hourly leader-elected pass that issues fresh PIX charges, fires
+	// 5d/2d/0d reminder emails, and suspends orgs that hit D+14 past
+	// dueAt without an approved payment. Card-recurring users are
+	// skipped (MP handles those via authorized_payment events).
+	const { runMpDunningSweep } = await import("../apps/audit-runner/dunning-pix");
+	const runDunning = async () => {
+		await withLeadership("mp-pix-dunning", { ttlSec: 90 }, async () => {
+			try {
+				const r = await runMpDunningSweep();
+				if (r.remindersSent > 0 || r.chargesCreated > 0 || r.suspended > 0) {
+					console.log(
+						`[mp-pix-dunning] users=${r.usersEvaluated} charges=${r.chargesCreated} reminders=${r.remindersSent} suspended=${r.suspended}`,
+					);
+				}
+			} catch (err) {
+				console.error("[mp-pix-dunning] sweep failed:", err);
+			}
+		});
+	};
+	runDunning();
+	setInterval(runDunning, SCHEDULER_INTERVAL_MS);
+	console.log("✓ MP PIX dunning cron registered (1h interval)");
+
 	// ── Notification dispatcher cron ──
 	// Drains NotificationLog rows queued with status="skipped". The only
 	// current producer is the inactivity-pause cron above; future producers

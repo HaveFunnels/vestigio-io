@@ -237,6 +237,49 @@ async function reconcilePixCharge(payment: MpPaymentResponse) {
 					currentPeriodEnd: nextPeriodEnd,
 				},
 			});
+
+			// Fire the confirmation email. Best-effort — if the
+			// notification path fails the renewal itself is already
+			// committed in DB. Wrapped in try/catch so a missing
+			// template / template renderer issue can't bring down the
+			// webhook response.
+			try {
+				const { notifyUser } = await import("@/libs/notifications");
+				const { renderEmailFromTemplate } = await import("@/libs/notification-templates");
+				const { getPlanByKey } = await import("@/libs/plan-config");
+				const plan = await getPlanByKey(charge.planKey);
+				const siteUrl = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://app.vestigio.io";
+				const vars = {
+					planLabel: plan?.label ?? charge.planKey,
+					amount: (charge.amountCents / 100).toLocaleString("pt-BR", {
+						style: "currency",
+						currency: "BRL",
+					}),
+					nextDueDate: nextPeriodEnd.toLocaleDateString("pt-BR", {
+						day: "2-digit",
+						month: "long",
+						year: "numeric",
+					}),
+				};
+				const rendered = renderEmailFromTemplate(
+					"pix_confirmed",
+					vars,
+					siteUrl,
+					user.locale || "pt-BR",
+				);
+				if (rendered) {
+					await notifyUser({
+						userId: user.id,
+						event: "pix_confirmed",
+						subject: rendered.subject,
+						bodyHtml: rendered.html,
+						bodyText: rendered.text,
+						tag: `pix-confirmed:${charge.id}`,
+					});
+				}
+			} catch (err) {
+				console.error(`[MP Webhook] pix_confirmed email failed for charge ${charge.id}:`, err);
+			}
 		}
 
 		await prisma.organization.update({

@@ -611,6 +611,91 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 			},
 		},
 	},
+
+	// ──────────────────────────────────────────────
+	// PIX dunning templates (pt-BR only — MP is BR-only today).
+	// Variables: planLabel, amount, dueDate, copyPasteCode, qrUrl
+	// ──────────────────────────────────────────────
+
+	pix_reminder_5d: {
+		"pt-BR": {
+			sms: {
+				body: "Sua assinatura Vestigio {planLabel} vence em 5 dias. Pague o PIX em app.vestigio.io/app/billing",
+			},
+			email: {
+				subject: "Sua renovação Vestigio vence em 5 dias",
+				headline: "Renovação Vestigio em 5 dias",
+				intro: "Sua assinatura <strong>{planLabel}</strong> vence em <strong>{dueDate}</strong>. Total: <strong>{amount}</strong>.<br/><br/>Pague o PIX já gerado na sua página de billing. Sem pagamento, a conta fica suspensa em 14 dias após o vencimento (seus dados ficam preservados).",
+				ctaLabel: "Pagar agora",
+				ctaPath: "/app/billing#pix-renewal",
+				footerNote: "Você está recebendo este email porque tem uma assinatura ativa via PIX na Vestigio.",
+			},
+		},
+	},
+
+	pix_reminder_2d: {
+		"pt-BR": {
+			sms: {
+				body: "ATENÇÃO: assinatura Vestigio {planLabel} vence em 2 dias. Pague o PIX em app.vestigio.io/app/billing",
+			},
+			email: {
+				subject: "ATENÇÃO: sua renovação vence em 2 dias",
+				headline: "Renovação Vestigio em 2 dias",
+				intro: "Sua assinatura <strong>{planLabel}</strong> vence em <strong>{dueDate}</strong>. Total: <strong>{amount}</strong>.<br/><br/>Faltam apenas <strong>2 dias</strong>. Pague o PIX para evitar suspensão.",
+				ctaLabel: "Pagar PIX",
+				ctaPath: "/app/billing#pix-renewal",
+				footerNote: "Sem pagamento, sua conta é suspensa 14 dias após o vencimento. Dados são preservados durante esse período.",
+			},
+		},
+	},
+
+	pix_reminder_today: {
+		"pt-BR": {
+			sms: {
+				body: "URGENTE: assinatura Vestigio {planLabel} vence HOJE. Pague em app.vestigio.io/app/billing",
+			},
+			email: {
+				subject: "URGENTE: sua renovação vence hoje",
+				headline: "Renovação Vestigio vence hoje",
+				intro: "Sua assinatura <strong>{planLabel}</strong> vence <strong>hoje</strong>. Total: <strong>{amount}</strong>.<br/><br/>Pague o PIX agora para manter sua conta ativa. Após 14 dias sem pagamento a conta fica suspensa.",
+				ctaLabel: "Pagar PIX agora",
+				ctaPath: "/app/billing#pix-renewal",
+				footerNote: "Esta é a última lembrança automática antes do vencimento.",
+			},
+		},
+	},
+
+	pix_confirmed: {
+		"pt-BR": {
+			sms: {
+				body: "PIX confirmado! Sua assinatura Vestigio {planLabel} foi renovada por mais 30 dias.",
+			},
+			email: {
+				subject: "Pagamento confirmado — Vestigio {planLabel}",
+				headline: "Pagamento confirmado",
+				intro: "Recebemos seu PIX de <strong>{amount}</strong>. Sua assinatura <strong>{planLabel}</strong> foi renovada e segue ativa.<br/><br/>Próxima renovação: <strong>{nextDueDate}</strong>.",
+				ctaLabel: "Ver detalhes da assinatura",
+				ctaPath: "/app/billing",
+				footerNote: "Obrigado por continuar com a Vestigio.",
+			},
+		},
+	},
+
+	pix_suspended: {
+		"pt-BR": {
+			sms: {
+				body: "Conta Vestigio suspensa por falta de pagamento. Reative em app.vestigio.io/app/billing — dados preservados.",
+			},
+			email: {
+				subject: "Conta Vestigio suspensa — reative pagando o PIX",
+				headline: "Sua conta foi suspensa",
+				intro: "A renovação venceu há 14 dias sem confirmação de pagamento, então sua conta foi <strong>suspensa</strong> automaticamente.<br/><br/>Seus dados estão preservados. Para reativar, basta pagar o PIX da renovação.",
+				ctaLabel: "Reativar conta",
+				ctaPath: "/app/billing",
+				footerNote: "Dados ficam preservados pelos próximos 60 dias. Após esse prazo, podem ser removidos definitivamente.",
+			},
+		},
+	},
 };
 
 // ──────────────────────────────────────────────

@@ -45,7 +45,15 @@ export type NotificationEvent =
 	// Product updates email channel — wired so the productUpdates toggle
 	// in settings actually gates anything. Fired when product release
 	// notes / changelog updates ship.
-	| "product_updates";
+	| "product_updates"
+	// PIX dunning lifecycle for MP recurring renewals. All five are
+	// transactional/critical (always sent regardless of prefs) — see
+	// isEventEnabled. Driven by apps/audit-runner/dunning-pix.ts.
+	| "pix_reminder_5d"
+	| "pix_reminder_2d"
+	| "pix_reminder_today"
+	| "pix_confirmed"
+	| "pix_suspended";
 
 interface BaseNotification {
 	event: NotificationEvent;
@@ -449,6 +457,11 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 		case "password_reset":
 		case "support_reply":
 		case "billing":
+		case "pix_reminder_5d":
+		case "pix_reminder_2d":
+		case "pix_reminder_today":
+		case "pix_confirmed":
+		case "pix_suspended":
 			return true; // critical / transactional always sent
 		case "verified_resolved":
 			// Celebration / attribution event — opt-out via preference toggle.

@@ -90,6 +90,12 @@ export default function TextInputStep({
 					onKeyDown={handleKeyDown}
 					placeholder={placeholder}
 					autoComplete={inputType === "email" ? "email" : inputType === "url" ? "url" : "off"}
+					// The shared .shiny-input class defaults to a dark
+					// (#12121e) fill for marketing-site use. The funnel
+					// sits on a white card with near-black text, so we
+					// override the bg var inline to make the typed value
+					// readable instead of black-on-near-black.
+					style={{ ["--shiny-input-bg" as string]: "#ffffff" } as React.CSSProperties}
 					className={`shiny-input w-full rounded-xl px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none ${
 						error ? "!border-red-400 !bg-red-50" : ""
 					}`}

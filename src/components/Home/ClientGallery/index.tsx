@@ -49,12 +49,22 @@ const ClientGallery = async () => {
 				}
 			`}</style>
 
-			<div className='relative mx-auto w-full max-w-[1200px] px-4 sm:px-8 xl:px-0'>
-				<p className='mb-4 text-center text-[11px] text-zinc-500 sm:mb-5 sm:text-xs'>
+			<div className='relative mx-auto w-full max-w-[1200px]'>
+				<p className='mb-4 px-4 text-center text-[11px] text-zinc-500 sm:mb-5 sm:px-8 sm:text-xs xl:px-0'>
 					{t("headline")}
 				</p>
 
-				<div className='relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]'>
+				{/*
+					The mask wrapper intentionally has NO horizontal
+					padding so the gradient fades at the viewport edge
+					on mobile. Pre-fix the wrapper sat inside px-4 with
+					an 8% fade, which on a 360px viewport ate ~29px of
+					the first/last visible logo and read as cropping.
+					Mobile keeps a tighter 4% fade so we lose less of
+					the edge logos in the carousel; desktop keeps the
+					original 8%.
+				*/}
+				<div className='relative w-full [mask-image:linear-gradient(to_right,transparent_0,black_4%,black_96%,transparent_100%)] sm:[mask-image:linear-gradient(to_right,transparent_0,black_8%,black_92%,transparent_100%)]'>
 					<div className='vclient-track flex w-max items-center gap-x-12 sm:gap-x-16'>
 						{loopLogos.map((logo, i) => (
 							<img
@@ -69,7 +79,7 @@ const ClientGallery = async () => {
 					</div>
 				</div>
 
-				<div className="mt-7 sm:mt-8">
+				<div className="mt-7 px-4 sm:mt-8 sm:px-8 xl:px-0">
 					<AwardsStrip />
 				</div>
 			</div>

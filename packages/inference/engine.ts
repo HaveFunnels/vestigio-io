@@ -33,10 +33,51 @@ import { computeCommerceContextPack } from './packs/commerce-context';
 import { computeMonetizationExtensionsPack } from './packs/monetization-extensions';
 import { computeWave4ExtensionsPack } from './packs/wave-4-extensions';
 
+/**
+ * Pack-level execution gate. When `skipPacks` is provided, the engine
+ * skips the named compute*Pack(input) calls entirely — this is the
+ * hook that lets `recomputeAll` (Wave 20.7) gate inference execution
+ * by `pack_eligibility`. Today the parameter is optional and unused
+ * by recompute, so behavior is unchanged. Wave 20.7's `engine.run`
+ * API will compute pack_eligibility upfront and pass the skip set in.
+ *
+ * Pack ids match the camelCase suffix of the compute function name
+ * (e.g. `'scaleReadiness'` for computeScaleReadinessPack). The full
+ * registry below documents every gate-able pack so a typo is obvious
+ * at the call site.
+ */
+export const INFERENCE_PACK_IDS = [
+  'scaleReadiness',
+  'revenueIntegrity',
+  'chargebackResilience',
+  'evidenceDerived',
+  'channelIntegrity',
+  'deepDiscovery',
+  'networkAnalysis',
+  'discoverability',
+  'brandIntegrity',
+  'behavioral',
+  'firstImpressionRevenue',
+  'actionValueMap',
+  'acquisitionIntegrity',
+  'mobileRevenue',
+  'frictionTax',
+  'trustRevenueGap',
+  'pathEfficiency',
+  'securityPosture',
+  'copyAlignment',
+  'contentFreshness',
+  'commerceContext',
+  'monetizationExtensions',
+  'wave4Extensions',
+] as const;
+export type InferencePackId = (typeof INFERENCE_PACK_IDS)[number];
+
 export function computeInferences(
   signals: Signal[],
   scoping: Scoping,
   cycle_ref: string,
+  skipPacks?: ReadonlySet<InferencePackId>,
 ): Inference[] {
   const ids = new IdGenerator('inf');
 
@@ -61,30 +102,34 @@ export function computeInferences(
   };
 
   const inferences: Inference[] = [];
+  const run = (id: InferencePackId, fn: (i: PackInput) => Inference[]): void => {
+    if (skipPacks?.has(id)) return;
+    inferences.push(...fn(packInput));
+  };
 
-  inferences.push(...computeScaleReadinessPack(packInput));
-  inferences.push(...computeRevenueIntegrityPack(packInput));
-  inferences.push(...computeChargebackResiliencePack(packInput));
-  inferences.push(...computeEvidenceDerivedPack(packInput));
-  inferences.push(...computeChannelIntegrityPack(packInput));
-  inferences.push(...computeDeepDiscoveryPack(packInput));
-  inferences.push(...computeNetworkAnalysisPack(packInput));
-  inferences.push(...computeDiscoverabilityPack(packInput));
-  inferences.push(...computeBrandIntegrityPack(packInput));
-  inferences.push(...computeBehavioralPack(packInput));
-  inferences.push(...computeFirstImpressionRevenuePack(packInput));
-  inferences.push(...computeActionValueMapPack(packInput));
-  inferences.push(...computeAcquisitionIntegrityPack(packInput));
-  inferences.push(...computeMobileRevenuePack(packInput));
-  inferences.push(...computeFrictionTaxPack(packInput));
-  inferences.push(...computeTrustRevenueGapPack(packInput));
-  inferences.push(...computePathEfficiencyPack(packInput));
-  inferences.push(...computeSecurityPosturePack(packInput));
-  inferences.push(...computeCopyAlignmentPack(packInput));
-  inferences.push(...computeContentFreshnessPack(packInput));
-  inferences.push(...computeCommerceContextPack(packInput));
-  inferences.push(...computeMonetizationExtensionsPack(packInput));
-  inferences.push(...computeWave4ExtensionsPack(packInput));
+  run('scaleReadiness', computeScaleReadinessPack);
+  run('revenueIntegrity', computeRevenueIntegrityPack);
+  run('chargebackResilience', computeChargebackResiliencePack);
+  run('evidenceDerived', computeEvidenceDerivedPack);
+  run('channelIntegrity', computeChannelIntegrityPack);
+  run('deepDiscovery', computeDeepDiscoveryPack);
+  run('networkAnalysis', computeNetworkAnalysisPack);
+  run('discoverability', computeDiscoverabilityPack);
+  run('brandIntegrity', computeBrandIntegrityPack);
+  run('behavioral', computeBehavioralPack);
+  run('firstImpressionRevenue', computeFirstImpressionRevenuePack);
+  run('actionValueMap', computeActionValueMapPack);
+  run('acquisitionIntegrity', computeAcquisitionIntegrityPack);
+  run('mobileRevenue', computeMobileRevenuePack);
+  run('frictionTax', computeFrictionTaxPack);
+  run('trustRevenueGap', computeTrustRevenueGapPack);
+  run('pathEfficiency', computePathEfficiencyPack);
+  run('securityPosture', computeSecurityPosturePack);
+  run('copyAlignment', computeCopyAlignmentPack);
+  run('contentFreshness', computeContentFreshnessPack);
+  run('commerceContext', computeCommerceContextPack);
+  run('monetizationExtensions', computeMonetizationExtensionsPack);
+  run('wave4Extensions', computeWave4ExtensionsPack);
 
   return inferences;
 }

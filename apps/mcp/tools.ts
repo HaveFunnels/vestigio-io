@@ -1,4 +1,26 @@
 import { EngineContext, getFindingProjections, getActionProjections, getWorkspaceProjections, getChangeReport, getMap, getMaps, getProjections } from './context';
+
+// ──────────────────────────────────────────────
+// Deprecated-alias telemetry (Wave 20.6 follow-up)
+//
+// answer_can_i_scale, answer_where_losing_money, answer_payment_health,
+// answer_underlying_cause, answer_fix_first were folded into the
+// unified `answer_intent` tool with an `intent` param. The aliases
+// still dispatch (back-compat for older LLM callers), but each call
+// is structured-logged so we can grep Railway logs to count usage by
+// name. Once a name shows zero calls for ~30 days, the corresponding
+// case branch in callTool() below can be deleted.
+// ──────────────────────────────────────────────
+function logDeprecatedAlias(toolName: string, canonicalIntent: string): void {
+  console.log(JSON.stringify({
+    level: 'warn',
+    ts: new Date().toISOString(),
+    event: 'mcp.deprecated_alias',
+    tool: toolName,
+    canonical: `answer_intent[intent=${canonicalIntent}]`,
+    msg: `Deprecated MCP tool '${toolName}' invoked. Migrate caller to answer_intent.`,
+  }));
+}
 import {
   McpToolDefinition,
   McpAnswer,
@@ -38,6 +60,7 @@ import type { FindingProjection, ActionProjection, WorkspaceProjection, ChangeRe
 import type { MapDefinition } from '../../packages/maps';
 import { buildCustomMap } from '../../packages/maps';
 import { searchFindingsSync } from './llm';
+import { getGuidelinesForDimension, type CroDimension } from '../../packages/copy-analysis/guidelines';
 
 // ──────────────────────────────────────────────
 // MCP Tool Registry
@@ -487,15 +510,27 @@ export function executeTool(
 
     // Deprecated alias cases — kept for one release to avoid breaking
     // older LLM-call patterns. New code should use answer_intent.
+    //
+    // Each call is logged via logDeprecatedAlias() so we can see (in
+    // structured-log telemetry) which aliases are still being called
+    // by name. After ~30 days of measurement these `case` branches
+    // can be safely deleted; callers should migrate to:
+    //   answer_intent({ intent: 'can_i_scale' | 'where_losing_money' |
+    //                    'payment_health' | 'underlying_cause' | 'fix_first' })
     case 'answer_can_i_scale':
+      logDeprecatedAlias('answer_can_i_scale', 'can_i_scale');
       return { type: 'answer', data: composeScaleReadinessAnswer(ctx) };
     case 'answer_where_losing_money':
+      logDeprecatedAlias('answer_where_losing_money', 'where_losing_money');
       return { type: 'answer', data: composeRevenueIntegrityAnswer(ctx) };
     case 'answer_payment_health':
+      logDeprecatedAlias('answer_payment_health', 'payment_health');
       return { type: 'answer', data: composePaymentHealthAnswer(ctx) };
     case 'answer_underlying_cause':
+      logDeprecatedAlias('answer_underlying_cause', 'underlying_cause');
       return { type: 'answer', data: composeRootCauseAnswer(ctx) };
     case 'answer_fix_first':
+      logDeprecatedAlias('answer_fix_first', 'fix_first');
       return { type: 'answer', data: composeFixFirstAnswer(ctx) };
 
     case 'get_finding_projections': {
@@ -565,6 +600,43 @@ export function executeTool(
         f => f.pack === 'copy_alignment' || copyInferenceKeys.has(f.inference_key ?? ''),
       );
 
+      // Wave 20.6 follow-up: surface the relevant CRO guidelines per
+      // finding so Claude can cite specific rules in chat ("This CTA
+      // violates the 'one primary CTA per page' guideline"). The
+      // mapping is inference_key → cro_dimension, then we resolve the
+      // guideline set via getGuidelinesForDimension(). Future work can
+      // promote this map into a shared registry alongside the pack file.
+      const INFERENCE_TO_CRO_DIMENSION: Record<string, CroDimension> = {
+        value_proposition_buried: 'value_prop_clarity',
+        social_proof_ineffective: 'headline_effectiveness',
+        social_proof_generic: 'headline_effectiveness',
+        cta_competing_or_unclear: 'cta_hierarchy',
+        cta_clarity_weak_on_commercial: 'cta_hierarchy',
+        trust_copy_absent_at_decision: 'trust_signals',
+        checkout_trust_language_absent: 'trust_signals',
+        objection_unaddressed: 'objection_handling',
+        urgency_dark_pattern: 'objection_handling',
+        copy_funnel_misalignment: 'value_prop_clarity',
+        copy_cross_page_inconsistent: 'value_prop_clarity',
+        product_page_copy_generic: 'value_prop_clarity',
+        pricing_page_framing_unclear: 'value_prop_clarity',
+        navigation_confusing: 'friction_reduction',
+        above_fold_cluttered: 'visual_hierarchy',
+        form_error_messages_unhelpful: 'friction_reduction',
+        micro_copy_friction_high: 'friction_reduction',
+        onboarding_no_quick_win: 'friction_reduction',
+        onboarding_copy_weak: 'value_prop_clarity',
+        localization_persuasion_lost: 'headline_effectiveness',
+        seo_conversion_conflict: 'visual_hierarchy',
+        copy_stale_references: 'trust_signals',
+      };
+      const guidelinesForFinding = (inferenceKey: string | undefined): { id: string; rule: string }[] => {
+        if (!inferenceKey) return [];
+        const dim = INFERENCE_TO_CRO_DIMENSION[inferenceKey];
+        if (!dim) return [];
+        return getGuidelinesForDimension(dim).slice(0, 3).map(g => ({ id: g.id, rule: g.rule }));
+      };
+
       if (url) {
         const pageFindings = copyFindings.filter(f => f.surface === url || f.surface?.includes(url));
         return {
@@ -581,6 +653,7 @@ export function executeTool(
               title: f.title,
               severity: f.severity,
               root_cause: f.root_cause,
+              violated_guidelines: guidelinesForFinding(f.inference_key),
             })),
           },
         };
@@ -632,6 +705,21 @@ export function executeTool(
         }
       }
 
+      // Top issues get their relevant guidelines attached so Claude
+      // can cite specific rules when explaining each issue.
+      const topIssuesWithGuidelines = [...issueMap.entries()]
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 7)
+        .map(([rc, v]) => {
+          const sampleFinding = negFindings.find(f => (f.root_cause || f.inference_key) === rc);
+          return {
+            root_cause: rc,
+            count: v.count,
+            worst_severity: v.worst,
+            violated_guidelines: guidelinesForFinding(sampleFinding?.inference_key),
+          };
+        });
+
       return {
         type: 'copy_analysis',
         data: {
@@ -639,10 +727,7 @@ export function executeTool(
           overall_score: overall,
           pages_analyzed: surfaces.size || 1,
           dimensions,
-          top_issues: [...issueMap.entries()]
-            .sort((a, b) => b[1].count - a[1].count)
-            .slice(0, 7)
-            .map(([rc, v]) => ({ root_cause: rc, count: v.count, worst_severity: v.worst })),
+          top_issues: topIssuesWithGuidelines,
           strengths: copyFindings.filter(f => f.polarity === 'positive').map(f => f.title),
         },
       };
@@ -973,6 +1058,45 @@ const PACK_TO_STAGE: Record<string, FunnelStageKey> = {
   action_value: 'post_purchase',
 };
 
+// Wave 20.6 follow-up — funnel_journey is a pack-without-a-workspace
+// today (see ROADMAP "funnel_journey is orphan in projectWorkspaces").
+// Its inferences span every funnel stage, so a single PACK_TO_STAGE
+// entry would be wrong. This map routes BY INFERENCE KEY so MCP can
+// surface funnel_journey findings under the right stage even before
+// the UI workspace ships.
+const FUNNEL_JOURNEY_INFERENCE_TO_STAGE: Record<string, FunnelStageKey> = {
+  // awareness moment
+  hero_outcome_absent: 'awareness',
+  cognitive_load_first_screen: 'awareness',
+  primary_cta_delayed: 'awareness',
+  specificity_deficit: 'awareness',
+
+  // consideration
+  proof_of_work_missing: 'consideration',
+  navigation_dead_ends: 'consideration',
+  page_depth_before_conversion: 'consideration',
+  feature_benefit_disconnect: 'consideration',
+  comparison_absent: 'consideration',
+  objection_echo_chamber: 'consideration',
+  social_channels_decorative: 'consideration',
+
+  // decision
+  pricing_without_context: 'decision',
+  checkout_identity_break: 'decision',
+  payment_options_invisible: 'decision',
+  guarantee_invisible_at_decision: 'decision',
+  urgency_mechanics_absent: 'decision',
+
+  // post-purchase
+  first_value_path_unclear: 'post_purchase',
+  support_response_expectation_gap: 'post_purchase',
+  billing_transparency_absent: 'post_purchase',
+  upgrade_value_gap: 'post_purchase',
+  referral_path_nonexistent: 'post_purchase',
+  success_story_feedback_loop_broken: 'post_purchase',
+  mobile_journey_friction_compound: 'post_purchase',
+};
+
 const STAGE_LABELS: Record<FunnelStageKey, string> = {
   awareness: 'Awareness',
   consideration: 'Consideration',
@@ -1004,7 +1128,12 @@ function composeFunnelState(ctx: EngineContext): FunnelStateView {
   let totalImpact = 0;
 
   for (const f of allFindings) {
-    const stage = PACK_TO_STAGE[String(f.pack || '').toLowerCase()];
+    const pack = String(f.pack || '').toLowerCase();
+    let stage: FunnelStageKey | undefined = PACK_TO_STAGE[pack];
+    // funnel_journey pack spans every stage; route by inference key.
+    if (!stage && pack === 'funnel_journey' && f.inference_key) {
+      stage = FUNNEL_JOURNEY_INFERENCE_TO_STAGE[f.inference_key];
+    }
     if (stage) {
       buckets[stage].push(f);
     } else {

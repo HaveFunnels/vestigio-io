@@ -11,7 +11,7 @@
 // severity from sig.value. Trigger is signal presence — no signal,
 // no inference.
 //
-// Wave 20.6 — migrated from packages/inference/engine.ts:3139-3150.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import { Inference, InferenceCategory } from "../../domain";

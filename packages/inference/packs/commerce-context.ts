@@ -11,7 +11,7 @@
 //
 // These fire only when the corresponding commerce signal is present.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:1365-1644.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

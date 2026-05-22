@@ -5,7 +5,7 @@
 // 20 inferences total. All single-signal lookups with severity from
 // sig.value, single createInference emission.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:1632-1849.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

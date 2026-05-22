@@ -5,7 +5,7 @@
 // conversion — too many surfaces visited, surfaces that absorb
 // intent without advancing it, intent decay over time.
 //
-// Wave 20.6 — migrated from packages/inference/engine.ts:3216-3227.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import { Inference, InferenceCategory } from "../../domain";

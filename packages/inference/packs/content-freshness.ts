@@ -4,7 +4,7 @@
 // Content decay inferences: stale commercial pages, outdated pricing,
 // expired social proof, decay progression. 4 functions.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:1817-1925.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

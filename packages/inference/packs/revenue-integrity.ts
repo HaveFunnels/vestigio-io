@@ -5,7 +5,7 @@
 // on critical paths, leakage detection, trust-revenue impact,
 // measurement blindspots, conversion clarity. Six functions.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:300-621.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

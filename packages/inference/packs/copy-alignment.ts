@@ -15,7 +15,7 @@
 //
 // 19 functions total. Order preserved from inline sequence.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:1389-1813.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

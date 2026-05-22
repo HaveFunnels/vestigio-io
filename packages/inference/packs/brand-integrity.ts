@@ -4,7 +4,7 @@
 // External brand mimicry + lookalike domain exposure inferences.
 // 6 functions, all single-signal lookups via byKey.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:1567-1610.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

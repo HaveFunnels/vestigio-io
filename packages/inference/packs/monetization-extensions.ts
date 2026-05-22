@@ -16,7 +16,7 @@
 // final pack (saas_growth_readiness, payment_health,
 // revenue_integrity, scale_readiness) at projection time.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:1340-1541.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

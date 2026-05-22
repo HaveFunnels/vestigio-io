@@ -6,7 +6,7 @@
 // barriers. Fires when behavioral signals point to abandonment from
 // UX friction (not lack of interest).
 //
-// Wave 20.6 — migrated from packages/inference/engine.ts:3190-3201.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import { Inference, InferenceCategory } from "../../domain";

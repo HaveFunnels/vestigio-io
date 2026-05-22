@@ -5,7 +5,7 @@
 // social preview failures, brand inconsistency across surfaces,
 // pages unlikely to be indexed. 7 functions.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:1514-1565.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

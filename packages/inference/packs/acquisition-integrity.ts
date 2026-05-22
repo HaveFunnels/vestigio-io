@@ -5,7 +5,7 @@
 // baselines. Fires when ad-driven visitors carry materially worse
 // friction/trust profiles than organic — signals ad-spend waste.
 //
-// Wave 20.6 — migrated from packages/inference/engine.ts:3164-3175.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import { Inference, InferenceCategory } from "../../domain";

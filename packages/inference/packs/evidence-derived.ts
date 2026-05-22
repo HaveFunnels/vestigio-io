@@ -19,7 +19,7 @@
 //                 alternate flow measurement gap, runtime reassurance
 //                 break, provider path weak, trust+measurement compound
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:179-957.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // Future: this bundle MAY be split per-phase if the migration tooling
 // (INFERENCE_TO_PACK) maps each inference to a more topical pack.
 // ──────────────────────────────────────────────

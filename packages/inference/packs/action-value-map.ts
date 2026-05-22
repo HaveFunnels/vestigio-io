@@ -5,7 +5,7 @@
 // when the most visible actions correlate poorly with conversion
 // or revenue-positive actions are buried.
 //
-// Wave 20.6 — migrated from packages/inference/engine.ts:3152-3162.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import { Inference, InferenceCategory } from "../../domain";

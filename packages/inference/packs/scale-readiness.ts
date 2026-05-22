@@ -10,7 +10,7 @@
 //   - inferMeasurementCoverage: tracking pixel coverage adequate?
 //   - inferCheckoutIntegrity: checkout robustness composite score.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:301-588.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

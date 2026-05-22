@@ -7,7 +7,7 @@
 // chains. The thread: revenue surfaces operating below the
 // network/runtime threshold they need to convert.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:974-1151.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

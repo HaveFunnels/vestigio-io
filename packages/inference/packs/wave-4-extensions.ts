@@ -16,7 +16,7 @@
 // 12 functions. Each pack-decision-routing happens via
 // projections/inference-to-pack.ts at projection time.
 //
-// Wave 20.6 — migrated verbatim from packages/inference/engine.ts:1354-1604.
+// Wave 20.6 — migrated from the pre-split inference monolith (see git log for engine.ts before commit f987895).
 // ──────────────────────────────────────────────
 
 import {

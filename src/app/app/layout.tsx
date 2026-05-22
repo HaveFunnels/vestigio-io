@@ -1,5 +1,6 @@
 import AppSidebarLayout from "@/components/app/AppSidebarLayout";
 import { McpDataProvider, type McpDataSnapshot } from "@/components/app/McpDataProvider";
+import { RenewalBanner } from "@/mp/RenewalBanner";
 import { resolveOrgContext } from "@/libs/resolve-org";
 import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps, loadProjectionsCacheForEnv, loadInventoryForEnv, hasRunningCycleForEnv } from "@/lib/console-data";
 import { AppProviders } from "./providers";
@@ -194,6 +195,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 					isImpersonating={isImpersonating}
 					impersonatingEmail={(session?.user as any)?.email}
 				>
+					<RenewalBanner />
 					{children}
 				</AppSidebarLayout>
 			</McpDataProvider>

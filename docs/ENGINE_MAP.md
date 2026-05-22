@@ -143,10 +143,11 @@ The user's claim is verifiable. Here are the actual bypasses, dead paths, and di
 
 | # | Bypass | Location | Consequence |
 |---|--------|----------|-------------|
-| 1 | **Static-checks emits Signal[] directly**, merged AFTER harmonization + quality adjustment | `workers/ingestion/stages/static-checks.ts:41` → injected as `additional_signals` in `recompute.ts:824` | ~21 static-check signals reach inference with raw confidence, no truth resolution, no evidence-quality scaling. Half the truth pipeline doesn't apply to them. |
-| 2 | **MRR contraction signal pushed manually** after extractSignals returns | `recompute.ts:379-406` | Pragmatic (it needs snapshot history) but establishes a pattern of mid-pipeline injection. |
-| 3 | **`computeFunnelGapInferences` + `computeFormFlowInferences`** called from `run-cycle.ts` directly, results injected as `additional_inferences` | `run-cycle.ts` → `recompute.ts` merge point | Two inference producers live OUTSIDE the inference engine's call graph. Tests that call `recomputeAll()` directly miss these. No `forPack()` filtering applied. |
-| 4 | **Regression inference manually constructed** after change detection | `recompute.ts:1162-1191` | One inference (`revenue_path_regressed`) is created by the recompute orchestrator instead of by an inference module. |
+| 1 | ~~Static-checks emits Signal[] directly, merged AFTER harmonization~~ | `recompute.ts:382` (new pre-harmonize injection) | ✅ **RESOLVED Wave 20.5.** Merge moved from post-harmonize (line ~867) to pre-harmonize (line ~382). Static-check signals now flow through `harmonizeSignals` + `guardTruthConsistency` + `adjustConfidenceByQuality` like every other source. `assertTruthResolved` upgraded to THROW mode — future post-harmonize injection bugs fail loud immediately. |
+| 2 | ~~MRR contraction signal pushed manually~~ | `recompute.ts:~400` | ☑️ **Verified non-bypass Wave 20.5.** Push happens BEFORE harmonize (line 400 < line 422), so signals participate normally. The original "manual push" framing was inaccurate — it's a legitimate pre-harmonize injection point. No change. |
+| 3 | **`computeFunnelGapInferences` + `computeFormFlowInferences`** called from `run-cycle.ts` directly, results injected as `additional_inferences` | `run-cycle.ts` → `recompute.ts` merge point | ⏸️ Deferred to Wave 20.6 alongside inference monolith split. Inference-level bypass (doesn't trip the signal-level `assertTruthResolved` guard), lower urgency. |
+| 4 | **Regression inference manually constructed** after change detection | `recompute.ts:~1162` | ⏸️ Deferred to Wave 20.6 alongside change-detection refactor. Same reasoning as #3. |
+| 5 | **SaaS signals bypass harmonize** (surfaced during Wave 20.5 recon) | `recompute.ts:683` calls `extractSaasSignals` AFTER harmonize | ⚠️ NEW item: `[...signals, ...saasSignals]` reaches `computeSaasInferences` without saasSignals participating in truth resolution. Deferred to Wave 20.6. |
 
 ### B. Dead code (defined, exported, never imported)
 

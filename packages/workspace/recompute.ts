@@ -179,7 +179,14 @@ export interface MultiPackInput {
   translations?: EngineTranslations;
   /** Integration snapshots from connected data sources */
   integration_snapshots?: IntegrationSnapshot[];
-  /** Additional signals from static checks (post-crawl) — merged before inference */
+  /** Pre-computed signals from outside extractSignals (typically
+   *  the static-check pass in workers/ingestion/stages/static-checks.ts).
+   *  Wave 20.5: now merged into rawSignals BEFORE harmonize + quality-
+   *  adjust, so they go through the same truth resolution as any other
+   *  signal source. Prior to Wave 20.5 they bypassed harmonization,
+   *  surfacing raw confidences and unreconciled contradictions to the
+   *  inference engine — assertTruthResolved (now THROW mode) catches
+   *  any future regression of this pattern. */
   additional_signals?: Signal[];
   /** Pre-computed inferences from external sources (funnel-gap, etc.) — merged into allInferences */
   additional_inferences?: Inference[];
@@ -377,6 +384,18 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   const graphStats = summarizeGraph(graph);
   const rawSignals = extractSignals(evidence, graph, scoping, cycle_ref, commerceContext);
 
+  // Wave 20.5 — pre-harmonize injection of caller-provided signals.
+  // Static-check signals from run-cycle.ts arrive via additional_signals
+  // and now flow through harmonize + quality-adjust like every other
+  // signal source. Before Wave 20.5 they were merged AFTER harmonize
+  // (line ~867, post-Wave-20.3 location), which let raw confidences
+  // and unreconciled contradictions reach the inference engine. The
+  // assertTruthResolved guard catches this category of bug as of
+  // Wave 20.5 (THROW mode).
+  if (input.additional_signals && input.additional_signals.length > 0) {
+    rawSignals.push(...input.additional_signals);
+  }
+
   // ── Wave 8.1 — MRR contraction (cycle-over-cycle from snapshot store) ──
   // Computed here (not inside extractSignals) because it requires the
   // previous_snapshot's `mrr_available` numeric_value as a baseline,
@@ -430,17 +449,18 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   const qualityAdjustment = adjustConfidenceByQuality(truthResolvedSignals, evidenceQuality);
   const signals = qualityAdjustment.signals;
 
-  // Wave 20.2 — Truth-resolved guard in WARN mode. Surfaces any
-  // signals that bypassed the harmonize step without crashing the
-  // cycle. After Wave 20.5 re-roots the static-checks bypass, this
-  // should be upgraded to 'throw' so contract violations are loud.
-  // For now we just log so the customer doesn't see audit failures.
-  try {
-    assertTruthResolved(signals, 'warn');
-  } catch {
-    // Defensive — should not throw in warn mode, but never let the
-    // guard itself break the cycle.
-  }
+  // Wave 20.5 — Truth-resolved guard in THROW mode on the main
+  // inference path. The static-checks bypass that motivated WARN
+  // mode (Wave 20.2) is now fixed — additional_signals are merged
+  // pre-harmonize so they participate in truth resolution. Any
+  // future signal injection that bypasses harmonize will trip this
+  // guard immediately. Known follow-up: saasSignals (extracted at
+  // ~line 683 only when packEligibility.saas_pack.eligible) still
+  // bypass harmonize and reach computeSaasInferences via
+  // `[...signals, ...saasSignals]`. The guard does NOT run on that
+  // merged array, so saas remains a documented bypass path. Will
+  // be re-rooted alongside the inference monolith split (Wave 20.6).
+  assertTruthResolved(signals, 'throw');
 
   // ─── Inferences from quality-adjusted, truth-resolved signals ───
   const inferences = computeInferences(signals, scoping, cycle_ref);
@@ -863,8 +883,11 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
 
   yield "cross_domain_compound_inferences"; // ── phase boundary
 
-  // Merge SaaS signals + additional static-check signals into main arrays
-  const allSignals = [...signals, ...saasSignals, ...(input.additional_signals || [])];
+  // Merge SaaS signals into main arrays. Wave 20.5: additional_signals
+  // (typically static-check signals) are now injected pre-harmonize at
+  // line ~382 so they participate in truth resolution + quality
+  // adjustment. They no longer need to be merged here.
+  const allSignals = [...signals, ...saasSignals];
   const allInferences = [...preCompoundInferences, ...compoundInferences];
 
   // Collect all decisions and risk evaluations

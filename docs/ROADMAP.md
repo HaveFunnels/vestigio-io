@@ -2717,14 +2717,16 @@ All three sub-tasks landed in one wave:
 
 This step unlocks Wave 21.5 "value caught" report: a simple `SELECT impactMidpoint FROM Finding WHERE status='resolved' AND statusChangedAt > start_of_month GROUP BY environmentId` query produces the monthly captured-value totals.
 
-**Step 20.5 — Re-root the bypass paths (2-3 days)**
+**Step 20.5 — Re-root the bypass paths (partial — SHIPPED 2026-05-22)**
 
-In priority order (highest blast radius first):
+Scope-revised based on production realities surfaced during the recon. The original 4-item plan was over-broad; what actually unblocks the assertTruthResolved THROW upgrade is item 1 only. Items 2-4 are inference-level (not signal-level) and don't trip the guard.
 
-1. **`additional_signals` from static-checks** → fold `runStaticChecks` into `extractSignals` as one of the sub-extractor branches, or move it to a separate evidence producer that emits typed evidence consumed by `extractSignals`. Goal: every signal flows through `harmonizeSignals` + `adjustConfidenceByQuality`.
-2. **`additional_inferences` from funnel-gap + form-flow** → either move these into `inference/engine.ts` (if they can be made pure functions over signals) or convert them into evidence producers that feed `extractSignals`. Document the design choice in 20.1.
-3. **MRR contraction signal manual push** → move to a dedicated `extractDeltaSignals(previousSnapshot, currentEvidence)` step that runs alongside `extractSignals`. Has a clean place to live without breaking the main flow.
-4. **Regression-inference manual construction** → move to a `computeChangeInferences(changeReport): Inference[]` function in `packages/change-detection/`. Treats change-driven inferences as a first-class category.
+- ✅ **`additional_signals` from static-checks — RE-ROOTED.** Merge moved from post-harmonize (line ~867, after truth resolution + quality adjustment had already run) to PRE-harmonize (immediately after `extractSignals` returns). Static-check signals now flow through `harmonizeSignals` + `guardTruthConsistency` + `adjustConfidenceByQuality` like every other signal source. A Structural static-check signal that contradicts a BrowserObserved finding now correctly loses in harmonization (was previously winning due to bypass).
+- ✅ **`assertTruthResolved` upgraded WARN → THROW.** With static-checks fixed, the guard is no longer a tripwire — every signal entering the main inference path MUST carry `truth_metadata`. Any future post-harmonize injection bug fails loud + immediately + names the offending signal_key. This is the contract enforcement that Wave 20.2 prepared.
+- ☑️ **MRR contraction signal push** — verified to already be pre-harmonize (line ~400, BEFORE harmonize at line ~422). Not a bypass; the "manual push" framing in the original plan was inaccurate. No change needed.
+- ⏸️ **`additional_inferences` from funnel-gap + form-flow** — deferred. Inference-level bypass, doesn't trip the guard. Best done alongside Wave 20.6 (inference monolith split) where the derived/ folder gets carved out.
+- ⏸️ **Regression-inference manual construction** — deferred. Same reasoning as above.
+- ⏸️ **SaaS signals bypass** — surfaced during Wave 20.5 recon: `extractSaasSignals` runs AFTER harmonize and feeds `computeSaasInferences` via `[...signals, ...saasSignals]` without participating in truth resolution. The guard does NOT check the saas path, so saas remains a documented bypass. Will be re-rooted in Wave 20.6 alongside the inference split.
 
 **Step 20.6 — Split the inference monolith (3-5 days)**
 

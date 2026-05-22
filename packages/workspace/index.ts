@@ -14,3 +14,8 @@ export { validateBehavior } from './behavioral-validation';
 export type { BehavioralValidationResult, BehavioralValidation } from './behavioral-validation';
 export { createBehavioralWorkspace } from './behavioral-workspace';
 export type { BehavioralWorkspaceConfig, BehavioralWorkspaceResult, BehavioralWorkspaceContext, BehavioralIssue, BehavioralWorkspaceSummary, BehavioralWorkspaceType } from './behavioral-workspace';
+
+// Wave 20.7 — unified engine entry point. New callers should use `run`
+// in place of stitching together recomputeAllAsync + projectAll by hand.
+export { run as runEngine } from './engine';
+export type { EngineRunInput, EngineRunOutput, EngineScope } from './engine';

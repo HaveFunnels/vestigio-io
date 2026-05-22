@@ -2735,12 +2735,17 @@ Scope-revised based on production realities surfaced during the recon. The origi
 - Top-level `inference/engine.ts` becomes the orchestrator that fans in/out per-pack modules.
 - Migrate one pack at a time, run tests after each, keep the old monolith functions until the migration is complete (parallel-run for one full cycle to verify identical outputs).
 
-**Step 20.7 — Expose `engine.run()`** (1 day)
+**Step 20.7 — Expose `engine.run()`** ✅ shipped 2026-05-22
 
-- New file: `packages/workspace/engine.ts` exporting `run(input: EngineRunInput): EngineRunOutput`.
-- This wraps `recomputeAllAsync` + `estimateImpact` + `projectAll` into one entry point.
-- `apps/audit-runner/run-cycle.ts` shrinks to a thin orchestrator that just calls `engine.run({ scope: 'full_cycle', ... })` and handles persistence.
-- This is the API surface Wave 21 depends on.
+- ✅ **New file:** `packages/workspace/engine.ts` exporting `run(input: EngineRunInput): Promise<EngineRunOutput>`.
+- ✅ **Two scopes locked into the API:** `{ kind: 'full_cycle' }` (default) and `{ kind: 'targeted', url, enrichers? }` for Wave 21.
+- ✅ **Wraps `recomputeAllAsync` + `projectAll`** so external callers don't stitch them by hand. `estimateImpact` already runs inside `recomputeAllAsync` and the result is on `multipack.impact`.
+- ✅ **`previousFindings` threaded through** to `projectAll` for finding lifecycle / change-class.
+- ✅ **Targeted scope implementation (Wave 20.7 minimum):** runs the full recompute, then FILTERS the returned `ProjectionResult` to findings/actions touching the target URL. Workspaces are preserved structurally with their `findings` arrays trimmed. Wave 21 will optimize the inner path to re-fetch + re-enrich only the named URL via the staged pipeline; the API surface external callers depend on is stable from 20.7 onward.
+- ✅ **Tests:** `tests/engine-run.test.ts` covers full_cycle equivalence (matches the hand-stitched baseline), default-scope behavior, targeted filtering, workspace structural preservation, subset property, and previousFindings threading.
+- 🔄 **Deferred to a follow-up commit:** shrinking `apps/audit-runner/run-cycle.ts` to call `runEngine()` instead of `recomputeWithPool` + `projectAll`. The run-cycle.ts file is ~2300 lines and the engine-core slice it touches is intertwined with framework-lens, lifecycle, persistence, and integration polling — best refactored in a dedicated diff to keep regression surface small. The engine.run() API is in place and ready to consume.
+
+Exported from `packages/workspace` as `runEngine`, `EngineRunInput`, `EngineRunOutput`, `EngineScope`.
 
 ### Wave 20 — Acceptance criteria
 

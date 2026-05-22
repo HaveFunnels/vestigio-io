@@ -178,10 +178,14 @@ test("shouldRun — skips when mode is shallow_plus", () => {
   assertEqual(decision.run, false, "shallow_plus mode skips");
 });
 
-test("shouldRun — skips when SPA not detected", () => {
+test("shouldRun — runs on non-SPA with reduced budget", () => {
+  // Gate 2 was relaxed: non-SPA sites also benefit from browser
+  // verification (cookie banners, lazy-loaded trust signals, dynamic
+  // CTAs, exit-intent overlays). They run with a smaller scenario
+  // budget, but they DO run.
   const decision = __test_shouldRun(ctx({ spa_detected: false }));
-  assertEqual(decision.run, false, "no SPA skips");
-  assert(decision.reason.includes("JavaScript"), "reason mentions SPA");
+  assertEqual(decision.run, true, "non-SPA still runs (Gate 2 relaxed)");
+  assert(decision.reason.includes("Non-SPA"), "reason mentions reduced-budget non-SPA path");
 });
 
 test("shouldRun — skips when landing URL is empty", () => {

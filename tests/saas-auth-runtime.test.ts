@@ -323,10 +323,16 @@ await runAsyncSuite('AuthenticatedJourneyExecutor — Simulated Mode', async () 
   // Force simulated mode for tests
   setAuthPlaywrightMode('simulated');
   resetSaasAccessStore();
+  // File-scoped orgs. Avoid resetAllCredits() — files race in parallel.
+  const { seedTestOrg, cleanupTestOrg } = await import('../apps/platform/credits');
+  await cleanupTestOrg('org_runtime_test');
+  await cleanupTestOrg('org_runtime_test2');
+  await seedTestOrg('org_runtime_test', 'pro');
+  await seedTestOrg('org_runtime_test2', 'pro');
 
   await testAsync('executor fails without access config', async () => {
     const executor = new AuthenticatedJourneyExecutor();
-    executor.setOrgContext('org_test', 'pro'); // needs credits to reach config check
+    executor.setOrgContext('org_runtime_test', 'pro'); // needs credits to reach config check
     const output = await executor.execute({
       request: {
         id: 'vr_1',
@@ -351,11 +357,9 @@ await runAsyncSuite('AuthenticatedJourneyExecutor — Simulated Mode', async () 
   });
 
   await testAsync('executor succeeds with valid config', async () => {
-    const { resetAllCredits: resetCreds } = require('../apps/platform/credits');
-    await resetCreds();
     const store = getSaasAccessStore();
     const executor2 = new AuthenticatedJourneyExecutor();
-    executor2.setOrgContext('org_test2', 'pro');
+    executor2.setOrgContext('org_runtime_test2', 'pro');
     await store.save('env_1', {
       login_url: 'https://app.example.com/login',
       email: 'test@example.com',
@@ -398,6 +402,8 @@ await runAsyncSuite('AuthenticatedJourneyExecutor — Simulated Mode', async () 
 
   // Clean up
   resetSaasAccessStore();
+  await cleanupTestOrg('org_runtime_test');
+  await cleanupTestOrg('org_runtime_test2');
   setAuthPlaywrightMode('auto');
 });
 

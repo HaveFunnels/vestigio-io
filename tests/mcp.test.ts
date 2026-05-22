@@ -83,7 +83,10 @@ runSuite('MCP Server Lifecycle', () => {
     const tools = server.listTools();
     assertGreater(tools.length, 5, 'should have multiple tools');
     assert(tools.some(t => t.name === 'get_workspace_summary'), 'should have workspace summary tool');
-    assert(tools.some(t => t.name === 'answer_can_i_scale'), 'should have scale answer tool');
+    // answer_intent is the canonical tool — the per-intent aliases
+    // (answer_can_i_scale, answer_where_losing_money, etc.) are
+    // hidden compatibility aliases that dispatch but aren't listed.
+    assert(tools.some(t => t.name === 'answer_intent'), 'should have unified answer_intent tool');
     assert(tools.some(t => t.name === 'request_verification'), 'should have verification tool');
   });
 

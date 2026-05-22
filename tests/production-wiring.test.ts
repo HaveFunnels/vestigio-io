@@ -295,6 +295,14 @@ await runAsyncSuite('Executor — Async Store Integration', async () => {
   setAuthPlaywrightMode('simulated');
   resetSaasAccessStore();
   clearAuthLogs();
+  // File-scoped org ids. Avoid resetAllCredits() — under `node --test`
+  // files run in parallel and a global wipe would race with other
+  // suites' seeded rows.
+  const { seedTestOrg, cleanupTestOrg } = await import('../apps/platform/credits');
+  await cleanupTestOrg('org_wiring_1');
+  await cleanupTestOrg('org_wiring_2');
+  await seedTestOrg('org_wiring_1', 'pro');
+  await seedTestOrg('org_wiring_2', 'pro');
 
   await testAsync('executor fails without config (async)', async () => {
     const executor = new AuthenticatedJourneyExecutor();
@@ -315,8 +323,6 @@ await runAsyncSuite('Executor — Async Store Integration', async () => {
   });
 
   await testAsync('executor succeeds and persists verified status', async () => {
-    const { resetAllCredits: rc } = require('../apps/platform/credits');
-    await rc();
     const store = getSaasAccessStore();
     await store.save('env_1', makeInput());
 
@@ -349,6 +355,8 @@ await runAsyncSuite('Executor — Async Store Integration', async () => {
   });
 
   resetSaasAccessStore();
+  await cleanupTestOrg('org_wiring_1');
+  await cleanupTestOrg('org_wiring_2');
   setAuthPlaywrightMode('auto');
 });
 

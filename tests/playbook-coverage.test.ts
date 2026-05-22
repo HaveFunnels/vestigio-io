@@ -233,7 +233,7 @@ const TOOL_REQUIREMENTS: ToolRequirement[] = [
   // Revenue Leaks
   {
     playbookId: 'revenue_leak_full_audit',
-    requiredTools: ['get_finding_projections', 'get_root_causes', 'answer_where_losing_money'],
+    requiredTools: ['get_finding_projections', 'get_root_causes', 'answer_intent'],
     requiredDataFields: ['finding.impact.midpoint', 'finding.severity', 'finding.root_cause', 'finding.title'],
     description: 'Needs all findings ranked by impact, root causes, total loss calculation',
   },
@@ -258,7 +258,7 @@ const TOOL_REQUIREMENTS: ToolRequirement[] = [
   // Conversion
   {
     playbookId: 'conversion_bottleneck',
-    requiredTools: ['get_finding_projections', 'get_map', 'answer_where_losing_money'],
+    requiredTools: ['get_finding_projections', 'get_map', 'answer_intent'],
     requiredDataFields: ['finding.surface', 'finding.impact.midpoint', 'map.nodes', 'map.edges'],
     description: 'Needs findings by surface/stage + revenue leakage map for funnel visualization',
   },
@@ -295,14 +295,14 @@ const TOOL_REQUIREMENTS: ToolRequirement[] = [
   },
   {
     playbookId: 'chargeback_prevention_plan',
-    requiredTools: ['get_finding_projections', 'get_prioritized_actions', 'answer_fix_first'],
+    requiredTools: ['get_finding_projections', 'get_prioritized_actions', 'answer_intent'],
     requiredDataFields: ['action.title', 'action.priority_score', 'finding.severity'],
     description: 'Needs prioritized actions + findings for a sequenced 30-day plan',
   },
   // Onboarding
   {
     playbookId: 'onboarding_friction_map',
-    requiredTools: ['get_finding_projections', 'get_workspace_summary', 'answer_where_losing_money'],
+    requiredTools: ['get_finding_projections', 'get_workspace_summary', 'answer_intent'],
     requiredDataFields: ['finding.surface', 'finding.impact.midpoint', 'workspace.headline'],
     description: 'Needs findings mapped to journey stages for friction identification',
   },
@@ -390,7 +390,7 @@ const TOOL_REQUIREMENTS: ToolRequirement[] = [
   },
   {
     playbookId: 'competitive_scale_readiness',
-    requiredTools: ['answer_can_i_scale', 'get_finding_projections', 'get_preflight_status'],
+    requiredTools: ['answer_intent', 'get_finding_projections', 'get_preflight_status'],
     requiredDataFields: ['finding.severity', 'preflight.readiness_label', 'finding.impact.midpoint'],
     description: 'Needs scale readiness answer + findings + preflight',
   },
@@ -403,7 +403,7 @@ const TOOL_REQUIREMENTS: ToolRequirement[] = [
   },
   {
     playbookId: 'executive_summary',
-    requiredTools: ['get_finding_projections', 'get_action_projections', 'get_prioritized_actions', 'answer_fix_first'],
+    requiredTools: ['get_finding_projections', 'get_action_projections', 'get_prioritized_actions', 'answer_intent'],
     requiredDataFields: ['finding.impact.midpoint', 'finding.severity', 'action.priority_score'],
     description: 'Needs all findings + actions + prioritization for executive overview',
   },
@@ -415,9 +415,42 @@ const TOOL_REQUIREMENTS: ToolRequirement[] = [
   },
   {
     playbookId: 'revenue_seasonal_risk',
-    requiredTools: ['get_finding_projections', 'get_preflight_status', 'answer_can_i_scale'],
+    requiredTools: ['get_finding_projections', 'get_preflight_status', 'answer_intent'],
     requiredDataFields: ['finding.impact.midpoint', 'finding.severity', 'finding.title'],
     description: 'Needs findings + scale readiness for peak traffic damage analysis',
+  },
+  // Copy audit playbooks — all delegate to analyze_copy with optional
+  // dimension filtering. The data fields are produced by analyze_copy's
+  // structured output (scores per dimension, findings, suggestions).
+  {
+    playbookId: 'copy_audit_full',
+    requiredTools: ['analyze_copy', 'get_finding_projections'],
+    requiredDataFields: ['finding.title', 'finding.impact.midpoint', 'finding.severity'],
+    description: 'Comprehensive 7-dimension copy audit with revenue ranking',
+  },
+  {
+    playbookId: 'copy_audit_vp_deep_dive',
+    requiredTools: ['analyze_copy', 'get_finding_projections'],
+    requiredDataFields: ['finding.title', 'finding.impact.midpoint'],
+    description: 'Value proposition findings + rewrite suggestions',
+  },
+  {
+    playbookId: 'copy_audit_cta_clarity',
+    requiredTools: ['analyze_copy', 'get_finding_projections'],
+    requiredDataFields: ['finding.title', 'finding.surface'],
+    description: 'CTA-clarity findings with surface-level mapping',
+  },
+  {
+    playbookId: 'copy_audit_objection_gaps',
+    requiredTools: ['analyze_copy', 'get_finding_projections'],
+    requiredDataFields: ['finding.title', 'finding.surface', 'finding.severity'],
+    description: 'Objection-handling gaps ranked by proximity to purchase',
+  },
+  {
+    playbookId: 'copy_audit_funnel_consistency',
+    requiredTools: ['analyze_copy', 'get_finding_projections'],
+    requiredDataFields: ['finding.title', 'finding.surface', 'finding.pack'],
+    description: 'Cross-page copy consistency across the funnel',
   },
 ];
 
@@ -591,23 +624,23 @@ runSuite('Data Field Availability', () => {
     }
   });
 
-  test('answer_where_losing_money returns structured answer', () => {
-    const result = server.callTool('answer_where_losing_money');
+  test('answer_intent[where_losing_money] returns structured answer', () => {
+    const result = server.callTool('answer_intent', { intent: 'where_losing_money' });
     assert(result.type === 'answer', 'Wrong result type');
     const data = result.data as any;
     assert(data.direct_answer !== undefined, 'Missing direct_answer');
     assert(data.confidence !== undefined, 'Missing confidence');
   });
 
-  test('answer_can_i_scale returns structured answer', () => {
-    const result = server.callTool('answer_can_i_scale');
+  test('answer_intent[can_i_scale] returns structured answer', () => {
+    const result = server.callTool('answer_intent', { intent: 'can_i_scale' });
     assert(result.type === 'answer', 'Wrong result type');
     const data = result.data as any;
     assert(data.direct_answer !== undefined, 'Missing direct_answer');
   });
 
-  test('answer_fix_first returns structured answer', () => {
-    const result = server.callTool('answer_fix_first');
+  test('answer_intent[fix_first] returns structured answer', () => {
+    const result = server.callTool('answer_intent', { intent: 'fix_first' });
     assert(result.type === 'answer', 'Wrong result type');
     const data = result.data as any;
     assert(data.direct_answer !== undefined, 'Missing direct_answer');
@@ -900,9 +933,9 @@ runSuite('Prompt-Specific Validation', () => {
     }
   });
 
-  test('Scale readiness — answer_can_i_scale provides structured data', () => {
+  test('Scale readiness — answer_intent[can_i_scale] provides structured data', () => {
     const server = createTestServer();
-    const result = server.callTool('answer_can_i_scale');
+    const result = server.callTool('answer_intent', { intent: 'can_i_scale' });
     if (result.type === 'answer') {
       const data = result.data as any;
       assert(data.confidence >= 0 && data.confidence <= 100, 'Confidence out of range');

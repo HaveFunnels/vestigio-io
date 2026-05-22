@@ -172,11 +172,10 @@ describe('Phase 22 — Stabilization', () => {
       assert.ok(raw.includes('export async function resolveOrgContext'), 'should export resolveOrgContext');
     });
 
-    it('console layout uses resolveOrgContext', () => {
-      const raw = readFile('src/app/(console)/layout.tsx');
-      assert.ok(raw.includes('resolveOrgContext'), 'console layout should use resolveOrgContext');
-      assert.ok(!raw.includes('orgId: "demo"'), 'console layout should not hardcode demo org');
-    });
+    // The (console) route group was retired — Wave 18e unified the
+    // console under /app/* and the (console)/layout.tsx wrapper was
+    // deleted. The single app shell at /app/layout.tsx is the only
+    // layout that should be checked for resolveOrgContext now.
 
     it('app layout uses resolveOrgContext', () => {
       const raw = readFile('src/app/app/layout.tsx');

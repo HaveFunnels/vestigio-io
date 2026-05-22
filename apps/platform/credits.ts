@@ -209,3 +209,32 @@ export async function resetAllCredits(): Promise<void> {
   await prisma.creditTransaction.deleteMany({});
   await prisma.orgCredits.deleteMany({});
 }
+
+/**
+ * Test-only helper: idempotently create a placeholder Organization row
+ * for a fake org id. OrgCredits has a FK to Organization, so any test
+ * that exercises canAffordVerification / consumeCredits with a synthetic
+ * org id must seed the parent row first. Safe to call repeatedly.
+ *
+ * Cleanup is handled by deleting the org (ON DELETE CASCADE removes the
+ * OrgCredits + CreditTransaction rows). See cleanupTestOrg below.
+ */
+export async function seedTestOrg(orgId: string, plan: PlanKey = 'vestigio'): Promise<void> {
+  await prisma.organization.upsert({
+    where: { id: orgId },
+    update: {},
+    create: {
+      id: orgId,
+      name: `test-${orgId}`,
+      ownerId: `test-owner-${orgId}`,
+      plan,
+      status: 'active',
+      orgType: 'demo',
+    },
+  });
+}
+
+/** Test-only helper: remove a seeded org and its cascaded credit rows. */
+export async function cleanupTestOrg(orgId: string): Promise<void> {
+  await prisma.organization.deleteMany({ where: { id: orgId } });
+}

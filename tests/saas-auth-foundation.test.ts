@@ -335,7 +335,16 @@ runSuite('Authenticated Journey Verification Type', () => {
   });
 
   test('AuthenticatedJourneyExecutor returns not_ready', async () => {
+    // OrgCredits.organizationId has a FK to Organization. Use a
+    // file-scoped synthetic org (rather than the testScoping default
+    // 'ws_1') to avoid colliding with parallel test files that may also
+    // resolve to 'ws_1' from their own testScoping().
+    const { seedTestOrg, cleanupTestOrg } = await import('../apps/platform/credits');
+    await cleanupTestOrg('org_foundation_ws');
+    await seedTestOrg('org_foundation_ws', 'vestigio');
+
     const executor = new AuthenticatedJourneyExecutor();
+    executor.setOrgContext('org_foundation_ws', 'vestigio');
     assertEqual(executor.type, VerificationType.AuthenticatedJourneyVerification, 'type');
 
     const result = await executor.execute({
@@ -365,6 +374,8 @@ runSuite('Authenticated Journey Verification Type', () => {
       'error should mention not_configured or credits'
     );
     assert(result.evidence.length === 0, 'should produce no evidence');
+
+    await cleanupTestOrg('org_foundation_ws');
   });
 });
 

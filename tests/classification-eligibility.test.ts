@@ -42,6 +42,8 @@ import {
   canAffordVerification,
   consumeCredits,
   resetAllCredits,
+  seedTestOrg,
+  cleanupTestOrg,
 } from '../apps/platform/credits';
 
 import {
@@ -320,32 +322,46 @@ runSuite('Eligibility — Authenticated Verification', () => {
 // Post-Wave 5 Fase 5: credits are DB-backed. These tests require a live
 // DATABASE_URL. The outer IIFE (`(async () => { ... })()`) already lets us
 // await inside; we convert individual tests to testAsync.
+// File-scoped org ids — using a prefix avoids collisions with other
+// test files that may run in parallel under `node --test`. Global
+// helpers like resetAllCredits() are intentionally avoided here for
+// the same reason: they would wipe another file's seeded rows mid-run.
 await runAsyncSuite('Credit Enforcement', async () => {
-  await resetAllCredits();
+  await cleanupTestOrg('org_classify_1');
+  await cleanupTestOrg('org_classify_2');
+  await cleanupTestOrg('org_classify_3');
+  await seedTestOrg('org_classify_1', 'vestigio');
+  await seedTestOrg('org_classify_2', 'pro');
+  await seedTestOrg('org_classify_3', 'pro');
 
   await testAsync('vestigio plan blocks verification', async () => {
-    const result = await canAffordVerification('org_1', 'vestigio', 10);
+    const result = await canAffordVerification('org_classify_1', 'vestigio', 10);
     assertEqual(result.allowed, false, 'should block vestigio');
   });
 
   await testAsync('pro plan with credits allows verification', async () => {
-    const result = await canAffordVerification('org_2', 'pro', 10);
+    const result = await canAffordVerification('org_classify_2', 'pro', 10);
     assertEqual(result.allowed, true, 'should allow pro');
   });
 
   await testAsync('pro plan blocks when credits exhausted', async () => {
-    await consumeCredits('org_3', 50, 'pro'); // exhaust all pro credits
-    const result = await canAffordVerification('org_3', 'pro', 10);
+    await consumeCredits('org_classify_3', 50, 'pro'); // exhaust all pro credits
+    const result = await canAffordVerification('org_classify_3', 'pro', 10);
     assertEqual(result.allowed, false, 'should block after exhaustion');
   });
 
-  await resetAllCredits();
+  await cleanupTestOrg('org_classify_1');
+  await cleanupTestOrg('org_classify_2');
+  await cleanupTestOrg('org_classify_3');
 });
 
 await runAsyncSuite('Executor Credit Enforcement', async () => {
   setAuthPlaywrightMode('simulated');
   resetSaasAccessStore();
-  await resetAllCredits();
+  await cleanupTestOrg('org_classify_no_credits');
+  await cleanupTestOrg('org_classify_pro');
+  await seedTestOrg('org_classify_no_credits', 'vestigio');
+  await seedTestOrg('org_classify_pro', 'pro');
 
   const store = getSaasAccessStore();
   await store.save('env_1', {
@@ -360,7 +376,7 @@ await runAsyncSuite('Executor Credit Enforcement', async () => {
 
   await testAsync('executor blocks when plan has no credits', async () => {
     const executor = new AuthenticatedJourneyExecutor();
-    executor.setOrgContext('org_no_credits', 'vestigio');
+    executor.setOrgContext('org_classify_no_credits', 'vestigio');
 
     const output = await executor.execute({
       request: {
@@ -378,9 +394,8 @@ await runAsyncSuite('Executor Credit Enforcement', async () => {
   });
 
   await testAsync('executor succeeds and consumes credits with pro plan', async () => {
-    await resetAllCredits();
     const executor = new AuthenticatedJourneyExecutor();
-    executor.setOrgContext('org_pro', 'pro');
+    executor.setOrgContext('org_classify_pro', 'pro');
 
     const output = await executor.execute({
       request: {
@@ -395,12 +410,13 @@ await runAsyncSuite('Executor Credit Enforcement', async () => {
     });
     assertEqual(output.status, 'completed', 'should succeed');
     // Credits should have been consumed
-    const balance = await canAffordVerification('org_pro', 'pro', 1);
+    const balance = await canAffordVerification('org_classify_pro', 'pro', 1);
     assert(balance.balance.consumed > 0, 'credits should be consumed');
   });
 
   resetSaasAccessStore();
-  await resetAllCredits();
+  await cleanupTestOrg('org_classify_no_credits');
+  await cleanupTestOrg('org_classify_pro');
   setAuthPlaywrightMode('auto');
 });
 

@@ -48,8 +48,12 @@ runSuite('Route Structure', () => {
     const fs = require('fs');
     const basePath = require('path').resolve(__dirname, '../src/app/app');
 
+    // Wave 3.20: /app/analysis was renamed to /app/findings (middleware
+    // 301-redirects the old path). Keep this list in sync with the
+    // actual /app/* directory; routes drift fast so the canonical truth
+    // lives in src/app/app/, not here.
     const requiredRoutes = [
-      'analysis/page.tsx',
+      'findings/page.tsx',
       'chat/page.tsx',
       'actions/page.tsx',
       'workspaces/page.tsx',
@@ -141,20 +145,21 @@ runSuite('RBAC Model', () => {
 
 runSuite('Redirect Logic', () => {
   test('middleware config covers all required paths', () => {
-    // Verify middleware matcher includes /app and legacy routes
-    // (structural test — actual middleware runs in Next.js runtime)
+    // Verify middleware matcher includes the unified app shell and the
+    // legacy /user, /admin namespaces (which still ship redirects).
+    // Wave 18e removed /analysis, /actions, /workspaces, /chat, /maps,
+    // /settings, /onboard from the matcher — those paths no longer
+    // exist outside /app/*, so matching them only added overhead on
+    // 404s. The bookmark-rescue redirect path was intentionally dropped.
     const expectedPaths = [
       '/app/:path*',
       '/user/:path*',
       '/admin/:path*',
-      '/analysis/:path*',
-      '/actions/:path*',
     ];
-    // The middleware file exists and has proper matcher config
     const fs = require('fs');
     const content = fs.readFileSync(require('path').resolve(__dirname, '../src/middleware.ts'), 'utf-8');
     for (const p of expectedPaths) {
-      assert(content.includes(p.replace(':path*', '')), `Middleware should match ${p}`);
+      assert(content.includes(p), `Middleware should match ${p}`);
     }
   });
 
@@ -162,10 +167,14 @@ runSuite('Redirect Logic', () => {
     const fs = require('fs');
     const content = fs.readFileSync(require('path').resolve(__dirname, '../src/middleware.ts'), 'utf-8');
 
-    // Should redirect old console paths to /app equivalents
-    assert(content.includes('"/analysis": "/app/analysis"'), 'analysis redirect');
-    assert(content.includes('"/chat": "/app/chat"'), 'chat redirect');
-    assert(content.includes('"/actions": "/app/actions"'), 'actions redirect');
+    // Wave 3.20 redirect: /app/analysis -> /app/findings (the analysis
+    // route was renamed). The remaining legacy paths (/chat, /actions,
+    // /workspaces, etc.) live exclusively under /app/* now, so the
+    // string redirect map that used to exist was retired in Wave 18e.
+    assert(content.includes('/app/analysis') && content.includes('/app/findings'), 'analysis -> findings redirect');
+    // /user and /admin roots redirect into /app
+    assert(content.includes('"/user"') && content.includes('/app'), '/user root redirect');
+    assert(content.includes('"/admin"') && content.includes('/app/admin/overview'), '/admin root redirect');
   });
 
   test('middleware protects /app/admin for non-admin', () => {

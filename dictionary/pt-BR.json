@@ -795,7 +795,7 @@
 			"action_queue": {
 				"eyebrow": "A Vestigio prioriza",
 				"title": "Saiba o que corrigir na segunda de manhã",
-				"description": "Uma fila ranqueada. Impacto em reais, não em cores. O primeiro item vale R$42k/mês. O nono vale R$1.5k. Você sabe por onde começar.",
+				"description": "Uma fila ranqueada. Impacto em reais, não em cores. O primeiro item vale R$42k/mês. O último vale R$5,7k. Você sabe por onde começar.",
 				"rows": [
 					{
 						"title": "Pico de abandono no checkout",
@@ -824,25 +824,25 @@
 				"rows": [
 					{
 						"surface": "Funil de checkout",
-						"loss": "−R$ 42.100",
+						"loss": "−R$ 38.400",
 						"confidence": "94%"
 					},
 					{
 						"surface": "Página de preços",
-						"loss": "−R$ 15.750",
+						"loss": "−R$ 14.200",
 						"confidence": "88%"
 					},
 					{
 						"surface": "Fluxo de onboarding",
-						"loss": "−R$ 9.600",
+						"loss": "−R$ 8.800",
 						"confidence": "91%"
 					}
 				]
 			},
 			"continuous_watch": {
 				"eyebrow": "Você recupera",
-				"title": "Você saberia em horas, não em dias.",
-				"description": "A atualização da semana passada quebrou seu checkout. Ciclos contínuos comparam cada superfície com a anterior — quando algo degrada, aparece na sua fila antes do cliente reclamar.",
+				"title": "Faturamento perdido cai 87% no primeiro mês.",
+				"description": "A atualização da semana passada quebrou seu checkout — você saberia em horas, não em dias. Ciclos contínuos comparam cada superfície com a anterior; quando algo degrada, aparece na sua fila antes do cliente reclamar.",
 				"axis_label": "Faturamento perdido / mês",
 				"before_label": "Antes da Vestigio",
 				"after_label": "Depois da Vestigio",
@@ -856,11 +856,11 @@
 				"center_label": "Descoberta",
 				"evidence_types": {
 					"browser": "Navegador",
-					"static": "Estático",
+					"static": "Código",
 					"behavioral": "Comportamental",
-					"cross_source": "Cruzamento",
-					"vendor": "Fornecedor",
-					"timestamped": "Timestamp"
+					"cross_source": "Correlação",
+					"vendor": "Integrações",
+					"timestamped": "Registro"
 				}
 			}
 		},

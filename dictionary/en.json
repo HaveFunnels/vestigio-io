@@ -795,7 +795,7 @@
 			"action_queue": {
 				"eyebrow": "Vestigio prioritizes",
 				"title": "Know what to fix Monday morning",
-				"description": "A ranked queue. Impact in dollars, not color codes. The first item is worth $42k/month. The ninth is worth $1.5k. You know where to start.",
+				"description": "A ranked queue. Impact in dollars, not color codes. The first item is worth $8.4k/month. The last is worth $1.1k. You know where to start.",
 				"rows": [
 					{
 						"title": "Checkout abandons spike",
@@ -824,25 +824,25 @@
 				"rows": [
 					{
 						"surface": "Checkout funnel",
-						"loss": "−$8,420",
+						"loss": "−$7,680",
 						"confidence": "94%"
 					},
 					{
 						"surface": "Pricing page",
-						"loss": "−$3,150",
+						"loss": "−$2,840",
 						"confidence": "88%"
 					},
 					{
 						"surface": "Onboarding flow",
-						"loss": "−$1,920",
+						"loss": "−$1,760",
 						"confidence": "91%"
 					}
 				]
 			},
 			"continuous_watch": {
 				"eyebrow": "You recover",
-				"title": "You'd know in hours, not days.",
-				"description": "Last week's site update broke your checkout. Continuous cycles compare every surface against the last — when something degrades, it shows up in your queue before a customer complains.",
+				"title": "Lost revenue drops 87% in the first month.",
+				"description": "Last week's site update broke your checkout — you'd know in hours, not days. Continuous cycles compare every surface against the last; when something degrades, it shows up in your queue before a customer complains.",
 				"axis_label": "Revenue lost / mo",
 				"before_label": "Before Vestigio",
 				"after_label": "After Vestigio",
@@ -856,11 +856,11 @@
 				"center_label": "Finding",
 				"evidence_types": {
 					"browser": "Browser",
-					"static": "Static",
+					"static": "Code",
 					"behavioral": "Behavioral",
-					"cross_source": "Cross-source",
-					"vendor": "Vendor",
-					"timestamped": "Timestamped"
+					"cross_source": "Correlated",
+					"vendor": "Integrations",
+					"timestamped": "Logged"
 				}
 			}
 		},

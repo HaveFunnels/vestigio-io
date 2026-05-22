@@ -57,12 +57,15 @@ const Counter = () => {
 							</div>
 						</div>
 
-						{/* Full Visibility */}
+						{/* Full Visibility — radar with sweep, semantic match for
+						    "15 mil sinais por ciclo" (scanning breadth, not time). */}
 						<div className='group flex items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 transition-all duration-300 hover:border-emerald-500/20 hover:bg-white/[0.04] sm:p-6'>
 							<div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10'>
 								<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round' className='h-5 w-5 text-violet-400'>
 									<circle cx='10' cy='10' r='7' />
-									<path d='M10 6v4l2.5 2.5' />
+									<circle cx='10' cy='10' r='3.5' />
+									<path d='M10 10L15.5 4.5' />
+									<circle cx='10' cy='10' r='0.6' fill='currentColor' stroke='none' />
 								</svg>
 							</div>
 							<div>
@@ -141,11 +144,13 @@ const Counter = () => {
 
 						{/* Bottom two small cards */}
 						<div className='flex gap-3 sm:gap-4'>
-							{/* Continuous Monitoring */}
+							{/* Continuous Monitoring — EKG/heartbeat line, semantic
+							    match for "Regressões em horas, não dias" (continuous
+							    detection with a spike when something breaks). */}
 							<div className='group flex flex-1 items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 transition-all duration-300 hover:border-emerald-500/20 hover:bg-white/[0.04]'>
 								<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/10'>
 									<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round' className='h-4.5 w-4.5 text-sky-400'>
-										<path d='M3 16V10M7 16V6M11 16V8M15 16V3' />
+										<path d='M2 10h3l2-4 3 8 2-6 2 2h4' />
 									</svg>
 								</div>
 								<div>

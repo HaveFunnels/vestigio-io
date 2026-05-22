@@ -339,7 +339,7 @@ runSuite('Authenticated Journey Verification Type', () => {
     // file-scoped synthetic org (rather than the testScoping default
     // 'ws_1') to avoid colliding with parallel test files that may also
     // resolve to 'ws_1' from their own testScoping().
-    const { seedTestOrg, cleanupTestOrg } = await import('../apps/platform/credits');
+    const { seedTestOrg, cleanupTestOrg } = await import('../apps/platform/credits-test-helpers');
     await cleanupTestOrg('org_foundation_ws');
     await seedTestOrg('org_foundation_ws', 'vestigio');
 

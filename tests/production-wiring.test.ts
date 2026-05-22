@@ -298,7 +298,7 @@ await runAsyncSuite('Executor — Async Store Integration', async () => {
   // File-scoped org ids. Avoid resetAllCredits() — under `node --test`
   // files run in parallel and a global wipe would race with other
   // suites' seeded rows.
-  const { seedTestOrg, cleanupTestOrg } = await import('../apps/platform/credits');
+  const { seedTestOrg, cleanupTestOrg } = await import('../apps/platform/credits-test-helpers');
   await cleanupTestOrg('org_wiring_1');
   await cleanupTestOrg('org_wiring_2');
   await seedTestOrg('org_wiring_1', 'pro');

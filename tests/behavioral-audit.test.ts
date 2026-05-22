@@ -327,19 +327,24 @@ function truthTests() {
     assertGreater(result.signals.length, 0, 'Should produce output signals');
   });
 
-  // 1i: Consistency guard annotates all signals with truth metadata
-  metricTest('truth', 'Consistency guard attaches TruthMetadata to all signals', () => {
+  // 1i: Consistency guard consumes annotated signals from harmonize.
+  // Note (Wave 20.6 follow-up): truth_metadata is now attached by
+  // harmonizeSignals inline. The guard no longer re-annotates — it
+  // only computes the consistency summary from pre-annotated signals.
+  metricTest('truth', 'Consistency guard passes pre-annotated signals through', () => {
     const signal = testSignal({ signal_key: 'test.attribute', confidence: 70 });
+    // testSignal() already attaches default truth_metadata (harmonized:true,
+    // no contradictions) so it's already a SignalWithTruth. The harmonize
+    // contract is the source of truth here.
     const harmonization = {
-      signals: [signal],
+      signals: [signal as any],
       truth_states: [],
       contradictions_found: 0,
       signals_adjusted: 0,
     };
     const result = guardTruthConsistency([signal], [signal], harmonization);
-    assertEqual(result.signals.length, 1, 'Should have 1 annotated signal');
+    assertEqual(result.signals.length, 1, 'Should pass through 1 signal');
     assert(result.signals[0].truth_metadata !== undefined, 'Should have truth_metadata');
-    assertEqual(result.signals[0].truth_metadata.harmonized, false, 'Single source not harmonized');
     assertEqual(result.fully_consistent, true, 'No contradictions = consistent');
   });
 

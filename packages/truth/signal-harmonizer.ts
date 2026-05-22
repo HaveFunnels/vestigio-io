@@ -1,6 +1,39 @@
 import { Signal, Evidence, makeRef } from '../domain';
 import { TruthClaim, AuthorityLevel, SOURCE_AUTHORITY, TruthState, TruthContradiction } from './types';
 import { resolveTruth } from './resolver';
+import type { SignalWithTruth, TruthMetadata } from './consistency-guard';
+
+const EMPTY_TRUTH_METADATA = (origConfidence: number): TruthMetadata => ({
+  harmonized: false,
+  contradiction_count: 0,
+  contradiction_severities: [],
+  resolution_method: null,
+  is_contested: false,
+  pre_harmonization_confidence: origConfidence,
+  truth_confidence_delta: 0,
+});
+
+function metadataForResolved(
+  signal: Signal,
+  origConfidence: number,
+  truthState: TruthState,
+): TruthMetadata {
+  const resolution = truthState.resolutions.find(r => r.claim_key === signal.signal_key);
+  const contradictions = resolution?.contradictions ?? [];
+  return {
+    harmonized: true,
+    contradiction_count: contradictions.length,
+    contradiction_severities: contradictions.map(c => c.severity),
+    resolution_method: resolution?.resolution_method ?? null,
+    is_contested: resolution?.is_contested ?? false,
+    pre_harmonization_confidence: origConfidence,
+    truth_confidence_delta: signal.confidence - origConfidence,
+  };
+}
+
+function annotate(signal: Signal, meta: TruthMetadata): SignalWithTruth {
+  return { ...signal, truth_metadata: meta };
+}
 
 // ──────────────────────────────────────────────
 // Signal Harmonizer — truth resolution for multi-source signals
@@ -17,7 +50,12 @@ import { resolveTruth } from './resolver';
 // ──────────────────────────────────────────────
 
 export interface HarmonizationResult {
-  signals: Signal[];
+  // Signals here are already annotated with truth_metadata — the
+  // consistency guard (consistency-guard.ts:guardTruthConsistency)
+  // used to walk this list a second time to attach metadata, which
+  // was a wasted O(N) pass. Now the guard consumes annotated signals
+  // directly and only computes the narrative + unresolved counts.
+  signals: SignalWithTruth[];
   truth_states: TruthState[];
   contradictions_found: number;
   signals_adjusted: number;
@@ -26,6 +64,9 @@ export interface HarmonizationResult {
 /**
  * Harmonize signals using truth resolution where multi-source evidence exists.
  * Single-source signals pass through unchanged.
+ *
+ * Returns signals annotated with truth_metadata so downstream callers
+ * (notably guardTruthConsistency) don't need to re-walk the array.
  */
 export function harmonizeSignals(
   signals: Signal[],
@@ -38,36 +79,41 @@ export function harmonizeSignals(
     evidenceByRef.set(`evidence:${e.id}`, e);
   }
 
-  // Group signals by (signal_key, subject_ref)
+  // Group signals by (signal_key, subject_ref) — also captures each
+  // signal's pre-harmonization confidence so the metadata attached at
+  // the end of this pass can compute truth_confidence_delta without
+  // a separate originalConfidence map lookup.
   const groups = new Map<string, Signal[]>();
+  const origConfidence = new Map<string, number>();
   for (const sig of signals) {
     const groupKey = `${sig.signal_key}:${sig.scoping.subject_ref}`;
-    const existing = groups.get(groupKey) || [];
-    existing.push(sig);
-    groups.set(groupKey, existing);
+    const existing = groups.get(groupKey);
+    if (existing) existing.push(sig);
+    else groups.set(groupKey, [sig]);
+    origConfidence.set(sig.id, sig.confidence);
   }
 
   const truthStates: TruthState[] = [];
-  const harmonized: Signal[] = [];
+  const harmonized: SignalWithTruth[] = [];
   let contradictionsFound = 0;
   let signalsAdjusted = 0;
 
-  for (const [groupKey, groupSignals] of groups) {
+  for (const [, groupSignals] of groups) {
     // Single signal in group — check if it has multi-source evidence
     if (groupSignals.length === 1) {
       const sig = groupSignals[0];
       const backingEvidence = resolveBackingEvidence(sig, evidenceByRef);
 
       if (backingEvidence.length <= 1) {
-        // Single source, pass through
-        harmonized.push(sig);
+        // Single source, pass through with empty metadata
+        harmonized.push(annotate(sig, EMPTY_TRUTH_METADATA(sig.confidence)));
         continue;
       }
 
       // Multi-source evidence for a single signal — resolve truth
       const claims = buildClaimsFromEvidence(sig, backingEvidence);
       if (claims.length <= 1) {
-        harmonized.push(sig);
+        harmonized.push(annotate(sig, EMPTY_TRUTH_METADATA(sig.confidence)));
         continue;
       }
 
@@ -78,7 +124,8 @@ export function harmonizeSignals(
       // Adjust signal confidence based on truth resolution
       const adjusted = applyTruthToSignal(sig, truthState);
       if (adjusted.confidence !== sig.confidence) signalsAdjusted++;
-      harmonized.push(adjusted);
+      const orig = origConfidence.get(adjusted.id) ?? adjusted.confidence;
+      harmonized.push(annotate(adjusted, metadataForResolved(adjusted, orig, truthState)));
       continue;
     }
 
@@ -90,7 +137,9 @@ export function harmonizeSignals(
     }
 
     if (allClaims.length <= 1) {
-      harmonized.push(...groupSignals);
+      for (const sig of groupSignals) {
+        harmonized.push(annotate(sig, EMPTY_TRUTH_METADATA(sig.confidence)));
+      }
       continue;
     }
 
@@ -104,13 +153,15 @@ export function harmonizeSignals(
     if (resolvedSignal) {
       const adjusted = applyTruthToSignal(resolvedSignal, truthState);
       if (adjusted.confidence !== resolvedSignal.confidence) signalsAdjusted++;
-      harmonized.push(adjusted);
+      const orig = origConfidence.get(adjusted.id) ?? adjusted.confidence;
+      harmonized.push(annotate(adjusted, metadataForResolved(adjusted, orig, truthState)));
     } else {
       // Fallback: keep all, adjust confidence
       for (const sig of groupSignals) {
         const adjusted = applyTruthToSignal(sig, truthState);
         if (adjusted.confidence !== sig.confidence) signalsAdjusted++;
-        harmonized.push(adjusted);
+        const orig = origConfidence.get(adjusted.id) ?? adjusted.confidence;
+        harmonized.push(annotate(adjusted, metadataForResolved(adjusted, orig, truthState)));
       }
     }
   }

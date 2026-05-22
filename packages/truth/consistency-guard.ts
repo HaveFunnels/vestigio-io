@@ -86,90 +86,47 @@ export interface ConsistencySummary {
  * - No unresolved conflicts silently propagate
  */
 export function guardTruthConsistency(
-  originalSignals: Signal[],
-  harmonizedSignals: Signal[],
+  // Kept for back-compat with the previous signature. The first two
+  // arguments are now unused (harmonizeSignals annotates the signals
+  // inline, so the guard only consumes `harmonization.signals`). They
+  // remain in the signature to avoid a sweeping caller-side rename
+  // until Wave 20.7 cleanup.
+  _originalSignals: Signal[],
+  _harmonizedSignalsLegacy: Signal[],
   harmonization: HarmonizationResult,
 ): TruthConsistencyResult {
-  // Build lookup: signal_key:subject_ref → truth state
-  const truthByGroup = new Map<string, TruthState>();
-  for (const ts of harmonization.truth_states) {
-    for (const res of ts.resolutions) {
-      truthByGroup.set(`${res.claim_key}:${ts.subject_ref}`, ts);
-    }
-  }
-
-  // Build original confidence lookup
-  const originalConfidence = new Map<string, number>();
-  for (const sig of originalSignals) {
-    originalConfidence.set(sig.id, sig.confidence);
-  }
-
-  const annotated: SignalWithTruth[] = [];
+  // Single pass over already-annotated signals. The previous version
+  // walked harmonizedSignals to ATTACH truth_metadata that harmonize
+  // had to recompute (origConfidence map + group lookup). Now harmonize
+  // attaches inline, and this loop only rolls up statistics.
+  const annotated = harmonization.signals;
   const unresolved: UnresolvedContradiction[] = [];
   let harmonizedCount = 0;
   let contestedCount = 0;
   let totalContradictions = 0;
 
-  for (const sig of harmonizedSignals) {
-    const groupKey = `${sig.signal_key}:${sig.scoping.subject_ref}`;
-    const truthState = truthByGroup.get(groupKey);
-    const origConf = originalConfidence.get(sig.id) ?? sig.confidence;
-
-    if (!truthState) {
-      // Single-source signal — no harmonization needed
-      annotated.push({
-        ...sig,
-        truth_metadata: {
-          harmonized: false,
-          contradiction_count: 0,
-          contradiction_severities: [],
-          resolution_method: null,
-          is_contested: false,
-          pre_harmonization_confidence: origConf,
-          truth_confidence_delta: 0,
-        },
-      });
-      continue;
-    }
-
-    // Find the resolution for this signal
-    const resolution = truthState.resolutions.find(r => r.claim_key === sig.signal_key);
-    const isContested = resolution?.is_contested ?? false;
-    const contradictions = resolution?.contradictions ?? [];
-    const severities = contradictions.map(c => c.severity);
+  for (const sig of annotated) {
+    const meta = sig.truth_metadata;
+    if (!meta.harmonized) continue;
 
     harmonizedCount++;
-    if (isContested) contestedCount++;
-    totalContradictions += contradictions.length;
+    if (meta.is_contested) contestedCount++;
+    totalContradictions += meta.contradiction_count;
 
-    // Check for unresolvable contradictions (multiple critical contradictions)
-    const criticalCount = severities.filter(s => s === 'critical').length;
-    if (criticalCount >= 2 && isContested) {
+    const criticalCount = meta.contradiction_severities.filter(s => s === 'critical').length;
+    if (criticalCount >= 2 && meta.is_contested) {
       unresolved.push({
         signal_key: sig.signal_key,
         subject_ref: sig.scoping.subject_ref,
-        contradiction_count: contradictions.length,
+        contradiction_count: meta.contradiction_count,
         highest_severity: 'critical',
         reason: `${criticalCount} critical contradictions could not be fully resolved. Confidence heavily penalized.`,
       });
     }
-
-    annotated.push({
-      ...sig,
-      truth_metadata: {
-        harmonized: true,
-        contradiction_count: contradictions.length,
-        contradiction_severities: severities,
-        resolution_method: resolution?.resolution_method ?? null,
-        is_contested: isContested,
-        pre_harmonization_confidence: origConf,
-        truth_confidence_delta: sig.confidence - origConf,
-      },
-    });
   }
 
   const narrative = buildNarrative(
-    harmonizedSignals.length, harmonizedCount, contestedCount,
+    annotated.length, harmonizedCount, contestedCount,
     unresolved.length, totalContradictions,
   );
 
@@ -178,7 +135,7 @@ export function guardTruthConsistency(
     unresolved_contradictions: unresolved,
     fully_consistent: unresolved.length === 0,
     consistency_summary: {
-      total_signals: harmonizedSignals.length,
+      total_signals: annotated.length,
       harmonized_signals: harmonizedCount,
       contested_signals: contestedCount,
       unresolved_count: unresolved.length,

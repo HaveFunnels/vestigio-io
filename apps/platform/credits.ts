@@ -44,10 +44,17 @@ export function planIncludedCredits(plan: PlanKey): number {
 
 // Load-or-create the OrgCredits row and roll the cycle if the anchor
 // is older than CYCLE_MS. Returns the fresh row.
+//
+// upsert is atomic — two concurrent calls for the same fresh org no
+// longer race on findUnique → create. The earlier "findUnique ?? create"
+// pattern could throw P2002 (unique violation) when the platform served
+// two requests for a brand-new org simultaneously (MCP + browser, etc).
 async function ensureOrgCredits(orgId: string) {
-  const row =
-    (await prisma.orgCredits.findUnique({ where: { organizationId: orgId } })) ??
-    (await prisma.orgCredits.create({ data: { organizationId: orgId } }));
+  const row = await prisma.orgCredits.upsert({
+    where: { organizationId: orgId },
+    update: {},
+    create: { organizationId: orgId },
+  });
 
   const age = Date.now() - row.cycleStartAt.getTime();
   if (age < CYCLE_MS) return row;
@@ -199,42 +206,11 @@ export async function addPurchasedCredits(
   return { credited: true, alreadyProcessed: false };
 }
 
-/** Delete a single org's credit state. Test-only helper. */
-export async function resetCredits(orgId: string): Promise<void> {
-  await prisma.orgCredits.deleteMany({ where: { organizationId: orgId } });
-}
-
-/** Delete ALL credit state. Test-only helper — never call from app code. */
-export async function resetAllCredits(): Promise<void> {
-  await prisma.creditTransaction.deleteMany({});
-  await prisma.orgCredits.deleteMany({});
-}
-
-/**
- * Test-only helper: idempotently create a placeholder Organization row
- * for a fake org id. OrgCredits has a FK to Organization, so any test
- * that exercises canAffordVerification / consumeCredits with a synthetic
- * org id must seed the parent row first. Safe to call repeatedly.
- *
- * Cleanup is handled by deleting the org (ON DELETE CASCADE removes the
- * OrgCredits + CreditTransaction rows). See cleanupTestOrg below.
- */
-export async function seedTestOrg(orgId: string, plan: PlanKey = 'vestigio'): Promise<void> {
-  await prisma.organization.upsert({
-    where: { id: orgId },
-    update: {},
-    create: {
-      id: orgId,
-      name: `test-${orgId}`,
-      ownerId: `test-owner-${orgId}`,
-      plan,
-      status: 'active',
-      orgType: 'demo',
-    },
-  });
-}
-
-/** Test-only helper: remove a seeded org and its cascaded credit rows. */
-export async function cleanupTestOrg(orgId: string): Promise<void> {
-  await prisma.organization.deleteMany({ where: { id: orgId } });
-}
+// ──────────────────────────────────────────────
+// Test helpers
+//
+// resetCredits, resetAllCredits, seedTestOrg, cleanupTestOrg moved to
+// apps/platform/credits-test-helpers.ts so production app code cannot
+// accidentally import them. Tests should import from credits-test-helpers
+// directly. An ESLint rule (no-test-helpers-in-src) prevents src/ imports.
+// ──────────────────────────────────────────────

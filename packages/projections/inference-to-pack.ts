@@ -425,5 +425,27 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   referral_path_nonexistent: 'funnel_journey',
   success_story_feedback_loop_broken: 'funnel_journey',
   mobile_journey_friction_compound: 'funnel_journey',
+
+  // ── Wave 20.6 invariant sweep (2026-05-22) ──
+  // The check-invariants script caught 15 pack-emitted inference keys
+  // that had no INFERENCE_TO_PACK entry. They were falling through to
+  // the 'unknown' default in projections/engine.ts:1063, so the
+  // findings were generated but had no workspace surface. Mapping
+  // each to the pack that emits them, by surface affinity.
+  urgency_dark_pattern: 'copy_alignment',          // copy-alignment.ts
+  onboarding_copy_weak: 'copy_alignment',          // copy-alignment.ts
+  navigation_confusing: 'copy_alignment',          // copy-alignment.ts
+  above_fold_cluttered: 'copy_alignment',          // copy-alignment.ts
+  subscriber_churn_elevated: 'saas_growth_readiness',  // monetization-extensions.ts, SaaS-only
+  failed_payment_rate_high: 'revenue_integrity',   // monetization-extensions.ts, applies to all commerce
+  pricing_offer_unclear: 'copy_alignment',         // wave-4-extensions.ts (4.2 LLM copy)
+  page_purpose_mismatch: 'copy_alignment',         // wave-4-extensions.ts (4.2 LLM copy)
+  structured_data_mismatch: 'discoverability',     // wave-4-extensions.ts (4.2 LLM SEO)
+  payment_handoff_dropoff: 'revenue_integrity',    // wave-4-extensions.ts (4.6 neglected)
+  saas_activation_gap_heuristic: 'saas_growth_readiness', // wave-4-extensions.ts (4.6 neglected)
+  oscillation_clustering: 'revenue_integrity',     // wave-4-extensions.ts (4.6 behavioral cluster)
+  network_error_weighted: 'revenue_integrity',     // wave-4-extensions.ts (4.6 commercial errors)
+  mobile_trust_gap: 'revenue_integrity',           // wave-4-extensions.ts (4.6 mobile-specific)
+  behavioral_micro_pattern_cascade: 'revenue_integrity', // wave-4-extensions.ts (4.6 compound)
 };
 

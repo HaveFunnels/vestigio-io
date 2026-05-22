@@ -22,8 +22,9 @@ import {
 import { BrowserWorker } from '../workers/verification/browser-worker';
 import {
   getCreditBalance, canAffordVerification, consumeCredits,
-  addPurchasedCredits, resetAllCredits,
+  addPurchasedCredits,
 } from '../apps/platform/credits';
+import { resetAllCredits } from '../apps/platform/credits-test-helpers';
 import { VerificationType, EvidenceType } from '../packages/domain';
 import { McpServer } from '../apps/mcp/server';
 import { McpRequestScope } from '../apps/mcp/types';

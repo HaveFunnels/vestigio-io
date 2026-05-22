@@ -324,7 +324,7 @@ await runAsyncSuite('AuthenticatedJourneyExecutor — Simulated Mode', async () 
   setAuthPlaywrightMode('simulated');
   resetSaasAccessStore();
   // File-scoped orgs. Avoid resetAllCredits() — files race in parallel.
-  const { seedTestOrg, cleanupTestOrg } = await import('../apps/platform/credits');
+  const { seedTestOrg, cleanupTestOrg } = await import('../apps/platform/credits-test-helpers');
   await cleanupTestOrg('org_runtime_test');
   await cleanupTestOrg('org_runtime_test2');
   await seedTestOrg('org_runtime_test', 'pro');

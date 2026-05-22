@@ -24,7 +24,9 @@
 		"typecheck": "tsc --noEmit",
 		"test": "npx tsx --test tests/all.test.ts",
 		"test:all": "npx tsx --test tests/*.test.ts",
-		"test-build": "npm run check-style && npm run typecheck && npm run build",
+		"check:invariants": "npx tsx scripts/check-invariants.ts",
+		"codegen:inference-keys": "npx tsx scripts/codegen-inference-keys.ts",
+		"test-build": "npm run check-style && npm run typecheck && npm run check:invariants && npm run build",
 		"seed": "npx tsx prisma/seed.ts"
 	},
 	"dependencies": {

@@ -38,13 +38,12 @@ import {
   EvidenceType,
 } from '../packages/domain';
 
+import { canAffordVerification, consumeCredits } from '../apps/platform/credits';
 import {
-  canAffordVerification,
-  consumeCredits,
   resetAllCredits,
   seedTestOrg,
   cleanupTestOrg,
-} from '../apps/platform/credits';
+} from '../apps/platform/credits-test-helpers';
 
 import {
   createAuthLogger,

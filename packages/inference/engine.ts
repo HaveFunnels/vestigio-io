@@ -40,23 +40,21 @@ export function computeInferences(
 ): Inference[] {
   const ids = new IdGenerator('inf');
 
-  // Index signals by attribute (supports multiple signals per attribute).
+  // Single-pass index build. Previous version iterated `signals` twice
+  // (byAttribute + byKey). At ~10k signals per audit cycle this saved
+  // one full O(N) walk in the hottest pre-pack path.
   const byAttribute = new Map<string, Signal[]>();
+  const byKey = new Map<string, Signal>();
   for (const s of signals) {
-    const list = byAttribute.get(s.attribute) || [];
-    list.push(s);
-    byAttribute.set(s.attribute, list);
+    const list = byAttribute.get(s.attribute);
+    if (list) list.push(s);
+    else byAttribute.set(s.attribute, [s]);
+    byKey.set(s.signal_key, s);
   }
   const first = (attr: string): Signal | undefined => {
     const list = byAttribute.get(attr);
     return list ? list[0] : undefined;
   };
-
-  // Index by signal_key for direct lookups.
-  const byKey = new Map<string, Signal>();
-  for (const s of signals) {
-    byKey.set(s.signal_key, s);
-  }
 
   const packInput: PackInput = {
     signals, byAttribute, byKey, first, scoping, cycle_ref, ids,

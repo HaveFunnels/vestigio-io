@@ -87,8 +87,8 @@ const Counter = () => {
 								<span className='font-display text-[5rem] font-bold leading-none tracking-tighter sm:text-[6.5rem] lg:text-[8rem]' style={{ background: 'linear-gradient(to bottom, #34d399 0%, #34d399 60%, rgba(52,211,153,0.3) 85%, transparent 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', filter: 'drop-shadow(0 8px 32px rgba(16,185,129,0.3))' }}>
 									4X
 								</span>
-								<h3 className='mt-2 text-lg font-bold text-white sm:text-xl'>ROI Guarantee</h3>
-								<p className='mt-1 text-sm text-zinc-400'>{t("roi_subtitle")}</p>
+								<h3 className='mt-2 text-lg font-bold text-white sm:text-xl'>{t("roi_title")}</h3>
+								<p className='mx-auto mt-1 max-w-[280px] text-sm text-zinc-400 sm:max-w-[320px]'>{t("roi_subtitle")}</p>
 							</div>
 						</div>
 					</div>

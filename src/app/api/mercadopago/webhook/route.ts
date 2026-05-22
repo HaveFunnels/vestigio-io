@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
 import {
+	cancelPreapproval,
+	getChargeback,
 	getPayment,
 	getPreapproval,
 	parseExternalRef,
@@ -244,6 +246,100 @@ async function reconcilePixCharge(payment: MpPaymentResponse) {
 	}
 }
 
+// ──────────────────────────────────────────────
+// Chargeback handler — buyer disputed the charge with their card
+// issuer. We suspend the org immediately so we stop serving, cancel
+// the preapproval so MP stops billing, and log loudly so a human can
+// follow up (chargebacks usually deserve a manual review).
+//
+// We act on `pending` and `in_process` (active disputes) and `lost`
+// (MP refunded the money). `won` means MP defended the charge on
+// our behalf — no action needed, the money stays.
+// ──────────────────────────────────────────────
+
+async function handleChargebackEvent(chargebackId: string) {
+	const cb = await getChargeback(chargebackId);
+	log("chargeback.recv", `id=${cb.id} payment=${cb.payment_id} status=${cb.status} reason=${cb.reason ?? "?"}`);
+
+	if (cb.status === "won") return; // we kept the money; nothing to revert
+
+	const payment = await getPayment(cb.payment_id);
+	const ref = payment.external_reference || "";
+	const parsed = parseExternalRef(ref);
+
+	// Identify the user. Three paths depending on what kind of payment
+	// was disputed:
+	//   - preapproval recurring → match by payer email or customerId
+	//   - pixrenew              → ref carries userId
+	//   - creditpack            → ref carries orgId (no plan suspension,
+	//                             but we still log; credits already
+	//                             granted, accountant follow-up)
+	let userId: string | null = null;
+	let orgId: string | null = null;
+
+	if (parsed.tag === "pixrenew") {
+		userId = parsed.parts[1] || null;
+		orgId = parsed.parts[0] || null;
+	} else if (parsed.tag === "creditpack") {
+		orgId = parsed.parts[0] || null;
+	}
+
+	if (!userId && payment.payer?.email) {
+		const u = await findUserByPayer(undefined, payment.payer.email);
+		if (u) {
+			userId = u.id;
+			if (!orgId) {
+				const org = await findUserOrg(u.id);
+				orgId = org?.id ?? null;
+			}
+		}
+	}
+
+	if (parsed.tag === "creditpack") {
+		// Credits already granted; we don't auto-revoke (refund accounting
+		// is messy and the dispute might still be lost). Just suspend the
+		// org so further actions need human approval, and log.
+		if (orgId) {
+			await prisma.organization.update({
+				where: { id: orgId },
+				data: { status: "suspended" },
+			});
+		}
+		log("chargeback.creditpack", `org=${orgId} chargeback=${cb.id} payment=${cb.payment_id}`);
+		return;
+	}
+
+	// Subscription / PIX-renewal disputes: suspend + cancel preapproval.
+	if (orgId) {
+		await prisma.organization.update({
+			where: { id: orgId },
+			data: { status: "suspended" },
+		});
+	}
+	if (userId) {
+		const user = await prisma.user.findUnique({ where: { id: userId } });
+		if (user?.mpPreapprovalId) {
+			try {
+				await cancelPreapproval(user.mpPreapprovalId);
+				log("chargeback.preapproval-cancelled", `user=${userId} preapproval=${user.mpPreapprovalId}`);
+			} catch (err) {
+				console.error(`[MP Webhook] chargeback cancelPreapproval failed: ${(err as Error).message}`);
+			}
+		}
+		await prisma.user.update({
+			where: { id: userId },
+			data: {
+				subscriptionId: null,
+				mpPreapprovalId: null,
+				priceId: null,
+				currentPeriodEnd: null,
+			},
+		});
+	}
+
+	log("chargeback.suspended", `user=${userId} org=${orgId} chargeback=${cb.id} status=${cb.status}`);
+}
+
 async function reconcileCreditPack(payment: MpPaymentResponse, refParts: string[]) {
 	if (payment.status !== "approved") {
 		log("creditpack.skip", `payment=${payment.id} status=${payment.status} (waiting for approval)`);
@@ -349,6 +445,12 @@ export const POST = withErrorTracking(
 					log("preapproval.no-id", JSON.stringify(payload).slice(0, 200));
 				} else {
 					await handlePreapprovalEvent(dataId);
+				}
+			} else if (type === "chargebacks" || type === "chargeback") {
+				if (!dataId) {
+					log("chargeback.no-id", JSON.stringify(payload).slice(0, 200));
+				} else {
+					await handleChargebackEvent(dataId);
 				}
 			} else if (type === "authorized_payment" || type === "subscription_authorized_payment") {
 				// A successful charge from an existing preapproval. The

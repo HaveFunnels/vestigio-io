@@ -345,6 +345,32 @@ export async function getPayment(paymentId: string | number): Promise<MpPaymentR
 }
 
 // ──────────────────────────────────────────────
+// Chargebacks (contestações)
+//
+// MP fires `chargebacks` webhook events when a cardholder disputes a
+// charge with their issuer. Lifecycle: pending → in_process → won
+// (we kept the money) or lost (money refunded by MP). We treat any
+// non-final state as "active dispute" and suspend the org + cancel
+// the preapproval so we stop serving + stop charging.
+// ──────────────────────────────────────────────
+
+export interface MpChargeback {
+	id: number;
+	payment_id: number;
+	amount: number;
+	currency_id: "BRL";
+	reason?: string;
+	status: "pending" | "in_process" | "won" | "lost";
+	date_created?: string;
+	date_event?: string;
+	live_mode?: boolean;
+}
+
+export async function getChargeback(chargebackId: string | number): Promise<MpChargeback> {
+	return mpRequest<MpChargeback>("GET", `/v1/chargebacks/${chargebackId}`);
+}
+
+// ──────────────────────────────────────────────
 // Webhook signature verification
 //
 // MP sends `x-signature: ts=...,v1=<hmac-sha256-hex>` and

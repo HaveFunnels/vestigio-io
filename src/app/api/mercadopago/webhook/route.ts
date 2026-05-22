@@ -206,6 +206,15 @@ async function reconcilePixCharge(payment: MpPaymentResponse) {
 		: payment.status === "refunded" ? "rejected"
 		: "pending";
 
+	// Capture the prior status BEFORE the update so we can tell whether
+	// this webhook is the first to flip the charge to approved (do the
+	// side effects) or a duplicate-delivery from MP (skip side effects).
+	// MP retries the same notification on 5xx responses and on cron
+	// re-fetch, so without this guard a duplicate approved webhook
+	// would extend currentPeriodEnd twice = one payment, two months
+	// granted.
+	const wasAlreadyApproved = charge.status === "approved";
+
 	await prisma.pixCharge.update({
 		where: { id: charge.id },
 		data: {
@@ -219,7 +228,7 @@ async function reconcilePixCharge(payment: MpPaymentResponse) {
 		},
 	});
 
-	if (nextStatus === "approved") {
+	if (nextStatus === "approved" && !wasAlreadyApproved) {
 		// Extend the user's currentPeriodEnd by one cycle. We compute
 		// "one month" as adding 30 days from the previous due date or
 		// from now (whichever is later) so back-to-back renewals don't
@@ -287,6 +296,11 @@ async function reconcilePixCharge(payment: MpPaymentResponse) {
 			data: { status: "active" },
 		});
 		log("pixrenew.approved", `charge=${charge.id} org=${charge.organizationId}`);
+	} else if (nextStatus === "approved" && wasAlreadyApproved) {
+		// Duplicate approval webhook — no-op. Logged distinctly so we
+		// can spot misbehaving retries without confusing them with the
+		// real approved→approved no-op.
+		log("pixrenew.duplicate", `charge=${charge.id} already-approved (mp retry)`);
 	} else {
 		log("pixrenew.update", `charge=${charge.id} → ${nextStatus}`);
 	}

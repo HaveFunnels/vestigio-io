@@ -45,6 +45,23 @@ const NOTIFICATION_DISPATCHER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const SCHEDULER_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 export async function registerNodeInstrumentation(): Promise<void> {
+	// Fail-fast guard: VESTIGIO_SECRET_KEY must be present in production.
+	// Without it, encryptSecret() silently falls back to a `dev:` base64
+	// scheme that anyone with DB read can decrypt. The existing
+	// enforceProductionSecrets() function was written for this exact
+	// purpose but had no caller — added here so a missing key crashes the
+	// boot rather than degrading the security boundary at first write.
+	try {
+		const { enforceProductionSecrets } = await import(
+			"../apps/platform/secret-service"
+		);
+		enforceProductionSecrets();
+	} catch (err) {
+		// Re-throw — startup failure is the correct behavior here.
+		console.error("✖ Secret enforcement failed:", err);
+		throw err;
+	}
+
 	// OpenTelemetry SDK MUST initialize before any other module loads its
 	// http/Prisma/Redis client — the SDK patches those modules at boot so
 	// subsequent imports can be traced transparently. Putting init here

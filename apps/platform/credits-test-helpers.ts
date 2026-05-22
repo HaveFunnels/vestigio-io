@@ -21,6 +21,32 @@ function assertNotProduction(fnName: string): void {
   }
 }
 
+/**
+ * Prefix synthetic test org ids with the current process PID + a sticky
+ * test-run nonce. Two motivations:
+ *
+ *   1. The test suite runs against the shared Railway DB. If a real
+ *      customer ever ends up with id matching a literal like
+ *      'org_classify_1', cleanupTestOrg would delete their data.
+ *      A PID prefix makes accidental collision effectively impossible.
+ *
+ *   2. `npm run test:all` runs files concurrently via `node --test`.
+ *      Files that hard-code the same org id (e.g. two files both using
+ *      'ws_1') race on resetAllCredits()-style global wipes. PID
+ *      namespacing keeps each test process in its own lane even when
+ *      file-level naming collides.
+ *
+ * Callers should use `nsOrgId('org_classify_3')` instead of the bare
+ * literal. The function is a pass-through in NODE_ENV=test if
+ * VESTIGIO_TEST_NO_NAMESPACE=1 is set (escape hatch for tests that
+ * intentionally probe shared state).
+ */
+const TEST_RUN_NONCE = Date.now().toString(36).slice(-4);
+export function nsOrgId(localId: string): string {
+  if (process.env.VESTIGIO_TEST_NO_NAMESPACE === "1") return localId;
+  return `test_${process.pid}_${TEST_RUN_NONCE}_${localId}`;
+}
+
 /** Delete a single org's credit state. */
 export async function resetCredits(orgId: string): Promise<void> {
   assertNotProduction("resetCredits");
@@ -39,19 +65,38 @@ export async function resetAllCredits(): Promise<void> {
   await prisma.orgCredits.deleteMany({});
 }
 
+// Real customer orgs use cuid() ids (format: `c` + 24 alphanumerics).
+// Test orgs MUST use a prefix that disambiguates from real cuids so
+// cleanupTestOrg can never delete a real customer.
+const SAFE_TEST_PREFIXES = ["org_", "test_", "demo_", "ws_"];
+
+function assertSyntheticOrgId(orgId: string, fnName: string): void {
+  if (SAFE_TEST_PREFIXES.some(p => orgId.startsWith(p))) return;
+  throw new Error(
+    `${fnName} called with org id '${orgId}' which does not start with a ` +
+      `recognized test prefix (${SAFE_TEST_PREFIXES.join("|")}). Real ` +
+      `customer orgs use cuid() ids — refusing to operate on what may be ` +
+      `a real org row.`,
+  );
+}
+
 /**
- * Idempotently create a placeholder Organization row for a fake org id.
- * OrgCredits has a FK to Organization, so any test that exercises
- * canAffordVerification / consumeCredits with a synthetic org id must
- * seed the parent row first. Re-runs refresh the plan (so a test that
- * needs plan='pro' overwrites a previously-seeded plan='vestigio').
+ * Idempotently create a placeholder Organization row for a synthetic
+ * test org id. OrgCredits has a FK to Organization, so any test that
+ * exercises canAffordVerification / consumeCredits with a synthetic
+ * org id must seed the parent row first. Re-runs refresh the plan.
  *
- * Test ids should be prefixed per file (e.g. 'org_classify_*',
- * 'org_wiring_*') so concurrent test files don't collide on the same
- * row. The shared DB makes the global namespace fragile.
+ * Org id MUST start with one of SAFE_TEST_PREFIXES. Real customer
+ * orgs use cuid() so they won't pass the prefix check — this is
+ * the runtime guarantee that a buggy test cannot delete a paying
+ * customer's row.
+ *
+ * Consider wrapping with `nsOrgId()` to add a per-process namespace
+ * if running concurrent test processes against the shared DB.
  */
 export async function seedTestOrg(orgId: string, plan: PlanKey = "vestigio"): Promise<void> {
   assertNotProduction("seedTestOrg");
+  assertSyntheticOrgId(orgId, "seedTestOrg");
   await prisma.organization.upsert({
     where: { id: orgId },
     update: { plan, status: "active" },
@@ -66,8 +111,9 @@ export async function seedTestOrg(orgId: string, plan: PlanKey = "vestigio"): Pr
   });
 }
 
-/** Remove a seeded org and its cascaded credit rows. */
+/** Remove a seeded org and its cascaded credit rows. Synthetic ids only. */
 export async function cleanupTestOrg(orgId: string): Promise<void> {
   assertNotProduction("cleanupTestOrg");
+  assertSyntheticOrgId(orgId, "cleanupTestOrg");
   await prisma.organization.deleteMany({ where: { id: orgId } });
 }

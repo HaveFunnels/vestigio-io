@@ -84,13 +84,19 @@ runSuite('Quantification Always Present', () => {
     assertGreater(valueCases[0].estimated_impact.monthly_revenue_delta!, 0, 'monthly delta must be > 0');
   });
 
-  test('negative/false inferences produce no value cases', () => {
+  test('negative/false inferences produce no loss cases', () => {
+    // Phase 1.2 introduced retention cases (impact_role: 'retention') that
+    // quantify the value of a working control. So "false" inferences may
+    // emit retention cases when a POSITIVE_IMPACT_BASELINE is defined.
+    // The original test intent — that "no problem" should not produce a
+    // LOSS — still holds, and is what's asserted here.
     const inferences = [
       testInference({ inference_key: 'trust_boundary_crossed', conclusion_value: 'false', confidence: 55 }),
       testInference({ inference_key: 'commerce_context', conclusion_value: 'false', confidence: 50 }),
     ];
     const valueCases = estimateImpact(inferences, defaultBusiness);
-    assertEqual(valueCases.length, 0);
+    const lossCases = valueCases.filter(c => c.impact_role === 'loss');
+    assertEqual(lossCases.length, 0);
   });
 });
 

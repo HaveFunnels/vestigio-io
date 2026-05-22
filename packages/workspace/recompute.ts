@@ -445,8 +445,11 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   const truthConsistency = guardTruthConsistency(rawSignals, truthResolvedSignals, truthHarmonization);
 
   // ─── Phase 26: Evidence quality → confidence adjustment ───
-  // Use truth-resolved signals (consistency guard is observational, not mutating)
-  const qualityAdjustment = adjustConfidenceByQuality(truthResolvedSignals, evidenceQuality);
+  // Use guard-annotated signals so truth_metadata flows through to the
+  // assertTruthResolved THROW guard below. The earlier comment claimed
+  // the consistency guard was "observational, not mutating" — it does
+  // annotate signals with truth_metadata, which the THROW guard requires.
+  const qualityAdjustment = adjustConfidenceByQuality(truthConsistency.signals, evidenceQuality);
   const signals = qualityAdjustment.signals;
 
   // Wave 20.5 — Truth-resolved guard in THROW mode on the main

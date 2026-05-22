@@ -182,15 +182,16 @@ runSuite('Action Projections', () => {
 // ══════════════════════════════════════════════════
 
 runSuite('Workspace Projections', () => {
-  test('projectWorkspaces produces 3 core workspaces', () => {
+  test('projectWorkspaces produces 8 core workspaces', () => {
     const result = computeResult();
     const workspaces = projectWorkspaces(result);
     // Filter out behavioral placeholder workspaces — they always emit
     // (category='behavioral') even when there's no pixel data, so they
-    // would otherwise inflate the count. The 3 core packs (preflight,
-    // revenue, chargeback) are the load-bearing assertion here.
+    // would otherwise inflate the count. Core packs are: preflight,
+    // revenue, chargeback, security_posture, copy_alignment,
+    // channel_integrity, discoverability, brand_integrity.
     const coreWorkspaces = workspaces.filter(w => w.category !== 'behavioral');
-    assertEqual(coreWorkspaces.length, 3);
+    assertEqual(coreWorkspaces.length, 8);
   });
 
   test('each workspace has correct type', () => {
@@ -219,10 +220,29 @@ runSuite('Workspace Projections', () => {
   test('workspace findings are scoped to pack', () => {
     const result = computeResult();
     const workspaces = projectWorkspaces(result);
+    // Map workspace type → pack name. Behavioral workspaces and saas
+    // share the same convention: workspace.type matches the pack key
+    // minus any "_pack" suffix.
+    const workspaceTypeToPack: Record<string, string> = {
+      preflight: 'scale_readiness',
+      revenue: 'revenue_integrity',
+      chargeback: 'chargeback_resilience',
+      security_posture: 'money_moment_exposure',
+      copy_alignment: 'copy_alignment',
+      channel_integrity: 'channel_integrity',
+      discoverability: 'discoverability',
+      brand_integrity: 'brand_integrity',
+      first_impression: 'first_impression_revenue',
+      action_value: 'action_value_map',
+      acquisition_integrity: 'acquisition_integrity',
+      mobile_revenue: 'mobile_revenue_exposure',
+      friction_tax: 'friction_tax',
+      trust_gap: 'trust_revenue_gap',
+      path_efficiency: 'path_efficiency',
+    };
     for (const ws of workspaces) {
-      const expectedPack = ws.type === 'preflight' ? 'scale_readiness'
-        : ws.type === 'revenue' ? 'revenue_integrity'
-          : 'chargeback_resilience';
+      const expectedPack = workspaceTypeToPack[ws.type];
+      if (!expectedPack) continue; // unmapped (e.g. saas reuses preflight type)
       for (const f of ws.findings) {
         assertEqual(f.pack, expectedPack, `${ws.name}: finding pack should be ${expectedPack}`);
       }
@@ -261,16 +281,22 @@ runSuite('projectAll Integration', () => {
     const proj = projectAll(result);
     assertGreater(proj.findings.length, 0, 'has findings');
     assertGreater(proj.actions.length, 0, 'has actions');
-    // Filter behavioral placeholders — see "produces 3 core workspaces" above
+    // Filter behavioral placeholders — see "produces 8 core workspaces" above
     const coreWorkspaces = proj.workspaces.filter(w => w.category !== 'behavioral');
-    assertEqual(coreWorkspaces.length, 3, 'has 3 core workspaces');
+    assertEqual(coreWorkspaces.length, 8, 'has 8 core workspaces');
   });
 
-  test('workspace findings sum equals total findings', () => {
+  test('workspace findings sum equals total findings (excluding orphan packs)', () => {
     const result = computeResult();
     const proj = projectAll(result);
     const wsFindings = proj.workspaces.reduce((sum, ws) => sum + ws.findings.length, 0);
-    assertEqual(wsFindings, proj.findings.length, 'workspace findings = total findings');
+    // funnel_journey pack tags findings (via INFERENCE_TO_PACK) but has
+    // no workspace projection yet — those findings are surfaced through
+    // other channels (intelligence layer) but not in projectWorkspaces.
+    // Track the gap explicitly so this doesn't silently grow.
+    const orphanPacks = new Set(['funnel_journey']);
+    const findingsInWorkspaces = proj.findings.filter(f => !orphanPacks.has(f.pack));
+    assertEqual(wsFindings, findingsInWorkspaces.length, 'workspace findings = total non-orphan findings');
   });
 
   test('projections are deterministic', () => {
@@ -386,14 +412,14 @@ runSuite('MCP Projection Tools', () => {
     assertGreater((result.data as any).length, 0, 'has actions');
   });
 
-  test('get_workspace_projections returns 3 core workspaces', () => {
+  test('get_workspace_projections returns 8 core workspaces', () => {
     const server = new McpServer();
     server.loadContext(standardEvidence(), scope, cycleRef, 'shop.com', 'https://shop.com/');
     const result = server.callTool('get_workspace_projections');
     assertEqual(result.type, 'workspace_projections');
-    // Filter behavioral placeholders — see "produces 3 core workspaces" above
+    // Filter behavioral placeholders — see "produces 8 core workspaces" above
     const coreCount = (result.data as any[]).filter(w => w.category !== 'behavioral').length;
-    assertEqual(coreCount, 3);
+    assertEqual(coreCount, 8);
   });
 
   test('get_map returns map definition', () => {

@@ -210,7 +210,7 @@ export function formEvidence(
 
 export function testSignal(overrides: Partial<Signal> = {}): Signal {
   const now = new Date();
-  return {
+  const base = {
     id: ids.next(),
     signal_key: 'test_signal',
     category: SignalCategory.Checkout,
@@ -227,7 +227,21 @@ export function testSignal(overrides: Partial<Signal> = {}): Signal {
     created_at: now,
     updated_at: now,
     ...overrides,
+  } as Signal;
+  // Attach a no-op truth_metadata so test signals satisfy the
+  // assertTruthResolved guard in recomputeAll (Wave 20.2). A single
+  // hand-built signal has no contradictions to resolve, so this
+  // matches what the guard would produce for an uncontested input.
+  (base as Signal & { truth_metadata: unknown }).truth_metadata = {
+    harmonized: true,
+    contradiction_count: 0,
+    contradiction_severities: [],
+    resolution_method: null,
+    is_contested: false,
+    pre_harmonization_confidence: base.confidence,
+    truth_confidence_delta: 0,
   };
+  return base;
 }
 
 export function testInference(overrides: Partial<Inference> = {}): Inference {

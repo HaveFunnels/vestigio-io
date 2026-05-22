@@ -4,6 +4,7 @@ import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { resolveOrgContext } from "@/libs/resolve-org";
 import { getPlanConfigs } from "@/libs/plan-config";
+import { getActiveProvider, resolveUserProvider } from "@/libs/payment-provider";
 
 /**
  * GET /api/billing — authenticated billing info for the current user.
@@ -31,8 +32,37 @@ export const GET = withErrorTracking(async function GET() {
       subscriptionId: true,
       priceId: true,
       currentPeriodEnd: true,
+      paymentProvider: true,
+      mpPreapprovalId: true,
     },
   });
+
+  // Most-recent PIX charge (if any) so the billing page can show the
+  // "pending PIX" block at the top. We only surface charges with
+  // status pending/approved within the last 30 days — anything older
+  // is irrelevant for the current cycle's UI.
+  const recentPixCharge = user?.paymentProvider === "mercadopago"
+    ? await prisma.pixCharge.findFirst({
+        where: {
+          userId,
+          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          status: true,
+          amountCents: true,
+          qrCode: true,
+          qrCodeBase64: true,
+          ticketUrl: true,
+          dueAt: true,
+          expiresAt: true,
+          paidAt: true,
+          planKey: true,
+          cycle: true,
+        },
+      })
+    : null;
 
   // Resolve org context for plan + org-level data
   const orgCtx = await resolveOrgContext();
@@ -69,6 +99,20 @@ export const GET = withErrorTracking(async function GET() {
   const planConfigs = await getPlanConfigs();
   const currentPlanConfig = planConfigs.find((p) => p.key === orgCtx.plan);
 
+  // Provider routing:
+  //   activeProvider — which gateway a NEW checkout would use (today: MP).
+  //   userProvider   — which gateway OWNS this user's existing sub.
+  // The billing UI uses userProvider when subscriptionId is set, else
+  // activeProvider. Keeps existing Paddle users on Paddle UI without
+  // forced migration.
+  const activeProvider = getActiveProvider();
+  const userProvider = user
+    ? resolveUserProvider({
+        paymentProvider: user.paymentProvider,
+        subscriptionId: user.subscriptionId,
+      })
+    : null;
+
   return NextResponse.json({
     plan: orgCtx.plan,
     status: orgCtx.orgId !== "demo" ? "active" : "none",
@@ -76,6 +120,10 @@ export const GET = withErrorTracking(async function GET() {
     priceId: user?.priceId || null,
     currentPeriodEnd: user?.currentPeriodEnd || null,
     customerId: user?.customerId || null,
+    activeProvider,        // for new checkouts
+    userProvider,          // for managing existing sub
+    mpPreapprovalId: user?.mpPreapprovalId || null,
+    pixCharge: recentPixCharge,
     usage: {
       environments: environmentsCount,
       maxEnvironments: currentPlanConfig?.maxEnvironments || 1,

@@ -11,6 +11,9 @@ import PricingComponent, {
   type PriceTier,
 } from "@/components/ui/pricing-card";
 import { PaddleLoader } from "@/paddle/paddleLoader";
+import { MpLoader } from "@/mp/MpLoader";
+import { MpCheckoutModal } from "@/mp/MpCheckoutModal";
+import { MpPixChargePanel, type PixChargeData } from "@/mp/MpPixChargePanel";
 import { BuyCreditsModal } from "@/components/app/BuyCreditsModal";
 
 // ──────────────────────────────────────────────
@@ -24,6 +27,10 @@ interface BillingData {
   priceId: string | null;
   currentPeriodEnd: string | null;
   customerId: string | null;
+  activeProvider: "mercadopago" | "paddle";
+  userProvider: "mercadopago" | "paddle" | null;
+  mpPreapprovalId: string | null;
+  pixCharge: PixChargeData | null;
   usage: {
     environments: number;
     maxEnvironments: number;
@@ -50,7 +57,10 @@ interface PricingPlan {
   label: string;
   paddlePriceId: string;
   paddleAnnualPriceId: string;
+  mpPreapprovalPlanId?: string;
+  mpAnnualPreapprovalPlanId?: string;
   monthlyPriceCents: number;
+  monthlyPriceCentsBrl?: number;
   maxMcpCalls: number;
   continuousAudits: boolean;
   creditsEnabled: boolean;
@@ -85,6 +95,18 @@ export default function BillingPage() {
   const [credits, setCredits] = useState<CreditBalanceData | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
+  // MP checkout state — opens with a target plan/cycle when the user
+  // clicks a plan in the comparison grid (and the active provider is MP).
+  const [mpCheckout, setMpCheckout] = useState<
+    | null
+    | {
+        planKey: "pro" | "max";
+        planLabel: string;
+        cycle: BillingCycle;
+        amountCentsBrl: number;
+        mode: "subscribe" | "change";
+      }
+  >(null);
 
   // Fetch billing data
   const fetchBilling = useCallback(async () => {
@@ -215,7 +237,9 @@ export default function BillingPage() {
   );
 
   // ──────────────────────────────────────────────
-  // Cancel Subscription
+  // Cancel Subscription — routes to the provider that owns the sub.
+  //  MP: /api/mercadopago/cancel (resolves the preapproval server-side).
+  //  Paddle: /api/paddle/cancel-subscription (legacy users).
   // ──────────────────────────────────────────────
 
   const handleCancelSubscription = useCallback(async () => {
@@ -223,12 +247,18 @@ export default function BillingPage() {
 
     setActionLoading(true);
     try {
-      const res = await fetch("/api/paddle/cancel-subscription", {
+      const cancelUrl =
+        billing.userProvider === "mercadopago"
+          ? "/api/mercadopago/cancel"
+          : "/api/paddle/cancel-subscription";
+      const cancelBody =
+        billing.userProvider === "mercadopago"
+          ? {}
+          : { subscriptionId: billing.subscriptionId };
+      const res = await fetch(cancelUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subscriptionId: billing.subscriptionId,
-        }),
+        body: JSON.stringify(cancelBody),
       });
 
       if (res.ok) {
@@ -256,17 +286,46 @@ export default function BillingPage() {
   const handlePlanSelect = useCallback(
     (planId: string, billingCycle: BillingCycle) => {
       if (planId === currentPlanId) return;
+      if (planId !== "pro" && planId !== "max") return; // Starter has no checkout
 
-      // Find the plan + pick the Paddle priceId matching the toggle.
-      // Annual falls back to monthly when the annual hasn't been synced
-      // yet — covered by isAnnualPriceReady below which keeps the
-      // toggle hidden until every plan has an annual id, so this branch
-      // is a safety net rather than a load-bearing fallback.
       const targetPlan = pricingPlans.find((p) => p.key === planId);
       if (!targetPlan) {
         toast.error(t("errors.plan_unavailable"));
         return;
       }
+
+      // Decide which provider runs this checkout:
+      //   - Existing sub → userProvider (don't migrate them mid-flow)
+      //   - No sub        → activeProvider (today: MP)
+      const provider: "mercadopago" | "paddle" =
+        (billing?.userProvider as any) ||
+        (billing?.activeProvider as any) ||
+        "mercadopago";
+
+      if (provider === "mercadopago") {
+        const mpPlanId =
+          billingCycle === "annually" && targetPlan.mpAnnualPreapprovalPlanId
+            ? targetPlan.mpAnnualPreapprovalPlanId
+            : targetPlan.mpPreapprovalPlanId;
+        if (!mpPlanId) {
+          toast.error(t("errors.plan_unavailable"));
+          return;
+        }
+        const amountCentsBrl =
+          billingCycle === "annually"
+            ? (targetPlan.monthlyPriceCentsBrl ?? 0) * 10
+            : targetPlan.monthlyPriceCentsBrl ?? 0;
+        setMpCheckout({
+          planKey: planId,
+          planLabel: targetPlan.label,
+          cycle: billingCycle,
+          amountCentsBrl,
+          mode: billing?.subscriptionId ? "change" : "subscribe",
+        });
+        return;
+      }
+
+      // Paddle branch (legacy users)
       const targetPriceId =
         billingCycle === "annually" && targetPlan.paddleAnnualPriceId
           ? targetPlan.paddleAnnualPriceId
@@ -275,12 +334,9 @@ export default function BillingPage() {
         toast.error(t("errors.plan_unavailable"));
         return;
       }
-
       if (billing?.subscriptionId) {
-        // Existing subscriber — change plan via API
         handleChangePlan(targetPriceId);
       } else {
-        // No subscription yet — open Paddle checkout
         openPaddleCheckout(targetPriceId);
       }
     },
@@ -319,10 +375,17 @@ export default function BillingPage() {
     return labels[key] || key;
   };
 
+  // Provider that drives THIS page's UI. Existing sub → userProvider,
+  // else activeProvider (today: MP). Loaders + modals are gated on this.
+  const uiProvider: "mercadopago" | "paddle" =
+    (billing?.userProvider as any) ||
+    (billing?.activeProvider as any) ||
+    "mercadopago";
+
   return (
     <div className="p-6">
-      {/* Load Paddle SDK so checkout can be opened */}
-      <PaddleLoader />
+      {/* Load the SDK matching whichever provider drives this page */}
+      {uiProvider === "mercadopago" ? <MpLoader /> : <PaddleLoader />}
 
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-content">{t("title")}</h1>
@@ -330,6 +393,18 @@ export default function BillingPage() {
           {t("subtitle")}
         </p>
       </div>
+
+      {/* Pending PIX renewal — shown above current-plan block when MP
+          has a charge in flight. Polls /check-pix-status until approved. */}
+      {billing?.pixCharge && (
+        <MpPixChargePanel
+          charge={billing.pixCharge}
+          onPaid={() => {
+            updateSession();
+            fetchBilling();
+          }}
+        />
+      )}
 
       {/* Current Plan Summary */}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -602,6 +677,28 @@ export default function BillingPage() {
         <div
           className="fixed inset-0 z-0"
           onClick={() => setShowManageMenu(false)}
+        />
+      )}
+
+      {/* MP Checkout Modal — opens when handlePlanSelect routes a plan
+          to the MP provider branch. Closes on success + refreshes
+          session/billing so the post-checkout state lands without a
+          full reload. */}
+      {mpCheckout && (
+        <MpCheckoutModal
+          open={true}
+          onClose={() => setMpCheckout(null)}
+          onSuccess={async () => {
+            setMpCheckout(null);
+            await new Promise((r) => setTimeout(r, 800)); // let webhook commit
+            await updateSession();
+            await fetchBilling();
+          }}
+          planKey={mpCheckout.planKey}
+          planLabel={mpCheckout.planLabel}
+          cycle={mpCheckout.cycle}
+          amountCentsBrl={mpCheckout.amountCentsBrl}
+          mode={mpCheckout.mode}
         />
       )}
     </div>

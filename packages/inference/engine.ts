@@ -23,6 +23,8 @@ import { computeScaleReadinessPack } from './packs/scale-readiness';
 import { computeRevenueIntegrityPack } from './packs/revenue-integrity';
 import { computeChargebackResiliencePack } from './packs/chargeback-resilience';
 import { computeBehavioralPack } from './packs/behavioral';
+import { computeBrandIntegrityPack } from './packs/brand-integrity';
+import { computeDiscoverabilityPack } from './packs/discoverability';
 
 // ──────────────────────────────────────────────
 // Inference Engine — composite interpretations from signals
@@ -151,22 +153,9 @@ export function computeInferences(
   inferences.push(...inferMobileTrustPaymentDepsFailing(byKey, scoping, cycle_ref, ids));
   inferences.push(...inferTrustSurfacesUnstableDeps(byKey, scoping, cycle_ref, ids));
 
-  // Phase 3E: Discoverability inferences
-  inferences.push(...inferWeakSearchRepresentation(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferSocialPreviewsFailValue(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferBrandInconsistentSurfaces(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferCommercialPagesUnlikelyIndexed(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferWeakSemanticIntentSignals(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferPreviewsDisconnectedConversion(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferCommercialPagesNotExposed(byKey, scoping, cycle_ref, ids));
-
-  // Phase 3E: Brand integrity inferences
-  inferences.push(...inferLookalikeDomains(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferExternalMimicry(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferBrandTrafficDeceptive(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferSuspiciousDomainsPurchaseIntent(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferPhishingExposure(byKey, scoping, cycle_ref, ids));
-  inferences.push(...inferBrandDilution(byKey, scoping, cycle_ref, ids));
+  // Discoverability + Brand Integrity (Wave 20.6 — migrated to packs/)
+  inferences.push(...computeDiscoverabilityPack(packInput));
+  inferences.push(...computeBrandIntegrityPack(packInput));
 
   // Behavioral (Wave 20.6 — migrated to packs/behavioral.ts)
   inferences.push(...computeBehavioralPack(packInput));
@@ -1508,105 +1497,6 @@ function inferTrustSurfacesUnstableDeps(byKey: Map<string, Signal>, scoping: Sco
     reasoning: `The layers that make buyers feel safe — support widgets, review badges, trust signals, chat tools — depend on external services that are failing or unreliable. Trust-critical surfaces are supposed to reduce hesitation and prevent abandonment, but when these dependencies fail, the trust infrastructure becomes invisible exactly when it matters most. The result is a checkout that looks bare and untrustworthy during outage or degradation of external providers.`,
     reasoning_slots: { severity },
   })];
-}
-
-// ──────────────────────────────────────────────
-// Phase 3E: Discoverability Inferences
-// ──────────────────────────────────────────────
-
-function inferWeakSearchRepresentation(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('commercial_pages_weak_search_representation');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'commercial_pages_weak_search_representation', category: InferenceCategory.CommercialPagesWeakSearchRepresentation, conclusion: 'commercial_pages_weak_search_representation', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `High-intent commercial pages have missing or thin titles and descriptions. When search engines display these pages in results, the snippets are generic or auto-generated — reducing click-through rate. Every missed click on a high-intent query is discoverable demand that never reaches the site.`, reasoning_slots: { severity } })];
-}
-
-function inferSocialPreviewsFailValue(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('social_previews_fail_commercial_value');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'social_previews_fail_commercial_value', category: InferenceCategory.SocialPreviewsFailCommercialValue, conclusion: 'social_previews_fail_commercial_value', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `When commercial pages are shared via messaging, social media, or email, they appear as raw URLs without product images, compelling titles, or value propositions. In a world where link previews drive click-through, a bare URL is a wasted distribution opportunity. Every share that fails to communicate value is a conversion the brand already earned but cannot capture.`, reasoning_slots: { severity } })];
-}
-
-function inferBrandInconsistentSurfaces(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('brand_inconsistent_across_surfaces');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'brand_inconsistent_across_surfaces', category: InferenceCategory.BrandInconsistentAcrossSurfaces, conclusion: 'brand_inconsistent_across_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The brand appears inconsistently across search results, social previews, and sharing surfaces. When titles and descriptions vary widely between commercial pages, search engines cannot build a coherent brand signal. Buyers see an unreliable brand presence — some pages look professional while others look unfinished — reducing both click-through and trust.`, reasoning_slots: { severity } })];
-}
-
-function inferCommercialPagesUnlikelyIndexed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('commercial_pages_unlikely_indexed');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'commercial_pages_unlikely_indexed', category: InferenceCategory.CommercialPagesUnlikelyIndexed, conclusion: 'commercial_pages_unlikely_indexed', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Revenue-generating pages have indexing problems — missing canonical URLs or explicit noindex directives. Search engines may not reliably include these pages in results. Demand that exists for these products or services cannot find the site through search, even when the content is commercially relevant.`, reasoning_slots: { severity } })];
-}
-
-function inferWeakSemanticIntentSignals(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('weak_semantic_intent_signals');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'weak_semantic_intent_signals', category: InferenceCategory.WeakSemanticIntentSignals, conclusion: 'weak_semantic_intent_signals', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Search engines and AI systems receive weak signals about what these commercial pages offer. Without structured data (Product, Organization, Offer schemas), ranking algorithms and AI assistants must guess page purpose from raw HTML. The result is lower ranking for commercial queries and inaccurate AI-generated summaries that fail to capture the business offering.`, reasoning_slots: { severity } })];
-}
-
-function inferPreviewsDisconnectedConversion(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('previews_disconnected_from_conversion');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'previews_disconnected_from_conversion', category: InferenceCategory.PreviewsDisconnectedFromConversion, conclusion: 'previews_disconnected_from_conversion', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Social and search previews show content that doesn't match the actual page. Visitors clicking through arrive with expectations set by the preview but encounter different content — creating a mismatch that drives immediate drop-off. The gap between what was promised and what was delivered converts the traffic acquisition cost into waste.`, reasoning_slots: { severity } })];
-}
-
-function inferCommercialPagesNotExposed(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('commercial_pages_not_exposed_for_discovery');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'commercial_pages_not_exposed_for_discovery', category: InferenceCategory.CommercialPagesNotExposedForDiscovery, conclusion: 'commercial_pages_not_exposed_for_discovery', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Key commercial pages have no internal links pointing to them — they exist in the site structure but are invisible to crawlers and users navigating the site. Without structural exposure, search engines cannot discover these pages reliably, and organic demand for the products or services offered on them cannot reach the site.`, reasoning_slots: { severity } })];
-}
-
-// ──────────────────────────────────────────────
-// Phase 3E: Brand Integrity Inferences
-// ──────────────────────────────────────────────
-
-function inferLookalikeDomains(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('lookalike_domains_competing');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'lookalike_domain_competing_for_traffic', category: InferenceCategory.LookalikeDomainCompetingForTraffic, conclusion: 'lookalike_domain_competing_for_traffic', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Active lookalike domains are competing for brand traffic. When customers search for the brand or type the domain from memory, some portion of traffic lands on impostor domains instead. This inflates effective customer acquisition cost — the brand pays for awareness that is captured by competitors or fraudsters through domain similarity.`, reasoning_slots: { severity } })];
-}
-
-function inferExternalMimicry(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('external_sites_mimicking_brand');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'external_sites_mimicking_brand', category: InferenceCategory.ExternalSitesMimickingBrand, conclusion: 'external_sites_mimicking_brand', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `External domains are actively mimicking the brand's identity — matching titles, descriptions, and content patterns. This is not passive domain squatting; these sites are designed to look like the real brand. Customers who land on these surfaces may share payment information with fraudsters, damaging both the customer and the brand's reputation.`, reasoning_slots: { severity } })];
-}
-
-function inferBrandTrafficDeceptive(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('brand_traffic_deceptive_surfaces');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'brand_traffic_exposed_to_deceptive_surfaces', category: InferenceCategory.BrandTrafficExposedToDeceptiveSurfaces, conclusion: 'brand_traffic_exposed_to_deceptive_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Typosquat domains — near-identical misspellings of the brand — are active and reachable. Users who make common typing errors land on these surfaces instead of the real site. This diverts direct-type traffic, damages trust when users realize the mistake, and creates chargeback and fraud exposure when the impostor site processes transactions.`, reasoning_slots: { severity } })];
-}
-
-function inferSuspiciousDomainsPurchaseIntent(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('suspicious_domains_purchase_intent');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'suspicious_domains_capturing_purchase_intent', category: InferenceCategory.SuspiciousDomainsCapturingPurchaseIntent, conclusion: 'suspicious_domains_capturing_purchase_intent', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `Lookalike domains show active commerce intent — checkout pages, cart functionality, or pricing structures. These are not passive parked domains; they are positioned to capture purchase-intent traffic and process transactions under a brand-similar identity. Revenue leakage is direct: customers who intended to buy from the brand are buying from impostors.`, reasoning_slots: { severity } })];
-}
-
-function inferPhishingExposure(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('customers_exposed_to_phishing');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'customers_exposed_to_phishing_surfaces', category: InferenceCategory.CustomersExposedToPhishingSurfaces, conclusion: 'customers_exposed_to_phishing_surfaces', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `High-confidence phishing surfaces combine brand domain similarity with active commerce patterns and content mimicry. Customers cannot distinguish these from the real site and may submit payment credentials to fraudsters. The downstream impact includes chargebacks on the brand's payment processor, legal liability from data breach exposure, and lasting trust damage when customers learn they were deceived through a brand-similar surface.`, reasoning_slots: { severity } })];
-}
-
-function inferBrandDilution(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
-  const sig = byKey.get('brand_diluted_across_variants');
-  if (!sig) return [];
-  const severity = sig.value === 'high' ? 'high' : 'medium';
-  return [createInference({ inference_key: 'brand_presence_diluted_across_variants', category: InferenceCategory.BrandPresenceDilutedAcrossVariants, conclusion: 'brand_presence_diluted_across_variants', conclusion_value: severity, severity_hint: severity, confidence: sig.confidence, scoping, cycle_ref, ids, signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs, reasoning: `The brand's online presence is fragmented across many domain variants — each one diluting the authority of the legitimate site. Search engines may split ranking signals across multiple similar domains, reducing organic visibility. Buyers encountering multiple brand-similar sites lose confidence in which one is real, suppressing click-through and trust across all surfaces.`, reasoning_slots: { severity } })];
 }
 
 // ──────────────────────────────────────────────

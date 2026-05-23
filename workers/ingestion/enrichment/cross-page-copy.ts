@@ -17,6 +17,7 @@ import {
   CollectionMethod,
   FreshnessState,
 } from "../../../packages/domain";
+import { buildSystemPrompt } from "./persona";
 
 // ──────────────────────────────────────────────
 // Wave 3.10 Fase 3 — Cross-Page Narrative Consistency
@@ -64,9 +65,10 @@ export interface CrossPageAnalysis {
 
 // ── Prompt ──────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a cross-page narrative consistency analyst. You compare copy elements across multiple pages of the same website to detect contradictions, tone shifts, naming inconsistencies, abandoned commitments, and value proposition drift.
-
-You MUST respond with valid JSON only — no markdown fences, no explanation, no preamble.`;
+const SYSTEM_PROMPT = buildSystemPrompt(
+  "cross-page narrative consistency analyst",
+  "Compare copy elements across multiple pages of the same website to detect contradictions, tone shifts, naming inconsistencies, abandoned commitments, and value proposition drift. A buyer who sees a different promise on the landing page than the pricing page hesitates — the inconsistency is the leak.",
+);
 
 function buildCrossPagePrompt(
   pageSummaries: string,

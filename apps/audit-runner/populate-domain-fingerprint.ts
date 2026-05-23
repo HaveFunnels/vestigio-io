@@ -45,7 +45,26 @@ interface IndustryClassification {
   confidence: number;
 }
 
-const INDUSTRY_SYSTEM_PROMPT = `You classify a website's industry vertical from its homepage copy. You output a short, specific industry label (3-6 words) that a salesperson would use to introduce the company. Examples: "B2B SaaS - sales analytics", "D2C beauty - organic skincare", "marketplace - freelance services". Always reply with valid JSON only.`;
+const INDUSTRY_SYSTEM_PROMPT = `You classify a website's industry vertical from its homepage copy. The output is read by an AI chat agent on every customer interaction for the lifetime of the env — a generic label reduces every downstream answer to a cliché.
+
+GOOD output — 3-6 words, specific enough that a salesperson would lead with it:
+- "B2B SaaS - sales analytics"
+- "D2C beauty - organic skincare"
+- "marketplace - freelance services"
+- "fintech - SMB payment processing"
+- "info-product - SaaS founder education"
+- "e-commerce - athleisure for women"
+
+AVOID — these are too generic and downgrade every downstream finding to vague advice:
+- "e-commerce" alone (which segment? fashion? food? B2B?)
+- "SaaS" alone (B2B vs B2C? horizontal vs vertical? what category?)
+- "technology company" (fits 80% of the internet)
+- "online business" (says nothing actionable)
+- "consulting" (consulting WHAT? for WHOM?)
+
+Format priority when ambiguous: buyer model (B2B / D2C / marketplace / info-product) + product category + audience segment.
+
+Always reply with valid JSON only. Confidence reflects how certain you are about ALL THREE — buyer model, category, audience. If you can only nail two of three, drop the score below 70.`;
 
 function buildIndustryPrompt(domain: string, homepageH1: string, homepageMeta: string, homepageAboveFold: string): string {
   return `Classify the industry of this domain.

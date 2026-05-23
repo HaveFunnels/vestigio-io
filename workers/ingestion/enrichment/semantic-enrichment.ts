@@ -22,6 +22,7 @@ import {
   FreshnessState,
 } from "../../../packages/domain";
 import { extractCopyElements } from "./copy-elements-extractor";
+import { buildSystemPrompt } from "./persona";
 import {
   getGuidelinesForPageType,
   serializeGuidelinesForPrompt,
@@ -70,9 +71,10 @@ const MAX_TEXT_CHARS = 8_000;
 // LLM Prompt
 // ──────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a policy quality analyst. You assess e-commerce policy pages (refund, privacy, terms, shipping, etc.) for clarity, completeness, and consumer-friendliness.
-
-You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+const SYSTEM_PROMPT = buildSystemPrompt(
+  "policy quality analyst",
+  "Assess e-commerce policy pages (refund, privacy, terms, shipping, etc.) for clarity, completeness, and consumer-friendliness. Flag the gaps that turn a buyer into a chargeback or a refund — not stylistic preferences.",
+);
 
 function buildUserPrompt(policyType: string, bodyText: string): string {
   return `Analyze this ${policyType} policy page content for quality. Respond with ONLY a JSON object matching this exact schema:
@@ -96,9 +98,10 @@ ${bodyText}
 // Copy Analysis Prompts (Tier 1)
 // ──────────────────────────────────────────────
 
-const CHECKOUT_TRUST_SYSTEM = `You are a checkout trust analyst. You assess e-commerce checkout pages for trust language that reassures buyers at the moment of purchase.
-
-You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+const CHECKOUT_TRUST_SYSTEM = buildSystemPrompt(
+  "checkout trust analyst",
+  "Assess e-commerce checkout pages for trust language at the moment of payment. Name the specific signal (guarantee, security, named social proof, payment badges) and the hesitation it relieves — generic 'add trust signals' is not acceptable output.",
+);
 
 function buildCheckoutTrustPrompt(bodyText: string): string {
   return `Analyze this checkout/cart/payment page for trust language. Does it mention:
@@ -123,9 +126,10 @@ ${bodyText}
 ---`;
 }
 
-const CTA_CLARITY_SYSTEM = `You are a CTA clarity analyst. You assess web pages for call-to-action effectiveness, competing actions, and clarity of the primary conversion path.
-
-You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+const CTA_CLARITY_SYSTEM = buildSystemPrompt(
+  "CTA clarity analyst",
+  "Assess web pages for call-to-action effectiveness, competing actions, and clarity of the primary conversion path. The output decides whether the platform tells the operator to consolidate CTAs — apply the bar strictly only on pages that decide money (PDP, checkout, pricing, paid landing).",
+);
 
 function buildCtaClarityPrompt(bodyText: string): string {
   return `Extract all CTA texts from this page. Evaluate:
@@ -149,9 +153,10 @@ ${bodyText}
 ---`;
 }
 
-const PRODUCT_PAGE_SYSTEM = `You are a product page copy analyst. You assess product descriptions for quality, uniqueness, benefit-orientation, and persuasiveness.
-
-You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+const PRODUCT_PAGE_SYSTEM = buildSystemPrompt(
+  "product page copy analyst",
+  "Assess product descriptions for quality, uniqueness, benefit-orientation, and persuasiveness. Manufacturer-generic copy is the failure mode that costs money — a page that reads like the supplier's PIM is invisible in the buyer's decision moment.",
+);
 
 function buildProductPagePrompt(bodyText: string): string {
   return `Analyze this product page description. Evaluate:
@@ -175,9 +180,10 @@ ${bodyText}
 ---`;
 }
 
-const PRICING_FRAMING_SYSTEM = `You are a pricing page analyst. You assess pricing pages for clarity of plan recommendation, value framing, comparison anchoring, and objection handling.
-
-You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+const PRICING_FRAMING_SYSTEM = buildSystemPrompt(
+  "pricing page analyst",
+  "Assess pricing pages for clarity of plan recommendation, value framing, comparison anchoring, and objection handling. The pricing page is the closer — vague framing here directly leaves money on the table.",
+);
 
 function buildPricingFramingPrompt(bodyText: string): string {
   return `Analyze this pricing page. Evaluate:

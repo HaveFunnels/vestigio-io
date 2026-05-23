@@ -69,12 +69,12 @@ import { getGuidelinesForDimension, type CroDimension } from '../../packages/cop
 export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   {
     name: 'get_workspace_summary',
-    description: 'Get a high-level summary of the workspace including all decision packs, root causes, and prioritized actions.',
+    description: 'High-level briefing across every pack — overall health, biggest impact areas, and what to look at first. Use when the user opens the conversation, asks "give me the overview / state of things", or you need a starting point before drilling in. NOT for: details of a specific finding (use discuss_finding) or one pack (use get_pack).',
     input_schema: {},
   },
   {
     name: 'get_decision_explainability',
-    description: 'Get detailed explainability for a specific decision pack — why the decision was made, contributing factors, and linked root causes.',
+    description: 'Reveals the reasoning behind a specific pack decision: which signals fed it, which evidence backed those signals, which root causes attach. Use when the user asks "why did Vestigio say my checkout is at risk?" or "how did you arrive at that?". NOT for: action queues (use get_prioritized_actions) or the list of findings (use get_pack).',
     input_schema: {
       pack_key: {
         type: 'string',
@@ -85,32 +85,32 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'get_root_causes',
-    description: 'Get the underlying root causes that connect problems across decision packs.',
+    description: 'Returns the underlying root causes that connect problems ACROSS multiple packs/findings. Use when the user asks "what is really causing my problems?" or wants to spot patterns. NOT for: ranked action lists (use get_prioritized_actions) or a single finding (use discuss_finding).',
     input_schema: {},
   },
   {
     name: 'get_prioritized_actions',
-    description: 'Get globally prioritized actions across all decision packs, deduplicated and ranked by impact.',
+    description: 'Ranked task queue — what to fix first, ordered by impact × confidence × severity, deduplicated across packs. Use when the user asks "what should I do first / today / next?" or wants their backlog. NOT for: understanding why a finding exists (use discuss_finding) or root-cause synthesis (use get_root_causes).',
     input_schema: {},
   },
   {
     name: 'get_preflight_status',
-    description: 'Get the preflight readiness status — blockers, risks, and readiness score for traffic scaling.',
+    description: 'Preflight readiness for traffic scaling: blockers, risks, and an overall readiness score. Use when the user asks "am I ready for an ad push / launch / Black Friday?" or "what would break under traffic?". NOT for: revenue leakage today (use get_revenue_integrity_summary) or the full action queue (use get_prioritized_actions).',
     input_schema: {},
   },
   {
     name: 'get_revenue_integrity_summary',
-    description: 'Get the revenue integrity assessment — leakage points, trust issues, measurement gaps, and what to fix first.',
+    description: 'Revenue integrity assessment: leakage points, trust gaps, measurement holes, and the highest-impact fix. Use when the user asks "where am I losing money / leaking revenue?" or wants a snapshot of monetary risk. NOT for: traffic-scaling readiness (use get_preflight_status), payment/dunning specifics (use answer_intent with payment_health), or a ranked task list (use get_prioritized_actions).',
     input_schema: {},
   },
   {
     name: 'get_graph_path_summary',
-    description: 'Get a read-only summary of the evidence graph structure — page count, external hosts, providers, redirects.',
+    description: 'Read-only snapshot of the evidence graph topology: page count, external hosts, providers, redirects discovered during the audit. Use only when the user asks structural meta-questions ("how many pages did you crawl?", "which third-parties are you seeing?"). NOT for: findings (use get_finding_projections) or any business-impact analysis — this is plumbing data, not signal.',
     input_schema: {},
   },
   {
     name: 'request_verification',
-    description: 'Request additional verification to strengthen confidence in a decision. Creates a verification request — does NOT execute collection directly. Only call when the user explicitly asks to verify, re-check, or collect fresh data.',
+    description: 'Queue a verification job to strengthen confidence in a decision (reuse_only / light_probe / browser_verification). Creates a request — does NOT execute collection synchronously. Use ONLY when the user explicitly asks to verify, re-check, validate, or collect fresh data. NOT for: speculative confidence boosts (let the user ask), checking status of an existing request (use get_verification_status), or running a full new audit (verification is per-subject).',
     input_schema: {
       verification_type: {
         type: 'string',
@@ -134,18 +134,18 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'answer_intent',
-    description: 'Answer one of the canonical business questions with a structured McpAnswer (direct answer + confidence + freshness + recommended next step + supporting refs). Preferred over the deprecated answer_can_i_scale / answer_where_losing_money / answer_underlying_cause / answer_fix_first tools — same shape, one tool.',
+    description: 'Single-shot canonical answer to one of five business questions. Returns a structured McpAnswer with a direct verdict, confidence, freshness, next-step recommendation, and supporting refs. Use when the user asks one of the five canonical questions (can I scale, where am I losing money, is payment health a risk, what is the root cause, what do I fix first) and wants a concise verdict instead of browsing raw data. NOT for: enumeration / list queries (use get_finding_projections or get_prioritized_actions) or specific-finding deep dives (use discuss_finding).',
     input_schema: {
       intent: {
         type: 'string',
         enum: ['can_i_scale', 'where_losing_money', 'payment_health', 'underlying_cause', 'fix_first'],
-        description: 'can_i_scale = scale-readiness assessment. where_losing_money = revenue integrity / leakage. payment_health = is payment health (dunning, involuntary churn, MRR risk) creating revenue risk; requires Stripe Connect. underlying_cause = root cause analysis. fix_first = globally prioritized action queue.',
+        description: 'can_i_scale = scale-readiness assessment. where_losing_money = revenue integrity / leakage. payment_health = dunning, involuntary churn, MRR risk; requires Stripe Connect. underlying_cause = root-cause synthesis. fix_first = top of the action queue.',
       },
     },
   },
   {
     name: 'get_verification_status',
-    description: 'Get the status and result of a verification request — useful after calling request_verification to check if collection has finished and what evidence was gathered.',
+    description: 'Check the status (queued/running/done/failed) and result payload of a single verification request. Use only as a follow-up after request_verification — never call it speculatively, since users are not aware of internal request_ids. NOT for: listing all verifications (use list_verifications).',
     input_schema: {
       request_id: {
         type: 'string',
@@ -155,12 +155,12 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'list_verifications',
-    description: 'List all verification requests and their statuses.',
+    description: 'List every verification request in the env with current status. Use when the user asks "what have I verified?" or wants to see the verification queue. NOT for: a specific status lookup (use get_verification_status) or requesting new verification (use request_verification).',
     input_schema: {},
   },
   {
     name: 'get_finding_projections',
-    description: 'Get findings with quantified financial impact, sorted by impact midpoint descending. Supports optional filters to reduce output size — prefer filters for targeted queries.',
+    description: 'List findings with quantified monthly impact, sorted by impact midpoint descending. Use when the user wants to browse, enumerate, or filter the catalog of findings. NOT for: ranked tasks (use get_prioritized_actions), a specific finding (use discuss_finding), cross-finding synthesis (use analyze_findings), or one pack only (use get_pack — saves round-trips).',
     input_schema: {
       pack: { type: 'string', nullable: true, description: 'Filter by pack (e.g. revenue_integrity, scale_readiness, chargeback_resilience, copy_alignment)' },
       severity: { type: 'string', nullable: true, enum: ['critical', 'high', 'medium', 'low'], description: 'Filter by minimum severity' },
@@ -169,22 +169,22 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'get_action_projections',
-    description: 'Get the global action queue: cross-pack remediation tasks with estimated impact, sorted by impact then confidence then severity. Each action carries a root_cause_key and links to its underlying findings (action_refs). Use when the user asks what to fix, what to prioritize, or what is on the queue.',
+    description: 'Global action queue: cross-pack remediation tasks with estimated impact, ranked by impact × confidence × severity. Each action carries a root_cause_key and links to underlying findings (action_refs). Use when the user asks "what should I fix / what is on the queue?" and the conversation does not need the priority framing. NOT for: priority-framed asks like "what first?" (use get_prioritized_actions, which is the same data with priority emphasis) or analysis of a single finding (use discuss_finding).',
     input_schema: {},
   },
   {
     name: 'get_workspace_projections',
-    description: 'Get workspace-scoped projections: one entry per workspace (a logical grouping of pages/findings) with an aggregate impact summary and the findings/actions that belong to it. Use when the user wants to compare workspaces or drill into a specific journey/perspective.',
+    description: 'Workspace-scoped projections: one entry per workspace (a logical grouping of pages/findings) with aggregate impact, findings and actions inside it. Use when the user wants to compare workspaces ("which workspace is hurting most?") or drill into one perspective. NOT for: a single finding (use discuss_finding), pack-level views (use get_pack), or funnel-stage breakdowns (use get_funnel_state).',
     input_schema: {},
   },
   {
     name: 'get_change_report',
-    description: 'Get the cycle-to-cycle change report projection — regressions, improvements, new issues, resolved items, and overall trend.',
+    description: 'Cycle-to-cycle delta: regressions, improvements, brand-new findings, resolved items, and the overall direction. Use when the user asks "what changed since last audit / yesterday / last week?" or wants to know what shifted. NOT for: multi-cycle trends over N cycles (use get_trend_analysis) or recovery attribution after a fix (use get_recovery_impact).',
     input_schema: {},
   },
   {
     name: 'get_map',
-    description: 'Get a causal visualization map definition (nodes + edges) for one of the predefined topologies.',
+    description: 'Fetch a predefined causal map (nodes + edges): revenue_leakage, chargeback_risk, root_cause, or user_journey. Use only when the user explicitly asks to see / open / draw a map. NOT for: ad-hoc visualizations (use create_custom_map), root-cause text synthesis (use get_root_causes), or funnel-stage views (use get_funnel_state).',
     input_schema: {
       map_type: {
         type: 'string',
@@ -195,7 +195,7 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'discuss_finding',
-    description: 'Get a focused analysis of one finding plus suggested follow-up prompts. Use when the user pinned a single finding or asked to deep-dive into a specific issue.',
+    description: 'Deep-dive on ONE finding: why it exists, what it costs, evidence trail, follow-up prompts. Use when the user pins a single finding, clicks "explain this", or asks about one specific issue. NOT for: multi-finding synthesis (use analyze_findings), the full list (use get_finding_projections), or actions (use get_prioritized_actions).',
     input_schema: {
       finding_id: {
         type: 'string',
@@ -205,7 +205,7 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'analyze_findings',
-    description: 'Analyze 2-10 findings together to detect shared root causes, compounding effects, and combined impact. Cross-pack synthesis. Use when the user wants a cohesive story across multiple issues.',
+    description: 'Synthesize 2-10 findings together to detect shared root causes, compound impact, and the one fix that resolves the most. Cross-pack. Use when the user wants a connected narrative ("how are these related?", "what is the common cause?") across multiple issues. NOT for: a single finding (use discuss_finding) or general browsing (use get_finding_projections).',
     input_schema: {
       finding_ids: {
         type: 'array',
@@ -216,7 +216,7 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'get_pack',
-    description: 'Get a single decision pack composed in one call: findings filtered to that pack + actions whose findings touch the pack + aggregate monthly impact range + severity breakdown. Preferred over filtering get_finding_projections by pack when discussing a specific domain (revenue, chargeback, security_posture, copy_alignment, etc.) — saves 2-3 round-trips.',
+    description: 'Composed view of a single decision pack: findings in the pack + actions whose findings touch it + aggregate monthly impact range + severity breakdown — in one call. Use when the user names a domain ("how is my checkout / payments / SEO doing?") or asks about a specific pack. Preferred over filtering get_finding_projections by pack (saves 2-3 round-trips). NOT for: cross-pack ranked tasks (use get_prioritized_actions) or full-journey overviews (use get_funnel_state).',
     input_schema: {
       pack_key: {
         type: 'string',
@@ -237,14 +237,14 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'analyze_copy',
-    description: 'Get copy analysis summary. If a URL is provided, returns findings for that specific page. If no URL, returns overall copy health (dimension scores, top issues, grade).',
+    description: 'Copy-quality view across the audited site. With a url: page-specific findings (clarity, message-market match, claims). Without a url: overall copy health — dimension scores, top issues, letter grade. Use when the user asks "how is my copy / messaging / page wording?" or wants to review a specific page. NOT for: SEO/content-freshness questions (use get_content_freshness) or paid-channel match (use answer_intent with where_losing_money or get_pack channel_integrity).',
     input_schema: {
       url: { type: 'string', nullable: true, description: 'Optional URL to get page-specific copy analysis. Omit for overall copy health.' },
     },
   },
   {
     name: 'create_custom_map',
-    description: 'Create a custom causal map from a subset of findings. The map shows the selected findings, their root causes, and recommended actions. Appears in the Maps gallery under "Created by you". Use when the user asks to focus on specific findings, create a visualization, or isolate a problem area.',
+    description: 'Build a new causal map from a subset of findings — shows selected findings, their root causes, and recommended actions, and appears in the Maps gallery under "Created by you". Use when the user asks to "build / draw / save a map for X findings" or wants to isolate a problem area as a visual artifact. NOT for: viewing existing maps (use get_map) or pure text synthesis without a saved artifact (use analyze_findings).',
     input_schema: {
       name: { type: 'string', description: 'Short name for the map (e.g., "Checkout Trust Issues")' },
       description: { type: 'string', description: 'One-sentence description of what the map shows' },
@@ -253,7 +253,7 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'search_findings',
-    description: 'Search findings by natural language query. Returns semantically similar findings ranked by relevance.',
+    description: 'Natural-language search across findings: returns semantically similar items ranked by relevance to the query. Use when the user asks about a topic that does not map cleanly to a pack/funnel/workspace ("anything about refunds?", "anything mentioning Shopify checkout?"). NOT for: enumeration / filtering by structured fields (use get_finding_projections), pack views (use get_pack), or single-finding lookups (use discuss_finding).',
     input_schema: {
       query: { type: 'string', description: 'Natural language search query' },
     },
@@ -261,7 +261,7 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   // Wave 7.1
   {
     name: 'get_trend_analysis',
-    description: 'Get multi-cycle trend analysis — shows how findings have been evolving over N cycles. Detects patterns like consecutive regressions, sudden spikes, gradual degradation. Ask "how has checkout been trending?" or "what findings are getting worse?"',
+    description: 'Multi-cycle trend analysis (3-20 cycles): how findings evolve over time, detecting patterns like consecutive regressions, sudden spikes, gradual degradation, oscillation, or sustained improvement. Use when the user asks "how has X been trending?", "what is getting worse?", or wants a longer view than a single cycle delta. NOT for: cycle-to-cycle deltas (use get_change_report) or recovery attribution post-fix (use get_recovery_impact).',
     input_schema: {
       lookback_cycles: { type: 'number', description: 'Number of cycles to analyze (3-20, default 10)' },
       filter_pattern: { type: 'string', enum: ['consecutive_regressions', 'gradual_degradation', 'sudden_spike', 'improving', 'oscillating', 'stable'], nullable: true, description: 'Optional: only return findings matching this trend pattern' },
@@ -270,13 +270,13 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   // Wave 8.3
   {
     name: 'get_content_freshness',
-    description: 'Get content freshness analysis — shows which pages have stale content (outdated dates, expired promotions, old social proof) and the revenue impact of content decay. Ask "which pages have stale content?" or "is my content hurting conversions?"',
+    description: 'Content-freshness view: which pages carry stale dates, expired promotions, outdated social proof, or aging copy — with the revenue impact of decay quantified. Use when the user asks "which pages are stale?", "is old content hurting me?", or about specific aging signals. NOT for: copy-quality dimensions like clarity/match (use analyze_copy) or SEO crawl/structure issues (use get_pack discoverability).',
     input_schema: {},
   },
   // Wave 7.2
   {
     name: 'get_recovery_impact',
-    description: 'Get revenue recovery attribution — shows which resolved findings correlate with actual revenue improvements, with confidence scoring. Ask "how much did fixing X actually recover?" or "what is the ROI of our fixes?"',
+    description: 'Revenue-recovery attribution: which resolved findings correlate with measured revenue improvements, with confidence scoring per attribution. Use when the user asks "how much did fixing X actually recover?", "did my last fix work?", or "what is the ROI of our fixes so far?". NOT for: future projections of unfixed findings (use get_finding_projections) or what to fix next (use get_prioritized_actions).',
     input_schema: {
       action_key: { type: 'string', nullable: true, description: 'Optional: filter to a specific action/finding key. Omit for all resolved actions.' },
     },

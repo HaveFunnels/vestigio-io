@@ -2,6 +2,7 @@ import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
 import { buildEnrichmentLlmContext } from "./llm-context";
+import { buildSystemPrompt } from "./persona";
 import {
   hashContentInput,
   readContentEnrichmentCache,
@@ -71,9 +72,10 @@ interface MessageMatchAssessment {
 
 // ── Prompt ──────────────────────────────────
 
-const SYSTEM_PROMPT = `You are an ad-landing-page consistency analyst. You compare the promise made in a paid ad creative against the actual content delivered on the landing page. You detect mismatches that waste ad spend.
-
-You MUST respond with valid JSON only — no markdown fences, no explanation, no preamble.`;
+const SYSTEM_PROMPT = buildSystemPrompt(
+  "ad-landing-page consistency analyst",
+  "Compare the promise made in a paid ad creative against the actual content delivered on the landing page. Detect mismatches that waste ad spend — a buyer who clicks an ad for 'free shipping' should land on a page that says it within the first scroll.",
+);
 
 function buildUserPrompt(
   pair: AdLpPair,

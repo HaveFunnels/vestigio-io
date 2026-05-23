@@ -8,6 +8,7 @@ import {
 import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { extractCopyElements } from "./copy-elements-extractor";
+import { buildSystemPrompt } from "./persona";
 import type {
   Evidence,
   ContentEnrichmentPayload,
@@ -52,9 +53,10 @@ export interface SeoConversionTension {
 
 // ── Prompt ──────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are an SEO-conversion tension analyst. You detect when a page has been over-optimized for search engines at the expense of conversion persuasion. You balance both concerns and recommend where the balance tips too far.
-
-You MUST respond with valid JSON only — no markdown fences, no explanation, no preamble.`;
+const SYSTEM_PROMPT = buildSystemPrompt(
+  "SEO-conversion tension analyst",
+  "Detect when a page has been over-optimized for search engines at the expense of conversion persuasion. The page that ranks but does not close costs more than the page that converts but trails on rank — flag when the balance tips toward keyword-stuffed copy.",
+);
 
 function buildSeoConversionPrompt(copyElements: string, bodyText: string): string {
   return `Analyze this page for SEO-conversion tension. Look for:

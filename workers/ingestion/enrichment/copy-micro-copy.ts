@@ -8,6 +8,7 @@ import {
 import { httpFetch } from "../http-client";
 import { extractBodyText } from "../parser";
 import { extractCopyElements } from "./copy-elements-extractor";
+import { buildSystemPrompt } from "./persona";
 import type {
   Evidence,
   ContentEnrichmentPayload,
@@ -51,9 +52,10 @@ export interface MicroCopyAnalysis {
 
 // ── Prompt ──────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a micro-copy specialist. You analyze form labels, button text, error messages, placeholder text, helper text, empty states, and confirmation messages for clarity, helpfulness, and human tone.
-
-You MUST respond with valid JSON only — no markdown fences, no explanation, no preamble.`;
+const SYSTEM_PROMPT = buildSystemPrompt(
+  "micro-copy specialist",
+  "Analyze form labels, button text, error messages, placeholder text, helper text, empty states, and confirmation messages for clarity, helpfulness, and human tone. The form is where intent dies — every generic label or unhelpful error costs a conversion.",
+);
 
 function buildMicroCopyPrompt(copyElements: string, bodyText: string): string {
   return `Analyze the micro-copy on this page — form labels, button text, error messages, placeholder text, helper text. Is it clear, human, and helpful? Or is it technical, generic, or confusing? Rate form friction based on label clarity and field count.

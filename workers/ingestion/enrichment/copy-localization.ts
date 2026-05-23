@@ -19,6 +19,7 @@ import {
 } from "../../../packages/domain";
 import { httpFetch } from "../http-client";
 import { extractCopyElements } from "./copy-elements-extractor";
+import { buildSystemPrompt } from "./persona";
 import type { EnrichmentContext } from "./types";
 
 // ──────────────────────────────────────────────
@@ -129,9 +130,10 @@ function detectHreflangTags(html: string): Array<{ locale: string; url: string }
 
 // ── Prompt ──────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are a localization quality analyst specializing in persuasive copy. You compare the persuasive structure of translated page versions to detect when translation weakens the sales message.
-
-You MUST respond with valid JSON only — no markdown fences, no explanation, no preamble.`;
+const SYSTEM_PROMPT = buildSystemPrompt(
+  "localization quality analyst specializing in persuasive copy",
+  "Compare the persuasive structure of translated page versions to detect when translation weakens the sales message. A literal but flat translation loses buyers as effectively as a mistranslation — the bar is whether the localized copy still closes.",
+);
 
 function buildLocalizationPrompt(
   primaryLocale: string,

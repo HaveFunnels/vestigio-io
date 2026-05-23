@@ -131,6 +131,19 @@ export async function runMonthlyValueCaughtPass(now: Date = new Date()): Promise
       const { renderEmailFromTemplate } = await import("./notification-templates");
       const { notifyUser } = await import("./notifications");
       const siteUrl = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://app.vestigio.io";
+      // Wave 20.6 — pre-build the retention HTML fragment so the
+      // template can drop it in via a single {retentionBlock} sub. We
+      // build outside the template because the single-brace interpolator
+      // doesn't support mustache-style {{#var}}…{{/var}} conditionals.
+      const retentionMid = summary.retentionInForceMidpoint;
+      const locale = owner.locale || "pt-BR";
+      const retentionBlock =
+        retentionMid > 0
+          ? locale === "pt-BR"
+            ? `<br/><br/>Além disso, <strong>R$ ${fmt(retentionMid)}/mês</strong> estão sendo mantidos seguros por ${summary.retentionInForceCount} controles ativos que continuam funcionando no seu site — receita que estaria em risco se eles falhassem.`
+            : `<br/><br/>On top of that, <strong>$${fmt(retentionMid)}/month</strong> is being held safe by ${summary.retentionInForceCount} active controls that are still working on your site — revenue that would be at risk if they broke.`
+          : "";
+
       const rendered = renderEmailFromTemplate(
         "value_caught_monthly",
         {
@@ -139,9 +152,10 @@ export async function runMonthlyValueCaughtPass(now: Date = new Date()): Promise
           amountMax: fmt(summary.totalCaughtMax),
           monthLabel,
           resolvedCount: String(summary.resolvedCount),
+          retentionBlock,
         },
         siteUrl,
-        owner.locale || "pt-BR",
+        locale,
       );
       if (!rendered) {
         skipped++;

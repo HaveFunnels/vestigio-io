@@ -238,23 +238,35 @@ export function summarizeImpact(valueCases: QuantifiedValueCase[], currency: str
       issue_count: 0,
       average_confidence: 0,
       currency,
+      total_monthly_retention_range: { min: 0, max: 0 },
+      total_monthly_retention_mid: 0,
+      retention_issue_count: 0,
+      loss_issue_count: 0,
     };
   }
 
-  let totalMin = 0;
-  let totalMax = 0;
+  let totalLossMin = 0;
+  let totalLossMax = 0;
+  let totalRetentionMin = 0;
+  let totalRetentionMax = 0;
   let highestValue = 0;
   let highestIssue: string | null = null;
   let totalConfidence = 0;
+  let lossCount = 0;
+  let retentionCount = 0;
 
   for (const vc of valueCases) {
     totalConfidence += vc.confidence;
+    const role = vc.impact_role || 'loss'; // legacy entries with no role default to loss
 
-    // Only sum loss cases (or undefined for backward compat) into the loss range.
-    // Retention cases represent value kept — mixing them in would understate losses.
-    if (vc.impact_role === 'loss' || !vc.impact_role) {
-      totalMin += vc.estimated_impact.range.min;
-      totalMax += vc.estimated_impact.range.max;
+    if (role === 'retention') {
+      totalRetentionMin += vc.estimated_impact.range.min;
+      totalRetentionMax += vc.estimated_impact.range.max;
+      retentionCount++;
+    } else {
+      totalLossMin += vc.estimated_impact.range.min;
+      totalLossMax += vc.estimated_impact.range.max;
+      lossCount++;
 
       const mid = (vc.estimated_impact.range.min + vc.estimated_impact.range.max) / 2;
       if (mid > highestValue) {
@@ -265,13 +277,17 @@ export function summarizeImpact(valueCases: QuantifiedValueCase[], currency: str
   }
 
   return {
-    total_monthly_loss_range: { min: Math.round(totalMin), max: Math.round(totalMax) },
-    total_monthly_loss_mid: Math.round((totalMin + totalMax) / 2),
+    total_monthly_loss_range: { min: Math.round(totalLossMin), max: Math.round(totalLossMax) },
+    total_monthly_loss_mid: Math.round((totalLossMin + totalLossMax) / 2),
     highest_impact_issue: highestIssue,
     highest_impact_value: Math.round(highestValue),
     issue_count: valueCases.length,
     average_confidence: Math.round(totalConfidence / valueCases.length),
     currency: valueCases[0]?.estimated_impact.currency || 'USD',
+    total_monthly_retention_range: { min: Math.round(totalRetentionMin), max: Math.round(totalRetentionMax) },
+    total_monthly_retention_mid: Math.round((totalRetentionMin + totalRetentionMax) / 2),
+    retention_issue_count: retentionCount,
+    loss_issue_count: lossCount,
   };
 }
 

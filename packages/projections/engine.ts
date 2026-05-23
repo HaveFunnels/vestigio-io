@@ -1038,6 +1038,31 @@ export function projectFindings(
     inferenceByKey.set(inf.inference_key, inf);
   }
 
+  // Wave 20.6 — index compound chain membership by inference_key so each
+  // FindingProjection can carry its chain context. A finding may appear
+  // in more than one compound chain in pathological cases; we keep only
+  // the first match (chains are emitted in detection order, so this is
+  // deterministic across cycles).
+  const compoundChainByInfKey = new Map<string, {
+    id: string;
+    type: string;
+    role: 'trigger' | 'consequence' | 'evidence';
+    order: number;
+  }>();
+  if (result.composites?.compound_findings) {
+    for (const cf of result.composites.compound_findings) {
+      for (const link of cf.chain ?? []) {
+        if (!link?.finding_key || compoundChainByInfKey.has(link.finding_key)) continue;
+        compoundChainByInfKey.set(link.finding_key, {
+          id: cf.id,
+          type: cf.compound_type,
+          role: link.role,
+          order: link.order,
+        });
+      }
+    }
+  }
+
   // Wave 15.6: evidence index by id for source_url + freshness lookups.
   // Same path used by projectActions for affected_surfaces, but here we
   // resolve PER FINDING (not aggregated) so the drawer can show "we
@@ -1251,6 +1276,14 @@ export function projectFindings(
       workspace_refs: [],
       action_refs: [],
       opportunity_ref: null,
+      // Wave 20.6 — compound chain membership (null when this finding
+      // doesn't participate in any compound chain).
+      ...(() => {
+        const cc = compoundChainByInfKey.get(vc.inference_key);
+        return cc
+          ? { compound_chain_id: cc.id, compound_chain_type: cc.type, compound_chain_role: cc.role, compound_chain_order: cc.order }
+          : { compound_chain_id: null, compound_chain_type: null, compound_chain_role: null, compound_chain_order: null };
+      })(),
     });
   }
 
@@ -2521,6 +2554,16 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         workspace_refs: [],
         action_refs: [],
         opportunity_ref: null,
+        // Wave 20.6 — positive findings don't currently participate in
+        // compound chains (chains are wired for negative loss findings)
+        // so the fields default to null. If/when positive controls start
+        // chaining (e.g. a "trust posture intact + measurement complete"
+        // virtuous chain), repeat the lookup here against the same
+        // compoundChainByInfKey map.
+        compound_chain_id: null,
+        compound_chain_type: null,
+        compound_chain_role: null,
+        compound_chain_order: null,
       });
     }
   }
@@ -3247,6 +3290,70 @@ function buildPerspectiveGroup(
  * Group workspace projections into the 5 redesigned perspectives.
  * Does NOT mutate the input array.
  */
+// ──────────────────────────────────────────────
+// Wave 20.6 — Compound chain grouping helper.
+//
+// UI consumers can call this on a FindingProjection list to get one
+// row per compound chain (with its members as children) plus the
+// remaining standalone findings. Lets a list view collapse "5 findings
+// caused by trust_hesitation_revenue" into a single expandable group
+// without the UI re-implementing the grouping logic per surface.
+//
+// Returns:
+//   chains: one entry per compound_chain_id, with members sorted by
+//           compound_chain_order (chain dependency sequence).
+//   standalone: findings without any compound chain membership, in
+//               the original input order.
+// ──────────────────────────────────────────────
+export interface CompoundChainGroup {
+  chain_id: string;
+  chain_type: string;
+  members: FindingProjection[];
+  /** Sum of monthly midpoint impact across members — for the group row preview. */
+  combined_midpoint: number;
+  /** Worst severity in the chain — drives the group row color. */
+  worst_severity: string;
+}
+
+export function groupFindingsByCompoundChain(
+  findings: FindingProjection[],
+): { chains: CompoundChainGroup[]; standalone: FindingProjection[] } {
+  const byChain = new Map<string, FindingProjection[]>();
+  const standalone: FindingProjection[] = [];
+  for (const f of findings) {
+    if (f.compound_chain_id) {
+      const arr = byChain.get(f.compound_chain_id);
+      if (arr) arr.push(f);
+      else byChain.set(f.compound_chain_id, [f]);
+    } else {
+      standalone.push(f);
+    }
+  }
+  const severityRank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1, none: 0 };
+  const chains: CompoundChainGroup[] = [];
+  for (const [chainId, members] of byChain) {
+    // Sort members by the dependency order assigned in the source chain.
+    // Same chain_id means same chain_type — pick from the first member.
+    members.sort((a, b) => (a.compound_chain_order ?? 0) - (b.compound_chain_order ?? 0));
+    const combined = members.reduce((s, f) => s + f.impact.midpoint, 0);
+    const worst = members.reduce(
+      (w, f) => severityRank[f.severity] > severityRank[w] ? f.severity : w,
+      'none',
+    );
+    chains.push({
+      chain_id: chainId,
+      chain_type: members[0].compound_chain_type || 'unknown',
+      members,
+      combined_midpoint: combined,
+      worst_severity: worst,
+    });
+  }
+  // Sort chains by combined impact descending — biggest collapsed group
+  // first, matching the rest of the surface's impact-first ordering.
+  chains.sort((a, b) => b.combined_midpoint - a.combined_midpoint);
+  return { chains, standalone };
+}
+
 export function groupByPerspective(
   workspaces: WorkspaceProjection[],
 ): PerspectiveGroup[] {

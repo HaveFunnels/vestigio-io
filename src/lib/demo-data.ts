@@ -116,6 +116,10 @@ const BASE: Omit<
 	workspace_refs: [],
 	action_refs: [],
 	opportunity_ref: null,
+	compound_chain_id: null,
+	compound_chain_type: null,
+	compound_chain_role: null,
+	compound_chain_order: null,
 };
 
 function f(

@@ -91,6 +91,18 @@ export async function GET(request: Request) {
 				impact_midpoint: t.impactMidpoint,
 				resolved_at: t.resolvedAt.toISOString(),
 			})),
+			// Wave 20.6 — current-state snapshot of value being kept safe
+			// by active positive controls (polarity='positive' AND status
+			// IN ('created','confirmed')). Not bounded by the window —
+			// reflects what's holding today, regardless of when each
+			// control first showed up. Dashboard widget surfaces this
+			// next to the captured-value tally.
+			retention_in_force: {
+				min: summary.retentionInForceMin,
+				max: summary.retentionInForceMax,
+				midpoint: summary.retentionInForceMidpoint,
+				count: summary.retentionInForceCount,
+			},
 		});
 	} catch (err) {
 		console.error(`[value-caught] envId=${envId} window=${window} failed:`, err);

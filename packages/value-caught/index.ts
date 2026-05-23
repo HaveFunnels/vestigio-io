@@ -43,6 +43,21 @@ export interface ValueCaughtSummary {
     pack: string;
     resolvedAt: Date;
   }>;
+
+  // Wave 20.6 — retention snapshot. While `caught` is a window-bounded
+  // historical win ("we recovered R$ X this month"), `retention` is a
+  // current-state snapshot ("you're holding R$ Y/mo right now via
+  // controls that ARE working"). Together they roughly double the
+  // perceived magnitude of what Vestigio is doing on a renewal touch.
+  //
+  // Sourced from polarity='positive' AND status IN ('created','confirmed')
+  // — i.e. active positive findings. NOT bounded by the window: this is
+  // the value being kept safe today, regardless of when each control
+  // was first observed.
+  retentionInForceMidpoint: number;
+  retentionInForceMin: number;
+  retentionInForceMax: number;
+  retentionInForceCount: number;
 }
 
 /**
@@ -58,27 +73,48 @@ export async function computeValueCaught(
   windowStart: Date,
   windowEnd: Date,
 ): Promise<ValueCaughtSummary> {
-  const resolved = await prisma.finding.findMany({
-    where: {
-      environmentId,
-      status: "resolved",
-      statusChangedAt: { gte: windowStart, lt: windowEnd },
-    },
-    select: {
-      inferenceKey: true,
-      surface: true,
-      pack: true,
-      impactMin: true,
-      impactMax: true,
-      impactMidpoint: true,
-      statusChangedAt: true,
-    },
-    orderBy: { impactMidpoint: "desc" },
-  });
+  // Both queries are issued in parallel against indexed columns —
+  // (environmentId, status, statusChangedAt) for the caught query and
+  // (environmentId, status) for the retention snapshot.
+  const [resolved, retentionActive] = await Promise.all([
+    prisma.finding.findMany({
+      where: {
+        environmentId,
+        status: "resolved",
+        statusChangedAt: { gte: windowStart, lt: windowEnd },
+      },
+      select: {
+        inferenceKey: true,
+        surface: true,
+        pack: true,
+        impactMin: true,
+        impactMax: true,
+        impactMidpoint: true,
+        statusChangedAt: true,
+      },
+      orderBy: { impactMidpoint: "desc" },
+    }),
+    prisma.finding.findMany({
+      where: {
+        environmentId,
+        polarity: "positive",
+        status: { in: ["created", "confirmed"] },
+      },
+      select: {
+        impactMin: true,
+        impactMax: true,
+        impactMidpoint: true,
+      },
+    }),
+  ]);
 
   const totalCaughtMidpoint = resolved.reduce((s, f) => s + (f.impactMidpoint || 0), 0);
   const totalCaughtMin = resolved.reduce((s, f) => s + (f.impactMin || 0), 0);
   const totalCaughtMax = resolved.reduce((s, f) => s + (f.impactMax || 0), 0);
+
+  const retentionInForceMidpoint = retentionActive.reduce((s, f) => s + (f.impactMidpoint || 0), 0);
+  const retentionInForceMin = retentionActive.reduce((s, f) => s + (f.impactMin || 0), 0);
+  const retentionInForceMax = retentionActive.reduce((s, f) => s + (f.impactMax || 0), 0);
 
   return {
     environmentId,
@@ -95,6 +131,10 @@ export async function computeValueCaught(
       pack: f.pack,
       resolvedAt: f.statusChangedAt,
     })),
+    retentionInForceMidpoint,
+    retentionInForceMin,
+    retentionInForceMax,
+    retentionInForceCount: retentionActive.length,
   };
 }
 

@@ -280,6 +280,22 @@ export interface FindingProjection {
   action_refs: { id: string; title: string; status: string | null; category: string }[];
   /** Opportunity linked to this finding, if one exists. */
   opportunity_ref: { id: string; hypothesis: string; value_range: { min: number; max: number } } | null;
+
+  /**
+   * Wave 20.6 — compound chain membership. When this finding participates
+   * in a CompoundFinding chain, these fields identify the chain id +
+   * compound_type so the UI can collapse N component findings under one
+   * group row ("5 findings caused by trust_hesitation_revenue chain")
+   * instead of rendering each as its own card. Null when the finding is
+   * standalone (the common case — only ~10-20% of findings chain).
+   *
+   * The order_in_chain mirrors ChainLink.order from the source chain so
+   * the UI can render the dependency sequence inside the collapsed group.
+   */
+  compound_chain_id: string | null;
+  compound_chain_type: string | null;
+  compound_chain_role: 'trigger' | 'consequence' | 'evidence' | null;
+  compound_chain_order: number | null;
 }
 
 export interface FindingTruthContext {

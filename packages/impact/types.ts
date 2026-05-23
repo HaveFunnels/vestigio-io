@@ -84,4 +84,19 @@ export interface ImpactSummary {
   issue_count: number;
   average_confidence: number;
   currency: string;
+
+  // Wave 20.6 — retained-value totals computed in the same pass as the
+  // loss totals. Surfaced separately so the UI can frame controls that
+  // ARE working as "you're retaining R$ X/mo" rather than mixing them
+  // into the loss total (which would understate exposure). The split
+  // also feeds the monthly value-caught report — "R$ retained + R$
+  // recovered" reads much stronger than "R$ recovered" alone.
+  //
+  // issue_count above counts BOTH roles (loss + retention) because the
+  // top-line "things we looked at" remains useful as a single number.
+  // The two role-specific counts let dashboards render each side.
+  total_monthly_retention_range: { min: number; max: number };
+  total_monthly_retention_mid: number;
+  retention_issue_count: number;
+  loss_issue_count: number;
 }

@@ -684,12 +684,16 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 	value_caught_monthly: {
 		"pt-BR": {
 			sms: {
-				body: "Vestigio: este mês detectamos R$ {{amount}} em problemas resolvidos. Veja o relatório completo no dashboard.",
+				body: "Vestigio: este mês detectamos R$ {amount} em problemas resolvidos. Veja o relatório completo no dashboard.",
 			},
 			email: {
-				subject: "Vestigio capturou R$ {{amount}} este mês",
-				headline: "Vestigio capturou R$ {{amount}} este mês",
-				intro: "Em {{monthLabel}}, <strong>{{resolvedCount}} problemas</strong> que poderiam estar custando ao seu negócio foram detectados e resolvidos.<br/><br/>Estimativa do valor capturado: <strong>R$ {{amount}}/mês</strong> (faixa: R$ {{amountMin}} a R$ {{amountMax}}).<br/><br/>O relatório completo mostra cada problema, o impacto estimado, e em qual ciclo foi resolvido.",
+				subject: "Vestigio capturou R$ {amount} este mês",
+				headline: "Vestigio capturou R$ {amount} este mês",
+				// Wave 20.6 — retention sentence inserts via {retentionBlock}.
+				// The cron pre-builds the full HTML fragment (or "" for zero)
+				// so we don't try to do mustache-style conditionals inside the
+				// single-brace interpolator (which only handles {name} subs).
+				intro: "Em {monthLabel}, <strong>{resolvedCount} problemas</strong> que poderiam estar custando ao seu negócio foram detectados e resolvidos.<br/><br/>Estimativa do valor capturado: <strong>R$ {amount}/mês</strong> (faixa: R$ {amountMin} a R$ {amountMax}).{retentionBlock}<br/><br/>O relatório completo mostra cada problema, o impacto estimado, e em qual ciclo foi resolvido.",
 				ctaLabel: "Ver relatório completo",
 				ctaPath: "/app/findings?status=resolved",
 				footerNote: "Esta é uma estimativa baseada em benchmarks de conversão por categoria de problema. Você pode pausar este relatório nas configurações do ambiente.",
@@ -697,12 +701,12 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 		en: {
 			sms: {
-				body: "Vestigio: this month we detected ${{amount}} worth of problems resolved. See the full report in your dashboard.",
+				body: "Vestigio: this month we detected ${amount} worth of problems resolved. See the full report in your dashboard.",
 			},
 			email: {
-				subject: "Vestigio caught ${{amount}} this month",
-				headline: "Vestigio caught ${{amount}} this month",
-				intro: "In {{monthLabel}}, <strong>{{resolvedCount}} problems</strong> that could have been costing your business were detected and resolved.<br/><br/>Estimated captured value: <strong>${{amount}}/month</strong> (range: ${{amountMin}} to ${{amountMax}}).<br/><br/>The full report shows each issue, its estimated impact, and which cycle it was resolved in.",
+				subject: "Vestigio caught ${amount} this month",
+				headline: "Vestigio caught ${amount} this month",
+				intro: "In {monthLabel}, <strong>{resolvedCount} problems</strong> that could have been costing your business were detected and resolved.<br/><br/>Estimated captured value: <strong>${amount}/month</strong> (range: ${amountMin} to ${amountMax}).{retentionBlock}<br/><br/>The full report shows each issue, its estimated impact, and which cycle it was resolved in.",
 				ctaLabel: "View full report",
 				ctaPath: "/app/findings?status=resolved",
 				footerNote: "This is an estimate based on conversion benchmarks per problem category. You can pause this report in environment settings.",

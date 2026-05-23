@@ -125,20 +125,32 @@ export const POST = withErrorTracking(
 		}
 
 		try {
-			// Step 1+2: Upsert Environment. We reuse the first env if present
-			// so repeated submissions are idempotent (activating twice shouldn't
-			// create two envs). Domain is updated on reuse so a typo fix on the
-			// second attempt sticks.
-			const existingEnv = await prisma.environment.findFirst({
-				where: { organizationId: org.id },
-				orderBy: { createdAt: "asc" },
+			// Wave 22 Fase B+ — Upsert Environment by (organizationId, domain).
+			// Previously this lookup did `findFirst orderBy createdAt asc` to
+			// match the assumption "one env per org" — but Fase A introduced
+			// multi-env orgs (new-domain flow via the org panel). For a user
+			// with 2+ envs, the old code would UPDATE the OLDEST env with the
+			// submitted domain, corrupting the first env's row AND orphaning
+			// the env the user just created in the modal.
+			//
+			// The new (organizationId, domain) unique constraint Fase A added
+			// lets us look up the right row directly. If the env was just
+			// created via the Add Domain modal, we find + update it. If we're
+			// in the first-time onboarding flow (no env exists yet), the
+			// findUnique returns null and we create.
+			const existingEnv = await prisma.environment.findUnique({
+				where: {
+					organizationId_domain: {
+						organizationId: org.id,
+						domain: normalizedDomain,
+					},
+				},
 			});
 
 			const env = existingEnv
 				? await prisma.environment.update({
 						where: { id: existingEnv.id },
 						data: {
-							domain: normalizedDomain,
 							landingUrl,
 							isProduction: data.isProduction,
 							activated: true,
@@ -288,7 +300,11 @@ export const POST = withErrorTracking(
 						id: cycle.id,
 						status: cycle.status,
 					},
-					redirectTo: "/app/inventory",
+					// Wave 22 Fase B+ — land on the dashboard so the user lands
+					// on the FirstAuditCard with live progress streaming.
+					// /app/inventory bypassed the new card and showed only
+					// the legacy CycleProgressBanner.
+					redirectTo: "/app/dashboard",
 				},
 				{ status: 201 },
 			);

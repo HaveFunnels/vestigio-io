@@ -154,7 +154,7 @@ export async function notifyUser(payload: UserNotification): Promise<NotifyResul
 	if (prefs.smsEnabled && user.phone && payload.bodyText) {
 		const r = await sendOneSms({
 			to: user.phone,
-			message: `[Vestigio] ${payload.bodyText}`,
+			message: payload.bodyText,
 			tag: payload.tag || payload.event,
 			userId: user.id,
 			event: payload.event,
@@ -208,7 +208,7 @@ export async function notifyDirect(payload: DirectNotification): Promise<NotifyR
 	if (payload.to.phone && payload.bodyText) {
 		result.sms = await sendOneSms({
 			to: payload.to.phone,
-			message: `[Vestigio] ${payload.bodyText}`,
+			message: payload.bodyText,
 			tag: payload.tag || payload.event,
 			userId: payload.userId,
 			event: payload.event,
@@ -497,37 +497,114 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 // Email template helpers — minimal branded layout
 // ──────────────────────────────────────────────
 
+// ──────────────────────────────────────────────
+// Branded email renderer
+//
+// Layout: neutral light body (renders reliably across Gmail desktop /
+// Outlook / Apple Mail — dark backgrounds get force-inverted in many
+// clients and look broken). The "card" inside the body is white with a
+// subtle border + dark headline text, matching the brand without
+// betting on email-client dark-mode support.
+//
+// Inputs:
+//   - headline: H1 text. Always escaped before rendering.
+//   - intro: paragraph HTML. Templates control formatting (<strong>,
+//     <br/>, etc.); interpolated values MUST be escaped by the caller
+//     before being substituted into the template string. See
+//     renderEmailFromTemplate's escapedVars handling.
+//   - ctaLabel + ctaUrl: optional CTA button. Both escaped.
+//   - footerNote: optional dimmer secondary text under the CTA. Escaped.
+//   - preheader: optional preview text shown in inbox before opening
+//     (Gmail/iOS preview line). Defaults to first 100 chars of intro
+//     with HTML stripped.
+//   - locale: drives the "you're receiving this" footer copy.
+//
+// Per-locale i18n strings live in BRANDED_EMAIL_STRINGS — keeps the
+// rendering shape locale-agnostic and the copy auditable in one place.
+// ──────────────────────────────────────────────
+
+const BRANDED_EMAIL_STRINGS: Record<string, {
+	preferencesPrefix: string;
+	preferencesLink: string;
+	ctaFallbackLabel: string;
+}> = {
+	"pt-BR": {
+		preferencesPrefix: "Você está recebendo este email porque suas notificações estão ativas. ",
+		preferencesLink: "Gerenciar preferências",
+		ctaFallbackLabel: "Abrir Vestigio",
+	},
+	en: {
+		preferencesPrefix: "You're receiving this because you have notifications enabled. ",
+		preferencesLink: "Manage preferences",
+		ctaFallbackLabel: "Open Vestigio",
+	},
+	es: {
+		preferencesPrefix: "Recibes este correo porque tus notificaciones están activas. ",
+		preferencesLink: "Administrar preferencias",
+		ctaFallbackLabel: "Abrir Vestigio",
+	},
+	de: {
+		preferencesPrefix: "Du erhältst diese Nachricht, weil deine Benachrichtigungen aktiviert sind. ",
+		preferencesLink: "Einstellungen verwalten",
+		ctaFallbackLabel: "Vestigio öffnen",
+	},
+};
+
+// App-subdomain so the "manage preferences" link doesn't bounce through
+// a marketing → app redirect. The middleware does the redirect on the
+// vestigio.io domain, but emails should send users to the right place
+// the first time — saves a hop and keeps the URL stable.
+const APP_SETTINGS_URL = "https://app.vestigio.io/app/settings";
+
 export function renderBrandedEmail(args: {
 	headline: string;
 	intro: string;
 	ctaLabel?: string;
 	ctaUrl?: string;
 	footerNote?: string;
+	preheader?: string;
+	locale?: string | null;
 }): string {
+	const localeKey = args.locale && BRANDED_EMAIL_STRINGS[args.locale] ? args.locale : "en";
+	const strings = BRANDED_EMAIL_STRINGS[localeKey];
+
+	// Preheader: hidden line that previews in the inbox before the email
+	// is opened. Defaults to a stripped-tag snippet of the intro. The
+	// trailing whitespace and zero-width chars are a common pattern to
+	// prevent the email body from leaking into the preview (some clients
+	// concatenate preheader + visible content).
+	const preheaderText = args.preheader ?? stripHtml(args.intro).slice(0, 120).trim();
+	const preheader = `<div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${escapeHtml(preheaderText)}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;</div>`;
+
 	const cta = args.ctaUrl
-		? `<a href="${escapeHtml(args.ctaUrl)}" style="display:inline-block;background:#10b981;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:14px;">${escapeHtml(args.ctaLabel || "Open Vestigio")}</a>`
+		? `<a href="${escapeHtml(args.ctaUrl)}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:600;font-size:14px;">${escapeHtml(args.ctaLabel || strings.ctaFallbackLabel)}</a>`
 		: "";
 
 	return `<!doctype html>
-<html>
-<body style="margin:0;padding:0;background:#0a0a0a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e4e4e7;">
+<html lang="${escapeHtml(localeKey)}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(args.headline)}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#18181b;">
+	${preheader}
 	<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
 		<tr>
 			<td align="center" style="padding:40px 16px;">
-				<table role="presentation" width="560" cellspacing="0" cellpadding="0" border="0" style="background:#18181b;border:1px solid #27272a;border-radius:12px;overflow:hidden;">
+				<table role="presentation" width="560" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff;border:1px solid #e4e4e7;border-radius:12px;overflow:hidden;">
 					<tr>
 						<td style="padding:32px 32px 16px 32px;">
-							<div style="font-size:14px;color:#a1a1aa;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">Vestigio</div>
-							<h1 style="margin:12px 0 16px 0;font-size:22px;color:#fafafa;font-weight:700;">${escapeHtml(args.headline)}</h1>
-							<p style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#d4d4d8;">${args.intro}</p>
+							<div style="font-size:13px;color:#71717a;font-weight:600;letter-spacing:0.5px;text-transform:uppercase;">Vestigio</div>
+							<h1 style="margin:12px 0 16px 0;font-size:22px;color:#0f172a;font-weight:700;line-height:1.3;">${escapeHtml(args.headline)}</h1>
+							<div style="margin:0 0 24px 0;font-size:15px;line-height:1.6;color:#3f3f46;">${args.intro}</div>
 							${cta}
 							${args.footerNote ? `<p style="margin:24px 0 0 0;font-size:13px;color:#71717a;line-height:1.5;">${escapeHtml(args.footerNote)}</p>` : ""}
 						</td>
 					</tr>
 					<tr>
-						<td style="padding:16px 32px;border-top:1px solid #27272a;font-size:12px;color:#52525b;">
-							You're receiving this because you have notifications enabled.
-							<a href="https://vestigio.io/app/settings" style="color:#10b981;text-decoration:none;"> Manage preferences</a>.
+						<td style="padding:16px 32px;border-top:1px solid #e4e4e7;font-size:12px;color:#71717a;">
+							${escapeHtml(strings.preferencesPrefix)}<a href="${APP_SETTINGS_URL}" style="color:#0f172a;text-decoration:underline;">${escapeHtml(strings.preferencesLink)}</a>.
 						</td>
 					</tr>
 				</table>
@@ -538,11 +615,17 @@ export function renderBrandedEmail(args: {
 </html>`;
 }
 
-function escapeHtml(s: string): string {
+export function escapeHtml(s: string): string {
 	return s
 		.replace(/&/g, "&amp;")
 		.replace(/</g, "&lt;")
 		.replace(/>/g, "&gt;")
 		.replace(/"/g, "&quot;")
 		.replace(/'/g, "&#39;");
+}
+
+// Strip HTML tags + collapse whitespace. Used to derive the inbox
+// preheader from an intro that may contain <strong> + <br/> tags.
+function stripHtml(s: string): string {
+	return s.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
 }

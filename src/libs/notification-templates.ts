@@ -1,4 +1,4 @@
-import { renderBrandedEmail } from "@/libs/notifications";
+import { renderBrandedEmail, escapeHtml } from "@/libs/notifications";
 
 // ─────────────────���────────────────────────────
 // Notification Templates — locale-aware
@@ -48,7 +48,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "{count} problema(s) critico(s) em {domain}: {headline}. Veja em app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Incidente: {headline}",
+				subject: "Incidente: {headline}",
 				headline: "Incidente detectado",
 				intro: "<strong>{headline}</strong>{rootCauseSuffix}.<br/><br/>A Vestigio acabou de analisar <strong>{domain}</strong> e identificou {count} problema(s) que precisam de atenção.",
 				ctaLabel: "Ver na Vestigio",
@@ -61,7 +61,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "{count} critical issue(s) on {domain}: {headline}. View at app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Incident: {headline}",
+				subject: "Incident: {headline}",
 				headline: "Incident detected",
 				intro: "<strong>{headline}</strong>{rootCauseSuffix}.<br/><br/>Vestigio just analyzed <strong>{domain}</strong> and found {count} issue(s) that need attention.",
 				ctaLabel: "View in Vestigio",
@@ -75,7 +75,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "{count} problema(s) critico(s) en {domain}: {headline}. Ver en app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Incidente: {headline}",
+				subject: "Incidente: {headline}",
 				headline: "Incidente detectado",
 				intro: "<strong>{headline}</strong>{rootCauseSuffix}.<br/><br/>Vestigio acaba de analizar <strong>{domain}</strong> y encontro {count} problema(s) que necesitan atencion.",
 				ctaLabel: "Ver en Vestigio",
@@ -89,7 +89,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "{count} kritische(s) Problem(e) auf {domain}: {headline}. Ansehen auf app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Vorfall: {headline}",
+				subject: "Vorfall: {headline}",
 				headline: "Vorfall erkannt",
 				intro: "<strong>{headline}</strong>{rootCauseSuffix}.<br/><br/>Vestigio hat gerade <strong>{domain}</strong> analysiert und {count} Problem(e) gefunden, die Aufmerksamkeit erfordern.",
 				ctaLabel: "In Vestigio ansehen",
@@ -105,7 +105,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Regressão em {domain}: {headline}. {count} finding(s) pioraram. Veja em app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Regressão: {headline}",
+				subject: "Regressão: {headline}",
 				headline: "Regressão detectada",
 				intro: "<strong>{headline}</strong> piorou desde a última auditoria.{rootCauseSuffix}<br/><br/>Total de regressões neste ciclo: <strong>{count}</strong>.",
 				ctaLabel: "Ver change report",
@@ -118,7 +118,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Regression on {domain}: {headline}. {count} finding(s) worsened. View at app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Regression: {headline}",
+				subject: "Regression: {headline}",
 				headline: "Regression detected",
 				intro: "<strong>{headline}</strong> worsened since the last audit.{rootCauseSuffix}<br/><br/>Total regressions this cycle: <strong>{count}</strong>.",
 				ctaLabel: "View change report",
@@ -132,7 +132,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Regresion en {domain}: {headline}. {count} hallazgo(s) empeoraron. Ver en app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Regresion: {headline}",
+				subject: "Regresion: {headline}",
 				headline: "Regresion detectada",
 				intro: "<strong>{headline}</strong> empeoro desde la ultima auditoria.{rootCauseSuffix}<br/><br/>Total de regresiones en este ciclo: <strong>{count}</strong>.",
 				ctaLabel: "Ver informe de cambios",
@@ -146,7 +146,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Regression auf {domain}: {headline}. {count} Ergebnis(se) verschlechtert. Ansehen auf app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Regression: {headline}",
+				subject: "Regression: {headline}",
 				headline: "Regression erkannt",
 				intro: "<strong>{headline}</strong> hat sich seit dem letzten Audit verschlechtert.{rootCauseSuffix}<br/><br/>Gesamte Regressionen in diesem Zyklus: <strong>{count}</strong>.",
 				ctaLabel: "Aenderungsbericht ansehen",
@@ -162,7 +162,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Melhoria em {domain}: {headline} foi resolvido. Veja em app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Melhoria: {headline}",
+				subject: "Melhoria: {headline}",
 				headline: "Melhoria confirmada",
 				intro: "<strong>{headline}</strong> melhorou desde o último ciclo em <strong>{domain}</strong>.",
 				ctaLabel: "Ver resultados",
@@ -175,7 +175,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Improvement on {domain}: {headline} was resolved. View at app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Improvement: {headline}",
+				subject: "Improvement: {headline}",
 				headline: "Improvement confirmed",
 				intro: "<strong>{headline}</strong> improved since the last cycle on <strong>{domain}</strong>.",
 				ctaLabel: "View results",
@@ -189,7 +189,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Mejora en {domain}: {headline} fue resuelto. Ver en app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Mejora: {headline}",
+				subject: "Mejora: {headline}",
 				headline: "Mejora confirmada",
 				intro: "<strong>{headline}</strong> mejoro desde el ultimo ciclo en <strong>{domain}</strong>.",
 				ctaLabel: "Ver resultados",
@@ -203,7 +203,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Verbesserung auf {domain}: {headline} wurde behoben. Ansehen auf app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Verbesserung: {headline}",
+				subject: "Verbesserung: {headline}",
 				headline: "Verbesserung bestaetigt",
 				intro: "<strong>{headline}</strong> hat sich seit dem letzten Zyklus auf <strong>{domain}</strong> verbessert.",
 				ctaLabel: "Ergebnisse ansehen",
@@ -219,7 +219,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Pagina fora do ar: {pageUrl}{statusSuffix}. Verifique agora.",
 			},
 			email: {
-				subject: "[Vestigio] Pagina fora do ar: {pageUrl}",
+				subject: "Pagina fora do ar: {pageUrl}",
 				headline: "Uma página do seu site está fora do ar",
 				intro: "A Vestigio detectou que <strong>{pageUrl}</strong> está inacessível.{statusDetail}{errorDetail}",
 				ctaLabel: "Ver incidente",
@@ -232,7 +232,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Page down: {pageUrl}{statusSuffix}. Check now.",
 			},
 			email: {
-				subject: "[Vestigio] Page down: {pageUrl}",
+				subject: "Page down: {pageUrl}",
 				headline: "One of your pages is down",
 				intro: "Vestigio detected that <strong>{pageUrl}</strong> is unreachable.{statusDetail}{errorDetail}",
 				ctaLabel: "View incident",
@@ -246,7 +246,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Pagina caida: {pageUrl}{statusSuffix}. Verifique ahora.",
 			},
 			email: {
-				subject: "[Vestigio] Pagina caida: {pageUrl}",
+				subject: "Pagina caida: {pageUrl}",
 				headline: "Una de tus paginas esta caida",
 				intro: "Vestigio detecto que <strong>{pageUrl}</strong> esta inaccesible.{statusDetail}{errorDetail}",
 				ctaLabel: "Ver incidente",
@@ -260,7 +260,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "Seite nicht erreichbar: {pageUrl}{statusSuffix}. Jetzt pruefen.",
 			},
 			email: {
-				subject: "[Vestigio] Seite nicht erreichbar: {pageUrl}",
+				subject: "Seite nicht erreichbar: {pageUrl}",
 				headline: "Eine Ihrer Seiten ist nicht erreichbar",
 				intro: "Vestigio hat erkannt, dass <strong>{pageUrl}</strong> nicht erreichbar ist.{statusDetail}{errorDetail}",
 				ctaLabel: "Vorfall ansehen",
@@ -447,7 +447,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "{headline} foi resolvido em {domain}. Impacto recuperado: {impact}. Veja em app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Resolvido: {headline}",
+				subject: "Resolvido: {headline}",
 				headline: "Problema resolvido e verificado",
 				intro: "<strong>{headline}</strong> em <strong>{domain}</strong> foi confirmado como resolvido pela auditoria mais recente.{impactDetail}",
 				ctaLabel: "Ver detalhes",
@@ -460,7 +460,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "{headline} resolved on {domain}. Recovered impact: {impact}. View at app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Resolved: {headline}",
+				subject: "Resolved: {headline}",
 				headline: "Issue resolved and verified",
 				intro: "<strong>{headline}</strong> on <strong>{domain}</strong> has been confirmed as resolved by the latest audit.{impactDetail}",
 				ctaLabel: "View details",
@@ -474,7 +474,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "{headline} resuelto en {domain}. Impacto recuperado: {impact}. Ver en app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Resuelto: {headline}",
+				subject: "Resuelto: {headline}",
 				headline: "Problema resuelto y verificado",
 				intro: "<strong>{headline}</strong> en <strong>{domain}</strong> ha sido confirmado como resuelto por la ultima auditoria.{impactDetail}",
 				ctaLabel: "Ver detalles",
@@ -488,7 +488,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				body: "{headline} behoben auf {domain}. Wiederhergestellte Auswirkung: {impact}. Ansehen auf app.vestigio.io",
 			},
 			email: {
-				subject: "[Vestigio] Behoben: {headline}",
+				subject: "Behoben: {headline}",
 				headline: "Problem behoben und verifiziert",
 				intro: "<strong>{headline}</strong> auf <strong>{domain}</strong> wurde durch das letzte Audit als behoben bestaetigt.{impactDetail}",
 				ctaLabel: "Details ansehen",
@@ -767,6 +767,57 @@ function interpolate(template: string, vars: Record<string, string>): string {
 	return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? "");
 }
 
+// Some intro vars are pre-formatted HTML fragments built by the caller
+// (e.g. retentionBlock in value_caught_monthly is `<br/><strong>...`).
+// The convention: caller-built HTML keys end with the suffix below.
+// All other vars are escaped before substitution.
+const RAW_HTML_VAR_SUFFIXES = ["Block", "Html"];
+
+function isRawHtmlVar(key: string): boolean {
+	return RAW_HTML_VAR_SUFFIXES.some((suffix) => key.endsWith(suffix));
+}
+
+// Build the interpolation vars to use for the email INTRO + subject —
+// every non-raw-HTML var is escaped so a malicious value can't break
+// out of the surrounding markup. Raw-HTML vars (keys ending in Block /
+// Html) pass through unchanged because the caller has already chosen
+// their HTML deliberately.
+function buildEmailEscapedVars(vars: Record<string, string>): Record<string, string> {
+	const escaped: Record<string, string> = {};
+	for (const [key, value] of Object.entries(vars)) {
+		escaped[key] = isRawHtmlVar(key) ? value : escapeHtml(value);
+	}
+	return escaped;
+}
+
+// Plain-text body builder: takes the rendered intro + subject and
+// produces a readable plain-text fallback that preserves paragraph
+// breaks (instead of joining everything into one wall of text). The
+// previous version replaced every tag with empty string, losing the
+// <br/><br/> paragraph separators.
+function buildPlainText(headline: string, intro: string, ctaUrl: string): string {
+	const body = intro
+		// Paragraph-break tags become double newlines so the plain-text
+		// body still reads as paragraphs.
+		.replace(/<br\s*\/?>\s*<br\s*\/?>/gi, "\n\n")
+		.replace(/<br\s*\/?>/gi, "\n")
+		.replace(/<\/p>\s*<p[^>]*>/gi, "\n\n")
+		.replace(/<\/?(p|div|h[1-6])[^>]*>/gi, "")
+		// Strip everything else (strong, em, etc.).
+		.replace(/<[^>]*>/g, "")
+		// Normalize entities the escape pass introduced.
+		.replace(/&amp;/g, "&")
+		.replace(/&lt;/g, "<")
+		.replace(/&gt;/g, ">")
+		.replace(/&quot;/g, '"')
+		.replace(/&#39;/g, "'")
+		.replace(/&nbsp;/g, " ")
+		.replace(/[ \t]+/g, " ")
+		.replace(/\n[ \t]+/g, "\n")
+		.trim();
+	return `${headline}\n\n${body}\n\n${ctaUrl}`;
+}
+
 export function renderSmsFromTemplate(
 	event: string,
 	vars: Record<string, string>,
@@ -774,6 +825,7 @@ export function renderSmsFromTemplate(
 ): string | null {
 	const t = resolveTemplate(event, locale);
 	if (!t) return null;
+	// SMS is plain text — interpolate the raw vars (no HTML escape).
 	return interpolate(t.sms.body, vars);
 }
 
@@ -786,21 +838,32 @@ export function renderEmailFromTemplate(
 	const t = resolveTemplate(event, locale);
 	if (!t) return null;
 
+	// Subjects + ctaPath are plain text (no HTML rendering involved),
+	// so raw interpolation is safe and we want the un-escaped values
+	// in the email subject line.
 	const subject = interpolate(t.email.subject, vars);
-	const intro = interpolate(t.email.intro, vars);
-	const footerNote = interpolate(t.email.footerNote, vars);
 	const ctaPath = interpolate(t.email.ctaPath, vars);
 	const ctaUrl = ctaPath.startsWith("http") ? ctaPath : `${baseUrl}${ctaPath}`;
 
+	// Intro, headline, and footer ARE rendered inside HTML, so vars
+	// have to be HTML-escaped before substitution. The exception is
+	// raw-HTML vars (keys ending in Block/Html — e.g. retentionBlock)
+	// which the caller has already built as HTML deliberately.
+	const htmlVars = buildEmailEscapedVars(vars);
+	const intro = interpolate(t.email.intro, htmlVars);
+	const headline = interpolate(t.email.headline, htmlVars);
+	const footerNote = interpolate(t.email.footerNote, htmlVars);
+
 	const html = renderBrandedEmail({
-		headline: t.email.headline,
+		headline,
 		intro,
 		ctaLabel: t.email.ctaLabel,
 		ctaUrl,
 		footerNote,
+		locale,
 	});
 
-	const text = `${t.email.headline}: ${intro.replace(/<[^>]*>/g, "")} — ${ctaUrl}`;
+	const text = buildPlainText(headline, intro, ctaUrl);
 
 	return { subject, html, text };
 }

@@ -19,6 +19,7 @@ import { createSignal } from '../signals/create';
 import {
   computeInferences,
   stampInferenceSurfaceKinds,
+  applySurfaceGate,
   computeSaasInferences,
   computeVerticalInferences,
   computeFunnelMomentInferences,
@@ -916,7 +917,12 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   // surface from the cited signals. The stamper preserves existing
   // surface_kind values, so the core `inferences` array (already
   // stamped at its production point) is a no-op pass.
-  const preCompoundInferences = stampInferenceSurfaceKinds(
+  //
+  // Then apply the surface gate (warn mode during the migration
+  // window — logs + flags rejections without dropping). Flipping to
+  // throw mode is a one-line config change once we've observed a few
+  // cycles of warn-mode telemetry on real customer data.
+  const stampedMerged = stampInferenceSurfaceKinds(
     [
       ...inferences,
       ...saasInferences,
@@ -930,6 +936,8 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
     ],
     signals,
   );
+  const gateMode = (process.env.SURFACE_GATE_MODE === 'throw' ? 'throw' : 'warn') as 'warn' | 'throw';
+  const preCompoundInferences = applySurfaceGate(stampedMerged, gateMode).kept;
   const compoundInferences = computeCrossPackSynthesis({
     inferences: preCompoundInferences,
     scoping,

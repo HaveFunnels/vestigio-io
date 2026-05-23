@@ -15,3 +15,8 @@ export { computeExternalReconInferences } from './external-recon-inference';
 // the signal-side stamper: each inference gets surface_kind derived
 // from the aggregate of its cited signals.
 export { stampInferenceSurfaceKinds } from './surface-stamp';
+// Wave 22.5 Tier 2 — surface gate. Drops or flags inferences whose
+// stamped surface_kind doesn't match the declared accepted_surfaces
+// for that inference_key.
+export { applySurfaceGate, type SurfaceGateMode, type SurfaceGateResult } from './surface-gate';
+export { INFERENCE_ACCEPTED_SURFACES, isSurfaceAccepted } from './accepted-surfaces';

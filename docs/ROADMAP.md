@@ -2967,6 +2967,84 @@ The havefunnels.com customer is the immediate beneficiary — they run Meta ads,
 
 ---
 
+## Wave 23 — Enterprise depth (analysis surface expansion)
+
+The Wave 22.5 surface refactor (public / authenticated / mixed) was the architectural unlock — Wave 23 fills out the analysis surface with classes of evidence that only enterprise/large customers genuinely need. Each entry below is its own mini-wave, sized 3-10 days, and they ship in priority order. Customer trigger: each accelerates ahead of its slot when a paying enterprise prospect (Itaú-class) asks for it specifically.
+
+### Wave 23.1 — Email hygiene scan (DMARC / SPF / DKIM / BIMI)
+
+**Why now:** phishing is the #1 attack vector against bank brands; DMARC `p=reject` is the table-stakes posture. Most enterprises THINK they have it; ~30% actually do (auditing CAIXA / Banco do Brasil / Itaú externally as of 2026 — anecdotal). Zero infra change: DNS lookups only.
+
+**Goals:**
+1. New evidence type `EmailHygieneRecord` populated per cycle via DNS lookups against the env's domain + common subdomains (no-reply.*, mail.*, info.*).
+2. New inference pack `email_deliverability` with rules: `dmarc_policy_weak` (p=none or p=quarantine), `dmarc_record_absent`, `spf_includes_too_broad` (open relay risk), `dkim_selector_missing`, `bimi_unconfigured` (brand visibility in Gmail).
+3. Each finding cites the DNS record verbatim so the operator can copy-paste the fix.
+
+**Sequence:**
+- 23.1.1 — `EmailHygieneRecord` evidence type + collector (workers/ingestion/email-hygiene/index.ts). DNS resolver via Node's dns/promises. ~1 day.
+- 23.1.2 — Inference pack with 6-8 rules + remediation catalog entries. ~1 day.
+- 23.1.3 — Integration into projection layer (new workspace? or augment security_posture? Likely augment). ~0.5 day.
+- 23.1.4 — Tests with golden DNS responses. ~0.5 day.
+
+**Effort:** ~2-3 days total. Highest-leverage quick win on the list.
+
+**Out of scope:** Live mailbox testing (sending an email through the chain and verifying inbox delivery). Adds infra dependency on a third-party mail testing service; defer until 50+ customers asking.
+
+### Wave 23.2 — Subdomain takeover detection
+
+**Why now:** Subdomain inventory already exists via `SubdomainDiscovery` evidence (Wave 9). The detection gate — comparing DNS CNAMEs to known-vulnerable patterns (Heroku abandoned apps, GitHub Pages of deleted repos, S3 buckets that no longer exist, Tumblr/Strikingly orphans) — has never been wired. For a 100+-subdomain enterprise, this is a critical security finding nobody else audits.
+
+**Goals:**
+1. New inference `subdomain_takeover_risk` keyed by domain + CNAME target + the fingerprint matching pattern. Severity always critical (it's a vulnerability).
+2. Match against the [can-i-take-over-xyz](https://github.com/EdOverflow/can-i-take-over-xyz) catalog of known-vulnerable services (~80 patterns as of 2026).
+3. Each finding includes the exact CNAME chain + the takeover-proof check ("we resolved CNAME X → Y → got 404 NXDOMAIN, confirming the target is unclaimed").
+
+**Sequence:**
+- 23.2.1 — Vulnerability-pattern catalog at `packages/security/takeover-patterns.ts`. ~0.5 day.
+- 23.2.2 — Inference rule `subdomain_takeover_risk` consuming `SubdomainDiscovery` evidence + cross-checking against the catalog + verifying the unclaimed-target HTTP signature. ~1.5 days.
+- 23.2.3 — Critical-severity finding rendering in UI (red banner, top of dashboard). ~0.5 day.
+- 23.2.4 — Tests with mocked DNS + HTTP responses for top 10 vulnerable patterns. ~0.5 day.
+
+**Effort:** ~3-4 days. Reuses existing subdomain collection; only the gate is new.
+
+**Out of scope:** Automatic remediation (claiming the dangling subdomain ourselves — legal mine field). The finding tells the operator to delete the CNAME or claim the resource.
+
+### Wave 24 — Mobile surface (APK static analysis)
+
+**Why now:** The Wave 22.5 surface refactor was deliberately built so adding a new SurfaceKind (Mobile) is a one-line schema change. Enterprise customers (Itaú especially) have a mobile app that's MORE strategic than the web for retention/expansion, and nobody is auditing it for the same things Vestigio audits the web (copy quality, trust posture, attribution, friction).
+
+**Why deferred to Wave 24:** Always-on (Wave 21.3+) and the Meta CSV bridge (21.6) are higher immediate-revenue wins. APK analysis is a major infra add (new Docker image with JDK, new worker pool, ~100MB-200MB per app per cycle in compute). Don't open this front until 21.x is closing.
+
+**Goals:**
+1. New `SurfaceKind.Mobile` value + Surface model rows declaring `urlPattern: 'apk:com.acme.app'` (Play Store package ID format).
+2. APK discovery: heuristic scan of the customer's domain for `play.google.com/store/apps/details?id=` links + meta tags + Schema.org `MobileApplication` annotations + Google Play search by brand name.
+3. APK download worker: fetches the APK once per env per week (or on-demand from `/app/settings/surfaces`). Stores hash for change detection.
+4. APK analysis worker:
+   - APKTool / JADX decompile.
+   - Extract: AndroidManifest.xml (permissions, version, target SDK), strings.xml (in-app copy), DEX (hardcoded URLs, tracking SDKs, library versions), network_security_config (cleartext traffic policy).
+5. New inference pack `mobile_growth_readiness` with rules: `mobile_overrequests_permissions`, `mobile_attribution_blindspot` (no Firebase/Adjust/AppsFlyer detected), `mobile_cleartext_traffic_allowed`, `mobile_app_stale` (version > 6mo old), `mobile_deeplink_misconfigured`, `mobile_data_leak_risk` (hardcoded staging URLs).
+6. Cross-surface compound: `landing_app_mismatch_mobile` (the web landing promises X, the APK delivers Y).
+
+**Sequence:**
+- 24.1 — `SurfaceKind.Mobile` enum + Surface model accepts apk: pattern + APKDiscovery evidence type + collector. ~3 days.
+- 24.2 — APK worker app (`apps/mobile-runner/`) with APKTool/JADX in Docker. ~5 days. Significant infra work.
+- 24.3 — Inference pack `mobile_growth_readiness` with 8-10 initial rules. ~3 days.
+- 24.4 — Surface gate (Tier 2 manifest) declares mobile-only inferences. ~0.5 day.
+- 24.5 — UI surface rendering: mobile findings show under a dedicated tab in the surface filter pills, with a phone icon. ~1 day.
+- 24.6 — Cross-surface compound finding `landing_app_mismatch_mobile`. ~1 day.
+
+**Effort:** ~2 weeks. The bulk is the APK worker + Docker image; everything else is incremental on top of the surface infrastructure that already exists.
+
+**Out of scope (V1):**
+- iOS IPA analysis. App Store doesn't allow public IPA download. Defer until either (a) a customer uploads their IPA build (CSV-bridge pattern), or (b) we partner with AppCensus/42matters which index iOS apps externally.
+- Runtime behavior analysis (running the APK in an emulator and observing traffic). Big infra step beyond static analysis.
+- Code-level security findings (treating Vestigio as a SAST tool). Stays in scope: anything that ties to revenue impact (attribution blindspot, conversion friction, trust signals). Out of scope: generic CVEs.
+- Dynamic instrumentation (Frida, Xposed). Out — that's a different product.
+
+**Trigger to ship sooner:** any enterprise prospect (Itaú-class) asks for mobile coverage during the sales process; Wave 24 jumps in front of remaining Wave 21 backlog.
+
+---
+
 ## What is NOT on this roadmap (Wave 20/21 specific)
 
 - Replacing the LLM provider. Anthropic / Haiku 4.5 / Sonnet 4.6 / Opus 4.7 stay.

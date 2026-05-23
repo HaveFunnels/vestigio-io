@@ -442,7 +442,7 @@ const MiniCalculator = ({
 									{!showExtra && (
 										<div className='w-full'>
 											<div
-												className={`shiny-input relative flex w-full items-center gap-2 !rounded-2xl !p-1.5 pl-4 sm:pl-5 ${
+												className={`shiny-input relative flex w-full items-center gap-2 !rounded-2xl !p-0 !pl-4 sm:!pl-5 ${
 													domainReady ? "!ring-1 !ring-emerald-500/40" : ""
 												}`}
 											>
@@ -469,7 +469,7 @@ const MiniCalculator = ({
 														if (!domainReady) { setUrlNudge(true); return; }
 														handleSubmit();
 													}}
-													className='!min-h-0 !w-auto shrink-0 !rounded-xl !px-3.5 !py-2.5 !text-xs sm:!px-6 sm:!text-sm'
+													className='!min-h-0 !w-auto shrink-0 !rounded-l-xl !rounded-r-2xl !px-3.5 !py-2.5 !text-xs sm:!px-6 sm:!text-sm'
 												>
 													{t("cta_audit")}
 												</ShinyButton>

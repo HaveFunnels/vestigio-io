@@ -163,7 +163,7 @@ const Footer = () => {
 				{/* Bottom bar */}
 				<div className='mt-10 border-t border-white/5 pt-6 sm:mt-12 sm:pt-8'>
 					<div className="mb-5">
-						<AwardsStrip compact />
+						<AwardsStrip compact only={["Product Hunt"]} />
 					</div>
 					<p className='text-center text-xs text-zinc-600'>
 						{t("copyright", { year })}

@@ -80,7 +80,7 @@ const ClientGallery = async () => {
 				</div>
 
 				<div className="mt-7 px-4 sm:mt-8 sm:px-8 xl:px-0">
-					<AwardsStrip />
+					<AwardsStrip darkBg={false} />
 				</div>
 			</div>
 		</section>

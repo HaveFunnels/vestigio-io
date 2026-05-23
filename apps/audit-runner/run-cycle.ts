@@ -392,13 +392,41 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			canonicalizeUrl,
 		} = await import("./cycle-modes");
 		const declaredType = (cycle.cycleType || "cold").toLowerCase();
+
+		// Wave 21.2 — targeted re-analysis enqueued by the probe cron.
+		// scopeJson carries { kind: 'targeted', url, triggered_by,
+		// prior_hash, current_hash }. We treat targeted as a 'hot' cycle
+		// (shallow_plus pipeline, carry-forward for unrelated URLs) AND
+		// pass the targeted scope through to runEngine so projectAll
+		// filters the output to findings/actions touching the changed
+		// URL. The scope object stays null for non-targeted cycles, so
+		// runEngine falls back to its default { kind: 'full_cycle' }.
+		const targetedScope: { kind: "targeted"; url: string; enrichers?: string[] } | null =
+			declaredType === "targeted" && cycle.scopeJson
+				? (() => {
+						const s = cycle.scopeJson as { kind?: string; url?: unknown; enrichers?: unknown };
+						if (s?.kind === "targeted" && typeof s.url === "string" && s.url.length > 0) {
+							const enrichers = Array.isArray(s.enrichers)
+								? (s.enrichers.filter((e) => typeof e === "string") as string[])
+								: undefined;
+							return { kind: "targeted" as const, url: s.url, enrichers };
+						}
+						return null;
+				  })()
+				: null;
+		if (declaredType === "targeted" && !targetedScope) {
+			console.warn(
+				`[audit-runner ${cycleId}] cycleType=targeted but scopeJson invalid; falling back to hot cycle without scope filter`,
+			);
+		}
+
 		// Mutable: the first-cycle fallback downgrades hot/warm → cold
 		// because we have nothing to carry forward from. Keeping it `let`
 		// means `pipelineMode` + `behavioralWindowHours` + `modeConfig`
 		// all follow the downgrade automatically instead of running a
 		// half-broken shallow_plus baseline.
 		let cycleMode: "hot" | "warm" | "cold" =
-			declaredType === "hot"
+			declaredType === "hot" || declaredType === "targeted"
 				? "hot"
 				: declaredType === "warm"
 					? "warm"
@@ -1696,6 +1724,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			const engineOut = await runEngine({
 				evidence: result.evidence,
 				additional_signals: staticCheckSignals,
+				// Wave 21.2 — targeted cycles pass their scope through so
+				// runEngine filters projections to findings touching the
+				// changed URL. Full/hot/warm/cold cycles fall through with
+				// scope undefined → runEngine defaults to full_cycle.
+				scope: targetedScope ?? undefined,
 				scoping: {
 					workspace_ref: workspaceRef,
 					environment_ref: environmentRef,

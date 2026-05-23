@@ -305,6 +305,18 @@ model Environment {
   // User-supplied glob patterns to exclude from crawl (e.g. "/admin/*", "/staging/*", "*.pdf").
   // Applied at discovery + per-URL crawl gate. Empty array = no exclusions.
   crawlExcludePatterns String[]  @default([])
+  // Wave 21.2 — probe scheduler configuration.
+  // probeEnabled: kill switch per env (defaults true; set false for
+  //   particularly noisy customers without ripping the cron).
+  // probeUrlsJson: explicit allow-list of URLs to probe. When null, the
+  //   probe runner derives the list from landingUrl + auto-discovered
+  //   commercial URLs from the most recent completed audit cycle.
+  // probeLastRunAt: last successful probe pass timestamp — used to
+  //   debounce per-env so plan cadence stays honest under any number
+  //   of cron replicas.
+  probeEnabled         Boolean   @default(true)
+  probeUrlsJson        Json?
+  probeLastRunAt       DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
@@ -323,15 +335,51 @@ model Environment {
   llmResultCache         LlmResultCache[]
   contentEnrichmentCache ContentEnrichmentCache[]
   domainFingerprint      DomainFingerprint?
+  pageProbes             PageProbe[]
 
-  @@index([activated, continuousPaused])
-  @@index([lastAccessedAt])
   // Wave 22 — one domain per org. The previous schema allowed
   // duplicate (orgId, domain) rows, which would let a user create
   // the same domain twice from the UI and end up with confused
   // dashboards. The API now returns 409 instead of silently
   // creating; this constraint enforces it at the DB layer too.
   @@unique([organizationId, domain])
+  @@index([activated, continuousPaused])
+  @@index([lastAccessedAt])
+}
+
+// Wave 21.2 — lightweight page-content probe.
+//
+// One row per HEAD/GET probe of a single URL by the probe scheduler.
+// Stores the content hash + minimal metadata so the next probe pass
+// can detect material change (changedFromPrior=true) without paying
+// the full audit-cycle cost. On change, the probe runner enqueues a
+// targeted audit cycle that re-fetches + re-enriches only the affected
+// URL via engine.run({ scope: { kind: 'targeted', url } }) — the path
+// established in Wave 20.7.
+//
+// Retention: prune to the most recent 30 probes per (env, url) via a
+// scheduled cleanup. The diff comparison only needs the most recent
+// one; the rest is forensic history for admin debugging.
+model PageProbe {
+  id               String   @id @default(cuid())
+  environmentId    String
+  url              String
+  contentHash      String
+  statusCode       Int
+  contentLength    Int
+  fetchMs          Int
+  // Whether this probe's contentHash differs from the prior probe's
+  // hash for the same (env, url). Null on the very first probe.
+  changedFromPrior Boolean?
+  // Prior hash captured for explainability ("yesterday it was X, today
+  // it is Y"). Null on first probe.
+  priorHash        String?
+  observedAt       DateTime @default(now())
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@index([environmentId, url, observedAt(sort: Desc)])
+  @@index([environmentId, observedAt])
 }
 
 model BusinessProfile {
@@ -364,7 +412,13 @@ model AuditCycle {
   organizationId   String
   environmentId    String
   status           String    @default("pending") // pending | running | complete | failed
-  cycleType        String    @default("full") // full | incremental | verification
+  cycleType        String    @default("full") // full | incremental | verification | targeted (Wave 21.2)
+  // Wave 21.2 — targeted-scope payload for engine.run({ scope:
+  // { kind:'targeted', url, enrichers? } }). Populated when cycleType=
+  // 'targeted' and the cycle was enqueued by the probe scheduler after
+  // detecting a page-content diff. Null for full/hot/warm/cold cycles.
+  // Shape: { kind:'targeted', url: string, enrichers?: string[] }.
+  scopeJson        Json?
   createdAt        DateTime  @default(now())
   completedAt      DateTime?
   // Partial-failure visibility. Set when a write step inside the cycle
@@ -396,16 +450,16 @@ model AuditCycle {
   // phase transition so the dashboard SSE stream can render fine-grained
   // progress without polling the engine itself.
   /// Last yield value emitted by the generator. Null while pending.
-  currentPhase     String?
+  currentPhase   String?
   /// Wall-clock timestamp of the last phase transition. Used by the
   /// dashboard SSE stream AND by the heal cron as an additional
   /// "stuck-in-phase" signal (more specific than just heartbeat).
-  phaseUpdatedAt   DateTime?
+  phaseUpdatedAt DateTime?
   /// Compact history of phase transitions for this cycle:
   ///   [{ "phase": "graph_and_signals", "at": "2026-…", "durationMs": 1234 }, …]
   /// Capped at ~12 entries (one per yield + final) so the row stays
   /// small even on slow cycles.
-  phaseHistory     Json?
+  phaseHistory   Json?
 
   organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   environment  Environment     @relation(fields: [environmentId], references: [id], onDelete: Cascade)

@@ -43,6 +43,12 @@ const NOTIFICATION_DISPATCHER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 // plan cadence (Max's 15min hot cycles will sample 4x per hot window;
 // Starter's weekly cold lands within 1h of due time).
 const SCHEDULER_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+// Wave 21.2 — probe cron tick. Fires every 60s; per-env cadence is
+// enforced inside the probe runner via the probeLastRunAt debounce.
+// Max-plan envs probe every 5 min, pro every 15 min, vestigio every
+// 60 min — picking 60s here means a freshly-due env never waits more
+// than a tick to be picked up regardless of plan.
+const PROBE_INTERVAL_MS = 60 * 1000; // 60 seconds
 
 export async function registerNodeInstrumentation(): Promise<void> {
 	// Fail-fast guard: VESTIGIO_SECRET_KEY must be present in production.
@@ -409,6 +415,35 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	runScheduler();
 	setInterval(runScheduler, SCHEDULER_INTERVAL_MS);
 	console.log("✓ Audit scheduler cron registered (1h interval)");
+
+	// ── Probe cron (Wave 21.2) ──
+	// Plan-cadence probing of critical pages. The cron tick is 60s but
+	// each env's actual cadence is enforced inside runProbeCronPass via
+	// the probeLastRunAt debounce (max=5min, pro=15min, vestigio=60min).
+	// On hash diff vs prior probe, the cron enqueues a targeted audit
+	// cycle via the audit-cycle-queue with scopeJson pointing at the
+	// changed URL — the audit-runner reads scopeJson and routes to
+	// engine.run({ scope: { kind: 'targeted', url } }).
+	const { runProbeCronPass } = await import("../apps/probe-runner/cron-pass");
+	const runProbe = async () => {
+		await withLeadership("probe-cron", { ttlSec: 90 }, async () => {
+			try {
+				const r = await runProbeCronPass(prisma);
+				if (r.envsProbed > 0 || r.changesDetected > 0) {
+					console.log(
+						`[probe-cron] scanned=${r.envsScanned} probed=${r.envsProbed} skipped=${r.envsSkipped} changes=${r.changesDetected} enqueued=${r.cyclesEnqueued} errors=${r.errors} took=${r.durationMs}ms`,
+					);
+				}
+			} catch (err) {
+				console.error("[probe-cron] pass failed:", err);
+			}
+		});
+	};
+	// No boot pass — every env's debounce is the source of truth, and
+	// the first tick lands within 60s anyway. Skipping boot avoids a
+	// surge of probes on every restart.
+	setInterval(runProbe, PROBE_INTERVAL_MS);
+	console.log("✓ Probe cron registered (60s tick; per-env cadence via debounce)");
 
 	// ── MP PIX dunning cron ──
 	// Hourly leader-elected pass that issues fresh PIX charges, fires

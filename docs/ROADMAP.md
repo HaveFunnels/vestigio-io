@@ -2820,15 +2820,17 @@ This is on the user's blocker list independent of always-on — adblocker brittl
 - Webhook: HTTP POST signed with HMAC.
 - WhatsApp (optional): start with [unofficial lib](../.claude/projects/-Users-luisgall-Downloads-Vestigio-io-vestigio-io/memory/) (Baileys / whatsapp-web.js via Playwright) for early-stage. Plan migration to Meta Cloud API after ~50 customers receiving alerts.
 
-**Step 21.5 — Monthly "value caught" report (3-5 days)**
+**Step 21.5 — Monthly "value caught" report (3-5 days)** ✅ shipped 2026-05-22
 
-This is the stickiness lever. Without it, always-on is "fica vigiando." With it, it's "tô te poupando $X/mês."
+This is the stickiness lever. Without it, always-on is "fica vigiando." With it, it's "tô te poupando R$ X/mês."
 
-- Cron: monthly per env on the 1st (or on subscription anniversary).
-- Source of truth: `Decision.status` transitions from Wave 20.4 (`Resolved` decisions = captured value, computed from their `value_case.range_mid` at resolution time).
-- Aggregation: sum of `value_case.range_mid` for all decisions that transitioned to `Resolved` during the month + alert count + diff count.
-- Delivery: email PDF with the explicit framing "Vestigio caught $X this month."
-- Dashboard widget: same data, always visible.
+- ✅ **Core engine**: `packages/value-caught/index.ts` — `computeValueCaught(prisma, envId, start, end)` returns `ValueCaughtSummary` (resolved count, total caught midpoint/min/max, top 5 resolved findings). Convenience wrappers `computeValueCaughtForPriorMonth` + `computeValueCaughtForCurrentMonth`.
+- ✅ **Source of truth**: queries `Finding.status='resolved' AND statusChangedAt BETWEEN window` against the `(environmentId, status, statusChangedAt)` index from Wave 20.4 — single indexed scan, fast even at 100k+ findings.
+- ✅ **Daily cron with idempotency**: `src/libs/value-caught-monthly.ts` — runs daily via `instrumentation-node.ts`, leader-elected, only fires deliveries in days 1-7 of the new month. Idempotency via NotificationLog `(userId, event, createdAt >= windowEnd)` query. Zero-resolution months are skipped (no "we caught R$0" emails).
+- ✅ **Email template**: pt-BR + en in `notification-templates.ts` under `value_caught_monthly`. Subject: "Vestigio capturou R$ {{amount}} este mês". CTA to `/app/findings?status=resolved`.
+- ✅ **Dashboard widget endpoint**: `GET /api/value-caught?envId=<id>&window=current|prior` — auth-checked, returns the same `ValueCaughtSummary` shape as the cron uses. Default window=current so the UI shows the in-flight tally.
+- ✅ **Tests**: `tests/value-caught.test.ts` — 7 tests covering aggregation (env scoping, status filter, window math), zero-result behavior, top-N sorting + cap, window-helper math (current/prior, December→January rollover).
+- 🔄 **Deferred**: PDF rendering (email today is HTML only — adding a PDF attachment is purely cosmetic and adds Brevo template complexity without changing the captured-value narrative). Frontend widget rendering on the dashboard (the API is in place; the React component lives in the next UI sweep).
 
 ### Wave 21 — Acceptance criteria
 

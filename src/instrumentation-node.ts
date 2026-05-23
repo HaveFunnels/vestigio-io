@@ -550,6 +550,40 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	setInterval(runInventoryPrune, INVENTORY_PRUNE_INTERVAL_MS);
 	console.log("✓ Inventory orphan prune cron registered (24h interval, 60d grace)");
 
+	// ── 21.5: Monthly value-caught report ──
+	// Daily-with-idempotency cron. Each tick covers the prior calendar
+	// month and only fires within the first 7 days of the new month.
+	// The NotificationLog `tag` field is the dedup key, so re-runs are
+	// safe even without a leader-elected lock (we still scope-lock for
+	// concurrent-replica protection).
+	const { runMonthlyValueCaughtPass } = await import("./libs/value-caught-monthly");
+	const runValueCaughtMonthly = async () => {
+		await withLeadership(
+			"value-caught-monthly",
+			{ ttlSec: 300 },
+			async () => {
+				try {
+					const r = await runMonthlyValueCaughtPass();
+					if (r.envsEvaluated > 0 || r.reportsSent > 0) {
+						console.log(
+							`[value-caught-monthly] envs=${r.envsEvaluated} sent=${r.reportsSent} skipped=${r.skipped} errors=${r.errors}`,
+						);
+					}
+				} catch (err) {
+					console.error("[value-caught-monthly] pass failed:", err);
+				}
+			},
+		);
+	};
+	// Run once per day. The internal early-month gate inside the pass
+	// is what limits actual delivery to days 1-7 of each month.
+	const VALUE_CAUGHT_INTERVAL_MS = 24 * 60 * 60 * 1000;
+	// Boot pass — catches early-month customers if the previous process
+	// missed the window (e.g. deploy at 23:59 on day 1).
+	runValueCaughtMonthly();
+	setInterval(runValueCaughtMonthly, VALUE_CAUGHT_INTERVAL_MS);
+	console.log("✓ Value-caught monthly cron registered (24h interval, fires days 1-7 of each month)");
+
 	// ── 3.13: Daily digest email ──
 	const { sendDailyDigests } = await import("./libs/cycle-digest");
 	const runDigest = async () => {

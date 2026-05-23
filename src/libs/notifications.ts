@@ -53,7 +53,11 @@ export type NotificationEvent =
 	| "pix_reminder_2d"
 	| "pix_reminder_today"
 	| "pix_confirmed"
-	| "pix_suspended";
+	| "pix_suspended"
+	// Wave 21.5 — monthly "Vestigio caught $X this month" report
+	// sent on the first ~7 days of each new month. Idempotent via
+	// the tag value-caught:{envId}:{YYYYMM}.
+	| "value_caught_monthly";
 
 interface BaseNotification {
 	event: NotificationEvent;
@@ -478,6 +482,14 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 			// Release notes / changelog announcements — opt-out via
 			// preference toggle. Defaults to true.
 			return prefs.productUpdates;
+		case "value_caught_monthly":
+			// Wave 21.5 — monthly value-caught report. Defaults on; the
+			// dashboard widget shows the same data so opt-out is a soft
+			// preference (no information loss). Reuses alertOnDigest as
+			// the toggle since it's conceptually the same "periodic
+			// summary email" channel — splitting the pref would require
+			// a Prisma migration for a low-value distinction.
+			return prefs.alertOnDigest ?? true;
 	}
 }
 

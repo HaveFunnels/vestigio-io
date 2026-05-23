@@ -175,8 +175,8 @@ runSuite('cadenceForPlan', () => {
   });
 
   test('all known plans have a positive interval', () => {
-    for (const [, cadence] of Object.entries(PLAN_CADENCE)) {
-      assert(cadence.intervalMinutes > 0);
+    for (const [plan, cadence] of Object.entries(PLAN_CADENCE)) {
+      assert(cadence.intervalMinutes > 0, `${plan} interval must be positive`);
     }
   });
 });

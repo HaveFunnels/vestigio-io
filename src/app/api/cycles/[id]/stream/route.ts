@@ -39,7 +39,58 @@ interface CycleSnapshot {
 	pagesDiscovered: number;
 	findingsCount: number;
 	durationMs: number;
+	// Wave 22 Fase B — phase-level progress + heal signal.
+	currentPhase: string | null;
+	phaseUpdatedAt: string | null;
+	healing: { reason: string; sinceMs: number } | null;
 }
+
+interface IdentitySnapshot {
+	industry: string | null;
+	industryConfidence: number | null;
+	primaryLocale: string | null;
+	detectedPlatforms: string[];
+	aiBotPolicy: unknown;
+}
+
+interface FindingPreview {
+	id: string;
+	inferenceKey: string;
+	title: string;
+	severity: string;
+	surface: string;
+	impactMidpoint: number;
+}
+
+// Customer-facing label for each engine yield. Keeps the stream voice
+// product-shaped ("Identificando o prejuízo") instead of log-shaped
+// ("core_inferences"). Server-side mapping so non-en customers see the
+// localized phrase too — extend with `phaseNarrativeI18n[locale][key]`
+// when we add per-locale narration. For now pt-BR is the default since
+// every paying customer is on pt-BR.
+const PHASE_NARRATIVE: Record<string, string> = {
+	evidence_quality_and_integration: "Coletando sinais de qualidade",
+	graph_and_signals: "Construindo o grafo de sinais",
+	core_inferences: "Identificando o prejuízo",
+	per_pack_decisions: "Avaliando cada superfície comercial",
+	behavioral_packs: "Analisando comportamento",
+	cross_domain_compound_inferences: "Conectando os padrões",
+	suppression_penalties: "Aplicando filtros de qualidade",
+	intelligence_layer: "Sintetizando inteligência",
+	final_assembly: "Finalizando audit",
+};
+export function narrateForPhase(phase: string | null | undefined): string {
+	if (!phase) return "Mapeando seu domínio";
+	return PHASE_NARRATIVE[phase] || phase;
+}
+
+// Heal triggers: cycle is "running" but the phase hasn't advanced in
+// HEAL_PHASE_STALE_MS, OR heartbeat is older than HEAL_HEARTBEAT_STALE_MS.
+// We only surface the BANNER to the customer — the actual heal cron in
+// apps/audit-runner already runs every 60s. This is just to make the
+// auto-heal visible instead of showing an apparently-frozen progress bar.
+const HEAL_PHASE_STALE_MS = 90_000; // 90s without phase advance
+const HEAL_HEARTBEAT_STALE_MS = 120_000; // 2min without heartbeat
 
 export async function GET(
 	request: Request,
@@ -84,7 +135,10 @@ export async function GET(
 
 	const encoder = new TextEncoder();
 
-	async function snapshot(): Promise<CycleSnapshot | null> {
+	async function snapshot(): Promise<{
+		cycle: CycleSnapshot;
+		environmentId: string | null;
+	} | null> {
 		const row = await prisma.auditCycle.findUnique({
 			where: { id: cycleId },
 			select: {
@@ -92,37 +146,26 @@ export async function GET(
 				cycleType: true,
 				createdAt: true,
 				completedAt: true,
+				environmentId: true,
+				currentPhase: true,
+				phaseUpdatedAt: true,
+				lastHeartbeatAt: true,
 			},
 		});
 		if (!row) return null;
 
-		// Finding count: everything persisted so far for this cycle. Used
-		// both as a progress indicator (climbs during the run) and as the
-		// final tally on `complete`.
-		const findingsCount = await prisma.finding.count({
-			where: { cycleId },
-		});
+		// Finding count: everything persisted so far for this cycle.
+		const findingsCount = await prisma.finding.count({ where: { cycleId } });
 
-		// Pages discovered: counted from PageInventoryItem rows created
-		// during this cycle. We filter by createdAt >= cycle start time to
-		// only count pages discovered in THIS cycle, not historical ones.
+		// Pages discovered during this cycle.
 		let pagesDiscovered = 0;
 		try {
-			const cycleRow = await prisma.auditCycle.findUnique({
-				where: { id: cycleId },
-				select: { environmentId: true, createdAt: true },
+			pagesDiscovered = await prisma.pageInventoryItem.count({
+				where: {
+					environmentRef: row.environmentId,
+					createdAt: { gte: row.createdAt },
+				},
 			});
-			if (cycleRow?.environmentId) {
-				// PageInventoryItem carries `environmentRef` (plain string column
-				// set to the env's id) — not a Prisma relation via environmentId.
-				// Filter by createdAt >= cycle start to scope to current cycle only.
-				pagesDiscovered = await prisma.pageInventoryItem.count({
-					where: {
-						environmentRef: cycleRow.environmentId,
-						createdAt: { gte: cycleRow.createdAt },
-					},
-				});
-			}
 		} catch {
 			// defensive — progress bar still works with pagesDiscovered=0
 		}
@@ -130,13 +173,104 @@ export async function GET(
 		const durationMs =
 			(row.completedAt?.getTime() ?? Date.now()) - row.createdAt.getTime();
 
+		// Wave 22 Fase B — heal signal. Surfaced to the UI so the
+		// customer sees an "auto-recovering" banner instead of an
+		// apparently-frozen progress card.
+		let healing: CycleSnapshot["healing"] = null;
+		if (row.status === "running") {
+			const nowMs = Date.now();
+			if (row.phaseUpdatedAt) {
+				const sinceMs = nowMs - row.phaseUpdatedAt.getTime();
+				if (sinceMs > HEAL_PHASE_STALE_MS) {
+					healing = { reason: "stuck_in_phase", sinceMs };
+				}
+			}
+			if (!healing && row.lastHeartbeatAt) {
+				const sinceMs = nowMs - row.lastHeartbeatAt.getTime();
+				if (sinceMs > HEAL_HEARTBEAT_STALE_MS) {
+					healing = { reason: "heartbeat_stale", sinceMs };
+				}
+			}
+		}
+
 		return {
-			status: row.status,
-			cycleType: row.cycleType,
-			pagesDiscovered,
-			findingsCount,
-			durationMs,
+			cycle: {
+				status: row.status,
+				cycleType: row.cycleType,
+				pagesDiscovered,
+				findingsCount,
+				durationMs,
+				currentPhase: row.currentPhase,
+				phaseUpdatedAt: row.phaseUpdatedAt?.toISOString() ?? null,
+				healing,
+			},
+			environmentId: row.environmentId,
 		};
+	}
+
+	async function identitySnapshot(envId: string): Promise<IdentitySnapshot | null> {
+		try {
+			const fp = await prisma.domainFingerprint.findUnique({
+				where: { environmentId: envId },
+				select: {
+					industry: true,
+					industryConfidence: true,
+					primaryLocale: true,
+					detectedPlatforms: true,
+					aiBotPolicy: true,
+				},
+			});
+			if (!fp) return null;
+			return {
+				industry: fp.industry,
+				industryConfidence: fp.industryConfidence,
+				primaryLocale: fp.primaryLocale,
+				detectedPlatforms: fp.detectedPlatforms || [],
+				aiBotPolicy: fp.aiBotPolicy,
+			};
+		} catch {
+			return null;
+		}
+	}
+
+	async function findingsSince(
+		lastFindingId: string | null,
+	): Promise<FindingPreview[]> {
+		try {
+			const rows = await prisma.finding.findMany({
+				where: {
+					cycleId,
+					...(lastFindingId ? { id: { gt: lastFindingId } } : {}),
+				},
+				orderBy: { id: "asc" },
+				take: 20,
+				select: {
+					id: true,
+					inferenceKey: true,
+					severity: true,
+					surface: true,
+					impactMidpoint: true,
+					projection: true,
+				},
+			});
+			return rows.map((row) => {
+				let title = row.inferenceKey;
+				try {
+					const proj = JSON.parse(row.projection);
+					if (proj?.title) title = proj.title;
+				} catch {}
+				return {
+					id: row.id,
+					inferenceKey: row.inferenceKey,
+					title,
+					severity: row.severity,
+					surface: row.surface || "",
+					impactMidpoint: row.impactMidpoint || 0,
+				};
+			});
+		} catch {
+			return [];
+		}
 	}
 
 	const stream = new ReadableStream({
@@ -171,6 +305,17 @@ export async function GET(
 				}
 			}
 
+			// Wave 22 Fase B — three pieces of state we diff across ticks so
+			// we only emit events when something genuinely changed (saves
+			// bytes + lets the client render reactively):
+			//   - lastPhaseEmitted     → phase boundary tracking
+			//   - lastFindingIdEmitted → newest finding row seen
+			//   - identityEmitted      → DomainFingerprint already streamed
+			let lastPhaseEmitted: string | null = null;
+			let lastFindingIdEmitted: string | null = null;
+			let identityEmitted = false;
+			let lastHealingKey: string | null = null;
+
 			// Send an initial snapshot immediately so the UI paints without
 			// waiting a full poll interval.
 			const initial = await snapshot();
@@ -179,10 +324,32 @@ export async function GET(
 				close();
 				return;
 			}
-			lastSerialized = JSON.stringify(initial);
-			send("status", initial);
-			if (initial.status === "complete" || initial.status === "failed") {
-				send("complete", { status: initial.status, cycleId });
+			lastSerialized = JSON.stringify(initial.cycle);
+			send("status", initial.cycle);
+			if (initial.cycle.currentPhase) {
+				lastPhaseEmitted = initial.cycle.currentPhase;
+				send("phase", {
+					phase: initial.cycle.currentPhase,
+					narrative: narrateForPhase(initial.cycle.currentPhase),
+					at: initial.cycle.phaseUpdatedAt,
+				});
+			}
+			if (initial.environmentId) {
+				const id = await identitySnapshot(initial.environmentId);
+				if (id && (id.industry || id.detectedPlatforms.length > 0 || id.primaryLocale)) {
+					identityEmitted = true;
+					send("identity", id);
+				}
+			}
+			// Emit any findings that already exist (cycle may have been
+			// running for some time before the client connected).
+			const initialFindings = await findingsSince(null);
+			if (initialFindings.length > 0) {
+				lastFindingIdEmitted = initialFindings[initialFindings.length - 1].id;
+				for (const f of initialFindings) send("finding", f);
+			}
+			if (initial.cycle.status === "complete" || initial.cycle.status === "failed") {
+				send("complete", { status: initial.cycle.status, cycleId });
 				close();
 				return;
 			}
@@ -211,13 +378,56 @@ export async function GET(
 						close();
 						return;
 					}
-					const serialized = JSON.stringify(snap);
+
+					// Aggregate status diff — only emit when something changed.
+					const serialized = JSON.stringify(snap.cycle);
 					if (serialized !== lastSerialized) {
 						lastSerialized = serialized;
-						send("status", snap);
+						send("status", snap.cycle);
 					}
-					if (snap.status === "complete" || snap.status === "failed") {
-						send("complete", { status: snap.status, cycleId });
+
+					// Phase event — fires when currentPhase transitions.
+					if (snap.cycle.currentPhase && snap.cycle.currentPhase !== lastPhaseEmitted) {
+						lastPhaseEmitted = snap.cycle.currentPhase;
+						send("phase", {
+							phase: snap.cycle.currentPhase,
+							narrative: narrateForPhase(snap.cycle.currentPhase),
+							at: snap.cycle.phaseUpdatedAt,
+						});
+					}
+
+					// Identity — fires once, when DomainFingerprint materializes.
+					if (!identityEmitted && snap.environmentId) {
+						const id = await identitySnapshot(snap.environmentId);
+						if (id && (id.industry || id.detectedPlatforms.length > 0 || id.primaryLocale)) {
+							identityEmitted = true;
+							send("identity", id);
+						}
+					}
+
+					// Healing — emitted on transition (none → healing or change of reason).
+					const healingKey = snap.cycle.healing
+						? `${snap.cycle.healing.reason}`
+						: null;
+					if (healingKey !== lastHealingKey) {
+						lastHealingKey = healingKey;
+						if (snap.cycle.healing) {
+							send("healing", snap.cycle.healing);
+						} else if (lastHealingKey === null) {
+							// transitioned out of healing — clear banner client-side.
+							send("healing_clear", {});
+						}
+					}
+
+					// Findings — every row newer than lastFindingIdEmitted.
+					const fresh = await findingsSince(lastFindingIdEmitted);
+					for (const f of fresh) {
+						send("finding", f);
+						lastFindingIdEmitted = f.id;
+					}
+
+					if (snap.cycle.status === "complete" || snap.cycle.status === "failed") {
+						send("complete", { status: snap.cycle.status, cycleId });
 						close();
 						return;
 					}

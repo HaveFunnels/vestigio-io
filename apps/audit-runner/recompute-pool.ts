@@ -242,13 +242,18 @@ function getPool(): RecomputePool {
  */
 export async function recomputeWithPool(
 	input: MultiPackInput,
+	onPhase?: import("../../packages/workspace").RecomputePhaseHandler,
 ): Promise<MultiPackResult> {
 	if (process.env.RECOMPUTE_USE_WORKER_THREADS !== "1") {
 		// Lazy import to avoid pulling the engine into the same Node
 		// context when the flag is off and we'd never use it.
 		const { recomputeAllAsync } = await import("../../packages/workspace");
-		return await recomputeAllAsync(input);
+		return await recomputeAllAsync(input, onPhase);
 	}
+	// Worker-thread path does not yet forward onPhase events back across
+	// the postMessage boundary — that's a follow-up if worker_threads is
+	// ever turned on by a customer. For now the default in-process path
+	// is the only one the dashboard SSE stream depends on.
 	return await getPool().run(input);
 }
 

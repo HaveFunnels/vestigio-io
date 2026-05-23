@@ -390,6 +390,23 @@ model AuditCycle {
   // Null until the next audit completes; legacy MCP path serves as fallback.
   projectionsCache Json?
 
+  // Wave 22 Fase B — phase-level progress.
+  // The recompute generator yields named phases (graph_and_signals,
+  // core_inferences, …). The drainer in apps/audit-runner persists each
+  // phase transition so the dashboard SSE stream can render fine-grained
+  // progress without polling the engine itself.
+  /// Last yield value emitted by the generator. Null while pending.
+  currentPhase     String?
+  /// Wall-clock timestamp of the last phase transition. Used by the
+  /// dashboard SSE stream AND by the heal cron as an additional
+  /// "stuck-in-phase" signal (more specific than just heartbeat).
+  phaseUpdatedAt   DateTime?
+  /// Compact history of phase transitions for this cycle:
+  ///   [{ "phase": "graph_and_signals", "at": "2026-…", "durationMs": 1234 }, …]
+  /// Capped at ~12 entries (one per yield + final) so the row stays
+  /// small even on slow cycles.
+  phaseHistory     Json?
+
   organization Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   environment  Environment     @relation(fields: [environmentId], references: [id], onDelete: Cascade)
   evidence     Evidence[]

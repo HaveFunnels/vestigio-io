@@ -36,9 +36,12 @@ import { useTranslations } from "next-intl";
 import { DashboardGrid } from "./DashboardGrid";
 import { DashboardHeader, type SaveStatus } from "./DashboardHeader";
 import { CatalogDrawer } from "./CatalogDrawer";
-import FirstAuditProgress from "@/components/console/FirstAuditProgress";
+// Wave 22 Fase B — FirstAuditProgress (heuristic-driven 5-stage bar) was
+// superseded by FirstAuditCard, which consumes the rich SSE stream
+// (phase/identity/finding/healing events). Same callback contract.
+import FirstAuditCard from "@/components/console/FirstAuditCard";
 import FirstAuditCelebration from "@/components/console/FirstAuditCelebration";
-import type { FirstAuditCompletePayload } from "@/components/console/FirstAuditProgress";
+import type { FirstAuditCompletePayload } from "@/components/console/FirstAuditCard";
 import {
 	DEFAULT_LAYOUT,
 	type WidgetInstance,
@@ -242,7 +245,7 @@ export function DashboardShell({
 			{/* Wave 3.18A+B: First-audit progress + preview (renders only
 			    when it detects a first audit is running; null otherwise) */}
 			{showFirstAudit && (
-				<FirstAuditProgress onComplete={handleFirstAuditComplete} />
+				<FirstAuditCard onComplete={handleFirstAuditComplete} />
 			)}
 
 			<DashboardGrid

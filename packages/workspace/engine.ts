@@ -34,7 +34,12 @@
 //     does not regress when the orchestrator gets refactored.
 // ──────────────────────────────────────────────
 
-import { recomputeAllAsync, MultiPackInput, MultiPackResult } from "./recompute";
+import {
+  recomputeAllAsync,
+  MultiPackInput,
+  MultiPackResult,
+  type RecomputePhaseHandler,
+} from "./recompute";
 import { projectAll } from "../projections";
 import type { ProjectionResult, FindingProjection, ActionProjection } from "../projections";
 import type { EngineTranslations } from "../projections/types";
@@ -84,7 +89,17 @@ export interface EngineRunInput extends MultiPackInput {
    * exists. Layering: this package can't import apps/audit-runner, so
    * the alternative backend is injected from the caller.
    */
-  recompute?: (input: MultiPackInput) => Promise<MultiPackResult>;
+  recompute?: (
+    input: MultiPackInput,
+    onPhase?: RecomputePhaseHandler,
+  ) => Promise<MultiPackResult>;
+  /**
+   * Wave 22 Fase B — invoked once per recompute phase boundary. The
+   * audit-runner uses this to persist progress on the AuditCycle row
+   * so the dashboard SSE stream can render fine-grained phase state.
+   * See `RecomputePhaseHandler` for the shape.
+   */
+  onPhase?: RecomputePhaseHandler;
 }
 
 export interface EngineRunOutput {
@@ -112,7 +127,7 @@ export async function run(input: EngineRunInput): Promise<EngineRunOutput> {
   // integration polling + re-fetches only the target URL; the contract
   // here is stable regardless of how that fills out.
   const recomputeFn = input.recompute ?? recomputeAllAsync;
-  const multipack = await recomputeFn(input);
+  const multipack = await recomputeFn(input, input.onPhase);
 
   let projections = projectAll(multipack, input.translations, {
     previousFindings: input.previousFindings,

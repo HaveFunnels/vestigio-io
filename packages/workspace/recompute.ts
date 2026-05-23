@@ -1465,7 +1465,23 @@ export function recomputeAll(input: MultiPackInput): MultiPackResult {
  * Importing `@opentelemetry/api` is lazy + best-effort so the function
  * still works on machines where OTel isn't installed (e.g. tests).
  */
-export async function recomputeAllAsync(input: MultiPackInput): Promise<MultiPackResult> {
+/**
+ * Wave 22 Fase B — optional callback fired at every phase boundary.
+ * Receives the yield value (phase name) + monotonic ms duration of
+ * the PREVIOUS phase. Used by the audit-runner to persist phase
+ * transitions on AuditCycle so the dashboard SSE stream can render
+ * fine-grained progress. Errors inside onPhase are swallowed — the
+ * engine must never crash because a side-channel logger failed.
+ */
+export type RecomputePhaseHandler = (
+  phase: string,
+  prevPhaseDurationMs: number,
+) => void | Promise<void>;
+
+export async function recomputeAllAsync(
+  input: MultiPackInput,
+  onPhase?: RecomputePhaseHandler,
+): Promise<MultiPackResult> {
   // Best-effort tracer acquisition. When OTel isn't present (tests,
   // legacy environments), we get a no-op tracer and the rest of the
   // code path is unaffected.
@@ -1488,14 +1504,27 @@ export async function recomputeAllAsync(input: MultiPackInput): Promise<MultiPac
   while (true) {
     const step = gen.next();
     const now = Date.now();
+    const phaseName = step.done ? "final_assembly" : step.value;
+    const prevPhaseDurationMs = now - phaseStart;
 
     if (tracer) {
       // Phase name comes from the yield value (or "final_assembly" for
       // the implicit phase that runs after the last yield).
-      const phaseName = step.done ? "final_assembly" : step.value;
       tracer
         .startSpan(`recompute.${phaseName}`, { startTime: phaseStart })
         .end(now);
+    }
+
+    // Wave 22 Fase B — fire the phase callback BEFORE we hand control
+    // back to the event loop, so the audit-runner can persist progress
+    // on the AuditCycle row in lock-step with the engine. Errors are
+    // swallowed: a failed UPDATE must NOT crash the cycle.
+    if (onPhase) {
+      try {
+        await Promise.resolve(onPhase(phaseName, prevPhaseDurationMs));
+      } catch (err) {
+        console.error("[recompute] onPhase callback threw (ignored):", err);
+      }
     }
 
     if (step.done) return step.value;

@@ -1662,6 +1662,43 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// process recompute otherwise.
 				recompute: recomputeWithPool,
 				previousFindings,
+				// Wave 22 Fase B — phase progress side-channel. The drainer
+				// in recomputeAllAsync invokes this at every yield boundary.
+				// We persist on AuditCycle so the dashboard SSE stream can
+				// emit phase events without re-querying the engine. Errors
+				// are swallowed inside the engine (the cycle must not crash
+				// because a progress UPDATE failed).
+				onPhase: async (phase, prevPhaseDurationMs) => {
+					const now = new Date();
+					try {
+						// Append to history; cap at 12 entries to keep row size
+						// bounded even on slow / re-tried cycles.
+						const cur = await prisma.auditCycle.findUnique({
+							where: { id: cycleId },
+							select: { phaseHistory: true },
+						});
+						const history = Array.isArray(cur?.phaseHistory)
+							? (cur!.phaseHistory as Array<{ phase: string; at: string; durationMs: number }>)
+							: [];
+						const nextHistory = [
+							...history,
+							{ phase, at: now.toISOString(), durationMs: prevPhaseDurationMs },
+						].slice(-12);
+						await prisma.auditCycle.update({
+							where: { id: cycleId },
+							data: {
+								currentPhase: phase,
+								phaseUpdatedAt: now,
+								phaseHistory: nextHistory,
+							},
+						});
+					} catch (err) {
+						console.warn(
+							`[audit-runner ${cycleId}] phase-persist failed for ${phase}:`,
+							err,
+						);
+					}
+				},
 			});
 			const multiPackResult = engineOut.multipack;
 			const projections = engineOut.projections;

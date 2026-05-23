@@ -7,7 +7,7 @@ export type { ChargebackWorkspaceConfig, ChargebackWorkspaceResult, ChargebackCo
 export { createSecurityWorkspace } from './security-workspace';
 export type { SecurityWorkspaceConfig, SecurityWorkspaceResult, SecurityContext, SecurityRiskFactor, SecuritySummary } from './security-workspace';
 export { recompute, recomputeAll, recomputeAllAsync } from './recompute';
-export type { RecomputeInput, RecomputeResult, GraphStats, MultiPackInput, MultiPackResult } from './recompute';
+export type { RecomputeInput, RecomputeResult, GraphStats, MultiPackInput, MultiPackResult, RecomputePhaseHandler } from './recompute';
 export { buildConfidenceAudit } from './confidence-audit';
 export type { ConfidenceIntegrityResult, ConfidenceAdjustment, ConfidenceIssue, LayerImpactSummary, ConfidenceLayer } from './confidence-audit';
 export { validateBehavior } from './behavioral-validation';

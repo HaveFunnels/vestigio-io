@@ -222,6 +222,10 @@ export default function useOnboardingForm() {
 	const [domainChecking, setDomainChecking] = useState(false);
 	const [domainWarning, setDomainWarning] = useState<string | null>(null);
 
+	// Wave 22 Fase B — new-env flow flag. Read once here so every gate
+	// below (prefill, redirect, submit) can branch on it consistently.
+	const isNewEnvFlow = searchParams.get("new_env") === "true";
+
 	// ── Prefill from existing lead/profile data ──
 	// If the user was promoted from a lead (promoteLeadToOrg), their
 	// BusinessProfile + Environment already exist. Fetch and prefill
@@ -229,6 +233,17 @@ export default function useOnboardingForm() {
 	const [prefillLoaded, setPrefillLoaded] = useState(false);
 	useEffect(() => {
 		if (prefillLoaded) return;
+		// Wave 22 Fase B — new-env flow already pre-filled the domain via
+		// localStorage from the AddEnvironmentPanel handoff. Skipping the
+		// onboard/prefill round-trip here avoids overwriting the freshly
+		// entered domain with the *first* env's domain (the prefill
+		// endpoint reads the oldest env by createdAt asc, not the active
+		// one). Other prefill fields (business profile) DO apply to this
+		// flow but the user can re-confirm in the wizard.
+		if (isNewEnvFlow) {
+			setPrefillLoaded(true);
+			return;
+		}
 		async function loadPrefill() {
 			try {
 				const res = await fetch("/api/onboard/prefill");
@@ -246,7 +261,9 @@ export default function useOnboardingForm() {
 				// BUG-12 fix: If environment is ALREADY activated, the user is
 				// stuck here due to a stale JWT (hasActivatedEnv=false in token).
 				// Force session refresh and redirect to the app.
-				if (prefill.activated) {
+				// Wave 22 Fase B — exception: new-env flow MUST stay on the
+				// onboarding wizard even when a sibling env is activated.
+				if (prefill.activated && !isNewEnvFlow) {
 					await updateSession();
 					router.replace("/app");
 					return;
@@ -337,6 +354,7 @@ export default function useOnboardingForm() {
 
 	// ── Redirect if already onboarded ──
 	useEffect(() => {
+		if (isNewEnvFlow) return; // setup-then-audit flow for new env
 		if ((session?.user as any)?.hasOrganization === true) {
 			const envActivated = (session?.user as any)?.hasActivatedEnv === true;
 			fetch("/api/usage")
@@ -351,7 +369,7 @@ export default function useOnboardingForm() {
 				})
 				.catch(() => {});
 		}
-	}, [session, paymentSuccess, router]);
+	}, [session, paymentSuccess, router, isNewEnvFlow]);
 
 	// ── Payment success polling ──
 	useEffect(() => {

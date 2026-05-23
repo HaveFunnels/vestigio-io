@@ -439,10 +439,18 @@ function AddEnvironmentPanel({
 	function handleGoTo() {
 		if (!created) return;
 		document.cookie = `active_env=${created.id};path=/;max-age=${60 * 60 * 24 * 365}`;
-		// Land the user on the dashboard for the new env. First audit
-		// auto-triggers from /app per Wave 22 — the dashboard sees an
-		// activated env with zero cycles and dispatches one.
-		router.push("/app");
+		// Wave 22 Fase B — setup-then-audit handoff. The new env exists
+		// but is NOT yet activated; we route through the onboarding wizard
+		// so the user can set the business profile + landing URL for this
+		// project before the first audit fires. Pre-fill the domain via
+		// localStorage (same pattern used by the MiniCalc handoff) so the
+		// user doesn't re-type what they JUST entered in this modal.
+		try {
+			localStorage.setItem("vestigio_onboard_domain", created.domain);
+		} catch {
+			// localStorage disabled — wizard will ask for domain
+		}
+		router.push("/app/onboarding?new_env=true");
 	}
 
 	function handleStay() {

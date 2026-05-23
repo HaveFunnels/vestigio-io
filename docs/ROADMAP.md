@@ -2844,6 +2844,129 @@ This is the stickiness lever. Without it, always-on is "fica vigiando." With it,
 
 ---
 
+## Wave 21.6 — Meta Ads CSV import bridge (data-source pivot)
+
+**Background.** The integrations deep-dive (2026-05-23) found that UTMify, listed as a UTM-attribution source, is inbound-only — they accept POST from gateways but never expose data outward. Eliminating UTMify forced a reframing: ad-spend → revenue attribution now anchors on **Meta + Google Ads** (with **Shopify-equivalents** as the order-side anchor). Both Meta and Google sit behind partner-app review (Meta is in review now; Google is deferred). The CSV import bridge ships first so customers see ad ROI BEFORE the partner-app approval lands.
+
+The havefunnels.com customer is the immediate beneficiary — they run Meta ads, and "we see your conversion finding but not your ad cost" is exactly the gap closing here.
+
+### Wave 21.6 — Goals
+
+1. **Customer uploads Ads Manager CSV → engine sees ad spend within minutes.** No app review, no OAuth, no Meta-side gate.
+2. **Ad-ROI finding class becomes computable** via the JOIN between Meta spend rows and Stripe / Shopify / gateway revenue rows.
+3. **CSV adapter architecture is reusable.** Google Ads / TikTok Ads / future partner CSVs ride the same scaffold with format-specific parsers.
+
+### Wave 21.6 — Sequence
+
+**Step 21.6.1 — Schema + CSV parser** (1-2 days)
+
+- New table `AdsCsvUpload` keyed by `(environmentId, provider, uploadedAt)`:
+  - `provider: 'meta' | 'google' | 'tiktok'`
+  - `dateRangeStart`, `dateRangeEnd` (extracted from the CSV header or filename)
+  - `rawCsvSha256` (idempotency: same CSV uploaded twice doesn't double-count)
+  - `rowsParsed`, `rowsSkipped`, `parserVersion`
+  - `parsedJson` (the normalized `MetaAdsSnapshotData` shape — same one the OAuth integration produces, so downstream consumers don't branch on source)
+- `packages/integrations/csv-parsers/meta.ts` — parses the standard Ads Manager export (campaign / ad set / ad / spend / impressions / clicks / attributed conversions / attributed revenue). Tolerant of column-order changes; uses header-name matching with synonyms. Aggregates to the same shape the OAuth poller would produce.
+- Unit tests with golden CSVs (small fixture set covering pt-BR Real currency formatting, blank columns Meta sometimes emits, the "Lifetime" vs "Custom date range" header variants).
+
+**Step 21.6.2 — Upload endpoint** (1 day)
+
+- `POST /api/integrations/meta-ads/csv` — multipart upload, owner-or-member auth, 5MB cap, MIME check.
+- Returns the parsed snapshot summary so the UI can preview before commit.
+- On commit, writes `AdsCsvUpload` row + emits an `IntegrationConnection` update so the next audit cycle picks it up via `integration_snapshots`.
+
+**Step 21.6.3 — Upload UI** (1-2 days)
+
+- New page section in `/app/integrations` ("Meta Ads — CSV bridge") with:
+  - Drag-and-drop file input.
+  - Date range parsed from the file shown for confirmation.
+  - Row count + aggregated spend preview.
+  - "Confirm + ingest" button.
+  - History: previous uploads listed with status (active, superseded, errored) so the customer can see what's currently feeding the engine.
+- Help link to a docs page explaining how to export the right CSV from Ads Manager (date range, columns to include).
+
+**Step 21.6.4 — Engine integration** (0.5 day)
+
+- `run-cycle.ts` already takes `integration_snapshots`. Add a loader that pulls the most recent `AdsCsvUpload` per env and feeds it as a `MetaAdsSnapshotData` snapshot alongside any OAuth-sourced data. CSV takes precedence when both exist for overlapping dates (CSV is operator-curated; OAuth is automatic — when the operator has gone to the trouble of uploading, they want that data).
+
+**Step 21.6.5 — Findings unlock** (1 day)
+
+- The `revenue_integrity` and `channel_integrity` packs already consume `MetaAdsSnapshotData` via the OAuth path. No new findings needed for the CSV path — same shape, same packs fire. Smoke test: upload a havefunnels Meta CSV, run a cycle, confirm `ad_spend_30d` surfaces in the dashboard.
+
+### Wave 21.6 — Acceptance criteria
+
+- Customer uploads a Meta Ads CSV; within 1 minute the file is parsed and a preview shows.
+- Customer confirms; within the next audit cycle the engine sees `MetaAdsSnapshotData` via the snapshot loader.
+- Re-uploading the same CSV is idempotent (rawCsvSha256 dedup).
+- Uploading a newer CSV supersedes the older one for the same date range.
+- Existing OAuth-sourced Meta snapshots still work when both are present.
+
+### Wave 21.6 — Estimated effort
+
+~4-6 days. The parser is the bulk of the work (Meta's CSV format has quirks). The endpoint + UI + engine wiring are small.
+
+### Wave 21.6 — Out of scope
+
+- Google Ads CSV parser — same scaffold, different parser. Schedule as Wave 21.6b when there's a paying customer using Google Ads.
+- Real-time ingest — CSV is a manual operator action. Real-time stays gated on the partner-app approval landing.
+- Inferring attribution beyond what the CSV columns provide. Whatever Meta's "attributed_conversions" column says is what we ingest; we don't run our own attribution model on top.
+
+---
+
+## Wave 21.7 — Shopify Custom Pixel (Web Pixels API) + scope expansion (data-source pivot)
+
+**Background.** Same deep-dive that pivoted away from UTMify identified Shopify as one of two pillars. The OAuth admin app is already shipped, but it sits on a minimal scope set (`read_orders`, `read_customers`) and there is no Custom Pixel implementation despite the catalog listing one. This wave fills both gaps.
+
+### Wave 21.7 — Goals
+
+1. **Behavioral signal floor for every Shopify customer**, adblock-blind and ITP-blind, via the Web Pixels API sandbox.
+2. **Expand the admin-app surface** with `read_products`, `read_inventory`, `read_themes`, `read_script_tags`, `read_checkouts`, `read_customer_events` — each unlocks a class of finding the current scopes can't see.
+3. **List the app on the Shopify App Store** (or unlisted-by-link as a first step) so non-development stores can install in 1 click.
+
+### Wave 21.7 — Sequence
+
+**Step 21.7.1 — Web Pixels API extension** (3-4 days)
+
+- New app extension type "Web Pixel" registered in our Shopify Partner dashboard.
+- Pixel source file (TypeScript compiled to a single bundled JS for the sandbox) subscribes to the Shopify standard events: `page_viewed`, `product_viewed`, `cart_viewed`, `collection_viewed`, `search_submitted`, `product_added_to_cart`, `cart_viewed`, `checkout_started`, `payment_info_submitted`, `checkout_completed`.
+- Events POST to `https://evt.<customer-domain>/shopify-pixel` (uses the Wave 21.1 CNAME proxy). Falls back to `https://api.vestigio.io/shopify-pixel` if no custom domain is configured.
+- Each event carries shop domain + event_type + event_id + payload + a Shopify-supplied `clientId`/`customerId` (when consented). Vestigio's ingest validates the shop domain against the OAuth connection.
+- Customer doesn't install the pixel manually — it auto-activates when the OAuth admin app is connected.
+
+**Step 21.7.2 — Pixel ingest endpoint** (1 day)
+
+- `POST /api/integrations/shopify/pixel` — accepts the pixel payload, validates the shop domain, persists as `RawBehavioralEvent` with a `source: 'shopify_pixel'` tag.
+- Same downstream consumer as the existing first-party pixel — behavioral findings (first impression, friction tax, path efficiency) fire for free.
+
+**Step 21.7.3 — Scope expansion** (2-3 days)
+
+- Bump `SHOPIFY_SCOPES` in [shopify/oauth/authorize/route.ts](src/app/api/integrations/shopify/oauth/authorize/route.ts) to include the expanded read scopes.
+- Implement scope-migration banner: existing connected stores see "We've expanded what Vestigio analyzes. Reconnect to unlock the new signals." with a re-OAuth flow that preserves the existing IntegrationConnection row.
+- Add per-scope adapters: theme reads → detect copy changes without probe; script_tags → spot competing pixels; inventory → out-of-stock alerts; checkouts → abandoned-cart finding (the missing piece for the cart-recovery narrative).
+
+**Step 21.7.4 — App Store listing (or unlisted-by-link)** (1-2 days, gated on Shopify review)
+
+- Submit the app for App Store review. While waiting, set up an unlisted-by-link install flow so any non-development store can install via a direct URL.
+- Required for the "1-click install" flow to work outside development stores.
+
+### Wave 21.7 — Acceptance criteria
+
+- A new Shopify customer connects the OAuth app; the Web Pixel auto-activates; within 1 hour the behavioral findings (first_impression, friction_tax, path_efficiency) start firing with real data.
+- An existing customer re-OAuths to the expanded scopes; the next cycle picks up products, inventory, themes, script_tags, checkouts.
+- A merchant who installs from a direct link (unlisted) completes the install in under 60 seconds with no developer involvement.
+
+### Wave 21.7 — Estimated effort
+
+~7-10 days, broken into roughly equal parts pixel + scope-expansion + app-listing. The pixel work is the most uncertain (Web Pixels API has its own runtime constraints; sandbox eval requires the bundle to be self-contained).
+
+### Wave 21.7 — Out of scope
+
+- Nuvemshop pixel equivalent — same pattern, schedule as Wave 21.7b after the Shopify version is validated.
+- WooCommerce plugin — different mechanism (WP plugin directory + `wp_head` hooks). Separate wave.
+- CAPI outbound (Vestigio → Meta) — different concern; schedule when there's customer demand.
+
+---
+
 ## What is NOT on this roadmap (Wave 20/21 specific)
 
 - Replacing the LLM provider. Anthropic / Haiku 4.5 / Sonnet 4.6 / Opus 4.7 stay.

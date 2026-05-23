@@ -11,6 +11,8 @@ import { startHealthCheckTimer } from "@/libs/health-checker";
 import { touchEnvActivity, resumeIfPaused } from "@/libs/env-activity";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 
 export const metadata = {
 	title: "Vestigio",
@@ -21,6 +23,42 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 	startHealthCheckTimer();
 
 	const orgCtx = await resolveOrgContext();
+
+	// Wave 22 Fase B+ — inactive-env detection. When the customer
+	// switched to (or the cookie points at) an env that hasn't been
+	// activated yet — typical case: clicked "Continuar em [atual]"
+	// after creating a new domain in the org panel — bounce them to
+	// the setup wizard so the first audit can fire. Otherwise they
+	// land on an empty dashboard with no obvious way to start.
+	//
+	// We only redirect on app routes that aren't already the
+	// onboarding flow itself OR the org page (where the customer
+	// might be explicitly inspecting envs without wanting to set
+	// one up right now). Admin impersonation also skips this — ops
+	// is debugging, not onboarding.
+	if (!orgCtx.isAdmin && orgCtx.envId && orgCtx.envId !== "default") {
+		const activeEnv = orgCtx.environments.find((e) => e.id === orgCtx.envId);
+		const isActivated = activeEnv?.activated === true;
+		if (!isActivated) {
+			const hdrs = await headers();
+			// Middleware sets x-pathname on every /app/* request. If the
+			// header is absent (some edge runtime cases, dev hot-reload
+			// boundary, or a direct asset request that slipped past the
+			// matcher), we degrade to NOT redirecting — better to show
+			// the empty dashboard than to risk an infinite redirect loop.
+			const pathname = hdrs.get("x-pathname");
+			if (pathname) {
+				const onSafePath =
+					pathname.startsWith("/app/onboarding") ||
+					pathname.startsWith("/app/organization") ||
+					pathname.startsWith("/app/billing") ||
+					pathname.startsWith("/app/settings");
+				if (!onSafePath) {
+					redirect("/app/onboarding?new_env=true");
+				}
+			}
+		}
+	}
 
 	// Session + impersonation state — needed by both the MCP bootstrap
 	// and the layout shell (impersonation banner).

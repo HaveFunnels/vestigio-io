@@ -90,8 +90,29 @@ export async function resolveOrgContext(): Promise<OrgContext> {
 
 		const org = membership.organization;
 		const allEnvs = org.environments;
-		// Default to first production env, fallback to first env
-		const defaultEnv = allEnvs.find(e => e.isProduction) || allEnvs[0];
+
+		// Wave 22 Fase B+ — honor the active_env cookie so the layout
+		// (sidebar dropdown, MCP context, env-scoped APIs) all agree on
+		// which env the user is viewing. Previously resolveOrgContext
+		// ignored the cookie and always picked the first prod env, so
+		// switching envs via the sidebar updated only the cookie — the
+		// dropdown's highlighted state + the data loaded by the layout
+		// stayed on env_1 until a hard reload.
+		//
+		// Fallback chain:
+		//   1. active_env cookie (if it points at a valid env)
+		//   2. first production env (legacy behavior)
+		//   3. first env (defense — every org should have at least one)
+		const { cookies } = await import("next/headers");
+		const cookieStore = await cookies();
+		const cookieEnvId = cookieStore.get("active_env")?.value;
+		const validIds = new Set(allEnvs.map(e => e.id));
+		const cookieEnv = cookieEnvId && validIds.has(cookieEnvId)
+			? allEnvs.find(e => e.id === cookieEnvId)
+			: null;
+		const defaultEnv = cookieEnv
+			|| allEnvs.find(e => e.isProduction)
+			|| allEnvs[0];
 
 		// Resolve plan limits
 		const planLimits: Record<string, number> = { vestigio: 1, pro: 3, max: 10 };

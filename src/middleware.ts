@@ -223,7 +223,18 @@ export default withAuth(
 
 		// Legacy /user/* pages (boilerplate) → any authenticated (keep for billing portal)
 
-		return NextResponse.next();
+		// Wave 22 Fase B+ — forward the request pathname as a header so
+		// server components can read it. Next.js doesn't expose pathname
+		// natively to layout.tsx; this is the standard workaround. Used
+		// by /app/layout.tsx to detect "user is on an inactive env"
+		// without infinite-looping the onboarding redirect.
+		//
+		// IMPORTANT: must be set on the REQUEST headers (not response)
+		// so it propagates to RSC handlers; NextResponse.next({ request })
+		// is the Next 13.5+ pattern.
+		const requestHeaders = new Headers(req.headers);
+		requestHeaders.set("x-pathname", pathname);
+		return NextResponse.next({ request: { headers: requestHeaders } });
 	},
 	{
 		secret: process.env.SECRET,

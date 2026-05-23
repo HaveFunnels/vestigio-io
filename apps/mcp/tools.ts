@@ -237,7 +237,7 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
   },
   {
     name: 'analyze_copy',
-    description: 'Copy-quality view across the audited site. With a url: page-specific findings (clarity, message-market match, claims). Without a url: overall copy health — dimension scores, top issues, letter grade. Use when the user asks "how is my copy / messaging / page wording?" or wants to review a specific page. NOT for: SEO/content-freshness questions (use get_content_freshness) or paid-channel match (use answer_intent with where_losing_money or get_pack channel_integrity).',
+    description: 'Copy-quality view across the audited site. With a url: page-specific findings (clarity, message-market match, claims). Without a url: overall copy health — dimension scores, top issues, letter grade. Each finding (and each top issue) carries violated_guidelines — a short list of {id, rule} pairs from the CRO knowledge base; cite the rule text when explaining what fired, NOT raw inference_keys (e.g. say "violates the one-primary-CTA-per-page guideline" instead of "violates cta_competing_or_unclear"). Use when the user asks "how is my copy / messaging / page wording?" or wants to review a specific page. NOT for: SEO/content-freshness questions (use get_content_freshness) or paid-channel match (use answer_intent with where_losing_money or get_pack channel_integrity).',
     input_schema: {
       url: { type: 'string', nullable: true, description: 'Optional URL to get page-specific copy analysis. Omit for overall copy health.' },
     },

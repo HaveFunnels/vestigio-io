@@ -18,6 +18,7 @@ import {
   computeValueCaught,
   computeValueCaughtForPriorMonth,
   computeValueCaughtForCurrentMonth,
+  detectChronicFindings,
 } from '../packages/value-caught';
 
 let suitesPassed = 0;
@@ -281,6 +282,103 @@ await runAsyncSuite('retention snapshot', async () => {
       const result = await computeValueCaught(prisma as any, 'env_a', new Date(), new Date());
       assertEqual(result.retentionInForceCount, 0);
       assertEqual(result.retentionInForceMidpoint, 0);
+    });
+  })();
+});
+
+// Wave 20.6 — chronic-finding detection: identities that toggled
+// resolved → present → resolved at least minResolves times.
+await runAsyncSuite('chronic findings', async () => {
+  await (async () => {
+    const tCase = (name: string, fn: () => Promise<void>) =>
+      test(name, fn as any);
+
+    // Simplified prisma mock for findings with createdAt + status — the
+    // detector reads every Finding in the env regardless of window
+    // boundaries the caught query enforces, so we keep this independent.
+    const makeChronicPrisma = (rows: Array<{
+      environmentId: string;
+      inferenceKey: string;
+      surface: string;
+      pack: string;
+      status: string;
+      impactMidpoint: number;
+      createdAt: Date;
+      statusChangedAt: Date;
+    }>): any => ({
+      finding: {
+        findMany: async (args: any) => {
+          const w = args.where;
+          return rows
+            .filter(r => r.environmentId === w.environmentId)
+            .filter(r => !w.createdAt || r.createdAt >= w.createdAt.gte)
+            .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+        },
+      },
+    });
+
+    await tCase('counts resolved transitions per identity', async () => {
+      // trust_boundary_crossed on /checkout: resolved twice, present once
+      // — chronic at minResolves=2. policy_gap on /: resolved once —
+      // below threshold, excluded.
+      const day = 24 * 60 * 60 * 1000;
+      const base = new Date('2026-04-01').getTime();
+      const prisma = makeChronicPrisma([
+        { environmentId: 'env_a', inferenceKey: 'trust_boundary_crossed', surface: '/checkout', pack: 'scale_readiness', status: 'created', impactMidpoint: 500, createdAt: new Date(base), statusChangedAt: new Date(base) },
+        { environmentId: 'env_a', inferenceKey: 'trust_boundary_crossed', surface: '/checkout', pack: 'scale_readiness', status: 'resolved', impactMidpoint: 500, createdAt: new Date(base + 7 * day), statusChangedAt: new Date(base + 7 * day) },
+        { environmentId: 'env_a', inferenceKey: 'trust_boundary_crossed', surface: '/checkout', pack: 'scale_readiness', status: 'regressed', impactMidpoint: 600, createdAt: new Date(base + 14 * day), statusChangedAt: new Date(base + 14 * day) },
+        { environmentId: 'env_a', inferenceKey: 'trust_boundary_crossed', surface: '/checkout', pack: 'scale_readiness', status: 'resolved', impactMidpoint: 600, createdAt: new Date(base + 21 * day), statusChangedAt: new Date(base + 21 * day) },
+        { environmentId: 'env_a', inferenceKey: 'trust_boundary_crossed', surface: '/checkout', pack: 'scale_readiness', status: 'created', impactMidpoint: 700, createdAt: new Date(base + 28 * day), statusChangedAt: new Date(base + 28 * day) },
+        // policy_gap appears once and resolves once — NOT chronic
+        { environmentId: 'env_a', inferenceKey: 'policy_gap', surface: '/', pack: 'scale_readiness', status: 'created', impactMidpoint: 200, createdAt: new Date(base), statusChangedAt: new Date(base) },
+        { environmentId: 'env_a', inferenceKey: 'policy_gap', surface: '/', pack: 'scale_readiness', status: 'resolved', impactMidpoint: 200, createdAt: new Date(base + 7 * day), statusChangedAt: new Date(base + 7 * day) },
+      ]);
+      const result = await detectChronicFindings(prisma as any, 'env_a');
+      assertEqual(result.length, 1, 'only trust_boundary_crossed is chronic');
+      assertEqual(result[0].inferenceKey, 'trust_boundary_crossed');
+      assertEqual(result[0].resolveCount, 2, 'resolved twice in lookback');
+      assertEqual(result[0].regressedCount, 1, 'regressed once');
+      assertEqual(result[0].currentStatus, 'created', 'most recent observation is created');
+      assertEqual(result[0].recentImpactMidpoint, 700, 'last observed midpoint');
+      assertEqual(result[0].spanDays, 28, '4 weeks of toggling');
+    });
+
+    await tCase('sorts chronic findings by resolveCount desc then impact desc', async () => {
+      const day = 24 * 60 * 60 * 1000;
+      const base = new Date('2026-01-01').getTime();
+      const mk = (env: string, key: string, status: string, impact: number, day_offset: number) => ({
+        environmentId: env, inferenceKey: key, surface: '/', pack: 'p', status,
+        impactMidpoint: impact,
+        createdAt: new Date(base + day_offset * day),
+        statusChangedAt: new Date(base + day_offset * day),
+      });
+      // Both chronic, 'small' has more resolves so it ranks first
+      const prisma = makeChronicPrisma([
+        mk('env_a', 'big', 'created', 1000, 0),
+        mk('env_a', 'big', 'resolved', 1000, 7),
+        mk('env_a', 'big', 'created', 1000, 14),
+        mk('env_a', 'big', 'resolved', 1000, 21),
+        mk('env_a', 'small', 'created', 100, 0),
+        mk('env_a', 'small', 'resolved', 100, 7),
+        mk('env_a', 'small', 'created', 100, 14),
+        mk('env_a', 'small', 'resolved', 100, 21),
+        mk('env_a', 'small', 'created', 100, 28),
+        mk('env_a', 'small', 'resolved', 100, 35),
+      ]);
+      const result = await detectChronicFindings(prisma as any, 'env_a');
+      assertEqual(result.length, 2);
+      assertEqual(result[0].inferenceKey, 'small', 'more resolves wins ranking');
+      assertEqual(result[0].resolveCount, 3);
+      assertEqual(result[1].inferenceKey, 'big');
+      assertEqual(result[1].resolveCount, 2);
+    });
+
+    await tCase('returns empty when no identity hits minResolves', async () => {
+      const prisma = makeChronicPrisma([
+        { environmentId: 'env_a', inferenceKey: 'just_once', surface: '/', pack: 'p', status: 'resolved', impactMidpoint: 100, createdAt: new Date(), statusChangedAt: new Date() },
+      ]);
+      const result = await detectChronicFindings(prisma as any, 'env_a');
+      assertEqual(result.length, 0, 'one resolve is not chronic');
     });
   })();
 });

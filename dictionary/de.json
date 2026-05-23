@@ -4316,7 +4316,8 @@
 			"friction_tax": "Reibungssteuer",
 			"trust_gap": "Vertrauens-Umsatz-Lücke",
 			"path_efficiency": "Kaufpfad-Effizienz",
-			"security_posture": "Sicherheitshaltung"
+			"security_posture": "Sicherheitshaltung",
+			"funnel_journey": "Funnel-Reise"
 		},
 		"behavioral_issues": {
 			"first_session_milestone_stall": "Erstbesucher verlassen die Seite, bevor sie Kaufabsicht zeigen",

@@ -6544,7 +6544,8 @@
 			"friction_tax": "Friction Tax",
 			"trust_gap": "Trust Revenue Gap",
 			"path_efficiency": "Path to Purchase Efficiency",
-			"security_posture": "Security Posture"
+			"security_posture": "Security Posture",
+			"funnel_journey": "Funnel Journey"
 		},
 		"behavioral_issues": {
 			"first_session_milestone_stall": "First-time visitors are leaving before they show intent to buy",

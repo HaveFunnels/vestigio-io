@@ -1979,6 +1979,7 @@ export function projectWorkspaces(
   const channelIntegrityFindings = findings.filter(f => f.pack === 'channel_integrity');
   const discoverabilityFindings = findings.filter(f => f.pack === 'discoverability');
   const brandIntegrityFindings = findings.filter(f => f.pack === 'brand_integrity');
+  const funnelJourneyFindings = findings.filter(f => f.pack === 'funnel_journey');
   const saasFindings = findings.filter(f => f.pack === 'saas_growth_readiness');
 
   const wn = translations?.workspace_names;
@@ -2082,6 +2083,55 @@ export function projectWorkspaces(
       coherenceByDecisionRef.get(makeRef('decision', result.brand_integrity.decision.id)) || null,
       narrative,
       changeSummaryMap.get('brand_integrity_pack') ?? null,
+    ),
+  );
+
+  // Wave 20.6 — funnel_journey workspace.
+  //
+  // The funnel_journey pack tags ~30 inference keys (navigation_dead_ends,
+  // decision_moment_anxiety, expansion_ceiling, post_purchase_abandonment,
+  // consideration_friction, etc. — see INFERENCE_TO_PACK) but historically
+  // had no workspace projection: findings were generated, paid for in CPU
+  // + LLM cost, and went straight to /dev/null. The "workspace findings
+  // sum equals total findings" test allow-listed this pack to keep CI
+  // green, which was the signal the surface was missing.
+  //
+  // Unlike the other packs, funnel_journey has no pack-level decision in
+  // MultiPackResult — there is no `result.funnel_journey.decision`. We
+  // synthesize the workspace's decision_key + decision_impact from the
+  // worst severity in the finding set, mirroring how the user perceives
+  // it: many findings of low severity ≠ one finding of critical severity.
+  // Always emits (even with zero findings) so the user sees a definitive
+  // "we looked, nothing material" state.
+  const severityRank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+  const worstFunnelSeverity = funnelJourneyFindings.reduce(
+    (max, f) => Math.max(max, severityRank[f.severity] ?? 0),
+    0,
+  );
+  const funnelDecisionKey =
+    funnelJourneyFindings.length === 0
+      ? 'funnel_journey_clear'
+      : worstFunnelSeverity >= 3
+        ? 'funnel_journey_friction_high'
+        : worstFunnelSeverity >= 2
+          ? 'funnel_journey_friction_moderate'
+          : 'funnel_journey_friction_low';
+  const funnelDecisionImpact =
+    funnelJourneyFindings.length === 0
+      ? 'No structural friction detected on the buyer journey today.'
+      : worstFunnelSeverity >= 3
+        ? 'Structural friction on the buyer journey is dropping conversion at material steps.'
+        : 'Some friction on the buyer journey — visible but not yet at material-impact levels.';
+  workspaces.push(
+    buildWorkspaceProjection(
+      'funnel_journey', wn?.funnel_journey ?? 'Funnel Journey', 'funnel_journey',
+      'funnel_journey_pack',
+      funnelDecisionKey,
+      funnelDecisionImpact,
+      funnelJourneyFindings,
+      null, // synthesized decision — no pack-level coherence to attach
+      narrative,
+      changeSummaryMap.get('funnel_journey_pack') ?? null,
     ),
   );
 

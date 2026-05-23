@@ -434,6 +434,7 @@ export type WorkspaceProjectionType =
   | 'channel_integrity'
   | 'discoverability'
   | 'brand_integrity'
+  | 'funnel_journey'
   // Behavioral workspaces (pixel-dependent)
   | 'first_impression'
   | 'action_value'

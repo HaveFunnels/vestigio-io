@@ -437,12 +437,28 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
 
   yield "graph_and_signals"; // ── phase boundary
 
+  // Wave 20.6 — SaaS signal extraction moved pre-harmonize.
+  //
+  // Previously `extractSaasSignals` ran below the eligibility check
+  // (~line 683) and the result was merged into the inference call as
+  // `signals`, which bypassed harmonizeSignals +
+  // guardTruthConsistency + assertTruthResolved. Any signal injection
+  // bug on the SaaS path was silently undetectable.
+  //
+  // We extract here unconditionally — the function is a no-op when the
+  // env has no SaaS-specific evidence (it filters to AuthenticatedPageView
+  // / ActivationStepObserved / etc.). For non-SaaS envs this adds zero
+  // cost. For SaaS envs, the signals now participate in truth resolution
+  // like every other signal source, so the THROW guard below catches
+  // any future merge-pattern bypass.
+  const saasSignals: Signal[] = extractSaasSignals(evidence, scoping, cycle_ref);
+  const allRawSignals = saasSignals.length > 0 ? [...rawSignals, ...saasSignals] : rawSignals;
+
   // ─── Phase 26: Truth resolution — harmonize multi-source signals ───
-  const truthHarmonization = harmonizeSignals(rawSignals, evidence);
-  const truthResolvedSignals = truthHarmonization.signals;
+  const truthHarmonization = harmonizeSignals(allRawSignals, evidence);
 
   // ─── Phase 27: Truth consistency guard — attach contradiction metadata ───
-  const truthConsistency = guardTruthConsistency(rawSignals, truthResolvedSignals, truthHarmonization);
+  const truthConsistency = guardTruthConsistency(truthHarmonization);
 
   // ─── Phase 26: Evidence quality → confidence adjustment ───
   // Use guard-annotated signals so truth_metadata flows through to the
@@ -452,17 +468,13 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   const qualityAdjustment = adjustConfidenceByQuality(truthConsistency.signals, evidenceQuality);
   const signals = qualityAdjustment.signals;
 
-  // Wave 20.5 — Truth-resolved guard in THROW mode on the main
-  // inference path. The static-checks bypass that motivated WARN
-  // mode (Wave 20.2) is now fixed — additional_signals are merged
-  // pre-harmonize so they participate in truth resolution. Any
-  // future signal injection that bypasses harmonize will trip this
-  // guard immediately. Known follow-up: saasSignals (extracted at
-  // ~line 683 only when packEligibility.saas_pack.eligible) still
-  // bypass harmonize and reach computeSaasInferences via
-  // `[...signals, ...saasSignals]`. The guard does NOT run on that
-  // merged array, so saas remains a documented bypass path. Will
-  // be re-rooted alongside the inference monolith split (Wave 20.6).
+  // Wave 20.5 + 20.6 — Truth-resolved guard in THROW mode on the main
+  // inference path. The static-checks bypass that motivated WARN mode
+  // (Wave 20.2) is fixed: additional_signals AND saasSignals are now
+  // merged pre-harmonize, so every signal entering the inference path
+  // carries truth_metadata. Any future signal injection that bypasses
+  // harmonize will trip this guard immediately and name the offending
+  // signal_key.
   assertTruthResolved(signals, 'throw');
 
   // ─── Inferences from quality-adjusted, truth-resolved signals ───
@@ -681,13 +693,16 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   });
 
   // SaaS growth readiness (only if eligible)
+  //
+  // Wave 20.6: saasSignals are already extracted pre-harmonize (see top
+  // of the function) and folded into `signals`. We no longer extract or
+  // merge here — the saas_pack.eligible gate decides whether to compute
+  // SaaS-specific inferences with the already-harmonized signal set.
   let saasGrowthReadiness: MultiPackResult['saas_growth_readiness'] = null;
-  let saasSignals: Signal[] = [];
   let saasInferences: Inference[] = [];
 
   if (packEligibility.saas_pack.eligible) {
-    saasSignals = extractSaasSignals(evidence, scoping, cycle_ref);
-    saasInferences = computeSaasInferences([...signals, ...saasSignals], scoping, cycle_ref);
+    saasInferences = computeSaasInferences(signals, scoping, cycle_ref);
 
     if (saasInferences.length > 0) {
       // Pack-pure inferences: SaaS-only inferences plus any
@@ -698,7 +713,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
       );
       const saasResult: DecisionResult = produceDecision({
         question_key: 'is_saas_growth_ready',
-        scoping, cycle_ref, signals: [...signals, ...saasSignals],
+        scoping, cycle_ref, signals: signals,
         inferences: saasPackInferences,
         conversion_proximity, is_production, translations,
       });
@@ -772,7 +787,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
 
   // Vertical-specific inferences (gated by businessModel)
   const verticalInferences = computeVerticalInferences(
-    [...signals, ...saasSignals],
+    signals,
     scoping,
     cycle_ref,
     input.onboarding_business_model || null,
@@ -785,7 +800,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
     verticalDecisionResult = produceDecision({
       question_key: 'are_vertical_specific_issues_present',
       scoping, cycle_ref,
-      signals: [...signals, ...saasSignals],
+      signals: signals,
       inferences: [...inferences, ...saasInferences, ...verticalInferences],
       conversion_proximity, is_production, translations,
     });
@@ -793,7 +808,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
 
   // Funnel-moment inferences (buyer journey analysis, gated by businessModel)
   const funnelMomentInferences = computeFunnelMomentInferences(
-    [...signals, ...saasSignals],
+    signals,
     scoping,
     cycle_ref,
     input.onboarding_business_model || null,
@@ -807,7 +822,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   // so trajectory inferences (score-up/score-down, new/lost citation)
   // can fire. First-ever audits have no prior snapshot → trajectory is
   // a no-op and only state-of-now inferences emit.
-  const allSignalsForRecon = [...signals, ...saasSignals];
+  const allSignalsForRecon = signals;
   const reconByKey = new Map<string, typeof signals[number]>();
   for (const s of allSignalsForRecon) reconByKey.set(s.signal_key, s);
   let priorReconByKey: Map<string, typeof signals[number]> | undefined;
@@ -837,7 +852,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
     funnelJourneyDecisionResult = produceDecision({
       question_key: 'are_funnel_journey_issues_present',
       scoping, cycle_ref,
-      signals: [...signals, ...saasSignals],
+      signals: signals,
       inferences: [...inferences, ...funnelMomentInferences],
       conversion_proximity, is_production, translations,
     });
@@ -890,7 +905,7 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   // (typically static-check signals) are now injected pre-harmonize at
   // line ~382 so they participate in truth resolution + quality
   // adjustment. They no longer need to be merged here.
-  const allSignals = [...signals, ...saasSignals];
+  const allSignals = signals;
   const allInferences = [...preCompoundInferences, ...compoundInferences];
 
   // Collect all decisions and risk evaluations

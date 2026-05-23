@@ -342,7 +342,7 @@ function truthTests() {
       contradictions_found: 0,
       signals_adjusted: 0,
     };
-    const result = guardTruthConsistency([signal], [signal], harmonization);
+    const result = guardTruthConsistency(harmonization);
     assertEqual(result.signals.length, 1, 'Should pass through 1 signal');
     assert(result.signals[0].truth_metadata !== undefined, 'Should have truth_metadata');
     assertEqual(result.fully_consistent, true, 'No contradictions = consistent');

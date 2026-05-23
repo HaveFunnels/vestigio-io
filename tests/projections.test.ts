@@ -182,16 +182,16 @@ runSuite('Action Projections', () => {
 // ══════════════════════════════════════════════════
 
 runSuite('Workspace Projections', () => {
-  test('projectWorkspaces produces 8 core workspaces', () => {
+  test('projectWorkspaces produces 9 core workspaces', () => {
     const result = computeResult();
     const workspaces = projectWorkspaces(result);
     // Filter out behavioral placeholder workspaces — they always emit
     // (category='behavioral') even when there's no pixel data, so they
     // would otherwise inflate the count. Core packs are: preflight,
     // revenue, chargeback, security_posture, copy_alignment,
-    // channel_integrity, discoverability, brand_integrity.
+    // channel_integrity, discoverability, brand_integrity, funnel_journey.
     const coreWorkspaces = workspaces.filter(w => w.category !== 'behavioral');
-    assertEqual(coreWorkspaces.length, 8);
+    assertEqual(coreWorkspaces.length, 9);
   });
 
   test('each workspace has correct type', () => {
@@ -281,22 +281,19 @@ runSuite('projectAll Integration', () => {
     const proj = projectAll(result);
     assertGreater(proj.findings.length, 0, 'has findings');
     assertGreater(proj.actions.length, 0, 'has actions');
-    // Filter behavioral placeholders — see "produces 8 core workspaces" above
+    // Filter behavioral placeholders — see "produces 9 core workspaces" above
     const coreWorkspaces = proj.workspaces.filter(w => w.category !== 'behavioral');
-    assertEqual(coreWorkspaces.length, 8, 'has 8 core workspaces');
+    assertEqual(coreWorkspaces.length, 9, 'has 9 core workspaces');
   });
 
-  test('workspace findings sum equals total findings (excluding orphan packs)', () => {
+  test('workspace findings sum equals total findings', () => {
     const result = computeResult();
     const proj = projectAll(result);
     const wsFindings = proj.workspaces.reduce((sum, ws) => sum + ws.findings.length, 0);
-    // funnel_journey pack tags findings (via INFERENCE_TO_PACK) but has
-    // no workspace projection yet — those findings are surfaced through
-    // other channels (intelligence layer) but not in projectWorkspaces.
-    // Track the gap explicitly so this doesn't silently grow.
-    const orphanPacks = new Set(['funnel_journey']);
-    const findingsInWorkspaces = proj.findings.filter(f => !orphanPacks.has(f.pack));
-    assertEqual(wsFindings, findingsInWorkspaces.length, 'workspace findings = total non-orphan findings');
+    // Wave 20.6 closure: funnel_journey now has its own workspace
+    // projection (engine.ts), so the orphan allow-list is gone — every
+    // finding emitted must land in exactly one workspace.
+    assertEqual(wsFindings, proj.findings.length, 'workspace findings = total findings');
   });
 
   test('projections are deterministic', () => {
@@ -412,14 +409,14 @@ runSuite('MCP Projection Tools', () => {
     assertGreater((result.data as any).length, 0, 'has actions');
   });
 
-  test('get_workspace_projections returns 8 core workspaces', () => {
+  test('get_workspace_projections returns 9 core workspaces', () => {
     const server = new McpServer();
     server.loadContext(standardEvidence(), scope, cycleRef, 'shop.com', 'https://shop.com/');
     const result = server.callTool('get_workspace_projections');
     assertEqual(result.type, 'workspace_projections');
-    // Filter behavioral placeholders — see "produces 8 core workspaces" above
+    // Filter behavioral placeholders — see "produces 9 core workspaces" above
     const coreCount = (result.data as any[]).filter(w => w.category !== 'behavioral').length;
-    assertEqual(coreCount, 8);
+    assertEqual(coreCount, 9);
   });
 
   test('get_map returns map definition', () => {

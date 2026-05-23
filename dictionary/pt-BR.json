@@ -6483,7 +6483,8 @@
 			"friction_tax": "Imposto de Fricção",
 			"trust_gap": "Gap de Confiança e Faturamento",
 			"path_efficiency": "Eficiência do Caminho de Compra",
-			"security_posture": "Postura de Segurança"
+			"security_posture": "Postura de Segurança",
+			"funnel_journey": "Jornada do Funil"
 		},
 		"behavioral_issues": {
 			"first_session_milestone_stall": "Visitantes de primeira vez estão saindo antes de mostrar qualquer sinal de compra",

@@ -84,15 +84,13 @@ export interface ConsistencySummary {
  * - Every signal carries its truth provenance
  * - Contradiction metadata flows through to explainability
  * - No unresolved conflicts silently propagate
+ *
+ * Wave 20.6 cleanup: the legacy `originalSignals` + `harmonizedSignals`
+ * parameters were dead — harmonize attaches metadata inline, so the
+ * guard only consumes `harmonization.signals`. Dropped to keep the
+ * signature honest about what the function actually needs.
  */
 export function guardTruthConsistency(
-  // Kept for back-compat with the previous signature. The first two
-  // arguments are now unused (harmonizeSignals annotates the signals
-  // inline, so the guard only consumes `harmonization.signals`). They
-  // remain in the signature to avoid a sweeping caller-side rename
-  // until Wave 20.7 cleanup.
-  _originalSignals: Signal[],
-  _harmonizedSignalsLegacy: Signal[],
   harmonization: HarmonizationResult,
 ): TruthConsistencyResult {
   // Single pass over already-annotated signals. The previous version

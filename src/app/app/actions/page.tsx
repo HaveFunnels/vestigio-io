@@ -22,6 +22,7 @@ import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
+import SurfaceFilterPills from "@/components/findings/SurfaceFilterPills";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import {
@@ -272,6 +273,14 @@ function ActionsContent({
 	const [typeFilter, setTypeFilter] = useState<string>("all");
 	const [severityFilter, setSeverityFilter] = useState<string>("all");
 	const [effortFilter, setEffortFilter] = useState<string>("all");
+	// Wave 22.5 Tier 3 — surface_kind filter (public / authenticated /
+	// mixed / all). Distinct from the existing surfaceFilter, which is
+	// a URL-based deep-link filter (affected_surfaces[]). This one
+	// filters by the aggregate surface_kind of each action's linked
+	// findings.
+	const [surfaceKindFilter, setSurfaceKindFilter] = useState<
+		"all" | "public" | "authenticated" | "mixed"
+	>("all");
 
 	// Fetch persisted UserActions once on mount. These come from the
 	// chat Verify flow (POST /api/actions/from-finding) and aren't
@@ -481,8 +490,17 @@ function ActionsContent({
 		if (surfaceFilter) {
 			result = result.filter(a => a.affected_surfaces?.includes(surfaceFilter));
 		}
+		// Wave 22.5 Tier 3 — surface_kind filter. Legacy actions
+		// (pre-engine) have surface_kind=null; treat them as 'public'
+		// to keep them visible during the migration window.
+		if (surfaceKindFilter !== "all") {
+			result = result.filter(a => {
+				const k = a.surface_kind ?? "public";
+				return k === surfaceKindFilter;
+			});
+		}
 		return result;
-	}, [actions, typeFilter, severityFilter, effortFilter, surfaceFilter]);
+	}, [actions, typeFilter, severityFilter, effortFilter, surfaceFilter, surfaceKindFilter]);
 
 	// Total addressable impact.
 	// Wave 18t: group by decision_key (extracted from action_key) and take
@@ -819,6 +837,17 @@ function ActionsContent({
 					</button>
 				))}
 			</div>
+
+			{/* Wave 22.5 Tier 3 — surface_kind filter pills (only on
+			    pipeline tab). Renders only when 2+ surface kinds are
+			    present, so single-surface envs don't see noise. */}
+			{activeTab === "pipeline" && (
+				<SurfaceFilterPills
+					items={actions}
+					value={surfaceKindFilter}
+					onChange={setSurfaceKindFilter}
+				/>
+			)}
 
 			{/* Fase 3: Filter bar — only visible on pipeline tab */}
 			{activeTab === "pipeline" && (

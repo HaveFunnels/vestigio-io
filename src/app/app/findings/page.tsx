@@ -15,6 +15,7 @@ import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
+import SurfaceFilterPills from "@/components/findings/SurfaceFilterPills";
 import ViewSelector, { SavedViewData } from "@/components/console/ViewSelector";
 import SaveViewModal from "@/components/console/SaveViewModal";
 import ColumnSelector, {
@@ -96,6 +97,15 @@ export default function FindingsPage() {
 	// ── Drawer state ──
 	const [selectedFinding, setSelectedFinding] =
 		useState<FindingProjection | null>(null);
+
+	// Wave 22.5 Tier 3 — surface filter (public / authenticated / mixed
+	// / all). Lives outside the SavedView system because surface is a
+	// top-level taxonomy, not a per-view filter — every operator wants
+	// to be able to switch between "all findings", "marketing site",
+	// and "authenticated app" without saving a view for each.
+	const [surfaceFilter, setSurfaceFilter] = useState<
+		"all" | "public" | "authenticated" | "mixed"
+	>("all");
 
 	// "Criar ação" is per-row async; track which row is mid-flight so the
 	// popover can show "Criando…" instead of letting the user spam clicks.
@@ -273,10 +283,23 @@ export default function FindingsPage() {
 
 	// ── Apply view filters ──
 	const filtered = useMemo(() => {
-		if (!activeView) return findings;
+		// Wave 22.5 — apply the surface filter regardless of whether
+		// there's an active SavedView. The filter sits OUTSIDE the
+		// SavedView system because surface is a primary axis of the UI.
+		const surfaceFiltered = surfaceFilter === "all"
+			? findings
+			: findings.filter((f) => {
+				// Legacy findings (pre-Wave-22.5) carry surface_kind=null;
+				// treat them as 'public' to keep them visible during the
+				// migration window.
+				const k = f.surface_kind ?? "public";
+				return k === surfaceFilter;
+			});
+
+		if (!activeView) return surfaceFiltered;
 		const f = activeView.filters as Record<string, any>;
 
-		return findings.filter((item) => {
+		return surfaceFiltered.filter((item) => {
 			if (item.suppression_context?.visibility === "hidden") return false;
 
 			// Severity filter
@@ -322,7 +345,7 @@ export default function FindingsPage() {
 
 			return true;
 		});
-	}, [findings, activeView]);
+	}, [findings, activeView, surfaceFilter]);
 
 	// ── Sorted findings ──
 	const sorted = useMemo(() => {
@@ -753,6 +776,17 @@ export default function FindingsPage() {
 					currentUserId={currentUserId}
 				/>
 			)}
+
+			{/* Wave 22.5 Tier 3 — Surface filter pills.
+			    Only render when there are >=2 surface kinds present in the
+			    finding set. With a single-surface env (the default for
+			    new envs without declared surfaces), this would be visual
+			    noise. */}
+			<SurfaceFilterPills
+				items={findings}
+				value={surfaceFilter}
+				onChange={setSurfaceFilter}
+			/>
 
 			{/* Summary Cards */}
 			<div className="mb-6">

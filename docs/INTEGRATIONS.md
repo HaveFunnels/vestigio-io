@@ -109,6 +109,7 @@ For customers who want maximum coverage and have engineering capacity. These are
 | **Backend SDK** (`@vestigio/sdk`) | API key | `vestigio.track(event, props)` from the customer's server. Identified user, server-side, adblock-proof. Captures events pixel never sees: async jobs, retries, internal admin actions, scheduled cycles. |
 | **Generic signed webhook ingest** | HMAC-signed POST to `/api/ingest` | Customer writes a Lambda / Cloud Function that translates an event from any tool we don't natively support into our event shape. Universal escape hatch. |
 | **First-party pixel via CNAME proxy** (Wave 21.1) | DNS CNAME + script tag | Today's pixel routed through `evt.<customer-domain>` instead of `vestigio.io/track`. Treated as first-party by adblockers, ITP, Brave Shields. Fallback path for customers without backend access or modern analytics tooling. |
+| **Cloudflare Worker log forwarder** | Worker script paste + deploy | Vestigio publishes a ~20-line `worker.js`; the customer creates a Worker on their CF zone, pastes the code, deploys. Captures every request that hits CF (path, status, response time, geo, UA, referrer) and POSTs structured logs to Vestigio. Adblock-proof, no app code change, runs at the edge so zero added latency. The same shape ports to Vercel Edge / Netlify Edge if a customer asks. |
 
 ---
 
@@ -122,7 +123,6 @@ Documented so we don't re-debate them every roadmap pass.
 - **Tally / Typeform / Google Forms** — form submissions are downstream of CRM events we already get from RD Station, ActiveCampaign, etc. Skip.
 - **AWS polling via CloudFormation read-only role** — future. The shape: customer runs a `cloudformation deploy` of a Vestigio-published template that creates a read-only IAM role limited to specific log groups or buckets. Vestigio assumes the role periodically and pulls. Zero credentials in our hands beyond the role ARN. Pairs naturally with CloudWatch Logs, ALB logs, CloudFront logs. Add when at least one customer asks.
 - **DB read-replica access** — too high a trust ask for SMB. Removed from this catalog.
-- **CDN log forwarding** (Cloudflare, Vercel, Netlify) — removed; folded into the "CloudFormation polling" future direction if it ever returns.
 - **GA4 OAuth ingestion** — Google's verification process is the same gate that blocks Meta Ads. Avoid in favor of GTM-tag / Measurement Protocol / Clarity as alternative behavioral surfaces.
 
 ---

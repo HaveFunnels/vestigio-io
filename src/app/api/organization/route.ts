@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
@@ -59,6 +60,17 @@ export const GET = withErrorTracking(async function GET() {
     return NextResponse.json({ message: "Organization not found" }, { status: 404 });
   }
 
+  // Resolve the env the caller is currently viewing. Falls back to the
+  // first env (sorted desc by createdAt above) if the cookie is unset
+  // or points at a row that no longer exists.
+  const cookieStore = await cookies();
+  const cookieEnvId = cookieStore.get("active_env")?.value;
+  const validEnvIds = new Set(organization.environments.map((e) => e.id));
+  const currentEnvId =
+    cookieEnvId && validEnvIds.has(cookieEnvId)
+      ? cookieEnvId
+      : (organization.environments[0]?.id ?? null);
+
   return NextResponse.json({
     organization: {
       id: organization.id,
@@ -96,7 +108,9 @@ export const GET = withErrorTracking(async function GET() {
           conversionModel: organization.businessProfile.conversionModel,
         }
       : null,
+    currentUserId: userId,
     currentUserRole: membership.role,
+    currentEnvId,
   });
 }, { endpoint: "/api/organization", method: "GET" });
 

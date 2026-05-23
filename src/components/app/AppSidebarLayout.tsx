@@ -390,9 +390,14 @@ function EnvironmentSwitcher({ orgCtx, plan }: { orgCtx: OrgCtx; plan: string })
 
 	function handleSwitch(envId: string) {
 		setOpen(false);
-		// Switch environment via cookie + reload to re-bootstrap MCP context
+		if (envId === orgCtx.envId) return;
+		// Soft switch — cookie + router.refresh() re-bootstraps the org
+		// context (MCP, dashboard, sidebar) through Next's server-component
+		// re-fetch without a full page reload. The previous
+		// `window.location.reload()` blanked the screen and reset every
+		// in-page state (open menus, draft inputs, scroll position).
 		document.cookie = `active_env=${envId};path=/;max-age=${60 * 60 * 24 * 365}`;
-		window.location.reload();
+		router.refresh();
 	}
 
 	function handleAddNew() {
@@ -400,7 +405,12 @@ function EnvironmentSwitcher({ orgCtx, plan }: { orgCtx: OrgCtx; plan: string })
 		if (atLimit) {
 			router.push("/app/billing");
 		} else {
-			router.push("/app/organization");
+			// Wave 22 — explicit `action=add-env` query param so the
+			// Organization page opens the Add Environment panel directly.
+			// Previously the user landed on /app/organization with no
+			// indication of what to do and had to hunt for the "+ Adicionar"
+			// button — a critical friction point in the new-env flow.
+			router.push("/app/organization?action=add-env");
 		}
 	}
 

@@ -23,7 +23,6 @@ async function resolveUserMembership(userId: string) {
 const createSchema = z.object({
   domain: z.string().min(3),
   landingUrl: z.string().url().optional(),
-  isProduction: z.boolean().optional(),
 });
 
 export const POST = withErrorTracking(async function POST(request: Request) {
@@ -52,18 +51,40 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     );
   }
 
-  const { domain, landingUrl, isProduction } = res.data;
+  const { domain, landingUrl } = res.data;
 
-  // Normalize domain
+  // Normalize domain — strip protocol + trailing slashes so the unique
+  // index (orgId, domain) doesn't get fooled by "https://x.com" vs
+  // "x.com" duplicates.
   const normalizedDomain = domain.replace(/^https?:\/\//, "").replace(/\/+$/, "");
   const resolvedLandingUrl = landingUrl || (domain.startsWith("http") ? domain : `https://${domain}`);
 
+  // Wave 22 — pre-check for duplicate so we can return a friendly 409
+  // message instead of letting Prisma throw a P2002 unique-constraint
+  // error that the UI would surface as a generic 500.
+  const existing = await prisma.environment.findFirst({
+    where: { organizationId: membership.organizationId, domain: normalizedDomain },
+    select: { id: true, domain: true },
+  });
+  if (existing) {
+    return NextResponse.json(
+      {
+        message: `O domínio "${normalizedDomain}" já está cadastrado nesta organização.`,
+        code: "DUPLICATE_DOMAIN",
+        existingEnvironmentId: existing.id,
+      },
+      { status: 409 },
+    );
+  }
+
+  // Wave 22 — isProduction column kept (default true in schema) for
+  // back-compat with the 80+ downstream call sites that branch on it.
+  // The UI no longer asks; every new env lands as production.
   const environment = await prisma.environment.create({
     data: {
       organizationId: membership.organizationId,
       domain: normalizedDomain,
       landingUrl: resolvedLandingUrl,
-      isProduction: isProduction ?? false,
     },
   });
 

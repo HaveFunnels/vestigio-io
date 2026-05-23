@@ -290,6 +290,12 @@ model Environment {
   organizationId       String
   domain               String
   landingUrl           String
+  // Kept with default(true) for back-compat with 80+ downstream call
+  // sites that branch on it. Wave 22 (env-flow refactor) removed the
+  // UI checkbox — every env now lands as production. Distinction
+  // belongs at the surface / endpoint layer, not the env row. This
+  // column should be considered vestigial; do not introduce new
+  // branching on it.
   isProduction         Boolean   @default(true)
   // Wave 5 Fase 2: activation lifecycle
   activated            Boolean   @default(false) // true once the first cold full cycle has been dispatched
@@ -320,6 +326,12 @@ model Environment {
 
   @@index([activated, continuousPaused])
   @@index([lastAccessedAt])
+  // Wave 22 — one domain per org. The previous schema allowed
+  // duplicate (orgId, domain) rows, which would let a user create
+  // the same domain twice from the UI and end up with confused
+  // dashboards. The API now returns 409 instead of silently
+  // creating; this constraint enforces it at the DB layer too.
+  @@unique([organizationId, domain])
 }
 
 model BusinessProfile {

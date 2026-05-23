@@ -130,6 +130,36 @@ export async function registerNodeInstrumentation(): Promise<void> {
 		console.warn("[instrumentation] activated backfill failed:", err);
 	}
 
+	// Wave 22.5 Tier 3 — seed the catch-all Surface for any env that
+	// landed BEFORE the surface_entity migration ran OR was created in
+	// the small window between the migration applying and the next
+	// backfill touch. Idempotent: findMany of envs WITHOUT surfaces +
+	// createMany skipDuplicates.
+	try {
+		const envsWithoutSurface = await prisma.environment.findMany({
+			where: { surfaces: { none: {} } },
+			select: { id: true },
+		});
+		if (envsWithoutSurface.length > 0) {
+			await prisma.surface.createMany({
+				data: envsWithoutSurface.map((e) => ({
+					environmentId: e.id,
+					kind: "public",
+					urlPattern: "*",
+					label: "Site público",
+					authRequired: false,
+					displayOrder: 100,
+				})),
+				skipDuplicates: true,
+			});
+			console.log(
+				`[instrumentation] seeded default Surface for ${envsWithoutSurface.length} env(s) missing one`,
+			);
+		}
+	} catch (err) {
+		console.warn("[instrumentation] surface seed failed:", err);
+	}
+
 	// ── Audit-runner heal cron ──
 	// Covers both customer audit cycles AND admin prospect scans (which
 	// share the same staleness pattern: stuck >10min in 'running').

@@ -1715,6 +1715,36 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				console.warn(`[audit-runner ${cycleId}] failed to load prev findings for change-class:`, err);
 			}
 
+			// Wave 22.5 Tier 3 — load the env's declared Surface rows and
+			// build a resolver to pass into the engine. Falls back to the
+			// hardcoded URL-substring heuristic when an env hasn't yet
+			// been seeded with surfaces (one-off legacy case; the
+			// migration seeds the catch-all surface for every existing
+			// env).
+			let surfaceResolver: import("../../packages/domain").InferenceSurfaceResolver | undefined;
+			try {
+				const declared = await prisma.surface.findMany({
+					where: { environmentId: env.id },
+					select: {
+						id: true,
+						kind: true,
+						urlPattern: true,
+						label: true,
+						authRequired: true,
+						displayOrder: true,
+					},
+				});
+				if (declared.length > 0) {
+					const { buildSurfaceResolver } = await import("../../packages/surfaces");
+					surfaceResolver = buildSurfaceResolver(declared);
+				}
+			} catch (err) {
+				console.warn(
+					`[audit-runner ${cycleId}] failed to load Surface declarations — falling back to URL heuristic:`,
+					err instanceof Error ? err.message : err,
+				);
+			}
+
 			const recomputeStartMs = Date.now();
 			// Wave 20.7 — single entry point. runEngine wraps recompute +
 			// projectAll; the audit-runner only knows about the engine
@@ -1729,6 +1759,12 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// changed URL. Full/hot/warm/cold cycles fall through with
 				// scope undefined → runEngine defaults to full_cycle.
 				scope: targetedScope ?? undefined,
+				// Wave 22.5 Tier 3 — env-specific Surface resolver. When
+				// the env has declared surfaces (default = catch-all
+				// public), URL-based classification consults them instead
+				// of the substring heuristic. Undefined for envs without
+				// surface rows (the heuristic is the fallback).
+				surface_resolver: surfaceResolver,
 				scoping: {
 					workspace_ref: workspaceRef,
 					environment_ref: environmentRef,

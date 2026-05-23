@@ -125,6 +125,19 @@ const AUTHENTICATED_EVIDENCE_TYPES: ReadonlySet<EvidenceType> = new Set([
 ]);
 
 /**
+ * Surface resolver injection point. Tier 3 lets the recompute layer
+ * pass an env-specific resolver (built from prisma.surface.findMany
+ * declarations) so URL-based classification uses operator-declared
+ * patterns instead of the hardcoded substring heuristic.
+ *
+ * Shape mirrors packages/surfaces's SurfaceResolver but inlined here
+ * to keep packages/domain dependency-free.
+ */
+export interface InferenceSurfaceResolver {
+  resolveSurfaceForUrl(url: string): SurfaceKind;
+}
+
+/**
  * Derive the SurfaceKind of a single Evidence row.
  *
  * Priority:
@@ -133,17 +146,17 @@ const AUTHENTICATED_EVIDENCE_TYPES: ReadonlySet<EvidenceType> = new Set([
  *      authoritative.
  *   2. If the evidence_type is in AUTHENTICATED_EVIDENCE_TYPES, it's
  *      Authenticated by construction.
- *   3. Otherwise, try classifying by the URL embedded in the payload
- *      (different payload shapes carry the URL under different keys —
- *      url, final_url, target_url, page_url, source_url). When none
- *      of those exist or the URL doesn't match a known pattern, fall
- *      back to Public.
- *
- * Tier 3 (Surface as first-class) replaces step 3 with an exact match
- * against the env's operator-declared Surface URL patterns. Until
- * then this URL-substring fallback is good enough for the common case.
+ *   3. If a Tier 3 resolver is provided, ask it to classify the URL
+ *      in the payload. This consults the env's operator-declared
+ *      Surface rows (more reliable than substring patterns).
+ *   4. Otherwise, fall back to classifySurfaceByUrl substring
+ *      heuristic — only kicks in when there are no surfaces declared
+ *      for the env.
  */
-export function inferEvidenceSurfaceKind(evidence: Evidence): SurfaceKind {
+export function inferEvidenceSurfaceKind(
+  evidence: Evidence,
+  resolver?: InferenceSurfaceResolver,
+): SurfaceKind {
   if (evidence.scoping?.surface_kind) {
     return evidence.scoping.surface_kind;
   }
@@ -152,6 +165,10 @@ export function inferEvidenceSurfaceKind(evidence: Evidence): SurfaceKind {
   }
   const url = extractUrlFromPayload(evidence.payload);
   if (url) {
+    if (resolver) {
+      const declared = resolver.resolveSurfaceForUrl(url);
+      if (declared !== SurfaceKind.Unknown) return declared;
+    }
     const guess = classifySurfaceByUrl(url);
     if (guess !== SurfaceKind.Unknown) return guess;
   }
@@ -180,10 +197,11 @@ function extractUrlFromPayload(payload: unknown): string | null {
  */
 export function buildEvidenceSurfaceIndex(
   evidence: readonly Evidence[],
+  resolver?: InferenceSurfaceResolver,
 ): Map<string, SurfaceKind> {
   const index = new Map<string, SurfaceKind>();
   for (const e of evidence) {
-    index.set(e.id, inferEvidenceSurfaceKind(e));
+    index.set(e.id, inferEvidenceSurfaceKind(e, resolver));
   }
   return index;
 }

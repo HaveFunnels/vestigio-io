@@ -4,7 +4,11 @@ import {
 	parseRef,
 	SurfaceKind,
 } from "../domain";
-import type { Evidence, Signal } from "../domain";
+import type {
+	Evidence,
+	InferenceSurfaceResolver,
+	Signal,
+} from "../domain";
 
 // ──────────────────────────────────────────────
 // Signal surface_kind stamping — Wave 22.5
@@ -32,6 +36,14 @@ export interface StampOptions {
 	 * Default: true (extractor-provided surface_kind wins over inferred).
 	 */
 	preserveExisting?: boolean;
+	/**
+	 * Wave 22.5 Tier 3 — env-specific Surface resolver. When provided,
+	 * evidence URLs are classified against operator-declared Surface
+	 * rows instead of the hardcoded URL-substring heuristic. Omit for
+	 * envs without explicit surfaces (the heuristic kicks in as
+	 * fallback).
+	 */
+	resolver?: InferenceSurfaceResolver;
 }
 
 /**
@@ -45,7 +57,7 @@ export function stampSignalSurfaceKinds(
 	evidence: readonly Evidence[],
 	options: StampOptions = {},
 ): Signal[] {
-	const evidenceIndex = buildEvidenceSurfaceIndex(evidence);
+	const evidenceIndex = buildEvidenceSurfaceIndex(evidence, options.resolver);
 	const preserveExisting = options.preserveExisting ?? true;
 
 	return signals.map((sig) => {

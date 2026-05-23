@@ -206,6 +206,12 @@ export interface MultiPackInput {
   /** Funnel stage multipliers from User Journey Intelligence Layer.
    *  Maps surface paths → impact multiplier (checkout=2.5x, awareness=1.0x). */
   funnel_multipliers?: FunnelStageMultipliers;
+  /** Wave 22.5 Tier 3 — env-specific Surface resolver built from
+   *  prisma.surface.findMany declarations. Drives URL-based
+   *  classification of evidence into surface kinds. When omitted, the
+   *  engine falls back to the URL-substring heuristic in
+   *  classifySurfaceByUrl (which treats unknown URLs as Public). */
+  surface_resolver?: import("../domain").InferenceSurfaceResolver;
 }
 
 export interface MultiPackResult {
@@ -463,7 +469,15 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   // the preserveExisting flag (default true) means they pass through
   // unchanged. Truth harmonization + the consistency guard see the
   // stamped signals so the field flows into inferences too.
-  const allRawSignals = stampSignalSurfaceKinds(allRawSignalsRaw, evidence);
+  //
+  // Tier 3: when the caller supplies a Surface resolver (built from
+  // prisma.surface.findMany for this env), URL-based classification
+  // consults operator-declared patterns. Without a resolver, the
+  // hardcoded URL-substring heuristic in classifySurfaceByUrl is the
+  // fallback.
+  const allRawSignals = stampSignalSurfaceKinds(allRawSignalsRaw, evidence, {
+    resolver: input.surface_resolver,
+  });
 
   // ─── Phase 26: Truth resolution — harmonize multi-source signals ───
   const truthHarmonization = harmonizeSignals(allRawSignals, evidence);

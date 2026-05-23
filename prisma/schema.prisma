@@ -336,6 +336,7 @@ model Environment {
   contentEnrichmentCache ContentEnrichmentCache[]
   domainFingerprint      DomainFingerprint?
   pageProbes             PageProbe[]
+  surfaces               Surface[]
 
   // Wave 22 — one domain per org. The previous schema allowed
   // duplicate (orgId, domain) rows, which would let a user create
@@ -380,6 +381,62 @@ model PageProbe {
 
   @@index([environmentId, url, observedAt(sort: Desc)])
   @@index([environmentId, observedAt])
+}
+
+// Wave 22.5 Tier 3 — Surface as a first-class entity.
+//
+// Each Environment owns N Surface rows. A Surface declares (a) what
+// kind of audience/journey it represents (public / authenticated /
+// mixed) and (b) the URL pattern that identifies pages belonging to
+// that surface. The engine consults these declarations when
+// classifying evidence — the URL-substring heuristic in
+// classifySurfaceByUrl is only a fallback for envs without explicit
+// surfaces.
+//
+// Seed: every existing env gets a default Surface row (kind=public,
+// urlPattern='*') so behavior is unchanged for legacy envs. Operators
+// can add additional surfaces (e.g. an authenticated subdomain) via
+// /app/settings/surfaces.
+//
+// urlPattern format: simple glob. '*' matches anything; otherwise
+// matched as a hostname-or-prefix substring against the request URL.
+// Tier 3+ can extend to full regex if customers need it. The default
+// '*' on the seeded row means "anything not covered by a more specific
+// surface" — making URL classification a sorted lookup with the default
+// at the end.
+model Surface {
+  id            String   @id @default(cuid())
+  environmentId String
+  /// 'public' | 'authenticated' | 'mixed'. The 'unknown' enum value is
+  /// only used in-memory by the engine; it's never persisted as a
+  /// surface kind because an explicit Surface declaration is the
+  /// answer to "what kind is this?".
+  kind          String
+  /// Glob-style URL pattern. '*' matches everything (the catch-all
+  /// default surface every env gets at seed time). Otherwise matched
+  /// as either an exact hostname or a URL-prefix substring.
+  urlPattern    String
+  /// Human-readable label shown in the surfaces UI. Defaults to
+  /// "Site público" / "Aplicação autenticada" / kind-based text;
+  /// operators can rename.
+  label         String
+  /// Whether pages on this surface require login. Used by the audit
+  /// pipeline to skip authenticated-only surfaces when the customer
+  /// hasn't connected saas-access credentials.
+  authRequired  Boolean  @default(false)
+  /// Sort order shown in the surfaces UI + applied during URL match
+  /// (more-specific patterns at lower order win over the catch-all).
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  // One catch-all '*' per env, plus zero or more named surfaces. The
+  // unique constraint on (environmentId, urlPattern) keeps the data
+  // honest — two surfaces can't claim the same pattern.
+  @@unique([environmentId, urlPattern])
+  @@index([environmentId, displayOrder])
 }
 
 model BusinessProfile {

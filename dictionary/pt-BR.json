@@ -3320,6 +3320,22 @@
 			"healing_stuck": "Recuperando a etapa atual ({phase})...",
 			"healing_heartbeat": "Reconectando ao worker — vamos retomar de onde paramos.",
 			"failed": "A auditoria falhou. O sistema vai tentar novamente automaticamente em alguns minutos.",
+			"phase_narrative": {
+				"pipeline_bootstrap": "Mapeando seu domínio",
+				"pipeline_first_value": "Coletando os primeiros sinais",
+				"pipeline_crawl": "Explorando suas páginas comerciais",
+				"pipeline_headless": "Inspecionando conteúdo dinâmico (JavaScript)",
+				"pipeline_enrichment": "Enriquecendo com inteligência artificial",
+				"evidence_quality_and_integration": "Avaliando qualidade dos sinais coletados",
+				"graph_and_signals": "Construindo o grafo de sinais",
+				"core_inferences": "Identificando o prejuízo",
+				"per_pack_decisions": "Avaliando cada superfície comercial",
+				"behavioral_packs": "Analisando padrões de comportamento",
+				"cross_domain_compound_inferences": "Conectando os padrões",
+				"suppression_penalties": "Aplicando filtros de qualidade",
+				"intelligence_layer": "Sintetizando inteligência",
+				"final_assembly": "Finalizando análise"
+			},
 			"stages": {
 				"discover": "Descobrindo a estrutura do seu site...",
 				"classify": "Classificando páginas por intenção comercial...",

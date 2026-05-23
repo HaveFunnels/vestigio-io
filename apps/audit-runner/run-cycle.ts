@@ -294,9 +294,79 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			update: {},
 		});
 
-		// 4. Run staged pipeline (no-op emit since we're not streaming)
-		const noopEmit = (_event: PipelineEvent) => {
-			// Background worker — drop events. Could log to a JobLog table later.
+		// Wave 22 Fase B+ — staged pipeline events now flow into the same
+		// AuditCycle.currentPhase / phaseUpdatedAt columns that the engine
+		// drainer writes to. Without this the dashboard SSE stream had ~14
+		// minutes of silence (full bootstrap + crawl + headless +
+		// enrichment) before the engine yields kicked in for the final
+		// minute. From the customer's seat the audit looked frozen.
+		//
+		// We persist `stage_complete` events as canonical phase transitions
+		// AND bump phaseUpdatedAt on `step` / `coverage_update` /
+		// `stage_progress` as an additional heartbeat-of-progress signal.
+		// The latter does NOT change currentPhase — just refreshes the
+		// "we are still working" timestamp the heal/healing logic reads.
+		//
+		// Errors are swallowed because a failed UPDATE must not crash the
+		// cycle. The cycle row's heartbeat column still ticks at 30s, so
+		// even if every phase write fails the worker is still alive.
+		let lastPersistedPipelinePhase: string | null = null;
+		const pipelineEmit = (event: PipelineEvent) => {
+			void (async () => {
+				try {
+					const now = new Date();
+					if (event.type === "stage_complete" && event.stage) {
+						const phaseKey = `pipeline_${event.stage}`;
+						if (phaseKey === lastPersistedPipelinePhase) return;
+						lastPersistedPipelinePhase = phaseKey;
+						const cur = await prisma.auditCycle.findUnique({
+							where: { id: cycleId },
+							select: { phaseHistory: true, phaseUpdatedAt: true },
+						});
+						const history = Array.isArray(cur?.phaseHistory)
+							? (cur!.phaseHistory as Array<{ phase: string; at: string; durationMs: number }>)
+							: [];
+						const durationMs = cur?.phaseUpdatedAt
+							? now.getTime() - cur.phaseUpdatedAt.getTime()
+							: 0;
+						const nextHistory = [
+							...history,
+							{ phase: phaseKey, at: now.toISOString(), durationMs },
+						].slice(-16);
+						await prisma.auditCycle.update({
+							where: { id: cycleId },
+							data: {
+								currentPhase: phaseKey,
+								phaseUpdatedAt: now,
+								phaseHistory: nextHistory,
+							},
+						});
+					} else if (
+						event.type === "step" ||
+						event.type === "coverage_update" ||
+						event.type === "stage_progress"
+					) {
+						// Refresh "we're working" timestamp WITHOUT changing
+						// currentPhase. Throttle to one write per ~3s to keep
+						// DB load bounded on chatty stages.
+						const cur = await prisma.auditCycle.findUnique({
+							where: { id: cycleId },
+							select: { phaseUpdatedAt: true },
+						});
+						if (
+							!cur?.phaseUpdatedAt ||
+							now.getTime() - cur.phaseUpdatedAt.getTime() > 3000
+						) {
+							await prisma.auditCycle.update({
+								where: { id: cycleId },
+								data: { phaseUpdatedAt: now },
+							});
+						}
+					}
+				} catch {
+					// non-fatal — phase persistence is best-effort
+				}
+			})();
 		};
 
 		// Look up the business profile early so we can pass business_model
@@ -458,7 +528,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						: {}),
 				},
 			},
-			noopEmit,
+			pipelineEmit,
 		);
 
 		evidenceCount = result.evidence.length;
@@ -2228,13 +2298,17 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 // catching legitimate full audits before they could finish. A real
 // cold/full cycle on a medium site takes 8-11 min end-to-end
 // (Playwright headless renders + LLM enrichment passes + recompute +
-// projection + snapshot save + cache write). Five havefunnels
-// cycles in a single dev session died at the 10-12 min mark, all
-// with lastError=null because healStuckCycles wasn't stamping the
-// reason. 25 min gives full audits ~2.5× breathing room while still
-// catching truly hung cycles (process killed mid-flight, never
-// resumed) within an acceptable window.
-const STUCK_RUNNING_AFTER_MS = 25 * 60 * 1000; // 25 minutes
+// projection + snapshot save + cache write).
+//
+// Wave 22 Fase B+ — IMPORTANT CLARIFICATION:
+// This is a LEGACY-ONLY cutoff. It only catches cycles that have
+// `lastHeartbeatAt IS NULL` (pre-Wave-18z rows or rows that died
+// before the first heartbeat tick fired). Modern cycles heartbeat
+// every 30s via WORKER_HEARTBEAT_MS and are governed by
+// STUCK_RUNNING_HEARTBEAT_MS (3min) instead. A legitimate 60-minute
+// enterprise audit on a heartbeating worker is NOT bound by this
+// 25min — its safety is the heartbeat freshness predicate below.
+const STUCK_RUNNING_AFTER_MS = 25 * 60 * 1000; // 25 minutes (legacy only)
 // Wave 18z — heartbeat-staleness cutoff for running cycles. Six×
 // the default WORKER_HEARTBEAT_MS (30s) so a worker that loses its
 // DB connection mid-cycle gets re-dispatched within 3min instead

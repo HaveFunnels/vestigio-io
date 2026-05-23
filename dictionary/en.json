@@ -3236,6 +3236,22 @@
 			"healing_stuck": "Recovering the current step ({phase})...",
 			"healing_heartbeat": "Reconnecting to the worker — we'll resume where we stopped.",
 			"failed": "The audit failed. The system will automatically retry shortly.",
+			"phase_narrative": {
+				"pipeline_bootstrap": "Mapping your domain",
+				"pipeline_first_value": "Collecting first signals",
+				"pipeline_crawl": "Exploring your commercial pages",
+				"pipeline_headless": "Inspecting dynamic content (JavaScript)",
+				"pipeline_enrichment": "Enriching with AI",
+				"evidence_quality_and_integration": "Evaluating signal quality",
+				"graph_and_signals": "Building the signal graph",
+				"core_inferences": "Identifying the loss",
+				"per_pack_decisions": "Assessing each commercial surface",
+				"behavioral_packs": "Analyzing behavior patterns",
+				"cross_domain_compound_inferences": "Connecting the patterns",
+				"suppression_penalties": "Applying quality filters",
+				"intelligence_layer": "Synthesizing intelligence",
+				"final_assembly": "Finalizing analysis"
+			},
 			"stages": {
 				"discover": "Discovering your site structure...",
 				"classify": "Classifying pages by commercial intent...",

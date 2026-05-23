@@ -80,7 +80,6 @@ interface FindingPreview {
 
 interface PhaseEvent {
 	phase: string;
-	narrative: string;
 	at: string | null;
 }
 
@@ -93,9 +92,18 @@ interface FirstAuditCardProps {
 	onComplete?: (payload: FirstAuditCompletePayload) => void;
 }
 
-// Engine yields in the order they fire. Used to render the dot
-// timeline + estimate completion percentage when status is `running`.
-const PHASES_IN_ORDER = [
+// All 14 phases the audit emits, in order. Five from the staged
+// pipeline (bootstrap → enrichment, ~14min) + nine from the engine
+// recompute (~30-60s). Powering both the dot timeline AND the
+// completion-percentage heuristic for the in-flight state.
+const PIPELINE_PHASES = [
+	"pipeline_bootstrap",
+	"pipeline_first_value",
+	"pipeline_crawl",
+	"pipeline_headless",
+	"pipeline_enrichment",
+];
+const ENGINE_PHASES = [
 	"evidence_quality_and_integration",
 	"graph_and_signals",
 	"core_inferences",
@@ -106,6 +114,7 @@ const PHASES_IN_ORDER = [
 	"intelligence_layer",
 	"final_assembly",
 ];
+const PHASES_IN_ORDER = [...PIPELINE_PHASES, ...ENGINE_PHASES];
 
 function severityDot(severity: string): string {
 	switch (severity) {
@@ -279,8 +288,20 @@ export default function FirstAuditCard({ onComplete }: FirstAuditCardProps) {
 		? PHASES_IN_ORDER.indexOf(currentPhaseName)
 		: -1;
 
-	const headerLabel = phase?.narrative
-		|| (currentPhaseName ? currentPhaseName : t("starting"));
+	// Wave 22 Fase B+ — phase narrative is now i18n-resolved client-side.
+	// The SSE event ships just the phase KEY; the dictionary owns the
+	// localized phrase. Missing keys fall back to the raw key string so
+	// a new phase added on the server but not yet in the dictionary still
+	// renders something (instead of empty header).
+	const phaseNarrative = (key: string | null): string => {
+		if (!key) return t("starting");
+		const i18nKey = `phase_narrative.${key}`;
+		try {
+			if (t.has(i18nKey)) return t(i18nKey);
+		} catch {}
+		return key;
+	};
+	const headerLabel = phaseNarrative(currentPhaseName);
 
 	return (
 		<section className="mb-6 rounded-2xl border border-edge bg-surface-card p-5 shadow-sm">
@@ -428,7 +449,7 @@ export default function FirstAuditCard({ onComplete }: FirstAuditCardProps) {
 					<WarningCircle size={14} weight="duotone" className="shrink-0 text-amber-500" />
 					<p className="text-xs text-amber-700 dark:text-amber-300">
 						{healing.reason === "stuck_in_phase"
-							? t("healing_stuck", { phase: phase?.narrative || phase?.phase || "" })
+							? t("healing_stuck", { phase: phaseNarrative(currentPhaseName) })
 							: t("healing_heartbeat")}
 					</p>
 				</div>

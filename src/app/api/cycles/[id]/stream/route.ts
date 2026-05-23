@@ -28,10 +28,16 @@ import { NextResponse } from "next/server";
 
 const POLL_INTERVAL_MS = 2000;
 const HEARTBEAT_INTERVAL_MS = 15000;
-// Guardrail: even a cold-start cycle should finish well under 10 minutes.
-// If it hasn't emitted `complete` by then we close anyway so the client
-// isn't stuck — the heal cron will fail the cycle on its side.
-const MAX_STREAM_DURATION_MS = 10 * 60 * 1000;
+// Wave 22 Fase B+ — bumped from 10min to 90min. The previous 10min cap
+// silently closed the SSE stream on any audit longer than that, which on
+// enterprise-scale customers (Itaú-class) is the COMMON case. We now
+// trust two safety layers: (1) the SSE heartbeat comment every 15s keeps
+// proxies from idling the connection, (2) `event: complete` closes
+// cleanly on the engine side. The 90min cap remains only as a last-
+// resort runaway-protection — a healthy long cycle that needs more than
+// 90min should just trigger client-side reconnect (browsers do this for
+// SSE by default).
+const MAX_STREAM_DURATION_MS = 90 * 60 * 1000;
 
 interface CycleSnapshot {
 	status: string;
@@ -62,27 +68,11 @@ interface FindingPreview {
 	impactMidpoint: number;
 }
 
-// Customer-facing label for each engine yield. Keeps the stream voice
-// product-shaped ("Identificando o prejuízo") instead of log-shaped
-// ("core_inferences"). Server-side mapping so non-en customers see the
-// localized phrase too — extend with `phaseNarrativeI18n[locale][key]`
-// when we add per-locale narration. For now pt-BR is the default since
-// every paying customer is on pt-BR.
-const PHASE_NARRATIVE: Record<string, string> = {
-	evidence_quality_and_integration: "Coletando sinais de qualidade",
-	graph_and_signals: "Construindo o grafo de sinais",
-	core_inferences: "Identificando o prejuízo",
-	per_pack_decisions: "Avaliando cada superfície comercial",
-	behavioral_packs: "Analisando comportamento",
-	cross_domain_compound_inferences: "Conectando os padrões",
-	suppression_penalties: "Aplicando filtros de qualidade",
-	intelligence_layer: "Sintetizando inteligência",
-	final_assembly: "Finalizando audit",
-};
-export function narrateForPhase(phase: string | null | undefined): string {
-	if (!phase) return "Mapeando seu domínio";
-	return PHASE_NARRATIVE[phase] || phase;
-}
+// Wave 22 Fase B+ — phase narrative moved to client-side i18n. The
+// SSE event now ships just the phase key; the client translates via
+// `t('console.first_audit.phase_narrative.${phase}')`. Keeps locale
+// negotiation in one place (next-intl) instead of duplicating a
+// per-locale map server-side.
 
 // Heal triggers: cycle is "running" but the phase hasn't advanced in
 // HEAL_PHASE_STALE_MS, OR heartbeat is older than HEAL_HEARTBEAT_STALE_MS.
@@ -330,7 +320,6 @@ export async function GET(
 				lastPhaseEmitted = initial.cycle.currentPhase;
 				send("phase", {
 					phase: initial.cycle.currentPhase,
-					narrative: narrateForPhase(initial.cycle.currentPhase),
 					at: initial.cycle.phaseUpdatedAt,
 				});
 			}
@@ -391,7 +380,6 @@ export async function GET(
 						lastPhaseEmitted = snap.cycle.currentPhase;
 						send("phase", {
 							phase: snap.cycle.currentPhase,
-							narrative: narrateForPhase(snap.cycle.currentPhase),
 							at: snap.cycle.phaseUpdatedAt,
 						});
 					}

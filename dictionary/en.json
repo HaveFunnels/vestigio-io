@@ -855,12 +855,12 @@
 				"description": "Every finding: browser screenshot, DOM snapshot, performance trace, timestamp. Your CTO sees evidence, not a dashboard.",
 				"center_label": "Finding",
 				"evidence_types": {
-					"browser": "Browser",
-					"static": "Code",
-					"behavioral": "Behavioral",
-					"cross_source": "Correlated",
-					"vendor": "Integrations",
-					"timestamped": "Logged"
+					"browser": "Page capture",
+					"static": "Source scan",
+					"behavioral": "Click paths",
+					"cross_source": "Cross-signal",
+					"vendor": "Pixel audit",
+					"timestamped": "Audit trail"
 				}
 			}
 		},

@@ -4,6 +4,7 @@
 
 export * from './enums';
 export * from './common';
+export * from './surface';
 export * from './workspace';
 export * from './website';
 export * from './audit-cycle';

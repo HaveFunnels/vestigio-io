@@ -1,4 +1,4 @@
-import { FreshnessState, SubjectType } from './enums';
+import { FreshnessState, SubjectType, SurfaceKind } from './enums';
 
 // ──────────────────────────────────────────────
 // Cross-cutting contracts
@@ -16,6 +16,17 @@ export interface Scoping {
   environment_ref: string;
   subject_ref: string;
   path_scope: string | null;
+  /**
+   * Wave 22.5 — surface context. Distinguishes signals/inferences from
+   * the public marketing surface vs the authenticated app. See
+   * SurfaceKind in enums.ts for semantics.
+   *
+   * Optional during the migration window: legacy data without the
+   * field is treated as 'unknown' by downstream consumers, which the
+   * engine maps to 'public' for backward-compat (matches today's
+   * behavior where every surface is implicitly treated as public).
+   */
+  surface_kind?: SurfaceKind;
 }
 
 export interface SubjectRef {

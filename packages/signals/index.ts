@@ -6,6 +6,11 @@ export { extractSaasSignals } from './saas-signals';
 // All three were behaviorally identical. The two copies are removed
 // in this wave; this is the single source.
 export { createSignal } from './create';
+// Wave 22.5 — surface-kind post-extraction stamper. Lifts the
+// surface_kind from each signal's backing evidence onto the signal's
+// scoping so downstream inference can route by surface without
+// re-deriving from URLs.
+export { stampSignalSurfaceKinds } from './surface-stamp';
 export {
 	extractCommerceHeuristicSignals,
 	type CommerceHeuristicSignals,

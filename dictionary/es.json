@@ -849,12 +849,12 @@
 				"description": "Cada hallazgo: captura del navegador, snapshot del DOM, trace de rendimiento, timestamp. Tu CTO ve evidencia, no un dashboard.",
 				"center_label": "Hallazgo",
 				"evidence_types": {
-					"browser": "Navegador",
-					"static": "Código",
-					"behavioral": "Comportamiento",
-					"cross_source": "Correlación",
-					"vendor": "Integraciones",
-					"timestamped": "Registro"
+					"browser": "Captura de página",
+					"static": "Scan del código",
+					"behavioral": "Rastro de clics",
+					"cross_source": "Señal cruzada",
+					"vendor": "Auditoría de tags",
+					"timestamped": "Pista temporal"
 				}
 			}
 		},

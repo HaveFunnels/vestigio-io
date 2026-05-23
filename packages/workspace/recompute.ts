@@ -14,10 +14,11 @@ import {
   makeRef,
 } from '../domain';
 import { buildGraph } from '../graph';
-import { extractSignals } from '../signals';
+import { extractSignals, stampSignalSurfaceKinds } from '../signals';
 import { createSignal } from '../signals/create';
 import {
   computeInferences,
+  stampInferenceSurfaceKinds,
   computeSaasInferences,
   computeVerticalInferences,
   computeFunnelMomentInferences,
@@ -452,7 +453,16 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   // like every other signal source, so the THROW guard below catches
   // any future merge-pattern bypass.
   const saasSignals: Signal[] = extractSaasSignals(evidence, scoping, cycle_ref);
-  const allRawSignals = saasSignals.length > 0 ? [...rawSignals, ...saasSignals] : rawSignals;
+  const allRawSignalsRaw = saasSignals.length > 0 ? [...rawSignals, ...saasSignals] : rawSignals;
+
+  // ─── Wave 22.5 — surface_kind stamping ───
+  // Every signal whose extractor didn't already set surface_kind gets
+  // it filled in here based on the surfaces of the evidence rows the
+  // signal cites. SaaS signals are already stamped (Authenticated) so
+  // the preserveExisting flag (default true) means they pass through
+  // unchanged. Truth harmonization + the consistency guard see the
+  // stamped signals so the field flows into inferences too.
+  const allRawSignals = stampSignalSurfaceKinds(allRawSignalsRaw, evidence);
 
   // ─── Phase 26: Truth resolution — harmonize multi-source signals ───
   const truthHarmonization = harmonizeSignals(allRawSignals, evidence);
@@ -478,7 +488,16 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   assertTruthResolved(signals, 'throw');
 
   // ─── Inferences from quality-adjusted, truth-resolved signals ───
-  const inferences = computeInferences(signals, scoping, cycle_ref);
+  // Wave 22.5: core inferences are stamped immediately so the per-pack
+  // decision step (which reads `inferences` directly) sees surface_kind
+  // on every inference it sorts. The OTHER inference sources (SaaS,
+  // vertical, funnel-moment, etc.) are stamped together at the merge
+  // point below (see preCompoundInferences) so the final allInferences
+  // array is fully surface-annotated.
+  const inferences = stampInferenceSurfaceKinds(
+    computeInferences(signals, scoping, cycle_ref),
+    signals,
+  );
 
   yield "core_inferences"; // ── phase boundary: heaviest single step
 
@@ -702,7 +721,15 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   let saasInferences: Inference[] = [];
 
   if (packEligibility.saas_pack.eligible) {
-    saasInferences = computeSaasInferences(signals, scoping, cycle_ref);
+    // Wave 22.5: SaaS inferences are produced from Authenticated-only
+    // signals by construction (computeSaasInferences only looks at
+    // SaaS-specific evidence types). Stamp surface_kind here so the
+    // per-pack decision below sees the right surface — the final
+    // merge-stamp would be too late.
+    saasInferences = stampInferenceSurfaceKinds(
+      computeSaasInferences(signals, scoping, cycle_ref),
+      signals,
+    );
 
     if (saasInferences.length > 0) {
       // Pack-pure inferences: SaaS-only inferences plus any
@@ -881,17 +908,28 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
   // engine has produced its findings; looks for combinations across
   // packs and emits compound insights. The combined inference array
   // (including external recon, SaaS, behavioral, etc.) is the input.
-  const preCompoundInferences = [
-    ...inferences,
-    ...saasInferences,
-    ...verticalInferences,
-    ...funnelMomentInferences,
-    ...externalReconInferences,
-    ...subdomainInferences,
-    ...crossDomainInferences,
-    ...tripleSourceInferences,
-    ...(input.additional_inferences || []),
-  ];
+  //
+  // Wave 22.5: stamp surface_kind across the merged set so any source
+  // that didn't get stamped at production time (SaaS, vertical,
+  // funnel-moment, external-recon, subdomain, cross-domain,
+  // triple-source, caller-supplied additional inferences) inherits its
+  // surface from the cited signals. The stamper preserves existing
+  // surface_kind values, so the core `inferences` array (already
+  // stamped at its production point) is a no-op pass.
+  const preCompoundInferences = stampInferenceSurfaceKinds(
+    [
+      ...inferences,
+      ...saasInferences,
+      ...verticalInferences,
+      ...funnelMomentInferences,
+      ...externalReconInferences,
+      ...subdomainInferences,
+      ...crossDomainInferences,
+      ...tripleSourceInferences,
+      ...(input.additional_inferences || []),
+    ],
+    signals,
+  );
   const compoundInferences = computeCrossPackSynthesis({
     inferences: preCompoundInferences,
     scoping,

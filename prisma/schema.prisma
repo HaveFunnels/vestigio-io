@@ -580,6 +580,10 @@ model Finding {
   /// Number of consecutive cycles this finding has been seen. Resets
   /// on resolved → regressed. Drives created → confirmed transition.
   cyclesSeen           Int      @default(1)
+  /// Wave 22.5 — surface_kind. 'public' | 'authenticated' | 'mixed' |
+  /// 'unknown'. Nullable for legacy rows that predate the
+  /// surface-aware engine; new rows always carry a value.
+  surfaceKind          String?
   // Full FindingProjection JSON for cheap rehydration on cold start
   projection           String   @db.Text
   createdAt            DateTime @default(now())
@@ -598,6 +602,10 @@ model Finding {
   // queries.
   @@index([environmentId, inferenceKey, surface])
   @@index([environmentId, status, statusChangedAt])
+  // Wave 22.5 — surface_kind filter on the findings page. The UI lets
+  // operators filter "public-only" or "authenticated-only" views; this
+  // index makes the predicate cheap.
+  @@index([environmentId, surfaceKind])
 }
 
 // ──────────────────────────────────────────────
@@ -641,6 +649,11 @@ model Action {
   // action's hasActive(...) condition. Used by the projection layer
   // to look up per-secondary impact + catalog remediation_steps.
   inferenceKeysJson String?  @db.Text
+  // Wave 22.5 — surface_kind aggregated across the linked findings.
+  // 'public' | 'authenticated' | 'mixed' | 'unknown'. Nullable for
+  // legacy rows that predate the surface-aware engine; new rows always
+  // carry a value.
+  surfaceKind       String?
   // Full ActionProjection JSON for cheap rehydration on drawer open
   projection        String   @db.Text
   createdAt         DateTime @default(now())
@@ -655,6 +668,8 @@ model Action {
   @@index([environmentId, surface])
   @@index([environmentId, decisionKey])
   @@index([cycleRef, actionKey])
+  // Wave 22.5 — surface_kind filter on the actions page.
+  @@index([environmentId, surfaceKind])
 }
 
 // ──────────────────────────────────────────────

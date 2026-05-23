@@ -127,6 +127,7 @@ function mockFinding(key: string, polarity: 'negative' | 'positive' | 'neutral' 
     compound_chain_type: null,
     compound_chain_role: null,
     compound_chain_order: null,
+    surface_kind: 'public',
   };
 }
 

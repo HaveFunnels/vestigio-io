@@ -855,12 +855,12 @@
 				"description": "Cada finding: screenshot do browser, snapshot do DOM, trace de performance, timestamp. Seu CTO vê evidência, não um dashboard.",
 				"center_label": "Descoberta",
 				"evidence_types": {
-					"browser": "Navegador",
-					"static": "Código",
-					"behavioral": "Comportamental",
-					"cross_source": "Correlação",
-					"vendor": "Integrações",
-					"timestamped": "Registro"
+					"browser": "Captura da página",
+					"static": "Scan do código",
+					"behavioral": "Rastro de cliques",
+					"cross_source": "Sinal cruzado",
+					"vendor": "Auditoria de tags",
+					"timestamped": "Trilha temporal"
 				}
 			}
 		},

@@ -840,12 +840,12 @@
 				"description": "Jeder Fund: Browser-Screenshot, DOM-Snapshot, Performance-Trace, Zeitstempel. Ihr CTO sieht Beweise, kein Dashboard.",
 				"center_label": "Befund",
 				"evidence_types": {
-					"browser": "Browser",
-					"static": "Statisch",
-					"behavioral": "Verhalten",
-					"cross_source": "Quervergleich",
-					"vendor": "Anbieter",
-					"timestamped": "Zeitstempel"
+					"browser": "Seitenerfassung",
+					"static": "Quellcode-Scan",
+					"behavioral": "Klickpfade",
+					"cross_source": "Kreuzsignal",
+					"vendor": "Pixel-Audit",
+					"timestamped": "Prüfpfad"
 				}
 			}
 		},

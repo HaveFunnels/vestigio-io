@@ -81,8 +81,10 @@ export class PrismaActionStore {
 					surface,                                  // $baseIdx+13
 					inferenceKeysJson,                        // $baseIdx+14
 					JSON.stringify(a),                        // $baseIdx+15
+					// Wave 22.5 — surface_kind aggregated across linked findings.
+					a.surface_kind ?? null,                   // $baseIdx+16
 				);
-				const placeholders = Array.from({ length: 15 }, (_, i) => `$${baseIdx + i + 1}`);
+				const placeholders = Array.from({ length: 16 }, (_, i) => `$${baseIdx + i + 1}`);
 				valueRows.push(`(gen_random_uuid(), ${placeholders.join(", ")}, NOW())`);
 			}
 
@@ -92,7 +94,7 @@ export class PrismaActionStore {
 					"decisionKey", "category", "actionType", "severity",
 					"impactMin", "impactMax", "impactMidpoint",
 					"priorityScore", "surface", "inferenceKeysJson",
-					"projection", "createdAt"
+					"projection", "surfaceKind", "createdAt"
 				)
 				VALUES ${valueRows.join(",\n                       ")}
 				ON CONFLICT ("cycleId", "actionKey") DO UPDATE SET
@@ -106,7 +108,8 @@ export class PrismaActionStore {
 					"priorityScore"     = EXCLUDED."priorityScore",
 					"surface"           = EXCLUDED."surface",
 					"inferenceKeysJson" = EXCLUDED."inferenceKeysJson",
-					"projection"        = EXCLUDED."projection"
+					"projection"        = EXCLUDED."projection",
+					"surfaceKind"       = EXCLUDED."surfaceKind"
 			`;
 
 			try {
@@ -145,6 +148,7 @@ export class PrismaActionStore {
 								surface,
 								inferenceKeysJson,
 								projection: JSON.stringify(a),
+								surfaceKind: a.surface_kind ?? null,
 							},
 							update: {
 								decisionKey,
@@ -158,6 +162,7 @@ export class PrismaActionStore {
 								surface,
 								inferenceKeysJson,
 								projection: JSON.stringify(a),
+								surfaceKind: a.surface_kind ?? null,
 							},
 						});
 						result.written++;

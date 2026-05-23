@@ -1284,6 +1284,12 @@ export function projectFindings(
           ? { compound_chain_id: cc.id, compound_chain_type: cc.type, compound_chain_role: cc.role, compound_chain_order: cc.order }
           : { compound_chain_id: null, compound_chain_type: null, compound_chain_role: null, compound_chain_order: null };
       })(),
+      // Wave 22.5 — surface_kind from the underlying inference. The
+      // recompute pipeline stamps surface_kind on every inference based
+      // on the aggregate surfaces of its cited signals; we just lift it
+      // onto the finding here. Null when the inference predates the
+      // surface-aware engine (legacy compatibility).
+      surface_kind: (inf.scoping.surface_kind as 'public' | 'authenticated' | 'mixed' | 'unknown' | undefined) ?? null,
     });
   }
 
@@ -1744,6 +1750,21 @@ export function projectActions(
       // Wave 18t: triggering inference keys carried through from
       // the engine→deriver path. Empty for primary actions.
       inference_keys: action.inference_keys ?? [],
+      // Wave 22.5 — aggregate surface_kind across the linked findings.
+      // Cross-surface actions (touching public + authenticated findings)
+      // surface as 'mixed' so the action drawer can render the right
+      // badge ("affects both marketing site + app").
+      surface_kind: (() => {
+        const kinds = new Set<string>();
+        for (const lf of linkedFindings) {
+          const fp = findingByInferenceKey.get(lf.inference_key);
+          if (fp?.surface_kind) kinds.add(fp.surface_kind);
+        }
+        if (kinds.size === 0) return null;
+        if (kinds.size > 1) return 'mixed';
+        if (kinds.has('mixed')) return 'mixed';
+        return Array.from(kinds)[0] as 'public' | 'authenticated' | 'mixed' | 'unknown';
+      })(),
     };
   });
 
@@ -1819,6 +1840,24 @@ export function projectActions(
         inference_keys: Array.isArray(cf.chain)
           ? cf.chain.map((c: { finding_key?: string }) => c.finding_key).filter((k: string | undefined): k is string => Boolean(k))
           : [],
+        // Wave 22.5 — compound actions inherently span whatever surfaces
+        // the chain links touch. Aggregate across the linked findings:
+        // if the chain spans public + authenticated, surface_kind is
+        // 'mixed' (the typical case for compound chains, which is
+        // exactly the value-add of the compound view).
+        surface_kind: (() => {
+          const kinds = new Set<string>();
+          for (const link of cf.chain ?? []) {
+            const key = link?.finding_key;
+            if (!key) continue;
+            const fp = findingByInferenceKey.get(key);
+            if (fp?.surface_kind) kinds.add(fp.surface_kind);
+          }
+          if (kinds.size === 0) return null;
+          if (kinds.size > 1) return 'mixed';
+          if (kinds.has('mixed')) return 'mixed';
+          return Array.from(kinds)[0] as 'public' | 'authenticated' | 'mixed' | 'unknown';
+        })(),
       };
       actions.push(compoundAction);
     }
@@ -2564,6 +2603,14 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         compound_chain_type: null,
         compound_chain_role: null,
         compound_chain_order: null,
+        // Wave 22.5 — positive findings emitted from positive_checks
+        // are heuristic / catalog-driven, not tied to a specific
+        // inference. They default to 'public' (the marketing surface)
+        // because that's where most positive controls — trust signals,
+        // policy presence, measurement coverage — are evaluated. If
+        // future health-check entries probe the authenticated app,
+        // re-derive from the check definition.
+        surface_kind: 'public',
       });
     }
   }

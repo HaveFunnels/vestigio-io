@@ -296,6 +296,17 @@ export interface FindingProjection {
   compound_chain_type: string | null;
   compound_chain_role: 'trigger' | 'consequence' | 'evidence' | null;
   compound_chain_order: number | null;
+
+  /**
+   * Wave 22.5 — surface_kind. Distinguishes findings from the public
+   * marketing surface vs the authenticated app vs cross-surface
+   * compound findings. Carried from the underlying inference's
+   * surface_kind (which itself comes from the cited signals' surfaces).
+   *
+   * Values: 'public' | 'authenticated' | 'mixed' | 'unknown'. Null on
+   * legacy persisted projections that predate the surface-aware engine.
+   */
+  surface_kind: 'public' | 'authenticated' | 'mixed' | 'unknown' | null;
 }
 
 export interface FindingTruthContext {
@@ -439,6 +450,15 @@ export interface ActionProjection {
    * each inference's QuantifiedValueCase. See Wave 18t.
    */
   inference_keys: string[];
+
+  /**
+   * Wave 22.5 — surface_kind aggregated across the linked_findings.
+   * Tells the UI / chat agent which surface the fix lives on
+   * (public marketing pages vs the authenticated app vs spans both).
+   * Cross-surface actions render with a "spans both" badge in the
+   * action drawer.
+   */
+  surface_kind: 'public' | 'authenticated' | 'mixed' | 'unknown' | null;
 }
 
 export type WorkspaceProjectionType =

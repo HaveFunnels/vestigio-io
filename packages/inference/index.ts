@@ -11,3 +11,7 @@ export { computeTripleSourceInferences } from './triple-source-inference';
 // packages/workspace/recompute.ts which imported them directly.
 export { computeCrossPackSynthesis } from './cross-pack-synthesis';
 export { computeExternalReconInferences } from './external-recon-inference';
+// Wave 22.5 — surface_kind stamping for the inference layer. Mirrors
+// the signal-side stamper: each inference gets surface_kind derived
+// from the aggregate of its cited signals.
+export { stampInferenceSurfaceKinds } from './surface-stamp';

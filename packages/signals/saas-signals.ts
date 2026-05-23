@@ -7,6 +7,7 @@ import {
   FreshnessState,
   IdGenerator,
   makeRef,
+  SurfaceKind,
 } from '../domain';
 
 // ──────────────────────────────────────────────
@@ -145,7 +146,14 @@ function makeSignal(
     id: ids.next(),
     signal_key: key,
     category,
-    scoping,
+    // Wave 22.5 — every signal produced by this extractor is sourced
+    // from authenticated SaaS evidence (the extractor filters input
+    // strictly to AuthenticatedPageView / ActivationStepObserved /
+    // EmptyStateObserved / UpgradeSurfaceObserved / FeatureUsageSurface
+    // / NavigationStructureObserved at the top of the function). Stamp
+    // surface_kind=Authenticated so downstream consumers don't have
+    // to re-derive it from the evidence_type discriminator.
+    scoping: { ...scoping, surface_kind: SurfaceKind.Authenticated },
     cycle_ref: cycleRef,
     freshness: { observed_at: now, fresh_until: new Date(now.getTime() + 86400000), freshness_state: FreshnessState.Fresh, staleness_reason: null },
     attribute: `saas.${key}`,

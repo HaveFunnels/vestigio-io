@@ -4,6 +4,7 @@ import {
 	Scoping,
 	Signal,
 	SignalCategory,
+	SurfaceKind,
 } from "../domain";
 
 // ──────────────────────────────────────────────
@@ -29,13 +30,31 @@ export function createSignal(params: {
 	evidence_refs: string[];
 	description: string;
 	ids: IdGenerator;
+	/**
+	 * Wave 22.5 — surface_kind override. When the caller knows this
+	 * signal is about a specific surface (e.g. it consumed evidence
+	 * from an authenticated app page), pass the SurfaceKind here. The
+	 * resulting signal's scoping carries this override so downstream
+	 * inference can route correctly.
+	 *
+	 * Falls back to params.scoping.surface_kind when omitted; falls
+	 * back to undefined (engine treats as Public) when neither is set.
+	 */
+	surface_kind?: SurfaceKind;
 }): Signal {
 	const now = new Date();
+	// Apply the per-signal surface_kind override on top of the global
+	// scoping. The recompute pipeline passes a single Scoping covering
+	// the whole env; individual signals are about specific surfaces, so
+	// the per-signal override is what downstream consumers should see.
+	const scoping = params.surface_kind
+		? { ...params.scoping, surface_kind: params.surface_kind }
+		: params.scoping;
 	return {
 		id: params.ids.next(),
 		signal_key: params.signal_key,
 		category: params.category,
-		scoping: params.scoping,
+		scoping,
 		cycle_ref: params.cycle_ref,
 		freshness: {
 			observed_at: now,

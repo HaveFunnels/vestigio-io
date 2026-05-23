@@ -228,6 +228,41 @@ export enum EvidenceType {
   CopyElements = 'copy_elements',
 }
 
+// ──────────────────────────────────────────────
+// SurfaceKind — Wave 22.5
+//
+// Distinguishes the audience / journey context of a signal:
+//
+//   public        — anyone-can-reach pages (marketing site, public
+//                   pricing, blog, public product pages). Visitor =
+//                   prospect; outcomes = conversion + acquisition.
+//   authenticated — pages behind login (SaaS app, customer portal,
+//                   member-only area). Visitor = paying user;
+//                   outcomes = activation + retention + expansion.
+//   mixed         — signals/inferences that legitimately span both
+//                   surfaces. Example: `landing_app_mismatch` — the
+//                   landing-page promise vs the post-signup product
+//                   experience. Some findings NEED both halves.
+//   unknown       — surface couldn't be determined. Default until
+//                   evidence collectors stamp the right value; the
+//                   engine treats this as 'public' for compatibility
+//                   with pre-Wave-22.5 data.
+//
+// Carried on Scoping so it propagates from evidence → signal →
+// inference → finding → projection without each layer re-deriving
+// it from URLs. The Surface-aware engine (Wave 22.5) lets packs
+// declare which surfaces their inferences accept; signals from the
+// wrong surface get rejected structurally instead of producing
+// findings that don't make sense in their context.
+// ──────────────────────────────────────────────
+
+export enum SurfaceKind {
+  Public = 'public',
+  Authenticated = 'authenticated',
+  Mixed = 'mixed',
+  Unknown = 'unknown',
+}
+
 export enum SourceKind {
   Crawl = 'crawl',
   HttpFetch = 'http_fetch',

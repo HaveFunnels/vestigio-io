@@ -209,8 +209,10 @@ export class PrismaFindingStore {
 					f.status ?? 'created',                                  // $baseIdx+17
 					f.status_changed_at ?? new Date().toISOString(),        // $baseIdx+18
 					f.cycles_seen ?? 1,                                     // $baseIdx+19
+					// Wave 22.5 — surface_kind nullable string.
+					f.surface_kind ?? null,                                 // $baseIdx+20
 				);
-				const placeholders = Array.from({ length: 19 }, (_, i) => `$${baseIdx + i + 1}`);
+				const placeholders = Array.from({ length: 20 }, (_, i) => `$${baseIdx + i + 1}`);
 				valueRows.push(`(gen_random_uuid(), ${placeholders.join(', ')}, NOW())`);
 			}
 
@@ -222,6 +224,7 @@ export class PrismaFindingStore {
 					"surface", "rootCause", "changeClass", "verificationMaturity",
 					"projection",
 					"status", "statusChangedAt", "cyclesSeen",
+					"surfaceKind",
 					"createdAt"
 				)
 				VALUES ${valueRows.join(',\n                       ')}
@@ -240,7 +243,8 @@ export class PrismaFindingStore {
 					"projection"           = EXCLUDED."projection",
 					"status"               = EXCLUDED."status",
 					"statusChangedAt"      = EXCLUDED."statusChangedAt",
-					"cyclesSeen"           = EXCLUDED."cyclesSeen"
+					"cyclesSeen"           = EXCLUDED."cyclesSeen",
+					"surfaceKind"          = EXCLUDED."surfaceKind"
 			`;
 
 			try {
@@ -281,6 +285,9 @@ export class PrismaFindingStore {
 								status: f.status ?? 'created',
 								statusChangedAt: f.status_changed_at ? new Date(f.status_changed_at) : new Date(),
 								cyclesSeen: f.cycles_seen ?? 1,
+								// Wave 22.5 — surface_kind. Persist null when the
+								// projection didn't carry it (legacy / pre-engine).
+								surfaceKind: f.surface_kind ?? null,
 							},
 							update: {
 								pack: f.pack,
@@ -299,6 +306,9 @@ export class PrismaFindingStore {
 								status: f.status ?? 'created',
 								statusChangedAt: f.status_changed_at ? new Date(f.status_changed_at) : new Date(),
 								cyclesSeen: f.cycles_seen ?? 1,
+								// Wave 22.5 — surface_kind. Persist null when the
+								// projection didn't carry it (legacy / pre-engine).
+								surfaceKind: f.surface_kind ?? null,
 							},
 						});
 						result.written++;

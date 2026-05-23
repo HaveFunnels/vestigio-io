@@ -120,6 +120,7 @@ const BASE: Omit<
 	compound_chain_type: null,
 	compound_chain_role: null,
 	compound_chain_order: null,
+	surface_kind: 'public',
 };
 
 function f(

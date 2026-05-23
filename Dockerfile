@@ -75,6 +75,17 @@ COPY . .
 # `prisma db push` once manually if they ever skip the build-time path).
 # `db push --skip-generate` is idempotent (no-op when schema matches), so
 # re-running on every image build is safe.
+#
+# `--accept-data-loss` is set because Prisma's warning fires on
+# ANY change Prisma considers potentially destructive (adding a unique
+# constraint, narrowing a column type, etc.) — even when the actual
+# data would NOT be lost (e.g. no duplicate rows for the new unique
+# constraint). Without the flag, every such change breaks the deploy
+# and forces an out-of-band manual push. Schema changes are reviewed
+# in PR before they land, so the trade-off is: trust the PR review +
+# unblock CI, accept that a careless "drop column" PR could silently
+# delete data. The mitigation is to always review schema PRs with
+# `prisma migrate diff` output attached.
 ARG DATABASE_URL
 ARG BUILD_DATABASE_URL
 
@@ -83,10 +94,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 RUN if [ -n "$BUILD_DATABASE_URL" ]; then \
       echo "[build] Running prisma db push against BUILD_DATABASE_URL (public proxy)"; \
-      DATABASE_URL="$BUILD_DATABASE_URL" DIRECT_URL="$BUILD_DATABASE_URL" npx prisma db push --skip-generate; \
+      DATABASE_URL="$BUILD_DATABASE_URL" DIRECT_URL="$BUILD_DATABASE_URL" npx prisma db push --skip-generate --accept-data-loss; \
     elif [ -n "$DATABASE_URL" ] && ! echo "$DATABASE_URL" | grep -q ".railway.internal"; then \
       echo "[build] Running prisma db push against DATABASE_URL"; \
-      DIRECT_URL="$DATABASE_URL" npx prisma db push --skip-generate; \
+      DIRECT_URL="$DATABASE_URL" npx prisma db push --skip-generate --accept-data-loss; \
     else \
       echo "[build] No build-reachable DB URL set — skipping prisma db push (operator must reconcile schema manually if migration is required)"; \
     fi

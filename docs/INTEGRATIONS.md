@@ -37,12 +37,15 @@ One-click connect, no developer needed. Either a copy-paste webhook URL from the
 | **Asaas** | Webhook | Invoice, subscription, PIX, boleto |
 | **Vindi** | Webhook | Subscription, invoice, dunning |
 
-### E-commerce platforms (BR)
+### E-commerce platforms (BR + global)
 
 | Source | Auth shape | What it gives us |
 |--------|------------|-------------------|
-| **Shopify** ✅ already shipped | OAuth + webhook | Order, product, inventory, customer events |
-| **Nuvemshop** ✅ already shipped | OAuth + webhook | Same shape, BR-focused |
+| **Shopify** ✅ already shipped | OAuth + webhook | Order, product, inventory, customer events (server-side, admin API) |
+| **Shopify Custom Pixels** | App-embedded pixel script | First-party in-session behavioral events (page_view, product_viewed, cart_viewed, checkout_started, payment_info_submitted) routed through Shopify's sandbox. GDPR-compliant by design, no third-party-cookie problem, adblock-blind. Complements the OAuth integration — that gives server-side events (orders), this gives front-of-funnel behavior. |
+| **Nuvemshop** ✅ already shipped | OAuth + webhook | Same shape as Shopify, BR-focused |
+| **Wix Velo** | Backend snippet (`wix-fetch` in `backend/events.js`) | Customer pastes Vestigio-provided Velo code into their Wix site editor. Velo runs server-side inside Wix, so events flow without a client pixel. Captures any Wix Data event the customer chooses to forward (product viewed, member-area actions, form submissions). |
+| **WordPress / WooCommerce** | Vestigio plugin (WP plugin directory) | Customer installs the plugin from inside their WP admin. Plugin auto-detects WooCommerce (cart/order/refund), Contact Form 7 + WPForms + Gravity Forms (lead capture), and core WP events (post published, comment, login). Server-side, runs inside the customer's WP stack. Significant BR coverage since WordPress + WooCommerce is the default stack for small / mid-tier BR merchants who outgrew Wix but haven't migrated to a platform e-commerce. |
 | **Loja Integrada** | API token + webhook | Order, product, customer |
 | **Tray** | API key + webhook | Order, product, customer — large in BR mid-market |
 | **Bagy** | Webhook | Order, customer (BR fashion / niche) |

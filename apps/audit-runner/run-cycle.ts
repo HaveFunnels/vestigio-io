@@ -25,7 +25,8 @@ import { prisma } from "@/libs/prismaDb";
 import { runStagedPipeline, type PipelineEvent } from "../../workers/ingestion/staged-pipeline";
 import { PrismaEvidenceStore } from "../../packages/evidence";
 import { PrismaSnapshotStore } from "../../packages/change-detection";
-import { PrismaActionStore, PrismaFindingStore, projectAll } from "../../packages/projections";
+import { PrismaActionStore, PrismaFindingStore } from "../../packages/projections";
+import { runEngine } from "../../packages/workspace";
 import { recomputeWithPool } from "./recompute-pool";
 import { loadEngineTranslationsForLocale } from "@/lib/engine-translations";
 import { runFrameworkLensForCycle } from "./run-framework-lens";
@@ -1599,13 +1600,30 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// Non-fatal — proceed without funnel multipliers
 			}
 
+			// Wave 18g — load the previous cycle's findings BEFORE the
+			// engine runs, so projectAll (inside runEngine) can compute
+			// real inference-level change_class (new_issue / regression /
+			// improvement / stable_risk) by comparing inferenceKey sets.
+			// Pre-fix every Finding row had changeClass=null because the
+			// decision-level change_report didn't share inferenceKey
+			// granularity with FindingProjection — the dashboard's
+			// "O que mudou" + Cycle Delta widgets were silently empty.
+			let previousFindings: import("../../packages/projections").FindingProjection[] = [];
+			try {
+				const findingStorePrev = new PrismaFindingStore(prisma);
+				const prev = await findingStorePrev.loadLatestForEnvironment(env.id);
+				previousFindings = prev?.findings ?? [];
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] failed to load prev findings for change-class:`, err);
+			}
+
 			const recomputeStartMs = Date.now();
-			// Recompute offload. When RECOMPUTE_USE_WORKER_THREADS=1 the
-			// engine runs on its own V8 isolate via worker_threads (true
-			// CPU parallelism between concurrent cycles); otherwise it
-			// falls back to the in-process generator drainer (event-loop
-			// yields between phases). Both produce identical output.
-			const multiPackResult = await recomputeWithPool({
+			// Wave 20.7 — single entry point. runEngine wraps recompute +
+			// projectAll; the audit-runner only knows about the engine
+			// contract, not the internals. Worker-threads offloading is
+			// preserved by injecting `recomputeWithPool` as the recompute
+			// backend (RECOMPUTE_USE_WORKER_THREADS=1 still works).
+			const engineOut = await runEngine({
 				evidence: result.evidence,
 				additional_signals: staticCheckSignals,
 				scoping: {
@@ -1639,28 +1657,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// over the same evidence. result.classification is the
 				// canonical one (computed in buildResult with full evidence).
 				classification: result.classification,
+				// Wave 20.7 wiring — keep the worker-pool offloading when
+				// RECOMPUTE_USE_WORKER_THREADS=1 is set; fall back to in-
+				// process recompute otherwise.
+				recompute: recomputeWithPool,
+				previousFindings,
 			});
+			const multiPackResult = engineOut.multipack;
+			const projections = engineOut.projections;
 			const recomputeMs = Date.now() - recomputeStartMs;
-
-			// (c) Project for the UI
-			//
-			// Wave 18g — load the previous cycle's findings BEFORE this
-			// cycle's findings land in the DB, so projectAll can compute
-			// real inference-level change_class (new_issue / regression /
-			// improvement / stable_risk) by comparing inferenceKey sets.
-			// Pre-fix every Finding row had changeClass=null because the
-			// decision-level change_report didn't share inferenceKey
-			// granularity with FindingProjection — the dashboard's
-			// "O que mudou" + Cycle Delta widgets were silently empty.
-			let previousFindings: import("../../packages/projections").FindingProjection[] = [];
-			try {
-				const findingStorePrev = new PrismaFindingStore(prisma);
-				const prev = await findingStorePrev.loadLatestForEnvironment(env.id);
-				previousFindings = prev?.findings ?? [];
-			} catch (err) {
-				console.warn(`[audit-runner ${cycleId}] failed to load prev findings for change-class:`, err);
-			}
-			const projections = projectAll(multiPackResult, translations, { previousFindings });
 
 			// Wave 20.4 — Apply finding lifecycle (Modelo B). After
 			// projectAll produces the current cycle's findings, match

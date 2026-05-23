@@ -75,6 +75,16 @@ export interface EngineRunInput extends MultiPackInput {
    * defaults (English) when omitted.
    */
   translations?: EngineTranslations;
+  /**
+   * Optional recompute backend. Defaults to `recomputeAllAsync` (in-
+   * process generator drainer). The audit-runner passes
+   * `recomputeWithPool` here so a `RECOMPUTE_USE_WORKER_THREADS=1`
+   * deploy offloads the engine to worker_threads on a separate V8
+   * isolate without engine.run() having to know that infrastructure
+   * exists. Layering: this package can't import apps/audit-runner, so
+   * the alternative backend is injected from the caller.
+   */
+  recompute?: (input: MultiPackInput) => Promise<MultiPackResult>;
 }
 
 export interface EngineRunOutput {
@@ -101,7 +111,8 @@ export async function run(input: EngineRunInput): Promise<EngineRunOutput> {
   // will introduce a partial-recompute path for `targeted` that skips
   // integration polling + re-fetches only the target URL; the contract
   // here is stable regardless of how that fills out.
-  const multipack = await recomputeAllAsync(input);
+  const recomputeFn = input.recompute ?? recomputeAllAsync;
+  const multipack = await recomputeFn(input);
 
   let projections = projectAll(multipack, input.translations, {
     previousFindings: input.previousFindings,

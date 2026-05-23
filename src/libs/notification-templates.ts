@@ -767,27 +767,72 @@ function interpolate(template: string, vars: Record<string, string>): string {
 	return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? "");
 }
 
-// Some intro vars are pre-formatted HTML fragments built by the caller
-// (e.g. retentionBlock in value_caught_monthly is `<br/><strong>...`).
-// The convention: caller-built HTML keys end with the suffix below.
-// All other vars are escaped before substitution.
-const RAW_HTML_VAR_SUFFIXES = ["Block", "Html"];
+// ──────────────────────────────────────────────
+// Email template var types
+//
+// Two var shapes coexist in the same `vars` map:
+//   - plain string: the value is treated as text and HTML-escaped
+//     before being substituted into the email's intro / headline /
+//     footer. This is the safe default for anything that ultimately
+//     came from a database row, a user input, or an LLM output.
+//   - rawHtml({ html: "<strong>...</strong>" }): the caller has
+//     deliberately built an HTML fragment and wants it injected
+//     unchanged. The wrapper is explicit so a future developer
+//     can't forget to mark a value as "this is raw HTML" — every
+//     non-wrapped value gets escaped, no exceptions.
+//
+// Previously this was a naming heuristic (keys ending in `Block` or
+// `Html` were treated as raw). The heuristic was silent and fragile:
+// adding a new var with `Block` in its name by accident would skip
+// escaping, and forgetting the suffix on a var that SHOULD be raw
+// would double-escape its HTML. The explicit wrapper trades a tiny
+// bit of caller boilerplate for a type-system-enforceable contract.
+// ──────────────────────────────────────────────
 
-function isRawHtmlVar(key: string): boolean {
-	return RAW_HTML_VAR_SUFFIXES.some((suffix) => key.endsWith(suffix));
+export interface RawHtmlValue {
+	__rawHtml: true;
+	html: string;
 }
 
-// Build the interpolation vars to use for the email INTRO + subject —
-// every non-raw-HTML var is escaped so a malicious value can't break
-// out of the surrounding markup. Raw-HTML vars (keys ending in Block /
-// Html) pass through unchanged because the caller has already chosen
-// their HTML deliberately.
-function buildEmailEscapedVars(vars: Record<string, string>): Record<string, string> {
+/** Wrap a string so it bypasses HTML escape during email interpolation. */
+export function rawHtml(html: string): RawHtmlValue {
+	return { __rawHtml: true, html };
+}
+
+function isRawHtmlValue(value: unknown): value is RawHtmlValue {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		(value as RawHtmlValue).__rawHtml === true &&
+		typeof (value as RawHtmlValue).html === "string"
+	);
+}
+
+export type EmailVar = string | RawHtmlValue;
+export type EmailVars = Record<string, EmailVar>;
+
+// Build the interpolation vars to use for the email body — every
+// plain-string var is HTML-escaped so a malicious value can't break
+// out of the surrounding markup. RawHtmlValue wrappers pass through
+// as their `html` payload because the caller has chosen the HTML
+// deliberately.
+function buildEmailEscapedVars(vars: EmailVars): Record<string, string> {
 	const escaped: Record<string, string> = {};
 	for (const [key, value] of Object.entries(vars)) {
-		escaped[key] = isRawHtmlVar(key) ? value : escapeHtml(value);
+		escaped[key] = isRawHtmlValue(value) ? value.html : escapeHtml(value);
 	}
 	return escaped;
+}
+
+// Subject + plain-text channels see the unwrapped raw value for HTML
+// payloads (they aren't rendered as HTML downstream, so the tags would
+// just be visible noise). The simpler "give me the raw text" view.
+function unwrapVars(vars: EmailVars): Record<string, string> {
+	const out: Record<string, string> = {};
+	for (const [key, value] of Object.entries(vars)) {
+		out[key] = isRawHtmlValue(value) ? value.html : value;
+	}
+	return out;
 }
 
 // Plain-text body builder: takes the rendered intro + subject and
@@ -820,18 +865,19 @@ function buildPlainText(headline: string, intro: string, ctaUrl: string): string
 
 export function renderSmsFromTemplate(
 	event: string,
-	vars: Record<string, string>,
+	vars: EmailVars,
 	locale?: string | null,
 ): string | null {
 	const t = resolveTemplate(event, locale);
 	if (!t) return null;
-	// SMS is plain text — interpolate the raw vars (no HTML escape).
-	return interpolate(t.sms.body, vars);
+	// SMS is plain text — interpolate with unwrapped values (no HTML
+	// escape, no raw-html marker visible).
+	return interpolate(t.sms.body, unwrapVars(vars));
 }
 
 export function renderEmailFromTemplate(
 	event: string,
-	vars: Record<string, string>,
+	vars: EmailVars,
 	baseUrl: string,
 	locale?: string | null,
 ): { subject: string; html: string; text: string } | null {
@@ -839,16 +885,16 @@ export function renderEmailFromTemplate(
 	if (!t) return null;
 
 	// Subjects + ctaPath are plain text (no HTML rendering involved),
-	// so raw interpolation is safe and we want the un-escaped values
-	// in the email subject line.
-	const subject = interpolate(t.email.subject, vars);
-	const ctaPath = interpolate(t.email.ctaPath, vars);
+	// so we want the un-escaped values in the email subject line.
+	const plainVars = unwrapVars(vars);
+	const subject = interpolate(t.email.subject, plainVars);
+	const ctaPath = interpolate(t.email.ctaPath, plainVars);
 	const ctaUrl = ctaPath.startsWith("http") ? ctaPath : `${baseUrl}${ctaPath}`;
 
 	// Intro, headline, and footer ARE rendered inside HTML, so vars
 	// have to be HTML-escaped before substitution. The exception is
-	// raw-HTML vars (keys ending in Block/Html — e.g. retentionBlock)
-	// which the caller has already built as HTML deliberately.
+	// rawHtml() wrappers, which pass their .html payload through
+	// unchanged because the caller built it deliberately.
 	const htmlVars = buildEmailEscapedVars(vars);
 	const intro = interpolate(t.email.intro, htmlVars);
 	const headline = interpolate(t.email.headline, htmlVars);

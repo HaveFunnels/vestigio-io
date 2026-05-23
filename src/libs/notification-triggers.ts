@@ -1,6 +1,6 @@
 import { prisma } from "@/libs/prismaDb";
 import { notifyOrganization, notifyUser } from "@/libs/notifications";
-import { renderSmsFromTemplate, renderEmailFromTemplate } from "@/libs/notification-templates";
+import { renderSmsFromTemplate, renderEmailFromTemplate, rawHtml } from "@/libs/notification-templates";
 
 // ──────────────────────────────────────────────
 // Notification triggers — high-level events that fan out
@@ -58,7 +58,11 @@ export async function triggerIncidentNotifications(args: {
 		count: String(critical.length),
 		domain: args.domain,
 		headline: headline.title,
-		rootCauseSuffix: headline.root_cause ? ` — ${escapeHtml(headline.root_cause)}` : "",
+		// Plain-text suffix — em-dash + root cause, no HTML tags. The
+		// template renderer now escapes interpolated values, so passing
+		// the raw string is the safe choice. Em-dash is unicode-safe in
+		// the HTML body (renders as-is in UTF-8).
+		rootCauseSuffix: headline.root_cause ? ` — ${headline.root_cause}` : "",
 	};
 
 	const email = renderEmailFromTemplate("incident", vars, getBaseUrl(), userLocale)!;
@@ -110,7 +114,12 @@ export async function triggerRegressionNotifications(args: {
 		count: String(args.regressions.length),
 		domain: args.domain,
 		headline: headline.title,
-		rootCauseSuffix: headline.root_cause ? `<br/><br/>${escapeHtml(headline.root_cause)}` : "",
+		// HTML fragment: <br/> tags + escaped root-cause text. The escape
+		// here protects the inner value; rawHtml() marks the whole thing
+		// as deliberate markup so the renderer doesn't escape the <br/>.
+		rootCauseSuffix: headline.root_cause
+			? rawHtml(`<br/><br/>${escapeHtml(headline.root_cause)}`)
+			: "",
 	};
 
 	const email = renderEmailFromTemplate("regression", vars, getBaseUrl(), userLocale)!;
@@ -160,8 +169,16 @@ export async function triggerPageDownNotification(args: {
 	const vars = {
 		pageUrl: args.pageUrl,
 		statusSuffix: args.statusCode ? ` (HTTP ${args.statusCode})` : "",
-		statusDetail: args.statusCode ? `<br/><br/>HTTP status: <strong>${args.statusCode}</strong>` : "",
-		errorDetail: args.errorMessage ? `<br/><br/>${escapeHtml(args.errorMessage)}` : "",
+		// HTML fragments with <br/> + <strong>. Status code is a number
+		// (safe in template literal); error message gets HTML-escaped
+		// inside the rawHtml() wrapper to protect against an upstream
+		// fetch error containing markup characters.
+		statusDetail: args.statusCode
+			? rawHtml(`<br/><br/>HTTP status: <strong>${args.statusCode}</strong>`)
+			: "",
+		errorDetail: args.errorMessage
+			? rawHtml(`<br/><br/>${escapeHtml(args.errorMessage)}`)
+			: "",
 	};
 
 	const email = renderEmailFromTemplate("page_down", vars, getBaseUrl())!;
@@ -372,7 +389,11 @@ export async function sendMiniAuditEmail(args: {
 		count: String(negativeCount),
 		impact: `${formatBRLCents(args.totalImpactMin)}–${formatBRLCents(args.totalImpactMax)}`,
 		resultUrl,
-		findingsHtml,
+		// Pre-built HTML table with severity rows + impact totals. The
+		// individual values (label, title, domain) are HTML-escaped
+		// inside buildFindingsHtml() so the rawHtml() wrapper only marks
+		// the surrounding markup as deliberate.
+		findingsHtml: rawHtml(findingsHtml),
 	};
 
 	const rendered = renderEmailFromTemplate("mini_audit_complete", vars, baseUrl)!;

@@ -128,13 +128,15 @@ export async function runMonthlyValueCaughtPass(now: Date = new Date()): Promise
 
       const fmt = (n: number) => Math.round(n).toLocaleString("pt-BR");
 
-      const { renderEmailFromTemplate } = await import("./notification-templates");
+      const { renderEmailFromTemplate, rawHtml } = await import("./notification-templates");
       const { notifyUser } = await import("./notifications");
       const siteUrl = process.env.SITE_URL || process.env.NEXTAUTH_URL || "https://app.vestigio.io";
       // Wave 20.6 — pre-build the retention HTML fragment so the
       // template can drop it in via a single {retentionBlock} sub. We
       // build outside the template because the single-brace interpolator
       // doesn't support mustache-style {{#var}}…{{/var}} conditionals.
+      // rawHtml() marks this string as deliberate HTML so the renderer
+      // skips escape — the un-wrapped vars (amount, etc.) ARE escaped.
       const retentionMid = summary.retentionInForceMidpoint;
       const locale = owner.locale || "pt-BR";
       const retentionBlock =
@@ -152,7 +154,7 @@ export async function runMonthlyValueCaughtPass(now: Date = new Date()): Promise
           amountMax: fmt(summary.totalCaughtMax),
           monthLabel,
           resolvedCount: String(summary.resolvedCount),
-          retentionBlock,
+          retentionBlock: rawHtml(retentionBlock),
         },
         siteUrl,
         locale,

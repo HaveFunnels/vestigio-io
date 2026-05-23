@@ -8,4 +8,9 @@ cmds = ["npm ci --legacy-peer-deps"]
 cmds = ["npx prisma generate", "npm run build"]
 
 [start]
-cmd = "npx prisma db push --skip-generate && npm run start"
+# --accept-data-loss matches the Dockerfile builder rationale (see
+# Dockerfile lines 75-87 comment block): Prisma's "data loss" warning
+# fires on safe additions like new unique constraints when no actual
+# duplicates exist, and blocking the start phase on it just stalls
+# deploys. Schema PRs are the place to catch real data-loss intent.
+cmd = "npx prisma db push --skip-generate --accept-data-loss && npm run start"

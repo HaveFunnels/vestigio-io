@@ -783,7 +783,7 @@
 				"description": "Eine priorisierte Warteschlange. Auswirkung in Dollar, nicht in Farbcodes. Das erste Element ist $42k/Monat wert. Das neunte $1.5k. Sie wissen, wo Sie anfangen.",
 				"rows": [
 					{
-						"title": "Checkout-Abbrüche steigen",
+						"title": "Werbebudget leckt auf Landing",
 						"impact": "−7.840 €"
 					},
 					{
@@ -813,7 +813,7 @@
 						"confidence": "94%"
 					},
 					{
-						"surface": "Preisseite",
+						"surface": "Landing-Page-Copy",
 						"loss": "−2.930 €",
 						"confidence": "88%"
 					},
@@ -826,7 +826,7 @@
 			},
 			"continuous_watch": {
 				"eyebrow": "Sie erholen sich",
-				"title": "Das Deploy letzte Woche hat den Checkout beschädigt. Sie wüssten es in Stunden, nicht Tagen.",
+				"title": "Das Deploy letzte Woche hat die Preisseite beschädigt. Sie wüssten es in Stunden, nicht Tagen.",
 				"description": "Kontinuierliche Zyklen vergleichen jede Oberfläche mit der vorherigen. Wenn sich etwas verschlechtert, erscheint es in Ihrer Warteschlange, bevor ein Kunde sich beschwert.",
 				"axis_label": "Verlorene Einnahmen / Monat",
 				"before_label": "Vor Vestigio",

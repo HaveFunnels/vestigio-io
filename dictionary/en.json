@@ -798,7 +798,7 @@
 				"description": "A ranked queue. Impact in dollars, not color codes. The first item is worth $8.4k/month. The last is worth $1.1k. You know where to start.",
 				"rows": [
 					{
-						"title": "Checkout abandons spike",
+						"title": "Ad spend leaking on landing",
 						"impact": "−$8,420"
 					},
 					{
@@ -828,7 +828,7 @@
 						"confidence": "94%"
 					},
 					{
-						"surface": "Pricing page",
+						"surface": "Landing page copy",
 						"loss": "−$2,840",
 						"confidence": "88%"
 					},
@@ -842,7 +842,7 @@
 			"continuous_watch": {
 				"eyebrow": "You recover",
 				"title": "Lost revenue drops 87% in the first month.",
-				"description": "Last week's site update broke your checkout — you'd know in hours, not days. Continuous cycles compare every surface against the last; when something degrades, it shows up in your queue before a customer complains.",
+				"description": "Last week's deploy broke your pricing page — you'd know in hours, not days. Continuous cycles compare every surface against the last; when something degrades, it shows up in your queue before a customer complains.",
 				"axis_label": "Revenue lost / mo",
 				"before_label": "Before Vestigio",
 				"after_label": "After Vestigio",

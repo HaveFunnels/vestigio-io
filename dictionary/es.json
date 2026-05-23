@@ -792,7 +792,7 @@
 				"description": "Una cola priorizada. Impacto en dólares, no en colores. El primer ítem vale $8.4k/mes. El último vale $1.1k. Sabes por dónde empezar.",
 				"rows": [
 					{
-						"title": "Pico de abandono en checkout",
+						"title": "Inversión filtrándose en landing",
 						"impact": "−$8.420"
 					},
 					{
@@ -822,7 +822,7 @@
 						"confidence": "94%"
 					},
 					{
-						"surface": "Página de precios",
+						"surface": "Copy de la landing",
 						"loss": "−$2.840",
 						"confidence": "88%"
 					},
@@ -836,7 +836,7 @@
 			"continuous_watch": {
 				"eyebrow": "Usted recupera",
 				"title": "Los ingresos perdidos caen 87% en el primer mes.",
-				"description": "La actualización de la semana pasada rompió tu checkout — lo sabrías en horas, no en días. Ciclos continuos comparan cada superficie con la anterior; cuando algo se degrada, aparece en tu cola antes de que un cliente se queje.",
+				"description": "La actualización de la semana pasada rompió tu página de precios — lo sabrías en horas, no en días. Ciclos continuos comparan cada superficie con la anterior; cuando algo se degrada, aparece en tu cola antes de que un cliente se queje.",
 				"axis_label": "Ingresos perdidos / mes",
 				"before_label": "Antes de Vestigio",
 				"after_label": "Después de Vestigio",

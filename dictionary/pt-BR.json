@@ -798,7 +798,7 @@
 				"description": "Uma fila ranqueada. Impacto em reais, não em cores. O primeiro item vale R$42k/mês. O último vale R$5,7k. Você sabe por onde começar.",
 				"rows": [
 					{
-						"title": "Pico de abandono no checkout",
+						"title": "Investimento vazando na landing",
 						"impact": "−R$ 42.100"
 					},
 					{
@@ -828,7 +828,7 @@
 						"confidence": "94%"
 					},
 					{
-						"surface": "Página de preços",
+						"surface": "Copy da landing page",
 						"loss": "−R$ 14.200",
 						"confidence": "88%"
 					},
@@ -842,7 +842,7 @@
 			"continuous_watch": {
 				"eyebrow": "Você recupera",
 				"title": "Faturamento perdido cai 87% no primeiro mês.",
-				"description": "A atualização da semana passada quebrou seu checkout — você saberia em horas, não em dias. Ciclos contínuos comparam cada superfície com a anterior; quando algo degrada, aparece na sua fila antes do cliente reclamar.",
+				"description": "A atualização da semana passada quebrou sua página de preços — você saberia em horas, não em dias. Ciclos contínuos comparam cada superfície com a anterior; quando algo degrada, aparece na sua fila antes do cliente reclamar.",
 				"axis_label": "Faturamento perdido / mês",
 				"before_label": "Antes da Vestigio",
 				"after_label": "Depois da Vestigio",

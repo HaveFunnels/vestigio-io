@@ -3036,12 +3036,202 @@ The Wave 22.5 surface refactor (public / authenticated / mixed) was the architec
 **Effort:** ~2 weeks. The bulk is the APK worker + Docker image; everything else is incremental on top of the surface infrastructure that already exists.
 
 **Out of scope (V1):**
-- iOS IPA analysis. App Store doesn't allow public IPA download. Defer until either (a) a customer uploads their IPA build (CSV-bridge pattern), or (b) we partner with AppCensus/42matters which index iOS apps externally.
+- iOS IPA analysis. **Decision 2026-05-23: dropped entirely.** App Store doesn't allow public IPA download, and the partner-indexing route (AppCensus / 42matters) adds dependency without enough payback. Operator-upload pattern adds friction without scale. Android-only coverage is honest — when an enterprise prospect asks, the answer is "Android today, iOS when there's contractual demand for it."
 - Runtime behavior analysis (running the APK in an emulator and observing traffic). Big infra step beyond static analysis.
 - Code-level security findings (treating Vestigio as a SAST tool). Stays in scope: anything that ties to revenue impact (attribution blindspot, conversion friction, trust signals). Out of scope: generic CVEs.
 - Dynamic instrumentation (Frida, Xposed). Out — that's a different product.
 
 **Trigger to ship sooner:** any enterprise prospect (Itaú-class) asks for mobile coverage during the sales process; Wave 24 jumps in front of remaining Wave 21 backlog.
+
+---
+
+## Wave 23.3 — API endpoint inventory (inside /inventory, finding-driven)
+
+**Positioning correction (2026-05-23):** the original "API surface" sketch positioned Vestigio as competing with Salt Security / NoName Security / WAAPs — wrong segment, wrong price point, wrong moat. The right framing: API endpoints are evidence that flows into the EXISTING inventory + inference engine, and the **findings** they generate (not the inventory itself) are the deliverable. The inventory surface is `/app/inventory` enriched with a new "APIs" tab; users discover their endpoints alongside their pages.
+
+**Why now:** the surface engine (Wave 22.5) accepts new evidence types cleanly. API endpoints discovered during crawl become a new evidence class; inferences over them tie to revenue impact (slow checkout API → conversion loss; PII-leaking endpoint → trust break) without requiring net-new infra.
+
+**Goals:**
+1. Discover API endpoints during normal crawl via the network-trace filter (flowchart in the strategic notes): HTTP method + content-type + path pattern + XHR/Fetch classifier.
+2. Persist as `ApiEndpoint` evidence (or extend `KatanaDiscovery` if it fits).
+3. Surface in `/app/inventory` under a new tab.
+4. Inference pack `api_endpoint_health` produces findings tied to business impact, not security alone.
+
+**Discovery pipeline (per the user-provided flowchart):**
+
+```
+Network Response
+  → Resource Type Filter (drop image/font/media)
+  → Static File Extension Filter (drop .js/.css/.png)
+  → Content-Type Media Check (drop image/* video/*)
+  → HTTP Method:
+      POST/PUT/DELETE/PATCH → ✅ API (non-GET)
+      GET/HEAD/OPTIONS → Content-Type Analysis:
+        application/json|xml → ✅ API
+        Other → Path Pattern Match:
+          /api/|/v1/|/graphql → ✅ API
+          No match → XHR/Fetch Origin → ✅ API
+          else → DROP
+  → Confidence Classification → Signature Dedup → Emit
+```
+
+**Finding examples (the deliverable, not the inventory):**
+
+- `api_pii_exposure` — endpoint returns customer email/phone/document without auth + no IP allowlist (LGPD risk + brand trust).
+- `api_response_unbounded` — pagination absent; full-table scrape possible in one call.
+- `api_endpoint_uses_staging_host` — hardcoded staging URL leaked into production bundle.
+- `api_rate_limit_absent` — same client IP makes 100+ requests with no 429 (cart-bot defense gap).
+- `api_versioning_drift` — `/v1` and `/v3` both live; `/v2` 404s (forgotten deprecation; operators load-balance to one then the other randomly).
+- `api_checkout_slow_outlier` — checkout API p99 is 8x catalog API p99 (revenue-line finding, not "slow API").
+- `api_auth_inconsistent_across_endpoints` — some endpoints use OAuth, others use API key in URL query string.
+
+**Sequence:**
+- 23.3.1 — `ApiEndpoint` evidence type + collector embedded in Playwright/Katana stages (extend existing crawl with the response classifier). ~2-3 days.
+- 23.3.2 — `/app/inventory` "APIs" tab — table view with endpoint + method + content-type + first seen + last seen + findings count. ~1.5 days.
+- 23.3.3 — `api_endpoint_health` inference pack with 7-10 initial rules listed above. ~2-3 days.
+- 23.3.4 — Cross-link findings from APIs view to the standard findings drawer. ~0.5 day.
+
+**Effort:** ~7-8 days. Sits cleanly inside the existing surface model — every API endpoint inherits its parent surface's `surface_kind` (typically `authenticated` if behind login, `public` otherwise).
+
+**Out of scope:**
+- Active fuzzing / payload injection — that's API security tooling, not what Vestigio does.
+- WAF rule recommendations — different product space.
+- OpenAPI spec validation if customer publishes one. (Could be added as a follow-up — operator uploads their spec, we cross-check discovered endpoints against declared ones; gap = silent shadow API.)
+
+---
+
+## Wave 25 — Enterprise compliance + identity (the procurement gates)
+
+**Positioning (2026-05-23):** SOC 2 Type II + dedicated penetration testing are deferred until there's cash for them (Type II audit ~$30k-50k + annual recurring + 6-9 months of evidence collection). Until then, the realistic combo is: **ISO 27001 + LGPD ANPD attestation + public security docs**. Free or low-cost; opens 80% of enterprise procurement conversations.
+
+This wave is a separate track from the engine work — runs in parallel, gated more by legal/compliance bandwidth than engineering.
+
+### Wave 25.1 — Public security overview pages (zero cost, high impact)
+
+A `/security` page on `vestigio.io` plus downloadable PDFs:
+- Security overview document
+- Data handling document (what we collect, where it lives, who can access)
+- Subprocessors list (Anthropic, Brevo, Railway, Stripe, Mercado Pago, Cloudflare, etc.)
+- Vulnerability disclosure policy + responsible disclosure email
+- Status page + uptime SLA commitment
+
+Procurement teams at every enterprise pull these documents in the first call. Without them, you're stuck answering 200-line security questionnaires by hand. ~3-5 days of writing + design.
+
+### Wave 25.2 — ISO 27001 certification track
+
+Lighter than SOC 2 for first-time pursuit: ~3-4 months, $8k-15k total (auditor + consulting). Vestigio's existing engineering practices (encryption at rest, audit logging, access controls, incident response) likely cover 60-70% of requirements out of the box.
+
+Required artifacts:
+- ISMS (Information Security Management System) documentation
+- Risk assessment + treatment plan
+- Statement of Applicability mapping controls to evidence
+- Internal audit log
+- Management review meetings (quarterly)
+
+Customer-facing payoff: ISO certificate becomes the answer to most security questionnaire items.
+
+### Wave 25.3 — LGPD ANPD attestation
+
+DPO designation + records of processing activities + DPIA (Data Protection Impact Assessment) for high-risk processing. Free or near-free; ~1-2 months of legal work. Required to sell to Brazilian banking sector legally.
+
+### Wave 25.4 — Data residency option (BR datacenter)
+
+Resolução 4.658 BACEN constrains data offshore for some financial-sector workloads. Vestigio offers an optional BR-hosted tenant for affected customers — replica of the multi-tenant infra deployed in a São Paulo region via Railway/AWS BR/Oracle BR.
+
+Engineering effort: ~3-6 months — non-trivial. Database replication, multi-region operations runbook, separate billing entity. Defer until 1-2 specific deals require it.
+
+### Wave 25.5 — Identity provider integration
+
+**Order:**
+
+1. **SAML 2.0 SSO** with Okta + Entra ID + Google Workspace + Auth0 + Ping as the priority IdPs. ~2-3 weeks. NextAuth.js supports SAML providers — saml-jackson or boxyhq adapter is the proven path.
+2. **SCIM 2.0 provisioning** for joiner-mover-leaver automation. ~1-2 weeks. Same boxyhq toolkit covers SCIM.
+3. **RBAC inherited from IdP groups.** The cliente declares "Equipe Compliance Itaú" in Entra ID; SCIM provisions; the group becomes a Vestigio role. ~3-4 weeks. This is the sophisticated end — identity-driven authorization.
+
+**Out of scope this wave:**
+- SOC 2 Type II — defer until cash flow supports + pentesting partner secured.
+- Single-tenant deployment per customer — major infra refactor; defer until at least one signed contract requires it.
+- BYOK encryption (customer-managed keys via AWS KMS / Azure Key Vault / GCP KMS / HashiCorp Vault) — wait for contractual demand.
+
+---
+
+## Wave 26 — Multi-Surface Coherence Engine (the cumulative ápice)
+
+**This is the moat.** Every prior wave added a surface or a source. Wave 26 is the engine that synthesizes ACROSS all of them and produces findings impossible without the full cumulative context. It is the answer to the question "what only Vestigio can do because of everything we've built?"
+
+### What it sees that nothing else does
+
+By Wave 26 the engine has unified data from:
+- **Public web** (crawl + content + copy + structured data + HTTP behavior)
+- **Authenticated web** (saas-access crawl behind login)
+- **Mobile app** (APK strings, manifest, deeplinks, SDKs — Wave 24)
+- **API endpoints** (Wave 23.3)
+- **Stripe revenue truth** (charges, MRR, refund rate, dispute rate)
+- **Meta + Google ad spend + creative copy** (Waves 21.6 / future)
+- **Email engagement** (DMARC + delivery rate via partner integrations)
+- **Off-site recon** (Trustpilot / Reclame Aqui / Reddit / G2)
+- **Cycle-over-cycle history** — N cycles of lifecycle data per env (Wave 20.4)
+- **CompoundFinding chains across packs** (Wave 19d / 20.6)
+
+**No other product combines these.** Salt + NoName see APIs. Hotjar sees behavior. SimilarWeb sees competitive position. Klaviyo sees email. Lighthouse sees web perf. None of them see all of these UNIFIED with revenue truth and lifecycle history.
+
+### Three flagship pack outputs
+
+**26.1 — Customer Journey Coherence Pack**
+
+Stitch every customer touchpoint into one narrative timeline:
+
+```
+Meta ad creative → click → public landing copy → checkout copy →
+post-purchase email → mobile app onboarding string → first
+authenticated session → upgrade prompt → cancellation flow.
+```
+
+Each step is a SURFACE; each surface has its own copy + design + promises. The pack finds incoherence:
+
+- **Promise drift:** "free shipping over R$50" in the ad → "free shipping over R$75" on the checkout → "free shipping over R$100" in the confirmation email. (Each side fired its own decision; the synthesis catches the contradiction.)
+- **Refund policy fragmentation:** 8 different ways to say "30 days" across web checkout / public refund policy / confirmation email / support macros / APK help screen / chat scripts. Customers cite WHICHEVER number is most favorable.
+- **Onboarding-conversion-pricing inconsistency:** the public landing page promises "5min setup", the app's onboarding flow has 14 steps, the in-app upgrade page expects "you've explored the product" — three teams operating in silos.
+- **Channel-message divergence:** Meta ad says "for SMBs"; Google Search Ads say "enterprise-grade"; landing page says "for any size"; app onboarding asks "what stage is your company?" with 7 options.
+
+**Engineering shape:** an LLM-orchestrated synthesis layer that loads per-surface evidence + cited copy strings + runs a "narrative consistency check" with a specialist prompt per coherence dimension. Cached at the cycle level; refreshes only when surface content changes.
+
+**26.2 — Strategic Position Pack**
+
+A monthly synthesis that uses ALL revenue + cost + competitive + behavior data to produce a forward-looking strategic narrative:
+
+- "Your category benchmark conversion is 2.4%; you're at 1.8%. The 0.6pp gap = R$ Y/mo at your current traffic. The 3 highest-ROI fixes (from your findings prioritized): A, B, C. Estimated combined recovery: R$ Z. Estimated effort: 2 dev-weeks."
+- "Your Meta CAC went from R$ 32 to R$ 48 over the last 90 days while your blended LTV stayed flat — your unit economics are deteriorating. Likely cause: [analysis], suggested response: [3 actions]."
+- "Competitive recon detected 3 new launches from competitors in your category last 60d. Your pricing page hasn't been updated in 4 months. Update window before churn risk hits: ~30 days based on patterns."
+- "Your cycle-over-cycle data shows you've resolved R$ X this quarter. Top 3 categories where you ARE NOT improving over time: A, B, C. Likely systemic causes: [...]."
+
+This is **LLM-as-strategist**. Built on top of all priors; impossible without the cumulative data. Different from a dashboard because each output is causal narrative + recommended action sequence, not a metric.
+
+**26.3 — Multi-brand Holding Posture (Vestigio Banking only)**
+
+For customers that own multiple brands (Itaú owns Itaú PJ, Itaú Personalité, Itaubanco PF, Iti, Rede; Magazine Luiza owns Magalu, Estante Virtual, Netshoes, Zoom). Cross-brand comparisons impossible to do externally:
+
+- "Itaú Personalité has trust signal X but main Itaú doesn't — copy migration opportunity, estimated revenue protect: R$ Y."
+- "Premium tier promises 'expert support' across both Iti and Personalité, but the chat surfaces (mobile + web) both route to the same single queue — promise fragmentation."
+- "Holding-wide pricing tier nomenclature is inconsistent across 5 brands (Plus / Pro / Premium / Black / Personalité all mean roughly the same tier but differently named) — customer-acquisition confusion at the holding level."
+
+### Why this is the moat
+
+- **Data acquisition cost is real, not trivial.** To compete with Wave 26 the rival needs to recreate every prior wave first. Each surface added 1-3 months of engineering. Cumulative moat ~24 months to replicate.
+- **LLM orchestration over a unified data graph is the hard part.** Anyone can prompt an LLM. Few can prompt an LLM with a coherent unified business graph as context.
+- **Cross-customer benchmarks compound.** Wave 21.3+ proposed a cross-customer aggregation pipeline (177 inference keys × N customers per businessModel = a corpus). By Wave 26 that corpus is 6-12 months mature; benchmark statements become evidence-backed, not hand-waved.
+
+### Engineering sizing
+
+**~12-16 weeks of focused engineering** broken into:
+
+- 26.1 (Journey Coherence): 4-6 weeks — LLM orchestration + per-surface evidence loader + coherence inference rules + UI narrative renderer
+- 26.2 (Strategic Position): 3-4 weeks — monthly synthesis cron + accountability loop (track past recommendations vs actual outcomes)
+- 26.3 (Multi-brand Holding): 3-4 weeks — multi-org hierarchy + cross-org aggregation queries + UI to navigate holding view
+
+**Pricing implication:** Wave 26 is the feature line item that justifies Vestigio Enterprise pricing. SMB tier never sees it (the data is too thin to produce useful synthesis). Enterprise / Banking tiers anchor their renewal narrative on these monthly outputs.
+
+**Trigger to ship sooner:** any enterprise prospect signs Vestigio Max and asks "how does this give me more than another KPI dashboard?" — Wave 26 is the answer; jumps to front of queue.
 
 ---
 

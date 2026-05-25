@@ -811,6 +811,602 @@ doc. Re-opening any of these requires explicit re-discussion.
 
 ---
 
+## 11. Step 3 implementation kit — deep dive
+
+The visual checkpoint. Everything below is the operational detail for
+executing Step 3 of the build sequence (Section 10). When a future
+session resumes Step 3, this is the kit they should follow without
+needing the original design conversation.
+
+**Goal of Step 3:** ship a visual mock of the Strategy Plan rendered
+end-to-end with REALISTIC hardcoded data, so the user can review
+layout, typography, spacing, dataviz, and interaction details BEFORE
+any LLM/generator code is written. No real DB queries; all data is
+local mock. After user approval, Step 4 swaps mock for live data.
+
+### 11.1 Dependencies to install
+
+```bash
+# Radix headless primitives — interactive UX (animations + a11y)
+npm install \
+  @radix-ui/react-accordion \
+  @radix-ui/react-collapsible \
+  @radix-ui/react-dialog \
+  @radix-ui/react-scroll-area \
+  @radix-ui/react-tabs \
+  @radix-ui/react-progress \
+  @radix-ui/react-separator \
+  @radix-ui/react-tooltip
+
+# visx — chart primitives for non-trivial dataviz
+npm install \
+  @visx/group \
+  @visx/scale \
+  @visx/shape \
+  @visx/axis \
+  @visx/tooltip \
+  @visx/event \
+  @visx/responsive
+```
+
+Fraunces is loaded via `next/font/google` — no npm install, just a
+TypeScript declaration in the font config.
+
+### 11.2 File map
+
+Create these files. Paths are absolute from the repo root.
+
+```
+src/styles/strategy.css                                NEW
+  - Print stylesheet (?print=true mode)
+  - Fraunces @font-face declarations as fallback if next/font fails
+
+src/lib/fonts.ts                                       MODIFY (or NEW)
+  - Add Fraunces import via next/font/google
+  - Export the CSS variable for use in tailwind config + StrategyPlanPanel root
+
+tailwind.config.ts                                     MODIFY
+  - Add 'serif' fontFamily mapped to var(--font-fraunces)
+  - Existing 'sans' (Satoshi) and 'mono' (JetBrains) untouched
+
+src/components/strategy/types.ts                       NEW
+  - TypeScript types for the mock data + section props
+  - Re-export Prisma types where appropriate (MonthlyStrategyPlan,
+    PlanNextStep) so swap to real data later is zero-friction
+
+src/components/strategy/mock-data.ts                   NEW
+  - Realistic hardcoded plan for havefunnels.com / June 2026
+  - Includes 3 historical months for memory rollups
+  - See section 11.4 below for the canonical mock shape
+
+src/components/strategy/StrategyPlanPanel.tsx          NEW
+  - Top composition component
+  - Receives a plan object as prop (mock during Step 3, real Step 4+)
+  - Renders the 6 sections in order with Framer staggered entrance
+  - Sticky header at top with Export PDF + Share buttons
+  - Print mode detection via URL query (?print=true)
+
+src/components/strategy/sections/HeroMetrics.tsx       NEW
+  - 4 metric tiles in a responsive grid
+  - Each tile: number (Mono tabular), label (Satoshi 11px uppercase),
+    delta vs prior month with arrow, inline SVG sparkline trail
+  - Sparkline reuses pattern from src/components/console/SummaryCards.tsx
+
+src/components/strategy/sections/BuyerSegments.tsx     NEW
+  - "O que sua audit revelou este mês" — 3 cards stacked or 3-col
+    grid (responsive)
+  - Each card: buyer label + finding count + impact range + sample
+    finding titles (1-2)
+  - Optional: small donut chart (visx) showing proportions
+
+src/components/strategy/sections/WhatHappenedNarrative.tsx  NEW
+  - "O que aconteceu em [mês]" — pure narrative paragraph(s)
+  - Fraunces 17px, line-height 1.7, max-width ~640px center
+  - Citations inline: superscript clickable links to findings/events
+  - Renders the narrativeWhatHappened markdown via lightweight
+    parser (markdown-to-react minimal — bold, italic, links, sup)
+
+src/components/strategy/sections/NextSteps.tsx         NEW
+  - "Próximo passo — atacar nesta ordem"
+  - The composite descriptive + checklist section
+  - Top 3 expanded; +2 collapsed under "ver mais" button (Radix
+    Collapsible)
+  - Each step card:
+    * Numbered badge (①②③) on left rail
+    * Title (Satoshi 18px semibold)
+    * Combined impact pill (mono tabular)
+    * Reasoning narrative (Fraunces 15px, indented section)
+    * "COMO PROCEDER" numbered list (Satoshi 14px)
+    * "PESQUISAR" research refs (small chips with external link icon)
+    * Effort + owner row (small Satoshi muted)
+    * Checkbox + status badge + assignee avatar + due date row
+    * "Ver actions linkadas" link → opens action drawer (Radix Dialog)
+    * Comment count + "comentar" CTA
+  - Sequence connector: SVG arrow between cards indicating "destrava"
+    relationships (custom SVG, computed via card coordinates)
+
+src/components/strategy/sections/ValuePreview.tsx      NEW
+  - "O que você ganha continuando"
+  - Horizontal timeline visualization (custom SVG)
+  - 4 markers: now, M3, M6, M12
+  - Each marker: dot + label + hover tooltip (Radix Tooltip) with
+    explanation
+  - Filled/empty state visualization for each marker (what's
+    available now vs unlocks later based on connected integrations)
+  - Below timeline: short narrative paragraph (Haiku-generated in
+    Step 4; mock in Step 3)
+
+src/components/strategy/sections/MemoryRollups.tsx     NEW
+  - "Memória — meses anteriores"
+  - 4 cards (1m / 3m / 6m / 12m windows) in a 2x2 grid or 4-col row
+  - Each card: window label + actions resolved + R$ captured
+    + biggest single win (for 6m, 12m)
+  - Small bar chart inside (visx) showing month-by-month values
+    within the window
+  - 12m card includes percentile vs category if available (mock
+    "disponível em 4 meses" state otherwise)
+
+src/components/strategy/PrintLayout.tsx                NEW
+  - Wraps StrategyPlanPanel for print mode
+  - Removes sticky header, expands all collapsibles, removes
+    hover/animation states
+  - Used by /app/library/strategy/[month]/export route in Step 10
+
+src/app/app/library/strategy/[month]/page.tsx          NEW
+  - The plan route. Server component fetches the plan + renders
+    StrategyPlanPanel with real data
+  - During Step 3: uses mock-data.ts entirely (no DB)
+  - Handles 404 (plan not found for month) + locked state (status='generating')
+
+src/app/app/actions/page.tsx                           MODIFY
+  - Add the destacated strip above the existing summary/filter bar
+  - Strip: subtle gradient card with "Seu Plano de Estratégia de
+    [mês] está pronto. 3 próximos passos identificados. R$ X em
+    foco." + "Abrir Plano" CTA
+  - Click on "Abrir Plano" → opens StrategyPlanPanel in full-screen
+    Radix Dialog overlay (URL state: ?plan=2026-06)
+  - Closing the panel returns to actions view unchanged
+```
+
+**Total: 12 NEW files + 3 MODIFY.** Estimated ~3-5 days of focused
+implementation including iteration on visual details.
+
+### 11.3 Mock data shape — realistic example
+
+This is the source of truth for what Step 3's mock plan looks like.
+Use this verbatim in `src/components/strategy/mock-data.ts`. When
+Step 4 generates real plans, the shape must match this contract.
+
+```ts
+import type { MonthlyStrategyPlan, PlanNextStep } from "@prisma/client";
+
+export const MOCK_PLAN: MonthlyStrategyPlan & {
+  nextSteps: PlanNextStep[];
+} = {
+  id: "mock_plan_havefunnels_2026_06",
+  environmentId: "cmot57x2i006cbidwuwaw5z3s", // real havefunnels env ID
+  month: "2026-06",
+  locale: "pt-BR",
+  generatedAt: new Date("2026-06-01T00:31:00Z"),
+  lastRegenerated: new Date("2026-06-12T14:22:00Z"),
+  status: "ready",
+
+  heroMetricsJson: {
+    retainedMid: 8523,
+    capturedMid: 3214,
+    criticalCount: 12,
+    inProgressCount: 6,
+    retainedDeltaMoM: 0.12, // +12%
+    capturedDeltaMoM: 0.08, // +8%
+    criticalDeltaMoM: -0.20, // -3 findings = -20%
+    inProgressDeltaMoM: 0.50, // +2 = +50%
+    retainedSpark: [6800, 7100, 7500, 7900, 8200, 8523],
+    capturedSpark: [1800, 2100, 2400, 2800, 3000, 3214],
+  },
+
+  buyerSegmentsJson: [
+    {
+      buyer: "copy",
+      buyerLabel: "Para o time de copy",
+      count: 3,
+      impactMin: 1200,
+      impactMax: 2400,
+      impactMidpoint: 1800,
+      sampleFindingIds: [
+        "finding_value_proposition_buried",
+        "finding_cta_competing_or_unclear",
+      ],
+      sampleFindingTitles: [
+        "Hero da home não diz o outcome em <5s",
+        "3 CTAs concorrentes na pricing",
+      ],
+    },
+    {
+      buyer: "eng",
+      buyerLabel: "Para o time de engenharia",
+      count: 2,
+      impactMin: 2800,
+      impactMax: 5600,
+      impactMidpoint: 4200,
+      sampleFindingIds: [
+        "finding_trust_boundary_crossed",
+        "finding_revenue_path_fragile",
+      ],
+      sampleFindingTitles: [
+        "Checkout redireciona pra domínio externo sem aviso",
+        "API de checkout p99 8x mais lenta que catálogo",
+      ],
+    },
+    {
+      buyer: "leadership",
+      buyerLabel: "Para liderança",
+      count: 1,
+      impactMin: 8000,
+      impactMax: 16000,
+      impactMidpoint: 12000,
+      sampleFindingIds: ["finding_landing_app_mismatch"],
+      sampleFindingTitles: [
+        "Anúncio do Meta promete 'plano grátis' mas signup não tem",
+      ],
+    },
+  ],
+
+  memoryRollupsJson: {
+    "1m": {
+      label: "Último mês (Maio)",
+      actionsResolved: 6,
+      capturedTotal: 4127,
+      topCategories: ["copy_alignment", "channel_integrity"],
+      monthlyValues: [{ month: "2026-05", value: 4127 }],
+    },
+    "3m": {
+      label: "Últimos 3 meses",
+      actionsResolved: 14,
+      capturedTotal: 8945,
+      topCategories: ["copy_alignment", "revenue_integrity", "channel_integrity"],
+      biggestWin: {
+        title: "Fix do checkout redirect chain",
+        capturedAmount: 3200,
+        resolvedAt: "2026-04-18",
+      },
+      monthlyValues: [
+        { month: "2026-03", value: 1800 },
+        { month: "2026-04", value: 3018 },
+        { month: "2026-05", value: 4127 },
+      ],
+    },
+    "6m": {
+      label: "Últimos 6 meses",
+      actionsResolved: 22,
+      capturedTotal: 14820,
+      topCategories: ["copy_alignment", "revenue_integrity"],
+      biggestWin: {
+        title: "Reorder da pricing page",
+        capturedAmount: 4100,
+        resolvedAt: "2026-02-09",
+      },
+      monthlyValues: [
+        { month: "2025-12", value: 2100 },
+        { month: "2026-01", value: 1900 },
+        { month: "2026-02", value: 2876 },
+        { month: "2026-03", value: 1800 },
+        { month: "2026-04", value: 3018 },
+        { month: "2026-05", value: 4127 },
+      ],
+    },
+    "12m": {
+      label: "Últimos 12 meses",
+      actionsResolved: 38,
+      capturedTotal: 23410,
+      topCategories: ["copy_alignment", "revenue_integrity", "scale_readiness"],
+      benchmarkAvailability: "available_in_4_months", // mock state
+      biggestWin: {
+        title: "Substituição do gateway pra Stripe",
+        capturedAmount: 6800,
+        resolvedAt: "2025-09-12",
+      },
+      // monthlyValues array of 12 entries
+    },
+  },
+
+  valuePreviewJson: {
+    currentMonth: {
+      label: "Hoje (M1)",
+      unlocked: ["surfaces visíveis", "findings públicos"],
+      icon: "check",
+    },
+    milestoneM3: {
+      label: "M3",
+      unlocked: ["Stripe + behavioral entram no engine"],
+      eta: "1 mês",
+      icon: "pending",
+    },
+    milestoneM6: {
+      label: "M6",
+      unlocked: ["benchmark vs categoria começa a aparecer"],
+      eta: "4 meses",
+      icon: "future",
+    },
+    milestoneM12: {
+      label: "M12",
+      unlocked: ["recommender com histórico completo"],
+      eta: "10 meses",
+      icon: "future",
+    },
+  },
+
+  narrativeWhatHappened: `Em maio você resolveu 4 findings totalizando R$ 3.2k — dois deles eram chronic, sinal que o time tá fechando padrões, não só sintomas. Mas o ciclo de **12/maio** trouxe 3 regressões novas conectadas ao deploy de Black Friday: o componente de checkout otimizado pra mobile introduziu fricção na variação desktop, provavelmente regressão da prop \`isFloatingLabel\`.
+
+Comparado ao mês anterior, você cresceu valor capturado em **78%**, mas o número absoluto de findings críticos abertos (**12**) permanece acima da sua média histórica de 8. A maior parte da exposição nova está no checkout — vale priorizar isso esta semana antes que afete revenue de junho.`,
+
+  valuePreviewNarrative: `Você tá há 2 meses no Vestigio. Em 1 mês, com seus dados de Stripe e behavioral entrando no engine, suas findings ficam ~40% mais específicas. Em 4 meses, você começa a ver benchmark contra sua categoria. Em 10 meses, o recommender tem histórico suficiente pra prever regressões antes de elas surgirem.`,
+
+  llmCostCents: 8,
+  llmCallsCount: 9,
+  exportLockedUntil: null,
+  editLockedByMcpUntil: null,
+
+  nextSteps: [
+    {
+      id: "mock_step_1",
+      planId: "mock_plan_havefunnels_2026_06",
+      order: 1,
+      title: "Resolver fricção do mobile checkout",
+      reasoning: `**78% do seu tráfego de paid Meta vem de mobile** (Stripe + Meta CSV data). O checkout mobile teve regressão de **22% em conversão** após o deploy de 12/maio — é provável que tenha sido a causa direta.
+
+A urgência aqui é: você gasta ~R$ 18k/mês em Meta Ads pra trazer esse tráfego, e a regressão de 22% significa ~R$ 4k de spend efetivamente perdido por mês até resolver. Isso destrava também os Steps 2 e 3 — boa parte do impacto deles depende do checkout estar limpo.`,
+      procedureStepsJson: [
+        "Reproduzir o problema no Chrome DevTools mobile emulator (iPhone 14 Pro viewport, conexão 3G simulada)",
+        "Checkar git log dos componentes de checkout no deploy 12/maio (provavelmente components/Checkout/PaymentForm.tsx ou MobileCheckout.tsx)",
+        "Comparar Lighthouse audit antes/depois (find on Wayback Machine for the 11/maio version if local snapshot missing)",
+        "Se for layout: revert localmente, cherry-pick fixes necessários; se for runtime: identificar o JS error via Sentry/error tracking",
+      ],
+      researchRefsJson: [
+        { title: "Baymard — Mobile Checkout Best Practices", url: "https://baymard.com/blog/mobile-checkout-design" },
+        { title: "Stripe Elements — Mobile Guide", url: "https://stripe.com/docs/stripe-js/elements/mobile" },
+      ],
+      estimatedEffort: "1-2 dias dev",
+      suggestedOwner: "time eng",
+      linkedActionRefsJson: ["action_47", "action_51"],
+      status: "todo",
+      assigneeUserId: null,
+      dueAt: new Date("2026-06-08T23:59:00Z"),
+      doneAt: null,
+    },
+    {
+      id: "mock_step_2",
+      planId: "mock_plan_havefunnels_2026_06",
+      order: 2,
+      title: "Recuperar política de refund visível nos PDPs",
+      reasoning: `Findings de **policy_gap** e **trust_break_in_checkout** fizeram coincidir: nenhum PDP cita política de refund acima da dobra, e o link da política expira em 404 nos mobile-only PDPs (consequência do mesmo deploy do passo 1).
+
+Customer hesita justamente onde decide comprar. Estimativa de impact: **R$ 800/mo** por PDP-equivalente afetado, recuperável em ~5 dias de trabalho de copy + 1 dia de eng.`,
+      procedureStepsJson: [
+        "Listar todos PDPs ativos (use /api/inventory ou painel Shopify)",
+        "Adicionar block 'Política de Refund' acima da dobra em template PDP",
+        "Validar que link da página /politica-de-reembolso retorna 200 em mobile",
+      ],
+      researchRefsJson: [
+        { title: "Hotmart — Como exibir política de reembolso", url: "https://blog.hotmart.com/pt-br/politica-de-reembolso" },
+      ],
+      estimatedEffort: "1 dia copy + 0.5 dia eng",
+      suggestedOwner: "copywriter",
+      linkedActionRefsJson: ["action_62"],
+      status: "todo",
+      assigneeUserId: null,
+      dueAt: null,
+      doneAt: null,
+    },
+    {
+      id: "mock_step_3",
+      planId: "mock_plan_havefunnels_2026_06",
+      order: 3,
+      title: "Reescrever CTA da landing /b2b",
+      reasoning: `Finding **cta_clarity_weak_on_commercial** detectado em /b2b: CTA atual é "Saiba mais", genérico. Análise comportamental mostra que **38% dos visitantes** dessa página rolam até o fim sem clicar — sinal de intent não-resolvida.
+
+Impact pequeno isolado (~R$ 500/mo) mas é um teste rápido com risco mínimo — quinze minutos de copywriting validados pelo time pode liberar a métrica.`,
+      procedureStepsJson: [
+        "Substituir 'Saiba mais' por algo outcome-driven, ex: 'Comece sua trial de 14 dias' ou 'Veja como funciona em 2min'",
+        "A/B test contra o atual por 1 semana (se tiver tooling) ou shipped direto com revert plan",
+      ],
+      researchRefsJson: [
+        { title: "Copyblogger — CTA outcome formulas", url: "https://copyblogger.com" },
+      ],
+      estimatedEffort: "15min copy + deploy",
+      suggestedOwner: "copywriter",
+      linkedActionRefsJson: ["action_73"],
+      status: "todo",
+      assigneeUserId: null,
+      dueAt: null,
+      doneAt: null,
+    },
+    // 2 more collapsed steps (order 4-5) — abbreviated structure
+    {
+      id: "mock_step_4",
+      planId: "mock_plan_havefunnels_2026_06",
+      order: 4,
+      title: "Auditar política de cookies vs banner de consent",
+      reasoning: `LGPD: banner de cookies fired analytics ANTES do consent. ANPD multou 60+ empresas em 2025 por padrão idêntico.`,
+      procedureStepsJson: ["Conditional GA fire", "Validar com browser console"],
+      researchRefsJson: [],
+      estimatedEffort: "0.5 dia eng",
+      suggestedOwner: "time eng",
+      linkedActionRefsJson: ["action_88"],
+      status: "todo",
+      assigneeUserId: null,
+      dueAt: null,
+      doneAt: null,
+    },
+    {
+      id: "mock_step_5",
+      planId: "mock_plan_havefunnels_2026_06",
+      order: 5,
+      title: "Atualizar last-updated em testimonials",
+      reasoning: `5 depoimentos com data 2024 visíveis na home. Custo 0; impact pequeno mas mensurável.`,
+      procedureStepsJson: ["Remover datas ou atualizar"],
+      researchRefsJson: [],
+      estimatedEffort: "15min",
+      suggestedOwner: "copywriter",
+      linkedActionRefsJson: ["action_91"],
+      status: "todo",
+      assigneeUserId: null,
+      dueAt: null,
+      doneAt: null,
+    },
+  ],
+};
+```
+
+### 11.4 Visual treatment per section
+
+**Hero metrics (HeroMetrics.tsx):**
+- Layout: CSS grid 4 columns desktop, 2 columns tablet, 1 column mobile
+- Each tile: 200px min-height, generous padding (24px)
+- Number: JetBrains Mono 700, 28-32px, tabular-nums, slight tracking tight
+- Label below number: Satoshi 500, 12px, uppercase tracking-wider, content-muted color
+- Delta: small pill below ("↗ +12% MoM"); positive = accent-text color, negative = soft red
+- Sparkline: inline SVG, 60px wide × 24px tall, single path stroke=current color, fill=transparent
+- Background: surface-card with 1px edge border, 12px radius
+
+**Buyer Segments (BuyerSegments.tsx):**
+- Layout: vertical stack on mobile, 3-col grid on desktop
+- Each card: 180px min-height
+- Buyer label: Satoshi 600, 14px (e.g. "Para o time de copy")
+- Sub-label: Satoshi 400, 12px content-muted ("3 fixes triviais")
+- Impact: JetBrains Mono 600, 22px, prominent ("R$ 1.8k")
+- Sample finding titles: bulleted (max 2), Satoshi 14px content-secondary
+- Hover: subtle lift -2px, shadow soft
+
+**WhatHappenedNarrative (WhatHappenedNarrative.tsx):**
+- Container: max-width 640px, centered horizontally
+- Body: Fraunces 400, 17px, line-height 1.7
+- Headings inside narrative (h2/h3 in markdown): Fraunces 700, 22px and 18px
+- Bold/strong: Fraunces 700 inline
+- Links/citations: superscript small numbers, accent-cta color, hoverable to scroll to source
+
+**NextSteps (NextSteps.tsx):**
+- Each step card: full-width within max 800px container, 32px vertical spacing between cards
+- Numbered badge (1, 2, 3): 36px circle, Fraunces 700, on the LEFT outside the card (visual rail)
+- Card body padding 32px; bg surface-card; 16px radius
+- Title: Satoshi 600, 18px
+- Combined impact pill: top-right corner, surface-inset bg, 8px padding, mono tabular
+- Reasoning: Fraunces 400, 15px, line-height 1.65, indented 0px (no extra)
+- "COMO PROCEDER" section header: Satoshi 600, 11px uppercase tracking-wider, content-muted
+- Procedure list: Satoshi 400, 14px, line-height 1.55, ordered numbered (1. 2. 3.) NOT bulleted
+- "PESQUISAR" chips: pill-shaped, surface-input bg, 12px padding, Satoshi 13px, small external-link icon
+- Effort + owner row: Satoshi 400, 13px content-muted, separated by middot
+- Checkbox: 18px Radix Checkbox with custom check icon
+- Status badge: pill, color varies by status (todo=neutral, in_progress=accent, done=green-muted)
+- Sequence arrow connector: SVG path from bottom-right of card N to top-left of card N+1, dashed line, accent-subtle color, animated draw on scroll into view
+
+**ValuePreview (ValuePreview.tsx):**
+- Container: full-width within max 800px
+- Timeline: custom SVG, horizontal axis, 4 markers at equal spacing
+- Markers: dot 12px diameter; filled if reached (current), outlined if future
+- Hover marker: Radix Tooltip with rich content (label + unlock list + ETA)
+- Below timeline: narrative paragraph in Fraunces 15px, max-width 640px center
+
+**MemoryRollups (MemoryRollups.tsx):**
+- Layout: 2x2 grid desktop, 1-col stack mobile
+- Each card: 200px min-height
+- Window label: Satoshi 600, 14px ("Último mês", "Últimos 3 meses")
+- Big metric: actions resolved (Mono Bold 24px) + R$ captured (Mono 18px)
+- "Biggest win" callout for 3m/6m/12m: small block with title + amount + date
+- Mini visx bar chart inside card: shows month-by-month within the window, 60px tall
+- 12m card: percentile vs category band (when available) or "disponível em N meses" placeholder
+
+### 11.5 Animation choreography
+
+All via Framer Motion. Hard-coded values for consistency:
+
+- **Section entrance:** staggered fade-up. Each section: `initial={{ opacity: 0, y: 16 }}`, `whileInView={{ opacity: 1, y: 0 }}`, `transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}`. Stagger between sections: 80ms.
+- **Hero metric numbers:** count-up animation on first mount. Use `useMotionValue` + `useTransform` to interpolate over 1.2s.
+- **Sparkline path:** SVG `stroke-dasharray` + `stroke-dashoffset` animated from full length to 0, duration 800ms, delay 200ms after section entrance.
+- **Hover lift on cards:** `whileHover={{ y: -2, boxShadow: 'soft elevated' }}`, transition spring stiffness 300.
+- **Checkbox check:** SVG path draw animation, 250ms.
+- **Sequence connector arrows:** draw animation on intersection observer trigger, 600ms.
+- **Full-screen panel open:** slide up from bottom 24px + fade in, 350ms.
+- **Drawer (action detail) open:** slide from right 100% → 0, 300ms.
+
+### 11.6 Strip on /app/actions
+
+Above the existing summary cards in `/app/actions/page.tsx`:
+
+```tsx
+<div className="mb-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 flex items-center justify-between gap-4">
+  <div>
+    <div className="text-[12px] font-semibold uppercase tracking-wider text-content-muted mb-1">
+      🪶 Plano de Estratégia de Junho
+    </div>
+    <div className="text-[14px] text-content">
+      3 próximos passos identificados · R$ 6k em foco · revisão semanal
+    </div>
+  </div>
+  <button
+    onClick={() => setPlanPanelOpen(true)}
+    className="rounded-md border border-edge bg-bg-elevated px-4 py-2 text-[13px] font-medium text-content hover:bg-surface-card-hover transition-colors"
+  >
+    Abrir Plano →
+  </button>
+</div>
+```
+
+State: `const [planPanelOpen, setPlanPanelOpen] = useState(initialFromUrl)` — reads `?plan=<month>` from URL on mount.
+
+Full-screen panel: Radix Dialog with `data-fullscreen` variant. Implementation:
+
+```tsx
+<Dialog.Root open={planPanelOpen} onOpenChange={setPlanPanelOpen}>
+  <Dialog.Portal>
+    <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 animate-fade-in" />
+    <Dialog.Content className="fixed inset-0 z-50 bg-surface overflow-auto animate-slide-up">
+      <button onClick={() => setPlanPanelOpen(false)} className="fixed top-4 right-4 z-10">×</button>
+      <StrategyPlanPanel plan={MOCK_PLAN} />
+    </Dialog.Content>
+  </Dialog.Portal>
+</Dialog.Root>
+```
+
+When panel opens, push state `?plan=2026-06`. When closes, replace state back.
+
+### 11.7 Print mode
+
+The same StrategyPlanPanel renders both interactive AND print versions
+— print mode is toggled via URL query `?print=true`. The detection:
+
+```tsx
+const isPrint = useSearchParams().get("print") === "true";
+```
+
+When `isPrint` is true:
+- No sticky header
+- All Radix Collapsible default open
+- No hover/animation states (use Tailwind `print:` prefix or conditional className)
+- Single-column layout regardless of viewport
+- Body bg = white (override dark mode for print)
+- Font sizes -1px across the board (denser)
+
+This route is what Step 10 will navigate to via headless chromium:
+`/app/library/strategy/[month]/export?print=true`. The PDF is generated
+by computing `document.body.scrollHeight` and calling
+`page.pdf({ width: '210mm', height: '<computed>px', preferCSSPageSize: false })`.
+
+### 11.8 Step 3 acceptance criteria (CHECKPOINT)
+
+User reviews and approves BEFORE moving to Step 4. Acceptance is:
+
+1. All 6 sections render end-to-end with mock data
+2. Typography matches the aesthetic standard (Section -1) — Fraunces narrative, Satoshi UI, Mono numbers, generous spacing
+3. Dataviz is custom + visx where appropriate, not converging to Recharts look
+4. Animations land smoothly without jank
+5. Print mode renders correctly (manual test via `?print=true`)
+6. Full-screen panel opens/closes cleanly from `/app/actions` strip
+7. Library page (Step 2) cards link correctly to `/app/library/strategy/[month]`
+
+If user pushes back on visual details, iterate within Step 3 — don't move to Step 4 until visual approval.
+
+---
+
 ## 12. What this doc does NOT cover
 
 These are intentionally out of scope for v1, listed so future iterations

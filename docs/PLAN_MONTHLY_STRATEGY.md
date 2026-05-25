@@ -1,13 +1,135 @@
 # Monthly Strategy Plan — Design Doc
 
 > Last updated: 2026-05-25
-> Status: design complete, build sequence below ready to execute
+> Status: Steps 1+2 shipped (schema + Library page); Step 3 is next
 > Source: synthesized from a multi-turn strategic conversation about
 > Vestigio's enterprise positioning, the "snapshot-vs-cumulative"
 > retention tension, and the realization that the flagship enterprise
 > feature isn't a new pack — it's a workflow integration play that
 > turns Vestigio from "audit tool" into "audit + remediation
 > orchestration platform."
+
+## 0. Build state (kept current)
+
+Updated as steps complete. The number-to-status mapping IS the
+authoritative source of "where are we in the build" — if a future
+session needs to resume, start by reading this section.
+
+| Step | Status | Commit | Notes |
+|---|---|---|---|
+| Design doc | ✅ shipped | `cc0b1b3` | This file |
+| 1 — Prisma schema + migration | ✅ shipped | `14a0a2e` | Applied to prod via db push |
+| 2 — Library page revamp | ✅ shipped | `14a0a2e` | `/app/library` exists; sidenav "Maps" → "Library"; i18n keys added in all 4 dictionaries; `/api/library/strategy` lists plans by env |
+| 3 — StrategyPlanPanel + visual mock | ⏳ next | — | **CHECKPOINT** for visual approval before any LLM code |
+| 4 — Generator | pending | — | LLM orchestration over schema |
+| 5 — Cron + first-month trigger | pending | — | Day-1 cron + post-first-audit hook |
+| 6 — Re-narrative event triggers | pending | — | Conservative regen on high-signal events |
+| 7 — Notification email | pending | — | Reuse `notification-templates.ts` infra |
+| 8 — MCP read-only context loader | pending | — | Plan visible globally to MCP |
+| 9 — MCP write (propose/approve) | pending | — | First time MCP gains write surface |
+| 10 — Export endpoint | pending | — | Single-page-long PDF via chromium pool |
+
+### Architectural decisions made AFTER doc creation (post-Step-2)
+
+- **Library page is a SIMPLE composition, not an extracted-component refactor.** The existing `/app/maps/page.tsx` (`MapsGallery` + `MapCard`) was NOT extracted into shared components. Library page links to `/app/maps` for the full gallery; Plans section lives inline. If Step 3 needs the gallery components, extract then. Otherwise, leave the duplication — keeps Step 2 small and reviewable.
+- **`/app/maps` continues to work as a direct URL** — no redirect from Maps → Library was added. Existing deep-links from external systems (chat bot responses, emails, bookmarks) keep working. Sidenav points only at Library.
+
+---
+
+## -1. Aesthetic standard (the visual quality bar)
+
+This is the user-stated quality bar for the document. It's important
+this survives compaction because the bar is the difference between
+"another SaaS dashboard page" and "a flagship moment for the product."
+
+User-stated standard (verbatim from the design conversation):
+
+- "Topo de linha, algo que Miro, Notion, Figma faria, nesse nível"
+- "Bonito, UI bem pensado e bonito"
+- "Investimento altíssimo, não vamos poupar nisso" (specifically about dataviz)
+- "O export tem que ser bonitinho, html" (not webpage-screenshot-to-PDF)
+- "Editorial typography" — Fraunces serif for narrative; Satoshi sans for UI
+
+What this means concretely:
+
+1. **Typography rhythm IS the moat against "looks like every SaaS page".** Serif display + serif narrative + sans UI + mono numeric, with line-heights 1.6-1.7 in narrative blocks. If a design choice doesn't respect that rhythm, it fails the standard.
+2. **No "out-of-the-box" chart libraries that converge to a Recharts look.** visx is locked in. Custom inline SVG for bespoke shapes (timeline, sequence flow).
+3. **Spacing is generous.** Hero metrics get room. Narrative paragraphs have max-width ~640px for readability, not stretched edge-to-edge.
+4. **Animations are subtle but consistent.** Framer Motion staggered entrance on scroll. No flashy / playful — editorial calm.
+5. **Print/PDF must match the screen quality.** Single-page-long PDF. Print stylesheet expands collapsibles, removes hover states, otherwise visually identical.
+
+If a future implementation step feels like it's "good enough" but not at this bar, push back and revise.
+
+---
+
+## -2. Architectural discipline (extend, not invent)
+
+This was a core lesson from the design conversation that the user
+pushed back on repeatedly until it crystallized. It applies to all
+future Plan work AND informs how to extend the engine in general.
+
+**The rule:** when adding a new capability, default to extending
+existing top-level concepts with metadata + generators, NOT to
+inventing new top-level concepts.
+
+**Examples this design follows:**
+
+- "Strategic Brief" output is NOT a new pack — it's a new `Action.category` value ('strategic_brief'). Same Action table, new discriminator.
+- "Customer Journey Coherence" findings are NOT a new finding type — they're regular Findings with `generator='ai_synthesis'` and `surface_kind='mixed'`. Same Finding table, new metadata.
+- "AI-generated content" is NOT a new entity — it's a `generator` field on PlanEdit (`'cron'|'mcp'|'user'`) and Finding/Action when those start receiving LLM emissions.
+
+**Where this lesson came from:** earlier iterations of the strategic
+conversation kept proposing "flagship enterprise packs" (Strategic
+Position Pack, Customer Journey Coherence Pack, Multi-brand Holding
+Pack). The user pointed out that under critical analysis these were
+all EXTENSIONS of existing concepts. The realization led to the
+conclusion that **flagship enterprise features at the engine layer
+mostly don't exist** — the enterprise moat is narrative + depth +
+workflow integration + compliance, not new top-level features.
+
+**Why this matters for the Plan:** when implementation surprises come
+up ("this feels like it needs its own table" / "should this be a new
+pack?"), the answer is usually "no, it's a `generator` discriminator
+or a category field on an existing table." Default to extension.
+
+---
+
+## -3. Why this exists (strategic framing)
+
+To survive compaction: this is the SHORT answer to "why are we building
+this." When future work feels expensive or unclear, this is the test
+to apply.
+
+**The problem the Plan solves:** Vestigio's discovery moment is the
+first-audit reveal — "we found 47 things you didn't know." That moment
+is high-leverage for acquisition but ANTI-leverage for retention.
+Sophisticated customers can pay 1 month, export findings, cancel, and
+work through them at their own pace. The continuous audit, trend
+detection, and chronic-pattern surfacing remain valuable but are NOT
+sufficient retention friction on their own.
+
+**The Plan's job is workflow lock-in + cumulative value visibility.**
+
+- **Workflow lock-in:** the Plan becomes the place where the operator's
+  team coordinates work. Comments, assignments, status changes, MCP
+  collaboration — once that lives in Vestigio, switching means losing
+  the institutional record of decisions and progress. This is the same
+  retention model Jira / Linear / Notion use.
+- **Cumulative value visibility:** each month the Plan demonstrates
+  that the product gets BETTER as the customer stays. Findings become
+  more specific to them (after Stripe / behavioral / Meta CSV data
+  enters the engine). Memory rollups show the progress. Value-preview
+  timeline shows what's coming.
+
+**The Plan is THE answer to "why pay month 4 of Vestigio when month 1
+already told me what's broken?"** Without it, retention is feature
+luck. With it, retention is structural.
+
+This framing should drive priority decisions: any feature that
+strengthens workflow lock-in OR makes cumulative value more visible
+ranks above one that just adds more findings.
+
+---
 
 ---
 

@@ -154,7 +154,8 @@
 				"cross_signals": "Insights Cruzados",
 				"workspaces": "Workspaces",
 				"chat": "Vestigio AI",
-				"maps": "Mapas"
+				"maps": "Mapas",
+				"library": "Biblioteca"
 			},
 			"user_label": "Vestigio Pro",
 			"actions_panel": {

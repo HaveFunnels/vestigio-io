@@ -61,10 +61,15 @@ export const productNav: NavItem[] = [
 	// /app/chat route still works as a direct-URL fallback.
 	// Cross-signals removed from sidenav — embedded as collapsible section in Workspaces.
 	// /app/cross-signals route still works as a deep-link fallback.
+	// Wave 22.6 — "Maps" renamed to "Library" as part of the
+	// Monthly Strategy Plan rollout. Library is the gallery of
+	// long-form artifacts the env accumulates: Maps (existing),
+	// monthly Strategy Plans (new), and future docs. Maps continue
+	// accessible via direct URL + inside workspaces.
 	{
-		id: "maps",
-		href: "/app/maps",
-		labelKey: "maps",
+		id: "library",
+		href: "/app/library",
+		labelKey: "library",
 		icon: "M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z",
 	},
 	{

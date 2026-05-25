@@ -131,6 +131,11 @@ model User {
   customMaps               CustomMap[]
   savedViews               SavedView[]
   pixCharges               PixCharge[]
+  // Monthly Strategy Plan relations (see docs/PLAN_MONTHLY_STRATEGY.md)
+  planStepsAssigned        PlanNextStep[]          @relation("PlanNextStepAssignee")
+  planComments             PlanComment[]           @relation("PlanCommentAuthor")
+  planEditsProposed        PlanEdit[]              @relation("PlanEditEditor")
+  planEditsApproved        PlanEdit[]              @relation("PlanEditApprover")
 }
 
 // ──────────────────────────────────────────────
@@ -337,6 +342,7 @@ model Environment {
   domainFingerprint      DomainFingerprint?
   pageProbes             PageProbe[]
   surfaces               Surface[]
+  strategyPlans          MonthlyStrategyPlan[]
 
   // Wave 22 — one domain per org. The previous schema allowed
   // duplicate (orgId, domain) rows, which would let a user create
@@ -437,6 +443,197 @@ model Surface {
   // honest — two surfaces can't claim the same pattern.
   @@unique([environmentId, urlPattern])
   @@index([environmentId, displayOrder])
+}
+
+// ──────────────────────────────────────────────
+// Monthly Strategy Plan (Pulse) — Wave 22.6 / docs/PLAN_MONTHLY_STRATEGY.md
+//
+// The core long-form deliverable of Vestigio Pulse. One plan per env
+// per calendar month. Generated automatically (day-1 cron OR after the
+// first full audit completes for new envs). Editable by admins +
+// MCP-proposed-then-approved; commentable by all members.
+//
+// See PLAN_MONTHLY_STRATEGY.md for the full design (sections, RBAC,
+// generation policy, cost model, MCP integration semantics).
+// ──────────────────────────────────────────────
+
+model MonthlyStrategyPlan {
+  id            String @id @default(cuid())
+  environmentId String
+  /// 'YYYY-MM' format, e.g. '2026-06'. Combined with environmentId to
+  /// form the unique key — one plan per env per month.
+  month         String
+  /// 'pt-BR' | 'en' | 'es' | 'de'. Locked at generation time from the
+  /// org's locale; subsequent regens use this value (so partial regens
+  /// don't accidentally switch language mid-month).
+  locale        String
+
+  // ── Lifecycle ──
+  generatedAt     DateTime @default(now())
+  lastRegenerated DateTime @default(now())
+  /// 'generating' | 'ready' | 'editing' | 'archived'
+  status          String   @default("generating")
+
+  // ── Structured data sections (deterministic, no LLM) ──
+  /// { retainedMid, capturedMid, criticalCount, inProgressCount,
+  ///   retainedDeltaMoM, capturedDeltaMoM, criticalDeltaMoM,
+  ///   inProgressDeltaMoM, retainedSpark: number[], capturedSpark: number[] }
+  heroMetricsJson   Json
+  /// [{ buyer: 'copy'|'eng'|'leadership', count, impactMin, impactMax,
+  ///    impactMidpoint, sampleFindingIds: string[] }]
+  buyerSegmentsJson Json
+  /// { '1m': {...}, '3m': {...}, '6m': {...}, '12m': {...} } — rollups
+  /// of actions resolved + value captured in each window
+  memoryRollupsJson Json
+  /// { currentMonth: {...}, milestoneM3: {...}, milestoneM6: {...},
+  ///   milestoneM12: {...} } — what unlocks at each future window
+  /// based on current env state (integrations connected, history depth)
+  valuePreviewJson  Json
+
+  // ── LLM-generated sections (markdown) ──
+  narrativeWhatHappened String @db.Text
+  valuePreviewNarrative String @db.Text
+
+  // ── Generation cost telemetry ──
+  llmCostCents  Int @default(0)
+  llmCallsCount Int @default(0)
+
+  // ── Locks (soft, time-bounded so they self-heal) ──
+  /// While exporting, set ~30s into the future. Other export attempts
+  /// return 423 Locked. Self-heals if the export process crashes.
+  exportLockedUntil    DateTime?
+  /// While MCP has a pending edit proposal on this plan, set ~5min
+  /// into the future. Approvals from members blocked until cleared
+  /// (admin can force-clear via UI).
+  editLockedByMcpUntil DateTime?
+
+  environment Environment    @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  nextSteps   PlanNextStep[]
+  comments    PlanComment[]
+  edits       PlanEdit[]
+  versions    PlanVersion[]
+
+  @@unique([environmentId, month])
+  @@index([environmentId, status])
+  @@index([environmentId, generatedAt])
+}
+
+// One PlanNextStep per actionable step in the "Próximo passo" section.
+// Top 3 displayed expanded by default, +2 collapsed (max 5 per plan).
+// Member-editable for status / assignee / dueAt — those fields are the
+// checklist behavior the user toggles inline in the doc.
+model PlanNextStep {
+  id                   String @id @default(cuid())
+  planId               String
+  /// 1-5, render order in the document.
+  order                Int
+  /// Generated title (e.g. "Resolver fricção do mobile checkout").
+  title                String
+  /// Markdown narrative. "POR QUE PRIMEIRO" — LLM-generated rationale
+  /// citing evidence numerically. Admin-editable; member-readonly.
+  reasoning            String @db.Text
+  /// string[] — 3-5 concrete procedure steps.
+  procedureStepsJson   Json
+  /// {title, url?}[] — external research references.
+  researchRefsJson     Json
+  /// Qualitative ("1-2 dias dev", "15min", "afternoon").
+  estimatedEffort      String
+  /// "time eng" / "copywriter" / "head of growth" / etc.
+  suggestedOwner       String
+  /// string[] — Action.id values this step bundles together.
+  linkedActionRefsJson Json
+
+  // ── Member-editable state ──
+  /// 'todo' | 'in_progress' | 'in_review' | 'done' | 'blocked'.
+  status         String    @default("todo")
+  assigneeUserId String?
+  dueAt          DateTime?
+  doneAt         DateTime?
+
+  plan     MonthlyStrategyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  assignee User?               @relation("PlanNextStepAssignee", fields: [assigneeUserId], references: [id])
+
+  @@index([planId, order])
+  @@index([assigneeUserId, status])
+}
+
+// Threaded comments per section. Visible to entire org team
+// (Notion-style — no per-user privacy). MCP can author comments
+// (authorKind='mcp', authorId=null) when @vestigio is invoked.
+model PlanComment {
+  id         String    @id @default(cuid())
+  planId     String
+  /// 'header' | 'hero-metrics' | 'buyer-segments' |
+  /// 'narrative-what-happened' | 'next-step:<step-id>' |
+  /// 'value-preview' | 'memory'
+  sectionId  String
+  /// Null when author is MCP. Set to the User who wrote the comment otherwise.
+  authorId   String?
+  /// 'user' | 'mcp'
+  authorKind String
+  /// Markdown. Supports @vestigio mentions (triggers MCP reply when
+  /// authored by a user).
+  body       String    @db.Text
+  createdAt  DateTime  @default(now())
+  editedAt   DateTime?
+  /// Soft delete — preserves audit trail. Hidden in UI when set.
+  deletedAt  DateTime?
+
+  plan   MonthlyStrategyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  author User?               @relation("PlanCommentAuthor", fields: [authorId], references: [id])
+
+  @@index([planId, sectionId, createdAt])
+}
+
+// MCP-proposed and human-applied edits to plan sections. The full
+// approve/reject flow lives here — UI surfaces proposed edits inline,
+// admins approve/reject, the snapshot before/after enables rollback.
+model PlanEdit {
+  id               String    @id @default(cuid())
+  planId           String
+  /// Same section vocabulary as PlanComment.sectionId.
+  sectionId        String
+  /// 'cron' | 'mcp' | 'user' — who proposed this edit. Cron edits
+  /// auto-approve (they're the generator); MCP + user edits require
+  /// admin approval before applying.
+  editorKind       String
+  editorUserId     String?
+  beforeText       String    @db.Text
+  afterText        String    @db.Text
+  /// Rationale for the edit — primary purpose: explain MCP-proposed
+  /// changes to the admin reviewing them.
+  reason           String?   @db.Text
+  proposedAt       DateTime  @default(now())
+  approvedAt       DateTime?
+  approvedByUserId String?
+  rejectedAt       DateTime?
+  rejectedByUserId String?
+
+  plan       MonthlyStrategyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  editorUser User?               @relation("PlanEditEditor", fields: [editorUserId], references: [id])
+  approvedBy User?               @relation("PlanEditApprover", fields: [approvedByUserId], references: [id])
+
+  @@index([planId, sectionId, proposedAt])
+  @@index([planId, approvedAt])
+}
+
+// Full-plan snapshot taken on every successful edit approval (or full
+// cron regeneration). Enables rollback + audit history. Stored as JSON
+// blob in snapshotJson for cheap serialization.
+model PlanVersion {
+  id            String   @id @default(cuid())
+  planId        String
+  /// Monotonic per plan — 1, 2, 3...
+  versionNum    Int
+  snapshotJson  Json
+  createdAt     DateTime @default(now())
+  /// 'cron' | 'mcp' | 'user_approval' — provenance of this version.
+  createdByKind String
+
+  plan MonthlyStrategyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, versionNum])
+  @@index([planId, createdAt])
 }
 
 model BusinessProfile {

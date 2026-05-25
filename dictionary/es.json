@@ -147,7 +147,8 @@
 				"cross_signals": "Cross-Signals",
 				"workspaces": "Workspaces",
 				"chat": "Vestigio AI",
-				"maps": "Mapas"
+				"maps": "Mapas",
+				"library": "Biblioteca"
 			},
 			"user_label": "Vestigio Pro",
 			"actions_panel": {

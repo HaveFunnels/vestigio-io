@@ -175,6 +175,33 @@ export async function hasRunningCycleForEnv(envId: string): Promise<boolean> {
   }
 }
 
+/**
+ * Returns true when at least one completed cycle exists for the env —
+ * regardless of whether that cycle wrote a projectionsCache. Used by
+ * the layout to distinguish "true first audit ever" (show loading)
+ * from "new cycle running but previous cycles have data" (show
+ * existing data, don't trap the customer behind a spinner).
+ *
+ * Previously the layout treated any running cycle as "loading", which
+ * locked customers out of /actions, /findings, /workspaces, etc when
+ * a new audit started — even when the previous audit's data was still
+ * fully populated. The right behavior is to keep showing what we have
+ * while the new cycle works, and only block on loading when there's
+ * genuinely no prior data anywhere.
+ */
+export async function hasCompletedCycleForEnv(envId: string): Promise<boolean> {
+  try {
+    const { prisma } = await import('@/libs/prismaDb');
+    const count = await prisma.auditCycle.count({
+      where: { environmentId: envId, status: 'complete' },
+    });
+    return count > 0;
+  } catch (err) {
+    console.warn('[hasCompletedCycleForEnv] failed:', err);
+    return false;
+  }
+}
+
 export async function ensureContext(orgCtx: {
   orgId: string;
   orgName: string;

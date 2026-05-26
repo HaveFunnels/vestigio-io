@@ -3,7 +3,7 @@ import { McpDataProvider, type McpDataSnapshot } from "@/components/app/McpDataP
 import { RenewalBanner } from "@/mp/RenewalBanner";
 import { SuspendedGate } from "@/mp/SuspendedGate";
 import { resolveOrgContext } from "@/libs/resolve-org";
-import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps, loadProjectionsCacheForEnv, loadInventoryForEnv, hasRunningCycleForEnv } from "@/lib/console-data";
+import { ensureContext, loadFindings, loadActions, loadChangeReport, loadWorkspaces, loadAllMaps, loadProjectionsCacheForEnv, loadInventoryForEnv, hasRunningCycleForEnv, hasCompletedCycleForEnv } from "@/lib/console-data";
 import { AppProviders } from "./providers";
 import { syncUserLocale } from "@/libs/sync-locale";
 import { loadEngineTranslations } from "@/lib/engine-translations";
@@ -111,15 +111,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 				maps: cached.maps.length === 0 ? { status: "empty" } : { status: "ready", data: cached.maps },
 				currency: orgCtx.currency,
 			};
-		} else if (orgCtx.envId && (await hasRunningCycleForEnv(orgCtx.envId))) {
-			// A cycle is in flight AND no completed cycle has produced a
-			// projections cache yet. Running ensureContext here would block
-			// for minutes: it loads up to 12k partial-cycle evidence rows
-			// and runs the engine synchronously, all while the audit-runner
-			// is competing for the same Prisma connection pool in the same
-			// Node process. Surfaced by admin impersonation during a
-			// customer's first audit. Render with loading state — pages
-			// already handle it cleanly.
+		} else if (
+			orgCtx.envId &&
+			(await hasRunningCycleForEnv(orgCtx.envId)) &&
+			!(await hasCompletedCycleForEnv(orgCtx.envId))
+		) {
+			// TRUE first-audit-ever: a cycle is in flight AND no completed
+			// cycle has ever finished for this env. Only here do we render
+			// the loading state — running ensureContext during a first
+			// audit blocks for minutes (12k partial-cycle evidence rows +
+			// sync engine recompute, competing with the audit-runner for
+			// Prisma connections).
+			//
+			// When a prior completed cycle exists, we DO fall through to
+			// ensureContext below — even if the cache happens to be
+			// missing for that cycle. Showing slightly stale data while a
+			// new audit runs is correct behavior; trapping the user behind
+			// a spinner because a new cycle started is not.
 			mcpData = {
 				findings: { status: "loading" },
 				actions: { status: "loading" },

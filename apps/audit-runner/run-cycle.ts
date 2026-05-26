@@ -2184,14 +2184,23 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				);
 				throw err;
 			}
-			// Prep/recompute failure upstream of the transaction — the
-			// cycle can still complete because evidence + inventory are
-			// already in DB and ensureContext() will recompute lazily on
-			// next request.
+			// Wave 22.6 — recompute/engine failure upstream of the
+			// transaction is also a fatal cycle error. Previously this
+			// branch swallowed the exception and let the cycle land in
+			// `complete` (the rationale was "ensureContext will recompute
+			// lazily"), but observed prod behavior is:
+			//   - runEngine throws for an env every cycle
+			//   - cycle marked complete with empty cache + 0 findings
+			//   - layout fast-path returns null → falls through to a slow
+			//     ensureContext that runs the same engine + throws again
+			//   - customer sees infinite loading on /actions /findings etc
+			// Mark FAILED instead so heal-cron retries on the next pass
+			// and the customer's UI shows an actionable error state.
 			console.error(
-				`[audit-runner ${cycleId}] recompute/persist block failed (non-fatal):`,
+				`[audit-runner ${cycleId}] recompute/persist block failed — marking cycle FAILED:`,
 				err,
 			);
+			throw err;
 		}
 
 		// (e2) Trigger notifications for critical findings — best-effort,
@@ -2267,15 +2276,36 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			);
 		}
 
-		// Fallback mark-complete for the non-transactional path. If we
-		// reached the transaction and it succeeded, cycleMarkedComplete is
-		// true and this is a no-op. If prep threw before the transaction
-		// started, we still want the cycle to land in `complete` (evidence
-		// + inventory are in DB, ensureContext() will recompute lazily).
+		// Defensive fallback. After the Wave 22.6 fix that rethrows
+		// recompute failures, this branch should not fire — the inner
+		// catch now bails to the outer catch (cycle → FAILED). If we
+		// land here, it means a new non-throwing path skipped the
+		// transaction. Write an empty-shape projectionsCache so the
+		// layout fast-path returns a coherent empty state instead of
+		// null (which would otherwise drop the request into the slow
+		// ensureContext path).
 		if (!cycleMarkedComplete) {
+			console.warn(
+				`[audit-runner ${cycleId}] reached defensive fallback — cycle completed without transaction. Writing empty-shape cache so layout fast-path returns empty (not null).`,
+			);
 			await prisma.auditCycle.update({
 				where: { id: cycleId },
-				data: { status: "complete", completedAt: new Date() },
+				data: {
+					status: "complete",
+					completedAt: new Date(),
+					projectionsCache: {
+						findings: [],
+						actions: [],
+						workspaces: [],
+						change_report: null,
+						maps: [],
+						coherence_score: 0,
+						system_health: null,
+						compound_findings: [],
+						cached_at: new Date().toISOString(),
+						cycle_ref: `audit_cycle:${cycleId}`,
+					} as any,
+				},
 			});
 		}
 
@@ -2386,6 +2416,18 @@ const STUCK_RUNNING_AFTER_MS = 25 * 60 * 1000; // 25 minutes (legacy only)
 // IS NULL) fall back to the createdAt-based cutoff above.
 const STUCK_RUNNING_HEARTBEAT_MS =
 	Number(process.env.STUCK_RUNNING_HEARTBEAT_MS) || 3 * 60 * 1000; // 3 minutes
+// Wave 22.6 fix — zombie-worker cutoff. A worker that keeps the
+// heartbeat fresh (DB connection alive, event loop pumping) but
+// never advances `currentPhase` is invisible to the heartbeat-based
+// heal predicate. Observed in prod when pipeline_headless looped
+// indefinitely without exception, leaving cycles "running" for
+// 16+ hours while a customer's /actions /findings /workspaces /
+// inventory all rendered the layout's loading state. If a cycle
+// sits on the same phase past this cutoff, heal it regardless of
+// heartbeat freshness — a healthy audit advances phases every few
+// minutes; sitting 15min on one is conclusive evidence of stall.
+const STUCK_RUNNING_PHASE_MS =
+	Number(process.env.STUCK_RUNNING_PHASE_MS) || 15 * 60 * 1000; // 15 minutes
 // Wave 18m — bumped 5→15 min. The previous 5min cutoff was too
 // aggressive for a latency-sensitive queue: a transient Redis hiccup
 // or a worker scaling event could leave a pending cycle untouched
@@ -2409,25 +2451,28 @@ const ORPHANED_PENDING_AFTER_MS = 15 * 60 * 1000; // 15 minutes
 export async function healStuckCycles(): Promise<number> {
 	const createdAtCutoff = new Date(Date.now() - STUCK_RUNNING_AFTER_MS);
 	const heartbeatCutoff = new Date(Date.now() - STUCK_RUNNING_HEARTBEAT_MS);
-	// Wave 18z — heartbeat-on-claim predicate. Two branches:
+	const phaseCutoff = new Date(Date.now() - STUCK_RUNNING_PHASE_MS);
+	// Three heal predicates ORed together:
 	//   1. lastHeartbeatAt IS NULL AND createdAt < createdAtCutoff
 	//      (legacy / pre-column cycles or never-heartbeated)
 	//   2. lastHeartbeatAt < heartbeatCutoff
 	//      (heartbeated at some point but now stale → worker died)
-	// An actively-heartbeating cycle matches NEITHER branch and is
-	// safe from re-dispatch even if createdAt is older than 25min.
+	//   3. phaseUpdatedAt < phaseCutoff
+	//      (Wave 22.6 fix — zombie worker: heartbeat alive but no
+	//       phase progress for too long → infinite loop somewhere)
 	const result = await prisma.auditCycle.updateMany({
 		where: {
 			status: "running",
 			OR: [
 				{ lastHeartbeatAt: null, createdAt: { lt: createdAtCutoff } },
 				{ lastHeartbeatAt: { lt: heartbeatCutoff } },
+				{ phaseUpdatedAt: { lt: phaseCutoff } },
 			],
 		},
 		data: {
 			status: "failed",
 			completedAt: new Date(),
-			lastError: `heal-cron: auto-failed (heartbeat stale >${Math.round(STUCK_RUNNING_HEARTBEAT_MS / 60000)}min or createdAt >${Math.round(STUCK_RUNNING_AFTER_MS / 60000)}min without heartbeat)`,
+			lastError: `heal-cron: auto-failed (heartbeat stale >${Math.round(STUCK_RUNNING_HEARTBEAT_MS / 60000)}min, createdAt >${Math.round(STUCK_RUNNING_AFTER_MS / 60000)}min without heartbeat, OR phase stuck >${Math.round(STUCK_RUNNING_PHASE_MS / 60000)}min)`,
 			lastErrorAt: new Date(),
 		},
 	});

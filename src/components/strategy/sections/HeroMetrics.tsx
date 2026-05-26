@@ -20,9 +20,22 @@ interface Props {
 	monthLabel: string;
 }
 
-function formatBRL(value: number): string {
-	if (value >= 1000) return `R$ ${(value / 1000).toFixed(1).replace(".", ",")}k`;
-	return `R$ ${value.toLocaleString("pt-BR")}`;
+// formatBRL has two modes — "k" (compact thousands) and "full"
+// (plain Brazilian thousands separator). During count-up animation
+// the format is locked to whichever branch the TARGET value lands
+// in, so the text doesn't jump from "R$ 900" → "R$ 1,0k" mid-tween.
+function formatBRL(value: number, mode: "auto" | "k" | "full" = "auto"): string {
+	const useK = mode === "auto" ? value >= 1000 : mode === "k";
+	if (useK) return `R$ ${(value / 1000).toFixed(1).replace(".", ",")}k`;
+	return `R$ ${Math.round(value).toLocaleString("pt-BR")}`;
+}
+
+// Factory returning a format fn locked to one mode — passed into the
+// CountUp tween so mid-animation values share a layout with the
+// final rendered string.
+function makeBRLFormatter(target: number): (n: number) => string {
+	const mode: "k" | "full" = target >= 1000 ? "k" : "full";
+	return (n: number) => formatBRL(n, mode);
 }
 
 function formatDelta(delta: number): string {
@@ -134,7 +147,7 @@ function Tile({
 
 	return (
 		<div
-			data-strategy-card
+			data-vsgp-card
 			className="group relative flex min-h-[160px] flex-col justify-between rounded-2xl border border-edge bg-surface-card p-6 transition-all hover:border-edge-focus hover:bg-surface-card-hover"
 		>
 			<div className="flex items-start justify-between gap-3">
@@ -185,14 +198,14 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					rawNumber={hero.retainedMid}
 					delta={hero.retainedDeltaMoM}
 					spark={hero.retainedSpark}
-					formatFn={formatBRL}
+					formatFn={makeBRLFormatter(hero.retainedMid)}
 				/>
 				<Tile
 					label="Capturado / mês"
 					rawNumber={hero.capturedMid}
 					delta={hero.capturedDeltaMoM}
 					spark={hero.capturedSpark}
-					formatFn={formatBRL}
+					formatFn={makeBRLFormatter(hero.capturedMid)}
 				/>
 				<Tile
 					label="Críticos abertos"

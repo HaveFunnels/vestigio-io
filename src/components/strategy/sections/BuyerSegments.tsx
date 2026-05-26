@@ -64,7 +64,7 @@ export default function BuyerSegments({ segments }: Props) {
 					return (
 						<motion.div
 							key={s.buyer}
-							data-strategy-card
+							data-vsgp-card
 							initial={{ opacity: 0, y: 12 }}
 							whileInView={{ opacity: 1, y: 0 }}
 							viewport={{ once: true }}

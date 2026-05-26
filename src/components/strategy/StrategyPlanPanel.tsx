@@ -66,7 +66,7 @@ function formatTimestamp(date: Date): string {
 function StickyHeader({ plan }: { plan: StrategyPlan }) {
 	return (
 		<div
-			data-strategy-sticky-header
+			data-vsgp-sticky-header
 			className="sticky top-0 z-30 border-b border-edge bg-surface/85 backdrop-blur-md"
 		>
 			<div className="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-6 py-3">
@@ -139,8 +139,8 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true }: Pro
 
 	return (
 		<div
-			data-strategy-plan
-			data-strategy-print={isPrint ? "true" : "false"}
+			data-vsgp-plan
+			data-vsgp-print={isPrint ? "true" : "false"}
 			className="min-h-screen bg-surface"
 		>
 			{!isPrint && showStickyHeader && <StickyHeader plan={plan} />}

@@ -21,13 +21,13 @@
 		font-size: 14px;
 	}
 
-	[data-strategy-plan] {
+	[data-vsgp-plan] {
 		max-width: none !important;
 	}
 
 	/* Drop interactive chrome */
-	[data-strategy-sticky-header],
-	[data-strategy-print-hide] {
+	[data-vsgp-sticky-header],
+	[data-vsgp-print-hide] {
 		display: none !important;
 	}
 
@@ -35,13 +35,13 @@
 	   is narrowed via Radix's own data attribute so it doesn't bleed
 	   into Tooltip/Popover/Dialog content nested inside the plan
 	   (which also use data-state=closed but should stay invisible). */
-	[data-strategy-plan]
+	[data-vsgp-plan]
 		[data-radix-collapsible-content][data-state="closed"] {
 		display: block !important;
 	}
 
 	/* Strip hover lift + shadows */
-	[data-strategy-plan] * {
+	[data-vsgp-plan] * {
 		box-shadow: none !important;
 		transform: none !important;
 		transition: none !important;
@@ -49,41 +49,41 @@
 	}
 
 	/* Card borders read better as hairlines on paper */
-	[data-strategy-plan] [data-strategy-card] {
+	[data-vsgp-plan] [data-vsgp-card] {
 		border-color: #d8dee8 !important;
 		background: #ffffff !important;
 	}
 
 	/* Avoid awkward page breaks inside section bodies + cards */
-	[data-strategy-plan] section,
-	[data-strategy-plan] [data-strategy-card] {
+	[data-vsgp-plan] section,
+	[data-vsgp-plan] [data-vsgp-card] {
 		break-inside: avoid;
 		page-break-inside: avoid;
 	}
 }
 
 /* ── ?print=true mode (used by the chromium exporter) ─────────── */
-[data-strategy-print="true"] {
+[data-vsgp-print="true"] {
 	background: #ffffff;
 	color: #0b0f1a;
 }
 
-[data-strategy-print="true"] [data-strategy-sticky-header],
-[data-strategy-print="true"] [data-strategy-print-hide] {
+[data-vsgp-print="true"] [data-vsgp-sticky-header],
+[data-vsgp-print="true"] [data-vsgp-print-hide] {
 	display: none !important;
 }
 
-[data-strategy-print="true"] [data-strategy-card] {
+[data-vsgp-print="true"] [data-vsgp-card] {
 	background: #ffffff !important;
 	border-color: #d8dee8 !important;
 	box-shadow: none !important;
 }
 
-[data-strategy-print="true"] [data-strategy-narrative] {
+[data-vsgp-print="true"] [data-vsgp-narrative] {
 	color: #1a2236 !important;
 }
 
-[data-strategy-print="true"] * {
+[data-vsgp-print="true"] * {
 	transition: none !important;
 	animation: none !important;
 }

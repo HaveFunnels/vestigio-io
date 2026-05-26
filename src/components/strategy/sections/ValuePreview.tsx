@@ -90,6 +90,10 @@ function Marker({
 								</svg>
 							)}
 						</div>
+						{/* Labels overflow on narrow viewports because they're
+						    short ("M3"/"M6") so whitespace-nowrap is fine. ETA
+						    captions ("em 10 meses") can be wider — cap them
+						    with max-w and let them wrap on tight layouts. */}
 						<div
 							className={`absolute left-1/2 mt-3 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] ${
 								isCurrent ? "text-content" : "text-content-muted"
@@ -98,7 +102,7 @@ function Marker({
 							{marker.label}
 						</div>
 						{marker.eta && !isCurrent && (
-							<div className="absolute left-1/2 mt-7 -translate-x-1/2 whitespace-nowrap font-mono text-[10px] tabular-nums text-content-faint">
+							<div className="absolute left-1/2 mt-7 max-w-[90px] -translate-x-1/2 text-center font-mono text-[10px] leading-tight tabular-nums text-content-faint">
 								{marker.eta}
 							</div>
 						)}
@@ -149,21 +153,25 @@ export default function ValuePreview({ preview, narrative }: Props) {
 				</div>
 			</div>
 
-			<div data-strategy-card className="rounded-2xl border border-edge bg-surface-card p-8">
+			<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-8">
 				{/* Timeline */}
 				<div className="relative mx-auto mb-16 h-20 max-w-[680px]">
 					<div className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-edge" />
 					<motion.div
 						initial={{ scaleX: 0 }}
-						whileInView={{ scaleX: 0.04 }}
+						whileInView={{ scaleX: 0.08 }}
 						viewport={{ once: true }}
 						transition={{ delay: 0.5, duration: 0.8 }}
 						className="absolute left-0 top-1/2 h-px origin-left -translate-y-1/2 bg-content"
 					/>
-					<Marker marker={preview.currentMonth} position={4} delay={0.3} />
-					<Marker marker={preview.milestoneM3} position={34} delay={0.4} />
-					<Marker marker={preview.milestoneM6} position={66} delay={0.5} />
-					<Marker marker={preview.milestoneM12} position={96} delay={0.6} />
+					{/* Marker positions pulled inboard from 0/100% so the
+					    centered (-translate-x-1/2) labels — particularly
+					    "M12" + ETA caption — don't overflow the timeline
+					    container on narrow mobile viewports (<360px). */}
+					<Marker marker={preview.currentMonth} position={8} delay={0.3} />
+					<Marker marker={preview.milestoneM3} position={36} delay={0.4} />
+					<Marker marker={preview.milestoneM6} position={64} delay={0.5} />
+					<Marker marker={preview.milestoneM12} position={92} delay={0.6} />
 				</div>
 
 				{/* Narrative */}

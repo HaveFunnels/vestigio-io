@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Bar } from "@visx/shape";
 import { Group } from "@visx/group";
 import { scaleBand, scaleLinear } from "@visx/scale";
+import { ParentSize } from "@visx/responsive";
 import type { MemoryRollups as MemoryRollupsType, MemoryWindow } from "../types";
 
 /*
@@ -36,16 +36,20 @@ function formatMonthShort(yearMonth: string): string {
 	return months[idx] ?? mm;
 }
 
-function MiniBarChart({
+// Inner chart — receives explicit width from the ParentSize wrapper
+// so the bars stretch the full card content area regardless of grid
+// breakpoint. Height stays fixed because vertical rhythm in the card
+// is more important than a perfectly square aspect ratio.
+function MiniBarChartInner({
 	values,
-	width = 200,
+	width,
 	height = 56,
 }: {
 	values: Array<{ month: string; value: number }>;
-	width?: number;
+	width: number;
 	height?: number;
 }) {
-	if (values.length === 0) return null;
+	if (values.length === 0 || width <= 0) return null;
 	const xScale = scaleBand({
 		domain: values.map((d) => d.month),
 		range: [0, width],
@@ -104,6 +108,24 @@ function MiniBarChart({
 	);
 }
 
+// Public chart — uses ParentSize from visx to track the actual width
+// of its parent box. Falls back to 0 on first paint; the inner chart
+// short-circuits on width=0 to avoid scaling against an undefined
+// range while ParentSize measures.
+function MiniBarChart({
+	values,
+}: {
+	values: Array<{ month: string; value: number }>;
+}) {
+	return (
+		<div className="w-full" style={{ height: 70 }}>
+			<ParentSize debounceTime={20}>
+				{({ width }) => <MiniBarChartInner values={values} width={width} />}
+			</ParentSize>
+		</div>
+	);
+}
+
 function RollupCard({
 	window,
 	idx,
@@ -117,7 +139,7 @@ function RollupCard({
 }) {
 	return (
 		<motion.div
-			data-strategy-card
+			data-vsgp-card
 			initial={{ opacity: 0, y: 12 }}
 			whileInView={{ opacity: 1, y: 0 }}
 			viewport={{ once: true }}

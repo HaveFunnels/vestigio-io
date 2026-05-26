@@ -79,7 +79,7 @@ export default function WhatHappenedNarrative({ narrative, monthLabel }: Props) 
 				</h2>
 
 				<div
-					data-strategy-narrative
+					data-vsgp-narrative
 					className="font-serif text-[17px] leading-[1.7] text-content-secondary"
 				>
 					{paragraphs.map((para, i) => (

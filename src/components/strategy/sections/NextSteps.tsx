@@ -114,7 +114,7 @@ function StepCard({ step }: { step: NextStep }) {
 
 			{/* Card body */}
 			<div
-				data-strategy-card
+				data-vsgp-card
 				className={`flex-1 rounded-2xl border bg-surface-card p-7 transition-all ${
 					isDone
 						? "border-emerald-500/30 opacity-75"
@@ -310,7 +310,7 @@ function StepCard({ step }: { step: NextStep }) {
 function SequenceConnector() {
 	return (
 		<div
-			data-strategy-print-hide
+			data-vsgp-print-hide
 			className="ml-[22px] hidden h-10 w-px bg-edge sm:block"
 			aria-hidden
 		/>

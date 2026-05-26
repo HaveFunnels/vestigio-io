@@ -147,7 +147,28 @@ export default async function RootLayout({
 			</head>
 			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
 				<JsonLd />
-				<NextIntlClientProvider messages={messages}>
+				{/* next-intl provider with non-fatal missing-key fallback.
+				    Default behavior throws on MISSING_MESSAGE which can
+				    crash entire route segments (e.g. /app/* layout) when
+				    a single nav label is unsynced across locales. We log
+				    in dev and silently render the key itself in prod so
+				    one missing translation never takes the app down. */}
+				<NextIntlClientProvider
+					messages={messages}
+					onError={(error) => {
+						if (error.code === "MISSING_MESSAGE") {
+							if (process.env.NODE_ENV !== "production") {
+								console.warn("next-intl MISSING_MESSAGE:", error.message);
+							}
+							return;
+						}
+						throw error;
+					}}
+					getMessageFallback={({ key, namespace }) => {
+						const path = namespace ? `${namespace}.${key}` : key;
+						return process.env.NODE_ENV === "production" ? key : `[${path}]`;
+					}}
+				>
 					<BrandingProvider>
 						{children}
 					</BrandingProvider>

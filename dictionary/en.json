@@ -4390,6 +4390,8 @@
 			"findings": "Findings",
 			"inventory": "Inventory",
 			"maps": "Maps",
+			"library": "Library",
+			"surfaces": "Surfaces",
 			"organization": "Organization",
 			"billing": "Billing",
 			"members": "Members",

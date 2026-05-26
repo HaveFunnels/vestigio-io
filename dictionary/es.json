@@ -4040,6 +4040,8 @@
 			"findings": "Hallazgos",
 			"inventory": "Inventario",
 			"maps": "Mapas",
+			"library": "Biblioteca",
+			"surfaces": "Superficies",
 			"organization": "Organización",
 			"billing": "Facturación",
 			"members": "Miembros",

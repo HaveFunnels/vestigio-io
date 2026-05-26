@@ -64,25 +64,26 @@ function MiniBarChart({
 					const barHeight = height - yScale(d.value);
 					const barX = xScale(d.month) ?? 0;
 					const barY = height - barHeight;
+					// Animate y + height directly (not scaleY): SVG transform-origin
+					// is unreliable across browsers and Safari ignores CSS
+					// transform-origin on <rect>. Starting from y=height with
+					// height=0 makes the bar grow from the baseline reliably.
 					return (
-						<motion.g key={d.month}>
-							<motion.rect
-								x={barX}
-								y={barY}
-								width={barWidth}
-								height={barHeight}
-								initial={{ scaleY: 0, transformOrigin: "bottom" }}
-								whileInView={{ scaleY: 1 }}
-								viewport={{ once: true }}
-								transition={{
-									delay: 0.05 * i,
-									duration: 0.55,
-									ease: [0.22, 1, 0.36, 1],
-								}}
-								fill="rgb(var(--text-tertiary))"
-								rx={1.5}
-							/>
-						</motion.g>
+						<motion.rect
+							key={d.month}
+							x={barX}
+							width={barWidth}
+							initial={{ y: height, height: 0 }}
+							whileInView={{ y: barY, height: barHeight }}
+							viewport={{ once: true }}
+							transition={{
+								delay: 0.05 * i,
+								duration: 0.55,
+								ease: [0.22, 1, 0.36, 1],
+							}}
+							fill="rgb(var(--text-tertiary))"
+							rx={1.5}
+						/>
 					);
 				})}
 				{values.length <= 6 &&

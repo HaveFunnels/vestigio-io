@@ -807,7 +807,7 @@ function ActionsContent({
 			    propose-and-approve flow needs it. */}
 			<Link
 				href='/app/library/strategy/2026-06'
-				className='mb-4 flex items-center justify-between gap-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 transition-all hover:border-edge-focus hover:from-surface-card-hover'
+				className='group mb-4 flex items-center justify-between gap-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 transition-all hover:border-edge-focus hover:from-surface-card-hover'
 			>
 				<div className='flex items-center gap-4'>
 					<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset font-serif text-[16px] font-semibold text-content'>

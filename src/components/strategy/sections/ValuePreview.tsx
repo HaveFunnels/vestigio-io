@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { ValuePreview as ValuePreviewType, ValuePreviewMarker } from "../types";
 
@@ -24,8 +25,8 @@ interface Props {
 	narrative: string;
 }
 
-function renderInline(text: string): React.ReactNode[] {
-	const parts: React.ReactNode[] = [];
+function renderInline(text: string): ReactNode[] {
+	const parts: ReactNode[] = [];
 	const matches = Array.from(text.matchAll(/(\*\*[^*]+\*\*)/g));
 	let lastIndex = 0;
 	let key = 0;

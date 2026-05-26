@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import StrategyPlanPanel from "@/components/strategy/StrategyPlanPanel";
@@ -49,5 +50,12 @@ export default function StrategyPlanPage() {
 		);
 	}
 
-	return <StrategyPlanPanel plan={plan} />;
+	// Suspense boundary required because StrategyPlanPanel calls
+	// useSearchParams() to detect ?print=true mode. Next.js 15 throws
+	// during prerender if the hook isn't enclosed in Suspense.
+	return (
+		<Suspense fallback={null}>
+			<StrategyPlanPanel plan={plan} />
+		</Suspense>
+	);
 }

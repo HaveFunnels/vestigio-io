@@ -47,20 +47,27 @@ function Sparkline({ values, tone }: { values: number[]; tone: "up" | "down" | "
 	const max = Math.max(...values);
 	const range = max - min || 1;
 	const stepX = w / (values.length - 1);
-	const points = values
-		.map((v, i) => `${(i * stepX).toFixed(1)},${(h - ((v - min) / range) * h).toFixed(1)}`)
+	// Path uses M…L… commands instead of <polyline points>; framer-motion's
+	// pathLength animation depends on getTotalLength() which is reliable on
+	// <path> but spotty on <polyline> across browsers/SSR.
+	const d = values
+		.map((v, i) => {
+			const x = (i * stepX).toFixed(1);
+			const y = (h - ((v - min) / range) * h).toFixed(1);
+			return `${i === 0 ? "M" : "L"}${x},${y}`;
+		})
 		.join(" ");
 	const stroke =
 		tone === "up" ? "#34d399" : tone === "down" ? "#fb7185" : "currentColor";
 	return (
 		<svg width={w} height={h} className="overflow-visible">
-			<motion.polyline
+			<motion.path
+				d={d}
 				fill="none"
 				stroke={stroke}
 				strokeWidth={1.5}
 				strokeLinecap="round"
 				strokeLinejoin="round"
-				points={points}
 				initial={{ pathLength: 0, opacity: 0 }}
 				animate={{ pathLength: 1, opacity: 0.9 }}
 				transition={{ duration: 0.8, delay: 0.25, ease: "easeOut" }}

@@ -1,7 +1,7 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { useState, type ReactNode } from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import type { NextStep, NextStepStatus } from "../types";
 
@@ -52,7 +52,7 @@ const STATUS_TONE: Record<NextStepStatus, string> = {
 };
 
 function renderInline(text: string) {
-	const parts: React.ReactNode[] = [];
+	const parts: ReactNode[] = [];
 	const matches = Array.from(text.matchAll(/(\*\*[^*]+\*\*|`[^`]+`)/g));
 	let lastIndex = 0;
 	let key = 0;
@@ -280,7 +280,10 @@ function StepCard({ step }: { step: NextStep }) {
 					)}
 
 					<div className="ml-auto flex items-center gap-3">
-						<button className="inline-flex items-center gap-1.5 text-[12px] text-content-muted transition-colors hover:text-content">
+						<button
+							type="button"
+							className="inline-flex items-center gap-1.5 text-[12px] text-content-muted transition-colors hover:text-content"
+						>
 							<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
 								<path
 									d="M1.5 2.5h10v6.5h-5L4 11V9h-2.5z"
@@ -344,38 +347,28 @@ export default function NextSteps({ steps }: Props) {
 					</div>
 				))}
 
-				<Collapsible.Root open={expanded} onOpenChange={setExpanded}>
-					{hidden.length > 0 && !expanded && (
-						<Collapsible.Trigger asChild>
-							<button
-								type="button"
-								className="mt-6 self-start text-[13px] text-content-muted underline-offset-4 transition-colors hover:text-content hover:underline"
-							>
-								Ver mais {hidden.length} passos →
-							</button>
-						</Collapsible.Trigger>
-					)}
-					<Collapsible.Content>
-						<AnimatePresence>
+				{hidden.length > 0 && (
+					<Collapsible.Root open={expanded} onOpenChange={setExpanded}>
+						<Collapsible.Content>
 							{hidden.map((step) => (
 								<div key={step.id}>
 									<SequenceConnector />
 									<StepCard step={step} />
 								</div>
 							))}
-						</AnimatePresence>
-					</Collapsible.Content>
-					{expanded && (
+						</Collapsible.Content>
 						<Collapsible.Trigger asChild>
 							<button
 								type="button"
 								className="mt-6 self-start text-[13px] text-content-muted underline-offset-4 transition-colors hover:text-content hover:underline"
 							>
-								Esconder passos
+								{expanded
+									? "Esconder passos"
+									: `Ver mais ${hidden.length} passos →`}
 							</button>
 						</Collapsible.Trigger>
-					)}
-				</Collapsible.Root>
+					</Collapsible.Root>
+				)}
 			</div>
 		</motion.section>
 	);

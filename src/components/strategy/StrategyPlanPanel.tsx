@@ -51,11 +51,16 @@ function formatMonthLabel(monthIso: string): string {
 }
 
 function formatTimestamp(date: Date): string {
-	const dd = String(date.getDate()).padStart(2, "0");
-	const mmName = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][date.getMonth()];
-	const hh = String(date.getHours()).padStart(2, "0");
-	const min = String(date.getMinutes()).padStart(2, "0");
-	return `${dd} ${mmName} · ${hh}:${min}`;
+	// UTC formatting: the server renders in Node's TZ (UTC) and the
+	// browser would otherwise render local time, producing a hydration
+	// mismatch on the same Date object. Locking to UTC keeps both
+	// surfaces consistent. The product chose to surface UTC timestamps
+	// explicitly — the operator's locale shows up elsewhere via Intl.
+	const dd = String(date.getUTCDate()).padStart(2, "0");
+	const mmName = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][date.getUTCMonth()];
+	const hh = String(date.getUTCHours()).padStart(2, "0");
+	const min = String(date.getUTCMinutes()).padStart(2, "0");
+	return `${dd} ${mmName} · ${hh}:${min} UTC`;
 }
 
 function StickyHeader({ plan }: { plan: StrategyPlan }) {
@@ -136,7 +141,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true }: Pro
 		<div
 			data-strategy-plan
 			data-strategy-print={isPrint ? "true" : "false"}
-			className={`min-h-screen bg-surface ${isPrint ? "" : ""}`}
+			className="min-h-screen bg-surface"
 		>
 			{!isPrint && showStickyHeader && <StickyHeader plan={plan} />}
 

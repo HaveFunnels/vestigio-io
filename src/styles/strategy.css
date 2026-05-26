@@ -31,8 +31,12 @@
 		display: none !important;
 	}
 
-	/* Expand every Radix collapsible by default in print */
-	[data-strategy-plan] [data-state="closed"] {
+	/* Expand Radix Collapsible content by default in print. Selector
+	   is narrowed via Radix's own data attribute so it doesn't bleed
+	   into Tooltip/Popover/Dialog content nested inside the plan
+	   (which also use data-state=closed but should stay invisible). */
+	[data-strategy-plan]
+		[data-radix-collapsible-content][data-state="closed"] {
 		display: block !important;
 	}
 

@@ -1,0 +1,85 @@
+/*
+ * Monthly Strategy Plan — print stylesheet
+ *
+ * Loaded only by /app/library/strategy/[month] surfaces. Drives the
+ * ?print=true mode used by the headless-chromium PDF exporter
+ * (Step 10) plus the in-browser print preview. The exporter measures
+ * document.body.scrollHeight and feeds it as the page height, so we
+ * deliberately render everything in one continuous column.
+ *
+ * Anything dynamic (hovers, sticky headers, lift animations) is
+ * stripped here so the PDF reads as a typeset document, not a
+ * webpage screenshot.
+ */
+
+/* ── Print media query (real browser Print → PDF) ────────────── */
+@media print {
+	html,
+	body {
+		background: #ffffff !important;
+		color: #0b0f1a !important;
+		font-size: 14px;
+	}
+
+	[data-strategy-plan] {
+		max-width: none !important;
+	}
+
+	/* Drop interactive chrome */
+	[data-strategy-sticky-header],
+	[data-strategy-print-hide] {
+		display: none !important;
+	}
+
+	/* Expand every Radix collapsible by default in print */
+	[data-strategy-plan] [data-state="closed"] {
+		display: block !important;
+	}
+
+	/* Strip hover lift + shadows */
+	[data-strategy-plan] * {
+		box-shadow: none !important;
+		transform: none !important;
+		transition: none !important;
+		animation: none !important;
+	}
+
+	/* Card borders read better as hairlines on paper */
+	[data-strategy-plan] [data-strategy-card] {
+		border-color: #d8dee8 !important;
+		background: #ffffff !important;
+	}
+
+	/* Avoid awkward page breaks inside section bodies + cards */
+	[data-strategy-plan] section,
+	[data-strategy-plan] [data-strategy-card] {
+		break-inside: avoid;
+		page-break-inside: avoid;
+	}
+}
+
+/* ── ?print=true mode (used by the chromium exporter) ─────────── */
+[data-strategy-print="true"] {
+	background: #ffffff;
+	color: #0b0f1a;
+}
+
+[data-strategy-print="true"] [data-strategy-sticky-header],
+[data-strategy-print="true"] [data-strategy-print-hide] {
+	display: none !important;
+}
+
+[data-strategy-print="true"] [data-strategy-card] {
+	background: #ffffff !important;
+	border-color: #d8dee8 !important;
+	box-shadow: none !important;
+}
+
+[data-strategy-print="true"] [data-strategy-narrative] {
+	color: #1a2236 !important;
+}
+
+[data-strategy-print="true"] * {
+	transition: none !important;
+	animation: none !important;
+}

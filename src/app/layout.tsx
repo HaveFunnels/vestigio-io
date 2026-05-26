@@ -1,7 +1,7 @@
 import { BrandingProvider } from "@/components/BrandingProvider";
 import JsonLd from "@/components/SEO/JsonLd";
 import { Metadata, Viewport } from "next";
-import { Geist, JetBrains_Mono } from "next/font/google";
+import { Geist, JetBrains_Mono, Fraunces } from "next/font/google";
 import localFont from "next/font/local";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -57,6 +57,18 @@ const geist = Geist({
 	subsets: ["latin"],
 	variable: "--font-display",
 	display: "swap",
+});
+
+// Fraunces — variable serif used exclusively for the Monthly Strategy
+// Plan editorial surfaces (display headlines + long-form narrative).
+// Reaches Tailwind via the `font-serif` family (see tailwind.config.ts).
+// Loaded lazy via display:swap so it doesn't block LCP on non-plan
+// routes; preload disabled because <1% of pageviews use it.
+const fraunces = Fraunces({
+	subsets: ["latin"],
+	variable: "--font-fraunces",
+	display: "swap",
+	preload: false,
 });
 
 // Viewport — exported explicitly with width + initialScale so the
@@ -123,7 +135,7 @@ export default async function RootLayout({
 	const messages = await getMessages();
 
 	return (
-		<html lang={locale} className={`dark ${satoshi.variable} ${jetbrainsMono.variable} ${geist.variable}`} suppressHydrationWarning={true}>
+		<html lang={locale} className={`dark ${satoshi.variable} ${jetbrainsMono.variable} ${geist.variable} ${fraunces.variable}`} suppressHydrationWarning={true}>
 			<head>
 				{/* Preconnect to CDN — eliminates DNS+TLS on first video/image load */}
 				{process.env.NEXT_PUBLIC_CDN_URL && (

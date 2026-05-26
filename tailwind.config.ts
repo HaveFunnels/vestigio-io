@@ -26,6 +26,10 @@ const config: Config = {
 			// Used exclusively for numerics on the dashboard so financial data
 			// reads as financial data instead of UI prose.
 			mono: ["var(--font-jetbrains-mono)", ...defaultTheme.fontFamily.mono],
+			// Fraunces — variable serif used by the Monthly Strategy Plan
+			// surfaces (display headlines + long-form narrative). Loaded
+			// lazy in src/app/layout.tsx since it's restricted to plan routes.
+			serif: ["var(--font-fraunces)", ...defaultTheme.fontFamily.serif],
 		},
 		container: {
 			center: true,

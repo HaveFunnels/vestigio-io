@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { formatDate } from "@/lib/format-date";
 import { useTrack } from "@/hooks/useProductTrack";
@@ -799,6 +800,33 @@ function ActionsContent({
 
 	return (
 		<>
+			{/* Wave 22.6 — Strategy Plan strip. Lives above the summary
+			    cards as a high-visibility entry into the current month's
+			    plan. Links straight to /app/library/strategy/[month];
+			    the dialog/overlay variant lives in Step 9 once
+			    propose-and-approve flow needs it. */}
+			<Link
+				href='/app/library/strategy/2026-06'
+				className='mb-4 flex items-center justify-between gap-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 transition-all hover:border-edge-focus hover:from-surface-card-hover'
+			>
+				<div className='flex items-center gap-4'>
+					<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset font-serif text-[16px] font-semibold text-content'>
+						6
+					</div>
+					<div>
+						<div className='mb-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint'>
+							Vestigio Pulse · Plano de Estratégia
+						</div>
+						<div className='text-[14px] font-medium text-content'>
+							Junho 2026 · 5 próximos passos identificados · R$ 5,7k em foco
+						</div>
+					</div>
+				</div>
+				<span className='shrink-0 rounded-md border border-edge bg-surface px-3 py-1.5 text-[12px] font-medium text-content transition-colors group-hover:border-edge-focus'>
+					Abrir Plano →
+				</span>
+			</Link>
+
 			{/* Summary Cards */}
 			<div className='mb-6'>
 				<SummaryCards cards={cards} />

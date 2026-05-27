@@ -28,14 +28,23 @@ import type { ReactNode } from "react";
 interface Props {
 	locale?: string;
 	messages: any;
+	/** Server-resolved Date — required to avoid hydration mismatch when
+	    this wrapper lives on the client side of the RSC boundary.
+	    Without it, the client instantiates formatters with new Date()
+	    and SSR vs client renders diverge (React error #418). */
+	now: Date;
+	/** Server-resolved IANA timeZone string — same reason as `now`. */
+	timeZone: string;
 	children: ReactNode;
 }
 
-export default function IntlProviderClient({ locale, messages, children }: Props) {
+export default function IntlProviderClient({ locale, messages, now, timeZone, children }: Props) {
 	return (
 		<NextIntlClientProvider
 			locale={locale}
 			messages={messages}
+			now={now}
+			timeZone={timeZone}
 			onError={(error) => {
 				if (error.code === "MISSING_MESSAGE") {
 					if (process.env.NODE_ENV !== "production") {

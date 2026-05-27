@@ -3,7 +3,7 @@ import JsonLd from "@/components/SEO/JsonLd";
 import { Metadata, Viewport } from "next";
 import { Geist, JetBrains_Mono, Fraunces } from "next/font/google";
 import localFont from "next/font/local";
-import { getLocale, getMessages } from "next-intl/server";
+import { getLocale, getMessages, getNow, getTimeZone } from "next-intl/server";
 import IntlProviderClient from "@/components/IntlProviderClient";
 import "../styles/globals.css";
 
@@ -131,8 +131,18 @@ export default async function RootLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	const locale = await getLocale();
-	const messages = await getMessages();
+	// Resolve i18n primitives on the server. Passing now + timeZone
+	// explicitly is REQUIRED when NextIntlClientProvider is rendered
+	// from a "use client" boundary — otherwise the client instantiates
+	// formatters with its own Date()/timeZone and the SSR vs client
+	// output diverge (React error #418: hydration mismatch). next-intl
+	// docs: when in client components, pass locale/messages/now/timeZone.
+	const [locale, messages, now, timeZone] = await Promise.all([
+		getLocale(),
+		getMessages(),
+		getNow(),
+		getTimeZone(),
+	]);
 
 	return (
 		<html lang={locale} className={`dark ${satoshi.variable} ${jetbrainsMono.variable} ${geist.variable} ${fraunces.variable}`} suppressHydrationWarning={true}>
@@ -152,7 +162,7 @@ export default async function RootLayout({
 				    non-fatal onError + getMessageFallback callbacks, and
 				    Next.js refuses to serialize functions across the
 				    RSC→client boundary. See that file for details. */}
-				<IntlProviderClient locale={locale} messages={messages}>
+				<IntlProviderClient locale={locale} messages={messages} now={now} timeZone={timeZone}>
 					<BrandingProvider>
 						{children}
 					</BrandingProvider>

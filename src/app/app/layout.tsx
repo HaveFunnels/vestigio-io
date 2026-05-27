@@ -140,46 +140,75 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 			// Legacy path: bootstrap MCP from evidence (slow but works for
 			// envs whose latest audit predates Wave 16 — they catch up on
 			// next audit completion).
-			await ensureContext({
-				orgId: orgCtx.orgId,
-				orgName: orgCtx.orgName,
-				orgType: orgCtx.orgType,
-				envId: orgCtx.envId,
-				domain: orgCtx.domain,
-				engineTranslations,
-			});
+			//
+			// Wave 22.6 — ensureContext + engine recompute can throw when
+			// the env's evidence is in an inconsistent state (e.g.
+			// previous audits failed mid-flight, schema field referenced
+			// by an inference is missing data, etc). Pre-Wave-22.6 the
+			// audit-runner swallowed those errors and marked cycles
+			// "complete" with no data; the layout's old branch then
+			// returned "loading" without invoking ensureContext at all,
+			// hiding the issue. Now that the audit-runner rethrows (so
+			// cycles correctly land in FAILED), the layout MUST tolerate
+			// ensureContext throwing — otherwise the same engine error
+			// would crash the entire /app/* shell and the customer can't
+			// even reach /dashboard or /settings to recover. Fall through
+			// to a clean error state instead of letting the exception
+			// bubble out of the RSC layout.
+			try {
+				await ensureContext({
+					orgId: orgCtx.orgId,
+					orgName: orgCtx.orgName,
+					orgType: orgCtx.orgType,
+					envId: orgCtx.envId,
+					domain: orgCtx.domain,
+					engineTranslations,
+				});
 
-			// Cross-tenant contamination guard. McpServer is a process-wide
-			// singleton, so two concurrent ensureContext calls from
-			// different orgs can race and the loser sees the winner's
-			// data. Wave 16 cache fast-path bypasses MCP for the common
-			// case, but the legacy path here still touches the singleton.
-			// Verify the loaded scope matches THIS request's env before
-			// serving its data. If it doesn't, render loading instead of
-			// risking a data leak — the next request will retry.
-			const { getMcpServer } = await import("@/lib/mcp-client");
-			const loadedEnvRef = getMcpServer().getLoadedEnvironmentRef?.();
-			const expectedEnvRef = `environment:${orgCtx.envId}`;
-			if (loadedEnvRef && loadedEnvRef !== expectedEnvRef) {
-				console.warn(
-					`[layout] mcp singleton env mismatch — expected=${expectedEnvRef} loaded=${loadedEnvRef}. ` +
-					`Rendering loading state instead of serving cross-tenant data.`,
-				);
+				// Cross-tenant contamination guard. McpServer is a process-wide
+				// singleton, so two concurrent ensureContext calls from
+				// different orgs can race and the loser sees the winner's
+				// data. Wave 16 cache fast-path bypasses MCP for the common
+				// case, but the legacy path here still touches the singleton.
+				// Verify the loaded scope matches THIS request's env before
+				// serving its data. If it doesn't, render loading instead of
+				// risking a data leak — the next request will retry.
+				const { getMcpServer } = await import("@/lib/mcp-client");
+				const loadedEnvRef = getMcpServer().getLoadedEnvironmentRef?.();
+				const expectedEnvRef = `environment:${orgCtx.envId}`;
+				if (loadedEnvRef && loadedEnvRef !== expectedEnvRef) {
+					console.warn(
+						`[layout] mcp singleton env mismatch — expected=${expectedEnvRef} loaded=${loadedEnvRef}. ` +
+						`Rendering loading state instead of serving cross-tenant data.`,
+					);
+					mcpData = {
+						findings: { status: "loading" },
+						actions: { status: "loading" },
+						changeReport: { status: "loading" },
+						workspaces: { status: "loading" },
+						maps: { status: "loading" },
+						currency: orgCtx.currency,
+					};
+				} else {
+					mcpData = {
+						findings: loadFindings(),
+						actions: loadActions(),
+						changeReport: loadChangeReport(),
+						workspaces: loadWorkspaces(),
+						maps: loadAllMaps(),
+						currency: orgCtx.currency,
+					};
+				}
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : String(err);
+				console.error(`[layout] ensureContext failed — rendering error state instead of crashing:`, msg);
+				const reason = `Engine não conseguiu carregar dados deste ambiente. Equipe foi notificada. (${msg.slice(0, 120)})`;
 				mcpData = {
-					findings: { status: "loading" },
-					actions: { status: "loading" },
-					changeReport: { status: "loading" },
-					workspaces: { status: "loading" },
-					maps: { status: "loading" },
-					currency: orgCtx.currency,
-				};
-			} else {
-				mcpData = {
-					findings: loadFindings(),
-					actions: loadActions(),
-					changeReport: loadChangeReport(),
-					workspaces: loadWorkspaces(),
-					maps: loadAllMaps(),
+					findings: { status: "error", message: reason },
+					actions: { status: "error", message: reason },
+					changeReport: { status: "error", message: reason },
+					workspaces: { status: "error", message: reason },
+					maps: { status: "error", message: reason },
 					currency: orgCtx.currency,
 				};
 			}
@@ -215,8 +244,23 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 	// settled. Awaiting here is essentially free — the query was kicked
 	// off earlier and has been running while the cache + ensureContext
 	// path executed.
+	//
+	// Wave 22.6 — wrap the await: if loadInventoryForEnv threw (e.g.
+	// the new MonthlyStrategyPlan-related joins reference a column the
+	// running Prisma client doesn't know about yet, or any other prod
+	// data inconsistency), don't take the whole layout down. /inventory
+	// degrades to a not-ready state; the rest of the app keeps working.
 	if (inventoryPromise) {
-		mcpData.inventory = await inventoryPromise;
+		try {
+			mcpData.inventory = await inventoryPromise;
+		} catch (err) {
+			const msg = err instanceof Error ? err.message : String(err);
+			console.error(`[layout] inventory preload failed:`, msg);
+			mcpData.inventory = {
+				status: "error",
+				message: `Inventário indisponível neste momento (${msg.slice(0, 100)})`,
+			} as any;
+		}
 	}
 
 	if (usedCacheFastPath) {

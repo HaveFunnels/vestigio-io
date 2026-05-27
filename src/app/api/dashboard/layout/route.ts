@@ -129,6 +129,14 @@ export const PUT = withErrorTracking(
 		const layout = (body as { layout?: unknown })?.layout;
 		const validated = validateLayout(layout);
 		if ("error" in validated) {
+			// Log the rejection so Railway logs surface which validation
+			// branch fired. The client treats every 400 silently (next
+			// drag retries with a fresher state), so without this log
+			// recurring 400s are invisible — they degrade persistence
+			// without anyone knowing. Includes user.id for triage.
+			console.warn(
+				`[api/dashboard/layout] PUT 400 for user=${user.id}: ${validated.error}`,
+			);
 			return NextResponse.json({ message: validated.error }, { status: 400 });
 		}
 

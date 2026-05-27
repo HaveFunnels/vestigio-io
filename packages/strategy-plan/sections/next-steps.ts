@@ -1,0 +1,233 @@
+// ──────────────────────────────────────────────
+// Next steps generator — top 5 actions + per-step Haiku reasoning
+//
+// The composite descriptive + checklist section. This is THE
+// section the operator reads first ("what should I do this week?")
+// so the output quality matters more than the cost optimization.
+//
+// Flow:
+//   1. Pick top 5 OPEN actions by priorityScore (deterministic).
+//   2. For each, look up REMEDIATION_CATALOG for procedure steps.
+//   3. For each, ask Haiku to write a 2-paragraph "POR QUE PRIMEIRO"
+//      reasoning that grounds the priority in concrete data.
+//   4. Aggregate cost + return 5 NextStepOutput rows.
+//
+// LLM fallback path: when a Haiku call fails (cost cap, API error),
+// the step still ships with a deterministic reasoning summary
+// derived from the action's severity/impact/category — never empty.
+// ──────────────────────────────────────────────
+
+import type { PrismaClient } from "@prisma/client";
+import type { GenerateContext, NextStepOutput, GenerationCost } from "../types";
+import { callForText } from "../llm-helpers";
+import {
+	REMEDIATION_CATALOG,
+	getDynamicRemediation,
+} from "../../projections/remediation-catalog";
+
+interface ActionRow {
+	id: string;
+	actionKey: string;
+	decisionKey: string;
+	category: string;
+	severity: string;
+	impactMin: number | null;
+	impactMax: number | null;
+	impactMidpoint: number | null;
+	priorityScore: number;
+	surface: string | null;
+	inferenceKeys: string[];
+}
+
+function effortFromHours(h: number | null): string {
+	if (h === null) return "esforço não calibrado";
+	if (h <= 0.5) return "<30min";
+	if (h <= 2) return "~2h";
+	if (h <= 8) return "1 dia dev";
+	if (h <= 16) return "1-2 dias dev";
+	return `${Math.round(h / 8)} dias dev`;
+}
+
+function ownerFromCategory(category: string): string {
+	if (category === "incident") return "time eng";
+	if (category === "opportunity") return "time growth";
+	if (category === "verification") return "time eng";
+	return "time eng";
+}
+
+function titleFromAction(action: ActionRow): string {
+	// Until ActionProjection.title is migrated to the relational table,
+	// derive a readable label from inference + surface.
+	const ref = action.inferenceKeys[0] ?? action.decisionKey;
+	const friendly = ref.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+	if (action.surface) return `${friendly} em ${action.surface}`;
+	return friendly;
+}
+
+function fallbackReasoning(action: ActionRow): string {
+	const sev = action.severity.toUpperCase();
+	const impact = action.impactMidpoint
+		? `R$ ${Math.round(action.impactMidpoint).toLocaleString("pt-BR")}/mo`
+		: "impact não calibrado";
+	return `Severidade **${sev}** com impacto estimado em **${impact}**. Resolver esse item primeiro porque ele aparece no topo da fila de prioridade do engine (\`priorityScore=${action.priorityScore}\`).`;
+}
+
+async function pickTopActions(
+	prisma: PrismaClient,
+	ctx: GenerateContext,
+): Promise<ActionRow[]> {
+	const rows = await prisma.action.findMany({
+		where: {
+			environmentId: ctx.environmentId,
+			category: { in: ["incident", "opportunity"] },
+		},
+		select: {
+			id: true,
+			actionKey: true,
+			decisionKey: true,
+			category: true,
+			severity: true,
+			impactMin: true,
+			impactMax: true,
+			impactMidpoint: true,
+			priorityScore: true,
+			surface: true,
+			projection: true, // contains linked inferences
+		},
+		orderBy: { priorityScore: "desc" },
+		take: 12, // pick top 12, then dedupe by decisionKey + take 5
+	});
+
+	// Dedupe by decisionKey — multiple sub-actions can roll up to one
+	// "step" in the plan.
+	const seen = new Set<string>();
+	const out: ActionRow[] = [];
+	for (const r of rows) {
+		if (seen.has(r.decisionKey)) continue;
+		seen.add(r.decisionKey);
+		let inferenceKeys: string[] = [];
+		try {
+			const parsed = JSON.parse(r.projection);
+			if (Array.isArray(parsed?.linked_findings)) {
+				inferenceKeys = parsed.linked_findings
+					.map((f: any) => f.inference_key)
+					.filter(Boolean);
+			}
+		} catch {
+			// Projection blob missing or malformed — that's OK, the step
+			// still ships with decisionKey-derived metadata.
+		}
+		out.push({ ...r, inferenceKeys });
+		if (out.length >= 5) break;
+	}
+	return out;
+}
+
+function buildPrompt(
+	action: ActionRow,
+	order: number,
+	envDomain: string,
+	monthLabel: string,
+): { system: string; user: string } {
+	const system = `Você escreve a seção "POR QUE PRIMEIRO" do passo ${order} do Plano de Estratégia mensal para ${envDomain}.
+
+Regras:
+1. Escreva 2 parágrafos curtos em português brasileiro, ~80-100 palavras no total.
+2. Use **negrito** para destacar números, severidades e nomes de componentes. Use \`código inline\` para nomes técnicos (caminhos de arquivo, props, classes CSS).
+3. NÃO use listas, NÃO use cabeçalhos.
+4. Primeiro parágrafo: por que esse passo é prioritário (severidade + impacto + contexto da causa).
+5. Segundo parágrafo: urgência calibrada (custo de NÃO fazer + dependências com outros passos se aplicável).
+6. Tom factual, sem hype. Se faltar dado pra justificar urgência alta, dê uma justificativa mais modesta.`;
+
+	const lines: string[] = [];
+	lines.push(`Ação ${order} no Plano de ${monthLabel} para ${envDomain}:`);
+	lines.push(`- Severidade: ${action.severity}`);
+	if (action.impactMidpoint) {
+		lines.push(
+			`- Impact estimado: R$ ${Math.round(action.impactMidpoint).toLocaleString("pt-BR")}/mês (range R$ ${Math.round(action.impactMin ?? 0).toLocaleString("pt-BR")} - R$ ${Math.round(action.impactMax ?? 0).toLocaleString("pt-BR")})`,
+		);
+	}
+	if (action.surface) lines.push(`- Surface afetada: ${action.surface}`);
+	if (action.inferenceKeys.length > 0) {
+		lines.push(`- Findings que disparam essa ação: ${action.inferenceKeys.slice(0, 3).join(", ")}`);
+	}
+	lines.push(`- Categoria: ${action.category}`);
+	lines.push(`- priorityScore: ${action.priorityScore}`);
+	lines.push("");
+	lines.push("Escreva o POR QUE PRIMEIRO agora.");
+	return { system, user: lines.join("\n") };
+}
+
+const MONTH_NAMES_PT_BR = [
+	"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+	"Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+export async function generateNextSteps(
+	prisma: PrismaClient,
+	ctx: GenerateContext,
+	organizationId: string | null,
+): Promise<{ steps: NextStepOutput[]; cost: GenerationCost }> {
+	const monthLabel = MONTH_NAMES_PT_BR[parseInt(ctx.month.split("-")[1], 10) - 1] ?? ctx.month;
+	const actions = await pickTopActions(prisma, ctx);
+
+	if (actions.length === 0) {
+		return {
+			steps: [],
+			cost: { llmCallsCount: 0, llmCostCents: 0 },
+		};
+	}
+
+	let totalCallsCount = 0;
+	let totalCostCents = 0;
+
+	const steps = await Promise.all(
+		actions.map(async (action, idx): Promise<NextStepOutput> => {
+			const order = idx + 1;
+			const primaryKey = action.inferenceKeys[0] ?? action.decisionKey;
+			const catalog =
+				REMEDIATION_CATALOG[primaryKey] ?? getDynamicRemediation(primaryKey);
+
+			const { system, user } = buildPrompt(action, order, ctx.envDomain, monthLabel);
+			const reasoning = await callForText({
+				model: "haiku_4_5",
+				systemPrompt: system,
+				userPrompt: user,
+				maxTokens: 400,
+				temperature: 0.35,
+				purpose: "strategy_plan.next_step_reasoning",
+				organizationId,
+				environmentId: ctx.environmentId,
+				fallbackText: fallbackReasoning(action),
+			});
+
+			totalCallsCount += reasoning.callsCount;
+			totalCostCents += reasoning.costCents;
+
+			return {
+				order,
+				title: titleFromAction(action),
+				reasoning: reasoning.text,
+				procedureSteps: catalog?.remediation_steps ?? [
+					"Reproduzir o problema localmente",
+					"Identificar o componente/arquivo afetado",
+					"Implementar fix + adicionar teste de regressão",
+				],
+				researchRefs: [],
+				estimatedEffort: effortFromHours(catalog?.estimated_effort_hours ?? null),
+				suggestedOwner: ownerFromCategory(action.category),
+				linkedActionRefs: [action.id],
+				combinedImpact: {
+					min: Math.round(action.impactMin ?? 0),
+					max: Math.round(action.impactMax ?? 0),
+					midpoint: Math.round(action.impactMidpoint ?? 0),
+				},
+			};
+		}),
+	);
+
+	return {
+		steps,
+		cost: { llmCallsCount: totalCallsCount, llmCostCents: totalCostCents },
+	};
+}

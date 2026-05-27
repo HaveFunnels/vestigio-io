@@ -3,8 +3,8 @@ import JsonLd from "@/components/SEO/JsonLd";
 import { Metadata, Viewport } from "next";
 import { Geist, JetBrains_Mono, Fraunces } from "next/font/google";
 import localFont from "next/font/local";
-import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import IntlProviderClient from "@/components/IntlProviderClient";
 import "../styles/globals.css";
 
 // Satoshi — body face. Previously loaded via a hand-written
@@ -147,32 +147,16 @@ export default async function RootLayout({
 			</head>
 			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
 				<JsonLd />
-				{/* next-intl provider with non-fatal missing-key fallback.
-				    Default behavior throws on MISSING_MESSAGE which can
-				    crash entire route segments (e.g. /app/* layout) when
-				    a single nav label is unsynced across locales. We log
-				    in dev and silently render the key itself in prod so
-				    one missing translation never takes the app down. */}
-				<NextIntlClientProvider
-					messages={messages}
-					onError={(error) => {
-						if (error.code === "MISSING_MESSAGE") {
-							if (process.env.NODE_ENV !== "production") {
-								console.warn("next-intl MISSING_MESSAGE:", error.message);
-							}
-							return;
-						}
-						throw error;
-					}}
-					getMessageFallback={({ key, namespace }) => {
-						const path = namespace ? `${namespace}.${key}` : key;
-						return process.env.NODE_ENV === "production" ? key : `[${path}]`;
-					}}
-				>
+				{/* IntlProviderClient is a "use client" wrapper around
+				    NextIntlClientProvider — needed because we pass the
+				    non-fatal onError + getMessageFallback callbacks, and
+				    Next.js refuses to serialize functions across the
+				    RSC→client boundary. See that file for details. */}
+				<IntlProviderClient locale={locale} messages={messages}>
 					<BrandingProvider>
 						{children}
 					</BrandingProvider>
-				</NextIntlClientProvider>
+				</IntlProviderClient>
 			</body>
 		</html>
 	);

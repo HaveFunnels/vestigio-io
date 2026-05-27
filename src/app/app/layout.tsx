@@ -9,7 +9,7 @@ import { syncUserLocale } from "@/libs/sync-locale";
 import { loadEngineTranslations } from "@/lib/engine-translations";
 import { startHealthCheckTimer } from "@/libs/health-checker";
 import { touchEnvActivity, resumeIfPaused } from "@/libs/env-activity";
-import { getServerSession } from "next-auth";
+import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
@@ -62,7 +62,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
 	// Session + impersonation state — needed by both the MCP bootstrap
 	// and the layout shell (impersonation banner).
-	const session = await getServerSession(authOptions);
+	//
+	// Wave 22.6 — wrap defensively. next-auth's getServerSession can
+	// throw when NEXTAUTH_SECRET drifts between env and JWT, when the
+	// adapter's DB read fails transiently, or on a malformed cookie
+	// that triggers an internal decode error. A throw here propagates
+	// out of the RSC layout and kills the whole /app/* shell — same
+	// failure mode as the ensureContext crash we just fixed. Falling
+	// back to a null session degrades gracefully: the impersonation
+	// banner won't render, but the customer can still reach the app.
+	let session: Session | null = null;
+	try {
+		session = (await getServerSession(authOptions)) ?? null;
+	} catch (err) {
+		console.error("[layout] getServerSession failed — proceeding with null session:", err);
+	}
 
 	// Sync locale cookie: org locale > user locale > browser detection.
 	const userLocale = (session?.user as any)?.locale as string | undefined;

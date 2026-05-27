@@ -3052,6 +3052,7 @@
 			"support_tickets": "Support-Tickets",
 			"feedback": "Feedback",
 			"system_health": "Systemzustand",
+			"mcp_observability": "MCP-Observability",
 			"error_tracking": "Fehlerverfolgung",
 			"audit_log": "Audit-Protokoll",
 			"alerts": "Warnungen",
@@ -3062,7 +3063,9 @@
 			"support": "Support",
 			"observability": "\u00dcberwachung",
 			"cross_signals": "Cross-Signals",
-			"product_analytics": "Product Analytics"
+			"product_analytics": "Product Analytics",
+			"add_new_domain": "Neue Domain hinzufügen",
+			"upgrade_to_add_domains": "Upgrade Ihres Plans, um weitere Domains hinzuzufügen"
 		},
 		"organization_selector": {
 			"no_organization": "Keine Organisation"

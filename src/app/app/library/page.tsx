@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import PageHeader from "@/components/console/PageHeader";
 
 // ──────────────────────────────────────────────
@@ -59,7 +58,6 @@ function formatMonth(monthIso: string): string {
 }
 
 export default function LibraryPage() {
-	const tc = useTranslations("console.common");
 	const envId = getEnvironmentId();
 	const [plans, setPlans] = useState<StrategyPlanSummary[]>([]);
 	const [plansLoading, setPlansLoading] = useState(true);

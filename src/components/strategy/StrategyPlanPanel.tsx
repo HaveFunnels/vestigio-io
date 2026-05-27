@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import "@/styles/strategy.css";
 import type { StrategyPlan } from "./types";
@@ -87,6 +88,32 @@ function StickyHeader({ plan }: { plan: StrategyPlan }) {
 					>
 						Exportar PDF
 					</button>
+					{/* Separator + close. Visually distinct from the action
+					    buttons so it reads as a navigation/dismiss control,
+					    not another action. Returns to the Library gallery
+					    where the user opened the plan from. */}
+					<span className="mx-1 h-5 w-px bg-edge" aria-hidden />
+					<Link
+						href="/app/library"
+						aria-label="Fechar plano"
+						title="Fechar"
+						className="group/close inline-flex h-8 w-8 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
+					>
+						<svg
+							width="14"
+							height="14"
+							viewBox="0 0 14 14"
+							fill="none"
+							className="transition-transform group-hover/close:scale-110"
+						>
+							<path
+								d="M3 3L11 11M11 3L3 11"
+								stroke="currentColor"
+								strokeWidth="1.6"
+								strokeLinecap="round"
+							/>
+						</svg>
+					</Link>
 				</div>
 			</div>
 		</div>
@@ -141,8 +168,33 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true }: Pro
 		<div
 			data-vsgp-plan
 			data-vsgp-print={isPrint ? "true" : "false"}
-			className="min-h-screen bg-surface"
+			className="relative min-h-screen bg-surface"
 		>
+			{/* Notion/Miro-style canvas background: subtle dotted grid
+			    fixed behind the content. Uses radial-gradient dots at
+			    24px spacing with very low opacity so it reads as
+			    "this is a canvas", not "this is a graph". Fixed to the
+			    viewport so the dots don't scroll with the content. The
+			    fade-to-edge mask keeps the focus on the central reading
+			    column without an abrupt hard edge. Hidden in print via
+			    the data-vsgp-print attribute (see strategy.css). */}
+			<div
+				data-vsgp-print-hide
+				aria-hidden
+				className="pointer-events-none fixed inset-0 z-0"
+				style={{
+					backgroundImage:
+						"radial-gradient(circle at center, rgb(255 255 255 / 0.045) 1px, transparent 1.2px)",
+					backgroundSize: "26px 26px",
+					maskImage:
+						"radial-gradient(ellipse 80% 70% at 50% 40%, black 40%, transparent 95%)",
+					WebkitMaskImage:
+						"radial-gradient(ellipse 80% 70% at 50% 40%, black 40%, transparent 95%)",
+				}}
+			/>
+
+			{/* All real content sits above the grid layer */}
+			<div className="relative z-10">
 			{!isPrint && showStickyHeader && <StickyHeader plan={plan} />}
 
 			<div className="mx-auto max-w-[1100px] px-6 py-10 sm:py-14">
@@ -171,6 +223,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true }: Pro
 						<div className="font-mono">v{plan.id.slice(-8)}</div>
 					</div>
 				</footer>
+			</div>
 			</div>
 		</div>
 	);

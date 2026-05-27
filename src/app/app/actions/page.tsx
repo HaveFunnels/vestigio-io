@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+import StrategyPlanDialog from "@/components/strategy/StrategyPlanDialog";
+import { MOCK_PLAN_HAVEFUNNELS_2026_06 } from "@/components/strategy/mock-data";
 import { useTranslations, useLocale } from "next-intl";
 import { formatDate } from "@/lib/format-date";
 import { useTrack } from "@/hooks/useProductTrack";
@@ -282,6 +283,29 @@ function ActionsContent({
 	const [surfaceKindFilter, setSurfaceKindFilter] = useState<
 		"all" | "public" | "authenticated" | "mixed"
 	>("all");
+
+	// Wave 22.6 — Strategy Plan dialog state. URL is synced via ?plan=
+	// so the panel survives refresh + supports deep links. Mount-effect
+	// hydrates from URL; toggle writes back via router.replace (no
+	// history pollution from drawer open/close). Reuses the `router`
+	// and `searchParams` already declared above for this component.
+	const [planOpen, setPlanOpen] = useState(false);
+	useEffect(() => {
+		if (searchParams?.get("plan")) setPlanOpen(true);
+		// mount-only: subsequent URL changes flow through handlePlanOpenChange
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
+	const handlePlanOpenChange = useCallback(
+		(open: boolean) => {
+			setPlanOpen(open);
+			const params = new URLSearchParams(searchParams?.toString() ?? "");
+			if (open) params.set("plan", "2026-06");
+			else params.delete("plan");
+			const qs = params.toString();
+			router.replace(`/app/actions${qs ? `?${qs}` : ""}`, { scroll: false });
+		},
+		[router, searchParams],
+	);
 
 	// Fetch persisted UserActions once on mount. These come from the
 	// chat Verify flow (POST /api/actions/from-finding) and aren't
@@ -800,14 +824,16 @@ function ActionsContent({
 
 	return (
 		<>
-			{/* Wave 22.6 — Strategy Plan strip. Lives above the summary
-			    cards as a high-visibility entry into the current month's
-			    plan. Links straight to /app/library/strategy/[month];
-			    the dialog/overlay variant lives in Step 9 once
-			    propose-and-approve flow needs it. */}
-			<Link
-				href='/app/library/strategy/2026-06'
-				className='group mb-4 flex items-center justify-between gap-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 transition-all hover:border-edge-focus hover:from-surface-card-hover'
+			{/* Wave 22.6 — Strategy Plan strip. High-visibility entry
+			    into the current month's plan. Opens StrategyPlanPanel
+			    as a full-screen Dialog (per design spec §11.6) so the
+			    operator keeps their /app/actions queue state and can
+			    close back to the same row they were on. URL state
+			    (?plan=2026-06) survives refresh + supports deep-links. */}
+			<button
+				type='button'
+				onClick={() => handlePlanOpenChange(true)}
+				className='group mb-4 flex w-full items-center justify-between gap-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 text-left transition-all hover:border-edge-focus hover:from-surface-card-hover'
 			>
 				<div className='flex items-center gap-4'>
 					<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset font-serif text-[16px] font-semibold text-content'>
@@ -825,7 +851,17 @@ function ActionsContent({
 				<span className='shrink-0 rounded-md border border-edge bg-surface px-3 py-1.5 text-[12px] font-medium text-content transition-colors group-hover:border-edge-focus'>
 					Abrir Plano →
 				</span>
-			</Link>
+			</button>
+
+			{/* Full-screen Dialog overlay — mounted once at the page
+			    level so the same instance is reused across user
+			    open/close cycles (cheaper than remount + nicer
+			    animations on Radix). */}
+			<StrategyPlanDialog
+				open={planOpen}
+				onOpenChange={handlePlanOpenChange}
+				plan={MOCK_PLAN_HAVEFUNNELS_2026_06}
+			/>
 
 			{/* Summary Cards */}
 			<div className='mb-6'>

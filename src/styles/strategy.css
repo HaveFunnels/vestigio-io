@@ -62,8 +62,31 @@
 	}
 }
 
-/* ── ?print=true mode (used by the chromium exporter) ─────────── */
+/* ── ?print=true mode (used by the chromium exporter in Step 10
+       AND for live in-browser preview) ──────────────────────────── */
+
+/* Override the design-token CSS variables to a light palette so
+   every component that resolves text/surface via tokens flips at
+   once. Cleaner than overriding each Tailwind utility individually.
+   The values mirror the project's existing light-mode tokens from
+   src/styles/globals.css. */
 [data-vsgp-print="true"] {
+	--bg-page: 255 255 255;
+	--bg-shell: 255 255 255;
+	--bg-card: 255 255 255;
+	--bg-card-hover: 248 250 252;
+	--bg-inset: 244 246 250;
+	--bg-input: 248 250 252;
+	--bg-overlay: 255 255 255;
+	--bg-tooltip: 248 250 252;
+	--border-default: 218 224 232;
+	--border-subtle: 230 234 240;
+	--border-focus: 148 163 184;
+	--text-primary: 15 23 42;
+	--text-secondary: 51 65 85;
+	--text-tertiary: 71 85 105;
+	--text-muted: 100 116 139;
+	--text-faint: 148 163 184;
 	background: #ffffff;
 	color: #0b0f1a;
 }
@@ -71,6 +94,15 @@
 [data-vsgp-print="true"] [data-vsgp-sticky-header],
 [data-vsgp-print="true"] [data-vsgp-print-hide] {
 	display: none !important;
+}
+
+/* Force-expand Radix Collapsible content so the chromium exporter
+   (and any user previewing ?print=true in the browser) sees the
+   full hidden steps + drawer content laid out. */
+[data-vsgp-print="true"]
+	[data-radix-collapsible-content][data-state="closed"] {
+	display: block !important;
+	height: auto !important;
 }
 
 [data-vsgp-print="true"] [data-vsgp-card] {
@@ -83,7 +115,19 @@
 	color: #1a2236 !important;
 }
 
+/* Single-column override: the grid layouts collapse so the PDF
+   reads top-to-bottom regardless of the viewport the exporter
+   chose. Targets the exact Tailwind utilities the panel uses. */
+[data-vsgp-print="true"] .grid {
+	grid-template-columns: 1fr !important;
+}
+
 [data-vsgp-print="true"] * {
 	transition: none !important;
 	animation: none !important;
+}
+
+/* Slight font-size tightening for paper density — spec §11.7. */
+[data-vsgp-print="true"] {
+	font-size: 14px;
 }

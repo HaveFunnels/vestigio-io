@@ -29,6 +29,12 @@ interface Props {
 	plan: StrategyPlan;
 	/** When true, the panel exposes a sticky export/share header. */
 	showStickyHeader?: boolean;
+	/** When provided, the close button in the sticky header calls this
+	    instead of navigating to /app/library. Used by the Dialog
+	    overlay variant that opens from the /app/actions strip — there,
+	    closing should dismiss the dialog and return the user to the
+	    underlying actions queue without a page transition. */
+	onClose?: () => void;
 }
 
 const MONTH_NAMES_PT_BR: Record<string, string> = {
@@ -64,7 +70,7 @@ function formatTimestamp(date: Date): string {
 	return `${dd} ${mmName} · ${hh}:${min} UTC`;
 }
 
-function StickyHeader({ plan }: { plan: StrategyPlan }) {
+function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => void }) {
 	return (
 		<div
 			data-vsgp-sticky-header
@@ -90,30 +96,36 @@ function StickyHeader({ plan }: { plan: StrategyPlan }) {
 					</button>
 					{/* Separator + close. Visually distinct from the action
 					    buttons so it reads as a navigation/dismiss control,
-					    not another action. Returns to the Library gallery
-					    where the user opened the plan from. */}
+					    not another action. Two variants:
+					    - If onClose is provided (Dialog overlay from
+					      /app/actions): close calls the parent's dismiss.
+					    - Otherwise (standalone route): close navigates to
+					      /app/library where the user opened the plan. */}
 					<span className="mx-1 h-5 w-px bg-edge" aria-hidden />
-					<Link
-						href="/app/library"
-						aria-label="Fechar plano"
-						title="Fechar"
-						className="group/close inline-flex h-8 w-8 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
-					>
-						<svg
-							width="14"
-							height="14"
-							viewBox="0 0 14 14"
-							fill="none"
-							className="transition-transform group-hover/close:scale-110"
+					{onClose ? (
+						<button
+							type="button"
+							onClick={onClose}
+							aria-label="Fechar plano"
+							title="Fechar"
+							className="group/close inline-flex h-8 w-8 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
 						>
-							<path
-								d="M3 3L11 11M11 3L3 11"
-								stroke="currentColor"
-								strokeWidth="1.6"
-								strokeLinecap="round"
-							/>
-						</svg>
-					</Link>
+							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="transition-transform group-hover/close:scale-110">
+								<path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+							</svg>
+						</button>
+					) : (
+						<Link
+							href="/app/library"
+							aria-label="Fechar plano"
+							title="Fechar"
+							className="group/close inline-flex h-8 w-8 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
+						>
+							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="transition-transform group-hover/close:scale-110">
+								<path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+							</svg>
+						</Link>
+					)}
 				</div>
 			</div>
 		</div>
@@ -159,7 +171,7 @@ function PlanHeader({ plan }: { plan: StrategyPlan }) {
 	);
 }
 
-export default function StrategyPlanPanel({ plan, showStickyHeader = true }: Props) {
+export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClose }: Props) {
 	const searchParams = useSearchParams();
 	const isPrint = searchParams?.get("print") === "true";
 	const monthLabel = formatMonthLabel(plan.month);
@@ -195,7 +207,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true }: Pro
 
 			{/* All real content sits above the grid layer */}
 			<div className="relative z-10">
-			{!isPrint && showStickyHeader && <StickyHeader plan={plan} />}
+			{!isPrint && showStickyHeader && <StickyHeader plan={plan} onClose={onClose} />}
 
 			<div className="mx-auto max-w-[1100px] px-6 py-10 sm:py-14">
 				<PlanHeader plan={plan} />

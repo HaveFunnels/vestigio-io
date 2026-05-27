@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useState, type ReactNode } from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import type { NextStep, NextStepStatus } from "../types";
+import ActionDrawer from "../ActionDrawer";
 
 /*
  * Next Steps — "Próximo passo, atacar nesta ordem"
@@ -84,6 +85,7 @@ function renderInline(text: string) {
 
 function StepCard({ step }: { step: NextStep }) {
 	const [status, setStatus] = useState<NextStepStatus>(step.status);
+	const [drawerOpen, setDrawerOpen] = useState(false);
 	const isDone = status === "done";
 	const due = formatDate(step.dueAt);
 
@@ -296,6 +298,7 @@ function StepCard({ step }: { step: NextStep }) {
 						</button>
 						<button
 							type="button"
+							onClick={() => setDrawerOpen(true)}
 							className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
 						>
 							Ver actions linkadas ({step.linkedActionRefs.length}) →
@@ -303,6 +306,16 @@ function StepCard({ step }: { step: NextStep }) {
 					</div>
 				</div>
 			</div>
+
+			{/* Side drawer with the actions linked to this step. Mounted
+			    per-card so Radix manages focus + Esc handling
+			    independently — multiple cards never collide. */}
+			<ActionDrawer
+				open={drawerOpen}
+				onOpenChange={setDrawerOpen}
+				stepTitle={step.title}
+				actionIds={step.linkedActionRefs}
+			/>
 		</motion.div>
 	);
 }

@@ -306,5 +306,105 @@ Impact pequeno isolado (~R$ 500/mo) mas é um teste rápido com risco mínimo �
 	],
 };
 
+/*
+ * Mock action details for the "Ver actions linkadas" drawer in the
+ * NextSteps section. Keyed by action ID; the values are realistic
+ * ActionProjection-shaped snippets that the drawer renders. Step 4
+ * replaces this lookup with a fetch against /api/actions/by-ids.
+ */
+export interface MockLinkedAction {
+	id: string;
+	title: string;
+	severity: "critical" | "high" | "medium" | "low";
+	impactMidpoint: number;
+	status: "open" | "in_progress" | "in_review" | "done" | "dismissed";
+	category: string;
+	findingId: string;
+	surface: string;
+	lastUpdate: string; // ISO date
+	summary: string;
+}
+
+export const MOCK_LINKED_ACTIONS: Record<string, MockLinkedAction> = {
+	action_47: {
+		id: "action_47",
+		title: "Resolver fricção do checkout mobile (PaymentForm)",
+		severity: "critical",
+		impactMidpoint: 3200,
+		status: "open",
+		category: "revenue_integrity",
+		findingId: "finding_revenue_path_fragile",
+		surface: "/checkout (mobile)",
+		lastUpdate: "2026-05-31",
+		summary:
+			"Regressão de 22% em conversão mobile pós-deploy 12/maio. Provável regressão da prop `isFloatingLabel` no componente PaymentForm. Mobile responde por 78% do tráfego Meta Ads — exposição imediata de ~R$ 4k/mo de spend efetivamente perdido.",
+	},
+	action_51: {
+		id: "action_51",
+		title: "Validar checkout em viewport iPhone 14 Pro + conexão 3G",
+		severity: "high",
+		impactMidpoint: 800,
+		status: "open",
+		category: "revenue_integrity",
+		findingId: "finding_revenue_path_fragile",
+		surface: "/checkout (mobile)",
+		lastUpdate: "2026-05-30",
+		summary:
+			"Sub-ação do passo 1 — reprodução determinística da regressão antes de cherry-pick. Bloqueia a hipótese do `isFloatingLabel` sem ela.",
+	},
+	action_62: {
+		id: "action_62",
+		title: "Política de Refund acima da dobra em todos PDPs",
+		severity: "high",
+		impactMidpoint: 900,
+		status: "open",
+		category: "trust_revenue_gap",
+		findingId: "finding_trust_break_in_checkout",
+		surface: "/produto/* (PDP template)",
+		lastUpdate: "2026-05-28",
+		summary:
+			"Nenhum PDP cita política de refund acima da dobra. Adicionalmente, link da política expira em 404 nos PDPs mobile-only (mesmo deploy do passo 1). Bloqueia decisão de compra justamente onde acontece.",
+	},
+	action_73: {
+		id: "action_73",
+		title: "Reescrever CTA da landing /b2b",
+		severity: "low",
+		impactMidpoint: 500,
+		status: "open",
+		category: "copy_alignment",
+		findingId: "finding_cta_clarity_weak_on_commercial",
+		surface: "/b2b",
+		lastUpdate: "2026-05-29",
+		summary:
+			"CTA atual 'Saiba mais' é genérico. 38% dos visitantes rolam até o fim sem clicar — intent não-resolvida. Teste rápido (15min copy + deploy) com risco mínimo.",
+	},
+	action_88: {
+		id: "action_88",
+		title: "Conditional GA fire após consent do banner LGPD",
+		severity: "medium",
+		impactMidpoint: 0,
+		status: "open",
+		category: "compliance",
+		findingId: "finding_lgpd_consent_violation",
+		surface: "/ (global tag manager)",
+		lastUpdate: "2026-05-27",
+		summary:
+			"Banner LGPD dispara analytics ANTES do user clicar 'aceitar'. ANPD multou 60+ empresas em 2025 por padrão idêntico. Compliance + reputação.",
+	},
+	action_91: {
+		id: "action_91",
+		title: "Atualizar last-updated em 5 testimonials da home",
+		severity: "low",
+		impactMidpoint: 250,
+		status: "open",
+		category: "trust_revenue_gap",
+		findingId: "finding_stale_social_proof",
+		surface: "/",
+		lastUpdate: "2026-05-25",
+		summary:
+			"5 depoimentos com data 2024 visíveis na home — trust signal degradado. Custo de execução próximo de zero.",
+	},
+};
+
 // Default export so consumers can `import MOCK_PLAN from "..."`.
 export default MOCK_PLAN_HAVEFUNNELS_2026_06;

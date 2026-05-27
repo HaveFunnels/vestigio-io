@@ -184,19 +184,24 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 		>
 			{/* Notion/Miro-style canvas background: subtle dotted grid
 			    fixed behind the content. Uses radial-gradient dots at
-			    24px spacing with very low opacity so it reads as
+			    26px spacing with very low opacity so it reads as
 			    "this is a canvas", not "this is a graph". Fixed to the
 			    viewport so the dots don't scroll with the content. The
 			    fade-to-edge mask keeps the focus on the central reading
-			    column without an abrupt hard edge. Hidden in print via
-			    the data-vsgp-print attribute (see strategy.css). */}
+			    column without an abrupt hard edge.
+
+			    Color uses --text-faint as the dot pigment so the
+			    pattern reads correctly in both dark and light themes
+			    (was hardcoded to white, which became invisible if the
+			    app ever ran in light mode). Hidden in print via the
+			    data-vsgp-print-hide attribute (see strategy.css). */}
 			<div
 				data-vsgp-print-hide
 				aria-hidden
 				className="pointer-events-none fixed inset-0 z-0"
 				style={{
 					backgroundImage:
-						"radial-gradient(circle at center, rgb(255 255 255 / 0.045) 1px, transparent 1.2px)",
+						"radial-gradient(circle at center, rgb(var(--text-faint) / 0.22) 1px, transparent 1.2px)",
 					backgroundSize: "26px 26px",
 					maskImage:
 						"radial-gradient(ellipse 80% 70% at 50% 40%, black 40%, transparent 95%)",

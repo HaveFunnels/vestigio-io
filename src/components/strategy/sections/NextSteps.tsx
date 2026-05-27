@@ -282,9 +282,15 @@ function StepCard({ step }: { step: NextStep }) {
 					)}
 
 					<div className="ml-auto flex items-center gap-3">
-						<button
-							type="button"
-							className="inline-flex items-center gap-1.5 text-[12px] text-content-muted transition-colors hover:text-content"
+						{/* Comments deferred to Step 9 (MCP write + threaded
+						    PlanComment model). Until then the button is
+						    rendered as a disabled hint with the count so the
+						    operator sees comments are coming + sees their
+						    count, but isn't tricked into clicking an inert
+						    CTA. Tooltip explains the timing. */}
+						<span
+							title="Comentários disponíveis em breve (Step 9 — MCP write)"
+							className="inline-flex cursor-not-allowed items-center gap-1.5 text-[12px] text-content-faint opacity-60"
 						>
 							<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
 								<path
@@ -294,8 +300,8 @@ function StepCard({ step }: { step: NextStep }) {
 									strokeLinejoin="round"
 								/>
 							</svg>
-							{step.commentsCount > 0 ? step.commentsCount : "Comentar"}
-						</button>
+							{step.commentsCount > 0 ? `${step.commentsCount} · em breve` : "em breve"}
+						</span>
 						<button
 							type="button"
 							onClick={() => setDrawerOpen(true)}

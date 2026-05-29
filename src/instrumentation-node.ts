@@ -649,6 +649,37 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	setInterval(runValueCaughtMonthly, VALUE_CAUGHT_INTERVAL_MS);
 	console.log("✓ Value-caught monthly cron registered (24h interval, fires days 1-7 of each month)");
 
+	// ── 22.6 Step 5: Monthly Strategy Plan cron ──
+	// Daily-with-idempotency. The pass itself only runs work in days
+	// 1–7 of the current month. Idempotency via the
+	// MonthlyStrategyPlan unique constraint (envId, month) — the pass
+	// skips envs whose plan already exists (unless archived).
+	const { runMonthlyStrategyPlanPass } = await import(
+		"./libs/strategy-plan-monthly"
+	);
+	const runStrategyPlanMonthly = async () => {
+		await withLeadership(
+			"strategy-plan-monthly",
+			{ ttlSec: 600 }, // generation runs LLM calls — 5min is too tight
+			async () => {
+				try {
+					const r = await runMonthlyStrategyPlanPass();
+					if (r.envsEvaluated > 0 || r.plansGenerated > 0) {
+						console.log(
+							`[strategy-plan-monthly] envs=${r.envsEvaluated} generated=${r.plansGenerated} skipped=${r.skipped} errors=${r.errors}`,
+						);
+					}
+				} catch (err) {
+					console.error("[strategy-plan-monthly] pass failed:", err);
+				}
+			},
+		);
+	};
+	const STRATEGY_PLAN_INTERVAL_MS = 24 * 60 * 60 * 1000;
+	runStrategyPlanMonthly();
+	setInterval(runStrategyPlanMonthly, STRATEGY_PLAN_INTERVAL_MS);
+	console.log("✓ Strategy-plan monthly cron registered (24h interval, fires days 1-7 of each month)");
+
 	// ── 3.13: Daily digest email ──
 	const { sendDailyDigests } = await import("./libs/cycle-digest");
 	const runDigest = async () => {

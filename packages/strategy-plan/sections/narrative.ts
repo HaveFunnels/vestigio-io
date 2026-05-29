@@ -21,6 +21,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { GenerateContext } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
+import { monthLabel } from "../i18n";
 
 interface NarrativeInputs {
 	resolvedCount: number;
@@ -32,16 +33,6 @@ interface NarrativeInputs {
 	regressionCount: number;
 	monthLabelPt: string;
 	envDomain: string;
-}
-
-const MONTH_NAMES_PT_BR = [
-	"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-	"Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
-
-function monthLabel(ymd: string): string {
-	const [, mm] = ymd.split("-");
-	return MONTH_NAMES_PT_BR[parseInt(mm, 10) - 1] ?? ymd;
 }
 
 async function gatherInputs(
@@ -101,7 +92,7 @@ async function gatherInputs(
 			.map((r) => `${r.inferenceKey.replace(/_/g, " ")} em ${r.surface}`),
 		chronicCount: chronic,
 		regressionCount: regression,
-		monthLabelPt: monthLabel(ctx.month),
+		monthLabelPt: monthLabel(ctx.month, ctx.locale),
 		envDomain: ctx.envDomain,
 	};
 }

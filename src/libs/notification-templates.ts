@@ -714,6 +714,66 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 	},
 
+	// Wave 22.6 Step 7 — Monthly Strategy Plan ready notification.
+	// Two narrative variants packed via {firstPlanLine} substitution:
+	//   - First-ever plan for the env: "Sua primeira análise terminou..."
+	//   - Recurring monthly: "Seu Plano de [mês] está pronto."
+	// The trigger passes the appropriate string via vars.firstPlanLine.
+	strategy_plan_ready: {
+		"pt-BR": {
+			sms: {
+				body: "Vestigio: Seu Plano de Estratégia de {monthLabel} está pronto. Acesse o relatório completo no dashboard.",
+			},
+			email: {
+				subject: "Seu Plano de Estratégia de {monthLabel} está pronto.",
+				headline: "Plano de Estratégia · {monthLabel}",
+				intro: "{firstPlanLine}<br/><br/>Esse mês: <strong>R$ {retainedAmount}/mo retidos</strong> · <strong>R$ {capturedAmount}/mo capturados</strong> · <strong>{criticalCount} findings críticos abertos</strong>.<br/><br/>O Plano condensa o mês em uma narrativa do que aconteceu, decompõe findings por time (copy, engenharia, liderança) e prioriza os próximos passos com reasoning + procedure.",
+				ctaLabel: "Abrir Plano",
+				ctaPath: "/app/library/strategy/{planMonth}",
+				footerNote: "Cada Plano é gerado uma vez por mês. Você pode pausar esses emails nas preferências do ambiente.",
+			},
+		},
+		en: {
+			sms: {
+				body: "Vestigio: Your {monthLabel} Strategy Plan is ready. View the full report in your dashboard.",
+			},
+			email: {
+				subject: "Your {monthLabel} Strategy Plan is ready.",
+				headline: "Strategy Plan · {monthLabel}",
+				intro: "{firstPlanLine}<br/><br/>This month: <strong>${retainedAmount}/mo retained</strong> · <strong>${capturedAmount}/mo captured</strong> · <strong>{criticalCount} open critical findings</strong>.<br/><br/>The Plan condenses the month into a narrative of what happened, decomposes findings by team (copy, engineering, leadership), and prioritizes next steps with reasoning + procedure.",
+				ctaLabel: "Open Plan",
+				ctaPath: "/app/library/strategy/{planMonth}",
+				footerNote: "Each Plan is generated once per month. You can pause these emails in environment settings.",
+			},
+		},
+		es: {
+			sms: {
+				body: "Vestigio: Tu Plan de Estrategia de {monthLabel} está listo. Consulta el informe completo en tu dashboard.",
+			},
+			email: {
+				subject: "Tu Plan de Estrategia de {monthLabel} está listo.",
+				headline: "Plan de Estrategia · {monthLabel}",
+				intro: "{firstPlanLine}<br/><br/>Este mes: <strong>${retainedAmount}/mes retenidos</strong> · <strong>${capturedAmount}/mes capturados</strong> · <strong>{criticalCount} hallazgos críticos abiertos</strong>.<br/><br/>El Plan condensa el mes en una narrativa de lo que sucedió, descompone los hallazgos por equipo y prioriza los próximos pasos.",
+				ctaLabel: "Abrir Plan",
+				ctaPath: "/app/library/strategy/{planMonth}",
+				footerNote: "Cada Plan se genera una vez al mes. Puedes pausar estos correos en la configuración del entorno.",
+			},
+		},
+		de: {
+			sms: {
+				body: "Vestigio: Dein Strategieplan für {monthLabel} ist fertig. Vollständiger Bericht im Dashboard.",
+			},
+			email: {
+				subject: "Dein Strategieplan für {monthLabel} ist fertig.",
+				headline: "Strategieplan · {monthLabel}",
+				intro: "{firstPlanLine}<br/><br/>Diesen Monat: <strong>{retainedAmount} EUR/Monat gesichert</strong> · <strong>{capturedAmount} EUR/Monat zurückgewonnen</strong> · <strong>{criticalCount} offene kritische Befunde</strong>.<br/><br/>Der Plan fasst den Monat in einer Erzählung zusammen, gliedert die Befunde nach Team und priorisiert die nächsten Schritte.",
+				ctaLabel: "Plan öffnen",
+				ctaPath: "/app/library/strategy/{planMonth}",
+				footerNote: "Jeder Plan wird einmal pro Monat erstellt. Sie können diese E-Mails in den Umgebungseinstellungen deaktivieren.",
+			},
+		},
+	},
+
 	pix_suspended: {
 		"pt-BR": {
 			sms: {

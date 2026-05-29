@@ -2276,6 +2276,144 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			);
 		}
 
+		// ─────────────────────────────────────────────
+		// Wave 22.6 Step 5 — first-cycle Strategy Plan generation.
+		// Fires the FIRST time a cycle lands in `complete` for this env;
+		// the day-1 cron handles every month thereafter. Idempotency via
+		// MonthlyStrategyPlan @@unique(envId, month). Best-effort:
+		// failure must not block the cycle outcome.
+		// ─────────────────────────────────────────────
+		try {
+			const { generateAndPersistPlan } = await import(
+				"../../packages/strategy-plan"
+			);
+			const prior = await prisma.monthlyStrategyPlan.findFirst({
+				where: { environmentId: env.id },
+				select: { id: true },
+			});
+			if (!prior) {
+				const now = new Date();
+				const month = `${now.getUTCFullYear()}-${String(
+					now.getUTCMonth() + 1,
+				).padStart(2, "0")}`;
+				const ownerId = cycle.organization?.ownerId ?? null;
+				const { triggerStrategyPlanReadyEmail } = await import(
+					"@/libs/notification-triggers"
+				);
+				await generateAndPersistPlan(prisma, {
+					environmentId: env.id,
+					month,
+					onReady: ownerId
+						? async (ready) => {
+							await triggerStrategyPlanReadyEmail({
+								userId: ownerId,
+								environmentId: ready.environmentId,
+								domain: env.domain,
+								month: ready.month,
+								heroMetrics: ready.heroMetrics,
+								isFirstPlan: ready.isFirstPlan,
+							});
+						}
+						: undefined,
+				});
+				console.log(
+					`[audit-runner ${cycleId}] strategy-plan first-cycle generated for month ${month}`,
+				);
+			}
+		} catch (err) {
+			console.warn(
+				`[audit-runner ${cycleId}] strategy-plan first-cycle failed (non-fatal):`,
+				err instanceof Error ? err.message : err,
+			);
+		}
+
+		// ─────────────────────────────────────────────
+		// Wave 22.6 Step 6 — re-narrative event triggers.
+		// Detects in-cycle events that warrant a partial regeneration
+		// of the existing month's plan. All best-effort; never blocks
+		// the cycle outcome. Trigger routing + cap enforcement lives
+		// in packages/strategy-plan/renarrate.ts.
+		// ─────────────────────────────────────────────
+		try {
+			const { maybeTriggerRenarrative } = await import(
+				"../../packages/strategy-plan"
+			);
+
+			// (a) new critical findings introduced this cycle. Excludes
+			// regressions — those are handled by the regression_chain
+			// trigger below to avoid double-counting against the cap +
+			// double-overwriting the same regenerated narrative.
+			const newCritical = projectionsForNotifications.filter(
+				(f: any) =>
+					f.severity === "critical" && f.change_class === "new_issue",
+			);
+			if (newCritical.length > 0) {
+				await maybeTriggerRenarrative({
+					prisma,
+					trigger: "new_critical",
+					environmentId: env.id,
+					cycleId,
+				});
+			}
+
+			// (b) regression chain — 3+ regressions in a single cycle.
+			const regressionCount =
+				changeReportForNotifications?.regressions?.length ?? 0;
+			if (regressionCount >= 3) {
+				await maybeTriggerRenarrative({
+					prisma,
+					trigger: "regression_chain",
+					environmentId: env.id,
+					cycleId,
+				});
+			}
+
+			// (c) probe-triggered surface change — targeted cycle whose
+			// scopeJson.triggered_by hints at the probe-diff path.
+			if (cycle.cycleType === "targeted" && cycle.scopeJson) {
+				const trigger = (cycle.scopeJson as any)?.triggered_by;
+				if (trigger === "probe_diff") {
+					await maybeTriggerRenarrative({
+						prisma,
+						trigger: "probe_surface_change",
+						environmentId: env.id,
+						cycleId,
+					});
+				}
+			}
+
+			// (d) chronic findings detected. Uses the detectChronicFindings
+			// helper from packages/value-caught. Wrapped in its own
+			// try/catch so a chronic-detection failure doesn't suppress
+			// the other triggers above.
+			try {
+				const { detectChronicFindings } = await import(
+					"../../packages/value-caught"
+				);
+				const chronic = await detectChronicFindings(prisma, env.id, {
+					minResolves: 3,
+				});
+				if (chronic.length > 0) {
+					await maybeTriggerRenarrative({
+						prisma,
+						trigger: "chronic_detected",
+						environmentId: env.id,
+						cycleId,
+					});
+				}
+			} catch (chronicErr) {
+				console.warn(
+					`[audit-runner ${cycleId}] chronic detection failed (non-fatal):`,
+					chronicErr instanceof Error ? chronicErr.message : chronicErr,
+				);
+			}
+		} catch (err) {
+			console.warn(
+				`[audit-runner ${cycleId}] strategy-plan renarrate dispatch failed (non-fatal):`,
+				err instanceof Error ? err.message : err,
+			);
+		}
+
 		// Defensive fallback. After the Wave 22.6 fix that rethrows
 		// recompute failures, this branch should not fire — the inner
 		// catch now bails to the outer catch (cycle → FAILED). If we

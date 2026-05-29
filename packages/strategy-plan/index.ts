@@ -9,7 +9,13 @@ export {
 	generatePlan,
 	generateAndPersistPlan,
 	type GeneratePlanArgs,
+	type RegenScope,
 } from "./generator";
+
+export {
+	maybeTriggerRenarrative,
+	type RenarrateTrigger,
+} from "./renarrate";
 
 export type {
 	GenerateContext,

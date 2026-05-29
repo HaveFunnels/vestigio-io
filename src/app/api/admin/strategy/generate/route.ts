@@ -51,11 +51,22 @@ export async function POST(request: Request) {
 
 	const env = await prisma.environment.findUnique({
 		where: { id: environmentId },
-		select: { id: true, domain: true },
+		select: {
+			id: true,
+			domain: true,
+			organization: { select: { ownerId: true } },
+		},
 	});
 	if (!env) {
 		return NextResponse.json({ message: "Environment not found" }, { status: 404 });
 	}
+
+	// Admin trigger defaults to NOT firing the notification email
+	// (testing/development should not spam customers). Pass
+	// { notify: true } in the body to enable — useful for ops
+	// recovery when a missed cron needs to deliver the email too.
+	const shouldNotify = body?.notify === true;
+	const ownerId = env.organization?.ownerId ?? null;
 
 	const t0 = Date.now();
 	try {
@@ -63,6 +74,22 @@ export async function POST(request: Request) {
 			environmentId,
 			month,
 			locale,
+			onReady:
+				shouldNotify && ownerId
+					? async (ready) => {
+						const { triggerStrategyPlanReadyEmail } = await import(
+							"@/libs/notification-triggers"
+						);
+						await triggerStrategyPlanReadyEmail({
+							userId: ownerId,
+							environmentId: ready.environmentId,
+							domain: env.domain,
+							month: ready.month,
+							heroMetrics: ready.heroMetrics,
+							isFirstPlan: ready.isFirstPlan,
+						});
+					}
+					: undefined,
 		});
 		const durationMs = Date.now() - t0;
 

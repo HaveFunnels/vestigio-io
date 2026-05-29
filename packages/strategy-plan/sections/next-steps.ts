@@ -20,6 +20,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { GenerateContext, NextStepOutput, GenerationCost } from "../types";
 import { callForText } from "../llm-helpers";
+import { monthLabel as renderedMonthLabel } from "../i18n";
 import {
 	REMEDIATION_CATALOG,
 	getDynamicRemediation,
@@ -158,17 +159,12 @@ Regras:
 	return { system, user: lines.join("\n") };
 }
 
-const MONTH_NAMES_PT_BR = [
-	"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-	"Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
-
 export async function generateNextSteps(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
 	organizationId: string | null,
 ): Promise<{ steps: NextStepOutput[]; cost: GenerationCost }> {
-	const monthLabel = MONTH_NAMES_PT_BR[parseInt(ctx.month.split("-")[1], 10) - 1] ?? ctx.month;
+	const month = renderedMonthLabel(ctx.month, ctx.locale);
 	const actions = await pickTopActions(prisma, ctx);
 
 	if (actions.length === 0) {
@@ -188,7 +184,7 @@ export async function generateNextSteps(
 			const catalog =
 				REMEDIATION_CATALOG[primaryKey] ?? getDynamicRemediation(primaryKey);
 
-			const { system, user } = buildPrompt(action, order, ctx.envDomain, monthLabel);
+			const { system, user } = buildPrompt(action, order, ctx.envDomain, month);
 			const reasoning = await callForText({
 				model: "haiku_4_5",
 				systemPrompt: system,

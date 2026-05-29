@@ -176,6 +176,10 @@ model NotificationLog {
   recipient  String // email or phone
   subject    String?
   status     String // sent | failed | skipped | delivered (delivery tracking only — don't use for read state)
+  /// Wave 22.6 — first-class dedup key set by callers (e.g. strategy-plan:{envId}:{YYYYMM}).
+  /// Older event triggers (incident, regression) match on a subject-substring; this column
+  /// makes dedup reliable for events whose subject doesn't carry a deterministic identifier.
+  tag        String?
   readAt     DateTime? // null = unread; set when user marks as read in bell UI. Separate from delivery status.
   provider   String    @default("brevo") // brevo | twilio | meta_whatsapp
   providerId String? // provider's message id (wamid for meta)
@@ -187,6 +191,7 @@ model NotificationLog {
   @@index([event, createdAt])
   @@index([providerId])
   @@index([userId, readAt]) // for efficient unread-count queries
+  @@index([tag, createdAt]) // efficient dedup query by tag
 }
 
 // ──────────────────────────────────────────────
@@ -497,6 +502,12 @@ model MonthlyStrategyPlan {
   // ── Generation cost telemetry ──
   llmCostCents  Int @default(0)
   llmCallsCount Int @default(0)
+  /// Wave 22.6 Step 6 — number of partial regenerations fired this month
+  /// by event triggers (critical_resolve, new_critical, chronic_detected,
+  /// regression_chain, probe_surface_change). Capped at 4/month to bound
+  /// LLM cost. Resets when a new month's plan is created (each plan row
+  /// has its own counter — no cross-month bleed).
+  regenCount Int @default(0)
 
   // ── Locks (soft, time-bounded so they self-heal) ──
   /// While exporting, set ~30s into the future. Other export attempts

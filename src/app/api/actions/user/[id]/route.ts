@@ -49,7 +49,16 @@ export async function PATCH(
 
 	const action = await prisma.userAction.findUnique({
 		where: { id: actionId },
-		select: { id: true, organizationId: true, status: true },
+		select: {
+			id: true,
+			organizationId: true,
+			environmentId: true,
+			findingId: true,
+			status: true,
+			// Wave 22.6 Step 6 — needed to detect the "critical resolve"
+			// re-narrative trigger after status flips to 'done'.
+			baselineImpactMidpoint: true,
+		},
 	});
 	if (!action) {
 		return NextResponse.json({ message: "Not found" }, { status: 404 });
@@ -100,6 +109,42 @@ export async function PATCH(
 			updatedAt: true,
 		},
 	});
+
+	// Wave 22.6 Step 6 — fire re-narrative trigger when a critical
+	// high-impact action flips to 'done'. Best-effort + async fire-
+	// and-forget so the HTTP response isn't blocked by the regen.
+	// Threshold: severity=critical AND baselineImpactMidpoint > 5000
+	// (R$ 5k/mo per spec §5 trigger table).
+	if (
+		body.status === "done" &&
+		action.status !== "done" &&
+		action.environmentId &&
+		(action.baselineImpactMidpoint ?? 0) > 5000
+	) {
+		// Resolve the linked Finding's severity to gate on "critical".
+		void (async () => {
+			try {
+				const finding = await prisma.finding.findFirst({
+					where: { id: action.findingId },
+					select: { severity: true },
+				});
+				if (finding?.severity !== "critical") return;
+				const { maybeTriggerRenarrative } = await import(
+					"../../../../../../packages/strategy-plan"
+				);
+				await maybeTriggerRenarrative({
+					prisma,
+					trigger: "critical_resolve",
+					environmentId: action.environmentId!,
+				});
+			} catch (err) {
+				console.warn(
+					"[api/actions/user/PATCH] re-narrative trigger failed:",
+					err instanceof Error ? err.message : err,
+				);
+			}
+		})();
+	}
 
 	return NextResponse.json({
 		id: updated.id,

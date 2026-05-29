@@ -427,12 +427,139 @@ export async function sendPasswordResetEmail(userId: string, email: string, link
 }
 
 // ──────────────────────────────────────────────
+// Wave 22.6 Step 7 — Strategy Plan ready email
+// ──────────────────────────────────────────────
+
+import { resolveLocale, monthLabel as renderMonthLabel } from "../../packages/strategy-plan/i18n";
+import type { SupportedLocale } from "../../packages/strategy-plan/i18n";
+
+interface FirstPlanCopy {
+	first: string;
+	recurring: string;
+	firstSubject: string;
+}
+
+const FIRST_PLAN_LINE: Record<SupportedLocale, FirstPlanCopy> = {
+	"pt-BR": {
+		first:
+			"Sua primeira análise terminou e seu primeiro <strong>Plano de Estratégia</strong> está pronto para <strong>{domain}</strong>.",
+		recurring:
+			"O Plano de <strong>{monthLabel}</strong> para <strong>{domain}</strong> foi gerado e está disponível.",
+		firstSubject: "Sua primeira análise terminou. Plano de Estratégia pronto.",
+	},
+	en: {
+		first:
+			"Your first audit completed and your first <strong>Strategy Plan</strong> is ready for <strong>{domain}</strong>.",
+		recurring:
+			"The <strong>{monthLabel}</strong> Plan for <strong>{domain}</strong> has been generated and is available.",
+		firstSubject: "Your first audit completed. Strategy Plan ready.",
+	},
+	es: {
+		first:
+			"Tu primera auditoría terminó y tu primer <strong>Plan de Estrategia</strong> está listo para <strong>{domain}</strong>.",
+		recurring:
+			"El Plan de <strong>{monthLabel}</strong> para <strong>{domain}</strong> ha sido generado y está disponible.",
+		firstSubject: "Tu primera auditoría terminó. Plan de Estrategia listo.",
+	},
+	de: {
+		first:
+			"Deine erste Analyse ist abgeschlossen und dein erster <strong>Strategieplan</strong> ist bereit für <strong>{domain}</strong>.",
+		recurring:
+			"Der Plan für <strong>{monthLabel}</strong> für <strong>{domain}</strong> wurde erstellt und ist verfügbar.",
+		firstSubject: "Deine erste Analyse ist fertig. Strategieplan bereit.",
+	},
+};
+
+/**
+ * Fire the Monthly Strategy Plan ready email. Idempotent via tag
+ * `strategy-plan:{envId}:{YYYYMM}`. Picks the right narrative
+ * (first-plan vs recurring) based on `isFirstPlan`.
+ */
+export async function triggerStrategyPlanReadyEmail(args: {
+	userId: string;
+	environmentId: string;
+	domain: string;
+	month: string; // YYYY-MM
+	heroMetrics: {
+		retainedMid: number;
+		capturedMid: number;
+		criticalCount: number;
+	};
+	isFirstPlan: boolean;
+}): Promise<void> {
+	const userLocale = (await getUserLocale(args.userId)) ?? "pt-BR";
+	const locale = resolveLocale(userLocale);
+	// Tag matches strategy-plan:{envId}:{YYYYMM} so wasRecentlySent
+	// hits the new NotificationLog.tag column (see Wave 22.6 migration
+	// notification_log_tag) for reliable dedup.
+	const dedupeKey = `strategy-plan:${args.environmentId}:${args.month.replace("-", "")}`;
+	if (await wasRecentlySent(dedupeKey, args.userId)) return;
+
+	const monthLabel = renderMonthLabel(args.month, locale);
+	const copy = FIRST_PLAN_LINE[locale];
+	const firstLineRaw = args.isFirstPlan ? copy.first : copy.recurring;
+	const firstPlanLine = firstLineRaw
+		.replace(/\{domain\}/g, args.domain)
+		.replace(/\{monthLabel\}/g, monthLabel);
+
+	const fmt = (n: number) =>
+		Math.round(n).toLocaleString(locale === "pt-BR" ? "pt-BR" : "en-US");
+	const vars = {
+		domain: args.domain,
+		monthLabel,
+		planMonth: args.month,
+		retainedAmount: fmt(args.heroMetrics.retainedMid),
+		capturedAmount: fmt(args.heroMetrics.capturedMid),
+		criticalCount: String(args.heroMetrics.criticalCount),
+		firstPlanLine: rawHtml(firstPlanLine),
+	};
+
+	const email = renderEmailFromTemplate(
+		"strategy_plan_ready",
+		vars,
+		getBaseUrl(),
+		locale,
+	);
+	if (!email) return;
+
+	// Subject override for the first-plan variant — lives alongside
+	// the body copy in FIRST_PLAN_LINE so adding a locale only
+	// touches one map entry.
+	const subject = args.isFirstPlan ? copy.firstSubject : email.subject;
+
+	const sms = renderSmsFromTemplate("strategy_plan_ready", vars, locale);
+
+	await notifyUser({
+		userId: args.userId,
+		event: "strategy_plan_ready",
+		subject,
+		bodyHtml: email.html,
+		bodyText: sms ?? email.text,
+		tag: dedupeKey,
+	});
+}
+
+// ──────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────
 
 async function wasRecentlySent(tag: string, userId?: string): Promise<boolean> {
 	try {
 		const cutoff = new Date(Date.now() - DEDUPE_WINDOW_MS);
+		// First, try the explicit tag column (Wave 22.6 — first-class
+		// dedup key, populated by new triggers like strategy_plan_ready).
+		// Falls back to the legacy subject-substring match for callers
+		// (incident, regression, page_down) that don't yet pass tag.
+		const byTag = await prisma.notificationLog.findFirst({
+			where: {
+				tag,
+				createdAt: { gte: cutoff },
+				status: "sent",
+				...(userId ? { userId } : {}),
+			},
+			select: { id: true },
+		});
+		if (byTag) return true;
 		const recent = await prisma.notificationLog.findFirst({
 			where: {
 				event: { startsWith: tag.split(":")[0] },

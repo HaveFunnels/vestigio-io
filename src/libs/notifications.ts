@@ -57,7 +57,14 @@ export type NotificationEvent =
 	// Wave 21.5 — monthly "Vestigio caught $X this month" report
 	// sent on the first ~7 days of each new month. Idempotent via
 	// the tag value-caught:{envId}:{YYYYMM}.
-	| "value_caught_monthly";
+	| "value_caught_monthly"
+	// Wave 22.6 Step 7 — Monthly Strategy Plan ready notification.
+	// Fired when MonthlyStrategyPlan.status flips from 'generating'
+	// to 'ready' (either via day-1 cron OR first-cycle trigger).
+	// Idempotent via tag strategy-plan:{envId}:{YYYYMM}. Two variants
+	// via the same union member: subject line + intro change based
+	// on isFirstPlan (resolved inside the trigger).
+	| "strategy_plan_ready";
 
 interface BaseNotification {
 	event: NotificationEvent;
@@ -286,6 +293,7 @@ async function sendOneEmail(args: {
 			status: "failed",
 			provider: "brevo",
 			errorMsg: error,
+			tag: args.tag,
 		});
 		return { sent: false, error };
 	}
@@ -402,6 +410,7 @@ async function sendOneWhatsApp(args: {
 			provider: "brevo",
 			providerId: res.messageId,
 			errorMsg: res.error,
+			tag: args.tag,
 		});
 		return { sent: res.ok, error: res.error };
 	}
@@ -419,6 +428,9 @@ async function logNotification(data: {
 	provider: string;
 	providerId?: string;
 	errorMsg?: string;
+	/** Wave 22.6 — first-class dedup key. New triggers should set
+	    this; older ones still derive a key from subject substring. */
+	tag?: string;
 }) {
 	try {
 		await prisma.notificationLog.create({
@@ -432,6 +444,7 @@ async function logNotification(data: {
 				provider: data.provider,
 				providerId: data.providerId,
 				errorMsg: data.errorMsg?.slice(0, 500),
+				tag: data.tag,
 			},
 		});
 	} catch {
@@ -489,6 +502,12 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 			// the toggle since it's conceptually the same "periodic
 			// summary email" channel — splitting the pref would require
 			// a Prisma migration for a low-value distinction.
+			return prefs.alertOnDigest ?? true;
+		case "strategy_plan_ready":
+			// Wave 22.6 Step 7 — monthly Strategy Plan ready email.
+			// Same justification as value_caught_monthly: conceptually
+			// a periodic summary; the plan UI is always reachable
+			// regardless of opt-out, so the email is a soft preference.
 			return prefs.alertOnDigest ?? true;
 	}
 }

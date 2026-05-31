@@ -281,6 +281,18 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
       action_key: { type: 'string', nullable: true, description: 'Optional: filter to a specific action/finding key. Omit for all resolved actions.' },
     },
   },
+  // Wave 22.6 Step 8 — Monthly Strategy Plan reader
+  {
+    name: 'get_strategy_plan',
+    description: 'Returns the persisted Monthly Strategy Plan for the env: hero metrics (retained/captured value, critical count), the editorial "what happened this month" narrative, and the top 5 prioritized next steps with reasoning + effort + suggested owner. Use when the user asks "what is my strategy plan?", "what should I focus on this month?", "show me the plan", or "summarize this month". Plan-aware behavior: when the user discusses a finding or action, check if it appears in the plan\'s next steps — if yes, mention "this is Step N in your Junho plan" so the operator sees the connection. Returns data: null when no plan exists yet (pre-first-cycle envs). NOT for: individual finding details (use discuss_finding), open action rankings (use get_prioritized_actions), or month-over-month value deltas (use get_recovery_impact).',
+    input_schema: {
+      month: {
+        type: 'string',
+        nullable: true,
+        description: 'Month in YYYY-MM format. Omit for the current month — that is what the operator usually means.',
+      },
+    },
+  },
 ];
 
 // ──────────────────────────────────────────────
@@ -324,7 +336,35 @@ export type ToolResult =
   | { type: 'content_freshness'; data: ContentFreshnessView }
   | { type: 'pack_summary'; data: PackSummaryDetailView }
   | { type: 'funnel_state'; data: FunnelStateView }
+  // Wave 22.6 Step 8 — Monthly Strategy Plan read tool. Returns a
+  // slim view of the persisted plan for the current month. `data: null`
+  // when no plan exists yet for the env.
+  | { type: 'strategy_plan'; data: StrategyPlanView | null }
   | { type: 'error'; data: { message: string } };
+
+export interface StrategyPlanView {
+  month: string;
+  status: string;
+  heroMetrics: {
+    retainedMid: number;
+    capturedMid: number;
+    criticalCount: number;
+    inProgressCount: number;
+  };
+  narrativeWhatHappened: string;
+  topNextSteps: Array<{
+    order: number;
+    title: string;
+    estimatedEffort: string;
+    suggestedOwner: string;
+    status: string;
+    reasoning: string;
+  }>;
+  generatedAt: string;
+  lastRegenerated: string;
+  llmCostCents: number;
+  regenCount: number;
+}
 
 export interface FunnelStateView {
   /** Five-stage canonical journey: awareness → consideration → decision → conversion → post_purchase. */

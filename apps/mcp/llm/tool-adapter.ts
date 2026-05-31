@@ -34,6 +34,7 @@ const NON_CACHEABLE_TOOLS = new Set([
   'create_custom_map',        // mutation: creates a new map record
   'get_verification_status',  // state can change between rounds
   'list_verifications',       // state can change between rounds
+  'get_strategy_plan',        // Wave 22.6 — status can flip generating→ready mid-turn
 ]);
 
 // Per-request verification call budget
@@ -111,12 +112,12 @@ export function buildClaudeTools(): Anthropic.Tool[] {
 
 // ── Execute Tool Call ────────────────────────
 
-export function executeToolCall(
+export async function executeToolCall(
   toolName: string,
   toolInput: Record<string, unknown>,
   mcpServer: McpServer,
   verificationCallCount = 0,
-): { result: any; summary: string; execution_ms: number; blocked: boolean } {
+): Promise<{ result: any; summary: string; execution_ms: number; blocked: boolean }> {
   const start = Date.now();
 
   // Block excessive verification calls silently
@@ -130,7 +131,11 @@ export function executeToolCall(
   }
 
   try {
-    const result = mcpServer.callTool(toolName, toolInput);
+    // Wave 22.6 Step 8 — route via callToolAsync. It handles tools
+    // that need DB (get_strategy_plan today; propose_plan_edit +
+    // add_plan_comment in Step 9) and delegates back to sync callTool
+    // for everything else.
+    const result = await mcpServer.callToolAsync(toolName, toolInput);
     const executionMs = Date.now() - start;
     const rawSummary = summarizeToolResult(toolName, result);
     const summary = sanitizeToolOutput(rawSummary);
@@ -214,9 +219,38 @@ function summarizeToolResult(toolName: string, result: any): string {
     case 'funnel_state':
       return summarizeFunnelState(data);
 
+    case 'strategy_plan':
+      return summarizeStrategyPlan(data);
+
     default:
       return truncateJson(data, 500);
   }
+}
+
+function summarizeStrategyPlan(data: any): string {
+  if (!data) {
+    return 'No Monthly Strategy Plan has been generated yet for this env. The plan is created automatically after the first complete audit cycle and on day 1-7 of each month.';
+  }
+  const hero = data.heroMetrics ?? {};
+  const next = data.topNextSteps ?? [];
+  const lines: string[] = [
+    `Strategy Plan for ${data.month} (status: ${data.status}, regenCount: ${data.regenCount}):`,
+    `Retained $${Math.round(hero.retainedMid ?? 0).toLocaleString()}/mo, captured $${Math.round(hero.capturedMid ?? 0).toLocaleString()}/mo, ${hero.criticalCount ?? 0} critical findings open, ${hero.inProgressCount ?? 0} actions in progress.`,
+  ];
+  if (data.narrativeWhatHappened) {
+    lines.push(`\nNarrative: ${String(data.narrativeWhatHappened).slice(0, 400)}`);
+  }
+  if (next.length > 0) {
+    lines.push(`\nTop ${next.length} prioritized next steps:`);
+    for (const step of next) {
+      lines.push(
+        `  ${step.order}. ${step.title} — ${step.estimatedEffort} · ${step.suggestedOwner} · status=${step.status}`,
+      );
+    }
+  } else {
+    lines.push('\nNo next steps in the plan yet — likely the env has no open actions.');
+  }
+  return lines.join('\n');
 }
 
 function summarizeFunnelState(data: any): string {

@@ -208,6 +208,101 @@ export class McpServer {
     return executeTool(toolName, params, this.context);
   }
 
+  /**
+   * Async-capable companion to callTool(). Handles tools that need DB
+   * access (e.g. get_strategy_plan reads from MonthlyStrategyPlan).
+   * For any sync tool, delegates to callTool() — so this is the safe
+   * default for the LLM tool loop (apps/mcp/llm/tool-adapter.ts).
+   *
+   * Why two methods instead of refactoring callTool to async globally:
+   * the codebase has 30+ sync call sites in mcp-client.ts wrappers and
+   * console-data.ts loaders that would each need to become async,
+   * cascading into every React server component that uses them. This
+   * sibling keeps the sync surface stable while unlocking async tools.
+   * Step 9 (MCP write — propose_plan_edit + add_plan_comment) will
+   * route through here too.
+   */
+  async callToolAsync(
+    toolName: string,
+    params: Record<string, unknown> = {},
+  ): Promise<ToolResult> {
+    if (!this.context) {
+      return { type: 'error', data: { message: 'No context loaded. Call loadContext() first.' } };
+    }
+
+    // Wave 22.6 Step 8 — read the persisted MonthlyStrategyPlan for
+    // the env in scope. Returns a slim view (hero metrics + top
+    // next-steps + narrative excerpt) so the LLM has the plan in
+    // working context without flooding the token budget with the
+    // full plan body.
+    if (toolName === 'get_strategy_plan') {
+      try {
+        const envRef = this.scope?.environment_ref;
+        const envId = envRef?.startsWith('environment:')
+          ? envRef.slice('environment:'.length)
+          : null;
+        if (!envId) {
+          return {
+            type: 'error',
+            data: { message: 'No environment in scope — strategy plan requires an env-scoped session.' },
+          };
+        }
+        const now = new Date();
+        const requestedMonth = typeof params.month === 'string' && /^\d{4}-\d{2}$/.test(params.month as string)
+          ? (params.month as string)
+          : `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}`;
+
+        // Lazy import — keeps cold-start of the engine path light.
+        const { prisma } = await import('@/libs/prismaDb');
+        const plan = await prisma.monthlyStrategyPlan.findUnique({
+          where: { environmentId_month: { environmentId: envId, month: requestedMonth } },
+          include: { nextSteps: { orderBy: { order: 'asc' }, take: 5 } },
+        });
+        if (!plan) {
+          return {
+            type: 'strategy_plan',
+            data: null,
+          };
+        }
+        const hero = (plan.heroMetricsJson ?? {}) as Record<string, number>;
+        return {
+          type: 'strategy_plan',
+          data: {
+            month: plan.month,
+            status: plan.status,
+            heroMetrics: {
+              retainedMid: Number(hero.retainedMid ?? 0),
+              capturedMid: Number(hero.capturedMid ?? 0),
+              criticalCount: Number(hero.criticalCount ?? 0),
+              inProgressCount: Number(hero.inProgressCount ?? 0),
+            },
+            narrativeWhatHappened: plan.narrativeWhatHappened,
+            topNextSteps: plan.nextSteps.map((s) => ({
+              order: s.order,
+              title: s.title,
+              estimatedEffort: s.estimatedEffort,
+              suggestedOwner: s.suggestedOwner,
+              status: s.status,
+              reasoning: s.reasoning.slice(0, 600),
+            })),
+            generatedAt: plan.generatedAt.toISOString(),
+            lastRegenerated: plan.lastRegenerated.toISOString(),
+            llmCostCents: plan.llmCostCents,
+            regenCount: plan.regenCount,
+          },
+        };
+      } catch (err) {
+        return {
+          type: 'error',
+          data: { message: `Failed to load strategy plan: ${err instanceof Error ? err.message : String(err)}` },
+        };
+      }
+    }
+
+    // Every other tool — fall through to the sync path.
+    return this.callTool(toolName, params);
+  }
+
   // Execute a verification and recompute — the closed loop
   async executeVerification(requestId: string): Promise<ToolResult> {
     if (!this.orchestrator || !this.scope) {

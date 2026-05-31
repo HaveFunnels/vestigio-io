@@ -101,6 +101,7 @@ const TOOL_LABELS: Record<string, string> = {
   get_workspace_projections: 'Loading workspaces...',
   get_pack: 'Composing pack view...',
   get_funnel_state: 'Mapping the funnel...',
+  get_strategy_plan: 'Loading strategy plan...',
 };
 
 // ── Main Pipeline ────────────────────────────
@@ -453,7 +454,7 @@ export async function executePipeline(
           servedFromCache = true;
           toolCacheHits++;
         } else {
-          const exec = executeToolCall(toolName, toolInput, mcpServer, verificationCallCount);
+          const exec = await executeToolCall(toolName, toolInput, mcpServer, verificationCallCount);
           toolResult = exec.result;
           summary = exec.summary;
           execution_ms = exec.execution_ms;

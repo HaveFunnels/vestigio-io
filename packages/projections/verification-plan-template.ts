@@ -19,6 +19,7 @@ export type VerificationStrategyKey =
 	| 'integration_pull'
 	| 'external_scan'
 	| 'pixel_accumulation'
+	| 'dns_recheck'
 	| 'heuristic_recompute'
 	| 'reuse_only'
 	| 'not_verifiable_explain'
@@ -86,6 +87,16 @@ const TEMPLATES: Record<Exclude<VerificationStrategyKey, null>, VerificationPlan
 			{ id: 'check_sessions', label_key: 'console.chat.verify.plan.steps.check_sessions' },
 			{ id: 'evaluate_confidence', label_key: 'console.chat.verify.plan.steps.evaluate_confidence' },
 			{ id: 'decide_wait_or_act', label_key: 'console.chat.verify.plan.steps.decide_wait_or_act' },
+			{ id: 'draft_remediation', label_key: 'console.chat.verify.plan.steps.draft_remediation' },
+			TERMINAL_STEP,
+		],
+	},
+	dns_recheck: {
+		goal_key: 'console.chat.verify.plan.goals.dns_recheck',
+		steps: [
+			{ id: 'resolve_dns', label_key: 'console.chat.verify.plan.steps.resolve_dns' },
+			{ id: 'compare_record', label_key: 'console.chat.verify.plan.steps.compare_record' },
+			{ id: 'confirm_propagation', label_key: 'console.chat.verify.plan.steps.confirm_propagation' },
 			{ id: 'draft_remediation', label_key: 'console.chat.verify.plan.steps.draft_remediation' },
 			TERMINAL_STEP,
 		],

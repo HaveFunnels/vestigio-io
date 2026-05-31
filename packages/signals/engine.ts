@@ -34,6 +34,7 @@ import {
 } from '../domain';
 import type { BehavioralCohortPayload } from '../behavioral';
 import { extractOffSiteReconSignals } from './off-site-recon-signals';
+import { extractEmailDeliverabilitySignals } from './email-deliverability-signals';
 // Wave 20.3 — canonical createSignal factory (was duplicated below
 // at line 5710 for "historical reasons" — that copy is now removed).
 import { createSignal } from './create';
@@ -163,6 +164,10 @@ export function extractSignals(
   // Wave 12: Brand Echo (off-site recon) signals — Trustpilot, Reclame
   // Aqui, DDG SERP, HN, Reddit, industry listings.
   extractOffSiteReconSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Wave 23.1: Email deliverability — DMARC / SPF / DKIM / BIMI
+  // signals from the EmailAuthRecord evidence.
+  extractEmailDeliverabilitySignals(byType, scoping, cycle_ref, signals, ids);
 
   // Phase 4B: Behavioral intelligence signals from snippet evidence
   extractBehavioralSignals(byType, scoping, cycle_ref, signals, ids);

@@ -50,6 +50,7 @@ export function validateVerificationRequest(request: McpVerificationRequest): st
     VerificationType.IntegrationPull,
     VerificationType.AuthenticatedJourneyVerification,
     VerificationType.ExternalScan,
+    VerificationType.DnsRecheck,
   ];
   if (!validTypes.includes(request.verification_type)) {
     return `Invalid verification_type: ${request.verification_type}`;
@@ -83,6 +84,7 @@ export type VerificationStrategyKey =
 	| 'integration_pull'
 	| 'external_scan'
 	| 'pixel_accumulation'
+	| 'dns_recheck'
 	| 'heuristic_recompute'
 	| 'reuse_only'
 	| 'not_verifiable_explain'
@@ -130,6 +132,12 @@ export function planVerification(
 			return {
 				kind: 'dispatch',
 				verification_type: VerificationType.ExternalScan,
+				expected_eta_seconds: etaSeconds,
+			};
+		case 'dns_recheck':
+			return {
+				kind: 'dispatch',
+				verification_type: VerificationType.DnsRecheck,
 				expected_eta_seconds: etaSeconds,
 			};
 		case 'pixel_accumulation':

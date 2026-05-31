@@ -4444,6 +4444,88 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Vamos re-checar o artigo Wikipedia da marca e confirmar que extract length > 800 chars e última edição < 18 meses.',
 		verification_eta_seconds: 30,
 	},
+	// ── Wave 23.1 — email_deliverability ──
+	dmarc_record_absent: {
+		remediation_steps: [
+			'Publique um registro TXT em `_dmarc.<seu-dominio>` começando com `v=DMARC1; p=none; rua=mailto:dmarc@<seu-dominio>` (modo monitoramento — não bloqueia nada ainda, mas coleta relatórios).',
+			'Configure uma caixa que receba os relatórios `rua=` (Postmark DMARC, EasyDMARC, dmarcian — todos têm tier free).',
+			'Após 2-4 semanas de relatórios, identifique todos os ESPs legítimos e suba pra `p=quarantine; pct=10`, crescendo `pct` semana a semana.',
+			'Quando confiante, mude pra `p=reject` — receivers passam a bloquear emails se passando pelo seu domínio.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'dns_recheck',
+		verification_notes:
+			'Re-consultamos `_dmarc.<seu-dominio>` via DNS TXT e confirmamos presença de um registro `v=DMARC1`.',
+		verification_eta_seconds: 8,
+	},
+	dmarc_policy_weak: {
+		remediation_steps: [
+			'Confirme que você já recebe relatórios `rua=` há pelo menos 2 semanas — sem dados é arriscado subir política.',
+			'Audite os relatórios pra identificar fontes legítimas (Workspace, M365, Mailgun, SendGrid, etc.) que ainda não passam por SPF+DKIM alinhados.',
+			'Configure SPF e DKIM em cada ESP legítimo até 100% dos volumes legítimos alinharem.',
+			'Suba pra `p=quarantine; pct=10` e cresça `pct` semanal (10→25→50→100) monitorando relatórios.',
+			'Mude pra `p=reject` quando ≥4 semanas em `quarantine; pct=100` sem regressão.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'dns_recheck',
+		verification_notes:
+			'Re-consultamos `_dmarc.<seu-dominio>` e confirmamos `p=reject` (ou pelo menos `p=quarantine; pct=100`).',
+		verification_eta_seconds: 8,
+	},
+	spf_record_absent: {
+		remediation_steps: [
+			'Identifique todos os ESPs que enviam email pelo seu domínio (Workspace, M365, Mailgun, SendGrid, transactional do app).',
+			'Construa o registro `v=spf1` incluindo cada provedor: ex. `v=spf1 include:_spf.google.com include:spf.protection.outlook.com -all`.',
+			'Publique como TXT no apex (sem subdomínio). Mantenha apenas UM registro SPF — múltiplos invalidam.',
+			'Termine com `-all` (hardfail) ou `~all` (softfail) — nunca `+all`.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'dns_recheck',
+		verification_notes:
+			'Re-consultamos TXT do apex `<seu-dominio>` e confirmamos um registro `v=spf1` válido.',
+		verification_eta_seconds: 6,
+	},
+	spf_includes_too_broad: {
+		remediation_steps: [
+			'Se a terminação está em `+all`: troque imediatamente — `+all` é open relay efetivo. Use `-all` ou `~all` após validar ESPs.',
+			'Se include_count > 10: liste cada `include:` e identifique includes redundantes (ex. dois CRMs cobrindo o mesmo caso de uso).',
+			'Consolide envios: ESPs marginais podem mover pra um subdomínio dedicado (`mail.<dominio>`) com SPF próprio.',
+			'Use SPF flattening (EasyDMARC, spf-flatten, dmarcian) pra trazer includes pra dentro do registro — recalcula a cada mês quando ESPs mudam IPs.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'dns_recheck',
+		verification_notes:
+			'Re-consultamos TXT do apex e confirmamos `include_count` ≤ 10 e terminação `-all` ou `~all`.',
+		verification_eta_seconds: 6,
+	},
+	dkim_selector_missing: {
+		remediation_steps: [
+			'Identifique o(s) ESP(s) que envia(m) email transacional pelo seu domínio.',
+			'Para cada ESP, ative DKIM no console (Workspace → Apps → Workspace → Gmail → Authenticate email; SendGrid → Settings → Sender Authentication; etc).',
+			'Cada ESP gera 1-2 registros TXT com formato `<selector>._domainkey.<seu-dominio>` → `v=DKIM1; k=rsa; p=<chave-publica>`.',
+			'Publique todos os registros no DNS e aguarde a propagação (até 24h).',
+			'Volte ao console do ESP e clique em "Verify DKIM" — eles confirmam a chave e habilitam a assinatura.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'dns_recheck',
+		verification_notes:
+			'Re-probemos os selectors comuns (default, google, k1, selector1, etc) em `<selector>._domainkey.<seu-dominio>` e confirmamos pelo menos um retornando `v=DKIM1`.',
+		verification_eta_seconds: 12,
+	},
+	bimi_unconfigured: {
+		remediation_steps: [
+			'Pré-requisito obrigatório: DMARC com `p=quarantine` ou `p=reject` (NÃO funciona com `p=none`).',
+			'Prepare seu logo em SVG no formato BIMI (SVG Tiny 1.2, square viewBox, ≤32KB). Use o validador da bimigroup.org pra confirmar.',
+			'Publique o SVG em uma URL HTTPS pública (ex. `https://<seu-dominio>/bimi-logo.svg`).',
+			'Opcional (necessário pra Gmail mostrar logo): adquira um VMC (Verified Mark Certificate) via Entrust ou DigiCert — ~$1k/ano, requer marca registrada.',
+			'Publique TXT em `default._bimi.<seu-dominio>` com `v=BIMI1; l=<url-do-svg>; a=<url-do-vmc>` (omita `a=` se não tiver VMC).',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'dns_recheck',
+		verification_notes:
+			'Re-consultamos `default._bimi.<seu-dominio>` via DNS TXT e confirmamos um registro `v=BIMI1` com `l=` apontando pra um SVG público.',
+		verification_eta_seconds: 8,
+	},
 };
 
 /**

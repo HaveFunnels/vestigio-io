@@ -11,6 +11,7 @@ import { katanaDiscoveryPass } from "./katana-discovery";
 import { brandIntelScanPass } from "./brand-intel-scan";
 import { subdomainDiscoveryPass } from "./subdomain-discovery";
 import { externalReconPass } from "./external-recon";
+import { emailDeliverabilityPass } from "./email-deliverability";
 
 // ──────────────────────────────────────────────
 // Enrichment Runner
@@ -36,6 +37,7 @@ import { externalReconPass } from "./external-recon";
  */
 const PASS_REGISTRY: EnrichmentPass[] = [
   subdomainDiscoveryPass,
+  emailDeliverabilityPass, // Wave 23.1 — pure DNS, ~200ms, no deps
   selectiveHeadlessPass,
   katanaDiscoveryPass,
   nucleiScanPass,

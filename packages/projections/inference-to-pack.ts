@@ -447,5 +447,15 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   network_error_weighted: 'revenue_integrity',     // wave-4-extensions.ts (4.6 commercial errors)
   mobile_trust_gap: 'revenue_integrity',           // wave-4-extensions.ts (4.6 mobile-specific)
   behavioral_micro_pattern_cascade: 'revenue_integrity', // wave-4-extensions.ts (4.6 compound)
+
+  // Wave 23.1 — Email deliverability (DMARC/SPF/DKIM/BIMI). Domain-
+  // level findings; the pack reads the single EmailAuthRecord
+  // evidence and emits at most one finding per rule per env.
+  dmarc_record_absent: 'email_deliverability',
+  dmarc_policy_weak: 'email_deliverability',
+  spf_record_absent: 'email_deliverability',
+  spf_includes_too_broad: 'email_deliverability',
+  dkim_selector_missing: 'email_deliverability',
+  bimi_unconfigured: 'email_deliverability',
 };
 

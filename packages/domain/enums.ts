@@ -153,6 +153,12 @@ export enum VerificationType {
    * detection depends on external scan coverage. Minutes, not seconds.
    */
   ExternalScan = 'external_scan',
+  /**
+   * Re-resolve DNS TXT records and re-run the email-deliverability
+   * collector (Wave 23.1). Fast — sub-second. Used for DMARC/SPF/DKIM/
+   * BIMI findings whose evidence is DNS state, not HTTP state.
+   */
+  DnsRecheck = 'dns_recheck',
 }
 
 export enum EvidenceType {
@@ -226,6 +232,12 @@ export enum EvidenceType {
   // inferences. Produced by `extractCopyElements` after Playwright (if
   // SPA-detected) or directly from raw HTML.
   CopyElements = 'copy_elements',
+  // Wave 23.1 — Email authentication record. One evidence row per
+  // env per cycle carrying the env's DMARC / SPF / DKIM / BIMI DNS
+  // records (raw TXT strings + parsed structure). Drives the
+  // `email_deliverability` inference pack — DNS misconfigs are
+  // domain-level findings, not URL-bound.
+  EmailAuthRecord = 'email_auth_record',
 }
 
 // ──────────────────────────────────────────────
@@ -277,6 +289,10 @@ export enum SourceKind {
   SubdomainEnum = 'subdomain_enum',
   ShopifyIntegration = 'shopify_integration',
   BehavioralSnippet = 'behavioral_snippet',
+  // Wave 23.1 — DNS resolution for email auth records (DMARC, SPF,
+  // DKIM, BIMI). Cheaper + semantically distinct from HttpFetch
+  // because the source is a DNS resolver, not an HTTP server.
+  DnsLookup = 'dns_lookup',
 }
 
 export enum CollectionMethod {
@@ -673,4 +689,12 @@ export enum InferenceCategory {
   CompoundDeadAdSpend = 'compound_dead_ad_spend',
   CompoundPricingUnclearAndUnparseable = 'compound_pricing_unclear_and_unparseable',
   CompoundCategoryInvisibleAndAuthorityThin = 'compound_category_invisible_and_authority_thin',
+  // Wave 23.1 — Email deliverability inferences (DMARC/SPF/DKIM/BIMI).
+  // Domain-level (not URL-bound). Drive the email_deliverability pack.
+  DmarcRecordAbsent = 'dmarc_record_absent',
+  DmarcPolicyWeak = 'dmarc_policy_weak',
+  SpfRecordAbsent = 'spf_record_absent',
+  SpfIncludesTooBroad = 'spf_includes_too_broad',
+  DkimSelectorMissing = 'dkim_selector_missing',
+  BimiUnconfigured = 'bimi_unconfigured',
 }

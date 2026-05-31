@@ -124,6 +124,13 @@ export type VerificationStrategy =
    */
   | 'pixel_accumulation'
   /**
+   * Re-resolve DNS TXT records (DMARC, SPF, DKIM selectors, BIMI) and
+   * re-run the email-deliverability collector. Cheap — a few hundred
+   * ms. Used by every email_deliverability finding (Wave 23.1) since
+   * the evidence is DNS state, not HTTP state.
+   */
+  | 'dns_recheck'
+  /**
    * No new data needed; the finding can be re-derived by re-running
    * the projection layer on existing evidence. Instant.
    */

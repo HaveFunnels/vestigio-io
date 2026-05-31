@@ -44,6 +44,9 @@ const ENG_PACKS = new Set<string>([
 	"acquisition_integrity",
 	"chargeback_resilience",
 	"compliance",
+	// Wave 23.1 — DMARC/SPF/DKIM/BIMI são configurações de DNS;
+	// o fix é eng abrindo um console de DNS e publicando TXT records.
+	"email_deliverability",
 ]);
 
 export function packToBuyer(pack: string): BuyerKind {

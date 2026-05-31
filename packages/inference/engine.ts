@@ -32,6 +32,7 @@ import { computeContentFreshnessPack } from './packs/content-freshness';
 import { computeCommerceContextPack } from './packs/commerce-context';
 import { computeMonetizationExtensionsPack } from './packs/monetization-extensions';
 import { computeWave4ExtensionsPack } from './packs/wave-4-extensions';
+import { computeEmailDeliverabilityPack } from './packs/email-deliverability';
 
 /**
  * Pack-level execution gate. When `skipPacks` is provided, the engine
@@ -70,6 +71,7 @@ export const INFERENCE_PACK_IDS = [
   'commerceContext',
   'monetizationExtensions',
   'wave4Extensions',
+  'emailDeliverability', // Wave 23.1 — DMARC/SPF/DKIM/BIMI
 ] as const;
 export type InferencePackId = (typeof INFERENCE_PACK_IDS)[number];
 
@@ -130,6 +132,7 @@ export function computeInferences(
   run('commerceContext', computeCommerceContextPack);
   run('monetizationExtensions', computeMonetizationExtensionsPack);
   run('wave4Extensions', computeWave4ExtensionsPack);
+  run('emailDeliverability', computeEmailDeliverabilityPack); // Wave 23.1
 
   return inferences;
 }

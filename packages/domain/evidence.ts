@@ -71,7 +71,8 @@ export type EvidencePayload =
   | SurfaceVitalityPayload
   | ContentEnrichmentPayload
   | CopyElementsPayload
-  | OffSiteReconPayload;
+  | OffSiteReconPayload
+  | EmailAuthRecordPayload;
 
 export interface HttpResponsePayload {
   type: 'http_response';
@@ -901,4 +902,78 @@ export interface OffSiteReconPayload {
   fetched_url: string;
   /** Error category when reachable=false. */
   error_kind?: 'timeout' | 'http_error' | 'parse_error' | 'rate_limited' | 'auth_missing' | 'unknown';
+}
+
+/**
+ * Wave 23.1 — Email authentication record.
+ *
+ * One evidence row per env per cycle, carrying the env's DMARC / SPF
+ * / DKIM / BIMI DNS records (raw TXT strings + parsed structure).
+ * Drives the email_deliverability inference pack. Findings are
+ * domain-level (not URL-bound) — the pack reads this single record
+ * and emits at most one finding per rule per env.
+ *
+ * Collected by workers/ingestion/enrichment/email-deliverability.ts
+ * via node:dns/promises. Best-effort: DNS timeouts mark the affected
+ * record as `lookup_failed=true` rather than emitting a partial
+ * finding (the pack treats lookup_failed as "we couldn't check" and
+ * suppresses the rule that depends on it).
+ */
+export interface EmailAuthRecordPayload {
+  type: 'email_auth_record';
+  /** Apex domain queried (e.g. 'havefunnels.com'). DMARC selector is
+   *  always `_dmarc.<apex>`; BIMI is `default._bimi.<apex>`. */
+  apex_domain: string;
+  /** DMARC record at `_dmarc.<apex>`. */
+  dmarc: {
+    found: boolean;
+    /** Raw TXT record value (the v=DMARC1 line). */
+    raw: string | null;
+    /** Parsed policy: 'none' | 'quarantine' | 'reject'. Null when
+     *  no DMARC record or when the `p=` tag is missing/invalid. */
+    policy: 'none' | 'quarantine' | 'reject' | null;
+    /** Aggregate reporting URI (`rua=`) — used to confirm whether
+     *  the owner is actually monitoring DMARC reports. */
+    rua: string | null;
+    /** Subdomain policy (`sp=`). Falls back to `policy` per RFC. */
+    subdomain_policy: 'none' | 'quarantine' | 'reject' | null;
+    /** Whether the DNS lookup itself failed (timeout, NXDOMAIN
+     *  for the _dmarc selector). Distinct from `found=false` which
+     *  means "we got a response but no DMARC record." */
+    lookup_failed: boolean;
+  };
+  /** SPF record on the apex domain. */
+  spf: {
+    found: boolean;
+    raw: string | null;
+    /** Number of `include:` mechanisms — SPF has a 10-lookup limit. */
+    include_count: number;
+    /** Whether the record terminates with `+all` (permissive — any
+     *  sender can spoof) or `~all` / `-all` (restrictive). */
+    all_qualifier: '+' | '-' | '~' | '?' | null;
+    lookup_failed: boolean;
+  };
+  /** DKIM selectors probed. We try a handful of common defaults
+   *  (default, google, selector1, selector2, k1, k2, mail) and
+   *  report whichever resolved. A `found_selectors.length > 0`
+   *  means at least one selector returned a v=DKIM1 record. */
+  dkim: {
+    probed_selectors: string[];
+    found_selectors: string[];
+    /** Raw DKIM TXT values per found selector, keyed by selector. */
+    raw_by_selector: Record<string, string>;
+    lookup_failed: boolean;
+  };
+  /** BIMI record at `default._bimi.<apex>`. Brand logo visibility
+   *  in Gmail / Yahoo / Apple Mail. */
+  bimi: {
+    found: boolean;
+    raw: string | null;
+    /** The `l=` (logo URL) tag value if present. */
+    logo_url: string | null;
+    /** The `a=` (VMC URL) tag value if present — VMC is the paid
+     *  Verified Mark Certificate that unlocks BIMI in Gmail. */
+    vmc_url: string | null;
+    lookup_failed: boolean;
+  };
 }

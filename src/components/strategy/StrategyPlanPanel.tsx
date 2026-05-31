@@ -223,7 +223,15 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 					narrative={plan.narrativeWhatHappened}
 					monthLabel={monthLabel}
 				/>
-				<NextSteps steps={plan.nextSteps} />
+				<NextSteps
+					steps={plan.nextSteps}
+					comments={plan.comments}
+					pendingEdits={plan.pendingEdits}
+					canApprove={plan.viewerCanApprove ?? false}
+					envId={plan.environmentId}
+					month={plan.month}
+					planId={plan.id}
+				/>
 				<ValuePreview
 					preview={plan.valuePreview}
 					narrative={plan.valuePreviewNarrative}

@@ -102,6 +102,8 @@ const TOOL_LABELS: Record<string, string> = {
   get_pack: 'Composing pack view...',
   get_funnel_state: 'Mapping the funnel...',
   get_strategy_plan: 'Loading strategy plan...',
+  propose_plan_edit: 'Proposing plan edit...',
+  add_plan_comment: 'Adding comment...',
 };
 
 // ── Main Pipeline ────────────────────────────

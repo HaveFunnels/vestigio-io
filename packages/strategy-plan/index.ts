@@ -17,6 +17,8 @@ export {
 	type RenarrateTrigger,
 } from "./renarrate";
 
+export { resolvePlanAccess, type PlanAccess } from "./rbac";
+
 export type {
 	GenerateContext,
 	HeroMetricsOutput,

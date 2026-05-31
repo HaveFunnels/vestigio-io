@@ -35,6 +35,8 @@ const NON_CACHEABLE_TOOLS = new Set([
   'get_verification_status',  // state can change between rounds
   'list_verifications',       // state can change between rounds
   'get_strategy_plan',        // Wave 22.6 — status can flip generating→ready mid-turn
+  'propose_plan_edit',        // Wave 22.6 — mutation: creates PlanEdit row
+  'add_plan_comment',         // Wave 22.6 — mutation: creates PlanComment row
 ]);
 
 // Per-request verification call budget
@@ -221,6 +223,12 @@ function summarizeToolResult(toolName: string, result: any): string {
 
     case 'strategy_plan':
       return summarizeStrategyPlan(data);
+
+    case 'plan_edit_proposed':
+      return `Proposed edit submitted for plan section "${data?.section_id}" (edit_id: ${data?.edit_id}). Status: pending admin approval. Tell the user where to review it (the plan view, under the affected section) and remind them that you cannot apply the change directly — admin sees an Aprovar/Recusar control inline.`;
+
+    case 'plan_comment_added':
+      return `Comment added to plan section "${data?.section_id}" (comment_id: ${data?.comment_id}). The thread is visible to the entire team.`;
 
     default:
       return truncateJson(data, 500);

@@ -103,6 +103,39 @@ export interface ValuePreview {
 	milestoneM12: ValuePreviewMarker;
 }
 
+/**
+ * Wave 22.6 Step 9 — pending plan edit. MCP proposals + (eventually)
+ * user-proposed edits both land here in 'pending' state and require
+ * admin approval. UI renders an inline banner per section while the
+ * row is unresolved.
+ */
+export interface PendingPlanEdit {
+	id: string;
+	sectionId: string;
+	editorKind: "mcp" | "user";
+	editorName: string;
+	beforeText: string;
+	afterText: string;
+	reason: string | null;
+	proposedAt: string;
+}
+
+/**
+ * Wave 22.6 Step 9 — team-visible comment on a plan section. Notion-
+ * style: no per-user privacy, anyone with read access sees them.
+ * MCP-authored comments carry authorKind='mcp' and are styled with
+ * Vestigio's avatar.
+ */
+export interface PlanComment {
+	id: string;
+	sectionId: string;
+	authorKind: "user" | "mcp";
+	authorName: string;
+	body: string;
+	createdAt: string;
+	editedAt: string | null;
+}
+
 export interface StrategyPlan {
 	id: string;
 	environmentId: string;
@@ -121,4 +154,10 @@ export interface StrategyPlan {
 	valuePreview: ValuePreview;
 	memoryRollups: MemoryRollups;
 	nextSteps: NextStep[];
+
+	// Wave 22.6 Step 9 — collaboration state (optional so the Step 3
+	// mock + showcase fallback still satisfy the type contract).
+	pendingEdits?: PendingPlanEdit[];
+	comments?: PlanComment[];
+	viewerCanApprove?: boolean;
 }

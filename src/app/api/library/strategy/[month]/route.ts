@@ -44,17 +44,22 @@ export async function GET(request: Request, { params }: RouteParams) {
 			organization: {
 				select: {
 					ownerId: true,
-					memberships: { select: { userId: true } },
+					memberships: { select: { userId: true, role: true } },
 				},
 			},
 		},
 	});
 	if (!env) return NextResponse.json({ message: "Environment not found" }, { status: 404 });
 	const isOwner = env.organization?.ownerId === user.id;
-	const isMember = env.organization?.memberships?.some((m) => m.userId === user.id) ?? false;
+	const myMembership = env.organization?.memberships?.find((m) => m.userId === user.id);
+	const isMember = !!myMembership;
 	if (!isOwner && !isMember) {
 		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 	}
+	const isOrgAdmin =
+		isOwner || myMembership?.role === "admin" || myMembership?.role === "owner";
+	const isSiteAdmin = (user as any).role === "ADMIN";
+	const canApprove = isOrgAdmin || isSiteAdmin;
 
 	const plan = await prisma.monthlyStrategyPlan.findUnique({
 		where: { environmentId_month: { environmentId: envId, month } },
@@ -117,6 +122,82 @@ export async function GET(request: Request, { params }: RouteParams) {
 		if (m) commentsByStepId.set(m[1], row._count.id);
 	}
 
+	// Wave 22.6 Step 9 — pending MCP edits + comments (full rows,
+	// not just counts) so the UI can render the inline propose
+	// banner + comment threads without a second round trip. Author
+	// names resolve in a single batched lookup.
+	const [pendingEditsRaw, commentsRaw] = await Promise.all([
+		prisma.planEdit.findMany({
+			where: {
+				planId: plan.id,
+				approvedAt: null,
+				rejectedAt: null,
+			},
+			orderBy: { proposedAt: "asc" },
+			select: {
+				id: true,
+				sectionId: true,
+				editorKind: true,
+				editorUserId: true,
+				beforeText: true,
+				afterText: true,
+				reason: true,
+				proposedAt: true,
+			},
+		}),
+		prisma.planComment.findMany({
+			where: { planId: plan.id, deletedAt: null },
+			orderBy: { createdAt: "asc" },
+			select: {
+				id: true,
+				sectionId: true,
+				authorId: true,
+				authorKind: true,
+				body: true,
+				createdAt: true,
+				editedAt: true,
+			},
+		}),
+	]);
+	const authorIds = Array.from(
+		new Set(
+			[...commentsRaw.map((c) => c.authorId), ...pendingEditsRaw.map((e) => e.editorUserId)].filter(
+				(id): id is string => !!id,
+			),
+		),
+	);
+	const authors = authorIds.length
+		? await prisma.user.findMany({
+			where: { id: { in: authorIds } },
+			select: { id: true, name: true, email: true },
+		})
+		: [];
+	const authorById = new Map(authors.map((u) => [u.id, u]));
+
+	const pendingEdits = pendingEditsRaw.map((e) => ({
+		id: e.id,
+		sectionId: e.sectionId,
+		editorKind: e.editorKind,
+		editorName: e.editorUserId
+			? authorById.get(e.editorUserId)?.name ?? "Membro"
+			: "Vestigio",
+		beforeText: e.beforeText,
+		afterText: e.afterText,
+		reason: e.reason,
+		proposedAt: e.proposedAt.toISOString(),
+	}));
+	const comments = commentsRaw.map((c) => ({
+		id: c.id,
+		sectionId: c.sectionId,
+		authorKind: c.authorKind,
+		authorName: c.authorId
+			? authorById.get(c.authorId)?.name ?? "Membro"
+			: "Vestigio",
+		body: c.body,
+		createdAt: c.createdAt.toISOString(),
+		editedAt: c.editedAt?.toISOString() ?? null,
+	}));
+
 	const hero = plan.heroMetricsJson as any;
 	const buyerSegments = plan.buyerSegmentsJson as any;
 	const memoryRollups = plan.memoryRollupsJson as any;
@@ -132,6 +213,12 @@ export async function GET(request: Request, { params }: RouteParams) {
 		lastRegenerated: plan.lastRegenerated.toISOString(),
 		status: plan.status,
 		cycleNumber,
+		// Wave 22.6 Step 9 — collaboration state. UI consumers (the
+		// inline PlanEditBanner + PlanCommentThread) read this directly
+		// so they don't need a second round-trip.
+		pendingEdits,
+		comments,
+		viewerCanApprove: canApprove,
 		heroMetrics: hero,
 		buyerSegments,
 		narrativeWhatHappened: plan.narrativeWhatHappened,

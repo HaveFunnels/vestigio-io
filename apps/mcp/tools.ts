@@ -293,6 +293,27 @@ export const TOOL_DEFINITIONS: McpToolDefinition[] = [
       },
     },
   },
+  // Wave 22.6 Step 9 — propose a plan edit (admin must approve)
+  {
+    name: 'propose_plan_edit',
+    description: 'Propose an edit to a Strategy Plan section. Does NOT mutate the plan — creates a PlanEdit row in pending state which an admin can approve or reject inline in the UI. Use when the user explicitly asks to "change the narrative", "rewrite the second step", or "soften the regression callout". The section_id values are: header, hero-metrics, buyer-segments, narrative-what-happened, value-preview, memory, OR next-step:<step-id> for a specific step. Always provide a short reason explaining WHY the edit improves the section — the admin sees that when deciding to approve. Returns the created edit_id. NOT for: adding comments (use add_plan_comment), regenerating from scratch (admins do that manually), or anything that requires user confirmation first (always confirm intent before calling this tool).',
+    input_schema: {
+      plan_id: { type: 'string', description: 'MonthlyStrategyPlan id. Get it from get_strategy_plan if missing.' },
+      section_id: { type: 'string', description: 'Section to edit. One of: header, hero-metrics, buyer-segments, narrative-what-happened, value-preview, memory, or next-step:<step-id>.' },
+      new_content: { type: 'string', description: 'Proposed replacement content. Markdown allowed for narrative sections.' },
+      reason: { type: 'string', description: 'Short justification (1-2 sentences) the admin sees when reviewing.' },
+    },
+  },
+  // Wave 22.6 Step 9 — add a comment to a plan section
+  {
+    name: 'add_plan_comment',
+    description: 'Add a comment to a Strategy Plan section as Vestigio (the MCP). Comments are visible to the entire org team (Notion-style). Use when the user asks Vestigio to chime in on a specific step or section — typically after the user invokes "@vestigio" in a thread. Section ids same as propose_plan_edit. Returns the created comment_id. NOT for: silent acknowledgment, sending to a single user, or anything sensitive that should not be team-visible.',
+    input_schema: {
+      plan_id: { type: 'string', description: 'MonthlyStrategyPlan id.' },
+      section_id: { type: 'string', description: 'Section the comment lives under.' },
+      body: { type: 'string', description: 'Markdown body of the comment.' },
+    },
+  },
 ];
 
 // ──────────────────────────────────────────────
@@ -340,6 +361,9 @@ export type ToolResult =
   // slim view of the persisted plan for the current month. `data: null`
   // when no plan exists yet for the env.
   | { type: 'strategy_plan'; data: StrategyPlanView | null }
+  // Wave 22.6 Step 9 — write tool results.
+  | { type: 'plan_edit_proposed'; data: { edit_id: string; section_id: string; status: 'pending' } }
+  | { type: 'plan_comment_added'; data: { comment_id: string; section_id: string } }
   | { type: 'error'; data: { message: string } };
 
 export interface StrategyPlanView {

@@ -299,8 +299,168 @@ export class McpServer {
       }
     }
 
+    // Wave 22.6 Step 9 — write tools. The MCP can PROPOSE edits +
+    // ADD comments on the Strategy Plan; both require an env-scoped
+    // session. Edits land in pending status and need admin approval
+    // (see /api/library/strategy/[month]/edits/[editId]/approve).
+    // Comments are immediate + team-visible.
+    if (toolName === 'propose_plan_edit') {
+      return this.proposePlanEditTool(params);
+    }
+    if (toolName === 'add_plan_comment') {
+      return this.addPlanCommentTool(params);
+    }
+
     // Every other tool — fall through to the sync path.
     return this.callTool(toolName, params);
+  }
+
+  private async proposePlanEditTool(
+    params: Record<string, unknown>,
+  ): Promise<ToolResult> {
+    const planId = params.plan_id as string;
+    const sectionId = params.section_id as string;
+    const newContent = params.new_content as string;
+    const reason = params.reason as string | undefined;
+    if (!planId || !sectionId || !newContent) {
+      return {
+        type: 'error',
+        data: { message: 'plan_id, section_id, and new_content are required.' },
+      };
+    }
+    try {
+      const { prisma } = await import('@/libs/prismaDb');
+      const plan = await prisma.monthlyStrategyPlan.findUnique({
+        where: { id: planId },
+        select: {
+          id: true,
+          environmentId: true,
+          editLockedByMcpUntil: true,
+          status: true,
+          narrativeWhatHappened: true,
+          valuePreviewNarrative: true,
+        },
+      });
+      if (!plan) {
+        return { type: 'error', data: { message: 'Plan not found.' } };
+      }
+      if (plan.status === 'archived') {
+        return { type: 'error', data: { message: 'Plan is archived; cannot propose edits.' } };
+      }
+      // Scope check: MCP can only write to the env it's bound to.
+      const envRef = this.scope?.environment_ref;
+      const envId = envRef?.startsWith('environment:')
+        ? envRef.slice('environment:'.length)
+        : null;
+      if (!envId || envId !== plan.environmentId) {
+        return {
+          type: 'error',
+          data: { message: 'Plan belongs to a different env than the current session scope.' },
+        };
+      }
+      // Edit lock: another MCP proposal on this same section may be
+      // pending. The lock is plan-wide + time-bounded so a worker
+      // crash doesn't trap the section forever.
+      const now = new Date();
+      if (plan.editLockedByMcpUntil && plan.editLockedByMcpUntil > now) {
+        return {
+          type: 'error',
+          data: { message: 'Plan is locked by a pending MCP edit. Approve or reject the existing proposal first.' },
+        };
+      }
+      // Resolve before-text for the section — narrative + value-preview
+      // narrative are stored as columns; everything else lives in
+      // JSON columns and gets stringified for the diff.
+      const beforeText =
+        sectionId === 'narrative-what-happened'
+          ? plan.narrativeWhatHappened
+          : sectionId === 'value-preview'
+          ? plan.valuePreviewNarrative
+          : '';
+
+      const tenMin = new Date(now.getTime() + 10 * 60_000);
+      const result = await prisma.$transaction(async (tx: any) => {
+        await tx.monthlyStrategyPlan.update({
+          where: { id: planId },
+          data: { editLockedByMcpUntil: tenMin },
+        });
+        return tx.planEdit.create({
+          data: {
+            planId,
+            sectionId,
+            editorKind: 'mcp',
+            beforeText,
+            afterText: newContent,
+            reason: reason ?? null,
+          },
+          select: { id: true, sectionId: true },
+        });
+      });
+
+      return {
+        type: 'plan_edit_proposed',
+        data: { edit_id: result.id, section_id: result.sectionId, status: 'pending' },
+      };
+    } catch (err) {
+      return {
+        type: 'error',
+        data: { message: `Failed to propose edit: ${err instanceof Error ? err.message : String(err)}` },
+      };
+    }
+  }
+
+  private async addPlanCommentTool(
+    params: Record<string, unknown>,
+  ): Promise<ToolResult> {
+    const planId = params.plan_id as string;
+    const sectionId = params.section_id as string;
+    const body = params.body as string;
+    if (!planId || !sectionId || !body) {
+      return {
+        type: 'error',
+        data: { message: 'plan_id, section_id, and body are required.' },
+      };
+    }
+    try {
+      const { prisma } = await import('@/libs/prismaDb');
+      const plan = await prisma.monthlyStrategyPlan.findUnique({
+        where: { id: planId },
+        select: { id: true, environmentId: true, status: true },
+      });
+      if (!plan) return { type: 'error', data: { message: 'Plan not found.' } };
+      if (plan.status === 'archived') {
+        return { type: 'error', data: { message: 'Plan is archived; cannot add comments.' } };
+      }
+      const envRef = this.scope?.environment_ref;
+      const envId = envRef?.startsWith('environment:')
+        ? envRef.slice('environment:'.length)
+        : null;
+      if (!envId || envId !== plan.environmentId) {
+        return {
+          type: 'error',
+          data: { message: 'Plan belongs to a different env than the current session scope.' },
+        };
+      }
+      const created = await prisma.planComment.create({
+        data: {
+          planId,
+          sectionId,
+          authorId: null,
+          authorKind: 'mcp',
+          body,
+        },
+        select: { id: true, sectionId: true },
+      });
+      return {
+        type: 'plan_comment_added',
+        data: { comment_id: created.id, section_id: created.sectionId },
+      };
+    } catch (err) {
+      return {
+        type: 'error',
+        data: { message: `Failed to add comment: ${err instanceof Error ? err.message : String(err)}` },
+      };
+    }
   }
 
   // Execute a verification and recompute — the closed loop

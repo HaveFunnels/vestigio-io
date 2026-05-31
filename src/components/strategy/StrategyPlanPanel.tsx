@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -71,6 +72,41 @@ function formatTimestamp(date: Date): string {
 }
 
 function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => void }) {
+	const [exporting, setExporting] = useState(false);
+	const [exportError, setExportError] = useState<string | null>(null);
+
+	const handleExport = async () => {
+		setExporting(true);
+		setExportError(null);
+		try {
+			const res = await fetch(
+				`/api/library/strategy/${encodeURIComponent(plan.month)}/export?envId=${encodeURIComponent(plan.environmentId)}`,
+				{ method: "POST" },
+			);
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}));
+				setExportError(data?.message ?? `Falhou (HTTP ${res.status})`);
+				setTimeout(() => setExportError(null), 5000);
+				return;
+			}
+			// Download the PDF blob via an anchor click.
+			const blob = await res.blob();
+			const blobUrl = URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = blobUrl;
+			a.download = `vestigio-plano-${plan.month}.pdf`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+		} catch (err) {
+			setExportError(err instanceof Error ? err.message : "Erro de rede");
+			setTimeout(() => setExportError(null), 5000);
+		} finally {
+			setExporting(false);
+		}
+	};
+
 	return (
 		<div
 			data-vsgp-sticky-header
@@ -80,6 +116,9 @@ function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => v
 				<div className="flex items-center gap-3 text-[12px] text-content-muted">
 					<span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
 					<span>Plano publicado · {formatTimestamp(plan.generatedAt)}</span>
+					{exportError && (
+						<span className="ml-2 text-rose-300/90">· {exportError}</span>
+					)}
 				</div>
 				<div className="flex items-center gap-2">
 					<button
@@ -90,9 +129,11 @@ function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => v
 					</button>
 					<button
 						type="button"
-						className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
+						onClick={handleExport}
+						disabled={exporting}
+						className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
 					>
-						Exportar PDF
+						{exporting ? "Exportando…" : "Exportar PDF"}
 					</button>
 					{/* Separator + close. Visually distinct from the action
 					    buttons so it reads as a navigation/dismiss control,

@@ -68,8 +68,15 @@ export default function StrategyPlanPage() {
 
 		const load = async () => {
 			try {
+				// Wave 22.6 Step 10 — when the page is fetched by the
+				// PDF exporter, ?export_token=X is forwarded so the
+				// underlying API call accepts it as alt-auth.
+				const sp = new URLSearchParams(window.location.search);
+				const exportToken = sp.get("export_token");
+				const qs = new URLSearchParams({ envId });
+				if (exportToken) qs.set("export_token", exportToken);
 				const res = await fetch(
-					`/api/library/strategy/${encodeURIComponent(month)}?envId=${encodeURIComponent(envId)}`,
+					`/api/library/strategy/${encodeURIComponent(month)}?${qs.toString()}`,
 				);
 				if (cancelled) return;
 

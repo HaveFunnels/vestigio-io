@@ -127,6 +127,37 @@
 	animation: none !important;
 }
 
+/* Wave 22.6 Step 10 — Framer Motion drives whileInView via inline
+   styles set by JS (opacity: 0; transform: translateY(16px)). The
+   chromium exporter sets a tall viewport + scrolls the page so
+   IntersectionObserver fires, but as defense-in-depth force-reveal
+   any element whose inline style still has opacity:0 at capture
+   time. The selector is intentionally global within the plan: every
+   sub-section uses the same FM pattern. */
+[data-vsgp-print="true"] [data-vsgp-plan] [style*="opacity: 0"],
+[data-vsgp-print="true"] [data-vsgp-plan] [style*="opacity:0"] {
+	opacity: 1 !important;
+	transform: none !important;
+}
+
+/* Step 9 banners use hardcoded amber/emerald tones intended for a
+   dark background. On the white print surface they read with very
+   low contrast. Override the worst offenders so the PDF doesn't
+   show an "edit proposal" block that looks broken. */
+[data-vsgp-print="true"] [data-vsgp-edit-banner] {
+	background: #fff8e1 !important;
+	border-color: #d6a548 !important;
+	color: #5b3d00 !important;
+}
+[data-vsgp-print="true"] [data-vsgp-edit-banner] * {
+	color: #5b3d00 !important;
+}
+[data-vsgp-print="true"] [data-vsgp-edit-approve] {
+	background: #d1fae5 !important;
+	border-color: #5fc499 !important;
+	color: #064e3b !important;
+}
+
 /* Slight font-size tightening for paper density — spec §11.7. */
 [data-vsgp-print="true"] {
 	font-size: 14px;

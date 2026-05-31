@@ -63,6 +63,7 @@ export default function PlanEditBanner({ edit, month, envId, canApprove }: Props
 
 	return (
 		<motion.div
+			data-vsgp-edit-banner
 			initial={{ opacity: 0, y: -8 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.3 }}
@@ -119,6 +120,7 @@ export default function PlanEditBanner({ edit, month, envId, canApprove }: Props
 					<div className="flex shrink-0 flex-col gap-1.5">
 						<button
 							type="button"
+							data-vsgp-edit-approve
 							onClick={() => handleDecision("approve")}
 							disabled={busy !== null}
 							className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-[12px] font-medium text-emerald-200 transition-colors hover:bg-emerald-500/20 disabled:opacity-50"

@@ -21,9 +21,6 @@ interface RouteParams {
 }
 
 export async function GET(request: Request, { params }: RouteParams) {
-	const user = await isAuthorized();
-	if (!user) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-
 	const { month } = await params;
 	if (!/^\d{4}-\d{2}$/.test(month)) {
 		return NextResponse.json({ message: "month must be YYYY-MM" }, { status: 400 });
@@ -35,7 +32,30 @@ export async function GET(request: Request, { params }: RouteParams) {
 		return NextResponse.json({ message: "envId is required" }, { status: 400 });
 	}
 
-	// Auth check — same pattern as the index endpoint.
+	// Wave 22.6 Step 10 — accept an HMAC export token as alternative
+	// auth so the headless chromium that generates the PDF can fetch
+	// the plan without a session cookie. Token is bound to the planId
+	// (resolved below) so it only works for the plan that minted it.
+	//
+	// Pre-check the token shape + expiry BEFORE touching the DB so a
+	// malformed token can't be used to probe (envId, month) existence
+	// via 200/404 timing. HMAC verification still happens after the
+	// plan is loaded — both gates must pass.
+	const exportToken = url.searchParams.get("export_token");
+	if (exportToken) {
+		const { isExportTokenWellFormed } = await import("@/libs/strategy-export-token");
+		if (!isExportTokenWellFormed(exportToken)) {
+			return NextResponse.json({ message: "Invalid export token" }, { status: 401 });
+		}
+	}
+
+	let user: { id: string; role?: string } | null = null;
+	if (!exportToken) {
+		const authed = await isAuthorized();
+		if (!authed) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+		user = authed as any;
+	}
+
 	const env = await prisma.environment.findUnique({
 		where: { id: envId },
 		select: {
@@ -50,15 +70,22 @@ export async function GET(request: Request, { params }: RouteParams) {
 		},
 	});
 	if (!env) return NextResponse.json({ message: "Environment not found" }, { status: 404 });
-	const isOwner = env.organization?.ownerId === user.id;
-	const myMembership = env.organization?.memberships?.find((m) => m.userId === user.id);
-	const isMember = !!myMembership;
-	if (!isOwner && !isMember) {
-		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+
+	let isOwner = false;
+	let myMembership: { userId: string; role: string } | undefined;
+	let isOrgAdmin = false;
+	let isSiteAdmin = false;
+	if (user) {
+		isOwner = env.organization?.ownerId === user.id;
+		myMembership = env.organization?.memberships?.find((m) => m.userId === user!.id);
+		const isMember = !!myMembership;
+		if (!isOwner && !isMember) {
+			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+		}
+		isOrgAdmin =
+			isOwner || myMembership?.role === "admin" || myMembership?.role === "owner";
+		isSiteAdmin = (user as any).role === "ADMIN";
 	}
-	const isOrgAdmin =
-		isOwner || myMembership?.role === "admin" || myMembership?.role === "owner";
-	const isSiteAdmin = (user as any).role === "ADMIN";
 	const canApprove = isOrgAdmin || isSiteAdmin;
 
 	const plan = await prisma.monthlyStrategyPlan.findUnique({
@@ -67,6 +94,13 @@ export async function GET(request: Request, { params }: RouteParams) {
 	});
 	if (!plan) {
 		return NextResponse.json({ message: "Plan not generated for this month" }, { status: 404 });
+	}
+	// Token path needs the planId to verify — done now that we have it.
+	if (exportToken) {
+		const { verifyExportToken } = await import("@/libs/strategy-export-token");
+		if (!verifyExportToken(exportToken, plan.id)) {
+			return NextResponse.json({ message: "Invalid export token" }, { status: 401 });
+		}
 	}
 	if (plan.status === "generating") {
 		return NextResponse.json(

@@ -457,5 +457,8 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   spf_includes_too_broad: 'email_deliverability',
   dkim_selector_missing: 'email_deliverability',
   bimi_unconfigured: 'email_deliverability',
+  // ── Wave 24 — competitive_lens ──
+  copy_mirror_detected: 'competitive_lens',
+  trust_posture_lag: 'competitive_lens',
 };
 

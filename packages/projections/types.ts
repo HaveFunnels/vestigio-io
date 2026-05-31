@@ -473,6 +473,7 @@ export type WorkspaceProjectionType =
   | 'discoverability'
   | 'brand_integrity'
   | 'funnel_journey'
+  | 'competitive_lens'
   // Behavioral workspaces (pixel-dependent)
   | 'first_impression'
   | 'action_value'

@@ -348,6 +348,7 @@ model Environment {
   pageProbes             PageProbe[]
   surfaces               Surface[]
   strategyPlans          MonthlyStrategyPlan[]
+  competitorDomains      CompetitorDomain[]
 
   // Wave 22 — one domain per org. The previous schema allowed
   // duplicate (orgId, domain) rows, which would let a user create
@@ -448,6 +449,48 @@ model Surface {
   // honest — two surfaces can't claim the same pattern.
   @@unique([environmentId, urlPattern])
   @@index([environmentId, displayOrder])
+}
+
+// Wave 24 — competitive lens.
+//
+// User-curated list of competitor domains the audit cycle should
+// observe on each pass. Each row is a peer surface we fetch via
+// httpFetch + parse to extract trust posture + copy fingerprint, so
+// the competitive_lens pack can emit findings comparing your env to
+// the peer set.
+//
+// Curation is manual in Wave 24 (UI lets owner paste apex domains).
+// Wave 25 auto-discovers candidates from SERP scrape, but those still
+// land here as `discoveryMethod: 'auto'` for the owner to pin/unpin.
+//
+// Cap at 20 active rows per env enforced at API layer (cost +
+// signal-to-noise — beyond ~15 competitors the comparisons blur).
+model CompetitorDomain {
+  id              String   @id @default(cuid())
+  environmentId   String
+  /// Apex domain only — lowercase, no scheme, no trailing slash
+  /// (e.g. "funnelsmasters.com.br"). Validated at API ingress.
+  domain          String
+  /// Friendly label shown in UI. Defaults to the domain.
+  label           String?
+  /// Optional free-text notes (why this competitor was added).
+  notes           String?
+  /// 'manual' = pasted by an owner. 'auto' = discovered by a future
+  /// SERP/keyword crawler and pending owner curation. Wave 24 only
+  /// emits 'manual'; Wave 25 adds 'auto'.
+  discoveryMethod String   @default("manual")
+  /// Soft-disable without delete — keeps historical comparisons in
+  /// findings linkable but stops new fetches.
+  active          Boolean  @default(true)
+  /// userId that added it (optional — null for legacy/seeded rows).
+  addedBy         String?
+  addedAt         DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([environmentId, domain])
+  @@index([environmentId, active, addedAt])
 }
 
 // ──────────────────────────────────────────────

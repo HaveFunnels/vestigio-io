@@ -238,6 +238,12 @@ export enum EvidenceType {
   // `email_deliverability` inference pack — DNS misconfigs are
   // domain-level findings, not URL-bound.
   EmailAuthRecord = 'email_auth_record',
+  // Wave 24 — Competitive Lens. One row per (env, competitor, cycle)
+  // capturing a competitor's homepage snapshot: trust-mini posture
+  // derived from response headers + DNS lookups, plus copy fingerprint
+  // (body text, headings, CTAs, hero phrase). Drives the
+  // `competitive_lens` inference pack.
+  CompetitorPageSnapshot = 'competitor_page_snapshot',
 }
 
 // ──────────────────────────────────────────────
@@ -375,6 +381,9 @@ export enum SignalCategory {
   Security = 'security',
   // Phase 4A: Commerce context
   Commerce = 'commerce',
+  // Wave 24: Competitive lens (copy mirror + trust posture delta vs
+  // user-curated competitor set)
+  Competitive = 'competitive',
 }
 
 export enum InferenceCategory {
@@ -697,4 +706,7 @@ export enum InferenceCategory {
   SpfIncludesTooBroad = 'spf_includes_too_broad',
   DkimSelectorMissing = 'dkim_selector_missing',
   BimiUnconfigured = 'bimi_unconfigured',
+  // ── Wave 24 — Competitive Lens ──
+  CopyMirrorDetected = 'copy_mirror_detected',
+  TrustPostureLag = 'trust_posture_lag',
 }

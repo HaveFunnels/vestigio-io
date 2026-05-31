@@ -2052,6 +2052,7 @@ export function projectWorkspaces(
   const discoverabilityFindings = findings.filter(f => f.pack === 'discoverability');
   const brandIntegrityFindings = findings.filter(f => f.pack === 'brand_integrity');
   const funnelJourneyFindings = findings.filter(f => f.pack === 'funnel_journey');
+  const competitiveLensFindings = findings.filter(f => f.pack === 'competitive_lens');
   const saasFindings = findings.filter(f => f.pack === 'saas_growth_readiness');
 
   const wn = translations?.workspace_names;
@@ -2204,6 +2205,44 @@ export function projectWorkspaces(
       null, // synthesized decision — no pack-level coherence to attach
       narrative,
       changeSummaryMap.get('funnel_journey_pack') ?? null,
+    ),
+  );
+
+  // Wave 24 — competitive_lens workspace.
+  //
+  // No pack-level decision in MultiPackResult (same as funnel_journey
+  // — competitive_lens is signal-driven, not decision-driven). Worst
+  // finding severity synthesizes the workspace state. Always emits so
+  // the user sees a definitive "we're watching the peer set" surface
+  // even before any competitor is curated.
+  const worstCompetitiveSeverity = competitiveLensFindings.reduce(
+    (max, f) => Math.max(max, severityRank[f.severity] ?? 0),
+    0,
+  );
+  const competitiveDecisionKey =
+    competitiveLensFindings.length === 0
+      ? 'competitive_lens_clear'
+      : worstCompetitiveSeverity >= 3
+        ? 'competitive_lens_pressure_high'
+        : worstCompetitiveSeverity >= 2
+          ? 'competitive_lens_pressure_moderate'
+          : 'competitive_lens_pressure_low';
+  const competitiveDecisionImpact =
+    competitiveLensFindings.length === 0
+      ? 'Nenhuma pressão competitiva material detectada no ciclo atual.'
+      : worstCompetitiveSeverity >= 3
+        ? 'Pressão competitiva alta — diferenciação ou trust posture estão materialmente atrás do peer set.'
+        : 'Pressão competitiva detectada — diferenças vs peer set visíveis, ainda não em nível material.';
+  workspaces.push(
+    buildWorkspaceProjection(
+      'competitive_lens', wn?.competitive_lens ?? 'Competitive Lens', 'competitive_lens',
+      'competitive_lens_pack',
+      competitiveDecisionKey,
+      competitiveDecisionImpact,
+      competitiveLensFindings,
+      null, // synthesized decision — no pack-level coherence to attach
+      narrative,
+      changeSummaryMap.get('competitive_lens_pack') ?? null,
     ),
   );
 

@@ -299,6 +299,8 @@ export default function ViewSelector({
 		"channel_integrity",
 		"discoverability",
 		"brand_integrity",
+		"email_deliverability",
+		"competitive_lens",
 	];
 	const IMPACT_OPTIONS = ["any", "gt1000", "gt5000", "gt10000"];
 	const CHANGE_OPTIONS = ["new_issue", "regression", "stable_risk", "improvement"];

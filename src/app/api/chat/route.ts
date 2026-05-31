@@ -260,6 +260,17 @@ export async function POST(request: Request) {
       llmOrgContext.industry = fingerprint.industry;
       llmOrgContext.detected_platforms = fingerprint.detectedPlatforms;
     }
+    // Wave 24 — surface curated competitor domains so the model can
+    // reason about positioning without the user re-typing peers.
+    const competitors = await prisma.competitorDomain.findMany({
+      where: { environmentId: envId, active: true },
+      orderBy: { addedAt: "desc" },
+      take: 20,
+      select: { domain: true },
+    });
+    if (competitors.length > 0) {
+      llmOrgContext.competitor_domains = competitors.map((c) => c.domain);
+    }
   } catch {
     // Continue with defaults
   }

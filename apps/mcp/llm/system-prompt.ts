@@ -132,6 +132,9 @@ export function buildSystemPrompt(orgContext: OrgContext): string {
     orgContext.detected_platforms && orgContext.detected_platforms.length > 0
       ? `Platforms: ${orgContext.detected_platforms.slice(0, 5).join(', ')}`
       : null,
+    orgContext.competitor_domains && orgContext.competitor_domains.length > 0
+      ? `Tracked competitors: ${orgContext.competitor_domains.slice(0, 10).join(', ')}`
+      : null,
     `Plan: ${orgContext.plan}`,
     orgContext.monthly_revenue ? `Monthly revenue: $${orgContext.monthly_revenue.toLocaleString()}` : null,
     `Evidence freshness: ${orgContext.freshness_state}`,
@@ -158,6 +161,9 @@ export function buildCacheableSystemPrompt(orgContext: OrgContext): Array<{ type
     orgContext.industry ? `Industry: ${orgContext.industry}` : null,
     orgContext.detected_platforms && orgContext.detected_platforms.length > 0
       ? `Platforms: ${orgContext.detected_platforms.slice(0, 5).join(', ')}`
+      : null,
+    orgContext.competitor_domains && orgContext.competitor_domains.length > 0
+      ? `Tracked competitors: ${orgContext.competitor_domains.slice(0, 10).join(', ')}`
       : null,
     `Plan: ${orgContext.plan}`,
     orgContext.monthly_revenue ? `Monthly revenue: $${orgContext.monthly_revenue.toLocaleString()}` : null,

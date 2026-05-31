@@ -12,6 +12,7 @@ import { brandIntelScanPass } from "./brand-intel-scan";
 import { subdomainDiscoveryPass } from "./subdomain-discovery";
 import { externalReconPass } from "./external-recon";
 import { emailDeliverabilityPass } from "./email-deliverability";
+import { competitorFetchPass } from "./competitor-fetch";
 
 // ──────────────────────────────────────────────
 // Enrichment Runner
@@ -42,6 +43,7 @@ const PASS_REGISTRY: EnrichmentPass[] = [
   katanaDiscoveryPass,
   nucleiScanPass,
   brandIntelScanPass,
+  competitorFetchPass, // Wave 24 — polite homepage fetch of curated competitors, full-mode only
   externalReconPass,
   semanticEnrichmentPass,
 ];

@@ -23,6 +23,7 @@ import ChargebackResilience from "@/components/console/workspace/ChargebackResil
 import RevenueIntelligence from "@/components/console/workspace/RevenueIntelligence";
 import SecurityPosture from "@/components/console/workspace/SecurityPosture";
 import CopyAlignment from "@/components/console/workspace/CopyAlignment";
+import { CompetitorRadar } from "@/components/console/workspace/CompetitorRadar";
 import MoneyOnTheTable from "@/components/console/workspace/MoneyOnTheTable";
 import SpofMap from "@/components/console/workspace/SpofMap";
 import DependencyHealth from "@/components/console/workspace/DependencyHealth";
@@ -222,6 +223,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 	const isRevenue = workspace.type === "revenue";
 	const isSecurityPosture = workspace.type === "security_posture";
 	const isCopyAlignment = workspace.type === "copy_alignment";
+	const isCompetitiveLens = workspace.type === "competitive_lens";
 	const preflightReadiness = isPreflight ? computePreflightReadiness(workspace.findings) : null;
 
 	const findingColumns: Column<FindingProjection>[] = [
@@ -451,6 +453,11 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 						<SecurityPosture findings={workspace.findings} />
 					</div>
 				</>
+			)}
+			{isCompetitiveLens && (
+				<div className="mt-5">
+					<CompetitorRadar />
+				</div>
 			)}
 			{isCopyAlignment && (
 				<>

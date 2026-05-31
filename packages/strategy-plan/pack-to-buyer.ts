@@ -30,6 +30,10 @@ const LEADERSHIP_PACKS = new Set<string>([
 	"brand_integrity",
 	"action_value_map",
 	"channel_integrity",
+	// Wave 24 — competitive_lens: decisões de posicionamento e
+	// diferenciação são chamadas de leadership/marketing, não de eng
+	// (mesmo quando a remediação envolve trust_posture_lag que é eng).
+	"competitive_lens",
 ]);
 
 // All other packs fall to engineering. Listed explicitly so future

@@ -72,7 +72,8 @@ export type EvidencePayload =
   | ContentEnrichmentPayload
   | CopyElementsPayload
   | OffSiteReconPayload
-  | EmailAuthRecordPayload;
+  | EmailAuthRecordPayload
+  | CompetitorPageSnapshotPayload;
 
 export interface HttpResponsePayload {
   type: 'http_response';
@@ -976,4 +977,62 @@ export interface EmailAuthRecordPayload {
     vmc_url: string | null;
     lookup_failed: boolean;
   };
+}
+
+// ──────────────────────────────────────────────
+// CompetitorPageSnapshotPayload — Wave 24
+//
+// One row per (env, competitor_domain, cycle). Captured by the
+// competitor-fetch enrichment pass: HTTP GET of the competitor's
+// homepage + structural parse + lightweight DNS lookup for trust
+// posture comparison.
+//
+// "Lightweight" by design — we do NOT run nuclei, katana, or any
+// authenticated path against competitor sites; this is a polite
+// observation pass equivalent to opening their homepage in a
+// browser. ~2-3s per competitor; caps at 10 competitors per cycle.
+// ──────────────────────────────────────────────
+export interface CompetitorPageSnapshotPayload {
+  type: 'competitor_page_snapshot';
+  /** Apex (lowercase, no scheme). Matches CompetitorDomain.domain. */
+  competitor_domain: string;
+  /** The URL actually fetched (canonical home page). */
+  url_fetched: string;
+  /** True if the home-page fetch failed entirely (DNS, timeout,
+   *  non-2xx). When true, all other fields are nullish and the
+   *  signal extractor skips this snapshot. */
+  fetch_failed: boolean;
+  fetch_error: string | null;
+  http_status: number | null;
+  /** Page content — used for copy fingerprint comparison. */
+  title: string | null;
+  h1: string | null;
+  meta_description: string | null;
+  /** First ~500 chars of visible body text (above-fold approximation). */
+  hero_text: string | null;
+  /** Up to 2000 chars of visible body text, HTML/scripts stripped. */
+  body_text_snippet: string | null;
+  /** Heading hierarchy, capped at 30 entries. */
+  headings: Array<{ level: 1 | 2 | 3; text: string }>;
+  /** Visible CTA button/link texts, capped at 20 entries. */
+  cta_texts: string[];
+  /** Trust mini-snapshot — derived from response headers + DNS. We
+   *  don't ship full security_headers_score for competitors (would
+   *  require headless render); these flags are header-presence only. */
+  trust_snapshot: {
+    https_redirect: boolean;
+    hsts_present: boolean;
+    csp_present: boolean;
+    x_frame_options_present: boolean;
+    x_content_type_options_present: boolean;
+    referrer_policy_present: boolean;
+    permissions_policy_present: boolean;
+    /** 0-100 — composite of the 6 flags above, 100/6 each. */
+    headers_score: number;
+    /** DMARC presence + policy strength. */
+    dmarc_present: boolean;
+    dmarc_policy: 'none' | 'quarantine' | 'reject' | null;
+    spf_present: boolean;
+  };
+  fetched_at: string;
 }

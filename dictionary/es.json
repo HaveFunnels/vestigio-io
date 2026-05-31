@@ -5848,7 +5848,8 @@
 			"trust_gap": "Brecha de Confianza e Ingresos",
 			"path_efficiency": "Eficiencia de Ruta de Compra",
 			"security_posture": "Postura de Seguridad",
-			"funnel_journey": "Recorrido del Funnel"
+			"funnel_journey": "Recorrido del Funnel",
+			"competitive_lens": "Lente Competitiva"
 		},
 		"behavioral_issues": {
 			"first_session_milestone_stall": "Los visitantes nuevos se van antes de mostrar cualquier señal de querer comprar",

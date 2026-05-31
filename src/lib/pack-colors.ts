@@ -76,6 +76,12 @@ export const PACK_STYLE_MAP: Record<string, PackStyle> = {
 	acquisition_integrity:   { text: "text-red-400",   dot: "bg-red-500",   bg: "bg-red-500" },
 	action_value_map:        { text: "text-amber-400", dot: "bg-amber-500", bg: "bg-amber-500" },
 	path_efficiency:         { text: "text-teal-400",  dot: "bg-teal-500",  bg: "bg-teal-500" },
+
+	// Email deliverability (Wave 23.1)
+	email_deliverability:    { text: "text-amber-400", dot: "bg-amber-500", bg: "bg-amber-500" },
+
+	// Competitive lens (Wave 24)
+	competitive_lens:        { text: "text-fuchsia-400", dot: "bg-fuchsia-500", bg: "bg-fuchsia-500" },
 };
 
 export const FALLBACK_PACK_STYLE: PackStyle = {

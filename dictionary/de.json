@@ -4323,7 +4323,8 @@
 			"trust_gap": "Vertrauens-Umsatz-Lücke",
 			"path_efficiency": "Kaufpfad-Effizienz",
 			"security_posture": "Sicherheitshaltung",
-			"funnel_journey": "Funnel-Reise"
+			"funnel_journey": "Funnel-Reise",
+			"competitive_lens": "Wettbewerbs-Linse"
 		},
 		"behavioral_issues": {
 			"first_session_milestone_stall": "Erstbesucher verlassen die Seite, bevor sie Kaufabsicht zeigen",

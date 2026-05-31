@@ -112,6 +112,11 @@ export interface OrgContext {
    *  first cold cycle. */
   industry?: string | null;
   detected_platforms?: string[];
+  /** Wave 24 — user-curated competitor domains the audit cycle watches.
+   *  Surface this to the LLM so it can reason about positioning
+   *  ("How does X compare vs <competitor>?") without the user having
+   *  to re-type the peer set every conversation. Apex domains only. */
+  competitor_domains?: string[];
 }
 
 export interface AttachedFile {

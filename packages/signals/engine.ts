@@ -35,6 +35,7 @@ import {
 import type { BehavioralCohortPayload } from '../behavioral';
 import { extractOffSiteReconSignals } from './off-site-recon-signals';
 import { extractEmailDeliverabilitySignals } from './email-deliverability-signals';
+import { extractCompetitiveSignals } from './competitive-signals';
 // Wave 20.3 — canonical createSignal factory (was duplicated below
 // at line 5710 for "historical reasons" — that copy is now removed).
 import { createSignal } from './create';
@@ -198,6 +199,17 @@ export function extractSignals(
   // destination URL with on-page evidence. Only fires when the graph has
   // ad nodes (i.e. ads integration is connected).
   extractAdsCreativeContextSignals(graph, evidence, scoping, cycle_ref, signals, ids);
+
+  // Wave 24 — Competitive Lens. Runs AFTER the trust signals above
+  // because it reads them via a local byKey index to compute the
+  // peer-comparison composite. Must stay last among the signal
+  // extractors so DMARC / SPF / HSTS / headers signals are all
+  // already in the signals array.
+  {
+    const byKey = new Map<string, Signal>();
+    for (const s of signals) byKey.set(s.signal_key, s);
+    extractCompetitiveSignals(byType, byKey, scoping, cycle_ref, signals, ids);
+  }
 
   // Phase 2.4: Commerce heuristics — fallback path when integration absent.
   // Emits the same signal_keys as the data-driven path with lower confidence,

@@ -4526,6 +4526,35 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Re-consultamos `default._bimi.<seu-dominio>` via DNS TXT e confirmamos um registro `v=BIMI1` com `l=` apontando pra um SVG público.',
 		verification_eta_seconds: 8,
 	},
+	// ── Wave 24 — competitive_lens ──
+	copy_mirror_detected: {
+		remediation_steps: [
+			'Liste no detalhe do finding as frases compartilhadas com cada competidor — são suas, deles, ou commodity de categoria?',
+			'Se 1 competidor copia: documente caso de uso de defesa (proof, case study, depoimento específico) que só você pode mostrar.',
+			'Se 2-3 competidores convergem: substitua a hero por um pilar único — um benefício, um caso, ou uma promessa de prazo que nenhum dos outros entrega.',
+			'Se 4+: o vocabulário virou commodity. Reescreva o ângulo principal apoiado em diferencial concreto de produto (não promessa de marketing).',
+			'A/B teste o novo ângulo por 2-4 semanas comparando conversão de homepage / signup.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'No próximo cycle, re-comparamos as frases de hero / heading / CTA dos competidores ativos com as suas pra confirmar que o overlap caiu.',
+		verification_eta_seconds: 60,
+	},
+	trust_posture_lag: {
+		remediation_steps: [
+			'Veja o sub-eixo mais penalizado (security headers, DMARC, SPF, HSTS) no detalhe do finding — atacar primeiro normalmente fecha 60-70% do gap.',
+			'Security headers: configure HSTS + CSP + X-Frame-Options + X-Content-Type-Options + Referrer-Policy + Permissions-Policy no servidor / CDN. Cada um é 1-2 linhas de config.',
+			'DMARC ausente / fraco: siga o caminho `p=none` + `rua` → `p=quarantine; pct` crescente → `p=reject` (ver finding email_deliverability se existente).',
+			'SPF ausente: publique `v=spf1 include:<seu-ESP> -all` no apex.',
+			'HSTS: header `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` (preload requer submit em hstspreload.org).',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'No próximo cycle, re-medimos seu composite trust score (4 sub-eixos) e re-calculamos o delta vs a mediana do peer set.',
+		verification_eta_seconds: 60,
+	},
 };
 
 /**

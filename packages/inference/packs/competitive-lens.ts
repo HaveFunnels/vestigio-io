@@ -144,10 +144,113 @@ function inferTrustPostureLag(
 	];
 }
 
+function inferBrandSerpEncroachment(
+	byKey: Map<string, Signal>,
+	scoping: Scoping,
+	cycle_ref: string,
+	ids: IdGenerator,
+): Inference[] {
+	const sig = byKey.get("competitive.brand_serp_encroachment");
+	if (!sig) return [];
+	const encroacherCount = Number(sig.value) || 0;
+	const bestRank = sig.numeric_value ?? 99;
+	const topHost = sig.subject_label || "concorrente";
+	const description = sig.description || "";
+
+	// Severity:
+	// - 1 encroacher at rank ≥4 → medium (visível mas baixo)
+	// - 1 encroacher em top-3   → high (intercepta tráfego de marca)
+	// - 2+ encroachers          → high (sua marca virou commodity de busca)
+	const severity =
+		encroacherCount >= 2 ? "high" : bestRank <= 3 ? "high" : "medium";
+
+	return [
+		createInference({
+			inference_key: "brand_serp_encroachment",
+			category: InferenceCategory.BrandSerpEncroachment,
+			conclusion: "brand_serp_encroachment",
+			conclusion_value: severity,
+			severity_hint: severity,
+			confidence: sig.confidence,
+			scoping,
+			cycle_ref,
+			ids,
+			signal_refs: [makeRef("signal", sig.id)],
+			evidence_refs: sig.evidence_refs,
+			reasoning: `${encroacherCount} concorrente(s) aparecem nos top-${5} resultados orgânicos quando alguém busca pela sua marca. Detalhe: ${description}. Esse é o sinal mais valioso de SERP — usuário digitou seu nome (alta intenção de compra) e encontrou outra coisa. ${
+				severity === "high"
+					? bestRank <= 3
+						? `${topHost} está em rank #${bestRank} — captura prospects que iam pra você. Auditar (1) se a página deles cita você no copy (concorrência direta), (2) se rankeiam pra termo similar mas não comparativo (commodity de categoria), ou (3) se é um afiliado ou marketplace listando você. Cada caso pede ação diferente: produção de conteúdo defensivo, comparativos honestos, ou cease-and-desist.`
+						: `Múltiplos concorrentes ocupam o espaço da sua marca. Sua SERP de marca está saturada — produza páginas próprias respondendo às top-related queries ("vs", "review", "preço", "alternativas") pra retomar posições.`
+					: `Encroachment leve. Monitore — se mais um competidor entrar nos próximos ciclos ou subir pra top-3, o sinal escala. Considere publicar conteúdo institucional na home (FAQ, comparativos, depoimentos) que ranqueie pela sua marca antes de competidores chegarem.`
+			}`,
+			reasoning_slots: {
+				count: String(encroacherCount),
+				best_rank: String(bestRank),
+				top_host: topHost,
+				severity,
+			},
+		}),
+	];
+}
+
+function inferSerpOverlapDetected(
+	byKey: Map<string, Signal>,
+	scoping: Scoping,
+	cycle_ref: string,
+	ids: IdGenerator,
+): Inference[] {
+	const sig = byKey.get("competitive.serp_overlap_detected");
+	if (!sig) return [];
+	const overlapCount = Number(sig.value) || 0;
+	const topQueries = sig.numeric_value ?? 0;
+	const topHost = sig.subject_label || "concorrente";
+	const description = sig.description || "";
+
+	// Severity:
+	// - 1-2 overlapping competitors  → low (campo amplo, normal)
+	// - 3-4                          → medium (concentração começando)
+	// - 5+                           → high (mercado saturado, atenção dispersa)
+	const severity =
+		overlapCount >= 5 ? "high" : overlapCount >= 3 ? "medium" : "low";
+
+	return [
+		createInference({
+			inference_key: "serp_overlap_detected",
+			category: InferenceCategory.SerpOverlapDetected,
+			conclusion: "serp_overlap_detected",
+			conclusion_value: severity,
+			severity_hint: severity,
+			confidence: sig.confidence,
+			scoping,
+			cycle_ref,
+			ids,
+			signal_refs: [makeRef("signal", sig.id)],
+			evidence_refs: sig.evidence_refs,
+			reasoning: `${overlapCount} concorrente(s) ocupam SERPs de categoria com você — mais relevante: ${topHost} (aparece em ${topQueries} das queries observadas). Detalhe: ${description}. Esses são candidatos a peer set ainda não curados — ${
+				severity === "high"
+					? "categoria saturada. Foque diferenciação clara em vez de competir em volume de keywords — quando 5+ players ocupam as mesmas SERPs, vencer em busca genérica vira concurso de orçamento de SEO."
+					: severity === "medium"
+						? "concentração emergindo. Avalie cada um: se ranqueiam acima de você em queries com intenção de compra, é hora de fortalecer landing pages pra essas queries específicas."
+						: "campo ainda amplo. Marque os mais ranqueados como concorrentes pra entrar no monitoramento de copy mirror + trust posture dos próximos ciclos."
+			}. ${overlapCount > 0 ? "Os candidatos já foram adicionados ao Radar como 'Auto-descobertos' — abra a Lente Competitiva pra pinar os que importam." : ""}`,
+			reasoning_slots: {
+				count: String(overlapCount),
+				top_host: topHost,
+				top_queries: String(topQueries),
+				severity,
+			},
+		}),
+	];
+}
+
 export function computeCompetitiveLensPack(input: PackInput): Inference[] {
 	const { byKey, scoping, cycle_ref, ids } = input;
 	const out: Inference[] = [];
 	out.push(...inferCopyMirrorDetected(byKey, scoping, cycle_ref, ids));
 	out.push(...inferTrustPostureLag(byKey, scoping, cycle_ref, ids));
+	// Wave 25 — offensive radar
+	out.push(...inferBrandSerpEncroachment(byKey, scoping, cycle_ref, ids));
+	out.push(...inferSerpOverlapDetected(byKey, scoping, cycle_ref, ids));
 	return out;
 }

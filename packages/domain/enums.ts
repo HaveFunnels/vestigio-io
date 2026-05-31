@@ -244,6 +244,11 @@ export enum EvidenceType {
   // (body text, headings, CTAs, hero phrase). Drives the
   // `competitive_lens` inference pack.
   CompetitorPageSnapshot = 'competitor_page_snapshot',
+  // Wave 25 — Competitive Lens (offensive radar). One per (env,
+  // cycle, query) carrying SERP results for branded + category
+  // keyword searches. Drives brand_serp_encroachment + serp_overlap
+  // findings and feeds auto-discovery of competitor candidates.
+  SerpResults = 'serp_results',
 }
 
 // ──────────────────────────────────────────────
@@ -709,4 +714,7 @@ export enum InferenceCategory {
   // ── Wave 24 — Competitive Lens ──
   CopyMirrorDetected = 'copy_mirror_detected',
   TrustPostureLag = 'trust_posture_lag',
+  // ── Wave 25 — Competitive Lens (offensive radar) ──
+  BrandSerpEncroachment = 'brand_serp_encroachment',
+  SerpOverlapDetected = 'serp_overlap_detected',
 }

@@ -460,5 +460,8 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   // ── Wave 24 — competitive_lens ──
   copy_mirror_detected: 'competitive_lens',
   trust_posture_lag: 'competitive_lens',
+  // ── Wave 25 — competitive_lens offensive radar ──
+  brand_serp_encroachment: 'competitive_lens',
+  serp_overlap_detected: 'competitive_lens',
 };
 

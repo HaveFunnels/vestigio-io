@@ -201,6 +201,23 @@ export function CompetitorRadar() {
 				</div>
 			)}
 
+			{/* Auto-discovery banner — when there are inactive auto candidates pending owner pin */}
+			{(() => {
+				const pendingAuto = competitors.filter(
+					(c) => c.discoveryMethod === "auto" && !c.active,
+				);
+				if (pendingAuto.length === 0) return null;
+				return (
+					<div className="mb-3 rounded-md border border-sky-500/40 bg-sky-500/[0.06] px-3 py-2 text-[12px] text-zinc-700 dark:text-zinc-200">
+						<span className="font-medium text-sky-400">
+							{pendingAuto.length} candidato(s) auto-descobertos
+						</span>{" "}
+						a partir da observação de SERPs do peer set. Ative os que importam pra
+						entrarem no monitoramento de copy mirror + trust posture.
+					</div>
+				);
+			})()}
+
 			{/* List */}
 			{loading ? (
 				<div className="py-6 text-center text-[12px] text-zinc-500">
@@ -212,8 +229,9 @@ export function CompetitorRadar() {
 						Nenhum competidor adicionado ainda.
 					</div>
 					<div className="mt-1 text-[11px] text-zinc-500">
-						Os findings de copy mirror e trust posture comparativo dependem de
-						pelo menos 2 competidores ativos.
+						Adicione 3-5 competidores diretos pra ativar copy mirror e trust
+						posture comparativo. Se a chave Brave Search estiver configurada,
+						sugerimos candidatos automaticamente a cada audit cycle full.
 					</div>
 				</div>
 			) : (
@@ -271,8 +289,10 @@ export function CompetitorRadar() {
 
 			<div className="mt-4 border-t border-edge pt-3 text-[11px] text-zinc-500">
 				A cada audit cycle full, capturamos a homepage dos {Math.min(10, activeCap)} competidores
-				mais recentes — fetch educado equivalente a abrir o site num navegador. Sem
-				autenticação, sem crawl, sem scanners pesados.
+				ativos mais recentes — fetch educado equivalente a abrir o site num navegador. Sem
+				autenticação, sem crawl, sem scanners pesados. Quando o Brave Search está
+				configurado, também observamos SERPs da sua marca e da categoria pra
+				detectar concorrência orgânica e sugerir candidatos.
 			</div>
 		</section>
 	);

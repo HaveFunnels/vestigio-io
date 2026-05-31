@@ -10,7 +10,9 @@ import {
 import type {
 	CompetitorPageSnapshotPayload,
 	CopyElementsPayload,
+	SerpResultsPayload,
 } from "../domain";
+import { isSerpExcluded } from "../domain";
 import { createSignal } from "./create";
 
 // ──────────────────────────────────────────────
@@ -269,8 +271,30 @@ export function extractCompetitiveSignals(
 	ids: IdGenerator,
 ): void {
 	const snapshots = byType.get(EvidenceType.CompetitorPageSnapshot) || [];
-	if (snapshots.length === 0) return;
+	const serps = byType.get(EvidenceType.SerpResults) || [];
+	// Wave 25: SERP rules can fire without competitor snapshots
+	// (auto-discovery hasn't promoted candidates yet); only bail
+	// when neither evidence source is present.
+	if (snapshots.length === 0 && serps.length === 0) return;
 
+	// Snapshot-driven rules need at least one snapshot.
+	if (snapshots.length > 0) {
+		extractSnapshotSignals(byType, byKey, scoping, cycle_ref, signals, ids, snapshots);
+	}
+
+	// ── Wave 25 — SERP-based offensive radar ──
+	extractSerpSignals(byType, scoping, cycle_ref, signals, ids);
+}
+
+function extractSnapshotSignals(
+	byType: Map<EvidenceType, Evidence[]>,
+	byKey: Map<string, Signal>,
+	scoping: Scoping,
+	cycle_ref: string,
+	signals: Signal[],
+	ids: IdGenerator,
+	snapshots: Evidence[],
+): void {
 	const ownPhrases = buildOwnCopyPhrases(byType);
 	const ownTrustScore = computeOwnTrustScore(byKey);
 
@@ -360,6 +384,149 @@ export function extractCompetitiveSignals(
 	}
 }
 
+// SERP signal config.
+const ENCROACHMENT_RANK_THRESHOLD = 5;
+const OVERLAP_QUERY_THRESHOLD = 2;
+// Exclusion list lives in packages/domain/serp-exclusions.ts and is
+// imported above. Both this file and the worker pass share that
+// single set so additions never drift.
+
+function deriveOwnApex(byType: Map<EvidenceType, Evidence[]>): string | null {
+	const pages = byType.get(EvidenceType.PageContent) || [];
+	for (const ev of pages) {
+		const p = ev.payload as { url?: string };
+		if (!p.url) continue;
+		try {
+			const host = new URL(p.url).hostname.replace(/^www\./, "").toLowerCase();
+			const parts = host.split(".");
+			return parts.length > 2 ? parts.slice(-2).join(".") : host;
+		} catch {
+			continue;
+		}
+	}
+	return null;
+}
+
+function extractSerpSignals(
+	byType: Map<EvidenceType, Evidence[]>,
+	scoping: Scoping,
+	cycle_ref: string,
+	signals: Signal[],
+	ids: IdGenerator,
+): void {
+	const serps = byType.get(EvidenceType.SerpResults) || [];
+	if (serps.length === 0) return;
+	const ownApex = deriveOwnApex(byType);
+
+	// brand_serp_encroachment — competitors ranking when someone
+	// searches for YOUR brand. Strong signal because branded queries
+	// have high purchase intent.
+	const brandSerp = serps.find(
+		(ev) => (ev.payload as SerpResultsPayload).query_intent === "brand",
+	);
+	if (brandSerp) {
+		const payload = brandSerp.payload as SerpResultsPayload;
+		const dedup = new Map<string, { host: string; rank: number; title: string }>();
+		for (const r of payload.results) {
+			if (r.rank > ENCROACHMENT_RANK_THRESHOLD) continue;
+			if (isSerpExcluded(r.host, ownApex)) continue;
+			const prior = dedup.get(r.host);
+			if (!prior || r.rank < prior.rank) {
+				dedup.set(r.host, { host: r.host, rank: r.rank, title: r.title });
+			}
+		}
+		const list = [...dedup.values()].sort((a, b) => a.rank - b.rank);
+		if (list.length > 0) {
+			const top = list[0];
+			const description = list
+				.slice(0, 5)
+				.map((e) => `#${e.rank} ${e.host}`)
+				.join(", ");
+			signals.push({
+				...createSignal({
+					signal_key: "competitive.brand_serp_encroachment",
+					attribute: "competitive.brand_serp.encroacher_count",
+					value: String(list.length),
+					numeric_value: top.rank,
+					category: SignalCategory.Competitive,
+					confidence: 90,
+					scoping,
+					cycle_ref,
+					ids,
+					evidence_refs: [makeRef("evidence", brandSerp.id)],
+					description: `Em busca por "${payload.query}" (intent: brand): ${description}`,
+				}),
+				subject_label: top.host,
+			});
+		}
+	}
+
+	// serp_overlap_detected — hosts co-occurring with you across
+	// multiple category-keyword queries. Signals "same space" peers.
+	const categorySerps = serps.filter(
+		(ev) => (ev.payload as SerpResultsPayload).query_intent === "category",
+	);
+	if (categorySerps.length >= 1) {
+		const hostQueries = new Map<string, Set<string>>();
+		const hostBestRank = new Map<string, number>();
+		const evidenceRefs: string[] = [];
+		for (const ev of categorySerps) {
+			const payload = ev.payload as SerpResultsPayload;
+			evidenceRefs.push(makeRef("evidence", ev.id));
+			const seen = new Set<string>();
+			for (const r of payload.results) {
+				if (r.rank > 10) continue;
+				if (isSerpExcluded(r.host, ownApex)) continue;
+				if (seen.has(r.host)) continue;
+				seen.add(r.host);
+				let qs = hostQueries.get(r.host);
+				if (!qs) {
+					qs = new Set();
+					hostQueries.set(r.host, qs);
+				}
+				qs.add(payload.query);
+				const prev = hostBestRank.get(r.host);
+				if (prev === undefined || r.rank < prev)
+					hostBestRank.set(r.host, r.rank);
+			}
+		}
+		const overlapping = [...hostQueries.entries()]
+			.filter(([, qs]) => qs.size >= OVERLAP_QUERY_THRESHOLD)
+			.map(([host, qs]) => ({
+				host,
+				queries: qs.size,
+				bestRank: hostBestRank.get(host) ?? 99,
+			}))
+			.sort((a, b) => b.queries - a.queries || a.bestRank - b.bestRank);
+		if (overlapping.length > 0) {
+			const top = overlapping[0];
+			const description = overlapping
+				.slice(0, 5)
+				.map(
+					(o) =>
+						`${o.host} (${o.queries}/${categorySerps.length}, melhor rank #${o.bestRank})`,
+				)
+				.join(" | ");
+			signals.push({
+				...createSignal({
+					signal_key: "competitive.serp_overlap_detected",
+					attribute: "competitive.serp.overlap_count",
+					value: String(overlapping.length),
+					numeric_value: top.queries,
+					category: SignalCategory.Competitive,
+					confidence: 85,
+					scoping,
+					cycle_ref,
+					ids,
+					evidence_refs: evidenceRefs,
+					description: description.slice(0, 480),
+				}),
+				subject_label: top.host,
+			});
+		}
+	}
+}
+
 export const __testing = {
 	normalizeText,
 	shingles,
@@ -369,4 +536,7 @@ export const __testing = {
 	computeOwnTrustScore,
 	computeCompetitorTrustScore,
 	median,
+	isSerpExcluded,
+	deriveOwnApex,
+	extractSerpSignals,
 };

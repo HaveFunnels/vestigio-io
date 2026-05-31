@@ -73,7 +73,8 @@ export type EvidencePayload =
   | CopyElementsPayload
   | OffSiteReconPayload
   | EmailAuthRecordPayload
-  | CompetitorPageSnapshotPayload;
+  | CompetitorPageSnapshotPayload
+  | SerpResultsPayload;
 
 export interface HttpResponsePayload {
   type: 'http_response';
@@ -1035,4 +1036,54 @@ export interface CompetitorPageSnapshotPayload {
     spf_present: boolean;
   };
   fetched_at: string;
+}
+
+// ──────────────────────────────────────────────
+// SerpResultsPayload — Wave 25
+//
+// One row per (env, cycle, query) capturing organic search results
+// from the env's locale-appropriate SERP provider (Brave Search in
+// Wave 25). Drives competitive_lens "offensive radar" rules:
+//
+//   - brand_serp_encroachment — competitor ranks top-5 organic when
+//     someone searches for YOUR brand name
+//   - serp_overlap_detected   — competitor co-occurs with you in
+//     top-10 for ≥2 category-keyword queries
+//
+// Auto-discovery side effect: domains seen in SERP top-5 across
+// multiple queries (and not already curated) are promoted to
+// CompetitorDomain rows with discoveryMethod='auto', active=false.
+// ──────────────────────────────────────────────
+export interface SerpResultsPayload {
+  type: 'serp_results';
+  /** Provider name — 'brave_search' in Wave 25. */
+  provider: string;
+  /** Query as sent to the provider. */
+  query: string;
+  /** Locale string (BCP-47-ish). Drives Brave's country + search_lang. */
+  locale: string;
+  /** Query intent classification — 'brand' when this is a search for
+   *  the env's own brand name, 'category' for industry/keyword
+   *  searches, 'competitor' (future) for searches comparing peers. */
+  query_intent: 'brand' | 'category' | 'competitor';
+  /** True when the provider classifies the query as navigational
+   *  (the user typed a brand to reach it, not to explore). */
+  is_navigational: boolean;
+  /** Organic results, 1-indexed by rank. Capped at 20. */
+  results: Array<{
+    rank: number;
+    url: string;
+    /** Host with leading "www." stripped, lowercase. */
+    host: string;
+    title: string;
+    snippet: string;
+    is_paid: boolean;
+  }>;
+  /** Related queries the provider suggested — keyword expansion seeds. */
+  related: string[];
+  total_results: number;
+  fetched_at: string;
+  /** Whether this row was served from cache vs a live API call.
+   *  Diagnostic only; downstream consumers ignore it. */
+  from_cache: boolean;
 }

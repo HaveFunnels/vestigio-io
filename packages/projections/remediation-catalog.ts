@@ -4555,6 +4555,34 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'No próximo cycle, re-medimos seu composite trust score (4 sub-eixos) e re-calculamos o delta vs a mediana do peer set.',
 		verification_eta_seconds: 60,
 	},
+	// ── Wave 25 — competitive_lens offensive radar ──
+	brand_serp_encroachment: {
+		remediation_steps: [
+			'Audite quem está no top-5 e classifique cada concorrente: (a) competidor direto, (b) afiliado seu, (c) marketplace listando você, (d) site editorial com review/comparativo.',
+			'Pra (a): produza páginas próprias que ranqueiem pelas top-related queries da sua marca ("vs", "preço", "alternativas a", "como funciona") — defesa de marca via conteúdo.',
+			'Pra (b/c): negocie acordo de cláusula de marca registrada (eles param de bidding em SEO/Ads na sua brand, você dá comissão extra ou exclusividade).',
+			'Pra (d): contato proativo com o site editorial pra atualizar dados / corrigir comparativos desatualizados — reviews que aparecem em busca de marca movem agulha.',
+			'Cadastre sua marca no Google Trademark Complaint pra bloquear ads pagos usando seu nome (efeito imediato em Ads, não em SEO).',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'No próximo cycle, re-rodamos a busca pela sua marca e re-medimos quantos concorrentes ocupam o top-5 orgânico.',
+		verification_eta_seconds: 60,
+	},
+	serp_overlap_detected: {
+		remediation_steps: [
+			'Abra a Lente Competitiva e revise os candidatos "Auto-descobertos" — pinar os que importam (3-5) ativa monitoramento de copy mirror + trust posture comparativo.',
+			'Pros pinados que ranqueiem ACIMA de você em queries de alta intenção: produza landing pages dedicadas pra essas queries específicas, com diferencial concreto na hero.',
+			'Pros pinados que ranqueiem ABAIXO: monitore — se subirem nos próximos ciclos, você vê o drift e age antes da perda de posição se materializar.',
+			'Pra categorias muito saturadas (5+ overlaps): pare de competir em queries genéricas. Mude pro ângulo "qualidade de prospect" — ranqueie em long-tail específico de seu ICP em vez de top-of-funnel.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'No próximo cycle, re-rodamos as buscas de categoria e re-medimos quantos concorrentes ocupam ≥2 SERPs com você.',
+		verification_eta_seconds: 60,
+	},
 };
 
 /**

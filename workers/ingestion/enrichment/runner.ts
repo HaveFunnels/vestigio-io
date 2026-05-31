@@ -13,6 +13,7 @@ import { subdomainDiscoveryPass } from "./subdomain-discovery";
 import { externalReconPass } from "./external-recon";
 import { emailDeliverabilityPass } from "./email-deliverability";
 import { competitorFetchPass } from "./competitor-fetch";
+import { serpObservationPass } from "./serp-observation";
 
 // ──────────────────────────────────────────────
 // Enrichment Runner
@@ -44,6 +45,7 @@ const PASS_REGISTRY: EnrichmentPass[] = [
   nucleiScanPass,
   brandIntelScanPass,
   competitorFetchPass, // Wave 24 — polite homepage fetch of curated competitors, full-mode only
+  serpObservationPass, // Wave 25 — brand + category SERP capture (cached), gated by BRAVE_SEARCH_API_KEY
   externalReconPass,
   semanticEnrichmentPass,
 ];

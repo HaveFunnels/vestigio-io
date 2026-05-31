@@ -18,6 +18,7 @@ import { useRef, useState, useCallback } from "react";
 // ──────────────────────────────────────────────
 
 const VSL_VIDEO = process.env.NEXT_PUBLIC_VSL_VIDEO_URL || "";
+const VSL_WEBM = process.env.NEXT_PUBLIC_VSL_WEBM_URL || "";
 const VSL_POSTER = process.env.NEXT_PUBLIC_VSL_POSTER_URL || "";
 
 export default function VSL() {
@@ -48,12 +49,14 @@ export default function VSL() {
 					<video
 						ref={videoRef}
 						className="absolute inset-0 h-full w-full object-cover"
-						src={VSL_VIDEO}
 						poster={VSL_POSTER || undefined}
 						preload="none"
 						playsInline
 						onEnded={() => setPlaying(false)}
-					/>
+					>
+						{VSL_WEBM && <source src={VSL_WEBM} type="video/webm" />}
+						<source src={VSL_VIDEO} type="video/mp4" />
+					</video>
 
 					{/* Play / Pause overlay */}
 					<div

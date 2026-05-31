@@ -57,14 +57,21 @@ function hostFromUrl(rawUrl: string | undefined): string {
 	}
 }
 
+// Brave's search_lang accepts a fixed enum; full list at
+// https://api.search.brave.com/app/documentation/web-search/query.
+// Portuguese is split between pt-br and pt-pt — we default to pt-br
+// since that's where customers live today (havefunnels is BR). Japanese
+// uses 'jp' (not 'ja'). UI lang uses the BCP-47 form.
 function localeToBrave(locale: string | undefined): {
 	country: string;
 	search_lang: string;
 	ui_lang: string;
 } {
 	const norm = (locale || "en").toLowerCase();
+	if (norm === "pt-pt")
+		return { country: "PT", search_lang: "pt-pt", ui_lang: "pt-PT" };
 	if (norm.startsWith("pt"))
-		return { country: "BR", search_lang: "pt", ui_lang: "pt-BR" };
+		return { country: "BR", search_lang: "pt-br", ui_lang: "pt-BR" };
 	if (norm.startsWith("es"))
 		return { country: "ES", search_lang: "es", ui_lang: "es-ES" };
 	if (norm.startsWith("de"))

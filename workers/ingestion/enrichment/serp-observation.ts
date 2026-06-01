@@ -298,9 +298,14 @@ export const serpObservationPass: EnrichmentPass = {
 					hostQueryCount.set(host, (hostQueryCount.get(host) || 0) + 1);
 				}
 
-				// Pace under Brave's 1 qps limit. Cache hits don't need
-				// this — only live calls. Conservative: just always wait.
-				if (!sr.from_cache) await new Promise((r) => setTimeout(r, 1100));
+				// Pace between live calls. Brave enforces 1 qps server-side
+				// (429 above that). Tavily is more permissive (>3 qps on
+				// basic tier) but a small pause keeps us friendly. Cache
+				// hits don't need pacing — skipped automatically.
+				if (!sr.from_cache) {
+					const paceMs = provider.name === "brave_search" ? 1100 : 350;
+					await new Promise((r) => setTimeout(r, paceMs));
+				}
 			}
 
 			// Auto-discovery: hosts seen in ≥2 query top-5s and not

@@ -717,4 +717,6 @@ export enum InferenceCategory {
   // ── Wave 25 — Competitive Lens (offensive radar) ──
   BrandSerpEncroachment = 'brand_serp_encroachment',
   SerpOverlapDetected = 'serp_overlap_detected',
+  // ── Wave 26 — Competitive Lens (surface delta) ──
+  SurfaceGapDetected = 'surface_gap_detected',
 }

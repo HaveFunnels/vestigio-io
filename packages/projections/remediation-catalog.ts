@@ -4583,6 +4583,21 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'No próximo cycle, re-rodamos as buscas de categoria e re-medimos quantos concorrentes ocupam ≥2 SERPs com você.',
 		verification_eta_seconds: 60,
 	},
+	// ── Wave 26 — competitive_lens surface delta ──
+	surface_gap_detected: {
+		remediation_steps: [
+			'Abra o detalhe do finding e leia as categorias listadas — cada uma vem com (a) quantos peers mostram, (b) onde você está hoje, (c) exemplo do texto que peers usam.',
+			'Comece pela primeira categoria da lista (maior peso × maior gap). Pra cada uma, decida: você tem o elemento e só não comunica? Ou genuinamente não tem ainda?',
+			'Se tem mas não comunica: prioriza adicionar à hero (acima da dobra) com texto inspirado nos exemplos dos peers — mas adaptado pro seu posicionamento. Não copie.',
+			'Se não tem ainda: avalie esforço de produto × impacto. Categorias de peso ≥0.8 (frete grátis, transformation_promise, address_visibility, core_features) geralmente justificam priorização imediata.',
+			'Não tente fechar todas as categorias de uma vez — 2-3 por cycle mantém foco e permite medir impacto no próximo audit.',
+		],
+		estimated_effort_hours: 12,
+		verification_strategy: 'heuristic_recompute',
+		verification_notes:
+			'No próximo cycle, re-rodamos o LLM enricher sobre sua homepage atual e re-comparamos com o peer set pra confirmar quais gaps foram fechados.',
+		verification_eta_seconds: 90,
+	},
 };
 
 /**

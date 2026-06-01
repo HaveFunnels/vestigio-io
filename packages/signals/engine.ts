@@ -36,6 +36,7 @@ import type { BehavioralCohortPayload } from '../behavioral';
 import { extractOffSiteReconSignals } from './off-site-recon-signals';
 import { extractEmailDeliverabilitySignals } from './email-deliverability-signals';
 import { extractCompetitiveSignals } from './competitive-signals';
+import { extractCompetitiveSurfaceSignals } from './competitive-surface-signals';
 // Wave 20.3 — canonical createSignal factory (was duplicated below
 // at line 5710 for "historical reasons" — that copy is now removed).
 import { createSignal } from './create';
@@ -210,6 +211,12 @@ export function extractSignals(
     for (const s of signals) byKey.set(s.signal_key, s);
     extractCompetitiveSignals(byType, byKey, scoping, cycle_ref, signals, ids);
   }
+
+  // Wave 26 — Competitive Lens (surface delta). Reads
+  // ContentEnrichmentPayload rows with enrichment_type='surface_inventory'
+  // produced by the surface-inventory enricher, computes per-category
+  // gaps (own vs peer set), emits competitive.surface_gap_detected.
+  extractCompetitiveSurfaceSignals(byType, scoping, cycle_ref, signals, ids);
 
   // Phase 2.4: Commerce heuristics — fallback path when integration absent.
   // Emits the same signal_keys as the data-driven path with lower confidence,

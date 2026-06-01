@@ -244,6 +244,66 @@ function inferSerpOverlapDetected(
 	];
 }
 
+function inferSurfaceGapDetected(
+	byKey: Map<string, Signal>,
+	scoping: Scoping,
+	cycle_ref: string,
+	ids: IdGenerator,
+): Inference[] {
+	const sig = byKey.get("competitive.surface_gap_detected");
+	if (!sig) return [];
+	const gapCount = Number(sig.value) || 0;
+	const weightedScore = sig.numeric_value ?? 0;
+	const topCategoryLabel = sig.subject_label || "categoria crítica";
+	const description = sig.description || "";
+
+	// Severity:
+	// - weighted_score >= 200 → high (multiple high-weight gaps)
+	// - >= 100                → medium
+	// - else                  → low
+	const severity =
+		weightedScore >= 200 ? "high" : weightedScore >= 100 ? "medium" : "low";
+
+	// Parse description back into per-category bullets so the reasoning
+	// names specific gaps. Format from the extractor:
+	//   "tipo=<ct> | <label>: N/M peers • você: ausente|presente em X • ex.: \"...\" | ..."
+	const parts = description.split(" | ");
+	const customerTypeBit = parts[0] || "tipo=generic";
+	const categoryBullets = parts
+		.slice(1, 6)
+		.map((part) => `• ${part}`)
+		.join("\n");
+
+	return [
+		createInference({
+			inference_key: "surface_gap_detected",
+			category: InferenceCategory.SurfaceGapDetected,
+			conclusion: "surface_gap_detected",
+			conclusion_value: severity,
+			severity_hint: severity,
+			confidence: sig.confidence,
+			scoping,
+			cycle_ref,
+			ids,
+			signal_refs: [makeRef("signal", sig.id)],
+			evidence_refs: sig.evidence_refs,
+			reasoning: `${gapCount} categoria(s) onde ≥50% dos competidores mostram um elemento e você não — ou mostra de forma menos proeminente (${customerTypeBit}). Detalhe das ${Math.min(5, gapCount)} mais críticas:\n${categoryBullets}\n\n${
+				severity === "high"
+					? `Pressão alta de surface delta. ${topCategoryLabel} é a mais urgente — quando uma categoria de alto peso aparece em todos os competidores e não em você, prospects do mesmo perfil que avaliam ambos têm um motivo concreto pra escolher o outro. Atacar as 2-3 primeiras da lista geralmente fecha o gap visível.`
+					: severity === "medium"
+						? `Padrão emergindo: competidores estão consolidando expectativas que você ainda não atende. Comece pela categoria de maior peso (${topCategoryLabel}) — incorporá-la na hero ou header pode mover percepção de "produto incompleto" pra "produto sério" sem custo de produto.`
+						: `Gap baixo mas visível. Vale ler o detalhe e decidir caso-a-caso quais categorias entram no roadmap próximo — algumas podem ser falsa percepção (você tem o feature/política, só não comunica).`
+			}`,
+			reasoning_slots: {
+				gap_count: String(gapCount),
+				weighted_score: String(weightedScore),
+				top_category: topCategoryLabel,
+				severity,
+			},
+		}),
+	];
+}
+
 export function computeCompetitiveLensPack(input: PackInput): Inference[] {
 	const { byKey, scoping, cycle_ref, ids } = input;
 	const out: Inference[] = [];
@@ -252,5 +312,7 @@ export function computeCompetitiveLensPack(input: PackInput): Inference[] {
 	// Wave 25 — offensive radar
 	out.push(...inferBrandSerpEncroachment(byKey, scoping, cycle_ref, ids));
 	out.push(...inferSerpOverlapDetected(byKey, scoping, cycle_ref, ids));
+	// Wave 26 — surface delta
+	out.push(...inferSurfaceGapDetected(byKey, scoping, cycle_ref, ids));
 	return out;
 }

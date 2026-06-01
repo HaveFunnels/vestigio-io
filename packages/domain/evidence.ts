@@ -74,7 +74,8 @@ export type EvidencePayload =
   | OffSiteReconPayload
   | EmailAuthRecordPayload
   | CompetitorPageSnapshotPayload
-  | SerpResultsPayload;
+  | SerpResultsPayload
+  | CustomerVoiceSnapshotPayload;
 
 export interface HttpResponsePayload {
   type: 'http_response';
@@ -1088,4 +1089,56 @@ export interface SerpResultsPayload {
   /** Whether this row was served from cache vs a live API call.
    *  Diagnostic only; downstream consumers ignore it. */
   from_cache: boolean;
+}
+
+// ──────────────────────────────────────────────
+// CustomerVoiceSnapshotPayload — Wave 27
+//
+// One row per (env, source_label, cycle, platform). source_label is
+// 'self' for the env's own brand or 'competitor:<domain>' for each
+// curated peer the customer-voice enricher inspected.
+//
+// Wave 27 ships Reclame Aqui only — the BR consumer complaint
+// platform. Future waves can add Trustpilot, G2, etc by emitting
+// additional rows with different `platform` values; the signal
+// extractor aggregates across platforms when present.
+//
+// Data is sourced via DDG `site:reclameaqui.com.br "<brand>"`
+// because Reclame Aqui is a Cloudflare-protected React SPA with no
+// public API. DDG SERP snippets carry the rendered reputation badge
+// + index in the title/snippet text. Less rich than direct scraping
+// would be, but stable and zero-marginal-cost vs maintaining auth'd
+// scrapers.
+// ──────────────────────────────────────────────
+export interface CustomerVoiceSnapshotPayload {
+  type: 'customer_voice_snapshot';
+  /** 'self' or 'competitor:<apex>'. Matches the enricher's source labeling. */
+  source_label: string;
+  /** Brand token sent to the platform (derived from domain first-label). */
+  brand_token: string;
+  /** Platform identifier. Wave 27: 'reclame_aqui' only. */
+  platform: 'reclame_aqui';
+  /** True when the platform was reachable AND a brand profile was
+   *  found. False when DDG returned nothing or no /empresa/ page hit. */
+  listed: boolean;
+  /** Canonical company page URL when listed=true, else null. */
+  company_page_url: string | null;
+  /** Reclame Aqui reputation badge: 'RA1000' | 'Ótimo' | 'Bom' |
+   *  'Regular' | 'Ruim' | 'Não recomendada' | 'Sem reputação' | null. */
+  reputation_label: string | null;
+  /** Normalized resolution index on a 0–10 scale (Reclame Aqui's
+   *  "Índice de Solução"). Null when not detected in the snippet. */
+  resolution_index: number | null;
+  /** Total complaint count when detectable in the snippet. Null
+   *  when the snippet doesn't carry it explicitly. */
+  complaints_total: number | null;
+  /** Up to 300 chars of the DDG snippet text — preserved for
+   *  audit + LLM topic synthesis in future waves. */
+  snippet_excerpt: string | null;
+  /** Reason when listed=false (e.g. 'no_reclame_aqui_profile_in_serp',
+   *  'http_error'). Used for diagnostics + suppressing false-negatives. */
+  unlisted_reason: string | null;
+  fetched_at: string;
+  /** URL we actually fetched (DDG SERP URL). For audit trail. */
+  fetched_url: string;
 }

@@ -37,6 +37,7 @@ import { extractOffSiteReconSignals } from './off-site-recon-signals';
 import { extractEmailDeliverabilitySignals } from './email-deliverability-signals';
 import { extractCompetitiveSignals } from './competitive-signals';
 import { extractCompetitiveSurfaceSignals } from './competitive-surface-signals';
+import { extractCompetitiveVoiceSignals } from './competitive-voice-signals';
 // Wave 20.3 — canonical createSignal factory (was duplicated below
 // at line 5710 for "historical reasons" — that copy is now removed).
 import { createSignal } from './create';
@@ -217,6 +218,12 @@ export function extractSignals(
   // produced by the surface-inventory enricher, computes per-category
   // gaps (own vs peer set), emits competitive.surface_gap_detected.
   extractCompetitiveSurfaceSignals(byType, scoping, cycle_ref, signals, ids);
+
+  // Wave 27 — Competitive Lens (customer voice). Reads
+  // CustomerVoiceSnapshot evidence from the customer-voice enricher
+  // (Reclame Aqui via DDG) and emits competitive.customer_voice_delta
+  // when reputation/resolution-index materially lag the peer median.
+  extractCompetitiveVoiceSignals(byType, scoping, cycle_ref, signals, ids);
 
   // Phase 2.4: Commerce heuristics — fallback path when integration absent.
   // Emits the same signal_keys as the data-driven path with lower confidence,

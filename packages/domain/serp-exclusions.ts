@@ -48,6 +48,15 @@ export const SERP_EXCLUDED_HOSTS: ReadonlySet<string> = new Set([
 	"trustpilot.com",
 	"reclameaqui.com.br",
 	"glassdoor.com",
+	"softwareworld.co",
+	"softwaresuggest.com",
+	"getapp.com",
+	"trustradius.com",
+	// App stores / aggregator listings
+	"play.google.com",
+	"apps.apple.com",
+	"alternativeto.net",
+	"producthunt.com",
 ]);
 
 /**

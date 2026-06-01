@@ -304,6 +304,51 @@ function inferSurfaceGapDetected(
 	];
 }
 
+function inferCustomerVoiceDelta(
+	byKey: Map<string, Signal>,
+	scoping: Scoping,
+	cycle_ref: string,
+	ids: IdGenerator,
+): Inference[] {
+	const sig = byKey.get("competitive.customer_voice_delta");
+	if (!sig) return [];
+	const bucket = sig.value;
+	const compositeMagnitude = sig.numeric_value ?? 0;
+	const description = sig.description || "";
+
+	// Severity from bucket emitted by the signal extractor.
+	const severity =
+		bucket === "severo" ? "high" : bucket === "moderado" ? "medium" : "low";
+
+	return [
+		createInference({
+			inference_key: "customer_voice_delta",
+			category: InferenceCategory.CustomerVoiceDelta,
+			conclusion: "customer_voice_delta",
+			conclusion_value: severity,
+			severity_hint: severity,
+			confidence: sig.confidence,
+			scoping,
+			cycle_ref,
+			ids,
+			signal_refs: [makeRef("signal", sig.id)],
+			evidence_refs: sig.evidence_refs,
+			reasoning: `Reputação Reclame Aqui materialmente abaixo do peer set (gap ${bucket}). ${description}. ${
+				severity === "high"
+					? "Esse é o sinal mais brutal de churn risk + objeção em ciclo de venda B2C: prospects pesquisam sua marca no RA antes de fechar, e encontram reputação abaixo dos concorrentes. Atacar os 3 tópicos de reclamação mais frequentes (geralmente suporte, prazo de entrega, ou produto defeituoso) consegue mover a agulha em 4-8 semanas se você atua nos próprios chamados pendentes. Considere também resposta pública nos casos abertos — o Índice de Solução é o que mais move a percepção."
+					: severity === "medium"
+						? "Gap visível mas recuperável. Operação típica: (a) lista reclamações abertas dos últimos 90 dias, (b) classifica por tópico, (c) responde + resolve os ≤ 20% que cobrem 80% do volume. RA recalcula o índice a cada ciclo — você vê o efeito em 1-2 meses."
+						: "Gap leve mas visível pra prospect comparando você com peer set. Vale monitorar próximos ciclos pra ver se está estabilizando ou piorando antes de agir."
+			}`,
+			reasoning_slots: {
+				bucket,
+				composite_magnitude: String(compositeMagnitude),
+				severity,
+			},
+		}),
+	];
+}
+
 export function computeCompetitiveLensPack(input: PackInput): Inference[] {
 	const { byKey, scoping, cycle_ref, ids } = input;
 	const out: Inference[] = [];
@@ -314,5 +359,7 @@ export function computeCompetitiveLensPack(input: PackInput): Inference[] {
 	out.push(...inferSerpOverlapDetected(byKey, scoping, cycle_ref, ids));
 	// Wave 26 — surface delta
 	out.push(...inferSurfaceGapDetected(byKey, scoping, cycle_ref, ids));
+	// Wave 27 — customer voice
+	out.push(...inferCustomerVoiceDelta(byKey, scoping, cycle_ref, ids));
 	return out;
 }

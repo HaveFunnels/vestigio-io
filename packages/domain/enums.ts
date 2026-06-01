@@ -249,6 +249,13 @@ export enum EvidenceType {
   // keyword searches. Drives brand_serp_encroachment + serp_overlap
   // findings and feeds auto-discovery of competitor candidates.
   SerpResults = 'serp_results',
+  // Wave 27 — Customer Voice. One per (env, source_label, cycle).
+  // source_label = 'self' for the env's own brand, or
+  // 'competitor:<domain>' for each curated peer. Currently sourced
+  // from Reclame Aqui (BR consumer-complaint platform); future waves
+  // can add Trustpilot, G2, etc as additional CustomerVoiceSnapshot
+  // rows with different `platform` values.
+  CustomerVoiceSnapshot = 'customer_voice_snapshot',
 }
 
 // ──────────────────────────────────────────────
@@ -719,4 +726,6 @@ export enum InferenceCategory {
   SerpOverlapDetected = 'serp_overlap_detected',
   // ── Wave 26 — Competitive Lens (surface delta) ──
   SurfaceGapDetected = 'surface_gap_detected',
+  // ── Wave 27 — Competitive Lens (customer voice) ──
+  CustomerVoiceDelta = 'customer_voice_delta',
 }

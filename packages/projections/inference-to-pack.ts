@@ -465,5 +465,7 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   serp_overlap_detected: 'competitive_lens',
   // ── Wave 26 — competitive_lens surface delta ──
   surface_gap_detected: 'competitive_lens',
+  // ── Wave 27 — competitive_lens customer voice ──
+  customer_voice_delta: 'competitive_lens',
 };
 

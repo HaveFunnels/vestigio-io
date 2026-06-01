@@ -4583,6 +4583,22 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'No próximo cycle, re-rodamos as buscas de categoria e re-medimos quantos concorrentes ocupam ≥2 SERPs com você.',
 		verification_eta_seconds: 60,
 	},
+	// ── Wave 27 — competitive_lens customer voice ──
+	customer_voice_delta: {
+		remediation_steps: [
+			'Abra sua conta empresa no Reclame Aqui e baixe lista de reclamações abertas dos últimos 90 dias.',
+			'Classifique cada uma por tópico (suporte, prazo, produto, cobrança, atendimento). 20% dos tópicos costumam cobrir 80% do volume.',
+			'Atue nos top 3 tópicos: para cada reclamação aberta, responda publicamente + resolva o caso no canal interno + atualize status no RA.',
+			'Para o tópico mais frequente, audite o processo upstream (suporte → ticket interno, prazo → operação logística, produto → quality control). Bug operacional precisa ser fixado, não só patched.',
+			'Configure alerta interno: toda reclamação RA nova → notificação no Slack/email com SLA de resposta de 24h. Índice de Solução depende de % de respondidas.',
+			'Re-meça no próximo audit cycle. RA recalcula reputação em 30 dias rolling, então mudanças aparecem rápido.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'external_scan',
+		verification_notes:
+			'No próximo audit cycle, re-rodamos o Reclame Aqui scrape (você + peers) e recomputamos a reputação + índice de solução pra confirmar que o delta diminuiu.',
+		verification_eta_seconds: 120,
+	},
 	// ── Wave 26 — competitive_lens surface delta ──
 	surface_gap_detected: {
 		remediation_steps: [

@@ -2,9 +2,9 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 
-const VSL_VIDEO = process.env.NEXT_PUBLIC_VSL_VIDEO_URL || "";
-const VSL_WEBM = process.env.NEXT_PUBLIC_VSL_WEBM_URL || "";
-const VSL_POSTER = process.env.NEXT_PUBLIC_VSL_POSTER_URL || "";
+const CDN = process.env.NEXT_PUBLIC_CDN_URL || "";
+const VSL_VIDEO = `${CDN}/vestigio-hero.mp4`;
+const VSL_WEBM = `${CDN}/vestigio-hero.webm`;
 
 function UnmuteIcon({ className }: { className?: string }) {
 	return (
@@ -25,7 +25,7 @@ function VolumeIcon({ className }: { className?: string }) {
 }
 
 export default function VSL() {
-	if (!VSL_VIDEO) return null;
+	if (!CDN) return null;
 
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
@@ -108,7 +108,6 @@ export default function VSL() {
 					<video
 						ref={videoRef}
 						className="absolute inset-0 h-full w-full object-cover"
-						poster={VSL_POSTER || undefined}
 						preload="metadata"
 						playsInline
 						autoPlay
@@ -121,7 +120,7 @@ export default function VSL() {
 							if (v.paused && v.muted) v.play().catch(() => {});
 						}}
 					>
-						{VSL_WEBM && <source src={VSL_WEBM} type="video/webm" />}
+						<source src={VSL_WEBM} type="video/webm" />
 						<source src={VSL_VIDEO} type="video/mp4" />
 					</video>
 

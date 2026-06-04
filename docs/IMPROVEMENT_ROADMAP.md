@@ -1,212 +1,341 @@
 # Vestigio — Improvement Roadmap (Power User Audit)
 
-**Last evaluated:** 2026-06-04
-**Audit method:** 11 parallel analytical agents (5 lens evaluations + 6 surface traces) crossing 24 hypothesized purchase intents for a technical power user in their first 14 days.
-**Overall score:** **4.3 / 10**
+**First audit:** 2026-06-04 against commit `4a89df4f`
+**Last update:** 2026-06-04 (4/4 P0s shipped)
 
-The product has genuinely strong engineering (ELK lanes for journey maps, change-detection,
-RBAC, surface gates, MCP read/write, competitive lens infrastructure). UX coherence with the
-landing page promise — and accessibility for non-engineer power users — does not yet meet
-the engineering bar. This roadmap is the path from 4.3 → 7 in ~9 engineering days.
+**Audit method:** 11 parallel analytical agents (5 lens evaluations
++ 6 surface traces) crossing 24 hypothesized purchase intents for a
+technical power user in their first 14 days.
 
----
-
-## Surface scores
-
-| Surface | Score | 1-line verdict |
-|---|---|---|
-| Findings | 5.0 | Solid bones but no search, surface filter hidden, ChangeBadge buried in drawer |
-| Maps | 5.0 | Excellent canvas (path highlight, ELK lanes, multi-select) ruined by zero discoverability + zero sharing |
-| Strategy Plan | 4.0 | Read-only, dead share button, `$0.08` LLM cost in footer, mock fallback leaks havefunnels.com to other tenants |
-| Workspaces | 4.0 | 15 workspace types collapsed to 4 perspectives via hardcoded if-chain; color drift; bespoke widgets feel disconnected |
-| Actions | 4.0 | "Fila de decisões" became a filtered table; zero assignment; ROI card shows all-time aggregate |
-| Inventory | 4.0 | Read-only — no Add URL, no Exclude URL, surface and inventory are disconnected concepts |
-
-## Lens scores
-
-| Lens | Score | Worst friction |
-|---|---|---|
-| Information Coherence | 3.5 | 3 incompatible severity enums, 5 independent `formatBRL` implementations, "trust" concept named 5 ways |
-| Methodological Rigor | 4.0 | `FALLBACK_INPUTS` ($50k MRR, $80 AOV) used silently when onboarding incomplete; `basis_type` chip computed but never rendered |
-| Churn Prevention | 4.0 | Hero "Money Recovered" KPI is structurally $0 for the first 14 days (requires 2nd-cycle confirmation) |
-| Self-Explanation | 4.5 | "Pack" used 50+ times across UI, never defined; "midpoint" shown with no inputs, no formula |
-| Strategic Positioning | 5.0 | Landing promises "fila de decisões" — dashboard delivers a 12-column bento; "Vestigio Pulse" radar has no UI home |
+**Scoring:** A friction tag is only listed here if it appeared in
+≥2 independent agent reports.
 
 ---
 
-## The 6 recurring frictions (each appears in ≥4 reports)
+## Progress at a glance
 
-### #1 — Engine vocabulary leaking to UI
-- "Pack" used 50+ times, never defined inline
-- 14 packs in ViewSelector as flat chip cloud
-- `inference_key`, `signal_key`, `confidence_tier` exposed as labels
-- "Workspace" vs "Panorama" vs "Perspectiva" — 3 terms, 1 concept
-- "Trust" appears as 5 variants in code: `trust_gap`, `trust_revenue_gap`, `trust_posture`, `behavioral_trust_revenue_gap`, `paid_traffic_trust_gap`
+```
+P0 (must fix, would churn)    ████████████████████ 4/4 ✅ shipped
+P1 (medium-leverage)          ░░░░░░░░░░░░░░░░░░░░ 0/3
+P2 (polish + structural)      ░░░░░░░░░░░░░░░░░░░░ 0/4
+P3 (deferred)                 ░░░░░░░░░░░░░░░░░░░░ 0/3
+```
 
-### #2 — Money math is a black box
-- `FALLBACK_INPUTS` ($50k MRR, $80 AOV, 625 transactions) silent default when business inputs are missing
-- `basis_type` ('data_driven' / 'mixed' / 'heuristic') computed in `packages/impact/engine.ts` but **never rendered** — `grep "basis_type" src/ --include="*.tsx"` returns zero matches
-- Hero metrics show `midpoint` only, discarding `min/max` already on the row
-- 5 independent `formatBRL` implementations producing `R$1.2k`, `R$ 5,7k em foco`, `R$ 1,2k` for the same value
-- No tooltip anywhere explaining "how was this number calculated?"
+**Score trajectory (estimated):**
 
-### #3 — Landing promise vs product reality
-| Landing claim | Product reality |
-|---|---|
-| "Não é um dashboard. É uma fila de decisões" | Dashboard is a 12-column bento grid; Actions is one click away |
-| "Vestigio Pulse — radar contínuo" | No "Pulse" surface exists; sidenav never mentions it |
-| "Money Recovered" hero | Structurally $0 for 14 days (`confirmedCents` requires 2nd-cycle verification) |
-| /pricing pt-BR | **Lorem ipsum in production** |
-| Monthly Strategy Plan | **Zero mention on landing** (the best deliverable) |
-| "Vestigio AI" tab in product tour | Removed from sidenav, only copilot panel |
-| 4X money-back guarantee | No in-product surfacing of the threshold or how to claim |
-
-### #4 — Read-only product, missing write affordances
-- **Actions**: zero `assignedToUserId`; "Mine" tab queries by org+env, not by user
-- **Inventory**: no "Add URL" anywhere; "Exclude" buried in Settings 3 levels deep
-- **Strategy Plan**: NextSteps cards don't convert → Action; "Compartilhar" button has no `onClick`
-- **Maps**: no share-link, no permission model; SVG export is HTML-in-SVG (breaks in Keynote)
-- **Findings**: no snooze, no silence, no free-text search
-
-### #5 — Cross-surface inconsistency (same data, different faces)
-- **3 incompatible severity scales**: Prisma 5-tuple vs `MiniImpactSeverity` (3 values) vs `MiniFindingSeverity` (4 with "positive" as a severity!)
-- **Status enums**: Finding (5) vs UserAction (4) vs PlanNextStep (5) — "done", "resolved", "completed" appear in different shapes
-- **Color drift**: copy = `sky` in Panorama page, `emerald` in workspace detail
-- **Mock fallback cross-tenant**: any new customer opening `/app/library/strategy/2026-06` falls back to `MOCK_PLAN_HAVEFUNNELS_2026_06` and sees `envDomain: "havefunnels.com"` in the header
-
-### #6 — Discoverability collapse
-- **Maps**: NOT in the primary sidebar; only reachable via Library card or chat citation
-- **Strategy Plan**: discovered only via `strategy_plan_ready` email — without email, never found
-- **Pulse**: announced on landing, has no entry anywhere in the app
-- **Global search**: doesn't exist in `/app/findings`, `/app/actions`, or `/app/inventory`
+```
+                          Initial     P0 done     P1 done     Target
+Overall                     4.3   →    ~6.0   →    ~7.5   →    8.5
+Strategy Plan               4.0   →    6.0    →    6.5    →    8.0
+Actions                     4.0   →    6.5    →    7.5    →    8.5
+Dashboard                   —     →    7.0    →    7.5    →    8.5
+Findings                    5.0   →    6.0    →    8.0    →    8.5
+Workspaces                  4.0   →    5.0    →    5.5    →    7.0
+Maps                        5.0   →    5.0    →    7.0    →    8.0
+Inventory                   4.0   →    4.0    →    6.0    →    7.5
+Methodological Rigor        4.0   →    6.5    →    7.5    →    8.5
+Self-Explanation            4.5   →    6.0    →    8.0    →    8.5
+Information Coherence       3.5   →    3.5    →    6.5    →    8.0
+Strategic Positioning       5.0   →    7.0    →    7.5    →    8.0
+```
 
 ---
 
-## Use cases that break today (prioritized by churn risk)
+## ✅ Shipped (P0 batch — 4/4 fixes, ~4.5 eng hours total)
 
-### 🚨 P0 — Would cause churn in week 1-2
+### UC3 — Strategy Plan exec credibility (3 sub-fixes)
+**Commit:** `8f3b857e` · **Files:** `StrategyPlanPanel.tsx`, `library/strategy/[month]/page.tsx`
 
-#### UC1: "Show me where I'm losing money right now"
-- Dashboard hero "Money Recovered" = $0 (structural, 14 days)
-- No tooltip explaining what `retainedMid` means
-- `basis_type: 'heuristic'` (using fallback $50k MRR) never disclosed
-- **Fix:** Methodology popover everywhere; rename hero to "Vazamento atual" + show range
+- **UC3.a:** Removed `$0.08` LLM-cost telemetry + engineer-style
+  version slug from the Strategy Plan footer. Exec-shareable surface
+  no longer leaks internal cost.
+- **UC3.b:** Wired the dead "Compartilhar" button to clipboard-copy
+  the plan permalink (`?envId=` deep link). Was previously a no-op
+  click for the most-clicked control on the surface.
+- **UC3.c:** Gated the Step-3 design-review mock fallback
+  (`MOCK_PLAN_HAVEFUNNELS_2026_06`) behind `?demo=1`. Previously
+  ANY customer hitting `/app/library/strategy/2026-06` without a
+  generated plan saw `envDomain: "havefunnels.com"` in the header
+  — cross-tenant data leak.
 
-#### UC2: "Give me a prioritized queue of decisions" (literal landing promise)
-- `/app/dashboard` is a 12-column bento, not a queue
-- `/app/actions` opens with 4 KPI cards + 3 filters before the queue
-- Sort is money-weighted; severity desc exists in code but no UI control
-- "Mine" tab shows actions for **all** org members (`/api/actions/user/route.ts:60-67`)
-- **Fix:** `/app/dashboard` redirect → `/app/actions` OR top widget = "Action Queue Hero"
+### UC4 — Actions multi-player delegation
+**Commit:** `8f3b857e` · **Files:** `prisma/schema.prisma`,
+`prisma/migrations/20260604140000_user_action_assignment/`,
+`api/actions/user/route.ts`, `api/actions/user/[id]/route.ts`,
+`app/actions/page.tsx`
 
-#### UC3: "Share the monthly plan with my CFO"
-- "Compartilhar" button at `StrategyPlanPanel.tsx:124-129` has **no `onClick`** — dead control
-- Footer renders `$0.08` LLM cost — internal telemetry on an exec document
-- Cross-tenant: new customer can see `envDomain: "havefunnels.com"` if the mock fallback activates
-- **Fix:** remove cost line, wire share button to signed-link share modal, gate mock fallback to demo env only
+- New `UserAction.assignedToUserId` column with FK + index on
+  `(envId, assignedToUserId, status)`. Migration backfills existing
+  rows to `createdByUserId`. Applied to Railway prod.
+- `GET /api/actions/user` accepts `?scope=mine|all`; response
+  includes `created_by` + `assigned_to` user info so the UI doesn't
+  need a second fetch.
+- `PATCH /api/actions/user/[id]` accepts `assigned_to_user_id`;
+  server validates the assignee is a member of the action's org
+  (no cross-org assignment via guessed user id).
+- New "Responsável" dropdown in the UserAction drawer populated
+  from `/api/organization/members`; switching fires PATCH + toast.
+- "Mine" tab now actually filters by current user's assignment
+  (previously showed everyone's actions in the org+env).
 
-#### UC4: "Delegate actions to my team"
-- `UserAction` schema only has `createdByUserId` — zero `assignedToUserId`
-- PATCH endpoint accepts only `{status, notes}` — no reassign
-- No `@mention`, no per-owner notification routing
-- **Fix:** 1 Prisma column + 1 PATCH field + assignee dropdown in drawer
+### UC1 — Universal methodology popover
+**Commit:** `9cfe6719` · **Files:** new
+`components/console/MethodologyPopover.tsx`, `ImpactBadge.tsx`,
+`FindingDetailPanel.tsx`, `findings/page.tsx`,
+`workspaces/[id]/page.tsx`,
+`workspaces/perspective/[slug]/page.tsx`,
+`strategy/sections/HeroMetrics.tsx`,
+`dashboard/widgets/MoneyRecoveredTicker.tsx`
 
-### ⚠️ P1 — Would cause public negative feedback
+- New reusable `MethodologyPopover` component — per-finding "ⓘ"
+  trigger that shows the min/max range, `basis_type` chip
+  (data_driven/mixed/heuristic), severity, baseline % rule, cause,
+  effect. When `basis_type === heuristic`, surfaces an amber CTA
+  linking to `/app/settings#business-inputs`.
+- Variant `AggregateMethodologyPopover` for KPI tiles with
+  description + drill-href.
+- `ImpactBadge` extended with optional `basis_type`, `severity`,
+  `cause`, `effect` props. The trigger renders only when
+  `basis_type` is supplied — existing callsites without it keep
+  working unchanged (backwards compatible).
+- Wired into 6 high-traffic surfaces: FindingDetailPanel,
+  findings list, workspace detail (table + drawer), perspective
+  page, Strategy Plan HeroMetrics (4 tiles), MoneyRecoveredTicker.
 
-#### UC5: "How does Vestigio calculate these numbers?"
-- Hero metrics are point estimates without visible range
-- `confidence` shown as tier (low filtered out, only medium/high shown) — numeric score hidden
-- "Re-verify" CTA doesn't say WHAT will be re-checked
-- **Fix:** "Estimate basis" expandable on every ImpactBadge (inputs + assumption + benchmark)
+### UC2 — Action Queue Hero on dashboard
+**Commit:** `c5ef4e05` · **Files:** new
+`components/console/dashboard/widgets/ActionQueueHero.tsx`,
+`lib/dashboard/types.ts`, `aggregator.ts`, `mock-data.ts`,
+`default-layout.ts`, dictionaries
 
-#### UC6: "Filter findings by tech area (security, copy, mobile)"
-- No pack named `security` — exists as `security_posture`, `money_moment_exposure`
-- No pack named `mobile` — exists as `mobile_revenue_exposure`
-- ZERO free-text search on `/app/findings`
-- 14 packs as flat chip cloud with no category, no tooltip
-- **Fix:** add search input + rename "Pack" → "Categoria" + per-pack tooltip
-
-#### UC7: "Show me what changed since last cycle"
-- ChangeSummaryBanner exists (✅ win)
-- But `change_class` is NOT a default column in the findings table — only visible in the drawer
-- Cycle 1 treats everything as `new_issue` but filter `regression` empties the table silently
-- **Fix:** ChangeBadge as default column + preset view "What Changed Since Last Cycle"
-
-#### UC8: "Share a map in slides"
-- PNG export works; SVG export is HTML-in-SVG (breaks in Keynote/Google Slides)
-- Zero share-link, zero permission model
-- Chat-created custom maps return `url: '/app/maps'` (gallery) instead of `/app/maps/${id}`
-- **Fix:** PDF export + chat tool returns correct deep link
-
-### 📝 P2 — Would notice + comment internally
-
-#### UC9: "I want to see the crawler's coverage"
-- No "we crawled N URLs, skipped M (why)" narrative panel
-- `skip_reason` field exists server-side but only visible in row drawer
-- **Fix:** "Audit scope" header strip on Inventory
-
-#### UC10: "Multiple workspaces for different teams"
-- Zero ownership/assignment primitives on WorkspaceProjection
-- No per-workspace notification routing, no "watch this workspace"
-- **Fix:** later wave
-
-#### UC11: "Compare mobile vs desktop journey maps"
-- Only one view per map; no segment overlay
-- **Fix:** later wave
-
----
-
-## The 10 highest-leverage fixes (sorted by impact × effort)
-
-The first 4 alone move the score from 4.3 → ~7. ~9 engineering days total.
-
-| # | Fix | Effort | Cross-cutting impact |
-|---|---|---|---|
-| 1 | **Add Maps to sidebar + fix chat custom-map deep link** | 30min | UC8 + cross-feature discovery |
-| 2 | **Rename Dashboard → Pulse, hero widget = Action Queue Top 5** | 1d | UC2 + delivers landing promise |
-| 3 | **Universal methodology popover** (range, basis_type, baseline %, formula) on every ImpactBadge / Hero metric | 2d | UC1 + UC5 + UC6 |
-| 4 | **Single `PACK_REGISTRY`** (id, label_pt, label_en, color, hue) + delete 6 alias maps | 1d | Friction #1 + #5 |
-| 5 | **`assignedToUserId` on UserAction + assignee dropdown in drawer** | 1d | UC4 |
-| 6 | **Free-text search on `/app/findings`** + add ChangeBadge as default column | 0.5d | UC6 + UC7 |
-| 7 | **Strategy Plan: delete `$0.08` cost + wire share button + close mock cross-tenant** | 0.5d | UC3 + exec credibility |
-| 8 | **Inventory: "Audit scope" header strip with +Add URL / Exclude URL inline** | 1d | UC9 + UC10 |
-| 9 | **Replace Lorem Ipsum on /pricing pt-BR with FALLBACK_PLANS** | 30min | post-purchase credibility |
-| 10 | **Collapse 3 severity enums → 1 canonical + delete 5 formatBRL implementations** | 1d | Friction #5 |
+- New widget renders top-5 prioritized open actions inline — each
+  row shows severity dot+chip, title, effort, assignee, in-progress
+  badge, impact midpoint, deep-link arrow.
+- New `actionQueue` slice in `DashboardData`. `computeActionQueue()`
+  pulls from `UserAction` directly (no MCP roundtrip), sorts by
+  `baselineImpactMidpoint DESC → severity DESC → createdAt DESC`,
+  caps top 5, surfaces totalOpen + totalImpact across ALL open.
+- Default layout restructured: ActionQueueHero at `(0,0,12,4)`
+  is now the first thing the user sees. Cross-Signal Hero moves
+  down to row 4. Everything else shifts +4 rows.
+- Empty state has explicit CTA into
+  `/app/findings?view=on_fire` so users without actions yet have
+  a clear path to create their first.
+- Widget is locked (`removable: false`) — same anchor pattern as
+  MoneyRecovered.
 
 ---
 
-## Strategic recommendation
+## 🟡 Next batch — P1 (3 items, ~3 eng days, 6.0 → ~7.5)
 
-Vestigio's engineering is genuinely impressive. The product suffers from the classic symptom
-of engineering-led B2B: the "power users" added to the roadmap by engineers are themselves
-engineers, and the vocabulary drifts toward engine-speak. Hence "pack" is undefined,
-`inference_key` appears in UI, `FALLBACK_INPUTS` runs silently.
+These are the natural follow-ons from the P0 batch. Each one closes
+a friction pattern that hits multiple surfaces.
 
-**The single line that separates Vestigio from Crayon / Klue / Similarweb today:**
-"queue of decisions with money in R$". The product is not making that promise stick — it's
-burying it under a 12-column bento.
+### P1.1 — Plumb `basis_type` through ActionProjection (0.5d)
 
-**Where to focus next:** the Competitive Intel pillar is mature. The next wave of leverage
-is **product polish, not new features**. The 10 fixes above are ~9 eng days with brutal ROI
-on paid retention.
+**Why:** UC1 ships methodology popover wired into 6 surfaces, but
+NOT `/app/actions`. The widget is wired client-side; the popover
+will render the moment `ActionProjection` carries `basis_type`,
+`cause`, `effect` at the top level (currently only on linked
+findings via `value_case_basis`).
 
-Pre-PMF priority order: top 4 first (~4.5 eng days → +2.7 score).
+**Touch list:**
+- `packages/projections/types.ts` — extend `ActionProjection` with
+  `basis_type: string | null`, `cause: string | null`,
+  `effect: string | null` (inherit from primary linked finding)
+- `packages/projections/engine.ts` — populate the new fields when
+  building each action (use linked finding's `valueCase`)
+- `src/app/app/actions/page.tsx` — pass the new fields to
+  `<ImpactBadge basis_type={...} cause={...} effect={...} />` in
+  both the table (line ~862) and drawer (lines ~1289, ~1298)
+
+**Verification:** click a $-impact row in `/app/actions` → "ⓘ"
+trigger renders → popover explains how the number was computed.
+
+### P1.2 — `PACK_REGISTRY` unification + delete alias maps (1d)
+
+**Why:** Friction #1 of the audit ("Engine vocabulary leaking to
+UI"). 14 packs exist as flat chip cloud in ViewSelector with no
+glossary; pack names drift across surfaces (`revenue` vs
+`revenue_integrity`, `behavioral` vs `behavioral_heuristics`,
+"trust" appears as 5 different identifiers).
+
+**Touch list:**
+- New `src/lib/pack-registry.ts` exports `PACK_REGISTRY:
+  Record<PackId, PackDefinition>` where `PackDefinition` is
+  `{ id, label_pt, label_en, description_pt, description_en,
+  color: hue, hex }`. Source of truth.
+- Delete the 6 alias maps that re-implement this concept:
+  - `src/lib/pack-colors.ts` `PACK_STYLE_MAP` (long+short forms)
+  - `src/components/console/ViewSelector.tsx` `PACK_OPTIONS`
+  - `src/components/console/chat/PackInsightBubble.tsx` `PACK_META`
+  - `src/lib/dashboard/aggregator.ts` line ~1110 `LABELS_EN`
+  - any string literal pack names in components
+- Rename `pack: string` callsites to `pack: PackId`; TypeScript
+  will catch every drift.
+- Add tooltip on every pack chip: hover shows
+  `description_pt`/`description_en` from the registry.
+
+**Verification:** type `Pack` becomes the canonical union of pack
+ids; renaming a pack updates label everywhere; UI tooltips explain
+each pack inline.
+
+### P1.3 — Free-text search on `/app/findings` + ChangeBadge column (0.5d)
+
+**Why:** UC6+UC7 in the audit. The findings page has 14 packs as
+flat chips; users with mental model "show me checkout findings"
+can't find them without learning the engine taxonomy. ChangeBadge
+exists per row but is only visible after opening the drawer.
+
+**Touch list:**
+- `src/app/app/findings/page.tsx`: add a
+  `<input type="search">` next to ViewSelector; filter `findings`
+  by `title.toLowerCase().includes(query)` OR
+  `affected_surfaces.some(...)` OR `inference_key.includes(query)`.
+- `src/components/console/ColumnSelector.tsx`: add `change_class`
+  to `AVAILABLE_COLUMNS` so users can show it as a column.
+- Update `DEFAULT_VIEW_PRESETS` in `src/app/api/views/route.ts`:
+  add a "What changed" preset
+  (`change in [regression, new_issue, resolved]`, ordered by
+  `last_observed_at DESC`).
+- Render `<ChangeBadge>` in the column body (component already
+  exists at `src/components/console/ChangeBadge.tsx`).
+
+**Verification:** searching "checkout" filters the table to
+matching findings without taxonomy knowledge; opening the saved
+view "What Changed" shows new/regression/resolved as the default
+sort.
+
+---
+
+## 🟢 P2 — Polish + structural (4 items, ~3 eng days, 7.5 → ~8.0)
+
+### P2.1 — Maps in sidebar + chat custom-map deep link (0.5d)
+
+**Why:** Audit #6 finding. Maps is genuinely a strong surface but
+zero discoverability — only reachable via Library card or chat
+citation. Chat-created custom maps return `url: '/app/maps'`
+(gallery) instead of `/app/maps/${id}`.
+
+**Touch list:**
+- `src/components/app/sidebar-nav-data.ts`: add `/app/maps`
+  entry between Findings and Library
+- `apps/mcp/tools.ts:815`: change `url: '/app/maps'` to
+  `url: /app/maps/${mapDef.id}`
+- `src/components/console/chat/ChatMessage.tsx`: add a card
+  renderer for `type === 'custom_map_created'` with thumbnail
+  + "Open map" button
+
+### P2.2 — Replace Lorem Ipsum on `/pricing` pt-BR (15 min)
+
+**Why:** Audit P0-3 ("/pricing pt-BR renders Lorem Ipsum"). Found
+by the strategic-positioning agent. A paying pt-BR power user who
+returns to `/pricing` to evaluate upgrade paths reads lorem ipsum
+— destroys credibility.
+
+**Touch list:**
+- Either delete `homepage.pricing_section.plans` from pt-BR
+  dictionary so the page falls back to the English `FALLBACK_PLANS`
+- OR translate the English `FALLBACK_PLANS` content into the
+  dictionary (better long-term)
+
+### P2.3 — Inventory "Audit scope" header strip (1d)
+
+**Why:** Audit UC9 + UC2 + UC10. Inventory has no "Add URL", no
+"Exclude URL" inline. Customers can't answer "did you check my
+homepage?" without scanning 200 rows.
+
+**Touch list:**
+- `src/app/app/inventory/page.tsx`: add a header strip above the
+  summary cards showing:
+  - "Crawled N URLs from {sources}" with discovery_source
+    breakdown
+  - "Skipped M (reasons →)" linking to a drawer showing
+    `skip_reason` aggregates
+  - "+ Add URL" button (POST `/api/inventory/manual` — new endpoint)
+  - "Exclude URL" button (PATCH `/api/organization/environments/
+    crawl-exclusions`, already exists)
+- `src/app/api/inventory/manual/route.ts` (new): POST adds a
+  user-supplied URL with `discovery_source: 'manual'`; needs
+  env-membership auth + URL validation
+
+### P2.4 — 3 severity enums → 1 canonical (1d)
+
+**Why:** Audit friction #5. Three incompatible severity scales
+exist:
+- `Finding.status` / `Action.status` Prisma: 5-tuple
+  (`critical|high|medium|low|none`)
+- `MiniImpactSeverity` (3 values, no critical, no none)
+- `MiniFindingSeverity` (4 values with `positive` repurposed as
+  severity)
+
+**Touch list:**
+- `packages/domain/types.ts` (or wherever): export canonical
+  `Severity = 'critical'|'high'|'medium'|'low'|'none'`
+- Delete `MiniImpactSeverity` and `MiniFindingSeverity`; migrate
+  all consumers to the canonical type
+- Add a polarity field where "positive" was conflated with
+  severity
+- Delete the 5 independent `formatBRL` implementations: there
+  are copies in `actions/page.tsx`, `strategy/sections/`,
+  `dashboard/page.tsx` etc. Replace with the canonical
+  `src/lib/format-currency.ts` (or add a new util) and grep -r
+  for `formatBRL` to verify zero local copies
+
+---
+
+## ⚪ P3 — Deferred / Wave 28+ (3 items)
+
+### P3.1 — Aggregate range + finding count on HeroMetric type
+Extend `HeroMetric` interface with optional `retainedRange:
+{min,max}`, `retainedFindingCount`, `capturedRange`,
+`capturedFindingCount`. Generator populates from underlying value
+cases. AggregateMethodologyPopover then renders the actual range
+instead of just the description.
+
+### P3.2 — Workspace by surface (URL/funnel-step) pivot
+Audit Workspaces H1: "fix ONE problem area" maps to surface, not
+to discipline. Add `/app/workspaces?surface=/checkout` filter.
+Foundation already exists (`surface` field on findings, surface
+declarations in Wave 22.5). Needs a new perspective tab "By
+Surface" + classification function.
+
+### P3.3 — `/app/dashboard` rename to `/app/pulse`
+Audit P0-2. Landing announces "Vestigio Pulse" but the dashboard
+URL says `/dashboard`. Rename route + sidenav label so the buyer
+mental model matches the product surface.
+
+---
+
+## How this roadmap is maintained
+
+- **Adding a new fix:** append to the appropriate P-bucket with
+  same shape (Why / Touch list / Verification).
+- **Marking a fix shipped:** move it from its P-bucket to
+  ✅ Shipped with the commit hash + file list.
+- **Re-auditing:** the parallel-agent methodology that produced
+  this doc is documented in
+  `docs/POWER_USER_AUDIT_METHOD.md` (TODO — write this when we
+  re-audit Wave 28 to compare scores apples-to-apples).
 
 ---
 
 ## Methodology notes
 
-Evaluation conducted via 11 parallel `code-reviewer` and `general-purpose` agents on
-2026-06-04 against the `main` branch at commit `4a89df4f` (Wave 22.6 review fully closed,
-Waves 23.1 + 24 + 25 + 26 + 27 + Tavily adapter shipped).
+Audit conducted via 11 parallel `code-reviewer` and
+`general-purpose` agents on 2026-06-04 against commit `4a89df4f`.
 
 Each agent received:
-- The same test-case framing (technical power user, fresh subscription, week 1-2)
-- Either a specific analytical lens (churn, customer research, methodology, coherence,
-  positioning) OR a specific product surface (Strategy Plan, Workspaces, Actions, Findings,
-  Maps, Inventory)
-- Multiple distinct purchase-intent hypotheses to trace through their assigned surface/lens
-- Output format: file/line references + severity (P0/P1/P2) + score 0-10 + leverage fix
+- Same test-case framing (technical power user, fresh subscription,
+  week 1-2)
+- Either a specific analytical lens (churn, customer research,
+  methodology, coherence, positioning) OR a specific product
+  surface (Strategy Plan, Workspaces, Actions, Findings, Maps,
+  Inventory)
+- Multiple distinct purchase-intent hypotheses to trace through
+  their assigned surface/lens
+- Output format: file/line references + severity (P0/P1/P2) +
+  score 0-10 + leverage fix
 
-Findings were cross-checked: a friction tag is only listed in this roadmap if it appeared
-in ≥2 independent agent reports.
+A friction tag is only listed in this roadmap if it appeared in
+≥2 independent agent reports.

@@ -2279,46 +2279,99 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		// ─────────────────────────────────────────────
 		// Wave 22.6 Step 5 — first-cycle Strategy Plan generation.
 		// Fires the FIRST time a cycle lands in `complete` for this env;
-		// the day-1 cron handles every month thereafter. Idempotency via
-		// MonthlyStrategyPlan @@unique(envId, month). Best-effort:
+		// the day-1 cron handles every month thereafter. Best-effort:
 		// failure must not block the cycle outcome.
+		//
+		// Concurrency: Two cycles for the same env can complete near-
+		// simultaneously (probe-targeted, retries, etc.). The original
+		// findFirst → generate pattern had a TOCTOU window where both
+		// would see prior=null, both would run generateAndPersistPlan,
+		// and both would fire onReady → two "your plan is ready" emails
+		// for the customer (the trigger's wasRecentlySent dedup has a
+		// race window too).
+		//
+		// Fix: atomically CLAIM the plan row via the @@unique([envId,
+		// month]) constraint. Only the cycle that successfully inserts
+		// the placeholder proceeds; concurrent cycles catch the unique
+		// violation and skip. The full generator runs against the row
+		// we just claimed (upsert takes the update path, no double
+		// insert).
 		// ─────────────────────────────────────────────
 		try {
-			const { generateAndPersistPlan } = await import(
-				"../../packages/strategy-plan"
-			);
+			const nowForMonth = new Date();
+			const month = `${nowForMonth.getUTCFullYear()}-${String(
+				nowForMonth.getUTCMonth() + 1,
+			).padStart(2, "0")}`;
+			const ownerId = cycle.organization?.ownerId ?? null;
+
+			// Pre-check: skip if any plan already exists for this env
+			// (could be from a previous cycle's completion or a prior
+			// month). Avoids burning a uniqueViolation cycle for the
+			// common case of "second cycle, plan already there."
 			const prior = await prisma.monthlyStrategyPlan.findFirst({
 				where: { environmentId: env.id },
 				select: { id: true },
 			});
 			if (!prior) {
-				const now = new Date();
-				const month = `${now.getUTCFullYear()}-${String(
-					now.getUTCMonth() + 1,
-				).padStart(2, "0")}`;
-				const ownerId = cycle.organization?.ownerId ?? null;
-				const { triggerStrategyPlanReadyEmail } = await import(
-					"@/libs/notification-triggers"
-				);
-				await generateAndPersistPlan(prisma, {
-					environmentId: env.id,
-					month,
-					onReady: ownerId
-						? async (ready) => {
-							await triggerStrategyPlanReadyEmail({
-								userId: ownerId,
-								environmentId: ready.environmentId,
-								domain: env.domain,
-								month: ready.month,
-								heroMetrics: ready.heroMetrics,
-								isFirstPlan: ready.isFirstPlan,
-							});
-						}
-						: undefined,
-				});
-				console.log(
-					`[audit-runner ${cycleId}] strategy-plan first-cycle generated for month ${month}`,
-				);
+				// Atomic claim. Concurrent first-cycle hooks racing this
+				// code get a P2002 from the unique constraint and bail.
+				let claimedRowId: string | null = null;
+				try {
+					const claimed = await prisma.monthlyStrategyPlan.create({
+						data: {
+							environmentId: env.id,
+							month,
+							locale: "pt-BR",
+							status: "generating",
+							heroMetricsJson: {},
+							buyerSegmentsJson: [],
+							memoryRollupsJson: {},
+							valuePreviewJson: {},
+							narrativeWhatHappened: "",
+							valuePreviewNarrative: "",
+						},
+						select: { id: true },
+					});
+					claimedRowId = claimed.id;
+				} catch (err) {
+					const msg = err instanceof Error ? err.message : String(err);
+					const isUniqueViolation =
+						msg.includes("Unique constraint") ||
+						msg.includes("environmentId_month") ||
+						msg.includes("23505");
+					if (!isUniqueViolation) throw err;
+					console.log(
+						`[audit-runner ${cycleId}] strategy-plan first-cycle: lost claim race for month ${month}, skipping`,
+					);
+				}
+
+				if (claimedRowId) {
+					const { generateAndPersistPlan } = await import(
+						"../../packages/strategy-plan"
+					);
+					const { triggerStrategyPlanReadyEmail } = await import(
+						"@/libs/notification-triggers"
+					);
+					await generateAndPersistPlan(prisma, {
+						environmentId: env.id,
+						month,
+						onReady: ownerId
+							? async (ready) => {
+								await triggerStrategyPlanReadyEmail({
+									userId: ownerId,
+									environmentId: ready.environmentId,
+									domain: env.domain,
+									month: ready.month,
+									heroMetrics: ready.heroMetrics,
+									isFirstPlan: ready.isFirstPlan,
+								});
+							}
+							: undefined,
+					});
+					console.log(
+						`[audit-runner ${cycleId}] strategy-plan first-cycle generated for month ${month}`,
+					);
+				}
 			}
 		} catch (err) {
 			console.warn(

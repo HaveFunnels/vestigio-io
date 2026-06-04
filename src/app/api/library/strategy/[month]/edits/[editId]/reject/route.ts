@@ -66,30 +66,52 @@ export async function POST(request: Request, { params }: RouteParams) {
 	});
 	if (!plan) return NextResponse.json({ message: "Plan not found" }, { status: 404 });
 
+	// Pre-fetch for 404 + UI-friendly error. The authoritative
+	// decision happens atomically below via UPDATE WHERE pending.
 	const edit = await prisma.planEdit.findUnique({
 		where: { id: editId },
-		select: { id: true, planId: true, approvedAt: true, rejectedAt: true },
+		select: { id: true, planId: true },
 	});
 	if (!edit || edit.planId !== plan.id) {
 		return NextResponse.json({ message: "Edit not found for this plan" }, { status: 404 });
 	}
-	if (edit.approvedAt || edit.rejectedAt) {
-		return NextResponse.json({ message: "Edit already decided" }, { status: 409 });
-	}
 
-	await prisma.$transaction([
-		prisma.planEdit.update({
-			where: { id: edit.id },
+	// Atomic claim — same pattern as approve. Two concurrent
+	// approve/reject requests can both pass a non-tx pre-check at
+	// Read Committed; only one updateMany with WHERE-pending succeeds.
+	const claimResult = await prisma.$transaction(async (tx: any) => {
+		const claim = await tx.planEdit.updateMany({
+			where: {
+				id: edit.id,
+				planId: plan.id,
+				approvedAt: null,
+				rejectedAt: null,
+			},
 			data: {
 				rejectedAt: new Date(),
 				rejectedByUserId: user.id,
 			},
-		}),
-		prisma.monthlyStrategyPlan.update({
+		});
+		if (claim.count === 0) {
+			throw new Error("EDIT_ALREADY_DECIDED");
+		}
+		await tx.monthlyStrategyPlan.update({
 			where: { id: plan.id },
 			data: { editLockedByMcpUntil: null },
-		}),
-	]);
+		});
+		return { claimed: true };
+	}).catch((err: unknown) => {
+		const msg = err instanceof Error ? err.message : String(err);
+		if (msg === "EDIT_ALREADY_DECIDED") return { claimed: false } as const;
+		throw err;
+	});
+
+	if (!claimResult.claimed) {
+		return NextResponse.json(
+			{ message: "Edit already decided" },
+			{ status: 409 },
+		);
+	}
 
 	return NextResponse.json({ ok: true, editId });
 }

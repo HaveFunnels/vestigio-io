@@ -37,6 +37,12 @@ export interface BootstrapInput {
   audit_cycle_id?: string;
   business_inputs?: BusinessInputs | null;
   existing_evidence?: Evidence[];
+  // Wave 22.6 Step 9 fix — when the bootstrap is driven by a chat
+  // session (signed-in user), forward the actor so MCP write tools
+  // (propose_plan_edit, add_plan_comment) can RBAC-gate. Audit
+  // bootstrap paths leave this undefined; read-only tools don't
+  // need it.
+  actor?: { user_id: string; user_role?: string | null };
 }
 
 export type BootstrapResult =
@@ -170,6 +176,7 @@ function buildScope(input: BootstrapInput): McpRequestScope {
     workspace_ref: `workspace:${input.organization_id}`,
     environment_ref: `environment:${input.environment_id}`,
     subject_ref: `website:${input.domain}`,
+    actor: input.actor,
   };
 }
 

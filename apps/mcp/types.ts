@@ -20,6 +20,20 @@ export interface McpRequestScope {
   environment_ref: string;
   subject_ref?: string;
   path_scope?: string;
+  // Wave 22.6 Step 9 fix — the human user driving the chat session.
+  // Required only for MCP write tools (propose_plan_edit) so the
+  // server can enforce RBAC instead of trusting "this env matched =
+  // this user can write." Audit/bootstrap callsites that read but
+  // don't write leave this undefined.
+  actor?: McpActor;
+}
+
+export interface McpActor {
+  user_id: string;
+  /** Site-wide role from User.role (typically 'USER' or 'ADMIN').
+   *  Org-level role (owner/admin/member) is resolved on demand inside
+   *  the tool against the plan's organization. */
+  user_role?: string | null;
 }
 
 export interface McpToolRequest<P = Record<string, unknown>> {

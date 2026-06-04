@@ -186,6 +186,15 @@ export async function POST(request: Request) {
   const { getMcpServer } = await import("@/lib/mcp-client");
   const mcpServer = getMcpServer();
 
+  // Wave 22.6 Step 9 fix — bind the signed-in user as the scope's
+  // actor so MCP write tools (propose_plan_edit, add_plan_comment)
+  // can RBAC-gate against the plan's org. Without this the tools
+  // refuse with "no actor in MCP scope."
+  mcpServer.setActor({
+    user_id: userId,
+    user_role: (session.user as any).role ?? null,
+  });
+
   // ── Validate conversation total size ─────────
   if (body.conversation_messages) {
     const totalChars = body.conversation_messages.reduce((sum, m) => sum + (m.content?.length || 0), 0);

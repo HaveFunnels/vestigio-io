@@ -81,6 +81,25 @@ export class McpServer {
     return this.scope?.environment_ref ?? null;
   }
 
+  /**
+   * Wave 22.6 Step 9 fix — set the signed-in user as the actor on
+   * the currently-loaded scope so MCP write tools can RBAC-gate.
+   *
+   * Audit-bootstrap callers leave the actor undefined (no signed-in
+   * user); chat-route callers MUST call this before invoking a
+   * write tool (propose_plan_edit, add_plan_comment), otherwise
+   * the tool refuses with "no actor in MCP scope".
+   *
+   * Sets a per-call actor side-channel rather than threading the
+   * user through every existing loadContext callsite. The scope
+   * object is mutated in place so subsequent reads inside the same
+   * request see the actor.
+   */
+  setActor(actor: import('./types').McpActor | null | undefined): void {
+    if (!this.scope) return;
+    this.scope = { ...this.scope, actor: actor ?? undefined };
+  }
+
   loadContext(
     evidence: Evidence[],
     scope: McpRequestScope,
@@ -358,6 +377,35 @@ export class McpServer {
           data: { message: 'Plan belongs to a different env than the current session scope.' },
         };
       }
+      // RBAC check: scope-match alone isn't authorization — a
+      // member can be scoped to an env and still not be allowed
+      // to propose plan edits. resolvePlanAccess.canApprove gates
+      // both manual edits (UI) and MCP-proposed edits (here). If
+      // the session didn't supply an actor (audit bootstrap, no
+      // signed-in user), refuse instead of defaulting open.
+      const actor = this.scope?.actor;
+      if (!actor || !actor.user_id) {
+        return {
+          type: 'error',
+          data: { message: 'Propose edit requires a signed-in user; no actor in MCP scope.' },
+        };
+      }
+      const { resolvePlanAccess } = await import('../../packages/strategy-plan/rbac');
+      const access = await resolvePlanAccess(
+        prisma as any,
+        planId,
+        actor.user_id,
+        actor.user_role ?? null,
+      );
+      if (!access.canApprove) {
+        return {
+          type: 'error',
+          data: {
+            message:
+              'Only owners + admins can propose plan edits. Use add_plan_comment to flag the section for an admin to review.',
+          },
+        };
+      }
       // Edit lock: another MCP proposal on this same section may be
       // pending. The lock is plan-wide + time-bounded so a worker
       // crash doesn't trap the section forever.
@@ -441,11 +489,35 @@ export class McpServer {
           data: { message: 'Plan belongs to a different env than the current session scope.' },
         };
       }
+      // RBAC check — same shape as propose_plan_edit but a softer
+      // capability (canComment, available to members too).
+      // Authorless comments from audit-bootstrap sessions are
+      // refused; only signed-in users post via MCP.
+      const actor = this.scope?.actor;
+      if (!actor || !actor.user_id) {
+        return {
+          type: 'error',
+          data: { message: 'Add comment requires a signed-in user; no actor in MCP scope.' },
+        };
+      }
+      const { resolvePlanAccess } = await import('../../packages/strategy-plan/rbac');
+      const access = await resolvePlanAccess(
+        prisma as any,
+        planId,
+        actor.user_id,
+        actor.user_role ?? null,
+      );
+      if (!access.canComment) {
+        return {
+          type: 'error',
+          data: { message: 'You don\'t have access to comment on this plan.' },
+        };
+      }
       const created = await prisma.planComment.create({
         data: {
           planId,
           sectionId,
-          authorId: null,
+          authorId: actor.user_id,
           authorKind: 'mcp',
           body,
         },

@@ -242,6 +242,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 	const searchParams = useSearchParams();
 	const isPrint = searchParams?.get("print") === "true";
 	const monthLabel = formatMonthLabel(plan.month);
+	const isPt = plan.locale === "pt-BR";
 
 	return (
 		<div
@@ -282,6 +283,15 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 			{!isPrint && showStickyHeader && <StickyHeader plan={plan} onClose={onClose} />}
 
 			<div className="mx-auto max-w-[1100px] px-6 py-10 sm:py-14">
+				{/* Mobile-only hint — the plan is readable on phones but
+				    the export/share/comment loop is built for a wider
+				    canvas. Telling the user explicitly avoids "this feels
+				    half-broken" anxiety on first read. */}
+				<div className="mb-4 rounded-xl border border-edge bg-surface-inset/50 px-3 py-2 text-[11px] text-content-faint sm:hidden">
+					{isPt
+						? "Esta visão funciona melhor em uma tela maior."
+						: "This view reads best on a larger screen."}
+				</div>
 				<PlanHeader plan={plan} />
 
 				<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} />

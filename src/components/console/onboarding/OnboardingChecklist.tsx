@@ -96,7 +96,11 @@ export default function OnboardingChecklist() {
 			initial={{ y: 80, opacity: 0 }}
 			animate={{ y: 0, opacity: 1 }}
 			transition={{ type: "spring", damping: 22, stiffness: 240 }}
-			className="fixed bottom-4 right-4 z-40 w-[calc(100vw-2rem)] max-w-[320px] overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-2xl sm:bottom-6 sm:right-6"
+			// Sits above the CopilotFab (bottom-4 right-4 z-[45]) so the
+			// two floating affordances don't stack. The FAB is the
+			// expected entry to Vestigio AI; we don't want to compete
+			// with it visually.
+			className="fixed bottom-20 right-4 z-40 w-[calc(100vw-2rem)] max-w-[320px] overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-2xl sm:bottom-24 sm:right-6"
 		>
 			<button
 				onClick={() => setOpen((o) => !o)}

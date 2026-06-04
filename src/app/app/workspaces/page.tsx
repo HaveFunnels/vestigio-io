@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ConsoleState from "@/components/console/ConsoleState";
@@ -14,6 +14,8 @@ import BraggingRights from "@/components/console/BraggingRights";
 import CrossSignalChainCard from "@/components/console/cross-signals/CrossSignalChainCard";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces } from "@/lib/console-data";
+import { filterWorkspacesBySurface } from "@/lib/workspace-surface-filter";
+import SurfaceFilterStrip from "@/components/console/workspace/SurfaceFilterStrip";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type { WorkspaceProjection } from "../../../../packages/projections";
 import type { CrossSignalChain } from "@/lib/dashboard/types";
@@ -320,10 +322,29 @@ function JourneySection({
   );
 }
 
-function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) {
+function PanoramaContent({ workspaces: rawWorkspaces }: { workspaces: WorkspaceProjection[] }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("console.workspaces");
   const { currency } = useMcpData();
+
+  // Wave-22.6 review fix P3.2 — surface pivot. URL-deeplinkable via
+  // ?surface=/path. When set, all downstream widgets see workspaces
+  // whose ws.findings are filtered to that surface AND summary counts
+  // recomputed, so perspective cards / revenue map / delta all
+  // re-aggregate naturally.
+  const surfaceParam = searchParams.get("surface");
+  const workspaces = useMemo(
+    () => filterWorkspacesBySurface(rawWorkspaces, surfaceParam),
+    [rawWorkspaces, surfaceParam],
+  );
+  const setSurface = (next: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next) params.set("surface", next);
+    else params.delete("surface");
+    const qs = params.toString();
+    router.replace(qs ? `/app/workspaces?${qs}` : "/app/workspaces", { scroll: false });
+  };
 
   const allFindings = useMemo(
     () => workspaces.flatMap((ws) => ws.findings),
@@ -411,6 +432,13 @@ function PanoramaContent({ workspaces }: { workspaces: WorkspaceProjection[] }) 
     <div className="space-y-6">
       {/* ── Lens 1: Intel Briefing ── */}
       <PulseSummary />
+
+      {/* ── Wave-22.6 review fix P3.2 — surface pivot strip ── */}
+      <SurfaceFilterStrip
+        workspaces={rawWorkspaces}
+        value={surfaceParam}
+        onChange={setSurface}
+      />
 
       {/* ── Perspective Cards (placed right below Pulse so users land on
           their 4 lenses before scrolling through revenue map + chains) ── */}

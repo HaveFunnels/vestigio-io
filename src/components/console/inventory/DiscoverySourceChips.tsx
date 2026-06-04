@@ -3,35 +3,36 @@
 import { useMemo, useState } from "react";
 import { useLocale } from "next-intl";
 import toast from "react-hot-toast";
-import { PlusIcon, FunnelIcon } from "@phosphor-icons/react/dist/ssr";
+import { PlusIcon } from "@phosphor-icons/react/dist/ssr";
 import type { InventorySurface } from "@/lib/console-data";
 
 // ──────────────────────────────────────────────
-// AuditScopeStrip — Wave-22.6 review fix P2.3
+// DiscoverySourceChips — Wave-22.6 review fix P2.3
 //
-// Compact one-line header above the inventory table answering
-// "what did the crawler look at?". Three things in one strip:
-//   1. Total + breakdown by discovery_source (sitemap, homepage_link,
-//      manual, …) so the user can sanity-check the audit scope.
-//   2. Skip count + top 2 reasons so they understand what we passed on.
-//   3. An inline "+ Add URL" button to surface anything we missed.
+// Replaces the old discoverySource FilterDropdown with a chip row
+// that doubles as audit-scope at-a-glance: each chip shows the
+// source + its count, so the user reads "what did we look at and
+// from where?" without opening anything. Clicking a chip filters
+// the table by that source.
 //
-// Reload triggers a full page refresh on success — keeps the strip
-// honest (counts re-flow from /api/inventory) without plumbing a
-// callback through 6 parent layers.
+// Trailing "+ Add URL" inline-popover lets the user surface any URL
+// the crawler missed (POST /api/inventory/manual).
+//
+// Skipped count + top reasons render as a quiet subline after the
+// chips — visible context, not a competing CTA.
 // ──────────────────────────────────────────────
 
 const SOURCE_LABEL_PT: Record<string, string> = {
-	homepage_link: "links da home",
+	homepage_link: "home",
 	sitemap: "sitemap",
 	critical_path: "rotas críticas",
 	internal_link: "links internos",
 	pagination: "paginação",
 	behavioral_event: "eventos",
-	manual: "adição manual",
+	manual: "manual",
 };
 const SOURCE_LABEL_EN: Record<string, string> = {
-	homepage_link: "homepage links",
+	homepage_link: "homepage",
 	sitemap: "sitemap",
 	critical_path: "critical paths",
 	internal_link: "internal links",
@@ -41,14 +42,14 @@ const SOURCE_LABEL_EN: Record<string, string> = {
 };
 
 const SKIP_LABEL_PT: Record<string, string> = {
-	robots_disallow: "bloqueado por robots.txt",
+	robots_disallow: "robots.txt",
 	out_of_scope: "fora do domínio",
 	budget_exceeded: "limite do ciclo",
 	duplicate: "duplicada",
-	noindex: "marcada como noindex",
+	noindex: "noindex",
 };
 const SKIP_LABEL_EN: Record<string, string> = {
-	robots_disallow: "robots.txt blocked",
+	robots_disallow: "robots.txt",
 	out_of_scope: "off-domain",
 	budget_exceeded: "cycle budget",
 	duplicate: "duplicate",
@@ -57,34 +58,32 @@ const SKIP_LABEL_EN: Record<string, string> = {
 
 interface Props {
 	surfaces: InventorySurface[];
+	value: string;
+	onChange: (next: string) => void;
 }
 
-export default function AuditScopeStrip({ surfaces }: Props) {
+export default function DiscoverySourceChips({ surfaces, value, onChange }: Props) {
 	const locale = useLocale();
 	const isPt = locale.startsWith("pt");
 	const [open, setOpen] = useState(false);
 	const [url, setUrl] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 
-	const { sourceCounts, skipCounts, totalCrawled, totalSkipped } = useMemo(() => {
+	const { sourceCounts, skipCounts, totalSkipped } = useMemo(() => {
 		const srcMap = new Map<string, number>();
 		const skipMap = new Map<string, number>();
-		let crawled = 0;
 		let skipped = 0;
 		for (const s of surfaces) {
 			if (s.skip_reason) {
 				skipped += 1;
 				skipMap.set(s.skip_reason, (skipMap.get(s.skip_reason) ?? 0) + 1);
-			} else {
-				crawled += 1;
-				const src = s.discovery_source ?? "unknown";
-				srcMap.set(src, (srcMap.get(src) ?? 0) + 1);
+			} else if (s.discovery_source) {
+				srcMap.set(s.discovery_source, (srcMap.get(s.discovery_source) ?? 0) + 1);
 			}
 		}
 		return {
 			sourceCounts: [...srcMap.entries()].sort((a, b) => b[1] - a[1]),
 			skipCounts: [...skipMap.entries()].sort((a, b) => b[1] - a[1]),
-			totalCrawled: crawled,
 			totalSkipped: skipped,
 		};
 	}, [surfaces]);
@@ -93,6 +92,11 @@ export default function AuditScopeStrip({ surfaces }: Props) {
 		(isPt ? SOURCE_LABEL_PT : SOURCE_LABEL_EN)[s] ?? s;
 	const localizeSkip = (s: string) =>
 		(isPt ? SKIP_LABEL_PT : SKIP_LABEL_EN)[s] ?? s;
+
+	const topSkips = skipCounts
+		.slice(0, 2)
+		.map(([reason, n]) => `${n} ${localizeSkip(reason)}`)
+		.join(", ");
 
 	async function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
@@ -118,53 +122,57 @@ export default function AuditScopeStrip({ surfaces }: Props) {
 		}
 	}
 
-	const sourceSummary =
-		sourceCounts.length === 0
-			? isPt ? "nenhum URL coletado" : "no URLs collected"
-			: sourceCounts
-					.slice(0, 3)
-					.map(([src, n]) => `${n} ${localizeSource(src)}`)
-					.join(" · ");
-
-	const topSkips = skipCounts
-		.slice(0, 2)
-		.map(([reason, n]) => `${n} ${localizeSkip(reason)}`)
-		.join(", ");
+	function chipClass(isActive: boolean) {
+		return `inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+			isActive
+				? "border-edge-focus bg-surface-card-hover text-content"
+				: "border-edge bg-surface-card text-content-muted hover:border-edge-focus hover:text-content"
+		}`;
+	}
 
 	return (
-		<section className="mb-5 rounded-2xl border border-edge bg-surface-card/60 p-4">
-			<div className="flex flex-wrap items-start justify-between gap-3">
-				<div className="min-w-0 flex-1">
-					<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500 dark:text-zinc-400">
-						{isPt ? "Escopo da auditoria" : "Audit scope"}
-					</div>
-					<div className="mt-1.5 text-[13px] text-content">
-						<span className="font-mono font-semibold tabular-nums">{totalCrawled}</span>{" "}
-						{isPt ? "URLs coletadas" : "URLs crawled"}
-						<span className="ml-1 text-content-muted">— {sourceSummary}</span>
-					</div>
-					{totalSkipped > 0 && (
-						<div className="mt-1 flex items-center gap-1.5 text-[11px] text-content-muted">
-							<FunnelIcon size={11} weight="bold" />
-							<span className="font-mono tabular-nums">{totalSkipped}</span>{" "}
-							{isPt ? "puladas" : "skipped"}
-							{topSkips && <span className="text-content-faint">· {topSkips}</span>}
-						</div>
-					)}
-				</div>
+		<div className="flex flex-col gap-1.5">
+			<div className="flex flex-wrap items-center gap-1.5">
 				<button
-					onClick={() => setOpen((o) => !o)}
-					className="flex items-center gap-1.5 rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-[12px] font-medium text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
+					type="button"
+					onClick={() => onChange("all")}
+					className={chipClass(value === "all")}
 				>
-					<PlusIcon size={12} weight="bold" />
+					{isPt ? "Todas as fontes" : "All sources"}
+				</button>
+				{sourceCounts.map(([src, n]) => (
+					<button
+						key={src}
+						type="button"
+						onClick={() => onChange(value === src ? "all" : src)}
+						className={chipClass(value === src)}
+					>
+						<span>{localizeSource(src)}</span>
+						<span className="font-mono tabular-nums text-content-faint">{n}</span>
+					</button>
+				))}
+				<button
+					type="button"
+					onClick={() => setOpen((o) => !o)}
+					className="ml-1 inline-flex items-center gap-1 rounded-full border border-dashed border-edge px-2.5 py-1 text-[11px] font-medium text-content-muted transition-colors hover:border-edge-focus hover:text-content"
+				>
+					<PlusIcon size={11} weight="bold" />
 					{isPt ? "Adicionar URL" : "Add URL"}
 				</button>
 			</div>
 
+			{totalSkipped > 0 && (
+				<div className="text-[10px] text-content-faint">
+					<span className="font-mono tabular-nums">{totalSkipped}</span>{" "}
+					{isPt ? "puladas" : "skipped"}
+					{topSkips && <span> · {topSkips}</span>}
+				</div>
+			)}
+
 			{open && (
 				<form
 					onSubmit={handleSubmit}
-					className="mt-3 flex flex-wrap items-center gap-2 border-t border-edge pt-3"
+					className="mt-1.5 flex flex-wrap items-center gap-2 rounded-lg border border-edge bg-surface-card-hover p-2"
 				>
 					<input
 						type="url"
@@ -197,6 +205,6 @@ export default function AuditScopeStrip({ surfaces }: Props) {
 					</button>
 				</form>
 			)}
-		</section>
+		</div>
 	);
 }

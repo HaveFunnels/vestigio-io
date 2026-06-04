@@ -8,7 +8,7 @@ import { Column } from "@/components/console/DataTable";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
-import AuditScopeStrip from "@/components/console/inventory/AuditScopeStrip";
+import DiscoverySourceChips from "@/components/console/inventory/DiscoverySourceChips";
 import {
 	loadInventory,
 	type InventorySurface,
@@ -1247,7 +1247,6 @@ export default function InventoryPage() {
 			>
 				{() => (
 					<>
-						<AuditScopeStrip surfaces={surfaces} />
 						{lookups && (!lookups.findings || !lookups.sessions) && (
 							<div className='mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-300'>
 								{!lookups.findings && <div>{t("lookup_warning.findings_failed")}</div>}
@@ -1337,6 +1336,15 @@ export default function InventoryPage() {
 							onClear={clearSelection}
 						/>
 
+						{/* Wave-22.6 review fix P2.3 — discovery sources as chips
+						    (replaces the dropdown). Doubles as audit-scope at a
+						    glance + "+Add URL" entry. */}
+						<DiscoverySourceChips
+							surfaces={surfaces}
+							value={discoverySourceFilter}
+							onChange={setDiscoverySourceFilter}
+						/>
+
 						<div className='no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto sm:flex-wrap sm:gap-3'>
 							<FilterDropdown
 								value={liveFilter}
@@ -1402,23 +1410,6 @@ export default function InventoryPage() {
 									},
 									{ value: "gt2000", label: t("response_time_filter.gt2000") },
 								]}
-							/>
-							<FilterDropdown
-								value={discoverySourceFilter}
-								onChange={setDiscoverySourceFilter}
-								options={(() => {
-									const unique = Array.from(
-										new Set(
-											surfaces
-												.map((s) => s.discovery_source)
-												.filter((src): src is string => Boolean(src)),
-										),
-									).sort();
-									return [
-										{ value: "all" as const, label: t("discovery_source_filter.all") },
-										...unique.map((src) => ({ value: src, label: localizeSource(src) })),
-									];
-								})()}
 							/>
 							{(() => {
 								const uniqueLocales = Array.from(

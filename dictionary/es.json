@@ -3880,6 +3880,29 @@
 		},
 		"onboard": {
 			"step_indicator": "Paso {current}/{total}",
+			"mirror": {
+				"continue": "Entendido",
+				"business_type": {
+					"headline": "Esto cambia cómo cuantificamos tu pérdida.",
+					"body": "Vestigio aplica un modelo de impacto financiero distinto por tipo de negocio. Tu elección calibra cómo ponemos cifras a cada fuga desde ahora."
+				},
+				"industry": {
+					"headline": "Vamos a compararte con tu sector.",
+					"body": "A medida que acumulamos auditorías en tu categoría, mostramos dónde estás fuera de curva — para bien o para mal."
+				},
+				"conversion_model": {
+					"headline": "Ya sabemos qué jornada instrumentar.",
+					"body": "Vestigio va a vigilar el camino hasta este punto de conversión como el tramo más crítico. Cualquier fuga ahí sale primero."
+				},
+				"revenue": {
+					"headline": "Ahora podemos cifrar lo que está en juego.",
+					"body": "Con tu facturación como base, cada finding trae un rango real — no un 'high severity' genérico. Ves cuánto cuesta cada problema."
+				},
+				"ticket": {
+					"headline": "Las estimaciones encajarán con tu volumen.",
+					"body": "Combinando ticket promedio con facturación, calibramos lo que vale cada conversión perdida. Evita estimaciones exageradas o pequeñas."
+				}
+			},
 			"nav": {
 				"previous": "Anterior",
 				"next": "Siguiente",

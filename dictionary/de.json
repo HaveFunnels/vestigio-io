@@ -2855,6 +2855,29 @@
 		},
 		"onboard": {
 			"step_indicator": "__TODO__",
+			"mirror": {
+				"continue": "Verstanden",
+				"business_type": {
+					"headline": "Das ändert, wie wir Ihren Verlust in Zahlen ausdrücken.",
+					"body": "Vestigio nutzt pro Geschäftsmodell ein eigenes Modell für die finanzielle Wirkung. Ihre Wahl bestimmt, wie wir jedes Leck ab jetzt beziffern."
+				},
+				"industry": {
+					"headline": "Wir vergleichen Sie mit Ihrem Branchen-Benchmark.",
+					"body": "Mit mehr Audits in Ihrer Kategorie können wir zeigen, wo Sie aus dem Rahmen fallen — positiv oder negativ."
+				},
+				"conversion_model": {
+					"headline": "Wir wissen jetzt, welche Journey wir überwachen.",
+					"body": "Vestigio beobachtet den Pfad bis zu diesem Konversionspunkt als kritischste Strecke. Lecks dort tauchen zuerst auf."
+				},
+				"revenue": {
+					"headline": "Jetzt können wir den Einsatz in Geld ausdrücken.",
+					"body": "Mit Ihrem Umsatz als Basis liefert jedes Finding eine echte Spanne — kein generisches 'High Severity'. Sie sehen, was jedes Problem kostet."
+				},
+				"ticket": {
+					"headline": "Schätzungen passen jetzt zu Ihrem Volumen.",
+					"body": "Aus Durchschnittsbon und Umsatz kalibrieren wir, was jede verlorene Conversion wert ist. Damit driften Schätzungen nicht zu groß oder zu klein."
+				}
+			},
 			"nav": {
 				"previous": "__TODO__",
 				"next": "__TODO__"

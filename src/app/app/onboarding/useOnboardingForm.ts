@@ -216,6 +216,11 @@ export default function useOnboardingForm() {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [activating, setActivating] = useState(paymentSuccess);
+	// Value-mirror state. When the user submits a step that has a
+	// mirror, we set this to that step's id and render the
+	// MirrorMoment interstitial instead of advancing. dismissMirror()
+	// clears it AND advances to the next step.
+	const [showMirrorFor, setShowMirrorFor] = useState<StepId | null>(null);
 
 	// Domain validation
 	const [domainError, setDomainError] = useState<string | null>(null);
@@ -421,6 +426,20 @@ export default function useOnboardingForm() {
 		[],
 	);
 
+	// Steps that earn a value-mirror after submission. Each entry's
+	// answer is meaningful enough that the user benefits from seeing
+	// "and this means we can now do X" before being pushed forward.
+	// Skip on: org (name doesn't unlock anything), domain (the crawl
+	// loading screen is its own moment), plan (activation is the
+	// final moment).
+	const MIRROR_STEPS = new Set<StepId>([
+		"business_type",
+		"industry",
+		"conversion_model",
+		"revenue",
+		"ticket",
+	]);
+
 	// ── Navigation ──
 	const next = useCallback(async () => {
 		// Domain step validation
@@ -442,12 +461,30 @@ export default function useOnboardingForm() {
 			}
 		}
 
+		// If this step has a mirror, show it BEFORE advancing.
+		// dismissMirror() handles the actual advance.
+		if (MIRROR_STEPS.has(currentStep)) {
+			setShowMirrorFor(currentStep);
+			return;
+		}
+
 		setStepIndex((s: number) => Math.min(s + 1, totalSteps - 1));
 	}, [currentStep, form.domain, t, totalSteps]);
 
+	const dismissMirror = useCallback(() => {
+		setShowMirrorFor(null);
+		setStepIndex((s: number) => Math.min(s + 1, totalSteps - 1));
+	}, [totalSteps]);
+
 	const prev = useCallback(() => {
+		// Going back from a mirror just clears it — user lands back on
+		// the step they just submitted, can edit and re-submit.
+		if (showMirrorFor) {
+			setShowMirrorFor(null);
+			return;
+		}
 		setStepIndex((s: number) => Math.max(s - 1, 0));
-	}, []);
+	}, [showMirrorFor]);
 
 	// ── Activation ──
 	const handleActivate = useCallback(async () => {
@@ -581,6 +618,9 @@ export default function useOnboardingForm() {
 		// Navigation
 		next,
 		prev,
+		// Value-mirror
+		showMirrorFor,
+		dismissMirror,
 		// Domain
 		domainError,
 		domainChecking,

@@ -4218,6 +4218,29 @@
 		},
 		"onboard": {
 			"step_indicator": "Step {current}/{total}",
+			"mirror": {
+				"continue": "Got it",
+				"business_type": {
+					"headline": "This changes how we quantify your losses.",
+					"body": "Vestigio uses a distinct financial impact model per business type. Your pick calibrates how we put a dollar amount on every leak from here on."
+				},
+				"industry": {
+					"headline": "We'll benchmark you against your sector.",
+					"body": "As we accumulate more audits in your category, we surface where you're an outlier — better or worse than peers."
+				},
+				"conversion_model": {
+					"headline": "We know which journey to instrument now.",
+					"body": "Vestigio will watch the path up to this conversion point as the most critical leg. Any leak there surfaces first."
+				},
+				"revenue": {
+					"headline": "Now we can put a dollar amount on what's at stake.",
+					"body": "With your revenue as a base, every finding ships with a real range — not a generic 'high severity'. You see what each problem costs."
+				},
+				"ticket": {
+					"headline": "Estimates will fit your volume properly.",
+					"body": "Combining average ticket with revenue, we calibrate what each missed conversion is worth. Stops estimates from being too big or too small."
+				}
+			},
 			"nav": {
 				"previous": "Previous",
 				"next": "Next",

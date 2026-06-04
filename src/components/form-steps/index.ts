@@ -5,3 +5,4 @@ export type { CardOption } from "./CardSelectionStep";
 export { default as SliderInputStep } from "./SliderInputStep";
 export { default as PlanSelectionStep } from "./PlanSelectionStep";
 export type { Plan } from "./PlanSelectionStep";
+export { default as MirrorMoment } from "./MirrorMoment";

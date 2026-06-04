@@ -16,6 +16,7 @@ import {
 	CardSelectionStep,
 	SliderInputStep,
 	PlanSelectionStep,
+	MirrorMoment,
 } from "@/components/form-steps";
 import type { CardOption } from "@/components/form-steps";
 import {
@@ -120,6 +121,36 @@ export default function OnboardPage() {
 		);
 	}
 
+	// ── Value-mirror dispatch ──
+	// When the user just submitted a step that has a mirror, render
+	// the MirrorMoment in place of the next step's form. The
+	// useOnboardingForm hook holds the gate state; clicking "Entendi"
+	// inside the mirror advances stepIndex.
+	function answerFor(step: typeof f.showMirrorFor): string {
+		switch (step) {
+			case "business_type":
+				return f.t(`business_context.types.${f.form.businessType}`);
+			case "industry":
+				return f.t(`industry_vertical.industries.${f.form.industryVertical}`);
+			case "conversion_model":
+				return f.t(`business_context.conversion_models.${f.form.conversionModel}`);
+			case "revenue":
+				return new Intl.NumberFormat("pt-BR", {
+					style: "currency",
+					currency: "BRL",
+					maximumFractionDigits: 0,
+				}).format(f.form.monthlyRevenue);
+			case "ticket":
+				return new Intl.NumberFormat("pt-BR", {
+					style: "currency",
+					currency: "BRL",
+					maximumFractionDigits: 0,
+				}).format(f.form.averageTicket);
+			default:
+				return "";
+		}
+	}
+
 	// ── Step rendering ──
 	return (
 		<StepShell
@@ -127,8 +158,17 @@ export default function OnboardPage() {
 			totalSteps={f.totalSteps}
 			onBack={f.prev}
 		>
+			{f.showMirrorFor && (
+				<MirrorMoment
+					answer={answerFor(f.showMirrorFor)}
+					headline={f.t(`mirror.${f.showMirrorFor}.headline`)}
+					body={f.t(`mirror.${f.showMirrorFor}.body`)}
+					continueLabel={f.t("mirror.continue")}
+					onContinue={f.dismissMirror}
+				/>
+			)}
 			{/* ── Org Name ── */}
-			{f.currentStep === "org" && (
+			{!f.showMirrorFor && f.currentStep === "org" && (
 				<TextInputStep
 					title={f.t("org_name.title")}
 					subtitle={f.t("org_name.subtitle")}
@@ -142,7 +182,7 @@ export default function OnboardPage() {
 			)}
 
 			{/* ── Domain ── */}
-			{f.currentStep === "domain" && (
+			{!f.showMirrorFor && f.currentStep === "domain" && (
 				<TextInputStep
 					title={f.t("domain.title")}
 					subtitle={f.t("domain.subtitle")}
@@ -211,7 +251,7 @@ export default function OnboardPage() {
 			)}
 
 			{/* ── Business Type (cards) ── */}
-			{f.currentStep === "business_type" && (
+			{!f.showMirrorFor && f.currentStep === "business_type" && (
 				<CardSelectionStep
 					title={f.t("business_context.title")}
 					subtitle={f.t("business_context.subtitle")}
@@ -224,7 +264,7 @@ export default function OnboardPage() {
 			)}
 
 			{/* ── Industry Vertical (dropdown with icons) ── */}
-			{f.currentStep === "industry" && (
+			{!f.showMirrorFor && f.currentStep === "industry" && (
 				<IndustryStep
 					value={f.form.industryVertical}
 					onChange={(v) => f.update("industryVertical", v)}
@@ -234,7 +274,7 @@ export default function OnboardPage() {
 			)}
 
 			{/* ── Conversion Model (cards) ── */}
-			{f.currentStep === "conversion_model" && (
+			{!f.showMirrorFor && f.currentStep === "conversion_model" && (
 				<CardSelectionStep
 					title={f.t("business_context.conversion_title")}
 					subtitle={f.t("business_context.conversion_subtitle")}
@@ -247,7 +287,7 @@ export default function OnboardPage() {
 			)}
 
 			{/* ── Revenue (slider) ── */}
-			{f.currentStep === "revenue" && (
+			{!f.showMirrorFor && f.currentStep === "revenue" && (
 				<SliderInputStep
 					title={f.t("revenue.title")}
 					subtitle={f.t("revenue.subtitle")}
@@ -267,7 +307,7 @@ export default function OnboardPage() {
 			)}
 
 			{/* ── Average Ticket (slider) ── */}
-			{f.currentStep === "ticket" && (
+			{!f.showMirrorFor && f.currentStep === "ticket" && (
 				<SliderInputStep
 					title={f.t("ticket.title")}
 					subtitle={f.t("ticket.subtitle")}
@@ -292,7 +332,7 @@ export default function OnboardPage() {
 			)}
 
 			{/* ── Plan Selection ── */}
-			{f.currentStep === "plan" && (
+			{!f.showMirrorFor && f.currentStep === "plan" && (
 				<PlanSelectionStep
 					title={f.t("plan.title")}
 					subtitle={f.t("plan.subtitle")}

@@ -74,7 +74,7 @@ export interface MaybeTriggerArgs {
 
 export interface MaybeTriggerResult {
 	fired: boolean;
-	reason?: "cap_reached" | "no_plan_yet" | "plan_archived" | "error";
+	reason?: "cap_reached" | "no_plan_yet" | "plan_archived" | "plan_failed" | "error";
 	scope?: RegenScope;
 	regenCountAfter?: number;
 }
@@ -98,11 +98,16 @@ export async function maybeTriggerRenarrative(
 		// This eliminates the read-check-write race where two
 		// concurrent triggers could both see "3 < 4" and both fire,
 		// landing the counter at 5. Atomic from the DB's perspective.
+		// Skip renarrate on terminal-no-retry plans:
+		//   - 'archived' = owner intentionally hid (no auto-fix)
+		//   - 'failed'   = infra error; monthly cron retries from
+		//                  scratch, mid-month renarrate would just
+		//                  layer onto broken state.
 		const reserved = await args.prisma.monthlyStrategyPlan.updateMany({
 			where: {
 				environmentId: args.environmentId,
 				month,
-				status: { not: "archived" },
+				status: { notIn: ["archived", "failed"] },
 				regenCount: { lt: MONTHLY_REGEN_CAP },
 			},
 			data: { regenCount: { increment: 1 } },
@@ -121,6 +126,7 @@ export async function maybeTriggerRenarrative(
 			});
 			if (!plan) return { fired: false, reason: "no_plan_yet" };
 			if (plan.status === "archived") return { fired: false, reason: "plan_archived" };
+			if (plan.status === "failed") return { fired: false, reason: "plan_failed" };
 			console.log(
 				`[strategy-plan/renarrate] env=${args.environmentId} month=${month} ` +
 					`trigger=${args.trigger} skipped (cap ${MONTHLY_REGEN_CAP} reached)`,

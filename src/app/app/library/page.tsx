@@ -24,7 +24,7 @@ import PageHeader from "@/components/console/PageHeader";
 interface StrategyPlanSummary {
 	id: string;
 	month: string; // 'YYYY-MM'
-	status: string; // 'generating' | 'ready' | 'editing' | 'archived'
+	status: string; // 'generating' | 'ready' | 'editing' | 'failed' | 'archived'
 	generatedAt: string;
 	heroMetrics: {
 		retainedMid: number;

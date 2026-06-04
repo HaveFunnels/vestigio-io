@@ -179,9 +179,17 @@ export async function GET(request: Request, { params }: RouteParams) {
 				proposedAt: true,
 			},
 		}),
+		// Wave 22.6 follow-up — cap comments at 200 most-recent.
+		// A plan that's been in the library for months with heavy
+		// @vestigio usage could otherwise return thousands of rows
+		// in a single response. We fetch DESC + reverse so the UI
+		// still gets ascending order (oldest first) for thread
+		// rendering. hasMoreComments lets the client know to
+		// surface a "Load earlier" affordance.
 		prisma.planComment.findMany({
 			where: { planId: plan.id, deletedAt: null },
-			orderBy: { createdAt: "asc" },
+			orderBy: { createdAt: "desc" },
+			take: 201, // 200 + 1 sentinel to detect overflow
 			select: {
 				id: true,
 				sectionId: true,
@@ -220,7 +228,12 @@ export async function GET(request: Request, { params }: RouteParams) {
 		reason: e.reason,
 		proposedAt: e.proposedAt.toISOString(),
 	}));
-	const comments = commentsRaw.map((c) => ({
+	// Detect overflow + slice back to 200, then reverse to ASC
+	// order for the UI (oldest first).
+	const hasMoreComments = commentsRaw.length > 200;
+	const commentsCapped = hasMoreComments ? commentsRaw.slice(0, 200) : commentsRaw;
+	commentsCapped.reverse();
+	const comments = commentsCapped.map((c) => ({
 		id: c.id,
 		sectionId: c.sectionId,
 		authorKind: c.authorKind,
@@ -252,6 +265,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 		// so they don't need a second round-trip.
 		pendingEdits,
 		comments,
+		hasMoreComments,
 		viewerCanApprove: canApprove,
 		heroMetrics: hero,
 		buyerSegments,

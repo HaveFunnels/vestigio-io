@@ -14,8 +14,9 @@ import { NextResponse } from "next/server";
 //   2. A PlanVersion snapshot is created so the edit is rollback-
 //      able from the audit log.
 //   3. The PlanEdit is marked approvedAt + approvedByUserId.
-//   4. editLockedByMcpUntil is cleared so the next proposal isn't
-//      blocked.
+//   4. The MCP edit lock for this specific section is cleared
+//      from editLockedSectionsByMcp; locks on other sections stay
+//      intact (each section is independently locked).
 // All inside a single transaction.
 //
 // Body: { envId }
@@ -156,10 +157,25 @@ export async function POST(request: Request, { params }: RouteParams) {
 					},
 				});
 
-				// 4. Apply edit. Only narrative columns have explicit
-				//    writers today (Wave 22.6 follow-up: section-
-				//    specific JSON writers).
-				const planUpdate: any = { editLockedByMcpUntil: null };
+				// 4. Apply edit + release this section's MCP lock.
+				//    Re-fetch the lock map inside the tx so concurrent
+				//    proposals on OTHER sections don't get clobbered
+				//    by a stale-read-then-write.
+				const lockHolder = await tx.monthlyStrategyPlan.findUnique({
+					where: { id: plan.id },
+					select: { editLockedSectionsByMcp: true },
+				});
+				const currentLocks: Record<string, string> =
+					(lockHolder?.editLockedSectionsByMcp as Record<string, string> | null) ??
+					{};
+				delete currentLocks[edit.sectionId];
+
+				const planUpdate: any = {
+					editLockedSectionsByMcp:
+						Object.keys(currentLocks).length === 0
+							? null
+							: (currentLocks as any),
+				};
 				if (edit.sectionId === "narrative-what-happened") {
 					planUpdate.narrativeWhatHappened = edit.afterText;
 				} else if (edit.sectionId === "value-preview") {

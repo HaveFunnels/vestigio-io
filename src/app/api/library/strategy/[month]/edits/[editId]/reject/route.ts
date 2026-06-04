@@ -70,7 +70,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 	// decision happens atomically below via UPDATE WHERE pending.
 	const edit = await prisma.planEdit.findUnique({
 		where: { id: editId },
-		select: { id: true, planId: true },
+		select: { id: true, planId: true, sectionId: true },
 	});
 	if (!edit || edit.planId !== plan.id) {
 		return NextResponse.json({ message: "Edit not found for this plan" }, { status: 404 });
@@ -95,9 +95,25 @@ export async function POST(request: Request, { params }: RouteParams) {
 		if (claim.count === 0) {
 			throw new Error("EDIT_ALREADY_DECIDED");
 		}
+		// Release this section's MCP lock — leave other sections
+		// locked if they have their own pending proposals. Same
+		// re-fetch + update pattern as approve.
+		const lockHolder = await tx.monthlyStrategyPlan.findUnique({
+			where: { id: plan.id },
+			select: { editLockedSectionsByMcp: true },
+		});
+		const currentLocks: Record<string, string> =
+			(lockHolder?.editLockedSectionsByMcp as Record<string, string> | null) ??
+			{};
+		delete currentLocks[edit.sectionId];
 		await tx.monthlyStrategyPlan.update({
 			where: { id: plan.id },
-			data: { editLockedByMcpUntil: null },
+			data: {
+				editLockedSectionsByMcp:
+					Object.keys(currentLocks).length === 0
+						? null
+						: (currentLocks as any),
+			},
 		});
 		return { claimed: true };
 	}).catch((err: unknown) => {

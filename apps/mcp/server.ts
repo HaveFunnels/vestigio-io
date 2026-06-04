@@ -354,7 +354,7 @@ export class McpServer {
         select: {
           id: true,
           environmentId: true,
-          editLockedByMcpUntil: true,
+          editLockedSectionsByMcp: true,
           status: true,
           narrativeWhatHappened: true,
           valuePreviewNarrative: true,
@@ -363,8 +363,16 @@ export class McpServer {
       if (!plan) {
         return { type: 'error', data: { message: 'Plan not found.' } };
       }
-      if (plan.status === 'archived') {
-        return { type: 'error', data: { message: 'Plan is archived; cannot propose edits.' } };
+      if (plan.status === 'archived' || plan.status === 'failed') {
+        return {
+          type: 'error',
+          data: {
+            message:
+              plan.status === 'archived'
+                ? 'Plan is archived; cannot propose edits.'
+                : 'Plan is in a failed state (cron will retry); cannot propose edits until it recovers.',
+          },
+        };
       }
       // Scope check: MCP can only write to the env it's bound to.
       const envRef = this.scope?.environment_ref;
@@ -406,14 +414,21 @@ export class McpServer {
           },
         };
       }
-      // Edit lock: another MCP proposal on this same section may be
-      // pending. The lock is plan-wide + time-bounded so a worker
-      // crash doesn't trap the section forever.
+      // Per-section MCP edit lock — only this section is blocked
+      // by an existing pending edit. Other sections (narrative,
+      // value-preview, next-step:<id>, …) remain unblocked so the
+      // MCP can propose edits in parallel on different sections.
+      // Each lock self-heals after 10 minutes.
       const now = new Date();
-      if (plan.editLockedByMcpUntil && plan.editLockedByMcpUntil > now) {
+      const lockMap: Record<string, string> =
+        (plan.editLockedSectionsByMcp as Record<string, string> | null) ?? {};
+      const existingLock = lockMap[sectionId];
+      if (existingLock && new Date(existingLock) > now) {
         return {
           type: 'error',
-          data: { message: 'Plan is locked by a pending MCP edit. Approve or reject the existing proposal first.' },
+          data: {
+            message: `Section "${sectionId}" is locked by a pending MCP edit. Approve or reject the existing proposal for this section first; other sections remain unblocked.`,
+          },
         };
       }
       // Resolve before-text for the section — narrative + value-preview
@@ -428,9 +443,30 @@ export class McpServer {
 
       const tenMin = new Date(now.getTime() + 10 * 60_000);
       const result = await prisma.$transaction(async (tx: any) => {
+        // Re-fetch inside tx so we serialize concurrent proposals
+        // on the same section. The outer check above is for the
+        // happy path; this collapses any TOCTOU window with the
+        // lock-map write below.
+        const current = await tx.monthlyStrategyPlan.findUnique({
+          where: { id: planId },
+          select: { editLockedSectionsByMcp: true },
+        });
+        const currentMap: Record<string, string> =
+          (current?.editLockedSectionsByMcp as Record<string, string> | null) ?? {};
+        const currentLock = currentMap[sectionId];
+        if (currentLock && new Date(currentLock) > now) {
+          throw new Error('SECTION_LOCKED');
+        }
+        // Prune expired entries while we're here — keeps the JSON
+        // map tight; old TTLs would otherwise accumulate forever.
+        const prunedMap: Record<string, string> = {};
+        for (const [k, v] of Object.entries(currentMap)) {
+          if (new Date(v) > now) prunedMap[k] = v;
+        }
+        prunedMap[sectionId] = tenMin.toISOString();
         await tx.monthlyStrategyPlan.update({
           where: { id: planId },
-          data: { editLockedByMcpUntil: tenMin },
+          data: { editLockedSectionsByMcp: prunedMap as any },
         });
         return tx.planEdit.create({
           data: {
@@ -443,11 +479,27 @@ export class McpServer {
           },
           select: { id: true, sectionId: true },
         });
+      }).catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (msg === 'SECTION_LOCKED') return { _locked: true } as const;
+        throw err;
       });
 
+      if ('_locked' in result && result._locked) {
+        return {
+          type: 'error',
+          data: {
+            message: `Section "${sectionId}" is locked by a pending MCP edit. Approve or reject the existing proposal for this section first.`,
+          },
+        };
+      }
+
+      // After the lock-sentinel check above, result is the
+      // tx.planEdit.create return shape.
+      const created = result as { id: string; sectionId: string };
       return {
         type: 'plan_edit_proposed',
-        data: { edit_id: result.id, section_id: result.sectionId, status: 'pending' },
+        data: { edit_id: created.id, section_id: created.sectionId, status: 'pending' },
       };
     } catch (err) {
       return {
@@ -476,8 +528,16 @@ export class McpServer {
         select: { id: true, environmentId: true, status: true },
       });
       if (!plan) return { type: 'error', data: { message: 'Plan not found.' } };
-      if (plan.status === 'archived') {
-        return { type: 'error', data: { message: 'Plan is archived; cannot add comments.' } };
+      if (plan.status === 'archived' || plan.status === 'failed') {
+        return {
+          type: 'error',
+          data: {
+            message:
+              plan.status === 'archived'
+                ? 'Plan is archived; cannot add comments.'
+                : 'Plan is in a failed state; cannot add comments until recovery.',
+          },
+        };
       }
       const envRef = this.scope?.environment_ref;
       const envId = envRef?.startsWith('environment:')

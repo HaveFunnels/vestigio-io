@@ -84,10 +84,11 @@ export async function runMonthlyStrategyPlanPass(
 		envsEvaluated++;
 
 		// Idempotency check — skip if a plan for this month already
-		// exists and isn't archived. The @@unique constraint would
-		// guard us anyway, but the early skip avoids a transient
-		// 'generating' state visible to the customer for an unnecessary
-		// upsert.
+		// exists in a final state. The cron retries 'failed' (infra
+		// errors that left the plan unusable) but never overwrites a
+		// healthy plan or one the owner explicitly archived. The
+		// @@unique constraint guards anyway; this early skip avoids
+		// a transient 'generating' state visible to the customer.
 		const existing = await prisma.monthlyStrategyPlan.findUnique({
 			where: {
 				environmentId_month: {
@@ -97,7 +98,7 @@ export async function runMonthlyStrategyPlanPass(
 			},
 			select: { id: true, status: true },
 		});
-		if (existing && existing.status !== "archived") {
+		if (existing && existing.status !== "failed") {
 			skipped++;
 			continue;
 		}

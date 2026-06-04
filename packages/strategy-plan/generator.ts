@@ -355,14 +355,18 @@ export async function generateAndPersistPlan(
 
 		return { planId: placeholder.id, output, regenScope: scope };
 	} catch (err) {
-		// Infrastructure failure (DB, cycle metadata) — mark the plan
-		// failed so the UI surfaces a recoverable state and the next
-		// cron pass retries. LLM failures don't land here (they fall
-		// back to deterministic text inside the sub-generators).
+		// Infrastructure failure (DB, cycle metadata) — mark with the
+		// dedicated 'failed' status. Distinct from 'archived':
+		//   - 'failed' = infra error, plan visible in the library as
+		//     a recoverable state, next cron retries it automatically.
+		//   - 'archived' = owner intentionally hid the plan (RBAC-gated
+		//     admin action); cron does NOT retry archived plans.
+		// LLM failures don't land here — sub-generators fall back to
+		// deterministic text.
 		await prisma.monthlyStrategyPlan
 			.update({
 				where: { id: placeholder.id },
-				data: { status: "archived" },
+				data: { status: "failed" },
 			})
 			.catch(() => {});
 		throw err;

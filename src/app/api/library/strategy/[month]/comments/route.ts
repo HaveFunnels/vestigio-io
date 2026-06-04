@@ -78,8 +78,16 @@ export async function POST(request: Request, { params }: RouteParams) {
 		select: { id: true, status: true },
 	});
 	if (!plan) return NextResponse.json({ message: "Plan not found" }, { status: 404 });
-	if (plan.status === "archived") {
-		return NextResponse.json({ message: "Plan is archived" }, { status: 409 });
+	if (plan.status === "archived" || plan.status === "failed") {
+		return NextResponse.json(
+			{
+				message:
+					plan.status === "archived"
+						? "Plan is archived"
+						: "Plan is in a failed state; the next cron pass will retry — please wait before commenting.",
+			},
+			{ status: 409 },
+		);
 	}
 
 	const comment = await prisma.planComment.create({

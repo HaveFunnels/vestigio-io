@@ -10,7 +10,15 @@
  * to know about the JSON column shape; everything below stays stable.
  */
 
-export type PlanStatus = "generating" | "ready" | "editing" | "archived";
+// 'failed' = infrastructure error during generation; cron retries it
+// on the next pass. UI surfaces it as a recoverable state. Distinct
+// from 'archived', which is an owner-intentional hide (RBAC-gated).
+export type PlanStatus =
+	| "generating"
+	| "ready"
+	| "editing"
+	| "failed"
+	| "archived";
 
 export type NextStepStatus =
 	| "todo"

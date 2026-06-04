@@ -3322,6 +3322,29 @@
 					"body": "Taking you to your action queue."
 				},
 				"per_month": "/mo"
+			},
+			"checklist": {
+				"title": "Getting started",
+				"title_done": "You're up to speed ✓",
+				"dismiss": "Dismiss",
+				"items": {
+					"audit_complete": {
+						"label": "Your first audit is ready",
+						"hint": "See what we crawled in the inventory"
+					},
+					"first_action": {
+						"label": "Start your first action",
+						"hint": "Mark one as 'in progress' to get rolling"
+					},
+					"invite_teammate": {
+						"label": "Invite a teammate",
+						"hint": "Vestigio pays off faster with two pairs of eyes"
+					},
+					"alerts_configured": {
+						"label": "Set your alert preferences",
+						"hint": "Decide what's worth interrupting you for"
+					}
+				}
 			}
 		},
 		"organization": {

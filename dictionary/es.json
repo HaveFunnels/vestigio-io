@@ -3145,6 +3145,29 @@
 					"body": "Llevándote a tu cola de acciones."
 				},
 				"per_month": "/mes"
+			},
+			"checklist": {
+				"title": "Primeros pasos",
+				"title_done": "Dominaste lo básico ✓",
+				"dismiss": "Descartar",
+				"items": {
+					"audit_complete": {
+						"label": "Tu primera auditoría está lista",
+						"hint": "Mira qué cubrimos en el inventario"
+					},
+					"first_action": {
+						"label": "Inicia tu primera acción",
+						"hint": "Marca una como 'en progreso' para arrancar"
+					},
+					"invite_teammate": {
+						"label": "Invita a alguien del equipo",
+						"hint": "Vestigio rinde más con 2+ miradas"
+					},
+					"alerts_configured": {
+						"label": "Configura tus alertas",
+						"hint": "Define qué debe interrumpirte"
+					}
+				}
 			}
 		},
 		"organization": {

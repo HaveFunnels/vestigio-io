@@ -42,6 +42,7 @@ import { CatalogDrawer } from "./CatalogDrawer";
 import FirstAuditCard from "@/components/console/FirstAuditCard";
 import FirstAuditCelebration from "@/components/console/FirstAuditCelebration";
 import FirstFindingMoment from "@/components/console/onboarding/FirstFindingMoment";
+import OnboardingChecklist from "@/components/console/onboarding/OnboardingChecklist";
 import type { FirstAuditCompletePayload } from "@/components/console/FirstAuditCard";
 import {
 	DEFAULT_LAYOUT,
@@ -289,6 +290,11 @@ export function DashboardShell({
 				existingDefIds={new Set(instances.map((i) => i.defId))}
 				onReset={handleReset}
 			/>
+			{/* Wave-22.6 guided onboarding — checklist self-hides when
+			    100% complete or when the user dismisses. Pulled from
+			    /api/onboarding/progress, so it survives across devices
+			    + tabs and shows credit for actions taken elsewhere. */}
+			<OnboardingChecklist />
 		</>
 	);
 }

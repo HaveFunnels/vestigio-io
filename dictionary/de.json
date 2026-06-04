@@ -3346,6 +3346,29 @@
 					"body": "Wir bringen Sie zur Aktionsliste."
 				},
 				"per_month": "/Mo"
+			},
+			"checklist": {
+				"title": "Erste Schritte",
+				"title_done": "Sie haben die Basics ✓",
+				"dismiss": "Schließen",
+				"items": {
+					"audit_complete": {
+						"label": "Ihr erstes Audit ist fertig",
+						"hint": "Sehen Sie im Inventar nach, was wir gecrawlt haben"
+					},
+					"first_action": {
+						"label": "Starten Sie Ihre erste Maßnahme",
+						"hint": "Markieren Sie eine als 'in Arbeit', um loszulegen"
+					},
+					"invite_teammate": {
+						"label": "Laden Sie eine Kollegin ein",
+						"hint": "Vestigio wirkt schneller mit zwei Paar Augen"
+					},
+					"alerts_configured": {
+						"label": "Konfigurieren Sie Ihre Alarme",
+						"hint": "Entscheiden Sie, was Sie unterbrechen darf"
+					}
+				}
 			}
 		},
 		"organization": {

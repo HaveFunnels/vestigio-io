@@ -90,7 +90,7 @@ function buildDigestHtml(data: DigestData): string {
 
 	// CTA
 	lines.push(`<div style="margin:24px 0;">`);
-	lines.push(`<a href="https://app.vestigio.io/app/dashboard" style="display:inline-block;background:#059669;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Open Dashboard</a>`);
+	lines.push(`<a href="https://app.vestigio.io/app/pulse" style="display:inline-block;background:#059669;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;">Open Pulse</a>`);
 	lines.push(`</div>`);
 
 	lines.push(`<p style="color:#64748b;font-size:11px;margin-top:24px;">You're receiving this because you have email notifications enabled on Vestigio. <a href="https://app.vestigio.io/app/settings" style="color:#64748b;">Manage preferences</a></p>`);
@@ -114,7 +114,7 @@ function buildDigestText(data: DigestData): string {
 		lines.push(`Recovered: ${formatDollars(data.moneyRecoveredCents)}`);
 	}
 	lines.push("");
-	lines.push("Open Dashboard: https://app.vestigio.io/app/dashboard");
+	lines.push("Open Pulse: https://app.vestigio.io/app/pulse");
 	return lines.join("\n");
 }
 

@@ -4035,7 +4035,7 @@
 			}
 		},
 		"navigation": {
-			"dashboard": "Dashboard",
+			"pulse": "Pulse",
 			"onboard": "Configuración inicial",
 			"actions": "Acciones",
 			"workspaces": "Espacios de trabajo",

@@ -35,6 +35,17 @@ export interface HeroMetricsOutput {
 	inProgressDeltaMoM: number;
 	retainedSpark: number[];
 	capturedSpark: number[];
+	// Wave-22.6 review fix P3.1 — receipt fields. The hero tile is
+	// the most exposed surface of the plan; without an underlying
+	// range + count it reads as a black box. These let the
+	// AggregateMethodologyPopover render the actual evidence
+	// ("R$ 18-32k from 14 findings") instead of just descriptive text.
+	retainedMin: number;
+	retainedMax: number;
+	retainedFindingCount: number;
+	capturedMin: number;
+	capturedMax: number;
+	capturedFindingCount: number;
 }
 
 export interface BuyerSegmentOutput {

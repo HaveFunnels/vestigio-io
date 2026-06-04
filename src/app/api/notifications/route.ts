@@ -70,7 +70,7 @@ function resolveHrefForEvent(event: string | null | undefined): string | null {
 		case "resolved":
 		case "verified_resolved":
 		case "digest":
-			return "/app/dashboard";
+			return "/app/pulse";
 		case "page_down":
 			return "/app/inventory";
 		case "incident":

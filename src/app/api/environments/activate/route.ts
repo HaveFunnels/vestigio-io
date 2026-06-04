@@ -304,7 +304,7 @@ export const POST = withErrorTracking(
 					// on the FirstAuditCard with live progress streaming.
 					// /app/inventory bypassed the new card and showed only
 					// the legacy CycleProgressBanner.
-					redirectTo: "/app/dashboard",
+					redirectTo: "/app/pulse",
 				},
 				{ status: 201 },
 			);

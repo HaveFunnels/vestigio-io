@@ -46,7 +46,7 @@ export interface CopilotUsage {
 export type PageContextType =
 	| { type: "analysis" }
 	| { type: "actions" }
-	| { type: "dashboard" }
+	| { type: "pulse" }
 	| { type: "inventory" }
 	| { type: "workspace"; id: string }
 	| { type: "perspective"; slug: string }
@@ -134,7 +134,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 		if (pathname === "/app/workspaces") return { type: "workspaces" };
 		if (pathname.startsWith("/app/findings")) return { type: "analysis" };
 		if (pathname.startsWith("/app/actions")) return { type: "actions" };
-		if (pathname.startsWith("/app/dashboard")) return { type: "dashboard" };
+		if (pathname.startsWith("/app/pulse") || pathname.startsWith("/app/dashboard")) return { type: "pulse" };
 		if (pathname.startsWith("/app/inventory")) return { type: "inventory" };
 		return { type: "other" };
 	}, [pathname]);

@@ -4384,7 +4384,7 @@
 			"last_audit_tooltip": "Last audit completed at {time}"
 		},
 		"navigation": {
-			"dashboard": "Dashboard",
+			"pulse": "Pulse",
 			"onboard": "Onboarding",
 			"actions": "Actions",
 			"workspaces": "Workspaces",

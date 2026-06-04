@@ -28,6 +28,14 @@ interface MonthlyAgg {
 	captured: number;
 	criticals: number;
 	inProgress: number;
+	// Wave-22.6 review fix P3.1 — range + count receipts for the
+	// AggregateMethodologyPopover on the hero tiles.
+	retainedMin: number;
+	retainedMax: number;
+	retainedCount: number;
+	capturedMin: number;
+	capturedMax: number;
+	capturedCount: number;
 }
 
 async function aggregateMonth(
@@ -50,7 +58,8 @@ async function aggregateMonth(
 				status: { in: ["created", "confirmed"] },
 				statusChangedAt: { lt: end },
 			},
-			_sum: { impactMidpoint: true },
+			_sum: { impactMidpoint: true, impactMin: true, impactMax: true },
+			_count: { _all: true },
 		}),
 		prisma.finding.aggregate({
 			where: {
@@ -58,7 +67,8 @@ async function aggregateMonth(
 				status: "resolved",
 				statusChangedAt: { gte: start, lt: end },
 			},
-			_sum: { impactMidpoint: true },
+			_sum: { impactMidpoint: true, impactMin: true, impactMax: true },
+			_count: { _all: true },
 		}),
 		prisma.finding.count({
 			where: {
@@ -86,6 +96,12 @@ async function aggregateMonth(
 		captured: captured._sum.impactMidpoint ?? 0,
 		criticals,
 		inProgress,
+		retainedMin: retained._sum.impactMin ?? 0,
+		retainedMax: retained._sum.impactMax ?? 0,
+		retainedCount: retained._count?._all ?? 0,
+		capturedMin: captured._sum.impactMin ?? 0,
+		capturedMax: captured._sum.impactMax ?? 0,
+		capturedCount: captured._count?._all ?? 0,
 	};
 }
 
@@ -134,5 +150,11 @@ export async function generateHeroMetrics(
 		inProgressDeltaMoM: pctDelta(current.inProgress, prev.inProgress),
 		retainedSpark: retainedSpark.map((v) => Math.round(v)),
 		capturedSpark: capturedSpark.map((v) => Math.round(v)),
+		retainedMin: Math.round(current.retainedMin),
+		retainedMax: Math.round(current.retainedMax),
+		retainedFindingCount: current.retainedCount,
+		capturedMin: Math.round(current.capturedMin),
+		capturedMax: Math.round(current.capturedMax),
+		capturedFindingCount: current.capturedCount,
 	};
 }

@@ -32,6 +32,12 @@ export const MOCK_PLAN_HAVEFUNNELS_2026_06: StrategyPlan = {
 		inProgressDeltaMoM: 0.50,
 		retainedSpark: [6800, 7100, 7500, 7900, 8200, 8523],
 		capturedSpark: [1800, 2100, 2400, 2800, 3000, 3214],
+		retainedMin: 6200,
+		retainedMax: 11400,
+		retainedFindingCount: 14,
+		capturedMin: 2400,
+		capturedMax: 4100,
+		capturedFindingCount: 6,
 	},
 
 	buyerSegments: [

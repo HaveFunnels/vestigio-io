@@ -183,6 +183,26 @@ function Tile({
 	);
 }
 
+// Builds the methodology description line shown inside the hero
+// tile's AggregateMethodologyPopover. The receipt prefix ("R$ 18-32k
+// de 14 findings") is only added when the generator populated the
+// range + count fields — older serialized plans fall back to the
+// pure descriptive text.
+function withReceipt(
+	base: string,
+	min: number | undefined,
+	max: number | undefined,
+	count: number | undefined,
+	currency: string,
+): string {
+	if (min === undefined || max === undefined || count === undefined || count === 0) {
+		return base;
+	}
+	const range = `${fmtCurrencyUnits(min, currency)}–${fmtCurrencyUnits(max, currency)}`;
+	const noun = count === 1 ? "finding" : "findings";
+	return `Faixa real este mês: ${range} de ${count} ${noun}. ${base}`;
+}
+
 export default function HeroMetrics({ hero, monthLabel }: Props) {
 	const { currency } = useMcpData();
 	return (
@@ -209,7 +229,13 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					delta={hero.retainedDeltaMoM}
 					spark={hero.retainedSpark}
 					formatFn={makeCurrencyFormatter(hero.retainedMid, currency)}
-					methodologyDescription="Soma dos midpoints de receita mensal que findings positivos (estado saudável detectado) preservam. Cada finding contribui com o midpoint do seu intervalo estimado calculado em packages/impact/baselines.ts. Atualize o perfil de negócio em Configurações para subir a confiança dos números."
+					methodologyDescription={withReceipt(
+						"Soma dos midpoints de receita mensal que findings positivos (estado saudável detectado) preservam. Cada finding contribui com o midpoint do seu intervalo estimado calculado em packages/impact/baselines.ts. Atualize o perfil de negócio em Configurações para subir a confiança dos números.",
+						hero.retainedMin,
+						hero.retainedMax,
+						hero.retainedFindingCount,
+						currency,
+					)}
 					methodologyDrillHref="/app/findings?polarity=positive"
 				/>
 				<Tile
@@ -218,7 +244,13 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					delta={hero.capturedDeltaMoM}
 					spark={hero.capturedSpark}
 					formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
-					methodologyDescription="Soma dos midpoints de receita mensal recuperada por ações marcadas como done + verificadas no ciclo seguinte. Distintos de 'marcado como done' — só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais."
+					methodologyDescription={withReceipt(
+						"Soma dos midpoints de receita mensal recuperada por ações marcadas como done + verificadas no ciclo seguinte. Distintos de 'marcado como done' — só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais.",
+						hero.capturedMin,
+						hero.capturedMax,
+						hero.capturedFindingCount,
+						currency,
+					)}
 					methodologyDrillHref="/app/actions?status=done"
 				/>
 				<Tile

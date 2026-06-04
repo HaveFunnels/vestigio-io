@@ -40,6 +40,14 @@ export interface HeroMetric {
 	inProgressDeltaMoM: number;
 	retainedSpark: number[];
 	capturedSpark: number[];
+	// P3.1 — range + count receipts on the two currency tiles.
+	// Optional so older serialized plans (no receipts) still render.
+	retainedMin?: number;
+	retainedMax?: number;
+	retainedFindingCount?: number;
+	capturedMin?: number;
+	capturedMax?: number;
+	capturedFindingCount?: number;
 }
 
 export interface BuyerSegment {

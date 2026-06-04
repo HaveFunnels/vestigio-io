@@ -288,6 +288,34 @@ export const POST = withErrorTracking(
 				}
 			}
 
+			// Wave-22.6 onboarding — fire the welcome email asynchronously.
+			// Best-effort: a failure here must not block the activation
+			// response. Triggers themselves dedupe per-user, so a retry
+			// or duplicate POST won't double-send.
+			(async () => {
+				try {
+					const userRow = await prisma.user.findUnique({
+						where: { id: user.id },
+						select: { email: true },
+					});
+					if (userRow?.email) {
+						const { triggerWelcomeEmail } = await import(
+							"@/libs/notification-triggers"
+						);
+						await triggerWelcomeEmail({
+							userId: user.id,
+							email: userRow.email,
+							domain: env.domain,
+						});
+					}
+				} catch (err) {
+					console.warn(
+						"[environments.activate] welcome email failed (non-fatal):",
+						err,
+					);
+				}
+			})();
+
 			return NextResponse.json(
 				{
 					environment: {

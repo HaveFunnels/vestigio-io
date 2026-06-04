@@ -58,6 +58,12 @@ export type NotificationEvent =
 	// sent on the first ~7 days of each new month. Idempotent via
 	// the tag value-caught:{envId}:{YYYYMM}.
 	| "value_caught_monthly"
+	// Wave-22.6 onboarding — fired on env activation (first audit
+	// kicked off) and when the user marks their first UserAction as
+	// in_progress. Dedupe-per-user via tag welcome:{userId} and
+	// activation_celebrated:{userId}.
+	| "welcome"
+	| "activation_celebrated"
 	// Wave 22.6 Step 7 — Monthly Strategy Plan ready notification.
 	// Fired when MonthlyStrategyPlan.status flips from 'generating'
 	// to 'ready' (either via day-1 cron OR first-cycle trigger).
@@ -509,6 +515,14 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 			// a periodic summary; the plan UI is always reachable
 			// regardless of opt-out, so the email is a soft preference.
 			return prefs.alertOnDigest ?? true;
+		case "welcome":
+		case "activation_celebrated":
+			// Wave-22.6 onboarding triggers — transactional. Welcome
+			// fires once per user on env activation; activation
+			// celebrated fires once per user when they first mark an
+			// action in-progress. Both have user-level dedup tags so
+			// they can't spam.
+			return true;
 	}
 }
 

@@ -774,6 +774,116 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 	},
 
+	welcome: {
+		"pt-BR": {
+			sms: {
+				body: "Vestigio: bem-vinda(o). Sua primeira auditoria de {domain} começou. Te avisamos quando os primeiros findings caírem.",
+			},
+			email: {
+				subject: "Bem-vinda(o) à Vestigio — sua primeira auditoria começou",
+				headline: "Sua auditoria de {domain} já está rodando",
+				intro: "Em ~60 segundos o primeiro relatório fica pronto. Cada finding traz um intervalo em reais e uma cadeia de evidências — não 'severity high' genérico.<br/><br/>Quando você abrir o Pulse, veremos juntos qual é o maior vazamento e o que fazer com ele.",
+				ctaLabel: "Abrir Pulse",
+				ctaPath: "/app/pulse",
+				footerNote: "Se algo travar, responda este email e a gente olha.",
+			},
+		},
+		en: {
+			sms: {
+				body: "Vestigio: welcome. Your first audit of {domain} just started. We'll ping you when the first findings land.",
+			},
+			email: {
+				subject: "Welcome to Vestigio — your first audit just started",
+				headline: "Your audit of {domain} is running",
+				intro: "In ~60 seconds the first report lands. Every finding carries a dollar range and an evidence chain — not a generic 'high severity'.<br/><br/>When you open the Pulse, we'll show you the biggest leak and what to do about it.",
+				ctaLabel: "Open Pulse",
+				ctaPath: "/app/pulse",
+				footerNote: "If anything stalls, reply to this email and we'll dig in.",
+			},
+		},
+		es: {
+			sms: {
+				body: "Vestigio: bienvenido. Tu primera auditoría de {domain} ya empezó. Te avisamos cuando lleguen los primeros findings.",
+			},
+			email: {
+				subject: "Bienvenido a Vestigio — tu primera auditoría empezó",
+				headline: "Tu auditoría de {domain} está en marcha",
+				intro: "En ~60 segundos llega el primer informe. Cada finding trae un rango en dinero y una cadena de evidencia — no un 'high severity' genérico.<br/><br/>Cuando abras el Pulse, te mostramos la mayor fuga y qué hacer con ella.",
+				ctaLabel: "Abrir Pulse",
+				ctaPath: "/app/pulse",
+				footerNote: "Si algo se traba, responde a este correo y lo revisamos.",
+			},
+		},
+		de: {
+			sms: {
+				body: "Vestigio: willkommen. Ihr erstes Audit von {domain} läuft. Wir melden uns, sobald die ersten Findings da sind.",
+			},
+			email: {
+				subject: "Willkommen bei Vestigio — Ihr erstes Audit läuft",
+				headline: "Ihr Audit von {domain} läuft",
+				intro: "In ~60 Sekunden landet der erste Bericht. Jeder Finding bringt eine Geldspanne und eine Beweiskette — keine generische 'High Severity'.<br/><br/>Im Pulse zeigen wir Ihnen das größte Leck und was Sie tun sollten.",
+				ctaLabel: "Pulse öffnen",
+				ctaPath: "/app/pulse",
+				footerNote: "Wenn etwas hängt, antworten Sie auf diese Mail und wir prüfen es.",
+			},
+		},
+	},
+
+	activation_celebrated: {
+		"pt-BR": {
+			sms: {
+				body: "Vestigio: primeira ação marcada. ~{impactAmount}/mês em jogo — acompanhe o ciclo seguinte pra confirmar a recuperação.",
+			},
+			email: {
+				subject: "Você acabou de marcar sua primeira ação",
+				headline: "Primeira ação em progresso",
+				intro: "Você marcou <strong>{actionTitle}</strong> como em progresso. Esse finding tem impacto estimado de <strong>~R$ {impactAmount}/mês</strong>.<br/><br/>Quando o próximo ciclo rodar, a gente confirma se o problema desapareceu e marca como capturado. Esse é o ciclo que prova ROI.",
+				ctaLabel: "Ver fila de ações",
+				ctaPath: "/app/actions",
+				footerNote: "Próximo passo natural: convide alguém do time pra dividir a fila.",
+			},
+		},
+		en: {
+			sms: {
+				body: "Vestigio: first action marked. ~{impactAmount}/mo at stake — watch the next cycle to confirm recovery.",
+			},
+			email: {
+				subject: "You just marked your first action",
+				headline: "First action in progress",
+				intro: "You marked <strong>{actionTitle}</strong> as in progress. That finding has an estimated impact of <strong>~${impactAmount}/mo</strong>.<br/><br/>When the next cycle runs, we'll confirm whether the problem disappeared and mark it as captured. That's the cycle that proves ROI.",
+				ctaLabel: "View action queue",
+				ctaPath: "/app/actions",
+				footerNote: "Natural next step: invite a teammate to share the queue.",
+			},
+		},
+		es: {
+			sms: {
+				body: "Vestigio: primera acción marcada. ~{impactAmount}/mes en juego — sigue el próximo ciclo para confirmar la recuperación.",
+			},
+			email: {
+				subject: "Marcaste tu primera acción",
+				headline: "Primera acción en progreso",
+				intro: "Marcaste <strong>{actionTitle}</strong> como en progreso. Ese finding tiene impacto estimado de <strong>~${impactAmount}/mes</strong>.<br/><br/>Cuando se ejecute el próximo ciclo, confirmamos si el problema desapareció y lo marcamos como capturado. Ese es el ciclo que prueba el ROI.",
+				ctaLabel: "Ver cola de acciones",
+				ctaPath: "/app/actions",
+				footerNote: "Siguiente paso natural: invita a alguien del equipo a compartir la cola.",
+			},
+		},
+		de: {
+			sms: {
+				body: "Vestigio: erste Aktion markiert. ~{impactAmount}/Mo im Spiel — beobachten Sie den nächsten Zyklus zur Bestätigung.",
+			},
+			email: {
+				subject: "Sie haben Ihre erste Aktion markiert",
+				headline: "Erste Aktion in Arbeit",
+				intro: "Sie haben <strong>{actionTitle}</strong> als in Arbeit markiert. Dieser Finding hat einen geschätzten Impact von <strong>~{impactAmount} EUR/Monat</strong>.<br/><br/>Beim nächsten Zyklus prüfen wir, ob das Problem verschwunden ist und markieren es als erfasst. Genau der Zyklus, der ROI beweist.",
+				ctaLabel: "Aktionsliste öffnen",
+				ctaPath: "/app/actions",
+				footerNote: "Nächster natürlicher Schritt: Laden Sie eine Kollegin ein, die Liste zu teilen.",
+			},
+		},
+	},
+
 	pix_suspended: {
 		"pt-BR": {
 			sms: {

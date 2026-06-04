@@ -107,6 +107,32 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 		select: { id: true, status: true, createdAt: true },
 	});
 
+	// Wave-22.6 onboarding — fire the activation celebration email
+	// asynchronously. Trigger itself dedupes per-user so toggling a
+	// second action won't re-send.
+	(async () => {
+		try {
+			const org = await prisma.organization.findUnique({
+				where: { id: membership.organizationId },
+				select: { currency: true },
+			});
+			const { triggerActivationCelebratedEmail } = await import(
+				"@/libs/notification-triggers"
+			);
+			await triggerActivationCelebratedEmail({
+				userId: user.id,
+				actionTitle: title,
+				impactMidpoint: finding.impactMidpoint,
+				currency: org?.currency ?? "USD",
+			});
+		} catch (err) {
+			console.warn(
+				"[onboarding/start-first-action] celebration email failed (non-fatal):",
+				err,
+			);
+		}
+	})();
+
 	return NextResponse.json(
 		{ id: action.id, status: action.status, existed: false },
 		{ status: 201 },

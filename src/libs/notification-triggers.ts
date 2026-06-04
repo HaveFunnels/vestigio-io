@@ -540,6 +540,89 @@ export async function triggerStrategyPlanReadyEmail(args: {
 }
 
 // ──────────────────────────────────────────────
+// Onboarding — welcome (fires on env activation)
+// ──────────────────────────────────────────────
+
+export async function triggerWelcomeEmail(args: {
+	userId: string;
+	email: string;
+	domain: string;
+}): Promise<void> {
+	const userLocale = (await getUserLocale(args.userId)) ?? "pt-BR";
+	const locale = resolveLocale(userLocale);
+	const tag = `welcome:${args.userId}`;
+	if (await wasRecentlySent(tag, args.userId)) return;
+
+	const vars = {
+		domain: args.domain.replace(/[<>&"']/g, ""),
+	};
+	const email = renderEmailFromTemplate("welcome", vars, getBaseUrl(), locale);
+	const smsText = renderSmsFromTemplate("welcome", vars, locale);
+	if (!email) return;
+
+	const { notifyDirect } = await import("@/libs/notifications");
+	await notifyDirect({
+		event: "welcome",
+		to: { email: args.email },
+		userId: args.userId,
+		subject: email.subject,
+		bodyHtml: email.html,
+		bodyText: smsText ?? email.subject,
+		tag,
+	});
+}
+
+// ──────────────────────────────────────────────
+// Onboarding — activation celebrated (fires when first UserAction
+// transitions to in_progress)
+// ──────────────────────────────────────────────
+
+export async function triggerActivationCelebratedEmail(args: {
+	userId: string;
+	actionTitle: string;
+	impactMidpoint: number;
+	currency: string;
+}): Promise<void> {
+	const userLocale = (await getUserLocale(args.userId)) ?? "pt-BR";
+	const locale = resolveLocale(userLocale);
+	const tag = `activation_celebrated:${args.userId}`;
+	// Dedupe so a user toggling status pending↔in_progress doesn't
+	// retrigger the celebration.
+	if (await wasRecentlySent(tag, args.userId)) return;
+
+	const fmt = (n: number) =>
+		Math.round(n).toLocaleString(locale === "pt-BR" ? "pt-BR" : "en-US");
+	const vars = {
+		actionTitle: args.actionTitle.replace(/[<>&"']/g, "").slice(0, 200),
+		impactAmount: fmt(args.impactMidpoint),
+	};
+	const email = renderEmailFromTemplate(
+		"activation_celebrated",
+		vars,
+		getBaseUrl(),
+		locale,
+	);
+	const smsText = renderSmsFromTemplate("activation_celebrated", vars, locale);
+	if (!email) return;
+
+	const userRow = await prisma.user
+		.findUnique({ where: { id: args.userId }, select: { email: true } })
+		.catch(() => null);
+	if (!userRow?.email) return;
+
+	const { notifyDirect } = await import("@/libs/notifications");
+	await notifyDirect({
+		event: "activation_celebrated",
+		to: { email: userRow.email },
+		userId: args.userId,
+		subject: email.subject,
+		bodyHtml: email.html,
+		bodyText: smsText ?? email.subject,
+		tag,
+	});
+}
+
+// ──────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────
 

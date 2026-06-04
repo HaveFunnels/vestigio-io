@@ -528,7 +528,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		// sticky (set on first POST to /api/inventory/manual and never
 		// overwritten), so a row stays seedable as long as it isn't
 		// soft-deleted. Same-domain enforcement happens inside the
-		// pipeline.
+		// pipeline. Cap comes from Organization.manualSeedCap so
+		// platform admin can bump it for enterprise customers without
+		// touching code.
+		const manualSeedCap =
+			(cycle.organization as { manualSeedCap?: number }).manualSeedCap ?? 200;
 		const manualSeedRows = await prisma.pageInventoryItem
 			.findMany({
 				where: {
@@ -537,7 +541,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 					removedAt: null,
 				},
 				select: { normalizedUrl: true },
-				take: 200,
+				take: manualSeedCap,
 			})
 			.catch(() => [] as Array<{ normalizedUrl: string }>);
 		const manualSeeds = manualSeedRows.map((r) => r.normalizedUrl);

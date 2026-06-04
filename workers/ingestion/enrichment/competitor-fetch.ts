@@ -19,6 +19,7 @@ import type {
 } from "./types";
 import { buildFailedResult } from "./types";
 import { prisma } from "../../../src/libs/prismaDb";
+import { isBlockedAddress } from "../../../packages/url-normalize/ssrf";
 
 // ──────────────────────────────────────────────
 // Wave 24 — Competitor fetch enrichment pass
@@ -55,47 +56,11 @@ const MAX_CTAS = 20;
 const USER_AGENT =
 	"Mozilla/5.0 (compatible; VestigioBot/1.0; +https://vestigio.io)";
 
-// ── SSRF guard: block private / loopback / link-local / IMDS IPs ──
+// ── SSRF guard ──
 //
-// Each redirect hop is re-resolved and the resulting address is
-// checked against the private-IP set BEFORE the TCP connect. This
-// prevents:
-//   - direct attacks like `internal.bad.example.com` → A 10.0.0.5
-//   - redirect attacks where a legit-looking domain 302s to
-//     `http://169.254.169.254/` (AWS IMDS)
-//   - DNS rebinding (we re-resolve at each hop, and the lookup
-//     callback runs at TCP-connect time, not during the URL parse)
-function isPrivateOrLoopbackIPv4(ip: string): boolean {
-	const parts = ip.split(".").map(Number);
-	if (parts.length !== 4 || parts.some((p) => Number.isNaN(p))) return true;
-	const [a, b] = parts;
-	if (a === 10) return true;
-	if (a === 127) return true;
-	if (a === 0) return true;
-	if (a === 169 && b === 254) return true; // link-local (IMDS 169.254.169.254)
-	if (a === 172 && b >= 16 && b <= 31) return true;
-	if (a === 192 && b === 168) return true;
-	if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
-	if (a >= 224) return true; // multicast + reserved
-	return false;
-}
-
-function isPrivateOrLoopbackIPv6(ip: string): boolean {
-	const lower = ip.toLowerCase();
-	if (lower === "::1" || lower === "::") return true;
-	if (lower.startsWith("fc") || lower.startsWith("fd")) return true; // ULA
-	if (lower.startsWith("fe80:")) return true; // link-local
-	// IPv4-mapped: ::ffff:a.b.c.d — extract embedded IPv4
-	const mapped = lower.match(/^::ffff:([\d.]+)$/);
-	if (mapped) return isPrivateOrLoopbackIPv4(mapped[1]);
-	return false;
-}
-
-function isBlockedAddress(ip: string, family: number): boolean {
-	if (family === 4) return isPrivateOrLoopbackIPv4(ip);
-	if (family === 6) return isPrivateOrLoopbackIPv6(ip);
-	return true; // unknown family — block
-}
+// Helpers live in packages/url-normalize/ssrf.ts so the inventory
+// manual-add API can reuse the same private-IP detection. Connect-
+// time lookup behavior (re-resolve every redirect hop) stays here.
 
 interface CompetitorRow {
 	id: string;

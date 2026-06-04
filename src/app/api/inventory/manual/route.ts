@@ -2,6 +2,7 @@ import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { isUrlSafeForFetch } from "../../../../../packages/url-normalize/ssrf";
 
 // ──────────────────────────────────────────────
 // Inventory Manual Add — Wave-22.6 review fix P2.3
@@ -53,6 +54,17 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 		return NextResponse.json({ message: "No organization" }, { status: 404 });
 	}
 
+	// SSRF guard — block private/loopback/link-local/IMDS before the URL
+	// can land in the audit pipeline. Resolves DNS, rejects with a clean
+	// reason. Domain match is re-validated below for defense-in-depth.
+	const safety = await isUrlSafeForFetch(parsed.url);
+	if (!safety.safe) {
+		return NextResponse.json(
+			{ message: `URL rejected: ${safety.reason}` },
+			{ status: 400 },
+		);
+	}
+
 	const cookieStore = await import("next/headers").then((m) => m.cookies());
 	const activeEnvId = cookieStore.get("active_env")?.value;
 	const environment = activeEnvId
@@ -84,6 +96,44 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 			{ message: `URL must be on ${websiteHost}` },
 			{ status: 400 },
 		);
+	}
+
+	// Per-org cap on manual seeds. Default 200, configurable by
+	// platform admin via Organization.manualSeedCap. We only count
+	// rows that aren't soft-deleted (removedAt = null) since the
+	// run-cycle only seeds those. Existing rows being re-added skip
+	// the cap (upsert vs. create) so the user can resurrect a deleted
+	// URL even when at the cap.
+	const org = await prisma.organization.findUnique({
+		where: { id: membership.organizationId },
+		select: { manualSeedCap: true },
+	});
+	const cap = org?.manualSeedCap ?? 200;
+	const existing = await prisma.pageInventoryItem.findUnique({
+		where: {
+			environmentRef_normalizedUrl: {
+				environmentRef: environment.id,
+				normalizedUrl: parsed.url,
+			},
+		},
+		select: { id: true },
+	});
+	if (!existing) {
+		const currentCount = await prisma.pageInventoryItem.count({
+			where: {
+				environmentRef: environment.id,
+				discoverySource: "manual",
+				removedAt: null,
+			},
+		});
+		if (currentCount >= cap) {
+			return NextResponse.json(
+				{
+					message: `Manual seed cap reached (${cap}). Contact support to raise the limit.`,
+				},
+				{ status: 429 },
+			);
+		}
 	}
 
 	// Upsert so re-adding an existing URL just clears removedAt/skipReason

@@ -244,6 +244,12 @@ model Organization {
   orgType     String    @default("customer") // customer | demo | trial
   locale      String? // Platform language: en | pt-BR | es | de. Single source of truth for the org.
   currency    String? // ISO 4217: USD, BRL, EUR. Null = auto from org locale
+  // Wave-22.6 review fix P2.3 — cap on user-added manual URLs that
+  // get seeded into every audit cycle. Default 200 is safe for SMBs;
+  // platform admin bumps it for enterprise envs with sprawling
+  // inventories. The cap is enforced both on the API submit side and
+  // when run-cycle.ts loads seeds into the pipeline.
+  manualSeedCap Int     @default(200)
   trialEndsAt DateTime? // only set when orgType="trial"
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

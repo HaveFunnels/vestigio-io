@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import StrategyPlanDialog from "@/components/strategy/StrategyPlanDialog";
 import { MOCK_PLAN_HAVEFUNNELS_2026_06 } from "@/components/strategy/mock-data";
 import { useTranslations, useLocale } from "next-intl";
@@ -74,8 +75,17 @@ interface UserActionRow {
 	// gates the "Run verification now" CTA.
 	verified_resolved_at: string | null;
 	verification_cycle_ref: string | null;
+	// Wave-22.6 review fix UC4 — assignment surfacing.
+	created_by: { id: string; name: string | null; email: string | null } | null;
+	assigned_to: { id: string; name: string | null; email: string | null } | null;
 	created_at: string;
 	updated_at: string;
+}
+
+interface OrgMember {
+	id: string;
+	name: string | null;
+	email: string | null;
 }
 
 const categoryConfig: Record<
@@ -271,6 +281,14 @@ function ActionsContent({
 	const [activeTab, setActiveTab] = useState<PipelineTab>("pipeline");
 	const [userActions, setUserActions] = useState<UserActionRow[]>([]);
 	const [mutatingUserActionId, setMutatingUserActionId] = useState<string | null>(null);
+	// Wave-22.6 review fix UC4 — org members list populates the
+	// assignee dropdown in the user-action drawer. Fetched lazily once
+	// and reused across drawer opens.
+	const [orgMembers, setOrgMembers] = useState<OrgMember[]>([]);
+	// Current user — drives the "Mine" tab filter so it actually means
+	// "assigned to me" instead of "everyone's actions" (pre-fix bug).
+	const { data: session } = useSession();
+	const currentUserId = (session?.user as { id?: string } | undefined)?.id ?? null;
 	const [viewMode, setViewMode] = useState<"list" | "scatter">("list");
 	const [typeFilter, setTypeFilter] = useState<string>("all");
 	const [severityFilter, setSeverityFilter] = useState<string>("all");
@@ -329,6 +347,73 @@ function ActionsContent({
 			cancelled = true;
 		};
 	}, []);
+
+	// Wave-22.6 review fix UC4 — fetch org members for the assignee
+	// dropdown. Silent failure: dropdown just shows "no teammates" and
+	// the rest of the drawer keeps working.
+	useEffect(() => {
+		let cancelled = false;
+		(async () => {
+			try {
+				const res = await fetch("/api/organization/members");
+				if (!res.ok) return;
+				const data = await res.json();
+				if (cancelled) return;
+				const members: OrgMember[] = Array.isArray(data.members)
+					? data.members.map((m: any) => ({
+							id: m.user?.id ?? m.id,
+							name: m.user?.name ?? m.name ?? null,
+							email: m.user?.email ?? m.email ?? null,
+						}))
+					: [];
+				setOrgMembers(members);
+			} catch {
+				/* silent */
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, []);
+
+	async function reassignUserAction(
+		action: UserActionRow,
+		assigneeUserId: string | null,
+	) {
+		if (mutatingUserActionId) return;
+		setMutatingUserActionId(action.id);
+		try {
+			const res = await fetch(`/api/actions/user/${action.id}`, {
+				method: "PATCH",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ assigned_to_user_id: assigneeUserId }),
+			});
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}));
+				toast.error(body?.message || "Falha ao atribuir.");
+				return;
+			}
+			// Update local state with the resolved assignee from the
+			// members list (drawer renders name immediately, no re-fetch).
+			const nextAssignee = assigneeUserId
+				? orgMembers.find((m) => m.id === assigneeUserId) ?? null
+				: null;
+			setUserActions((prev) =>
+				prev.map((a) =>
+					a.id === action.id ? { ...a, assigned_to: nextAssignee } : a,
+				),
+			);
+			toast.success(
+				nextAssignee
+					? `Atribuída a ${nextAssignee.name || nextAssignee.email}`
+					: "Atribuição removida",
+			);
+		} catch {
+			toast.error("Falha ao atribuir.");
+		} finally {
+			setMutatingUserActionId(null);
+		}
+	}
 
 	async function updateUserActionStatus(
 		action: UserActionRow,
@@ -964,7 +1049,20 @@ function ActionsContent({
 			    fields. Every other tab filters the MCP projections. */}
 			{activeTab === "mine" ? (
 				<UserActionsTable
-					actions={userActions}
+					actions={
+						// Wave-22.6 review fix UC4 — actually filter to "mine".
+						// Previously userActions was the full org+env list and the
+						// tab label was misleading. Show rows where the current
+						// user is the assignee, OR (legacy backfill) where there's
+						// no assignee and the user is the creator.
+						currentUserId
+							? userActions.filter(
+								(a) =>
+									a.assigned_to?.id === currentUserId ||
+									(!a.assigned_to && a.created_by?.id === currentUserId),
+							)
+							: userActions
+					}
 					onRowClick={(row) => setSelectedUserAction(row)}
 				/>
 			) : viewMode === "scatter" ? (
@@ -1007,8 +1105,12 @@ function ActionsContent({
 					<UserActionDrawerContent
 						action={selectedUserAction}
 						mutating={mutatingUserActionId === selectedUserAction.id}
+						orgMembers={orgMembers}
 						onUpdateStatus={(next) =>
 							updateUserActionStatus(selectedUserAction, next)
+						}
+						onReassign={(assigneeUserId) =>
+							reassignUserAction(selectedUserAction, assigneeUserId)
 						}
 						onRunVerification={() =>
 							runVerificationForUserAction(selectedUserAction)
@@ -1764,13 +1866,17 @@ function UserActionsTable({
 function UserActionDrawerContent({
 	action,
 	mutating,
+	orgMembers,
 	onUpdateStatus,
+	onReassign,
 	onRunVerification,
 	onReopenConversation,
 }: {
 	action: UserActionRow;
 	mutating: boolean;
+	orgMembers: OrgMember[];
 	onUpdateStatus: (next: UserActionRow["status"]) => void;
+	onReassign: (assigneeUserId: string | null) => void;
 	onRunVerification: () => void;
 	onReopenConversation: (conversationId: string) => void;
 }) {
@@ -1828,6 +1934,31 @@ function UserActionDrawerContent({
 								{tStatus(cfg.labelKey)}
 							</span>
 						</div>
+						{/* Wave-22.6 review fix UC4 — assignee dropdown.
+						    Members are loaded once on mount; switching the
+						    select fires PATCH /api/actions/user/[id] with
+						    assigned_to_user_id. Server validates the assignee
+						    is a member of the action's org. */}
+						<DrawerStatRow
+							label="Responsável"
+							value={
+								<select
+									disabled={mutating}
+									className='rounded-md border border-edge bg-surface-card px-2 py-1 text-xs text-content-secondary focus:border-edge-focus focus:outline-none disabled:opacity-50'
+									value={action.assigned_to?.id ?? ""}
+									onChange={(e) =>
+										onReassign(e.target.value === "" ? null : e.target.value)
+									}
+								>
+									<option value=''>Não atribuída</option>
+									{orgMembers.map((m) => (
+										<option key={m.id} value={m.id}>
+											{m.name || m.email || m.id.slice(0, 8)}
+										</option>
+									))}
+								</select>
+							}
+						/>
 						<DrawerStatRow
 							label={t("created")}
 							value={

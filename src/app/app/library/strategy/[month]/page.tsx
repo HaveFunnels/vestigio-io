@@ -115,10 +115,19 @@ export default function StrategyPlanPage() {
 		};
 	}, [month, envId]);
 
-	// Showcase fallback: the mock plan keeps the Step 3 visual review
-	// URL (2026-06) alive even when no real generation has run yet.
+	// Wave-22.6-review fix: previously the Step-3 design-review fallback
+	// activated for ANY customer hitting /app/library/strategy/2026-06
+	// without a real plan — leaking havefunnels.com as envDomain in the
+	// header (cross-tenant data exposure). Showcase mock is now gated
+	// behind an explicit ?demo=1 query param so it only fires in the
+	// reviewer's hand-test URL, never in production billing paths.
+	const isDemoSession =
+		typeof window !== "undefined" &&
+		new URLSearchParams(window.location.search).get("demo") === "1";
 	const showMockFallback =
-		state.status === "missing" && month === MOCK_PLAN_HAVEFUNNELS_2026_06.month;
+		state.status === "missing" &&
+		month === MOCK_PLAN_HAVEFUNNELS_2026_06.month &&
+		isDemoSession;
 
 	if (state.status === "loading") {
 		return (

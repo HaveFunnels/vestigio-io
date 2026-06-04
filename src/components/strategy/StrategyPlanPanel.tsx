@@ -74,6 +74,27 @@ function formatTimestamp(date: Date): string {
 function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => void }) {
 	const [exporting, setExporting] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
+	const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
+
+	// Wave-22.6-review fix: previously a dead button (no onClick). For a
+	// CFO-sharing use case this was the single most-clicked control in
+	// the surface — and it did nothing. V1 ships "copy permalink to
+	// clipboard" (works today with the existing /app/library/strategy/
+	// [month] route + envId param). A full signed-link / external-share
+	// modal lands in a follow-up wave (Wave 28+).
+	const handleShare = async () => {
+		try {
+			const url = `${window.location.origin}/app/library/strategy/${encodeURIComponent(
+				plan.month,
+			)}?envId=${encodeURIComponent(plan.environmentId)}`;
+			await navigator.clipboard.writeText(url);
+			setShareState("copied");
+			setTimeout(() => setShareState("idle"), 2500);
+		} catch {
+			setShareState("error");
+			setTimeout(() => setShareState("idle"), 4000);
+		}
+	};
 
 	const handleExport = async () => {
 		setExporting(true);
@@ -123,9 +144,14 @@ function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => v
 				<div className="flex items-center gap-2">
 					<button
 						type="button"
+						onClick={handleShare}
 						className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
 					>
-						Compartilhar
+						{shareState === "copied"
+							? "Link copiado"
+							: shareState === "error"
+								? "Falha ao copiar"
+								: "Compartilhar"}
 					</button>
 					<button
 						type="button"
@@ -279,14 +305,22 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				/>
 				<MemoryRollups rollups={plan.memoryRollups} />
 
-				{/* Footer */}
+				{/* Footer — Wave-22.6-review fix: removed internal LLM
+				    cost telemetry ("$0.08") and engineer-style version
+				    slug; this surface is exec-shareable and shouldn't
+				    leak internal metrics. Generation date in the user's
+				    locale replaces both. */}
 				<footer className="mt-16 border-t border-edge pt-6 text-[11px] text-content-faint">
 					<div className="flex flex-wrap items-center justify-between gap-2">
 						<div>
-							Gerado por <span className="font-medium">Vestigio Pulse</span> · custo do mês{" "}
-							<span className="font-mono">$0.08</span>
+							Gerado por <span className="font-medium">Vestigio Pulse</span>
 						</div>
-						<div className="font-mono">v{plan.id.slice(-8)}</div>
+						<div>
+							{new Date(plan.lastRegenerated).toLocaleDateString(
+								plan.locale === "pt-BR" ? "pt-BR" : "en-US",
+								{ day: "2-digit", month: "short", year: "numeric" },
+							)}
+						</div>
 					</div>
 				</footer>
 			</div>

@@ -6,14 +6,15 @@ import { prisma } from "@/libs/prismaDb";
 // ──────────────────────────────────────────────
 // PATCH /api/actions/user/[id]
 //
-// Lifecycle transitions for UserAction. Validates that the caller
-// owns the action (via membership in the action's org). Status
-// transitions allowed: any → any (client drives the UX, server
-// stamps transition timestamps).
+// Lifecycle + assignment transitions for UserAction. Validates that
+// the caller is a member of the action's org. Status transitions are
+// open (any → any; client drives the UX). Reassignment requires the
+// new assignee to also be a member of the same org.
 //
 // Body:
 //   { status?: 'pending'|'in_progress'|'done'|'dismissed',
-//     notes?: string (max 5000) }
+//     notes?: string (max 5000),
+//     assigned_to_user_id?: string | null  // Wave-22.6 review fix UC4 }
 // ──────────────────────────────────────────────
 
 const ALLOWED_STATUSES = new Set([
@@ -40,7 +41,7 @@ export async function PATCH(
 		return NextResponse.json({ message: "id is required" }, { status: 400 });
 	}
 
-	let body: { status?: string; notes?: string };
+	let body: { status?: string; notes?: string; assigned_to_user_id?: string | null };
 	try {
 		body = await request.json();
 	} catch {
@@ -91,6 +92,33 @@ export async function PATCH(
 		updateData.notes = body.notes.slice(0, MAX_NOTES);
 	}
 
+	// Reassignment — null clears the assignee, a string assigns. Both
+	// require the assignee to be a member of the action's org (no
+	// cross-org leak via a guessed user id).
+	if (body.assigned_to_user_id !== undefined) {
+		if (body.assigned_to_user_id === null) {
+			updateData.assignedToUserId = null;
+		} else if (typeof body.assigned_to_user_id === "string") {
+			const target = body.assigned_to_user_id;
+			const targetMembership = await prisma.membership.findFirst({
+				where: { userId: target, organizationId: action.organizationId },
+				select: { id: true },
+			});
+			if (!targetMembership) {
+				return NextResponse.json(
+					{ message: "Assignee is not a member of this organization" },
+					{ status: 400 },
+				);
+			}
+			updateData.assignedToUserId = target;
+		} else {
+			return NextResponse.json(
+				{ message: "Invalid assigned_to_user_id" },
+				{ status: 400 },
+			);
+		}
+	}
+
 	if (Object.keys(updateData).length === 0) {
 		return NextResponse.json(
 			{ message: "Nothing to update" },
@@ -106,6 +134,7 @@ export async function PATCH(
 			status: true,
 			doneAt: true,
 			notes: true,
+			assignedToUserId: true,
 			updatedAt: true,
 		},
 	});
@@ -151,6 +180,7 @@ export async function PATCH(
 		status: updated.status,
 		done_at: updated.doneAt?.toISOString() ?? null,
 		notes: updated.notes,
+		assigned_to_user_id: updated.assignedToUserId,
 		updated_at: updated.updatedAt.toISOString(),
 	});
 }

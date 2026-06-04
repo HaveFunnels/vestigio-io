@@ -127,7 +127,8 @@ model User {
   notificationPrefs        NotificationPreference?
   prospectScans            ProspectScan[]
   dashboardLayouts         DashboardLayout[]
-  userActions              UserAction[]
+  userActions              UserAction[]   @relation("UserActionCreatedBy")
+  assignedUserActions      UserAction[]   @relation("UserActionAssignedTo")
   customMaps               CustomMap[]
   savedViews               SavedView[]
   pixCharges               PixCharge[]
@@ -2072,6 +2073,14 @@ model UserAction {
   environmentId   String
   findingId       String
   createdByUserId String
+  // Wave-22.6-review fix — explicit assignment. Previously the "Mine"
+  // tab on /app/actions queried by (organizationId, environmentId)
+  // and returned EVERY member's actions to every viewer, breaking
+  // the multi-player delegation use case. assignedToUserId is the
+  // canonical owner. Null = unassigned. Defaults to createdByUserId
+  // when the row is first created (write owns), can be reassigned
+  // later via PATCH.
+  assignedToUserId String?
 
   title                String
   description          String? @db.Text
@@ -2109,12 +2118,14 @@ model UserAction {
   organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   environment  Environment   @relation(fields: [environmentId], references: [id], onDelete: Cascade)
   finding      Finding       @relation(fields: [findingId], references: [id], onDelete: Cascade)
-  createdBy    User          @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+  createdBy    User          @relation("UserActionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Cascade)
+  assignedTo   User?         @relation("UserActionAssignedTo", fields: [assignedToUserId], references: [id], onDelete: SetNull)
   verifiedVia  Conversation? @relation(fields: [verifiedViaConversationId], references: [id], onDelete: SetNull)
 
   @@index([organizationId, status, createdAt])
   @@index([environmentId, status])
   @@index([environmentId, status, verifiedResolvedAt])
+  @@index([environmentId, assignedToUserId, status])
   @@index([findingId])
   @@index([createdByUserId])
 }

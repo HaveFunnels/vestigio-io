@@ -51,6 +51,10 @@
 			"highlight": "−$81k/mo",
 			"after_highlight": " in their first Vestigio diagnostic."
 		},
+		"demo_surface": {
+			"listen": "Listen",
+			"skip": "Skip to demo →"
+		},
 		"hero_v2": {
 			"banner": {
 				"label": "Vestigio Pulse",

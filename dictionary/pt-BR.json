@@ -51,6 +51,10 @@
 			"highlight": "−R$31k/mês ou 27% a 43% do faturamento",
 			"after_highlight": " no primeiro diagnóstico Vestigio."
 		},
+		"demo_surface": {
+			"listen": "Ouvir",
+			"skip": "Pular para demo →"
+		},
 		"hero_v2": {
 			"banner": {
 				"label": "Vestigio Pulse",

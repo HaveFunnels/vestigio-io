@@ -51,6 +51,10 @@
 			"highlight": "−81.000 €/Monat",
 			"after_highlight": " in ihrer ersten Vestigio-Diagnose."
 		},
+		"demo_surface": {
+			"listen": "Anhören",
+			"skip": "Zur Demo →"
+		},
 		"hero_v2": {
 			"banner": {
 				"label": "Vestigio Pulse",

@@ -3,8 +3,10 @@
 -- behind a single pending edit; per-section unblocks parallel
 -- proposals across narrative + value-preview + next-step rows.
 --
--- Safe to drop: existing values had a 10-min TTL and there are no
--- prod plans with active locks. New rows write to the JSON column.
+-- Idempotent: DROP IF EXISTS handles envs where the original
+-- editLockedByMcpUntil column never landed (some prod envs migrated
+-- via prisma db push and skipped that migration). ADD COLUMN IF
+-- NOT EXISTS keeps re-runs safe.
 
-ALTER TABLE "MonthlyStrategyPlan" DROP COLUMN "editLockedByMcpUntil";
-ALTER TABLE "MonthlyStrategyPlan" ADD COLUMN "editLockedSectionsByMcp" JSONB;
+ALTER TABLE "MonthlyStrategyPlan" DROP COLUMN IF EXISTS "editLockedByMcpUntil";
+ALTER TABLE "MonthlyStrategyPlan" ADD COLUMN IF NOT EXISTS "editLockedSectionsByMcp" JSONB;

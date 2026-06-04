@@ -147,19 +147,40 @@ export async function maybeTriggerRenarrative(
 		// If every LLM section fell back to deterministic text (no
 		// actual LLM cost), refund the reserved slot — the cap is
 		// designed to bound LLM cost, not penalize zero-value regens.
+		//
+		// Known narrow race: between the reservation above and this
+		// refund below, a concurrent trigger sees regenCount at the
+		// (temporarily-inflated) value and bails with cap_reached
+		// when it would otherwise succeed. We accept this rather than
+		// hold a tx open across the heavy generator path — the worst
+		// case is one false cap-rejection per env per month and the
+		// next trigger re-evaluates. Worth revisiting if observability
+		// shows it firing repeatedly.
 		if (result.output.cost.llmCallsCount === 0) {
-			await args.prisma.monthlyStrategyPlan.updateMany({
+			const refund = await args.prisma.monthlyStrategyPlan.updateMany({
 				where: { environmentId: args.environmentId, month, regenCount: { gt: 0 } },
 				data: { regenCount: { decrement: 1 } },
 			});
+			// Read back the actual count for observability — surfaces if
+			// the refund didn't apply (someone else just consumed it).
+			const after = await args.prisma.monthlyStrategyPlan.findUnique({
+				where: {
+					environmentId_month: {
+						environmentId: args.environmentId,
+						month,
+					},
+				},
+				select: { regenCount: true },
+			});
 			console.log(
 				`[strategy-plan/renarrate] env=${args.environmentId} month=${month} ` +
-					`trigger=${args.trigger} fell back to deterministic text — slot refunded`,
+					`trigger=${args.trigger} fell back to deterministic text — slot refunded ` +
+					`(refundedRows=${refund.count}, regenCountAfter=${after?.regenCount ?? "?"})`,
 			);
 			return {
 				fired: true,
 				scope,
-				regenCountAfter: 0, // approximate; client probably re-reads
+				regenCountAfter: after?.regenCount ?? 0,
 			};
 		}
 

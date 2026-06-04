@@ -347,6 +347,30 @@ export class McpServer {
         data: { message: 'plan_id, section_id, and new_content are required.' },
       };
     }
+    // Wave 22.6 fix — server-side caps on free-text fields. Even
+    // though React JSX escaping makes the current renderer XSS-safe,
+    // a future markdown-rendering switch (the composer placeholder
+    // hints at it) would turn unbounded LLM-supplied content into a
+    // stored-XSS vector. Capping at the MCP layer is defense in
+    // depth that doesn't depend on render-time behavior.
+    const MAX_REASON_CHARS = 500;
+    const MAX_CONTENT_CHARS = 4_000;
+    const MAX_SECTION_ID_CHARS = 120;
+    if (newContent.length > MAX_CONTENT_CHARS) {
+      return {
+        type: 'error',
+        data: {
+          message: `new_content exceeds ${MAX_CONTENT_CHARS} chars; section edits should be focused — split into multiple proposals if needed.`,
+        },
+      };
+    }
+    if (sectionId.length > MAX_SECTION_ID_CHARS) {
+      return { type: 'error', data: { message: 'section_id too long.' } };
+    }
+    const reasonCapped =
+      typeof reason === 'string' && reason.length > MAX_REASON_CHARS
+        ? reason.slice(0, MAX_REASON_CHARS)
+        : reason ?? null;
     try {
       const { prisma } = await import('@/libs/prismaDb');
       const plan = await prisma.monthlyStrategyPlan.findUnique({
@@ -475,7 +499,7 @@ export class McpServer {
             editorKind: 'mcp',
             beforeText,
             afterText: newContent,
-            reason: reason ?? null,
+            reason: reasonCapped,
           },
           select: { id: true, sectionId: true },
         });
@@ -521,6 +545,16 @@ export class McpServer {
         data: { message: 'plan_id, section_id, and body are required.' },
       };
     }
+    // Same defense-in-depth caps as propose_plan_edit.
+    const MAX_COMMENT_BODY_CHARS = 2_000;
+    const MAX_SECTION_ID_CHARS = 120;
+    if (sectionId.length > MAX_SECTION_ID_CHARS) {
+      return { type: 'error', data: { message: 'section_id too long.' } };
+    }
+    const bodyCapped =
+      body.length > MAX_COMMENT_BODY_CHARS
+        ? body.slice(0, MAX_COMMENT_BODY_CHARS)
+        : body;
     try {
       const { prisma } = await import('@/libs/prismaDb');
       const plan = await prisma.monthlyStrategyPlan.findUnique({
@@ -579,7 +613,7 @@ export class McpServer {
           sectionId,
           authorId: actor.user_id,
           authorKind: 'mcp',
-          body,
+          body: bodyCapped,
         },
         select: { id: true, sectionId: true },
       });

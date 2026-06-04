@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import type { BuyerSegment } from "../types";
+import { fmtCurrencyUnits } from "@/lib/format-currency";
+import { useMcpData } from "@/components/app/McpDataProvider";
 
 /*
  * Buyer Segments — "O que sua audit revelou este mês"
@@ -35,12 +37,8 @@ const BUYER_ACCENT: Record<string, { dot: string; bg: string; chip: string }> = 
 	},
 };
 
-function formatBRL(value: number): string {
-	if (value >= 1000) return `R$ ${(value / 1000).toFixed(1).replace(".", ",")}k`;
-	return `R$ ${value.toLocaleString("pt-BR")}`;
-}
-
 export default function BuyerSegments({ segments }: Props) {
+	const { currency } = useMcpData();
 	return (
 		<motion.section
 			initial={{ opacity: 0, y: 16 }}
@@ -87,13 +85,13 @@ export default function BuyerSegments({ segments }: Props) {
 							</div>
 
 							<div className="mt-4 font-mono text-[22px] font-semibold tabular-nums text-content">
-								{formatBRL(s.impactMidpoint)}
+								{fmtCurrencyUnits(s.impactMidpoint, currency)}
 								<span className="ml-1 text-[12px] font-normal text-content-faint">
 									/ mês
 								</span>
 							</div>
 							<div className="mt-0.5 font-mono text-[10px] tabular-nums text-content-faint">
-								faixa {formatBRL(s.impactMin)} — {formatBRL(s.impactMax)}
+								faixa {fmtCurrencyUnits(s.impactMin, currency)} — {fmtCurrencyUnits(s.impactMax, currency)}
 							</div>
 
 							<div className="mt-4 flex-1 space-y-1.5 border-t border-edge/40 pt-3">

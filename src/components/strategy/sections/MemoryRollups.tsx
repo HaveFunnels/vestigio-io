@@ -5,6 +5,8 @@ import { Group } from "@visx/group";
 import { scaleBand, scaleLinear } from "@visx/scale";
 import { ParentSize } from "@visx/responsive";
 import type { MemoryRollups as MemoryRollupsType, MemoryWindow } from "../types";
+import { fmtCurrencyUnits } from "@/lib/format-currency";
+import { useMcpData } from "@/components/app/McpDataProvider";
 
 /*
  * Memory Rollups — "Memória de meses anteriores"
@@ -22,11 +24,6 @@ import type { MemoryRollups as MemoryRollupsType, MemoryWindow } from "../types"
 
 interface Props {
 	rollups: MemoryRollupsType;
-}
-
-function formatBRL(value: number): string {
-	if (value >= 1000) return `R$ ${(value / 1000).toFixed(1).replace(".", ",")}k`;
-	return `R$ ${value.toLocaleString("pt-BR")}`;
 }
 
 function formatMonthShort(yearMonth: string): string {
@@ -137,6 +134,7 @@ function RollupCard({
 	tone: "now" | "near" | "mid" | "year";
 	emphasizeBenchmark?: boolean;
 }) {
+	const { currency } = useMcpData();
 	return (
 		<motion.div
 			data-vsgp-card
@@ -168,7 +166,7 @@ function RollupCard({
 						Capturado
 					</div>
 					<div className="mt-1 font-mono text-[22px] font-semibold tabular-nums text-content">
-						{formatBRL(window.capturedTotal)}
+						{fmtCurrencyUnits(window.capturedTotal, currency)}
 					</div>
 				</div>
 			</div>
@@ -188,7 +186,7 @@ function RollupCard({
 						{window.biggestWin.title}
 					</div>
 					<div className="mt-0.5 font-mono text-[11px] tabular-nums text-content-muted">
-						{formatBRL(window.biggestWin.capturedAmount)} · {window.biggestWin.resolvedAt}
+						{fmtCurrencyUnits(window.biggestWin.capturedAmount, currency)} · {window.biggestWin.resolvedAt}
 					</div>
 				</div>
 			)}

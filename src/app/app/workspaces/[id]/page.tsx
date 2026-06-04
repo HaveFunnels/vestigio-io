@@ -40,6 +40,7 @@ import ToneConsistency from "@/components/console/workspace/ToneConsistency";
 import CopyFrameworkLens from "@/components/console/workspace/CopyFrameworkLens";
 import NextActionStrip from "@/components/console/workspace/NextActionStrip";
 import CostOfInaction from "@/components/console/workspace/CostOfInaction";
+import WorkspaceRelatedMaps from "@/components/console/workspace/WorkspaceRelatedMaps";
 import TrendDelta from "@/components/console/workspace/TrendDelta";
 import TrendSparkline, { synthesizeSparklineData } from "@/components/console/workspace/TrendSparkline";
 import { loadWorkspaces, loadChangeReport } from "@/lib/console-data";
@@ -357,6 +358,11 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 			{/* ── Wave 11.7c — Cost of inaction strip ── */}
 			<div className="mt-5">
 				<CostOfInaction findings={workspace.findings} />
+			</div>
+
+			{/* ── Wave-22.6 review fix P2.1 — contextual map bridge ── */}
+			<div className="mt-5">
+				<WorkspaceRelatedMaps workspaceType={workspace.type} />
 			</div>
 
 			{/* ── Summary strip: Change Summary + Quick Stats (full width) ── */}

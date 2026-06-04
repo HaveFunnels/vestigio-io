@@ -12,6 +12,8 @@ import type {
 import ActionDrawer from "../ActionDrawer";
 import PlanCommentThread from "../PlanCommentThread";
 import PlanEditBanner from "../PlanEditBanner";
+import { fmtCurrencyUnits } from "@/lib/format-currency";
+import { useMcpData } from "@/components/app/McpDataProvider";
 
 /*
  * Next Steps — "Próximo passo, atacar nesta ordem"
@@ -38,12 +40,6 @@ interface Props {
 	envId?: string;
 	month?: string;
 	planId?: string;
-}
-
-function formatBRL(value: number): string {
-	if (value === 0) return "—";
-	if (value >= 1000) return `R$ ${(value / 1000).toFixed(1).replace(".", ",")}k`;
-	return `R$ ${value.toLocaleString("pt-BR")}`;
 }
 
 function formatDate(date: Date | null): string | null {
@@ -120,6 +116,7 @@ function StepCard({
 }: StepCardProps) {
 	const [status, setStatus] = useState<NextStepStatus>(step.status);
 	const [drawerOpen, setDrawerOpen] = useState(false);
+	const { currency } = useMcpData();
 	const isDone = status === "done";
 	const due = formatDate(step.dueAt);
 
@@ -197,7 +194,7 @@ function StepCard({
 								impact
 							</div>
 							<div className="font-mono text-[13px] font-semibold tabular-nums text-content">
-								{formatBRL(step.combinedImpact.midpoint)}
+								{fmtCurrencyUnits(step.combinedImpact.midpoint, currency, { zeroAsDash: true })}
 								<span className="text-[10px] font-normal text-content-faint">
 									{" "}/mo
 								</span>

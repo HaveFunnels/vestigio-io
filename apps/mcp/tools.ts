@@ -812,7 +812,11 @@ export function executeTool(
           name,
           nodeCount: mapDef.nodes.length,
           edgeCount: mapDef.edges.length,
-          url: '/app/maps',
+          // P2.1 fix — was '/app/maps' (gallery), so chat users who
+          // asked for "create a map of X" landed back at the catalog
+          // instead of the map they just generated. Deep-link to the
+          // specific map definition the buildCustomMap() call returned.
+          url: `/app/maps/${mapDef.id}`,
           mapDefinition: mapDef,
         },
       };

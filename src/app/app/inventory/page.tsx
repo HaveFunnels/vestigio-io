@@ -8,6 +8,7 @@ import { Column } from "@/components/console/DataTable";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
+import AuditScopeStrip from "@/components/console/inventory/AuditScopeStrip";
 import {
 	loadInventory,
 	type InventorySurface,
@@ -1246,6 +1247,7 @@ export default function InventoryPage() {
 			>
 				{() => (
 					<>
+						<AuditScopeStrip surfaces={surfaces} />
 						{lookups && (!lookups.findings || !lookups.sessions) && (
 							<div className='mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-4 py-2.5 text-xs text-amber-300'>
 								{!lookups.findings && <div>{t("lookup_warning.findings_failed")}</div>}

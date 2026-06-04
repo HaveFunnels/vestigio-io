@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { HeroMetric } from "../types";
 import { AggregateMethodologyPopover } from "@/components/console/MethodologyPopover";
+import { fmtCurrencyUnits } from "@/lib/format-currency";
+import { useMcpData } from "@/components/app/McpDataProvider";
 
 /*
  * Hero metrics tile row
@@ -21,22 +23,12 @@ interface Props {
 	monthLabel: string;
 }
 
-// formatBRL has two modes — "k" (compact thousands) and "full"
-// (plain Brazilian thousands separator). During count-up animation
-// the format is locked to whichever branch the TARGET value lands
-// in, so the text doesn't jump from "R$ 900" → "R$ 1,0k" mid-tween.
-function formatBRL(value: number, mode: "auto" | "k" | "full" = "auto"): string {
-	const useK = mode === "auto" ? value >= 1000 : mode === "k";
-	if (useK) return `R$ ${(value / 1000).toFixed(1).replace(".", ",")}k`;
-	return `R$ ${Math.round(value).toLocaleString("pt-BR")}`;
-}
-
 // Factory returning a format fn locked to one mode — passed into the
 // CountUp tween so mid-animation values share a layout with the
-// final rendered string.
-function makeBRLFormatter(target: number): (n: number) => string {
+// final rendered string (no "R$ 900" → "R$ 1,0k" mid-tween jump).
+function makeCurrencyFormatter(target: number, currency: string): (n: number) => string {
 	const mode: "k" | "full" = target >= 1000 ? "k" : "full";
-	return (n: number) => formatBRL(n, mode);
+	return (n: number) => fmtCurrencyUnits(n, currency, { mode });
 }
 
 function formatDelta(delta: number): string {
@@ -192,6 +184,7 @@ function Tile({
 }
 
 export default function HeroMetrics({ hero, monthLabel }: Props) {
+	const { currency } = useMcpData();
 	return (
 		<motion.section
 			initial={{ opacity: 0, y: 16 }}
@@ -215,7 +208,7 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					rawNumber={hero.retainedMid}
 					delta={hero.retainedDeltaMoM}
 					spark={hero.retainedSpark}
-					formatFn={makeBRLFormatter(hero.retainedMid)}
+					formatFn={makeCurrencyFormatter(hero.retainedMid, currency)}
 					methodologyDescription="Soma dos midpoints de receita mensal que findings positivos (estado saudável detectado) preservam. Cada finding contribui com o midpoint do seu intervalo estimado calculado em packages/impact/baselines.ts. Atualize o perfil de negócio em Configurações para subir a confiança dos números."
 					methodologyDrillHref="/app/findings?polarity=positive"
 				/>
@@ -224,7 +217,7 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					rawNumber={hero.capturedMid}
 					delta={hero.capturedDeltaMoM}
 					spark={hero.capturedSpark}
-					formatFn={makeBRLFormatter(hero.capturedMid)}
+					formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
 					methodologyDescription="Soma dos midpoints de receita mensal recuperada por ações marcadas como done + verificadas no ciclo seguinte. Distintos de 'marcado como done' — só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais."
 					methodologyDrillHref="/app/actions?status=done"
 				/>

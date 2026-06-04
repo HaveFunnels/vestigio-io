@@ -65,3 +65,39 @@ export function fmtCurrencyCents(cents: number, currency: string = "USD"): strin
     maximumFractionDigits: 0,
   }).format(dollars);
 }
+
+/**
+ * Locale-aware currency formatter for **whole-unit** inputs (not cents).
+ * Used by Strategy Plan sections + any place that has impact values in
+ * the customer's currency already (BRL reais, USD dollars, …).
+ *
+ * Replaces the five hand-rolled `formatBRL` implementations across
+ * strategy/* and ActionDrawer — each hardcoded "R$" and pt-BR, which
+ * was wrong for any non-BRL org. Behavior matches the previous
+ * formatBRL contract (zero → "—" when `zeroAsDash`, abbreviate ≥1000
+ * to "k") but currency-aware via Intl.
+ */
+export function fmtCurrencyUnits(
+  value: number,
+  currency: string = "USD",
+  opts?: { mode?: "auto" | "k" | "full"; zeroAsDash?: boolean },
+): string {
+  if (opts?.zeroAsDash && value === 0) return "—";
+  const mode = opts?.mode ?? "auto";
+  const locale = CURRENCY_LOCALE[currency] || "en-US";
+  const useK = mode === "k" || (mode === "auto" && Math.abs(value) >= 1000);
+  if (useK) {
+    return (
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: 1,
+      }).format(value / 1000) + "k"
+    );
+  }
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(Math.round(value));
+}

@@ -4,6 +4,8 @@ import { useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { MOCK_LINKED_ACTIONS, type MockLinkedAction } from "./mock-data";
+import { fmtCurrencyUnits } from "@/lib/format-currency";
+import { useMcpData } from "@/components/app/McpDataProvider";
 
 /*
  * Action drawer — slides from the right when an operator clicks
@@ -47,18 +49,13 @@ const STATUS_LABEL: Record<MockLinkedAction["status"], string> = {
 	dismissed: "Descartada",
 };
 
-function formatBRL(value: number): string {
-	if (value === 0) return "—";
-	if (value >= 1000) return `R$ ${(value / 1000).toFixed(1).replace(".", ",")}k`;
-	return `R$ ${value.toLocaleString("pt-BR")}`;
-}
-
 export default function ActionDrawer({
 	open,
 	onOpenChange,
 	stepTitle,
 	actionIds,
 }: Props) {
+	const { currency } = useMcpData();
 	const actions = actionIds
 		.map((id) => MOCK_LINKED_ACTIONS[id])
 		.filter((a): a is MockLinkedAction => a !== undefined);
@@ -162,7 +159,7 @@ export default function ActionDrawer({
 																Impact
 															</div>
 															<div className="mt-0.5 font-mono tabular-nums text-content">
-																{formatBRL(action.impactMidpoint)}
+																{fmtCurrencyUnits(action.impactMidpoint, currency, { zeroAsDash: true })}
 																{action.impactMidpoint > 0 && (
 																	<span className="text-content-faint">/mo</span>
 																)}

@@ -1402,12 +1402,25 @@ export function projectActions(
   // those impacts (per user's product choice — soma double-counts vs
   // parent decision, max is conservative).
   const impactByInferenceKey = new Map<string, { min: number; max: number; midpoint: number }>();
+  // Wave-22.6 review fix UC1 (P1.1) — parallel lookup of the
+  // methodology fields (basis_type, cause, effect) per inference_key
+  // so the action builder below can inherit them onto the
+  // ActionProjection. Same lookup pattern as impactByInferenceKey.
+  const methodologyByInferenceKey = new Map<
+    string,
+    { basis_type: string; cause: string; effect: string }
+  >();
   for (const vc of valueCases) {
     const range = vc.estimated_impact.range;
     impactByInferenceKey.set(vc.inference_key, {
       min: range.min,
       max: range.max,
       midpoint: Math.round((range.min + range.max) / 2),
+    });
+    methodologyByInferenceKey.set(vc.inference_key, {
+      basis_type: vc.basis_type,
+      cause: vc.cause,
+      effect: vc.effect,
     });
   }
 
@@ -1563,18 +1576,27 @@ export function projectActions(
     //      the umbrella; dashboards dedupe by decision_ref so summing
     //      doesn't double-count secondaries against parent.
     let impact: { range: { min: number; max: number }; midpoint: number } | null = null;
+    // Wave-22.6 review fix UC1 (P1.1) — methodology inheritance:
+    // tracks the inference_key that produced the winning impact so
+    // we can attach basis_type/cause/effect of the same value case
+    // to the ActionProjection.
+    let winningInferenceKey: string | null = null;
     if (action.inference_keys && action.inference_keys.length > 0) {
-      const triggered = action.inference_keys
-        .map((k) => impactByInferenceKey.get(k))
-        .filter((v): v is { min: number; max: number; midpoint: number } => v != null);
-      if (triggered.length > 0) {
-        const winner = triggered.reduce((best, v) =>
+      const triggeredWithKey = action.inference_keys
+        .map((k) => {
+          const v = impactByInferenceKey.get(k);
+          return v != null ? { ...v, inference_key: k } : null;
+        })
+        .filter((v): v is { min: number; max: number; midpoint: number; inference_key: string } => v != null);
+      if (triggeredWithKey.length > 0) {
+        const winner = triggeredWithKey.reduce((best, v) =>
           v.midpoint > best.midpoint ? v : best,
-        triggered[0]);
+        triggeredWithKey[0]);
         impact = {
           range: { min: Math.round(winner.min), max: Math.round(winner.max) },
           midpoint: Math.round(winner.midpoint),
         };
+        winningInferenceKey = winner.inference_key;
       }
     }
     if (!impact) {
@@ -1582,6 +1604,18 @@ export function projectActions(
         ? rcImpact.get(rc.root_cause_key)!
         : null;
     }
+    // Resolve methodology fields — prefer the winning inference's
+    // value case (when this action is a secondary), else fall back
+    // to the first matching inference_key with methodology data
+    // (when the action carries inferences but none of them produced
+    // a winning impact for some reason).
+    const methodology =
+      (winningInferenceKey ? methodologyByInferenceKey.get(winningInferenceKey) : null) ??
+      (action.inference_keys
+        ? action.inference_keys
+            .map((k) => methodologyByInferenceKey.get(k))
+            .find((m): m is { basis_type: string; cause: string; effect: string } => m != null) ?? null
+        : null);
 
     // Compute priority score: impact midpoint × (confidence/100) × cross-pack multiplier
     // Phase 27: Coherence affects action priority — incoherent actions are less reliable
@@ -1667,6 +1701,12 @@ export function projectActions(
       priority_score: priorityScore,
       severity: action.severity,
       action_type: action.action_type,
+      // Wave-22.6 review fix UC1 (P1.1) — inherit methodology from
+      // the winning value case so MethodologyPopover can render on
+      // /app/actions ImpactBadges.
+      basis_type: methodology?.basis_type ?? null,
+      cause: methodology?.cause ?? null,
+      effect: methodology?.effect ?? null,
       category,
       operational_status: finalOperationalStatus,
       decision_status: decisionStatus,
@@ -1787,6 +1827,14 @@ export function projectActions(
         priority_score: Math.round(cf.combined_impact_cents * 1.5), // compound boost
         severity: cf.severity,
         action_type: 'risk_mitigation',
+        // Wave-22.6 review fix UC1 (P1.1) — compound actions don't
+        // inherit from a single value case; the impact is summed
+        // across multiple findings. basis_type set to null so the
+        // ImpactBadge popover doesn't render misleading per-finding
+        // methodology on an aggregate row.
+        basis_type: null,
+        cause: null,
+        effect: null,
         category: 'incident',
         operational_status: null,
         decision_status: null,

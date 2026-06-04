@@ -353,6 +353,20 @@ export interface ActionProjection {
   severity: string;
   action_type: string;
 
+  // Wave-22.6 review fix UC1 (P1.1) — methodology surfacing on
+  // /app/actions. Mirrors FindingProjection's fields so the
+  // MethodologyPopover can render next to action impact figures.
+  // Inherited from the action's primary linked finding (the value
+  // case that produced the impact estimate). Null when the action
+  // wasn't derived from a quantified value case (e.g. observation
+  // actions without an impact figure).
+  /** 'data_driven' | 'mixed' | 'heuristic' | null. */
+  basis_type: string | null;
+  /** Human-readable cause for the methodology popover. */
+  cause: string | null;
+  /** Human-readable effect for the methodology popover. */
+  effect: string | null;
+
   /** Phase 1B UX: Categorized action type for operational display */
   category: 'incident' | 'opportunity' | 'verification' | 'observation';
   /** Phase 1B UX: Operational status from matching incident/opportunity */

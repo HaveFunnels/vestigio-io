@@ -862,6 +862,10 @@ function ActionsContent({
 					<ImpactBadge
 						min={row.impact.monthly_range.min}
 						max={row.impact.monthly_range.max}
+						basis_type={row.basis_type}
+						severity={row.severity as any}
+						cause={row.cause}
+						effect={row.effect}
 					/>
 				) : (
 					<span className='text-xs text-content-faint'>--</span>
@@ -1289,6 +1293,10 @@ function ActionDrawerContent({
 								<ImpactBadge
 									min={action.impact.monthly_range.min}
 									max={action.impact.monthly_range.max}
+									basis_type={action.basis_type}
+									severity={action.severity as any}
+									cause={action.cause}
+									effect={action.effect}
 								/>
 							}
 						/>
@@ -1299,6 +1307,10 @@ function ActionDrawerContent({
 									min={action.impact.midpoint}
 									max={action.impact.midpoint}
 									compact
+									basis_type={action.basis_type}
+									severity={action.severity as any}
+									cause={action.cause}
+									effect={action.effect}
 								/>
 							}
 						/>

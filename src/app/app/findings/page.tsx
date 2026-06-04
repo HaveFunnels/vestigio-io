@@ -10,6 +10,7 @@ import DataTable, { Column } from "@/components/console/DataTable";
 import SideDrawer from "@/components/console/SideDrawer";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import VerificationBadge from "@/components/console/VerificationBadge";
+import ChangeBadge from "@/components/console/ChangeBadge";
 import { getPackStyle } from "@/lib/pack-colors";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
@@ -106,6 +107,18 @@ export default function FindingsPage() {
 	const [surfaceFilter, setSurfaceFilter] = useState<
 		"all" | "public" | "authenticated" | "mixed"
 	>("all");
+
+	// Wave-22.6 review fix P1.3 — free-text search across title +
+	// affected_surfaces + inference_key + root_cause. Previously the
+	// only way to find "checkout findings" was to learn the engine's
+	// pack taxonomy or build a saved view; this debounces 200ms so
+	// typing feels live without thrashing the filter pipeline.
+	const [searchQuery, setSearchQuery] = useState("");
+	const [debouncedQuery, setDebouncedQuery] = useState("");
+	useEffect(() => {
+		const id = setTimeout(() => setDebouncedQuery(searchQuery.trim().toLowerCase()), 200);
+		return () => clearTimeout(id);
+	}, [searchQuery]);
 
 	// "Criar ação" is per-row async; track which row is mid-flight so the
 	// popover can show "Criando…" instead of letting the user spam clicks.
@@ -296,10 +309,32 @@ export default function FindingsPage() {
 				return k === surfaceFilter;
 			});
 
-		if (!activeView) return surfaceFiltered;
+		// Wave-22.6 review fix P1.3 — free-text search. Matches title,
+		// any affected_surfaces entry, inference_key, root_cause. Lets
+		// the user type "checkout" or "DMARC" without learning the
+		// engine's pack taxonomy. Applied BEFORE the saved-view filters
+		// so search composes with whatever view is active.
+		const searched =
+			debouncedQuery.length === 0
+				? surfaceFiltered
+				: surfaceFiltered.filter((f) => {
+					const q = debouncedQuery;
+					if (f.title?.toLowerCase().includes(q)) return true;
+					if (f.root_cause?.toLowerCase().includes(q)) return true;
+					if (f.inference_key?.toLowerCase().includes(q)) return true;
+					const surfaces: string[] = Array.isArray((f as any).affected_surfaces)
+						? (f as any).affected_surfaces
+						: [];
+					if (surfaces.some((s) => s.toLowerCase().includes(q))) return true;
+					if ((f.surface ?? "").toLowerCase().includes(q)) return true;
+					if (f.pack?.toLowerCase().includes(q)) return true;
+					return false;
+				});
+
+		if (!activeView) return searched;
 		const f = activeView.filters as Record<string, any>;
 
-		return surfaceFiltered.filter((item) => {
+		return searched.filter((item) => {
 			if (item.suppression_context?.visibility === "hidden") return false;
 
 			// Severity filter
@@ -345,7 +380,7 @@ export default function FindingsPage() {
 
 			return true;
 		});
-	}, [findings, activeView, surfaceFilter]);
+	}, [findings, activeView, surfaceFilter, debouncedQuery]);
 
 	// ── Sorted findings ──
 	const sorted = useMemo(() => {
@@ -651,6 +686,21 @@ export default function FindingsPage() {
 			),
 		},
 		{
+			// Wave-22.6 review fix P1.3 — ChangeBadge column. Previously
+			// only visible after opening the FindingDetailPanel drawer;
+			// power users asked "what changed since last cycle?" and had
+			// to click row-by-row.
+			key: "change",
+			label: tc("columns.change"),
+			className: "w-28",
+			render: (row) =>
+				row.change_class ? (
+					<ChangeBadge value={row.change_class} />
+				) : (
+					<span className="text-xs text-content-faint">-</span>
+				),
+		},
+		{
 			key: "root_cause",
 			label: tc("columns.root_cause"),
 			className: "w-32",
@@ -767,6 +817,46 @@ export default function FindingsPage() {
 				title={tv("page_title") || t("title")}
 				tooltip={tc("page_tooltips.analysis")}
 			/>
+
+			{/* Wave-22.6 review fix P1.3 — free-text search. Matches
+			    title, surface, root_cause, inference_key, pack. Pre-fix
+			    users with mental "show me checkout findings" had no path
+			    that didn't require learning the engine's pack taxonomy. */}
+			<div className="mb-4 flex items-center gap-2">
+				<div className="relative flex-1 max-w-md">
+					<input
+						type="search"
+						value={searchQuery}
+						onChange={(e) => setSearchQuery(e.target.value)}
+						placeholder="Buscar por título, URL, causa raiz, pack…"
+						className="w-full rounded-md border border-edge bg-surface-card px-3 py-1.5 pl-8 text-[13px] text-content placeholder-content-faint focus:border-edge-focus focus:outline-none"
+						autoComplete="off"
+						spellCheck={false}
+					/>
+					<svg
+						aria-hidden
+						className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-content-faint"
+						viewBox="0 0 16 16"
+						fill="none"
+					>
+						<circle cx="7" cy="7" r="4.5" stroke="currentColor" />
+						<path
+							d="m10.5 10.5 3 3"
+							stroke="currentColor"
+							strokeLinecap="round"
+						/>
+					</svg>
+				</div>
+				{searchQuery && (
+					<button
+						type="button"
+						onClick={() => setSearchQuery("")}
+						className="text-[12px] text-content-muted hover:text-content"
+					>
+						Limpar
+					</button>
+				)}
+			</div>
 
 			{/* View Selector — always show after loading so the "+" button is accessible */}
 			{!viewsLoading && (

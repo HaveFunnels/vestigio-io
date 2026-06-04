@@ -25,6 +25,10 @@ export const AVAILABLE_COLUMNS: ColumnConfig[] = [
 	{ key: "impact", labelKey: "impact", defaultOn: true },
 	{ key: "pack", labelKey: "pack", defaultOn: true },
 	{ key: "surface", labelKey: "surface", defaultOn: true },
+	// Wave-22.6 review fix P1.3 — make "what changed since last
+	// cycle" a glance, not a drawer round-trip. ChangeBadge was
+	// previously only visible inside FindingDetailPanel.
+	{ key: "change", labelKey: "change", defaultOn: true },
 	{ key: "verification", labelKey: "verification", defaultOn: false },
 	{ key: "root_cause", labelKey: "root_cause", defaultOn: false },
 	{ key: "confidence_tier", labelKey: "confidence_tier", defaultOn: false },

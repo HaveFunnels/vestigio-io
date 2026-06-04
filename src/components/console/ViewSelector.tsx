@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
 	FlameIcon,
 	SealCheckIcon,
@@ -20,6 +20,11 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import toast from "react-hot-toast";
 import CustomSelect from "./CustomSelect";
+import {
+	listPackIds,
+	getPackLabel,
+	getPackDescription,
+} from "@/lib/pack-registry";
 
 // ──────────────────────────────────────────────
 // ViewSelector — horizontal tab bar for saved views
@@ -86,6 +91,7 @@ export default function ViewSelector({
 }: ViewSelectorProps) {
 	const t = useTranslations("console.findings.views");
 	const tc = useTranslations("console.common");
+	const locale = useLocale();
 	const [optionsViewId, setOptionsViewId] = useState<string | null>(null);
 	const optionsRef = useRef<HTMLDivElement>(null);
 
@@ -286,22 +292,12 @@ export default function ViewSelector({
 	// ── Constants for edit mode ──
 	const SEVERITY_OPTIONS = ["critical", "high", "medium", "low"];
 	const POLARITY_OPTIONS = ["all", "negative", "positive"];
-	const PACK_OPTIONS = [
-		"scale_readiness",
-		"revenue_integrity",
-		"chargeback_resilience",
-		"money_moment_exposure",
-		"saas_growth_readiness",
-		"behavioral_heuristics",
-		"copy_alignment",
-		"content_freshness",
-		"payment_health",
-		"channel_integrity",
-		"discoverability",
-		"brand_integrity",
-		"email_deliverability",
-		"competitive_lens",
-	];
+	// Wave-22.6 review fix P1.2 — source from PACK_REGISTRY so this
+	// list stays in sync with the canonical pack ids. Previously a
+	// hand-maintained array that drifted from the engine's actual
+	// pack ids (carried "behavioral_heuristics" which isn't a real
+	// engine pack, missed several real ones).
+	const PACK_OPTIONS = listPackIds();
 	const IMPACT_OPTIONS = ["any", "gt1000", "gt5000", "gt10000"];
 	const CHANGE_OPTIONS = ["new_issue", "regression", "stable_risk", "improvement"];
 	const GROUP_BY_OPTIONS = ["none", "pack", "severity", "surface"];
@@ -538,13 +534,18 @@ export default function ViewSelector({
 									<button
 										key={pack}
 										onClick={() => setEditPack(toggleChip(editPack, pack))}
+										// Wave-22.6 review fix P1.2 — tooltip from
+										// PACK_REGISTRY description so a non-engineer
+										// power user knows what each pack covers without
+										// learning the engine taxonomy.
+										title={getPackDescription(pack, locale)}
 										className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
 											editPack.includes(pack)
 												? "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
 												: "border-edge bg-surface-inset text-content-muted hover:border-content-faint hover:text-content-secondary"
 										}`}
 									>
-										{tc(`pack_labels.${pack}`)}
+										{getPackLabel(pack, locale)}
 									</button>
 								))}
 							</div>

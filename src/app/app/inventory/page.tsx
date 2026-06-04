@@ -8,7 +8,7 @@ import { Column } from "@/components/console/DataTable";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ConsoleState from "@/components/console/ConsoleState";
 import PageHeader from "@/components/console/PageHeader";
-import DiscoverySourceChips from "@/components/console/inventory/DiscoverySourceChips";
+import InventoryAddUrl from "@/components/console/inventory/InventoryAddUrl";
 import {
 	loadInventory,
 	type InventorySurface,
@@ -1223,11 +1223,34 @@ export default function InventoryPage() {
 			key: "discovery_source",
 			label: tc("source"),
 			render: (row: InventorySurface) => {
+				if (row.skip_reason) {
+					return (
+						<span
+							className='cursor-default rounded bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-400'
+							title={localizeSkipReason(row.skip_reason)}
+						>
+							{localizeSkipReason(row.skip_reason)}
+						</span>
+					);
+				}
 				if (!row.discovery_source) return <span className='text-content-faint'>—</span>;
+				const src = row.discovery_source;
+				const isActive = discoverySourceFilter === src;
 				return (
-					<span className='rounded bg-surface-inset px-1.5 py-0.5 text-[10px] text-content-faint'>
-						{localizeSource(row.discovery_source)}
-					</span>
+					<button
+						onClick={(e) => {
+							e.stopPropagation();
+							setDiscoverySourceFilter(isActive ? "all" : src);
+						}}
+						className={`rounded px-1.5 py-0.5 text-[10px] transition-colors ${
+							isActive
+								? "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30"
+								: "bg-surface-inset text-content-faint hover:bg-surface-card-hover hover:text-content-secondary"
+						}`}
+						title={isActive ? t("discovery_source_filter.all") : localizeSource(src)}
+					>
+						{localizeSource(src)}
+					</button>
 				);
 			},
 		},
@@ -1336,15 +1359,6 @@ export default function InventoryPage() {
 							onClear={clearSelection}
 						/>
 
-						{/* Wave-22.6 review fix P2.3 — discovery sources as chips
-						    (replaces the dropdown). Doubles as audit-scope at a
-						    glance + "+Add URL" entry. */}
-						<DiscoverySourceChips
-							surfaces={surfaces}
-							value={discoverySourceFilter}
-							onChange={setDiscoverySourceFilter}
-						/>
-
 						<div className='no-scrollbar mb-4 flex items-center gap-2 overflow-x-auto sm:flex-wrap sm:gap-3'>
 							<FilterDropdown
 								value={liveFilter}
@@ -1411,6 +1425,23 @@ export default function InventoryPage() {
 									{ value: "gt2000", label: t("response_time_filter.gt2000") },
 								]}
 							/>
+							<FilterDropdown
+								value={discoverySourceFilter}
+								onChange={setDiscoverySourceFilter}
+								options={(() => {
+									const unique = Array.from(
+										new Set(
+											surfaces
+												.map((s) => s.discovery_source)
+												.filter((src): src is string => Boolean(src)),
+										),
+									).sort();
+									return [
+										{ value: "all" as const, label: t("discovery_source_filter.all") },
+										...unique.map((src) => ({ value: src, label: localizeSource(src) })),
+									];
+								})()}
+							/>
 							{(() => {
 								const uniqueLocales = Array.from(
 									new Set(
@@ -1450,6 +1481,7 @@ export default function InventoryPage() {
 							>
 								<DownloadSimple size={14} weight='regular' />
 							</button>
+							<InventoryAddUrl />
 							{(liveFilter !== "all" ||
 								typeFilter !== "all" ||
 								httpStatusFilter !== "all" ||

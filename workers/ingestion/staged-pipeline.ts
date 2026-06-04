@@ -176,6 +176,13 @@ export interface StagedPipelineInput {
   // promoting once it's exhausted. Defaults to 0 (no Playwright in
   // ingestion), which preserves the legacy behavior.
   playwright_budget?: number;
+  // Wave-22.6 review fix P2.3 — URLs the customer added manually via
+  // the inventory "+ Add URL" control. Merged into the candidate list
+  // alongside sitemap/hreflang seeds, gated by the same-domain check
+  // (we never crawl a host that doesn't endsWith rootDomain). The
+  // run-cycle loads these from PageInventoryItem rows tagged with
+  // discoverySource = "manual".
+  manual_seeds?: string[];
 }
 
 // Constraint overrides per mode. Anything not set falls back to
@@ -621,6 +628,25 @@ export async function runStagedPipeline(
     }
   }
 
+  // Wave-22.6 review fix P2.3 — user-supplied manual URLs from the
+  // inventory "+ Add URL" control. Same same-domain check as hreflang
+  // (host must endsWith rootDomain) — we never crawl off-domain.
+  if (input.manual_seeds && input.manual_seeds.length > 0) {
+    const seen = new Set<string>(candidates.map(c => normalizeUrlForDedup(c.url)));
+    seen.add(normalizeUrlForDedup(rootUrl));
+    for (const mUrl of input.manual_seeds) {
+      try {
+        const host = new URL(mUrl).hostname;
+        if (!host.endsWith(rootDomain)) continue;
+      } catch { continue; }
+      const key = normalizeUrlForDedup(mUrl);
+      if (!seen.has(key)) {
+        seen.add(key);
+        candidates.push({ url: mUrl, source: 'manual' });
+      }
+    }
+  }
+
   // Wave 9.3 — homepage pagination links (rel=next/prev or numbered).
   // These rarely apply to the home page itself but if they do, we want
   // to discover page 2..N. Pagination links from inner pages are added
@@ -694,6 +720,13 @@ export async function runStagedPipeline(
       }
     };
     const allow = new Set<string>(input.url_filter.map(canon));
+    // Wave-22.6 review fix P2.3 — manual seeds must survive the
+    // url_filter intersection on hot/warm cycles too. Without this
+    // the customer adds a URL via the inventory control and then
+    // wonders why it never gets crawled (warm cycles run weekly).
+    if (input.manual_seeds && input.manual_seeds.length > 0) {
+      for (const m of input.manual_seeds) allow.add(canon(m));
+    }
     const homepageUrl = canon(rootUrl);
     candidates = candidates.filter((c) => {
       const cc = canon(c.url);

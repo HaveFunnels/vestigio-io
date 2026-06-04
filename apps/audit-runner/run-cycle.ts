@@ -523,6 +523,30 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		// everything; hot/warm run the crawl + engine but skip Playwright.
 		const pipelineMode: "full" | "shallow_plus" = cycleMode === "cold" ? "full" : "shallow_plus";
 
+		// Wave-22.6 review fix P2.3 — load user-supplied manual URLs so
+		// they get re-fetched every cycle. discoverySource = "manual" is
+		// sticky (set on first POST to /api/inventory/manual and never
+		// overwritten), so a row stays seedable as long as it isn't
+		// soft-deleted. Same-domain enforcement happens inside the
+		// pipeline.
+		const manualSeedRows = await prisma.pageInventoryItem
+			.findMany({
+				where: {
+					websiteRef: website.id,
+					discoverySource: "manual",
+					removedAt: null,
+				},
+				select: { normalizedUrl: true },
+				take: 200,
+			})
+			.catch(() => [] as Array<{ normalizedUrl: string }>);
+		const manualSeeds = manualSeedRows.map((r) => r.normalizedUrl);
+		if (manualSeeds.length > 0) {
+			console.log(
+				`[audit-runner ${cycleId}] seeding ${manualSeeds.length} manual URLs into the crawl`,
+			);
+		}
+
 		const result = await runStagedPipeline(
 			{
 				domain,
@@ -538,6 +562,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// and crawl everything.
 				url_filter: urlFilter ?? undefined,
 				exclude_patterns: (env as any).crawlExcludePatterns ?? [],
+				manual_seeds: manualSeeds.length > 0 ? manualSeeds : undefined,
 				// Playwright budget per cycle, scoped by org plan. Cold
 				// cycles are the only mode where the renderer fires
 				// (it's gated by mode='full' inside the pipeline too,

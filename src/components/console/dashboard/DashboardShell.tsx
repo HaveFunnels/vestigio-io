@@ -41,6 +41,7 @@ import { CatalogDrawer } from "./CatalogDrawer";
 // (phase/identity/finding/healing events). Same callback contract.
 import FirstAuditCard from "@/components/console/FirstAuditCard";
 import FirstAuditCelebration from "@/components/console/FirstAuditCelebration";
+import FirstFindingMoment from "@/components/console/onboarding/FirstFindingMoment";
 import type { FirstAuditCompletePayload } from "@/components/console/FirstAuditCard";
 import {
 	DEFAULT_LAYOUT,
@@ -76,6 +77,10 @@ export function DashboardShell({
 		useState<FirstAuditCompletePayload | null>(null);
 	const [showCelebration, setShowCelebration] = useState(false);
 	const [firstAuditDismissed, setFirstAuditDismissed] = useState(false);
+	// Wave-22.6 guided onboarding — when FirstFindingMoment can't show
+	// (no negative finding / user already engaged elsewhere), we fall
+	// back to the legacy celebration so the user still gets closure.
+	const [showLegacyCelebration, setShowLegacyCelebration] = useState(false);
 
 	const handleFirstAuditComplete = useCallback(
 		(payload: FirstAuditCompletePayload) => {
@@ -226,12 +231,34 @@ export function DashboardShell({
 
 	return (
 		<>
-			{/* Wave 3.18C: Celebration overlay */}
-			{showCelebration && firstAuditComplete && (
+			{/* Wave-22.6 review fix / guided onboarding — FirstFindingMoment
+			    replaces the legacy numbers-only celebration when the first
+			    audit surfaced something actionable. When it can't render
+			    (no negative finding / user already engaged with an action
+			    elsewhere) it resolves with reason="no_finding" so we can
+			    still close the moment with the legacy celebration. */}
+			{showCelebration && firstAuditComplete && !showLegacyCelebration && (
+				<FirstFindingMoment
+					onResolve={(reason) => {
+						if (reason === "no_finding") {
+							// Fall through to legacy celebration so the user
+							// still sees closure on "first audit done".
+							setShowLegacyCelebration(true);
+							return;
+						}
+						setShowCelebration(false);
+						setFirstAuditDismissed(true);
+					}}
+				/>
+			)}
+			{showLegacyCelebration && firstAuditComplete && (
 				<FirstAuditCelebration
 					findingsCount={firstAuditComplete.findingsCount}
 					pagesDiscovered={firstAuditComplete.pagesDiscovered}
-					onDone={handleCelebrationDone}
+					onDone={() => {
+						setShowLegacyCelebration(false);
+						handleCelebrationDone();
+					}}
 				/>
 			)}
 

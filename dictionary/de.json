@@ -3324,6 +3324,30 @@
 				"body": "{findings} Befunde in {pages} Seiten entdeckt. Dein Dashboard ist bereit."
 			}
 		},
+		"onboarding": {
+			"first_finding": {
+				"hook": {
+					"eyebrow": "Erster Blick",
+					"headline": "{total} verlassen Ihren Funnel diesen Monat.",
+					"subhead": "Wir haben {count} Punkte erkannt. Wir starten mit dem größten.",
+					"cta": "Maßnahme sehen"
+				},
+				"guide": {
+					"eyebrow": "Der Punkt",
+					"cause": "Ursache",
+					"effect": "Wirkung",
+					"range": "Geschätzter Bereich",
+					"cta": "Als in Arbeit markieren",
+					"submitting": "Wird gestartet…",
+					"skip": "Vorerst überspringen"
+				},
+				"done": {
+					"headline": "Sie sind dran.",
+					"body": "Wir bringen Sie zur Aktionsliste."
+				},
+				"per_month": "/Mo"
+			}
+		},
 		"organization": {
 			"title": "Organisation",
 			"subtitle": "Verwalte deine Organisation, Plan und Umgebungen.",

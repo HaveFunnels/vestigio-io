@@ -3300,6 +3300,30 @@
 				"body": "{findings} findings discovered across {pages} pages. Your dashboard is ready."
 			}
 		},
+		"onboarding": {
+			"first_finding": {
+				"hook": {
+					"eyebrow": "First read",
+					"headline": "We found {total} leaking from your funnel this month.",
+					"subhead": "There are {count} signals. Let's start with the biggest one.",
+					"cta": "See what to do"
+				},
+				"guide": {
+					"eyebrow": "The point",
+					"cause": "Cause",
+					"effect": "Effect",
+					"range": "Estimated range",
+					"cta": "Mark as in progress",
+					"submitting": "Starting…",
+					"skip": "Skip for now"
+				},
+				"done": {
+					"headline": "You're on it.",
+					"body": "Taking you to your action queue."
+				},
+				"per_month": "/mo"
+			}
+		},
 		"organization": {
 			"title": "Organization",
 			"subtitle": "Manage your organization, plan, and environments.",

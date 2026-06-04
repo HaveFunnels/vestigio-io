@@ -3384,6 +3384,30 @@
 				"body": "{findings} findings descobertos em {pages} páginas. Seu dashboard está pronto."
 			}
 		},
+		"onboarding": {
+			"first_finding": {
+				"hook": {
+					"eyebrow": "Primeira leitura",
+					"headline": "Encontramos {total} saindo do seu funil este mês.",
+					"subhead": "São {count} pontos detectados. Vamos começar pelo maior.",
+					"cta": "Ver o que fazer"
+				},
+				"guide": {
+					"eyebrow": "O ponto",
+					"cause": "Causa",
+					"effect": "Efeito",
+					"range": "Faixa estimada",
+					"cta": "Marcar como em progresso",
+					"submitting": "Iniciando…",
+					"skip": "Pular por agora"
+				},
+				"done": {
+					"headline": "Você está em ação.",
+					"body": "Levando você para a fila de ações."
+				},
+				"per_month": "/mês"
+			}
+		},
 		"organization": {
 			"title": "Organização",
 			"subtitle": "Gerencie sua organização, plano e ambientes.",

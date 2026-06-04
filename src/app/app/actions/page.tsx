@@ -24,6 +24,7 @@ import ChangeSummaryBanner from "@/components/console/ChangeSummaryBanner";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
+import PreAuditEmptyState from "@/components/console/PreAuditEmptyState";
 import PageHeader from "@/components/console/PageHeader";
 import SurfaceFilterPills from "@/components/findings/SurfaceFilterPills";
 import VerificationPanel from "@/components/console/VerificationPanel";
@@ -248,6 +249,7 @@ export default function ActionsPage() {
 				state={dataState}
 				loadingLabel={t("loading")}
 				emptyLabel={t("empty")}
+				emptyRender={() => <PreAuditEmptyState surface="actions" />}
 			>
 				{(actions) => (
 					<ActionsContent actions={actions} changeReport={changeReport} />

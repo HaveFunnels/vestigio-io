@@ -3347,6 +3347,39 @@
 				"body": "{findings} Befunde in {pages} Seiten entdeckt. Dein Dashboard ist bereit."
 			}
 		},
+		"pre_audit_empty": {
+			"cta_back_to_pulse": "Zurück zu Pulse",
+			"library": {
+				"title": "Hier wohnt Ihre Bibliothek",
+				"pre_audit_body": "Kausale Maps und der monatliche Strategieplan erscheinen, sobald das erste Audit fertig ist — meist ~60 Sekunden nach dem Start.",
+				"empty_body": "Mit genug Findings sammeln sich Maps und Pläne hier an."
+			},
+			"maps": {
+				"title": "Ihre Maps tauchen bald auf",
+				"pre_audit_body": "Maps zeigen die Ursache-Wirkungs-Kette hinter jedem Finding. Sie entstehen während des ersten kompletten Audits.",
+				"empty_body": "Maps brauchen Findings. Kommen Sie nach einem Zyklus zurück."
+			},
+			"workspaces": {
+				"title": "Ihre Workspaces werden zusammengestellt",
+				"pre_audit_body": "Workspaces gruppieren Findings nach Linse — Umsatz, Vertrauen, Copy, Verhalten. Sie füllen sich, sobald die Engine läuft.",
+				"empty_body": "Noch keine Linse hat Treffer. Sie sehen sie nach dem nächsten Audit."
+			},
+			"findings": {
+				"title": "Ihre Findings werden noch gelesen",
+				"pre_audit_body": "Jeder Finding liefert eine Geldspanne + eine Beweiskette. Die erste Welle landet nach Abschluss des Audits.",
+				"empty_body": "Aktuell keine aktiven Findings. Kommen Sie nach dem nächsten Zyklus zurück."
+			},
+			"actions": {
+				"title": "Ihre Aktionsliste erscheint hier",
+				"pre_audit_body": "Aktionen sind Fixes, sortiert nach finanzieller Wirkung. Sie entstehen aus Findings — also erst Audit, dann Liste.",
+				"empty_body": "Liste leer. Markieren Sie ein Finding als umsetzbar, um zu starten."
+			},
+			"inventory": {
+				"title": "Ihr Site-Inventar erscheint hier",
+				"pre_audit_body": "Entdeckte URLs, Quelle jeder URL und aktueller Status. Der Crawler muss seinen ersten Durchlauf beenden.",
+				"empty_body": "Noch keine URLs gecrawlt."
+			}
+		},
 		"onboarding": {
 			"first_finding": {
 				"hook": {

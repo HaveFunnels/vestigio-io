@@ -14,6 +14,11 @@ interface ConsoleStateProps<T> {
   children: (data: T) => React.ReactNode;
   loadingLabel?: string;
   emptyLabel?: string;
+  /** Optional custom render for the empty state. When provided, it
+   *  replaces the default ∅ block — used by PreAuditEmptyState so
+   *  low-awareness users get surface-specific guidance instead of
+   *  "no_data_yet". */
+  emptyRender?: () => React.ReactNode;
 }
 
 export default function ConsoleState<T>({
@@ -21,6 +26,7 @@ export default function ConsoleState<T>({
   children,
   loadingLabel,
   emptyLabel,
+  emptyRender,
 }: ConsoleStateProps<T>) {
   const t = useTranslations("console.state");
   if (state.status === "loading") {
@@ -105,6 +111,7 @@ export default function ConsoleState<T>({
   }
 
   if (state.status === "empty") {
+    if (emptyRender) return <>{emptyRender()}</>;
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
         <div className="mb-3 text-4xl text-content-faint">&#8709;</div>

@@ -15,6 +15,7 @@ import { getPackStyle } from "@/lib/pack-colors";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
 import ConsoleState from "@/components/console/ConsoleState";
+import PreAuditEmptyState from "@/components/console/PreAuditEmptyState";
 import PageHeader from "@/components/console/PageHeader";
 import SurfaceFilterPills from "@/components/findings/SurfaceFilterPills";
 import ViewSelector, { SavedViewData } from "@/components/console/ViewSelector";
@@ -763,7 +764,7 @@ export default function FindingsPage() {
 	if (!hasData || viewsLoading) {
 		return (
 			<div className="p-4 sm:p-6">
-				<ConsoleState state={viewsLoading ? { status: "loading" } : existingState} loadingLabel={t("loading")} emptyLabel={t("empty")}>
+				<ConsoleState state={viewsLoading ? { status: "loading" } : existingState} loadingLabel={t("loading")} emptyLabel={t("empty")} emptyRender={() => <PreAuditEmptyState surface="findings" />}>
 					{() => null}
 				</ConsoleState>
 			</div>

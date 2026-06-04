@@ -3384,6 +3384,39 @@
 				"body": "{findings} findings descobertos em {pages} páginas. Seu dashboard está pronto."
 			}
 		},
+		"pre_audit_empty": {
+			"cta_back_to_pulse": "Voltar ao Pulse",
+			"library": {
+				"title": "Sua Biblioteca vai morar aqui",
+				"pre_audit_body": "Mapas causais e o Plano de Estratégia mensal aparecem assim que o primeiro audit termina. Geralmente ~60 segundos depois do início.",
+				"empty_body": "Quando você tiver findings suficientes, mapas e planos começam a se acumular aqui."
+			},
+			"maps": {
+				"title": "Seus Mapas vão começar a aparecer",
+				"pre_audit_body": "Mapas mostram a cadeia de causa e efeito por trás de cada finding. Eles são construídos no primeiro audit completo.",
+				"empty_body": "Mapas precisam de findings pra existir. Volte aqui depois de um audit completar."
+			},
+			"workspaces": {
+				"title": "Seus Workspaces vão ser montados",
+				"pre_audit_body": "Workspaces agrupam findings por lente — Receita, Confiança, Copy, Comportamento. Eles são preenchidos quando o engine roda pela primeira vez.",
+				"empty_body": "Nenhuma lente apresentou resultados ainda. Você verá conforme o próximo audit gerar findings."
+			},
+			"findings": {
+				"title": "Seus Findings ainda estão sendo lidos",
+				"pre_audit_body": "Cada finding traz um intervalo em reais + uma cadeia de evidências. Os primeiros aparecem assim que o primeiro audit terminar.",
+				"empty_body": "Nenhum finding ativo agora. Volte depois do próximo ciclo."
+			},
+			"actions": {
+				"title": "Sua fila de Ações vai aparecer aqui",
+				"pre_audit_body": "Ações são fixes priorizados por impacto financeiro. Elas são derivadas dos findings — então primeiro o audit, depois a fila.",
+				"empty_body": "Sua fila está vazia. Marque um finding como acionável pra começar."
+			},
+			"inventory": {
+				"title": "O Inventário do seu site vai aparecer aqui",
+				"pre_audit_body": "URLs descobertas, fonte de cada uma, e o status delas. O crawler precisa terminar a primeira passagem.",
+				"empty_body": "Nenhuma URL coletada ainda."
+			}
+		},
 		"onboarding": {
 			"first_finding": {
 				"hook": {

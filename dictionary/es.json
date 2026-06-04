@@ -3123,6 +3123,39 @@
 				"body": "{findings} hallazgos descubiertos en {pages} páginas. Tu dashboard está listo."
 			}
 		},
+		"pre_audit_empty": {
+			"cta_back_to_pulse": "Volver al Pulse",
+			"library": {
+				"title": "Tu Biblioteca vivirá aquí",
+				"pre_audit_body": "Mapas causales y el Plan de Estrategia mensual aparecen al terminar la primera auditoría — normalmente ~60 segundos después del inicio.",
+				"empty_body": "Con suficientes findings, los mapas y planes empiezan a acumularse aquí."
+			},
+			"maps": {
+				"title": "Tus Mapas empezarán a aparecer",
+				"pre_audit_body": "Los mapas muestran la cadena causa-efecto detrás de cada finding. Se construyen durante la primera auditoría completa.",
+				"empty_body": "Los mapas necesitan findings. Vuelve después de un ciclo completo."
+			},
+			"workspaces": {
+				"title": "Tus Workspaces se están montando",
+				"pre_audit_body": "Los workspaces agrupan findings por lente — Ingresos, Confianza, Copy, Comportamiento. Se llenan al ejecutar el motor.",
+				"empty_body": "Ningún lente tiene resultados aún. Los verás cuando la próxima auditoría genere findings."
+			},
+			"findings": {
+				"title": "Tus Findings aún se están leyendo",
+				"pre_audit_body": "Cada finding trae un rango en dinero + una cadena de evidencia. Los primeros llegan al terminar la auditoría.",
+				"empty_body": "No hay findings activos. Vuelve después del próximo ciclo."
+			},
+			"actions": {
+				"title": "Tu cola de Acciones aparecerá aquí",
+				"pre_audit_body": "Las acciones son fixes priorizados por impacto financiero. Se derivan de findings — primero auditoría, después cola.",
+				"empty_body": "Cola vacía. Marca un finding como accionable para empezar."
+			},
+			"inventory": {
+				"title": "El Inventario de tu sitio aparecerá aquí",
+				"pre_audit_body": "URLs descubiertas, fuente de cada una y estado. El crawler necesita terminar la primera pasada.",
+				"empty_body": "Aún no se han crawleado URLs."
+			}
+		},
 		"onboarding": {
 			"first_finding": {
 				"hook": {

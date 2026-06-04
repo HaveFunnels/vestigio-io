@@ -7,6 +7,7 @@ import { useCopilot } from "@/components/app/CopilotProvider";
 import { Column } from "@/components/console/DataTable";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ConsoleState from "@/components/console/ConsoleState";
+import PreAuditEmptyState from "@/components/console/PreAuditEmptyState";
 import PageHeader from "@/components/console/PageHeader";
 import InventoryAddUrl from "@/components/console/inventory/InventoryAddUrl";
 import {
@@ -1267,6 +1268,7 @@ export default function InventoryPage() {
 				state={dataState}
 				loadingLabel={t("loading")}
 				emptyLabel={`${t("empty.title")}. ${t("empty.description")}`}
+				emptyRender={() => <PreAuditEmptyState surface="inventory" />}
 			>
 				{() => (
 					<>

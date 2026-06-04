@@ -3300,6 +3300,39 @@
 				"body": "{findings} findings discovered across {pages} pages. Your dashboard is ready."
 			}
 		},
+		"pre_audit_empty": {
+			"cta_back_to_pulse": "Back to Pulse",
+			"library": {
+				"title": "Your Library will live here",
+				"pre_audit_body": "Causal maps and the monthly Strategy Plan show up once the first audit finishes — usually ~60 seconds after kickoff.",
+				"empty_body": "When you have enough findings, maps and plans start accumulating here."
+			},
+			"maps": {
+				"title": "Your Maps will start appearing",
+				"pre_audit_body": "Maps show the cause-and-effect chain behind each finding. They're built during the first complete audit.",
+				"empty_body": "Maps need findings to exist. Come back after a cycle completes."
+			},
+			"workspaces": {
+				"title": "Your Workspaces are being assembled",
+				"pre_audit_body": "Workspaces group findings by lens — Revenue, Trust, Copy, Behavior. They populate once the engine runs.",
+				"empty_body": "No lens has anything yet. You'll see them once the next audit produces findings."
+			},
+			"findings": {
+				"title": "Your Findings are still being read",
+				"pre_audit_body": "Every finding ships with a dollar range + an evidence chain. The first batch lands once the audit completes.",
+				"empty_body": "No active findings right now. Come back after the next cycle."
+			},
+			"actions": {
+				"title": "Your Action queue will appear here",
+				"pre_audit_body": "Actions are fixes ranked by financial impact. They're derived from findings — so audit first, queue second.",
+				"empty_body": "Your queue is empty. Mark a finding as actionable to start."
+			},
+			"inventory": {
+				"title": "Your site Inventory will appear here",
+				"pre_audit_body": "Discovered URLs, the source each came from, and current status. The crawler needs to finish its first pass.",
+				"empty_body": "No URLs crawled yet."
+			}
+		},
 		"onboarding": {
 			"first_finding": {
 				"hook": {

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import ConsoleState from "@/components/console/ConsoleState";
+import PreAuditEmptyState from "@/components/console/PreAuditEmptyState";
 import PageHeader from "@/components/console/PageHeader";
 import { loadAllMaps } from "@/lib/console-data";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -82,6 +83,7 @@ export default function MapsGalleryPage() {
 						state={enginesState}
 						loadingLabel={t("loading")}
 						emptyLabel={t("empty")}
+						emptyRender={() => <PreAuditEmptyState surface="maps" />}
 					>
 						{() => null}
 					</ConsoleState>

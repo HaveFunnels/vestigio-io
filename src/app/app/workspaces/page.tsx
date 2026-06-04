@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import SeverityBadge from "@/components/console/SeverityBadge";
 import ConsoleState from "@/components/console/ConsoleState";
+import PreAuditEmptyState from "@/components/console/PreAuditEmptyState";
 import PageHeader from "@/components/console/PageHeader";
 import PulseSummary from "@/components/console/PulseSummary";
 import RevenueMap from "@/components/console/RevenueMap";
@@ -70,6 +71,7 @@ export default function WorkspacesPage() {
         state={dataState}
         loadingLabel={t("loading")}
         emptyLabel={t("empty")}
+        emptyRender={() => <PreAuditEmptyState surface="workspaces" />}
       >
         {(workspaces) => <PanoramaContent workspaces={workspaces} />}
       </ConsoleState>

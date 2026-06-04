@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import PageHeader from "@/components/console/PageHeader";
+import PreAuditEmptyState from "@/components/console/PreAuditEmptyState";
 
 // ──────────────────────────────────────────────
 // Library — Wave 22.6
@@ -103,22 +104,7 @@ export default function LibraryPage() {
 							))}
 						</div>
 					) : plans.length === 0 ? (
-						<div className="rounded-xl border border-edge border-dashed bg-surface-card/40 p-8 text-center">
-							<div className="mb-2 text-[13px] font-medium text-content">
-								Seu primeiro Plano será gerado ao final do próximo audit completo.
-							</div>
-							<div className="text-[12px] text-content-muted max-w-md mx-auto mb-4">
-								O Plano de Estratégia condensa suas findings, ações e contexto cumulativo em
-								um documento mensal acionável — onde começar, em qual ordem, e o que esperar
-								continuando com Vestigio.
-							</div>
-							<Link
-								href="/app/library/strategy/2026-06"
-								className="inline-flex items-center gap-1.5 text-[12px] text-content-secondary underline-offset-4 hover:text-content hover:underline"
-							>
-								Visualizar exemplo (Junho 2026) →
-							</Link>
-						</div>
+						<PreAuditEmptyState surface="library" />
 					) : (
 						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
 							{plans.map((p) => (

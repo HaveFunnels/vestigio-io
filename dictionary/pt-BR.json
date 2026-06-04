@@ -2573,6 +2573,10 @@
 			"customize": "Personalizar",
 			"done": "Pronto",
 			"widgets": {
+				"action_queue_hero": {
+					"name": "Fila de Decisões",
+					"description": "Top 5 ações priorizadas — entrega a promessa do landing \"fila de decisões, não dashboard\"."
+				},
 				"money_recovered": {
 					"name": "Dinheiro Recuperado",
 					"description": "Total acumulado de impacto $ recuperado com Vestigio."

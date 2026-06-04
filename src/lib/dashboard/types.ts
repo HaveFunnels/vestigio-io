@@ -237,6 +237,50 @@ export interface CrossSignalData {
 	journey: JourneyStage[];
 }
 
+// Wave-22.6 review fix UC2 — Action Queue Hero data shape.
+//
+// The landing literally promises "Não é um dashboard. É uma fila de
+// decisões." Pre-fix, the dashboard top widget was Cross-Signal Hero
+// (a chains visualization) and the action queue lived one click away
+// at /app/actions. This data slice powers an in-dashboard "Top 5
+// next decisions" hero that delivers the landing promise.
+export interface ActionQueueData {
+	/** Top-N prioritized open actions. Capped at 5 for the hero view;
+	 *  the widget links to /app/actions for the full queue. */
+	items: ActionQueueItem[];
+	/** Total open UserActions in the env (pending + in_progress).
+	 *  Drives the "Top 5 of 23" badge on the widget header. */
+	totalOpen: number;
+	/** Sum of impact midpoints (cents) across ALL open actions, not
+	 *  just the top 5. Lets the widget show "R$ 18,4k em foco" — the
+	 *  full at-risk number, not just the top 5 subset. */
+	totalImpactCents: number;
+	/** Currency code (USD / BRL / EUR). Same as moneyRecovered. */
+	currency: string;
+	/** Caption — locale-aware copy under the list. */
+	caption: string;
+}
+
+export interface ActionQueueItem {
+	id: string;
+	title: string;
+	severity: "critical" | "high" | "medium" | "low" | "none";
+	/** Sum of baselineImpactMidpoint when set; null when an action was
+	 *  created from a finding without a calibrated baseline. */
+	impactMidpointCents: number | null;
+	/** Action status: pending | in_progress. (We exclude done/dismissed
+	 *  from the queue.) */
+	status: "pending" | "in_progress";
+	/** Effort hint when available (trivial / low / medium / high). */
+	effortHint: string | null;
+	/** ISO timestamp the action was created. Powers the "criada há 3
+	 *  dias" affordance. */
+	createdAt: string;
+	/** Optional friendly name of the assignee (or "Não atribuída"
+	 *  when null). Surfaces the Wave-22.6 review fix UC4 plumbing. */
+	assigneeName: string | null;
+}
+
 export interface DashboardData {
 	moneyRecovered: MoneyRecoveredData;
 	healthScore: HealthScoreData;
@@ -245,6 +289,9 @@ export interface DashboardData {
 	activityHeatmap: ActivityHeatmapData;
 	adSpend: AdSpendData;
 	crossSignal: CrossSignalData;
+	/** Wave-22.6 review fix UC2 — prioritized action queue for the
+	 *  dashboard hero widget. */
+	actionQueue: ActionQueueData;
 }
 
 /** Type-safe key list — used by the registry to declare data dependencies */

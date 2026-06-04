@@ -880,6 +880,7 @@ export function emptyDashboardData(currency: string = DEFAULT_CURRENCY, captionT
 		activityHeatmap,
 		adSpend: { totalMonthly: 0, currency: "USD", byPlatform: [], hasData: false, caption: "" },
 		crossSignal: { chains: [], allChains: [], totalChains: 0, totalImpactCents: 0, allChainsImpactCents: 0, caption: "", journey: [] },
+		actionQueue: { items: [], totalOpen: 0, totalImpactCents: 0, currency, caption: "" },
 	};
 }
 
@@ -1439,6 +1440,128 @@ export async function computeJourneyForEnv(
 	return buildJourneyChains(findings);
 }
 
+// Wave-22.6 review fix UC2 — compute top-5 prioritized action queue
+// for the dashboard hero. Pulled directly from UserAction (not from
+// projected actions, which are derived per-MCP-request and not cheap
+// to recompute server-side from a long-lived API route).
+//
+// Sort priority: baselineImpactMidpoint DESC (highest money exposed
+// first) → severity DESC (critical first) → createdAt DESC (most
+// recent tiebreak). Caps at 5 items; the widget links to /app/actions
+// for the full queue.
+async function computeActionQueue(
+	prisma: PrismaClient,
+	envId: string,
+	currency: string,
+): Promise<import("@/lib/dashboard/types").ActionQueueData> {
+	try {
+		const SEVERITY_ORDER: Record<string, number> = {
+			critical: 4,
+			high: 3,
+			medium: 2,
+			low: 1,
+			none: 0,
+		};
+		// Open actions = pending OR in_progress. Done/dismissed are out.
+		const rows = await prisma.userAction.findMany({
+			where: {
+				environmentId: envId,
+				status: { in: ["pending", "in_progress"] },
+			},
+			select: {
+				id: true,
+				title: true,
+				status: true,
+				baselineImpactMidpoint: true,
+				estimatedEffortHours: true,
+				createdAt: true,
+				assignedToUserId: true,
+				finding: { select: { severity: true } },
+				assignedTo: { select: { name: true, email: true } },
+			},
+		});
+
+		// Sort + take top 5.
+		const sorted = [...rows].sort((a, b) => {
+			const ai = a.baselineImpactMidpoint ?? 0;
+			const bi = b.baselineImpactMidpoint ?? 0;
+			if (ai !== bi) return bi - ai;
+			const as = SEVERITY_ORDER[a.finding?.severity || "none"] ?? 0;
+			const bs = SEVERITY_ORDER[b.finding?.severity || "none"] ?? 0;
+			if (as !== bs) return bs - as;
+			return b.createdAt.getTime() - a.createdAt.getTime();
+		});
+
+		// Total impact = sum of midpoints across ALL open (not just
+		// top 5) so the widget header shows the full at-risk number.
+		const totalImpact = sorted.reduce(
+			(acc, r) => acc + (r.baselineImpactMidpoint ?? 0),
+			0,
+		);
+		// baselineImpactMidpoint is stored in USD (or business
+		// currency) — caller knows. Convert to cents for the data
+		// shape used by money widgets.
+		const totalImpactCents = Math.round(totalImpact * 100);
+
+		const items = sorted.slice(0, 5).map((r) => {
+			const effortHint =
+				(r.estimatedEffortHours ?? 0) < 2
+					? "trivial"
+					: (r.estimatedEffortHours ?? 0) < 8
+						? "low"
+						: (r.estimatedEffortHours ?? 0) < 24
+							? "medium"
+							: "high";
+			return {
+				id: r.id,
+				title: r.title,
+				severity: (r.finding?.severity || "none") as
+					| "critical"
+					| "high"
+					| "medium"
+					| "low"
+					| "none",
+				impactMidpointCents:
+					r.baselineImpactMidpoint != null
+						? Math.round(r.baselineImpactMidpoint * 100)
+						: null,
+				status: r.status as "pending" | "in_progress",
+				effortHint,
+				createdAt: r.createdAt.toISOString(),
+				assigneeName:
+					r.assignedTo?.name ||
+					r.assignedTo?.email ||
+					(r.assignedToUserId == null ? null : null),
+			};
+		});
+
+		const caption =
+			items.length === 0
+				? "Você ainda não tem ações. Comece em Findings → marque uma como ação."
+				: `${rows.length} ${rows.length === 1 ? "ação aberta" : "ações abertas"}`;
+
+		return {
+			items,
+			totalOpen: rows.length,
+			totalImpactCents,
+			currency,
+			caption,
+		};
+	} catch (err) {
+		console.warn(
+			"[dashboard/aggregator] computeActionQueue failed (non-fatal):",
+			err instanceof Error ? err.message : err,
+		);
+		return {
+			items: [],
+			totalOpen: 0,
+			totalImpactCents: 0,
+			currency,
+			caption: "",
+		};
+	}
+}
+
 export async function computeDashboardData(
 	prisma: PrismaClient,
 	orgId: string,
@@ -1448,16 +1571,25 @@ export async function computeDashboardData(
 ): Promise<DashboardData> {
 	_captionT = captionTranslations;
 	_currency = currency;
-	const [moneyRecovered, healthScore, exposure, changeReport, activityHeatmap, adSpend, crossSignal] =
-		await Promise.all([
-			computeMoneyRecovered(prisma, envId, currency),
-			computeHealthScore(prisma, orgId, envId),
-			computeExposure(prisma, envId, currency),
-			computeChangeReport(prisma, envId),
-			computeActivityHeatmap(prisma, orgId, envId),
-			computeAdSpend(prisma, envId),
-			computeCrossSignal(prisma, envId),
-		]);
+	const [
+		moneyRecovered,
+		healthScore,
+		exposure,
+		changeReport,
+		activityHeatmap,
+		adSpend,
+		crossSignal,
+		actionQueue,
+	] = await Promise.all([
+		computeMoneyRecovered(prisma, envId, currency),
+		computeHealthScore(prisma, orgId, envId),
+		computeExposure(prisma, envId, currency),
+		computeChangeReport(prisma, envId),
+		computeActivityHeatmap(prisma, orgId, envId),
+		computeAdSpend(prisma, envId),
+		computeCrossSignal(prisma, envId),
+		computeActionQueue(prisma, envId, currency),
+	]);
 
 	return {
 		moneyRecovered,
@@ -1467,5 +1599,6 @@ export async function computeDashboardData(
 		activityHeatmap,
 		adSpend,
 		crossSignal,
+		actionQueue,
 	};
 }

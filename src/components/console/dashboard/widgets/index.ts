@@ -16,6 +16,10 @@
 // widget. The registry-driven architecture handles the rest.
 // ──────────────────────────────────────────────
 
+// Wave-22.6 review fix UC2 — delivers the landing's "fila de decisões"
+// promise inside the dashboard. Loaded first so it lands at the top
+// of default layouts.
+import "./ActionQueueHero";
 // Cross-signal hero — Vestigio's differentiator (3.13)
 import "./CrossSignalHero";
 import "./MoneyRecoveredTicker";

@@ -2554,6 +2554,10 @@
 			"customize": "Customize",
 			"done": "Done",
 			"widgets": {
+				"action_queue_hero": {
+					"name": "Decision Queue",
+					"description": "Top 5 prioritized actions — delivers the landing's \"queue of decisions, not a dashboard\" promise."
+				},
 				"money_recovered": {
 					"name": "Money Recovered",
 					"description": "Running total of $ impact you've recovered with Vestigio."

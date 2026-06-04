@@ -237,7 +237,7 @@ function PerspectiveContent({ slug, workspaces }: { slug: string; workspaces: Wo
         row.polarity === "positive" ? (
           <span className="text-[11px] text-emerald-400">{tc("healthy")}</span>
         ) : (
-          <ImpactBadge min={row.impact.monthly_range.min} max={row.impact.monthly_range.max} />
+          <ImpactBadge min={row.impact.monthly_range.min} max={row.impact.monthly_range.max} basis_type={row.basis_type} severity={row.severity as any} cause={row.cause} effect={row.effect} />
         ),
     },
     {
@@ -519,7 +519,7 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
           </h3>
           <div className="flex items-center justify-between rounded border border-zinc-200 bg-zinc-50 px-4 py-2 dark:border-white/[0.04] dark:bg-white/[0.015]">
             <span className="text-[11px] text-zinc-600">{td("monthly_range")}</span>
-            <ImpactBadge min={finding.impact.monthly_range.min} max={finding.impact.monthly_range.max} />
+            <ImpactBadge min={finding.impact.monthly_range.min} max={finding.impact.monthly_range.max} basis_type={finding.basis_type} severity={finding.severity as any} cause={finding.cause} effect={finding.effect} />
           </div>
         </section>
       )}

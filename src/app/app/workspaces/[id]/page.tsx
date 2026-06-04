@@ -251,7 +251,7 @@ function WorkspaceDetail({ workspace }: { workspace: WorkspaceProjection }) {
 				row.polarity === "positive" ? (
 					<span className="text-[11px] text-emerald-600 dark:text-emerald-400">{tc("healthy")}</span>
 				) : (
-					<ImpactBadge min={row.impact.monthly_range.min} max={row.impact.monthly_range.max} />
+					<ImpactBadge min={row.impact.monthly_range.min} max={row.impact.monthly_range.max} basis_type={row.basis_type} severity={row.severity as any} cause={row.cause} effect={row.effect} />
 				),
 		},
 		{
@@ -711,11 +711,11 @@ function FindingDrawerContent({ finding, onDiscuss }: { finding: FindingProjecti
 					<div className="space-y-1.5">
 						<div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card/50 px-4 py-2">
 							<span className="text-[11px] text-zinc-500">{td("monthly_range")}</span>
-							<ImpactBadge min={finding.impact.monthly_range.min} max={finding.impact.monthly_range.max} />
+							<ImpactBadge min={finding.impact.monthly_range.min} max={finding.impact.monthly_range.max} basis_type={finding.basis_type} severity={finding.severity as any} cause={finding.cause} effect={finding.effect} />
 						</div>
 						<div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card/50 px-4 py-2">
 							<span className="text-[11px] text-zinc-500">{td("midpoint")}</span>
-							<ImpactBadge min={finding.impact.midpoint} max={finding.impact.midpoint} compact />
+							<ImpactBadge min={finding.impact.midpoint} max={finding.impact.midpoint} compact basis_type={finding.basis_type} severity={finding.severity as any} cause={finding.cause} effect={finding.effect} />
 						</div>
 						<div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card/50 px-4 py-2">
 							<span className="text-[11px] text-zinc-500">{td("impact_type")}</span>

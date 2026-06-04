@@ -618,6 +618,10 @@ export default function FindingsPage() {
 					<ImpactBadge
 						min={row.impact.monthly_range.min}
 						max={row.impact.monthly_range.max}
+						basis_type={row.basis_type}
+						severity={row.severity as any}
+						cause={row.cause}
+						effect={row.effect}
 					/>
 				),
 		},

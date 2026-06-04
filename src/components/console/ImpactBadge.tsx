@@ -2,12 +2,24 @@
 
 import { useTranslations } from "next-intl";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import MethodologyPopover from "./MethodologyPopover";
 
 interface ImpactBadgeProps {
   min: number;
   max: number;
   currency?: string;
   compact?: boolean;
+  // Wave-22.6 review fix UC1 — optional methodology surfacing. When
+  // these are provided, an "ⓘ" trigger renders next to the badge that
+  // expands into the methodology popover (range, basis_type, baseline
+  // rule). All optional so existing callsites work unchanged.
+  basis_type?: string | null;
+  severity?: "critical" | "high" | "medium" | "low" | null;
+  cause?: string | null;
+  effect?: string | null;
+  /** Hide the methodology trigger even when basis_type is provided.
+   *  Use for compact list views where the popover would feel cluttered. */
+  hideMethodology?: boolean;
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = { USD: "$", BRL: "R$", EUR: "€" };
@@ -18,7 +30,17 @@ function formatCurrency(value: number, sym: string): string {
   return `${sym}${Math.round(value)}`;
 }
 
-export default function ImpactBadge({ min, max, currency, compact = false }: ImpactBadgeProps) {
+export default function ImpactBadge({
+  min,
+  max,
+  currency,
+  compact = false,
+  basis_type,
+  severity,
+  cause,
+  effect,
+  hideMethodology = false,
+}: ImpactBadgeProps) {
   const t = useTranslations("console.common");
   const { currency: orgCurrency } = useMcpData();
   const sym = CURRENCY_SYMBOLS[currency || orgCurrency] || "$";
@@ -31,19 +53,47 @@ export default function ImpactBadge({ min, max, currency, compact = false }: Imp
         ? "text-amber-600 dark:text-amber-400"
         : "text-zinc-600 dark:text-zinc-400";
 
+  const showMethodology = !hideMethodology && basis_type != null;
+
   if (compact) {
     return (
-      <span className={`font-mono text-xs ${color}`}>
-        {formatCurrency(midpoint, sym)}
-        {t("per_month_short")}
+      <span className="inline-flex items-center">
+        <span className={`font-mono text-xs ${color}`}>
+          {formatCurrency(midpoint, sym)}
+          {t("per_month_short")}
+        </span>
+        {showMethodology && (
+          <MethodologyPopover
+            min={min}
+            max={max}
+            currency={currency || orgCurrency}
+            basis_type={basis_type}
+            severity={severity ?? null}
+            cause={cause ?? null}
+            effect={effect ?? null}
+          />
+        )}
       </span>
     );
   }
 
   return (
-    <span className={`font-mono text-xs ${color}`}>
-      {formatCurrency(min, sym)} – {formatCurrency(max, sym)}
-      {t("per_month_short")}
+    <span className="inline-flex items-center">
+      <span className={`font-mono text-xs ${color}`}>
+        {formatCurrency(min, sym)} – {formatCurrency(max, sym)}
+        {t("per_month_short")}
+      </span>
+      {showMethodology && (
+        <MethodologyPopover
+          min={min}
+          max={max}
+          currency={currency || orgCurrency}
+          basis_type={basis_type}
+          severity={severity ?? null}
+          cause={cause ?? null}
+          effect={effect ?? null}
+        />
+      )}
     </span>
   );
 }

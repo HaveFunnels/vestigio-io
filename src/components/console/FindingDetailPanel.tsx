@@ -401,6 +401,10 @@ export default function FindingDetailPanel({
 								<ImpactBadge
 									min={finding.impact.monthly_range.min}
 									max={finding.impact.monthly_range.max}
+									basis_type={finding.basis_type}
+									severity={finding.severity as any}
+									cause={finding.cause}
+									effect={finding.effect}
 								/>
 							}
 						/>
@@ -413,6 +417,10 @@ export default function FindingDetailPanel({
 											min={finding.impact.midpoint}
 											max={finding.impact.midpoint}
 											compact
+											basis_type={finding.basis_type}
+											severity={finding.severity as any}
+											cause={finding.cause}
+											effect={finding.effect}
 										/>
 									}
 								/>

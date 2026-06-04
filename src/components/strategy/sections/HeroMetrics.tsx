@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import type { HeroMetric } from "../types";
+import { AggregateMethodologyPopover } from "@/components/console/MethodologyPopover";
 
 /*
  * Hero metrics tile row
@@ -123,6 +124,12 @@ type TileProps = {
 	invertDelta?: boolean;
 	spark?: number[];
 	formatFn?: (n: number) => string;
+	// Wave-22.6 review fix UC1 — optional methodology surfacing on hero
+	// tiles. When provided, an "ⓘ" trigger renders next to the label
+	// that opens the aggregate-methodology popover (description, drill
+	// link, optional aggregate range/count).
+	methodologyDescription?: string;
+	methodologyDrillHref?: string;
 };
 
 function Tile({
@@ -132,6 +139,8 @@ function Tile({
 	invertDelta = false,
 	spark,
 	formatFn = (n) => Math.round(n).toLocaleString("pt-BR"),
+	methodologyDescription,
+	methodologyDrillHref,
 }: Omit<TileProps, "value" | "formatted">) {
 	const sparkTone: "up" | "down" | "flat" = invertDelta
 		? delta < 0
@@ -151,8 +160,16 @@ function Tile({
 			className="group relative flex min-h-[160px] flex-col justify-between rounded-2xl border border-edge bg-surface-card p-6 transition-all hover:border-edge-focus hover:bg-surface-card-hover"
 		>
 			<div className="flex items-start justify-between gap-3">
-				<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-					{label}
+				<div className="flex items-center text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+					<span>{label}</span>
+					{methodologyDescription && (
+						<AggregateMethodologyPopover
+							title={label}
+							description={methodologyDescription}
+							drillHref={methodologyDrillHref ?? null}
+							placement="below"
+						/>
+					)}
 				</div>
 				{spark && spark.length > 1 && (
 					<div className="text-content-tertiary">
@@ -199,6 +216,8 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					delta={hero.retainedDeltaMoM}
 					spark={hero.retainedSpark}
 					formatFn={makeBRLFormatter(hero.retainedMid)}
+					methodologyDescription="Soma dos midpoints de receita mensal que findings positivos (estado saudável detectado) preservam. Cada finding contribui com o midpoint do seu intervalo estimado calculado em packages/impact/baselines.ts. Atualize o perfil de negócio em Configurações para subir a confiança dos números."
+					methodologyDrillHref="/app/findings?polarity=positive"
 				/>
 				<Tile
 					label="Capturado / mês"
@@ -206,17 +225,23 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					delta={hero.capturedDeltaMoM}
 					spark={hero.capturedSpark}
 					formatFn={makeBRLFormatter(hero.capturedMid)}
+					methodologyDescription="Soma dos midpoints de receita mensal recuperada por ações marcadas como done + verificadas no ciclo seguinte. Distintos de 'marcado como done' — só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais."
+					methodologyDrillHref="/app/actions?status=done"
 				/>
 				<Tile
 					label="Críticos abertos"
 					rawNumber={hero.criticalCount}
 					delta={hero.criticalDeltaMoM}
 					invertDelta
+					methodologyDescription="Quantidade de findings com severity=critical em estado aberto (não resolvidos). Severidade é determinada pelo severity_hint da regra de inferência."
+					methodologyDrillHref="/app/findings?severity=critical"
 				/>
 				<Tile
 					label="Em progresso"
 					rawNumber={hero.inProgressCount}
 					delta={hero.inProgressDeltaMoM}
+					methodologyDescription="Quantidade de ações com status=in_progress atribuídas ao seu env. Reflete trabalho em curso da equipe."
+					methodologyDrillHref="/app/actions?status=in_progress"
 				/>
 			</div>
 		</motion.section>

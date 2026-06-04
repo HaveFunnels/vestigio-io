@@ -26,6 +26,7 @@ import {
 } from "@/lib/dashboard/widget-registry";
 
 import { fmtCurrencyCents } from "@/lib/format-currency";
+import { AggregateMethodologyPopover } from "@/components/console/MethodologyPopover";
 
 function formatSignedCents(cents: number, currency: string): string {
 	const sign = cents >= 0 ? "+" : "−";
@@ -58,6 +59,17 @@ function MoneyRecoveredTickerComponent({ data }: WidgetProps) {
 			<div className='relative flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted'>
 				<TrendUp size={11} weight='bold' className='text-emerald-400' />
 				<span>{t("eyebrow")}</span>
+				{/* Wave-22.6 review fix UC1 — methodology popover. The hero
+				    KPI is structurally $0 for ~14 days post-subscription
+				    because `confirmedCents` requires 2nd-cycle verification;
+				    without an explainer the buyer reads "Vestigio isn't
+				    working" instead of "the metric hasn't matured yet". */}
+				<AggregateMethodologyPopover
+					title={t("eyebrow")}
+					description="Soma de impactos confirmados — ações marcadas como done + verificadas no ciclo seguinte. Distinto de 'reivindicado': só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais. Por isso esse número costuma ser $0 durante o primeiro ciclo completo (a verificação acontece no próximo)."
+					drillHref="/app/actions?status=done"
+					placement="below"
+				/>
 			</div>
 
 			{/* Hero number — CONFIRMED only. The headline is what we can

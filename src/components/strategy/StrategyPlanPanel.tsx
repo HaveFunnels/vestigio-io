@@ -302,8 +302,8 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				/>
 				<NextSteps
 					steps={plan.nextSteps}
-					comments={plan.comments}
-					pendingEdits={plan.pendingEdits}
+					comments={plan.comments ?? []}
+					pendingEdits={plan.pendingEdits ?? []}
 					canApprove={plan.viewerCanApprove ?? false}
 					envId={plan.environmentId}
 					month={plan.month}

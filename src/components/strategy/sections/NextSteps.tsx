@@ -32,14 +32,14 @@ import { useMcpData } from "@/components/app/McpDataProvider";
 interface Props {
 	steps: NextStep[];
 	/** Wave 22.6 Step 9 — collaboration props. Threaded comments per
-	    step + inline edit banners. Optional so the Step 3 mock keeps
-	    working without backend wiring. */
-	comments?: PlanComment[];
-	pendingEdits?: PendingPlanEdit[];
-	canApprove?: boolean;
-	envId?: string;
-	month?: string;
-	planId?: string;
+	    step + inline edit banners. Required now that the mock
+	    branch is gone — every caller routes a real backend plan. */
+	comments: PlanComment[];
+	pendingEdits: PendingPlanEdit[];
+	canApprove: boolean;
+	envId: string;
+	month: string;
+	planId: string;
 }
 
 function formatDate(date: Date | null): string | null {
@@ -97,12 +97,12 @@ function renderInline(text: string) {
 
 interface StepCardProps {
 	step: NextStep;
-	comments?: PlanComment[];
+	comments: PlanComment[];
 	pendingEdit?: PendingPlanEdit;
-	canApprove?: boolean;
-	envId?: string;
-	month?: string;
-	planId?: string;
+	canApprove: boolean;
+	envId: string;
+	month: string;
+	planId: string;
 }
 
 function StepCard({
@@ -120,7 +120,7 @@ function StepCard({
 	const isDone = status === "done";
 	const due = formatDate(step.dueAt);
 
-	const stepComments = comments ?? [];
+	const stepComments = comments;
 	const sectionId = `next-step:${step.id}`;
 
 	const paragraphs = step.reasoning.split(/\n{2,}/).filter((p) => p.trim().length > 0);
@@ -153,12 +153,12 @@ function StepCard({
 				{/* Wave 22.6 Step 9 — inline MCP edit proposal banner.
 				    Only renders when an unresolved PlanEdit exists for
 				    THIS step's section. Admins see Aprovar/Recusar. */}
-				{pendingEdit && envId && month && (
+				{pendingEdit && (
 					<PlanEditBanner
 						edit={pendingEdit}
 						month={month}
 						envId={envId}
-						canApprove={canApprove ?? false}
+						canApprove={canApprove}
 					/>
 				)}
 				<div
@@ -328,45 +328,26 @@ function StepCard({
 					)}
 
 					<div className="ml-auto flex items-center gap-3">
-						{/* Step 9 — when the plan came from the backend
-						    (envId+month+planId all present), comments render
-						    as the inline PlanCommentThread below. Up here
-						    we just show the count + "ver" hint so the
-						    button row stays tight. When in mock mode
-						    (no envId), fall back to the legacy disabled
-						    affordance. */}
-						{envId && month && planId ? (
-							<span className="inline-flex items-center gap-1.5 text-[12px] text-content-muted">
-								<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-									<path
-										d="M1.5 2.5h10v6.5h-5L4 11V9h-2.5z"
-										stroke="currentColor"
-										strokeWidth="1.1"
-										strokeLinejoin="round"
-									/>
-								</svg>
-								{stepComments.length === 0
-									? "Comentar abaixo"
-									: `${stepComments.length} ${stepComments.length === 1 ? "comentário" : "comentários"}`}
-							</span>
-						) : (
-							<span
-								title="Comentários disponíveis quando o plano vier do backend"
-								className="inline-flex items-center gap-1.5 text-[12px] text-content-faint opacity-60"
-							>
-								<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-									<path
-										d="M1.5 2.5h10v6.5h-5L4 11V9h-2.5z"
-										stroke="currentColor"
-										strokeWidth="1.1"
-										strokeLinejoin="round"
-									/>
-								</svg>
-								{step.commentsCount > 0
-									? `${step.commentsCount} · mock`
-									: "mock"}
-							</span>
-						)}
+						{/* Wave 22.6 Step 9 — comments render as the inline
+						    PlanCommentThread below. Up here we just show the
+						    count + "ver" hint so the button row stays tight.
+						    The previous mock-mode fallback (rendered when
+						    envId/month/planId were missing) was deleted: every
+						    caller — StrategyPlanPanel is the only one — now
+						    always passes a real backend-sourced plan. */}
+						<span className="inline-flex items-center gap-1.5 text-[12px] text-content-muted">
+							<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+								<path
+									d="M1.5 2.5h10v6.5h-5L4 11V9h-2.5z"
+									stroke="currentColor"
+									strokeWidth="1.1"
+									strokeLinejoin="round"
+								/>
+							</svg>
+							{stepComments.length === 0
+								? "Comentar abaixo"
+								: `${stepComments.length} ${stepComments.length === 1 ? "comentário" : "comentários"}`}
+						</span>
 						<button
 							type="button"
 							onClick={() => setDrawerOpen(true)}
@@ -379,20 +360,17 @@ function StepCard({
 
 				{/* Wave 22.6 Step 9 — inline collapsible comment thread.
 				    Opens automatically when the step has comments;
-				    the composer appears when expanded. Skips when in
-				    mock mode (no envId/month/planId props passed). */}
-				{envId && month && planId && (
-					<div className="px-7 pb-5">
-						<PlanCommentThread
-							comments={stepComments}
-							sectionId={sectionId}
-							envId={envId}
-							month={month}
-							planId={planId}
-							defaultOpen={stepComments.length > 0}
-						/>
-					</div>
-				)}
+				    the composer appears when expanded. */}
+				<div className="px-7 pb-5">
+					<PlanCommentThread
+						comments={stepComments}
+						sectionId={sectionId}
+						envId={envId}
+						month={month}
+						planId={planId}
+						defaultOpen={stepComments.length > 0}
+					/>
+				</div>
 				</div>
 			</div>
 
@@ -436,7 +414,7 @@ export default function NextSteps({
 	// comments + pending edit that belong to it. Comments are keyed
 	// by sectionId="next-step:<step.id>"; pending edits same.
 	const commentsByStepId = new Map<string, PlanComment[]>();
-	for (const c of comments ?? []) {
+	for (const c of comments) {
 		const m = c.sectionId.match(/^next-step:(.+)$/);
 		if (!m) continue;
 		const arr = commentsByStepId.get(m[1]) ?? [];
@@ -444,14 +422,14 @@ export default function NextSteps({
 		commentsByStepId.set(m[1], arr);
 	}
 	const editByStepId = new Map<string, PendingPlanEdit>();
-	for (const e of pendingEdits ?? []) {
+	for (const e of pendingEdits) {
 		const m = e.sectionId.match(/^next-step:(.+)$/);
 		if (m) editByStepId.set(m[1], e);
 	}
 
 	const cardProps = (step: NextStep) => ({
 		step,
-		comments: commentsByStepId.get(step.id),
+		comments: commentsByStepId.get(step.id) ?? [],
 		pendingEdit: editByStepId.get(step.id),
 		canApprove,
 		envId,

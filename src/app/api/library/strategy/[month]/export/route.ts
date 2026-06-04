@@ -87,6 +87,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 			id: true,
 			status: true,
 			exportLockedUntil: true,
+			locale: true,
 		},
 	});
 	if (!plan) return NextResponse.json({ message: "Plan not found" }, { status: 404 });
@@ -142,10 +143,16 @@ export async function POST(request: Request, { params }: RouteParams) {
 			})
 			.catch(() => {});
 
+	// Wave-22.6 review fix — observability. Tracks pool wait time
+	// (mostly chromium contention) separately from PDF render time
+	// so we can tell "the pool was busy" from "the plan was huge".
+	const tStart = Date.now();
+	let tPoolAcquired = 0;
 	try {
-		const { withBrowserContext } = await import(
+		const { withBrowserContext, getPoolStats } = await import(
 			"../../../../../../../workers/verification/chromium-pool"
 		);
+		const poolStatsAtStart = getPoolStats();
 		// Use a tall viewport so Framer Motion's whileInView
 		// IntersectionObserver sees the entire document on first paint.
 		// Without this, sections below the fold render with opacity:0
@@ -153,6 +160,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 		const pdf = await withBrowserContext(
 			{ viewport: { width: 794, height: 20000 } },
 			async (ctx: any) => {
+			tPoolAcquired = Date.now();
 			const page = await ctx.newPage();
 			await page.goto(printUrl, {
 				waitUntil: "networkidle",
@@ -193,7 +201,27 @@ export async function POST(request: Request, { params }: RouteParams) {
 			return buffer;
 		});
 
-		const filename = `vestigio-plano-${month}.pdf`;
+		// Locale-aware filename. Falls back to English "plan" when
+		// the plan's locale is missing or unrecognized.
+		const BASE_NAME_BY_LOCALE: Record<string, string> = {
+			"pt-BR": "vestigio-plano",
+			"en": "vestigio-plan",
+			"es": "vestigio-plan",
+			"de": "vestigio-plan",
+		};
+		const baseName = BASE_NAME_BY_LOCALE[plan.locale ?? ""] ?? "vestigio-plan";
+		const filename = `${baseName}-${month}.pdf`;
+
+		const tDone = Date.now();
+		console.log(
+			`[strategy/export] env=${env.domain} month=${month} ` +
+			`pool_wait_ms=${tPoolAcquired - tStart} ` +
+			`render_ms=${tDone - tPoolAcquired} ` +
+			`total_ms=${tDone - tStart} ` +
+			`pool_busy_at_start=${poolStatsAtStart.inUse}/${poolStatsAtStart.capacity} ` +
+			`bytes=${pdf.byteLength}`,
+		);
+
 		const response = new NextResponse(pdf, {
 			status: 200,
 			headers: {

@@ -2,9 +2,8 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 
-const CDN = process.env.NEXT_PUBLIC_CDN_URL || "";
-const VSL_VIDEO = `${CDN}/vestigio-hero.mp4`;
-const VSL_WEBM = `${CDN}/vestigio-hero.webm`;
+const VSL_VIDEO = "https://cdn.vestigio.io/vestigio-hero.mp4";
+const VSL_WEBM = "https://cdn.vestigio.io/vestigio-hero.webm";
 
 function UnmuteIcon({ className }: { className?: string }) {
 	return (
@@ -25,8 +24,6 @@ function VolumeIcon({ className }: { className?: string }) {
 }
 
 export default function VSL() {
-	if (!CDN) return null;
-
 	const videoRef = useRef<HTMLVideoElement>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [state, setState] = useState<"muted" | "playing" | "paused">("muted");

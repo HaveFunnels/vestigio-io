@@ -9989,6 +9989,17 @@
 				"counts": "{nodes} stages · {edges} frictions",
 				"locked": "Open interactive map"
 			},
+			"funnel_map": {
+				"stages": {
+					"awareness": "Awareness",
+					"consideration": "Consideration",
+					"decision": "Decision",
+					"conversion": "Conversion",
+					"post_conversion": "Post-conversion"
+				},
+				"ok": "Clean",
+				"findings_count": "{visible} visible · {locked} locked"
+			},
 			"mcp_mockup": {
 				"title": "Vestigio AI",
 				"subtitle": "Ask anything about your data",

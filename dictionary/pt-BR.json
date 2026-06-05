@@ -7870,6 +7870,17 @@
 				"counts": "{nodes} estágios · {edges} fricções",
 				"locked": "Abrir mapa interativo"
 			},
+			"funnel_map": {
+				"stages": {
+					"awareness": "Descoberta",
+					"consideration": "Consideração",
+					"decision": "Decisão",
+					"conversion": "Conversão",
+					"post_conversion": "Pós-conversão"
+				},
+				"ok": "Sem fricção",
+				"findings_count": "{visible} visíveis · {locked} bloqueados"
+			},
 			"mcp_mockup": {
 				"title": "Vestigio AI",
 				"subtitle": "Pergunta livre sobre seus dados",

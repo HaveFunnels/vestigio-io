@@ -186,9 +186,19 @@ export default function useOnboardingForm() {
 		domain: string;
 		revenue: number | null;
 		businessType: BusinessType | null;
+		primaryConcern: PrimaryConcern | null;
+		currentOptimizationMethod: CurrentOptimizationMethod | null;
+		whyNow: WhyNow | null;
 	}>(() => {
 		if (typeof window === "undefined") {
-			return { domain: "", revenue: null, businessType: null };
+			return {
+				domain: "",
+				revenue: null,
+				businessType: null,
+				primaryConcern: null,
+				currentOptimizationMethod: null,
+				whyNow: null,
+			};
 		}
 		const read = (key: string): string => {
 			try {
@@ -202,6 +212,9 @@ export default function useOnboardingForm() {
 		const domain = read("vestigio_onboard_domain");
 		const revenueRaw = read("vestigio_onboard_revenue");
 		const businessTypeRaw = read("vestigio_onboard_business_type");
+		const concernRaw = read("vestigio_onboard_concern");
+		const currentMethodRaw = read("vestigio_onboard_current_method");
+		const whyNowRaw = read("vestigio_onboard_why_now");
 		const revenue = revenueRaw ? Number(revenueRaw) : null;
 		// MiniCalc has six business types; onboarding accepts four. Map the
 		// less-specific ones to the closest match so the prefill survives
@@ -213,14 +226,33 @@ export default function useOnboardingForm() {
 			institutional: "lead_gen",
 			app_download: "saas",
 			blog: "lead_gen",
+			lead_gen: "lead_gen",
+			hybrid: "hybrid",
 		};
 		const businessType: BusinessType | null = businessTypeRaw
 			? businessTypeMap[businessTypeRaw] ?? null
 			: null;
+		// Wave-22.6 — JTBD handoff from the LP audit form. Each value is
+		// either a known ID (mirrored from BusinessProfile) or null.
+		const VALID_CONCERN = new Set<PrimaryConcern>([
+			"traffic_no_sales", "low_conversion", "unknown_leak",
+			"scale_efficiency", "prioritization",
+		]);
+		const VALID_METHOD = new Set<CurrentOptimizationMethod>([
+			"analytics_tools", "session_replay", "agency_consultant",
+			"team_judgment", "spreadsheets", "nothing",
+		]);
+		const VALID_WHY = new Set<WhyNow>([
+			"scaling_paid_traffic", "recent_drop", "prove_roi",
+			"competitive_pressure", "chronic_pain", "exploring",
+		]);
 		return {
 			domain,
 			revenue: revenue != null && Number.isFinite(revenue) ? revenue : null,
 			businessType,
+			primaryConcern: VALID_CONCERN.has(concernRaw as PrimaryConcern) ? (concernRaw as PrimaryConcern) : null,
+			currentOptimizationMethod: VALID_METHOD.has(currentMethodRaw as CurrentOptimizationMethod) ? (currentMethodRaw as CurrentOptimizationMethod) : null,
+			whyNow: VALID_WHY.has(whyNowRaw as WhyNow) ? (whyNowRaw as WhyNow) : null,
 		};
 	}, []);
 
@@ -232,9 +264,9 @@ export default function useOnboardingForm() {
 		domain: prefillDomain,
 		ownershipConfirmed: false,
 		businessType: prefill.businessType ?? "ecommerce",
-		primaryConcern: "",
-		currentOptimizationMethod: "",
-		whyNow: "",
+		primaryConcern: prefill.primaryConcern ?? "",
+		currentOptimizationMethod: prefill.currentOptimizationMethod ?? "",
+		whyNow: prefill.whyNow ?? "",
 		industryVertical: "",
 		monthlyRevenue: prefill.revenue ?? 100000,
 		averageTicket: 300,
@@ -245,11 +277,14 @@ export default function useOnboardingForm() {
 		...defaultForm,
 		...(savedDraft?.form ?? {}),
 		...(prefillDomain ? { domain: prefillDomain } : {}),
-		// MiniCalc handoff wins over the saved draft for revenue + business
-		// type when both exist: the visitor just typed them on the homepage
-		// seconds ago, so that's the freshest signal.
+		// MiniCalc/LP audit handoff wins over the saved draft for any
+		// freshly-captured field: the visitor just answered them seconds
+		// ago, so that's the freshest signal.
 		...(prefill.businessType ? { businessType: prefill.businessType } : {}),
 		...(prefill.revenue != null ? { monthlyRevenue: prefill.revenue } : {}),
+		...(prefill.primaryConcern ? { primaryConcern: prefill.primaryConcern } : {}),
+		...(prefill.currentOptimizationMethod ? { currentOptimizationMethod: prefill.currentOptimizationMethod } : {}),
+		...(prefill.whyNow ? { whyNow: prefill.whyNow } : {}),
 	}));
 
 	// ── Steps (dynamic based on business type — SaaS/Hybrid skip conversion model) ──

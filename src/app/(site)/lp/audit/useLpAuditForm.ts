@@ -23,6 +23,28 @@ import { useRouter } from "next/navigation";
 // ---------------------------------------------------------------------------
 export type BusinessType = "ecommerce" | "lead_gen" | "saas" | "hybrid";
 export type ConversionModel = "checkout" | "whatsapp" | "form" | "external";
+// Wave-22.6 mini-audit JTBD — same IDs as BusinessProfile so the
+// localStorage handoff into the paid onboarding form is 1:1.
+export type PrimaryConcern =
+	| "traffic_no_sales"
+	| "low_conversion"
+	| "unknown_leak"
+	| "scale_efficiency"
+	| "prioritization";
+export type CurrentOptimizationMethod =
+	| "analytics_tools"
+	| "session_replay"
+	| "agency_consultant"
+	| "team_judgment"
+	| "spreadsheets"
+	| "nothing";
+export type WhyNow =
+	| "scaling_paid_traffic"
+	| "recent_drop"
+	| "prove_roi"
+	| "competitive_pressure"
+	| "chronic_pain"
+	| "exploring";
 
 export interface LeadState {
 	domain: string;
@@ -31,6 +53,9 @@ export interface LeadState {
 	conversionModel: ConversionModel;
 	monthlyRevenue: number;
 	averageTicket: number;
+	primaryConcern: PrimaryConcern | "";
+	currentOptimizationMethod: CurrentOptimizationMethod | "";
+	whyNow: WhyNow | "";
 	email: string;
 }
 
@@ -42,6 +67,15 @@ const DEFAULT_CONVERSION: Record<BusinessType, ConversionModel> = {
 	hybrid: "checkout",
 };
 
+// Default revenue per business_type — populates the slider so the
+// visitor can keep moving with a sane number instead of starting at 0.
+const DEFAULT_REVENUE: Record<BusinessType, number> = {
+	ecommerce: 100000,
+	lead_gen: 50000,
+	saas: 80000,
+	hybrid: 120000,
+};
+
 // Default ticket by business type — avoids asking
 const DEFAULT_TICKET: Record<BusinessType, number> = {
 	ecommerce: 250,
@@ -50,19 +84,95 @@ const DEFAULT_TICKET: Record<BusinessType, number> = {
 	hybrid: 350,
 };
 
-// Frontend screens → backend step mapping (v3 — 3 screens)
-//   Screen 1 (domain)        → Backend step 1
-//   Screen 2 (business_type) → batched with inferred conversion_model into backend step 2
-//   Screen 3 (email)         → submits revenue+ticket as backend step 3, then email as step 4
-type ScreenId = "domain" | "business_type" | "email";
-const SCREENS: ScreenId[] = ["domain", "business_type", "email"];
+// Frontend screens → backend step mapping (v3 — 7 screens).
+//   Screen 1 (domain)         → Backend step 1
+//   Screen 2 (business_type)  → Backend step 2 (conversionModel inferred client-side)
+//   Screen 3 (revenue)        → Backend step 3
+//   Screen 4 (concern)        → Backend step 4
+//   Screen 5 (current_method) → Backend step 5
+//   Screen 6 (why_now)        → Backend step 6
+//   Screen 7 (email)          → Backend step 7 (terminal — fires audit)
+type ScreenId =
+	| "domain"
+	| "business_type"
+	| "revenue"
+	| "concern"
+	| "current_method"
+	| "why_now"
+	| "email";
+const SCREENS: ScreenId[] = [
+	"domain",
+	"business_type",
+	"revenue",
+	"concern",
+	"current_method",
+	"why_now",
+	"email",
+];
 const TOTAL_SCREENS = SCREENS.length;
 
-function backendStepForScreen(screen: ScreenId): number | null {
+function backendStepForScreen(screen: ScreenId): number {
 	switch (screen) {
 		case "domain": return 1;
-		case "business_type": return 2; // submits businessModel + inferred conversionModel
-		case "email": return null; // handled specially — submits steps 3 + 4 + fires audit
+		case "business_type": return 2;
+		case "revenue": return 3;
+		case "concern": return 4;
+		case "current_method": return 5;
+		case "why_now": return 6;
+		case "email": return 7;
+	}
+}
+
+// ---------------------------------------------------------------------------
+// LocalStorage handoff — bridges the anon mini-audit and paid onboarding.
+// The paid form reads the same keys; matching field names mean zero
+// translation. Defensive try/catch — Safari private mode, full disk,
+// blocked storage all return undefined and the form falls back to
+// empty.
+// ---------------------------------------------------------------------------
+interface PrefillFromStorage {
+	domain?: string;
+	businessType?: BusinessType;
+	revenue?: number;
+	concern?: PrimaryConcern;
+	currentMethod?: CurrentOptimizationMethod;
+	whyNow?: WhyNow;
+}
+
+function readLocalStoragePrefill(): PrefillFromStorage {
+	if (typeof window === "undefined") return {};
+	try {
+		const read = (key: string) => window.localStorage.getItem(key) || undefined;
+		const businessType = read("vestigio_onboard_business_type") as BusinessType | undefined;
+		const revenueRaw = read("vestigio_onboard_revenue");
+		const revenue = revenueRaw ? Number(revenueRaw) : undefined;
+		return {
+			domain: read("vestigio_onboard_domain"),
+			businessType: businessType && ["ecommerce", "lead_gen", "saas", "hybrid"].includes(businessType) ? businessType : undefined,
+			revenue: revenue != null && Number.isFinite(revenue) && revenue > 0 ? revenue : undefined,
+			concern: read("vestigio_onboard_concern") as PrimaryConcern | undefined,
+			currentMethod: read("vestigio_onboard_current_method") as CurrentOptimizationMethod | undefined,
+			whyNow: read("vestigio_onboard_why_now") as WhyNow | undefined,
+		};
+	} catch {
+		return {};
+	}
+}
+
+function writeLocalStorageHandoff(form: LeadState): void {
+	if (typeof window === "undefined") return;
+	try {
+		const write = (key: string, value: string | number) => {
+			window.localStorage.setItem(key, String(value));
+		};
+		write("vestigio_onboard_domain", form.domain);
+		write("vestigio_onboard_business_type", form.businessModel);
+		write("vestigio_onboard_revenue", form.monthlyRevenue);
+		if (form.primaryConcern) write("vestigio_onboard_concern", form.primaryConcern);
+		if (form.currentOptimizationMethod) write("vestigio_onboard_current_method", form.currentOptimizationMethod);
+		if (form.whyNow) write("vestigio_onboard_why_now", form.whyNow);
+	} catch {
+		// best effort
 	}
 }
 
@@ -97,14 +207,22 @@ export default function useLpAuditForm() {
 	const eventCountRef = useRef({ mousemove: 0, keydown: 0, focus: 0, scroll: 0 });
 
 	// ── Form data ──
-	const [form, setForm] = useState<LeadState>({
-		domain: "",
-		ownershipConfirmed: true, // no longer gated by checkbox
-		businessModel: "ecommerce",
-		conversionModel: "checkout",
-		monthlyRevenue: 100000,
-		averageTicket: 250,
-		email: "",
+	// Wave-22.6 — prefill from localStorage handoff if MiniCalculator
+	// stashed values, OR from a returning visitor's previous session.
+	const [form, setForm] = useState<LeadState>(() => {
+		const fromStorage = readLocalStoragePrefill();
+		return {
+			domain: fromStorage.domain ?? "",
+			ownershipConfirmed: true, // no longer gated by checkbox
+			businessModel: fromStorage.businessType ?? "ecommerce",
+			conversionModel: DEFAULT_CONVERSION[fromStorage.businessType ?? "ecommerce"],
+			monthlyRevenue: fromStorage.revenue ?? DEFAULT_REVENUE[fromStorage.businessType ?? "ecommerce"],
+			averageTicket: DEFAULT_TICKET[fromStorage.businessType ?? "ecommerce"],
+			primaryConcern: fromStorage.concern ?? "",
+			currentOptimizationMethod: fromStorage.currentMethod ?? "",
+			whyNow: fromStorage.whyNow ?? "",
+			email: "",
+		};
 	});
 
 	// ── Mount: start lead session + register event listeners ──
@@ -204,7 +322,7 @@ export default function useLpAuditForm() {
 		}
 
 		const payload = {
-			version: 2,
+			version: 3,
 			formToken,
 			behavioral: buildBehavioralPayload(),
 			website: honeypot,
@@ -214,6 +332,9 @@ export default function useLpAuditForm() {
 			conversionModel: form.conversionModel,
 			monthlyRevenue: String(form.monthlyRevenue),
 			averageTicket: String(form.averageTicket),
+			primaryConcern: form.primaryConcern || undefined,
+			currentOptimizationMethod: form.currentOptimizationMethod || undefined,
+			whyNow: form.whyNow || undefined,
 			email: form.email,
 		};
 
@@ -289,26 +410,22 @@ export default function useLpAuditForm() {
 			await checkDomainReachability();
 		}
 
-		// Determine if this screen needs a backend submission
+		// Every screen in v3 corresponds 1:1 to a backend step.
 		const backendStep = backendStepForScreen(currentScreen);
-
-		if (backendStep !== null) {
-			const ok = await submitToBackend(backendStep);
-			if (!ok) {
-				setSubmitting(false);
-				inFlightRef.current = false;
-				return;
-			}
+		const ok = await submitToBackend(backendStep);
+		if (!ok) {
+			setSubmitting(false);
+			inFlightRef.current = false;
+			return;
 		}
 
-		// Last screen (email): submit revenue+ticket (step 3), email (step 4), then fire audit
+		// Email is the terminal step — fire audit and persist the
+		// JTBD answers to localStorage so the paid onboarding form
+		// can prefill them and skip 5 of its 7 steps.
 		if (currentScreen === "email") {
-			const step3ok = await submitToBackend(3);
-			if (!step3ok) { setSubmitting(false); inFlightRef.current = false; return; }
-			const step4ok = await submitToBackend(4);
-			if (!step4ok) { setSubmitting(false); inFlightRef.current = false; return; }
-			const ok = await fireAudit();
-			if (ok) {
+			writeLocalStorageHandoff(form);
+			const fired = await fireAudit();
+			if (fired) {
 				router.push(`/lp/audit/result/${leadId}`);
 			} else {
 				setSubmitting(false);
@@ -321,7 +438,7 @@ export default function useLpAuditForm() {
 		setStepIndex((s) => Math.min(s + 1, TOTAL_SCREENS - 1));
 		setSubmitting(false);
 		inFlightRef.current = false;
-	}, [currentScreen, checkDomainReachability, submitToBackend, fireAudit, leadId, router]);
+	}, [currentScreen, checkDomainReachability, submitToBackend, fireAudit, leadId, router, form]);
 
 	const prev = useCallback(() => {
 		setFieldError(null);

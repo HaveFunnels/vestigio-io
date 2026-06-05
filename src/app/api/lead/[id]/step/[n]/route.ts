@@ -43,12 +43,15 @@ function getClientIp(request: Request): string {
 interface StepBody {
 	formToken: string;
 	behavioral: BehavioralSignals;
-	// v2 step mapping — sent by the redesigned premium form.
-	// When version=2, the step numbers map differently:
+	// version=3 — Wave-22.6 mini-audit redesign with JTBD trio.
 	//   Step 1: domain + ownershipConfirmed
-	//   Step 2: businessModel + conversionModel
+	//   Step 2: businessModel
 	//   Step 3: monthlyRevenue
-	//   Step 4: email
+	//   Step 4: primaryConcern
+	//   Step 5: currentOptimizationMethod
+	//   Step 6: whyNow
+	//   Step 7: email (terminal — triggers mini-audit)
+	// version=2 — premium 4-step (domain/business/revenue/email).
 	// Default (v1) preserves the original mapping for in-progress leads.
 	version?: number;
 	// Step-specific fields (all optional — server picks the right ones
@@ -60,6 +63,9 @@ interface StepBody {
 	monthlyRevenue?: string; // raw "$50k" — parsed server-side
 	averageTicket?: string;
 	conversionModel?: string;
+	primaryConcern?: string;
+	currentOptimizationMethod?: string;
+	whyNow?: string;
 	email?: string;
 	phone?: string;
 	// Honeypot
@@ -73,7 +79,7 @@ export async function PATCH(
 	const { id, n } = await context.params;
 	const stepNum = parseInt(n, 10);
 
-	if (isNaN(stepNum) || stepNum < 1 || stepNum > 4) {
+	if (isNaN(stepNum) || stepNum < 1 || stepNum > 7) {
 		return NextResponse.json(
 			{ message: "Invalid step number." },
 			{ status: 400 },
@@ -147,8 +153,132 @@ export async function PATCH(
 	};
 
 	const isV2 = body.version === 2;
+	const isV3 = body.version === 3;
 
-	if (isV2) {
+	if (isV3) {
+		// ── V3 step mapping — Wave-22.6 mini-audit JTBD form ──
+		// Step 1: domain + ownership
+		// Step 2: businessModel (conversionModel inferred client-side)
+		// Step 3: monthlyRevenue
+		// Step 4: primaryConcern
+		// Step 5: currentOptimizationMethod
+		// Step 6: whyNow
+		// Step 7: email (terminal)
+		const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "hybrid"]);
+		const VALID_CONCERN = new Set([
+			"traffic_no_sales",
+			"low_conversion",
+			"unknown_leak",
+			"scale_efficiency",
+			"prioritization",
+		]);
+		const VALID_METHOD = new Set([
+			"analytics_tools",
+			"session_replay",
+			"agency_consultant",
+			"team_judgment",
+			"spreadsheets",
+			"nothing",
+		]);
+		const VALID_WHY_NOW = new Set([
+			"scaling_paid_traffic",
+			"recent_drop",
+			"prove_roi",
+			"competitive_pressure",
+			"chronic_pain",
+			"exploring",
+		]);
+
+		if (stepNum === 1) {
+			const domainCheck = validateLeadDomain(body.domain || "");
+			if (!domainCheck.ok) {
+				return NextResponse.json(
+					{ message: domainCheck.reason, field: "domain" },
+					{ status: 422 },
+				);
+			}
+			if (!body.ownershipConfirmed) {
+				return NextResponse.json(
+					{ message: "Please confirm ownership before we analyze your domain.", field: "ownershipConfirmed" },
+					{ status: 422 },
+				);
+			}
+			updates.domain = body.domain!.trim();
+			const domainClean = body.domain!.trim().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+			const orgFromDomain = domainClean.split(".")[0];
+			updates.organizationName = orgFromDomain.charAt(0).toUpperCase() + orgFromDomain.slice(1);
+		}
+
+		if (stepNum === 2) {
+			if (!body.businessModel || !VALID_BUSINESS_MODELS.has(body.businessModel)) {
+				return NextResponse.json(
+					{ message: "Please pick a valid business type.", field: "businessModel" },
+					{ status: 422 },
+				);
+			}
+			updates.businessModel = body.businessModel;
+			// conversionModel inferred client-side — accept if present.
+			if (body.conversionModel) {
+				const VALID_CONVERSION_MODELS = new Set(["checkout", "whatsapp", "form", "external"]);
+				if (VALID_CONVERSION_MODELS.has(body.conversionModel)) {
+					updates.conversionModel = body.conversionModel;
+				}
+			}
+		}
+
+		if (stepNum === 3) {
+			const revenueParsed = parseRevenue(body.monthlyRevenue || "");
+			const revenueCheck = validateLeadRevenue(revenueParsed);
+			if (!revenueCheck.ok) {
+				return NextResponse.json(
+					{ message: revenueCheck.reason, field: "monthlyRevenue" },
+					{ status: 422 },
+				);
+			}
+			updates.monthlyRevenue = revenueParsed;
+		}
+
+		if (stepNum === 4) {
+			if (!body.primaryConcern || !VALID_CONCERN.has(body.primaryConcern)) {
+				return NextResponse.json(
+					{ message: "Please pick what concerns you most.", field: "primaryConcern" },
+					{ status: 422 },
+				);
+			}
+			updates.primaryConcern = body.primaryConcern;
+		}
+
+		if (stepNum === 5) {
+			if (!body.currentOptimizationMethod || !VALID_METHOD.has(body.currentOptimizationMethod)) {
+				return NextResponse.json(
+					{ message: "Please pick how you optimize today.", field: "currentOptimizationMethod" },
+					{ status: 422 },
+				);
+			}
+			updates.currentOptimizationMethod = body.currentOptimizationMethod;
+		}
+
+		if (stepNum === 6) {
+			if (!body.whyNow || !VALID_WHY_NOW.has(body.whyNow)) {
+				return NextResponse.json(
+					{ message: "Please pick why now.", field: "whyNow" },
+					{ status: 422 },
+				);
+			}
+			updates.whyNow = body.whyNow;
+		}
+
+		if (stepNum === 7) {
+			const emailCheck = validateLeadEmail(body.email || "");
+			if (!emailCheck.ok) {
+				return NextResponse.json(
+					{ message: emailCheck.reason, field: "email" },
+					{ status: 422 },
+				);
+			}
+			updates.email = body.email!.trim().toLowerCase();
+		}
+	} else if (isV2) {
 		// ── V2 step mapping (premium one-question-per-screen form) ──
 		// Step 1: domain + ownership
 		// Step 2: businessModel + conversionModel

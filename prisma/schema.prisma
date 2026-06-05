@@ -1930,6 +1930,14 @@ model AnonymousLead {
   phone            String?
   formData         String? @db.Text // JSON dump of remaining state for debug
 
+  // Wave-22.6 mini-audit redesign — JTBD discovery on the LP form.
+  // Stable IDs mirror BusinessProfile.primaryConcern et al so the
+  // localStorage handoff into the paid onboarding form is a 1:1 copy
+  // (no field name translation). Nullable so legacy leads still work.
+  primaryConcern             String?
+  currentOptimizationMethod  String?
+  whyNow                     String?
+
   // Funnel state
   status           String  @default("draft") // draft | auditing | audit_complete | checkout_started | converted | expired | spam
   currentStep      Int     @default(1)

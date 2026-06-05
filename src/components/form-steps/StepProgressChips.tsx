@@ -9,6 +9,9 @@ import {
 	CalculatorIcon,
 	SparkleIcon,
 	UsersIcon,
+	BrainIcon,
+	HourglassIcon,
+	EnvelopeIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import type { ComponentType } from "react";
 
@@ -33,7 +36,10 @@ export type StepKind =
 	| "revenue"
 	| "ticket"
 	| "plan"
-	| "concern";
+	| "concern"
+	| "current_method"
+	| "why_now"
+	| "email";
 
 interface Props {
 	steps: readonly StepKind[];
@@ -50,6 +56,9 @@ const ICON: Record<StepKind, ComponentType<{ size?: number; weight?: any }>> = {
 	ticket: CalculatorIcon,
 	plan: SparkleIcon,
 	concern: TargetIcon,
+	current_method: BrainIcon,
+	why_now: HourglassIcon,
+	email: EnvelopeIcon,
 };
 
 export default function StepProgressChips({ steps, activeIndex }: Props) {

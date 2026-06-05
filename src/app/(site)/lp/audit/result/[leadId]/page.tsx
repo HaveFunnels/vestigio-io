@@ -28,6 +28,7 @@ import logoLight from "@/../public/images/logo/logo-light.png";
 import { trackLpEvent } from "@/lib/lp-audit-track";
 import { PREVIEW_SCENARIOS } from "@/lib/lp-audit-preview-scenarios";
 import MiniFunnelMap from "@/components/lp/MiniFunnelMap";
+import CopilotPanel from "@/components/lp/CopilotPanel";
 
 // ──────────────────────────────────────────────
 // /lp/audit/result/[leadId] — Mini-Audit Result
@@ -437,15 +438,9 @@ export default function MiniAuditResultPage() {
 						domain={lead.domain || ""}
 					/>
 
-					{/* Vestigio AI mockup — typing animation that cuts
-					    mid-response. Anchors the MCP value without
-					    serving an LLM call to anon visitors. */}
-					<McpChatMockup
-						domain={lead.domain || ""}
-						revealed={revealed}
-						onCheckout={openCheckout}
-						launching={launching}
-					/>
+					{/* Vestigio AI lives as a CopilotPanel pinned to the right
+					    (desktop) / bottom-sheet (mobile) — mounted below at
+					    the page level so it floats over every section. */}
 
 					{/* Negative findings */}
 					<section className={`mt-10 transition-opacity duration-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
@@ -560,6 +555,11 @@ export default function MiniAuditResultPage() {
 					}
 				}
 			`}</style>
+			<CopilotPanel
+				domain={lead.domain || ""}
+				onCheckout={openCheckout}
+				launching={launching}
+			/>
 			{previewWidget}
 		</>
 	);
@@ -1212,124 +1212,10 @@ function MapPreviewSection({
 	);
 }
 
-// ── McpChatMockup (Wave-22.6 spec block #5) ──
-// Animated typing mockup of Vestigio AI. Question + response that
-// cuts mid-sentence with a fade. Static layout, JS-driven typing.
-// Zero LLM calls — anchors the MCP value without burning tokens on
-// anon traffic.
-function McpChatMockup({
-	domain,
-	revealed,
-	onCheckout,
-	launching,
-}: {
-	domain: string;
-	revealed: boolean;
-	onCheckout: () => void;
-	launching: boolean;
-}) {
-	const t = useTranslations("lp.audit_result");
-	const question = t("mcp_mockup.question");
-	// Response is cut mid-sentence on purpose (server-side string truncation
-	// would be ideal; for this preview, the cut is part of the string in
-	// the dictionary, ending with a deliberate trail-off).
-	const responseFull = t("mcp_mockup.response_cut");
-	const [phase, setPhase] = useState<"idle" | "user" | "ai_typing" | "ai_response" | "done">("idle");
-	const [typedChars, setTypedChars] = useState(0);
-
-	useEffect(() => {
-		if (!revealed) return;
-		const timers: number[] = [];
-		// 0s: idle → 1s: user message appears → 2s: AI typing dots →
-		// 3.5s: AI starts char-by-char response → end: cut + cursor.
-		timers.push(window.setTimeout(() => setPhase("user"), 600));
-		timers.push(window.setTimeout(() => setPhase("ai_typing"), 1600));
-		timers.push(window.setTimeout(() => setPhase("ai_response"), 3000));
-		return () => {
-			timers.forEach((id) => window.clearTimeout(id));
-		};
-	}, [revealed]);
-
-	useEffect(() => {
-		if (phase !== "ai_response") return;
-		const id = window.setInterval(() => {
-			setTypedChars((n) => {
-				if (n >= responseFull.length) {
-					window.clearInterval(id);
-					setPhase("done");
-					return n;
-				}
-				return n + 1;
-			});
-		}, 24);
-		return () => window.clearInterval(id);
-	}, [phase, responseFull.length]);
-
-	return (
-		<section
-			className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}
-		>
-			<div className="mb-4 flex items-baseline justify-between">
-				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
-					{t("mcp_mockup.title")}
-				</h2>
-				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-content-muted">
-					{t("mcp_mockup.subtitle")}
-				</div>
-			</div>
-
-			<div className="overflow-hidden rounded-2xl border border-edge bg-surface-card">
-				<div className="border-b border-edge-subtle px-4 py-3 text-[12px] font-medium text-content-secondary">
-					<span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500" />
-					{t("mcp_mockup.header", { domain })}
-				</div>
-				<div className="space-y-3 p-5">
-					{/* User bubble */}
-					<div
-						className={`flex justify-end transition-all duration-500 ${
-							phase === "idle" ? "translate-y-2 opacity-0" : "translate-y-0 opacity-100"
-						}`}
-					>
-						<div className="max-w-[80%] rounded-2xl rounded-br-sm bg-emerald-100 px-4 py-2.5 text-[13px] text-zinc-900 dark:bg-emerald-500/20 dark:text-content">
-							{question}
-						</div>
-					</div>
-
-					{/* AI bubble — typing indicator */}
-					{(phase === "ai_typing" || phase === "ai_response" || phase === "done") && (
-						<div className="flex justify-start">
-							<div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-edge bg-surface-inset px-4 py-3 text-[13px] text-content-secondary">
-								{phase === "ai_typing" ? (
-									<span className="inline-flex items-center gap-1.5">
-										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-content-faint [animation-delay:0ms]" />
-										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-content-faint [animation-delay:150ms]" />
-										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-content-faint [animation-delay:300ms]" />
-									</span>
-								) : (
-									<span className="leading-relaxed">
-										{responseFull.slice(0, typedChars)}
-										<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-content-secondary align-middle" />
-									</span>
-								)}
-							</div>
-						</div>
-					)}
-				</div>
-				<button
-					type="button"
-					onClick={onCheckout}
-					disabled={launching}
-					className="flex w-full items-center justify-center gap-1.5 border-t border-edge-subtle px-5 py-3 text-[12px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
-				>
-					{t("mcp_mockup.cta")}
-					<svg className="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-						<path d="M3 8h10M9 4l4 4-4 4" />
-					</svg>
-				</button>
-			</div>
-		</section>
-	);
-}
+// McpChatMockup was extracted to src/components/lp/CopilotPanel.tsx
+// and mounted at the page level as a floating right-side panel
+// (desktop) / bottom-sheet (mobile). The previous in-flow section
+// went stale on scrollback (typing animation only fired once).
 
 // ── CTAFinalSection (Wave-22.6 spec block #6) ──
 // The emotional close. JTBD-personalized using primaryConcern,

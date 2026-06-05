@@ -9713,6 +9713,19 @@
 				"critical_label": "críticos",
 				"actions_label": "acciones prioritarias"
 			},
+			"map": {
+				"title": "Mapa de causa raíz",
+				"counts": "{nodes} nodos · {edges} conexiones",
+				"locked": "El mapa real se desbloquea en el Pulse"
+			},
+			"mcp_mockup": {
+				"title": "Vestigio AI",
+				"subtitle": "Pregunta libre sobre tus datos",
+				"header": "conectada a las fuentes de {domain}",
+				"question": "¿Cuánto perdí con el checkout este mes?",
+				"response_cut": "Mirando tus últimos 30 días, perdiste $ ░░░░ en 3 fricciones del checkout. La mayor: la pantalla de pago carga en ░░░░ ms ░░░░",
+				"cta": "Ver la respuesta completa en el Pulse"
+			},
 			"workspaces": {
 				"title": "Cuatro lentes sobre el mismo análisis",
 				"subtitle": "4 workspaces",

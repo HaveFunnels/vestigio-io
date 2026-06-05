@@ -7826,6 +7826,19 @@
 				"critical_label": "críticos",
 				"actions_label": "ações priorizadas"
 			},
+			"map": {
+				"title": "Mapa de causa-raiz",
+				"counts": "{nodes} nós · {edges} conexões",
+				"locked": "Mapa real desbloqueia no Pulse"
+			},
+			"mcp_mockup": {
+				"title": "Vestigio AI",
+				"subtitle": "Pergunta livre sobre seus dados",
+				"header": "conectada às fontes de {domain}",
+				"question": "Quanto perdi com checkout esse mês?",
+				"response_cut": "Olhando seus últimos 30 dias, você perdeu R$ ░░░░ em 3 fricções no checkout. A maior: a tela de pagamento carrega ░░░░ ms ░░░░",
+				"cta": "Veja a resposta completa no Pulse"
+			},
 			"workspaces": {
 				"title": "Quatro lentes sobre a mesma análise",
 				"subtitle": "4 workspaces",

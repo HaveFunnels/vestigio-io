@@ -8188,6 +8188,19 @@
 				"critical_label": "kritisch",
 				"actions_label": "priorisierte Maßnahmen"
 			},
+			"map": {
+				"title": "Ursache-Karte",
+				"counts": "{nodes} Knoten · {edges} Verbindungen",
+				"locked": "Echte Karte wird im Pulse freigeschaltet"
+			},
+			"mcp_mockup": {
+				"title": "Vestigio AI",
+				"subtitle": "Fragen Sie alles über Ihre Daten",
+				"header": "verbunden mit den Quellen von {domain}",
+				"question": "Wie viel habe ich diesen Monat am Checkout verloren?",
+				"response_cut": "In den letzten 30 Tagen haben Sie {amount} EUR über 3 Checkout-Friktionen verloren. Die größte: die Zahlungsseite lädt in ░░░░ ms ░░░░",
+				"cta": "Vollständige Antwort im Pulse ansehen"
+			},
 			"workspaces": {
 				"title": "Vier Perspektiven auf dieselbe Analyse",
 				"subtitle": "4 Workspaces",

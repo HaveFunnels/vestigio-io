@@ -9945,6 +9945,19 @@
 				"critical_label": "critical",
 				"actions_label": "priority actions"
 			},
+			"map": {
+				"title": "Root-cause map",
+				"counts": "{nodes} nodes · {edges} connections",
+				"locked": "Real map unlocks in Pulse"
+			},
+			"mcp_mockup": {
+				"title": "Vestigio AI",
+				"subtitle": "Ask anything about your data",
+				"header": "connected to {domain}'s sources",
+				"question": "How much did I lose at checkout this month?",
+				"response_cut": "Looking at your last 30 days, you lost $ ░░░░ across 3 checkout frictions. The biggest: the payment screen loads in ░░░░ ms ░░░░",
+				"cta": "See the full answer in Pulse"
+			},
 			"workspaces": {
 				"title": "Four lenses on the same analysis",
 				"subtitle": "4 workspaces",

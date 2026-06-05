@@ -343,6 +343,24 @@ export default function MiniAuditResultPage() {
 						revealed={revealed}
 					/>
 
+					{/* Causal map preview — synthetic SVG illustration.
+					    Content is illustrative, not real data. */}
+					<MapPreviewSection
+						negativeCount={negativeFindings.length}
+						blurredCount={blurredFindings.length}
+						revealed={revealed}
+					/>
+
+					{/* Vestigio AI mockup — typing animation that cuts
+					    mid-response. Anchors the MCP value without
+					    serving an LLM call to anon visitors. */}
+					<McpChatMockup
+						domain={lead.domain || ""}
+						revealed={revealed}
+						onCheckout={openCheckout}
+						launching={launching}
+					/>
+
 					{/* Negative findings */}
 					<section className={`mt-10 transition-opacity duration-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<header className="mb-3 flex items-end justify-between">
@@ -966,6 +984,248 @@ function WorkspaceShimmerRow() {
 				<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 			</svg>
 		</li>
+	);
+}
+
+// ── MapPreviewSection (Wave-22.6 spec block #4) ──
+// Synthetic causal-map illustration. SVG inline because the content
+// is illustrative — there's no real audit data here to leak, just
+// the shape of what a real map looks like.
+function MapPreviewSection({
+	negativeCount,
+	blurredCount,
+	revealed,
+}: {
+	negativeCount: number;
+	blurredCount: number;
+	revealed: boolean;
+}) {
+	const t = useTranslations("lp.audit_result");
+	const totalCount = negativeCount + blurredCount;
+	// Synthetic node/edge counts so the buyer sees scope; matches the
+	// "counts > content" rule from the spec.
+	const nodeCount = Math.max(8, Math.ceil(totalCount * 0.6));
+	const edgeCount = Math.max(11, Math.ceil(totalCount * 0.8));
+
+	return (
+		<section
+			className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}
+		>
+			<div className="mb-4 flex items-baseline justify-between">
+				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
+					{t("map.title")}
+				</h2>
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+					{t("map.counts", { nodes: nodeCount, edges: edgeCount })}
+				</div>
+			</div>
+
+			<div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+				<div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-zinc-50 to-zinc-100">
+					{/* Synthetic SVG map illustration */}
+					<svg
+						className="absolute inset-0 h-full w-full"
+						viewBox="0 0 800 450"
+						preserveAspectRatio="xMidYMid meet"
+					>
+						{/* Dot grid background */}
+						<defs>
+							<pattern id="dotgrid" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+								<circle cx="2" cy="2" r="0.8" fill="#d4d4d8" />
+							</pattern>
+							<marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+								<path d="M 0 0 L 10 5 L 0 10 z" fill="#a1a1aa" />
+							</marker>
+						</defs>
+						<rect width="800" height="450" fill="url(#dotgrid)" />
+
+						{/* Edges */}
+						<g stroke="#a1a1aa" strokeWidth="1.5" fill="none" markerEnd="url(#arrow)">
+							<path d="M 140 150 C 220 150, 260 220, 340 220" />
+							<path d="M 140 280 C 220 280, 260 220, 340 220" />
+							<path d="M 340 220 C 420 220, 460 140, 540 140" />
+							<path d="M 340 220 C 420 220, 460 300, 540 300" />
+							<path d="M 540 140 C 620 140, 660 220, 700 220" />
+							<path d="M 540 300 C 620 300, 660 220, 700 220" />
+							<path d="M 140 380 C 240 380, 280 320, 340 220" strokeDasharray="4 3" />
+						</g>
+
+						{/* Nodes — Findings (left), Cause (center), Effect (right) */}
+						{/* Findings */}
+						<g>
+							<rect x="60" y="125" width="120" height="50" rx="10" fill="#fee2e2" stroke="#fca5a5" strokeWidth="1.5" />
+							<text x="120" y="148" textAnchor="middle" fontSize="11" fontFamily="ui-monospace, monospace" fill="#9f1239" fontWeight="600">Finding</text>
+							<text x="120" y="162" textAnchor="middle" fontSize="9" fontFamily="ui-monospace, monospace" fill="#9f1239" opacity="0.6">checkout</text>
+						</g>
+						<g>
+							<rect x="60" y="255" width="120" height="50" rx="10" fill="#fef3c7" stroke="#fcd34d" strokeWidth="1.5" />
+							<text x="120" y="278" textAnchor="middle" fontSize="11" fontFamily="ui-monospace, monospace" fill="#92400e" fontWeight="600">Finding</text>
+							<text x="120" y="292" textAnchor="middle" fontSize="9" fontFamily="ui-monospace, monospace" fill="#92400e" opacity="0.6">trust</text>
+						</g>
+						<g>
+							<rect x="60" y="355" width="120" height="50" rx="10" fill="#dbeafe" stroke="#93c5fd" strokeWidth="1.5" />
+							<text x="120" y="378" textAnchor="middle" fontSize="11" fontFamily="ui-monospace, monospace" fill="#1e40af" fontWeight="600">Finding</text>
+							<text x="120" y="392" textAnchor="middle" fontSize="9" fontFamily="ui-monospace, monospace" fill="#1e40af" opacity="0.6">copy</text>
+						</g>
+
+						{/* Cause */}
+						<g>
+							<rect x="340" y="190" width="160" height="60" rx="12" fill="#ecfeff" stroke="#67e8f9" strokeWidth="1.5" />
+							<text x="420" y="218" textAnchor="middle" fontSize="12" fontFamily="ui-monospace, monospace" fill="#155e75" fontWeight="700">Causa raiz</text>
+							<text x="420" y="234" textAnchor="middle" fontSize="9" fontFamily="ui-monospace, monospace" fill="#155e75" opacity="0.6">comportamento</text>
+						</g>
+
+						{/* Effects */}
+						<g>
+							<rect x="540" y="115" width="160" height="50" rx="10" fill="#fae8ff" stroke="#e9d5ff" strokeWidth="1.5" />
+							<text x="620" y="138" textAnchor="middle" fontSize="11" fontFamily="ui-monospace, monospace" fill="#6b21a8" fontWeight="600">Efeito</text>
+							<text x="620" y="152" textAnchor="middle" fontSize="9" fontFamily="ui-monospace, monospace" fill="#6b21a8" opacity="0.6">−R$ ░░░░</text>
+						</g>
+						<g>
+							<rect x="540" y="275" width="160" height="50" rx="10" fill="#fae8ff" stroke="#e9d5ff" strokeWidth="1.5" />
+							<text x="620" y="298" textAnchor="middle" fontSize="11" fontFamily="ui-monospace, monospace" fill="#6b21a8" fontWeight="600">Efeito</text>
+							<text x="620" y="312" textAnchor="middle" fontSize="9" fontFamily="ui-monospace, monospace" fill="#6b21a8" opacity="0.6">−R$ ░░░░</text>
+						</g>
+
+						{/* Action node */}
+						<g>
+							<rect x="660" y="195" width="100" height="50" rx="10" fill="#d1fae5" stroke="#86efac" strokeWidth="1.5" />
+							<text x="710" y="218" textAnchor="middle" fontSize="11" fontFamily="ui-monospace, monospace" fill="#065f46" fontWeight="700">Ação</text>
+							<text x="710" y="232" textAnchor="middle" fontSize="9" fontFamily="ui-monospace, monospace" fill="#065f46" opacity="0.6">+R$ ░░░░</text>
+						</g>
+					</svg>
+
+					{/* Locked overlay */}
+					<div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-white/80 via-white/0 to-transparent">
+						<div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/95 px-3 py-1.5 text-[11px] font-medium text-zinc-700 shadow-sm backdrop-blur-sm">
+							<svg className="h-3 w-3 text-zinc-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+							</svg>
+							{t("map.locked")}
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	);
+}
+
+// ── McpChatMockup (Wave-22.6 spec block #5) ──
+// Animated typing mockup of Vestigio AI. Question + response that
+// cuts mid-sentence with a fade. Static layout, JS-driven typing.
+// Zero LLM calls — anchors the MCP value without burning tokens on
+// anon traffic.
+function McpChatMockup({
+	domain,
+	revealed,
+	onCheckout,
+	launching,
+}: {
+	domain: string;
+	revealed: boolean;
+	onCheckout: () => void;
+	launching: boolean;
+}) {
+	const t = useTranslations("lp.audit_result");
+	const question = t("mcp_mockup.question");
+	// Response is cut mid-sentence on purpose (server-side string truncation
+	// would be ideal; for this preview, the cut is part of the string in
+	// the dictionary, ending with a deliberate trail-off).
+	const responseFull = t("mcp_mockup.response_cut");
+	const [phase, setPhase] = useState<"idle" | "user" | "ai_typing" | "ai_response" | "done">("idle");
+	const [typedChars, setTypedChars] = useState(0);
+
+	useEffect(() => {
+		if (!revealed) return;
+		const timers: number[] = [];
+		// 0s: idle → 1s: user message appears → 2s: AI typing dots →
+		// 3.5s: AI starts char-by-char response → end: cut + cursor.
+		timers.push(window.setTimeout(() => setPhase("user"), 600));
+		timers.push(window.setTimeout(() => setPhase("ai_typing"), 1600));
+		timers.push(window.setTimeout(() => setPhase("ai_response"), 3000));
+		return () => {
+			timers.forEach((id) => window.clearTimeout(id));
+		};
+	}, [revealed]);
+
+	useEffect(() => {
+		if (phase !== "ai_response") return;
+		const id = window.setInterval(() => {
+			setTypedChars((n) => {
+				if (n >= responseFull.length) {
+					window.clearInterval(id);
+					setPhase("done");
+					return n;
+				}
+				return n + 1;
+			});
+		}, 24);
+		return () => window.clearInterval(id);
+	}, [phase, responseFull.length]);
+
+	return (
+		<section
+			className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}
+		>
+			<div className="mb-4 flex items-baseline justify-between">
+				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
+					{t("mcp_mockup.title")}
+				</h2>
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+					{t("mcp_mockup.subtitle")}
+				</div>
+			</div>
+
+			<div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+				<div className="border-b border-zinc-100 px-4 py-3 text-[12px] font-medium text-zinc-700">
+					<span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500" />
+					{t("mcp_mockup.header", { domain })}
+				</div>
+				<div className="space-y-3 p-5">
+					{/* User bubble */}
+					<div
+						className={`flex justify-end transition-all duration-500 ${
+							phase === "idle" ? "translate-y-2 opacity-0" : "translate-y-0 opacity-100"
+						}`}
+					>
+						<div className="max-w-[80%] rounded-2xl rounded-br-sm bg-emerald-100 px-4 py-2.5 text-[13px] text-zinc-900">
+							{question}
+						</div>
+					</div>
+
+					{/* AI bubble — typing indicator */}
+					{(phase === "ai_typing" || phase === "ai_response" || phase === "done") && (
+						<div className="flex justify-start">
+							<div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-zinc-200 bg-zinc-50 px-4 py-3 text-[13px] text-zinc-700">
+								{phase === "ai_typing" ? (
+									<span className="inline-flex items-center gap-1.5">
+										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:0ms]" />
+										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:150ms]" />
+										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:300ms]" />
+									</span>
+								) : (
+									<span className="leading-relaxed">
+										{responseFull.slice(0, typedChars)}
+										<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-zinc-600 align-middle" />
+									</span>
+								)}
+							</div>
+						</div>
+					)}
+				</div>
+				<button
+					type="button"
+					onClick={onCheckout}
+					disabled={launching}
+					className="flex w-full items-center justify-center gap-1.5 border-t border-zinc-100 px-5 py-3 text-[12px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60"
+				>
+					{t("mcp_mockup.cta")}
+					<svg className="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+						<path d="M3 8h10M9 4l4 4-4 4" />
+					</svg>
+				</button>
+			</div>
+		</section>
 	);
 }
 

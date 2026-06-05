@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
 import Link from "next/link";
 import Image from "next/image";
@@ -26,6 +26,7 @@ import {
 import logoDark from "@/../public/images/logo/logo.png";
 import logoLight from "@/../public/images/logo/logo-light.png";
 import { trackLpEvent } from "@/lib/lp-audit-track";
+import { PREVIEW_SCENARIOS } from "@/lib/lp-audit-preview-scenarios";
 
 // ──────────────────────────────────────────────
 // /lp/audit/result/[leadId] — Mini-Audit Result
@@ -67,13 +68,38 @@ export default function MiniAuditResultPage() {
 	const t = useTranslations("lp.audit_result");
 	const params = useParams<{ leadId: string }>();
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const leadId = params?.leadId;
 
-	const [lead, setLead] = useState<LeadResponse | null>(null);
+	// ── Dev-only preview mode ──
+	// /lp/audit/result/anything?preview=<scenarioId>&theme=light|dark
+	// short-circuits the fetch + polling and renders mocked data.
+	// Production builds ignore the query param entirely.
+	const previewScenarioId =
+		process.env.NODE_ENV !== "production"
+			? searchParams?.get("preview")
+			: null;
+	const previewTheme = searchParams?.get("theme") as "light" | "dark" | null;
+	const previewScenario = previewScenarioId
+		? PREVIEW_SCENARIOS[previewScenarioId] ?? null
+		: null;
+	const isPreview = !!previewScenario;
+
+	const [lead, setLead] = useState<LeadResponse | null>(
+		previewScenario ? (previewScenario.lead as LeadResponse) : null,
+	);
+	// Result scenarios skip the "audit complete, click to view" gate and
+	// land directly on the populated result view; "loading-done" keeps
+	// that gate so the AuditingState w/ "Ver resultados" button is
+	// reachable. Everything else uses the production default (false).
+	const skipViewGate =
+		previewScenarioId === "saas-br" ||
+		previewScenarioId === "ecom-br" ||
+		previewScenarioId === "course-br";
 	const [error, setError] = useState<string | null>(null);
-	const [revealed, setRevealed] = useState(false);
+	const [revealed, setRevealed] = useState(skipViewGate);
 	const [shareCopied, setShareCopied] = useState(false);
-	const [showResults, setShowResults] = useState(false);
+	const [showResults, setShowResults] = useState(skipViewGate);
 	const [timedOut, setTimedOut] = useState(false);
 	const [paddleReady, setPaddleReady] = useState(false);
 	const [checkoutEmail, setCheckoutEmail] = useState<string | null>(null);
@@ -122,6 +148,12 @@ export default function MiniAuditResultPage() {
 
 	// ── Open Paddle checkout ──
 	function openCheckout() {
+		if (isPreview) {
+			// In preview mode we never want to actually open Paddle —
+			// just acknowledge the click so the buttons feel alive.
+			console.info("[preview] checkout would open here");
+			return;
+		}
 		if (!leadId || !window.Paddle || !paddleReady) {
 			setError(t("error_payment_loading"));
 			return;
@@ -165,7 +197,7 @@ export default function MiniAuditResultPage() {
 
 	// ── Polling loop ──
 	const fetchLead = useCallback(async () => {
-		if (!leadId) return;
+		if (!leadId || isPreview) return;
 		try {
 			const res = await fetch(`/api/lead/${leadId}`);
 			if (!res.ok) {
@@ -185,7 +217,7 @@ export default function MiniAuditResultPage() {
 	}, [fetchLead]);
 
 	useEffect(() => {
-		if (!lead) return;
+		if (!lead || isPreview) return;
 		if (lead.status === "audit_complete" || lead.status === "expired") return;
 		if (pollAttemptsRef.current >= POLL_MAX_ATTEMPTS) {
 			setTimedOut(true);
@@ -197,7 +229,20 @@ export default function MiniAuditResultPage() {
 			fetchLead();
 		}, POLL_INTERVAL_MS);
 		return () => clearTimeout(timer);
-	}, [lead, fetchLead]);
+	}, [lead, fetchLead, isPreview]);
+
+	// ── Preview theme: force-apply ?theme= to <html> ──
+	useEffect(() => {
+		if (!isPreview || !previewTheme) return;
+		const html = document.documentElement;
+		const wasDark = html.classList.contains("dark");
+		if (previewTheme === "light") html.classList.remove("dark");
+		else html.classList.add("dark");
+		return () => {
+			if (wasDark) html.classList.add("dark");
+			else html.classList.remove("dark");
+		};
+	}, [isPreview, previewTheme]);
 
 	// ── Share handling ──
 	function copyShareLink() {
@@ -216,14 +261,29 @@ export default function MiniAuditResultPage() {
 
 	// ── Render branches ──
 
+	const previewWidget = isPreview ? (
+		<PreviewToggle
+			scenarioId={previewScenarioId!}
+			theme={previewTheme ?? "dark"}
+		/>
+	) : null;
+
 	if (error) {
 		return (
-			<ErrorState message={error} onRetry={() => { setError(null); fetchLead(); }} />
+			<>
+				<ErrorState message={error} onRetry={() => { setError(null); fetchLead(); }} />
+				{previewWidget}
+			</>
 		);
 	}
 
 	if (!lead) {
-		return <LoadingState message={t("loading")} />;
+		return (
+			<>
+				<LoadingState message={t("loading")} />
+				{previewWidget}
+			</>
+		);
 	}
 
 	if (lead.status === "expired") {
@@ -231,6 +291,7 @@ export default function MiniAuditResultPage() {
 			<>
 				<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
 				<ExpiredState lead={lead} onCheckout={openCheckout} launching={launching} />
+				{previewWidget}
 			</>
 		);
 	}
@@ -239,22 +300,30 @@ export default function MiniAuditResultPage() {
 
 	// Still auditing — show progress
 	if (!isAuditComplete) {
-		return <AuditingState lead={lead} timedOut={timedOut} />;
+		return (
+			<>
+				<AuditingState lead={lead} timedOut={timedOut} />
+				{previewWidget}
+			</>
+		);
 	}
 
 	// Audit done but user hasn't clicked to see results yet
 	if (!showResults) {
 		return (
-			<AuditingState
-				lead={lead}
-				timedOut={timedOut}
-				completed
-				onViewResults={() => {
-					trackLpEvent(leadId, "lp_audit_result_viewed");
-					setShowResults(true);
-					setTimeout(() => setRevealed(true), 80);
-				}}
-			/>
+			<>
+				<AuditingState
+					lead={lead}
+					timedOut={timedOut}
+					completed
+					onViewResults={() => {
+						trackLpEvent(leadId, "lp_audit_result_viewed");
+						setShowResults(true);
+						setTimeout(() => setRevealed(true), 80);
+					}}
+				/>
+				{previewWidget}
+			</>
 		);
 	}
 
@@ -479,6 +548,7 @@ export default function MiniAuditResultPage() {
 					}
 				}
 			`}</style>
+			{previewWidget}
 		</>
 	);
 }
@@ -2123,5 +2193,41 @@ function CountdownTimer({ computedAt }: { computedAt: string }) {
 		<span className={`font-mono tabular-nums ${isLow ? "font-semibold text-red-400" : "text-red-400/80"}`}>
 			{label}
 		</span>
+	);
+}
+
+// ── PreviewToggle (dev-only) ──────────────────
+// Floating widget shown when the page is rendered in preview mode.
+// Lets the reviewer flip the theme and jump back to the picker
+// without losing context. Whole component (and its consumers)
+// gets deleted alongside `/lp/audit/preview`.
+function PreviewToggle({
+	scenarioId,
+	theme,
+}: {
+	scenarioId: string;
+	theme: "light" | "dark";
+}) {
+	const otherTheme = theme === "light" ? "dark" : "light";
+	const themeHref = `?preview=${scenarioId}&theme=${otherTheme}`;
+	return (
+		<div className="fixed bottom-4 right-4 z-[100] flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/95 px-2.5 py-2 text-[11px] font-medium text-zinc-100 shadow-xl backdrop-blur">
+			<span className="px-1 text-zinc-400">preview</span>
+			<span className="rounded-full bg-zinc-800 px-2 py-0.5 font-mono text-[10px] text-emerald-300">
+				{scenarioId}
+			</span>
+			<a
+				href={themeHref}
+				className="rounded-full border border-zinc-700 px-2.5 py-1 hover:border-emerald-400 hover:text-emerald-300"
+			>
+				{theme === "light" ? "→ dark" : "→ light"}
+			</a>
+			<a
+				href="/lp/audit/preview"
+				className="rounded-full border border-zinc-700 px-2.5 py-1 hover:border-emerald-400 hover:text-emerald-300"
+			>
+				← picker
+			</a>
+		</div>
 	);
 }

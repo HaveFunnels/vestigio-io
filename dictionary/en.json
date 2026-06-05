@@ -9890,11 +9890,11 @@
 	},
 	"lp": {
 		"audit_result": {
-			"loading": "Loading your diagnostic…",
+			"loading": "Loading your Analysis…",
 			"share_copied": "Link copied",
 			"share": "Share",
-			"success_banner": "Your diagnostic was completed successfully. Check the results below.",
-			"diagnosed": "Diagnosed",
+			"success_banner": "Your Analysis is complete. Check the results below.",
+			"diagnosed": "Analyzed",
 			"response": "Response",
 			"ssl": "SSL",
 			"ssl_https": "HTTPS",
@@ -9908,7 +9908,7 @@
 			"badge_premium": "Premium",
 			"findings_unlocked_one": "{count} leak unlocked for free",
 			"findings_unlocked_other": "{count} leaks unlocked for free",
-			"findings_to_unlock": "{count} leaks for you to unlock",
+			"findings_to_unlock": "{count, plural, one {# locked leak} other {# locked leaks}} for you to unlock",
 			"response_excellent": "Excellent",
 			"response_good": "Good",
 			"response_slow": "Slow",
@@ -9925,11 +9925,11 @@
 			"score_desc_ok": "Your landing page works, but it is leaking revenue at specific points.",
 			"score_desc_bad": "Your landing page has problems that are costing you money every day.",
 			"exposure_label": "Estimated monthly exposure",
-			"exposure_text": "{count} problems costing between {min} and {max} per month",
-			"unlock_title": "Unlock full diagnostic",
+			"exposure_text": "{count, plural, one {# leak costing} other {# leaks costing}} between {min} and {max} per month",
+			"unlock_title": "Unlock the full Analysis",
 			"unlock_launching": "Opening checkout…",
-			"unlock_desc": "The full diagnostic analyzes 15,000+ signals including automated navigation, copy analysis, and continuous monitoring. Recover up to {amount}/mo.",
-			"footer": "Diagnostic performed by Vestigio · Sample of {visible} of {total}+ findings",
+			"unlock_desc": "The full Analysis covers 15,000+ signals, including automated navigation, copy, and continuous monitoring. Recover up to {amount}/mo.",
+			"footer": "Analysis by Vestigio · Showing {visible} of {total}+ leaks",
 			"stages": [
 				"Fetching your landing page",
 				"Analyzing the HTML",
@@ -9941,7 +9941,9 @@
 			"cta_create_account": "Create account now",
 			"header": {
 				"title": "Analysis of {domain}",
-				"findings_label": "findings",
+				"visible_label": "visible leaks",
+				"blocked_label": "locked",
+				"findings_label": "leaks",
 				"critical_label": "critical",
 				"actions_label": "priority actions"
 			},
@@ -9949,7 +9951,7 @@
 				"eyebrow": "Time to come in",
 				"headline": "{org} is losing money right now.",
 				"you_told_us": "You told us",
-				"generic_close": "There are {count} critical findings waiting for the first move.",
+				"generic_close": "There {count, plural, one {is # critical leak} other {are # critical leaks}} waiting for the first move.",
 				"concern_closes": {
 					"traffic_no_sales": "At {org}, traffic comes in, sales don't. We found where the leak concentrates.",
 					"low_conversion": "At {org}, conversion is below where it could be. We located the 3 main friction spots.",
@@ -9982,9 +9984,9 @@
 				"trust_line": "You're in within minutes. No trial, no lock-in — just the product."
 			},
 			"map": {
-				"title": "Root-cause map",
-				"counts": "{nodes} nodes · {edges} connections",
-				"locked": "Real map unlocks in Pulse"
+				"title": "Funnel map for {domain}",
+				"counts": "{nodes} stages · {edges} frictions",
+				"locked": "Open interactive map"
 			},
 			"mcp_mockup": {
 				"title": "Vestigio AI",
@@ -9992,10 +9994,10 @@
 				"header": "connected to {domain}'s sources",
 				"question": "How much did I lose at checkout this month?",
 				"response_cut": "Looking at your last 30 days, you lost $ ░░░░ across 3 checkout frictions. The biggest: the payment screen loads in ░░░░ ms ░░░░",
-				"cta": "See the full answer in Pulse"
+				"cta": "See the full answer"
 			},
 			"workspaces": {
-				"title": "Four lenses on the same analysis",
+				"title": "Four lenses on the same Analysis",
 				"subtitle": "4 workspaces",
 				"revenue": {
 					"title": "Revenue Intelligence",
@@ -10007,16 +10009,16 @@
 				},
 				"copy": {
 					"title": "Copy Frameworks",
-					"subtitle": "5 frameworks analyzed",
+					"count": "5 frameworks · {hidden} locked",
 					"intro": "We evaluated your copy against the 5 persuasion frameworks most used in CRO. Each has its own criteria — you see where your landing hits and where it breaks.",
 					"example": "Your landing uses PAS well, but the AIDA handoff fails at the sub-headline.",
-					"unlock": "+{count} sentence-by-sentence analyses in the full plan"
+					"unlock": "+{count} sentence-by-sentence evaluations in the full Plan"
 				},
 				"behavioral": {
 					"title": "Behavioral Signals",
-					"subtitle": "{count} patterns waiting for the pixel",
-					"intro": "We connect your ads, ecommerce, and analytics integrations to read real visitor behavior — not just what's in the HTML.",
-					"unlock": "Connect any integration in Pulse to unlock behavioral analysis"
+					"count": "{count} integrations · {hidden} locked",
+					"intro": "We connect your ads, ecommerce, and analytics sources to read real visitor behavior — not just what's in the HTML.",
+					"unlock": "Connect any integration inside your account to unlock behavioral signals"
 				}
 			},
 			"plan_preview": {
@@ -10029,7 +10031,7 @@
 					"label_2": "Open critical"
 				},
 				"narrative_label": "What we're seeing",
-				"narrative_continues": "4 more paragraphs — continues in Pulse.",
+				"narrative_continues": "4 more paragraphs continue in the full Plan.",
 				"concern_openings": {
 					"traffic_no_sales": "{org} has the classic funnel mismatch: traffic in, sales not. We can see where it's leaking.",
 					"low_conversion": "{org} is in a conversion squeeze. The quick analysis already found where friction concentrates.",
@@ -10044,15 +10046,15 @@
 				"next_step_2_hint": "Includes root cause analysis and a step-by-step procedure",
 				"unlock_cta": "See the full plan"
 			},
-			"auditing_title": "Diagnosing {domain}…",
-			"auditing_complete_title": "Diagnostic for {domain} complete",
-			"auditing_complete_desc": "We found findings on your site. Click below to see the results.",
+			"auditing_title": "Analyzing {domain}…",
+			"auditing_complete_title": "Analysis of {domain} complete",
+			"auditing_complete_desc": "We found leaks on your site. Click below to see the results.",
 			"auditing_desc": "This usually takes 5–10 seconds. Do not close this tab.",
-			"auditing_view": "See my analysis",
+			"auditing_view": "See my Analysis",
 			"loading": {
 				"headline": "Analyzing {domain}",
 				"headline_complete": "Analysis of {domain} ready",
-				"subtitle": "First report in ~60 seconds. We're building your Pulse in the meantime.",
+				"subtitle": "First report in ~60 seconds. Your account is getting ready in the meantime.",
 				"subtitle_complete": "All calibrated. You can come in.",
 				"active_label": "Now — Quick analysis",
 				"teaser_label": "Next phases — Full analysis",
@@ -10074,23 +10076,23 @@
 					"What it all means for you, in one narrative"
 				]
 			},
-			"timeout_title": "The diagnostic is taking longer than expected",
+			"timeout_title": "The Analysis is taking longer than expected",
 			"timeout_desc": "This can happen if the site is slow or temporarily unavailable. Verify the domain is correct and try again.",
 			"timeout_retry": "Try again",
 			"timeout_support": "Need help? Contact support",
-			"expired_title": "Unfortunately, your diagnostic has expired",
-			"expired_impact": "We found {count} problems on {domain} costing between {min} and {max} per month",
-			"expired_hidden": "Including {count} findings you haven't seen yet.",
-			"expired_fallback": "We found problems on {domain} that were costing money. The link has expired, but you can recover the diagnostic.",
+			"expired_title": "Your Analysis has expired",
+			"expired_impact": "We found {count, plural, one {# leak} other {# leaks}} on {domain} costing between {min} and {max} per month",
+			"expired_hidden": "Including {count, plural, one {# leak} other {# leaks}} you haven't seen yet.",
+			"expired_fallback": "We found leaks on {domain} that were costing money. The link has expired, but you can recover the Analysis.",
 			"expired_features": [
-				"15,000+ signals analyzed by static audit",
+				"15,000+ signals analyzed in the static Analysis",
 				"Complete automated navigation via real browser",
-				"Copy, CTA, and form friction analysis",
+				"Copy, CTA, and form-friction evaluation",
 				"Cycle-to-cycle regression detection",
-				"Quantified financial impact per finding"
+				"Quantified financial impact per leak"
 			],
-			"expired_cta": "Recover my diagnostic for {domain}",
-			"expired_footer": "The full diagnostic analyzes 15,000+ signals.",
+			"expired_cta": "Recover my Analysis for {domain}",
+			"expired_footer": "The full Analysis covers 15,000+ signals.",
 			"error_title": "Something went wrong",
 			"error_retry": "Try again",
 			"error_payment_loading": "Payment system loading. Please wait a moment.",

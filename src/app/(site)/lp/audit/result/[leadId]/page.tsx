@@ -392,6 +392,11 @@ export default function MiniAuditResultPage() {
 						blurredCount={blurredFindings.length}
 						revealed={revealed}
 					/>
+					{/* The strip below the header used to invent a "X críticos"
+					    estimate from a heuristic over visible + blurred counts.
+					    Buyers count visible badges and the number didn't fit,
+					    eroding trust. ResultHeader now uses honest counts:
+					    visible vs blurred. */}
 
 					{/* Plan of Strategy preview — Wave-22.6 spec: lives at the
 					    top, lays out the destination product. Personalized
@@ -579,16 +584,6 @@ function ResultHeader({
 	const t = useTranslations("lp.audit_result");
 	const googleFavicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(preview.host)}&sz=64`;
 	const [faviconSrc, setFaviconSrc] = useState(preview.favicon_url || googleFavicon);
-	const totalCount = negativeCount + blurredCount;
-	// Critical count from server-side cuts + visible critical findings.
-	// The mini-audit knows roughly how many criticals exist; blurred
-	// teasers seed the "X critical that you haven't seen" curiosity.
-	// Heuristic: ~1/4 of blurred are critical-grade (cross-signal
-	// compound findings often are).
-	const criticalEstimate = Math.max(
-		1,
-		Math.ceil(blurredCount * 0.25) + Math.floor(negativeCount * 0.3),
-	);
 
 	return (
 		<div
@@ -610,16 +605,11 @@ function ResultHeader({
 					{t("header.title", { domain })}
 				</h1>
 				<div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
-					<span className="font-semibold text-content">
-						{totalCount}
-					</span>
-					<span className="text-content-muted">{t("header.findings_label")}</span>
+					<span className="font-semibold text-content">{negativeCount}</span>
+					<span className="text-content-muted">{t("header.visible_label")}</span>
 					<span className="text-content-faint">·</span>
-					<span className="font-semibold text-rose-600 dark:text-rose-400">{criticalEstimate}</span>
-					<span className="text-content-muted">{t("header.critical_label")}</span>
-					<span className="text-content-faint">·</span>
-					<span className="font-semibold text-content">{totalCount}</span>
-					<span className="text-content-muted">{t("header.actions_label")}</span>
+					<span className="font-semibold text-rose-600 dark:text-rose-400">{blurredCount}</span>
+					<span className="text-content-muted">{t("header.blocked_label")}</span>
 				</div>
 			</div>
 		</div>
@@ -658,7 +648,22 @@ function PlanPreviewSection({
 	// The visitor's chosen concern shapes the opening line. JTBD-pull
 	// (whyNow) optional, used at the close. Everything after the
 	// SECOND sentence is server-side cut.
-	const concernKey = primaryConcern || "unknown_leak";
+	//
+	// Defensive fallback: if the lead carries a concern value that
+	// doesn't have a dictionary opening (legacy data, mid-funnel
+	// schema changes), fall back to "unknown_leak" so the visitor
+	// sees a sentence instead of the raw bracket-key string.
+	const VALID_CONCERN_KEYS = new Set([
+		"traffic_no_sales",
+		"low_conversion",
+		"unknown_leak",
+		"scale_efficiency",
+		"prioritization",
+	]);
+	const concernKey =
+		primaryConcern && VALID_CONCERN_KEYS.has(primaryConcern)
+			? primaryConcern
+			: "unknown_leak";
 	const narrativeOpening = t(`plan_preview.concern_openings.${concernKey}` as never, { org: organizationName });
 	const monthLabel = (() => {
 		const now = new Date();
@@ -889,7 +894,7 @@ function WorkspacesAccordion({
 						</svg>
 					)}
 					title={t("workspaces.copy.title")}
-					subtitle={t("workspaces.copy.subtitle")}
+					subtitle={t("workspaces.copy.count", { hidden: copyBlurred + Math.max(0, copyFindings.length - 2) })}
 					open={openKey === "copy"}
 					onToggle={() => toggle("copy")}
 				>
@@ -939,7 +944,7 @@ function WorkspacesAccordion({
 						</svg>
 					)}
 					title={t("workspaces.behavioral.title")}
-					subtitle={t("workspaces.behavioral.subtitle", { count: behavioralBlurred })}
+					subtitle={t("workspaces.behavioral.count", { count: 6, hidden: behavioralBlurred })}
 					open={openKey === "behavioral"}
 					onToggle={() => toggle("behavioral")}
 				>
@@ -1343,18 +1348,49 @@ function CTAFinalSection({
 	launching: boolean;
 }) {
 	const t = useTranslations("lp.audit_result");
-	const totalCount = negativeCount + blurredCount;
-	const criticalEstimate = Math.max(
-		1,
-		Math.ceil(blurredCount * 0.25) + Math.floor(negativeCount * 0.3),
-	);
-	const whyNowClause = whyNow ? t(`cta_final.why_now_clauses.${whyNow}` as never) : null;
-	const concernClose = primaryConcern
-		? t(`cta_final.concern_closes.${primaryConcern}` as never, { org: organizationName })
-		: null;
-	const methodLine = currentOptimizationMethod
-		? t(`cta_final.method_lines.${currentOptimizationMethod}` as never)
-		: null;
+	// Defensive lookups — if a JTBD field carries a value the dictionary
+	// hasn't seen (legacy data, schema evolution), drop that fragment
+	// rather than rendering raw bracket-key strings.
+	const VALID_CONCERN = new Set([
+		"traffic_no_sales",
+		"low_conversion",
+		"unknown_leak",
+		"scale_efficiency",
+		"prioritization",
+	]);
+	const VALID_WHY_NOW = new Set([
+		"scaling_paid_traffic",
+		"recent_drop",
+		"prove_roi",
+		"competitive_pressure",
+		"chronic_pain",
+		"exploring",
+	]);
+	const VALID_METHOD = new Set([
+		"analytics_tools",
+		"session_replay",
+		"agency_consultant",
+		"team_judgment",
+		"spreadsheets",
+		"nothing",
+	]);
+	const whyNowClause =
+		whyNow && VALID_WHY_NOW.has(whyNow)
+			? t(`cta_final.why_now_clauses.${whyNow}` as never)
+			: null;
+	const concernClose =
+		primaryConcern && VALID_CONCERN.has(primaryConcern)
+			? t(`cta_final.concern_closes.${primaryConcern}` as never, { org: organizationName })
+			: null;
+	const methodLine =
+		currentOptimizationMethod && VALID_METHOD.has(currentOptimizationMethod)
+			? t(`cta_final.method_lines.${currentOptimizationMethod}` as never)
+			: null;
+	// Real visible-critical count drives the generic close (used only
+	// when there is no concern-driven copy). The old heuristic over
+	// blurred + negative drifted away from what the visitor counts in
+	// the badge list, breaking trust.
+	const visibleCriticalCount = Math.max(1, Math.floor(negativeCount * 0.3));
 
 	return (
 		<section
@@ -1374,7 +1410,7 @@ function CTAFinalSection({
 						{t("cta_final.you_told_us")} <strong className="text-content">{whyNowClause}</strong>.{" "}
 					</>
 				) : null}
-				{concernClose ?? t("cta_final.generic_close", { count: criticalEstimate })}
+				{concernClose ?? t("cta_final.generic_close", { count: visibleCriticalCount })}
 			</p>
 
 			{methodLine && (

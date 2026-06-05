@@ -7771,11 +7771,11 @@
 	},
 	"lp": {
 		"audit_result": {
-			"loading": "Carregando seu diagnóstico…",
+			"loading": "Carregando sua Análise…",
 			"share_copied": "Link copiado",
 			"share": "Compartilhar",
-			"success_banner": "Seu diagnóstico foi realizado com sucesso. Confira os resultados abaixo.",
-			"diagnosed": "Diagnosticado",
+			"success_banner": "Sua Análise foi concluída. Confira os resultados abaixo.",
+			"diagnosed": "Analisado",
 			"response": "Resposta",
 			"ssl": "SSL",
 			"ssl_https": "HTTPS",
@@ -7789,7 +7789,7 @@
 			"badge_premium": "Premium",
 			"findings_unlocked_one": "{count} vazamento desbloqueado gratuitamente",
 			"findings_unlocked_other": "{count} vazamentos desbloqueados gratuitamente",
-			"findings_to_unlock": "{count} vazamentos para você desbloquear",
+			"findings_to_unlock": "{count, plural, one {# vazamento bloqueado} other {# vazamentos bloqueados}} para você desbloquear",
 			"response_excellent": "Ótimo",
 			"response_good": "Bom",
 			"response_slow": "Lento",
@@ -7806,11 +7806,11 @@
 			"score_desc_ok": "Sua landing funciona, mas está vazando receita em pontos específicos.",
 			"score_desc_bad": "Sua landing tem problemas que estão custando dinheiro todos os dias.",
 			"exposure_label": "Exposição mensal estimada",
-			"exposure_text": "{count} problemas custando entre {min} e {max} por mês",
-			"unlock_title": "Desbloquear diagnóstico completo",
+			"exposure_text": "{count, plural, one {# vazamento custando} other {# vazamentos custando}} entre {min} e {max} por mês",
+			"unlock_title": "Desbloquear Análise completa",
 			"unlock_launching": "Abrindo checkout…",
-			"unlock_desc": "O diagnóstico completo analisa 15.000+ sinais incluindo navegação automatizada, análise de copy e monitoramento contínuo. Recupere até {amount}/mês.",
-			"footer": "Diagnóstico realizado pela Vestigio · Amostra de {visible} de {total}+ findings",
+			"unlock_desc": "A Análise completa cobre 15.000+ sinais, incluindo navegação automatizada, copy e monitoramento contínuo. Recupere até {amount}/mês.",
+			"footer": "Análise realizada pela Vestigio · Mostrando {visible} de {total}+ vazamentos",
 			"stages": [
 				"Buscando sua landing page",
 				"Analisando o HTML",
@@ -7822,7 +7822,9 @@
 			"cta_create_account": "Criar conta agora",
 			"header": {
 				"title": "Análise de {domain}",
-				"findings_label": "findings",
+				"visible_label": "vazamentos visíveis",
+				"blocked_label": "bloqueados",
+				"findings_label": "vazamentos",
 				"critical_label": "críticos",
 				"actions_label": "ações priorizadas"
 			},
@@ -7830,7 +7832,7 @@
 				"eyebrow": "Hora de entrar",
 				"headline": "{org} está perdendo dinheiro agora.",
 				"you_told_us": "Você nos disse que",
-				"generic_close": "Há {count} achados críticos esperando a primeira ação.",
+				"generic_close": "Há {count, plural, one {# vazamento crítico} other {# vazamentos críticos}} esperando a primeira ação.",
 				"concern_closes": {
 					"traffic_no_sales": "Em {org}, tráfego entra e venda não. Encontramos onde a fuga concentra.",
 					"low_conversion": "Em {org}, conversão tá abaixo do que poderia. Localizamos os 3 pontos de fricção principais.",
@@ -7863,9 +7865,9 @@
 				"trust_line": "Você está dentro em minutos. Sem trial, sem amarração — só o produto."
 			},
 			"map": {
-				"title": "Mapa de causa-raiz",
-				"counts": "{nodes} nós · {edges} conexões",
-				"locked": "Mapa real desbloqueia no Pulse"
+				"title": "Mapa do funil de {domain}",
+				"counts": "{nodes} estágios · {edges} fricções",
+				"locked": "Abrir mapa interativo"
 			},
 			"mcp_mockup": {
 				"title": "Vestigio AI",
@@ -7873,31 +7875,31 @@
 				"header": "conectada às fontes de {domain}",
 				"question": "Quanto perdi com checkout esse mês?",
 				"response_cut": "Olhando seus últimos 30 dias, você perdeu R$ ░░░░ em 3 fricções no checkout. A maior: a tela de pagamento carrega ░░░░ ms ░░░░",
-				"cta": "Veja a resposta completa no Pulse"
+				"cta": "Ver a resposta completa"
 			},
 			"workspaces": {
-				"title": "Quatro lentes sobre a mesma análise",
+				"title": "Quatro lentes sobre a mesma Análise",
 				"subtitle": "4 workspaces",
 				"revenue": {
 					"title": "Revenue Intelligence",
-					"count": "{visible} achados visíveis · {hidden} bloqueados"
+					"count": "{visible} visíveis · {hidden} bloqueados"
 				},
 				"trust": {
 					"title": "Confiança & Conversão",
-					"count": "{visible} achados visíveis · {hidden} bloqueados"
+					"count": "{visible} visíveis · {hidden} bloqueados"
 				},
 				"copy": {
 					"title": "Frameworks de Copy",
-					"subtitle": "5 frameworks analisados",
-					"intro": "Avaliamos sua copy contra os 5 frameworks de persuasão mais usados em CRO. Cada um tem critérios próprios — vê onde sua landing acerta e onde quebra.",
+					"count": "5 frameworks · {hidden} bloqueados",
+					"intro": "Avaliamos sua copy contra os 5 frameworks de persuasão mais usados em CRO. Cada um tem critério próprio — vemos onde sua landing acerta e onde quebra.",
 					"example": "Sua landing usa PAS bem, mas a transição pro AIDA falha na sub-headline.",
-					"unlock": "+{count} análises específicas de frase por frase no plano completo"
+					"unlock": "+{count} avaliações frase por frase no Plano completo"
 				},
 				"behavioral": {
 					"title": "Sinais Comportamentais",
-					"subtitle": "{count} padrões aguardando o pixel",
-					"intro": "Conectamos suas integrações de mídia, e-commerce e analytics para ler o comportamento real dos visitantes — não só o que aparece no HTML.",
-					"unlock": "Conecte qualquer integração no Pulse pra desbloquear análise comportamental"
+					"count": "{count} integrações · {hidden} bloqueados",
+					"intro": "Conectamos suas fontes de mídia, e-commerce e analytics para ler o comportamento real dos visitantes — não só o que aparece no HTML.",
+					"unlock": "Conecte qualquer integração na sua conta pra desbloquear sinais comportamentais"
 				}
 			},
 			"plan_preview": {
@@ -7910,7 +7912,7 @@
 					"label_2": "Críticos abertos"
 				},
 				"narrative_label": "O que estamos vendo",
-				"narrative_continues": "Há mais 4 parágrafos — continuação no Pulse.",
+				"narrative_continues": "Mais 4 parágrafos seguem no Plano completo.",
 				"concern_openings": {
 					"traffic_no_sales": "{org} tem o problema clássico de funnel: tráfego entra, vendas não. Conseguimos olhar onde tem fuga.",
 					"low_conversion": "{org} está em um momento de aperto na conversão. A análise rápida já encontrou onde a fricção concentra.",
@@ -7925,15 +7927,15 @@
 				"next_step_2_hint": "Inclui análise de causa raiz e procedimento detalhado",
 				"unlock_cta": "Ver o plano completo"
 			},
-			"auditing_title": "Diagnosticando {domain}…",
-			"auditing_complete_title": "Diagnóstico de {domain} concluído",
-			"auditing_complete_desc": "Encontramos findings no seu site. Clique abaixo para ver o resultado.",
+			"auditing_title": "Analisando {domain}…",
+			"auditing_complete_title": "Análise de {domain} concluída",
+			"auditing_complete_desc": "Encontramos vazamentos no seu site. Clique abaixo para ver o resultado.",
 			"auditing_desc": "Isso geralmente leva 5–10 segundos. Não feche esta aba.",
-			"auditing_view": "Ver minha análise",
+			"auditing_view": "Ver minha Análise",
 			"loading": {
 				"headline": "Analisando {domain}",
 				"headline_complete": "Análise de {domain} pronta",
-				"subtitle": "Primeiro relatório em ~60 segundos. Construímos seu Pulse enquanto isso.",
+				"subtitle": "Primeiro relatório em ~60 segundos. Sua conta vai ficando pronta enquanto isso.",
 				"subtitle_complete": "Tudo calibrado. Você pode entrar.",
 				"active_label": "Agora — Análise rápida",
 				"teaser_label": "Próximas fases — Análise completa",
@@ -7955,23 +7957,23 @@
 					"O que tudo isso significa pra você, em uma narrativa"
 				]
 			},
-			"timeout_title": "O diagnóstico está demorando mais que o esperado",
+			"timeout_title": "A Análise está demorando mais que o esperado",
 			"timeout_desc": "Isso pode acontecer se o site estiver lento ou temporariamente indisponível. Verifique se o domínio está correto e tente novamente.",
 			"timeout_retry": "Tentar novamente",
 			"timeout_support": "Precisa de ajuda? Fale com o suporte",
-			"expired_title": "Que pena, seu diagnóstico expirou",
-			"expired_impact": "Encontramos {count} problemas em {domain} custando entre {min} e {max} por mês",
-			"expired_hidden": "Incluindo {count} findings que você ainda não viu.",
-			"expired_fallback": "Encontramos problemas em {domain} que estavam custando dinheiro. O link expirou, mas você pode recuperar o diagnóstico.",
+			"expired_title": "Sua Análise expirou",
+			"expired_impact": "Encontramos {count, plural, one {# vazamento} other {# vazamentos}} em {domain} custando entre {min} e {max} por mês",
+			"expired_hidden": "Incluindo {count, plural, one {# vazamento} other {# vazamentos}} que você ainda não viu.",
+			"expired_fallback": "Encontramos vazamentos em {domain} que estavam custando dinheiro. O link expirou, mas você pode recuperar a Análise.",
 			"expired_features": [
-				"15.000+ sinais analisados por auditoria estática",
+				"15.000+ sinais analisados na Análise estática",
 				"Navegação automatizada completa via browser real",
-				"Análise de copy, CTAs e fricção de formulários",
+				"Avaliação de copy, CTAs e fricção de formulários",
 				"Detecção de regressão ciclo a ciclo",
-				"Impacto financeiro quantificado em cada finding"
+				"Impacto financeiro quantificado em cada vazamento"
 			],
-			"expired_cta": "Recuperar meu diagnóstico em {domain}",
-			"expired_footer": "O diagnóstico completo analisa 15.000+ sinais.",
+			"expired_cta": "Recuperar minha Análise em {domain}",
+			"expired_footer": "A Análise completa cobre 15.000+ sinais.",
 			"error_title": "Algo deu errado",
 			"error_retry": "Tentar novamente",
 			"error_payment_loading": "Sistema de pagamento carregando. Aguarde um momento.",

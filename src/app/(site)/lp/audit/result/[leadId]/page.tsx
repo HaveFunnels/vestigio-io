@@ -334,6 +334,15 @@ export default function MiniAuditResultPage() {
 						launching={launching}
 					/>
 
+					{/* Workspaces accordion — 4 lenses on the same análise.
+					    Copy flaunts framework analysis; Behavioral exposes
+					    the integration grid. */}
+					<WorkspacesAccordion
+						negativeFindings={negativeFindings}
+						blurredCount={blurredFindings.length}
+						revealed={revealed}
+					/>
+
 					{/* Negative findings */}
 					<section className={`mt-10 transition-opacity duration-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<header className="mb-3 flex items-end justify-between">
@@ -659,6 +668,304 @@ function PlanPreviewSection({
 				</svg>
 			</button>
 		</section>
+	);
+}
+
+// ── WorkspacesAccordion (Wave-22.6 spec block #3) ──
+// Four collapsible cards, one per Vestigio workspace. Each tells a
+// different angle on the same análise. Copy lens flaunts our
+// framework analysis (PAS/AIDA/BAB/4P/Cialdini); Behavioral lens
+// exposes the integration grid as locked.
+function WorkspacesAccordion({
+	negativeFindings,
+	blurredCount,
+	revealed,
+}: {
+	negativeFindings: MiniFinding[];
+	blurredCount: number;
+	revealed: boolean;
+}) {
+	const t = useTranslations("lp.audit_result");
+	const [openKey, setOpenKey] = useState<string | null>("revenue");
+
+	// Group findings by category → workspace lens.
+	const revenueFindings = negativeFindings.filter((f) =>
+		["checkout", "structure", "mobile"].includes(f.category),
+	);
+	const trustFindings = negativeFindings.filter((f) =>
+		["trust", "policy"].includes(f.category),
+	);
+	const copyFindings = negativeFindings.filter((f) =>
+		["cta", "friction"].includes(f.category),
+	);
+	// Behavior lens has no visible findings in mini — it's the locked
+	// teaser. Blurred count split heuristically between Behavioral and
+	// the other 3 lenses; behavioral gets the lion's share.
+	const behavioralBlurred = Math.ceil(blurredCount * 0.5);
+	const revenueBlurred = Math.ceil(blurredCount * 0.2);
+	const trustBlurred = Math.ceil(blurredCount * 0.15);
+	const copyBlurred = blurredCount - behavioralBlurred - revenueBlurred - trustBlurred;
+
+	const toggle = (key: string) => setOpenKey((prev) => (prev === key ? null : key));
+
+	return (
+		<section
+			className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}
+		>
+			<div className="mb-4 flex items-baseline justify-between">
+				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
+					{t("workspaces.title")}
+				</h2>
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+					{t("workspaces.subtitle")}
+				</div>
+			</div>
+
+			<div className="space-y-2">
+				{/* Revenue Intelligence */}
+				<WorkspaceCard
+					accent="rose"
+					icon={(
+						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 12a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V12zm-12 0h.008v.008H6V12z" />
+						</svg>
+					)}
+					title={t("workspaces.revenue.title")}
+					subtitle={t("workspaces.revenue.count", {
+						visible: revenueFindings.length,
+						hidden: revenueBlurred,
+					})}
+					open={openKey === "revenue"}
+					onToggle={() => toggle("revenue")}
+				>
+					<ul className="space-y-2">
+						{revenueFindings.slice(0, 3).map((f) => (
+							<WorkspaceFindingRow key={f.id} title={f.title} severity={f.severity} />
+						))}
+						{Array.from({ length: Math.max(0, revenueBlurred) }).map((_, i) => (
+							<WorkspaceShimmerRow key={`r-shim-${i}`} />
+						))}
+					</ul>
+				</WorkspaceCard>
+
+				{/* Trust & Conversion */}
+				<WorkspaceCard
+					accent="amber"
+					icon={(
+						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+						</svg>
+					)}
+					title={t("workspaces.trust.title")}
+					subtitle={t("workspaces.trust.count", {
+						visible: trustFindings.length,
+						hidden: trustBlurred,
+					})}
+					open={openKey === "trust"}
+					onToggle={() => toggle("trust")}
+				>
+					<ul className="space-y-2">
+						{trustFindings.slice(0, 3).map((f) => (
+							<WorkspaceFindingRow key={f.id} title={f.title} severity={f.severity} />
+						))}
+						{Array.from({ length: Math.max(0, trustBlurred) }).map((_, i) => (
+							<WorkspaceShimmerRow key={`t-shim-${i}`} />
+						))}
+					</ul>
+				</WorkspaceCard>
+
+				{/* Copy Frameworks — the flaunt section */}
+				<WorkspaceCard
+					accent="sky"
+					icon={(
+						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+						</svg>
+					)}
+					title={t("workspaces.copy.title")}
+					subtitle={t("workspaces.copy.subtitle")}
+					open={openKey === "copy"}
+					onToggle={() => toggle("copy")}
+				>
+					<div className="mb-3 text-[12px] text-zinc-600">
+						{t("workspaces.copy.intro")}
+					</div>
+					<div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+						{[
+							{ key: "PAS", status: "ok" },
+							{ key: "AIDA", status: "warn" },
+							{ key: "BAB", status: "fail" },
+							{ key: "4P", status: "ok" },
+							{ key: "Cialdini", status: "fail" },
+						].map((fw) => {
+							const config = {
+								ok: { bg: "bg-emerald-50", border: "border-emerald-500/40", text: "text-emerald-700", symbol: "✓" },
+								warn: { bg: "bg-amber-50", border: "border-amber-500/40", text: "text-amber-700", symbol: "△" },
+								fail: { bg: "bg-rose-50", border: "border-rose-500/40", text: "text-rose-700", symbol: "✕" },
+							}[fw.status as "ok" | "warn" | "fail"];
+							return (
+								<div
+									key={fw.key}
+									className={`flex items-center justify-between rounded-xl border px-3 py-2 ${config.bg} ${config.border}`}
+								>
+									<span className="font-mono text-[11px] font-semibold text-zinc-700">{fw.key}</span>
+									<span className={`font-mono text-[13px] font-bold ${config.text}`}>{config.symbol}</span>
+								</div>
+							);
+						})}
+					</div>
+					{copyFindings.length > 0 && (
+						<div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] text-zinc-600">
+							{t("workspaces.copy.example")}
+						</div>
+					)}
+					<div className="mt-3 text-[11px] text-zinc-500">
+						{t("workspaces.copy.unlock", { count: copyBlurred + Math.max(0, copyFindings.length - 2) })}
+					</div>
+				</WorkspaceCard>
+
+				{/* Behavioral Signals — the integration grid flaunt */}
+				<WorkspaceCard
+					accent="violet"
+					icon={(
+						<svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+						</svg>
+					)}
+					title={t("workspaces.behavioral.title")}
+					subtitle={t("workspaces.behavioral.subtitle", { count: behavioralBlurred })}
+					open={openKey === "behavioral"}
+					onToggle={() => toggle("behavioral")}
+				>
+					<div className="mb-3 text-[12px] text-zinc-600">
+						{t("workspaces.behavioral.intro")}
+					</div>
+					<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+						{INTEGRATION_LOGOS.map((logo) => (
+							<div
+								key={logo.name}
+								className="flex flex-col items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2 py-3 text-center"
+							>
+								{logo.svg ? (
+									/* eslint-disable-next-line @next/next/no-img-element */
+									<img src={logo.svg} alt={logo.name} className="h-6 w-auto opacity-70 grayscale" />
+								) : (
+									<span className="font-[family-name:var(--font-jetbrains-mono)] text-[9px] font-medium uppercase tracking-wider text-zinc-500">
+										{logo.name}
+									</span>
+								)}
+								<span className="text-[9px] text-zinc-400">{logo.name}</span>
+							</div>
+						))}
+					</div>
+					<div className="mt-3 text-[11px] text-zinc-500">
+						{t("workspaces.behavioral.unlock")}
+					</div>
+				</WorkspaceCard>
+			</div>
+		</section>
+	);
+}
+
+// Integration logos shown in the Behavioral workspace card. SVG
+// references files in /public/logos/. Items without `svg` fall back
+// to a text label.
+const INTEGRATION_LOGOS: Array<{ name: string; svg?: string }> = [
+	{ name: "Meta Ads", svg: "/logos/meta.svg" },
+	{ name: "Google Ads", svg: "/logos/google-ads.svg" },
+	{ name: "Stripe", svg: "/logos/stripe.svg" },
+	{ name: "Shopify", svg: "/logos/shopify.svg" },
+	{ name: "Nuvemshop", svg: "/logos/nuvemshop.svg" },
+	{ name: "GA4" },
+	{ name: "Hotjar" },
+	{ name: "Clarity" },
+];
+
+function WorkspaceCard({
+	accent,
+	icon,
+	title,
+	subtitle,
+	open,
+	onToggle,
+	children,
+}: {
+	accent: "rose" | "amber" | "sky" | "violet";
+	icon: React.ReactNode;
+	title: string;
+	subtitle: string;
+	open: boolean;
+	onToggle: () => void;
+	children: React.ReactNode;
+}) {
+	const accentClass = {
+		rose: "bg-rose-50 text-rose-700",
+		amber: "bg-amber-50 text-amber-700",
+		sky: "bg-sky-50 text-sky-700",
+		violet: "bg-violet-50 text-violet-700",
+	}[accent];
+
+	return (
+		<div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+			<button
+				type="button"
+				onClick={onToggle}
+				className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-50"
+			>
+				<span
+					className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${accentClass}`}
+				>
+					{icon}
+				</span>
+				<div className="min-w-0 flex-1">
+					<div className="text-[14px] font-semibold leading-tight text-zinc-900">
+						{title}
+					</div>
+					<div className="mt-0.5 font-[family-name:var(--font-jetbrains-mono)] text-[11px] tabular-nums text-zinc-500">
+						{subtitle}
+					</div>
+				</div>
+				<svg
+					className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`}
+					fill="none"
+					viewBox="0 0 24 24"
+					strokeWidth={2}
+					stroke="currentColor"
+				>
+					<path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+				</svg>
+			</button>
+			{open && <div className="border-t border-zinc-100 px-4 py-3">{children}</div>}
+		</div>
+	);
+}
+
+function WorkspaceFindingRow({ title, severity }: { title: string; severity: string }) {
+	const dot = {
+		critical: "bg-rose-500",
+		high: "bg-amber-500",
+		medium: "bg-sky-500",
+		low: "bg-emerald-500",
+	}[severity as "critical" | "high" | "medium" | "low"] || "bg-zinc-400";
+	return (
+		<li className="flex items-start gap-3">
+			<span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
+			<span className="min-w-0 flex-1 text-[13px] leading-snug text-zinc-700">
+				{title}
+			</span>
+		</li>
+	);
+}
+
+function WorkspaceShimmerRow() {
+	return (
+		<li className="flex items-center gap-3">
+			<span className="h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-300" />
+			<span className="skeleton-shimmer h-3 flex-1 rounded-md" />
+			<svg className="h-3 w-3 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
+				<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+			</svg>
+		</li>
 	);
 }
 

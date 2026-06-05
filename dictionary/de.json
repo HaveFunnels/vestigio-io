@@ -8188,6 +8188,31 @@
 				"critical_label": "kritisch",
 				"actions_label": "priorisierte Maßnahmen"
 			},
+			"workspaces": {
+				"title": "Vier Perspektiven auf dieselbe Analyse",
+				"subtitle": "4 Workspaces",
+				"revenue": {
+					"title": "Revenue Intelligence",
+					"count": "{visible} sichtbar · {hidden} gesperrt"
+				},
+				"trust": {
+					"title": "Vertrauen & Konversion",
+					"count": "{visible} sichtbar · {hidden} gesperrt"
+				},
+				"copy": {
+					"title": "Copy-Frameworks",
+					"subtitle": "5 Frameworks analysiert",
+					"intro": "Wir haben Ihre Copy gegen die 5 in CRO meistgenutzten Persuasion-Frameworks bewertet. Jedes hat eigene Kriterien — Sie sehen, wo Ihre Landing trifft und wo sie bricht.",
+					"example": "Ihre Landing nutzt PAS gut, aber der Übergang zu AIDA scheitert in der Sub-Headline.",
+					"unlock": "+{count} satzweise Analysen im vollständigen Plan"
+				},
+				"behavioral": {
+					"title": "Verhaltenssignale",
+					"subtitle": "{count} Muster warten auf das Pixel",
+					"intro": "Wir verbinden Ihre Anzeigen-, E-Commerce- und Analytics-Integrationen, um echtes Besucherverhalten zu lesen — nicht nur, was im HTML steht.",
+					"unlock": "Verbinden Sie eine Integration im Pulse, um die Verhaltensanalyse zu entsperren"
+				}
+			},
 			"plan_preview": {
 				"eyebrow": "Monatlicher Strategieplan",
 				"preview_badge": "Vorschau",

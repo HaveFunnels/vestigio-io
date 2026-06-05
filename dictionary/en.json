@@ -9945,6 +9945,31 @@
 				"critical_label": "critical",
 				"actions_label": "priority actions"
 			},
+			"workspaces": {
+				"title": "Four lenses on the same analysis",
+				"subtitle": "4 workspaces",
+				"revenue": {
+					"title": "Revenue Intelligence",
+					"count": "{visible} visible · {hidden} locked"
+				},
+				"trust": {
+					"title": "Trust & Conversion",
+					"count": "{visible} visible · {hidden} locked"
+				},
+				"copy": {
+					"title": "Copy Frameworks",
+					"subtitle": "5 frameworks analyzed",
+					"intro": "We evaluated your copy against the 5 persuasion frameworks most used in CRO. Each has its own criteria — you see where your landing hits and where it breaks.",
+					"example": "Your landing uses PAS well, but the AIDA handoff fails at the sub-headline.",
+					"unlock": "+{count} sentence-by-sentence analyses in the full plan"
+				},
+				"behavioral": {
+					"title": "Behavioral Signals",
+					"subtitle": "{count} patterns waiting for the pixel",
+					"intro": "We connect your ads, ecommerce, and analytics integrations to read real visitor behavior — not just what's in the HTML.",
+					"unlock": "Connect any integration in Pulse to unlock behavioral analysis"
+				}
+			},
 			"plan_preview": {
 				"eyebrow": "Monthly Strategy Plan",
 				"preview_badge": "Preview",

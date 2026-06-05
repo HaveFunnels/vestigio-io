@@ -28,10 +28,44 @@ import {
 	Briefcase as ServicesIcon,
 	Plant as HomeGardenIcon,
 	DotsThreeCircle as OtherIcon,
+	ShoppingCartIcon,
+	UsersThreeIcon,
+	CloudIcon,
+	StackIcon,
+	ChartLineUpIcon,
+	TargetIcon,
+	MagnifyingGlassIcon,
+	RocketIcon,
+	QuestionIcon,
+	StorefrontIcon,
+	WhatsappLogoIcon,
+	NotePencilIcon,
+	ArrowSquareOutIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import CustomSelect, { type SelectOption } from "@/components/console/CustomSelect";
 import useOnboardingForm from "./useOnboardingForm";
-import type { BusinessType, ConversionModel, IndustryVertical } from "./useOnboardingForm";
+import type {
+	BusinessType,
+	ConversionModel,
+	IndustryVertical,
+	PrimaryConcern,
+	CurrentOptimizationMethod,
+	WhyNow,
+} from "./useOnboardingForm";
+import {
+	ChartLineIcon,
+	VideoCameraIcon,
+	HandshakeIcon,
+	BrainIcon,
+	TableIcon,
+	XCircleIcon,
+	TrendUpIcon,
+	WarningIcon,
+	CertificateIcon,
+	SwordIcon,
+	HourglassIcon,
+	CompassIcon,
+} from "@phosphor-icons/react/dist/ssr";
 
 // ---------------------------------------------------------------------------
 // Card options (static — labels come from i18n inside the component)
@@ -46,21 +80,25 @@ export default function OnboardPage() {
 			value: "ecommerce",
 			label: f.t("business_context.types.ecommerce"),
 			description: f.t("business_context.types.ecommerce_desc"),
+			icon: ShoppingCartIcon,
 		},
 		{
 			value: "lead_gen",
 			label: f.t("business_context.types.lead_gen"),
 			description: f.t("business_context.types.lead_gen_desc"),
+			icon: UsersThreeIcon,
 		},
 		{
 			value: "saas",
 			label: f.t("business_context.types.saas"),
 			description: f.t("business_context.types.saas_desc"),
+			icon: CloudIcon,
 		},
 		{
 			value: "hybrid",
 			label: f.t("business_context.types.hybrid"),
 			description: f.t("business_context.types.hybrid_desc"),
+			icon: StackIcon,
 		},
 	];
 
@@ -69,21 +107,119 @@ export default function OnboardPage() {
 			value: "checkout",
 			label: f.t("business_context.conversion_models.checkout"),
 			description: f.t("business_context.conversion_models.checkout_desc"),
+			icon: StorefrontIcon,
 		},
 		{
 			value: "whatsapp",
 			label: f.t("business_context.conversion_models.whatsapp"),
 			description: f.t("business_context.conversion_models.whatsapp_desc"),
+			icon: WhatsappLogoIcon,
 		},
 		{
 			value: "form",
 			label: f.t("business_context.conversion_models.form"),
 			description: f.t("business_context.conversion_models.form_desc"),
+			icon: NotePencilIcon,
 		},
 		{
 			value: "external",
 			label: f.t("business_context.conversion_models.external"),
 			description: f.t("business_context.conversion_models.external_desc"),
+			icon: ArrowSquareOutIcon,
+		},
+	];
+
+	const concernOptions: CardOption<PrimaryConcern>[] = [
+		{
+			value: "traffic_no_sales",
+			label: f.t("primary_concern.options.traffic_no_sales"),
+			icon: ChartLineUpIcon,
+		},
+		{
+			value: "low_conversion",
+			label: f.t("primary_concern.options.low_conversion"),
+			icon: TargetIcon,
+		},
+		{
+			value: "unknown_leak",
+			label: f.t("primary_concern.options.unknown_leak"),
+			icon: MagnifyingGlassIcon,
+		},
+		{
+			value: "scale_efficiency",
+			label: f.t("primary_concern.options.scale_efficiency"),
+			icon: RocketIcon,
+		},
+		{
+			value: "prioritization",
+			label: f.t("primary_concern.options.prioritization"),
+			icon: QuestionIcon,
+		},
+	];
+
+	const currentMethodOptions: CardOption<CurrentOptimizationMethod>[] = [
+		{
+			value: "analytics_tools",
+			label: f.t("current_method.options.analytics_tools"),
+			icon: ChartLineIcon,
+		},
+		{
+			value: "session_replay",
+			label: f.t("current_method.options.session_replay"),
+			icon: VideoCameraIcon,
+		},
+		{
+			value: "agency_consultant",
+			label: f.t("current_method.options.agency_consultant"),
+			icon: HandshakeIcon,
+		},
+		{
+			value: "team_judgment",
+			label: f.t("current_method.options.team_judgment"),
+			icon: BrainIcon,
+		},
+		{
+			value: "spreadsheets",
+			label: f.t("current_method.options.spreadsheets"),
+			icon: TableIcon,
+		},
+		{
+			value: "nothing",
+			label: f.t("current_method.options.nothing"),
+			icon: XCircleIcon,
+		},
+	];
+
+	const whyNowOptions: CardOption<WhyNow>[] = [
+		{
+			value: "scaling_paid_traffic",
+			label: f.t("why_now.options.scaling_paid_traffic"),
+			icon: TrendUpIcon,
+		},
+		{
+			value: "recent_drop",
+			label: f.t("why_now.options.recent_drop"),
+			icon: WarningIcon,
+		},
+		{
+			value: "prove_roi",
+			label: f.t("why_now.options.prove_roi"),
+			icon: CertificateIcon,
+		},
+		{
+			value: "competitive_pressure",
+			label: f.t("why_now.options.competitive_pressure"),
+			icon: SwordIcon,
+		},
+		{
+			value: "chronic_pain",
+			label: f.t("why_now.options.chronic_pain"),
+			icon: HourglassIcon,
+		},
+		{
+			value: "exploring",
+			label: f.t("why_now.options.exploring"),
+			icon: CompassIcon,
 		},
 	];
 
@@ -130,6 +266,18 @@ export default function OnboardPage() {
 		switch (step) {
 			case "business_type":
 				return f.t(`business_context.types.${f.form.businessType}`);
+			case "concern":
+				return f.form.primaryConcern
+					? f.t(`primary_concern.options.${f.form.primaryConcern}`)
+					: "";
+			case "current_method":
+				return f.form.currentOptimizationMethod
+					? f.t(`current_method.options.${f.form.currentOptimizationMethod}`)
+					: "";
+			case "why_now":
+				return f.form.whyNow
+					? f.t(`why_now.options.${f.form.whyNow}`)
+					: "";
 			case "industry":
 				return f.t(`industry_vertical.industries.${f.form.industryVertical}`);
 			case "conversion_model":
@@ -162,8 +310,14 @@ export default function OnboardPage() {
 			{f.showMirrorFor && (
 				<MirrorMoment
 					answer={answerFor(f.showMirrorFor)}
-					headline={f.t(`mirror.${f.showMirrorFor}.headline`)}
-					body={f.t(`mirror.${f.showMirrorFor}.body`)}
+					headline={f.t(`mirror.${f.showMirrorFor}.headline`, {
+						domain: f.form.domain.replace(/^https?:\/\//, "").replace(/\/$/, ""),
+						answer: answerFor(f.showMirrorFor),
+					})}
+					body={f.t(`mirror.${f.showMirrorFor}.body`, {
+						domain: f.form.domain.replace(/^https?:\/\//, "").replace(/\/$/, ""),
+						answer: answerFor(f.showMirrorFor),
+					})}
 					continueLabel={f.t("mirror.continue")}
 					onContinue={f.dismissMirror}
 				/>
@@ -259,6 +413,45 @@ export default function OnboardPage() {
 					options={businessTypeOptions}
 					onSelect={(v) => {
 						f.update("businessType", v);
+						f.next();
+					}}
+				/>
+			)}
+
+			{/* ── Primary Concern (Wave-22.6 onboarding redesign) ── */}
+			{!f.showMirrorFor && f.currentStep === "concern" && (
+				<CardSelectionStep
+					title={f.t("primary_concern.title")}
+					subtitle={f.t("primary_concern.subtitle")}
+					options={concernOptions}
+					onSelect={(v) => {
+						f.update("primaryConcern", v);
+						f.next();
+					}}
+				/>
+			)}
+
+			{/* ── Current Optimization Method (JTBD push) ── */}
+			{!f.showMirrorFor && f.currentStep === "current_method" && (
+				<CardSelectionStep
+					title={f.t("current_method.title")}
+					subtitle={f.t("current_method.subtitle")}
+					options={currentMethodOptions}
+					onSelect={(v) => {
+						f.update("currentOptimizationMethod", v);
+						f.next();
+					}}
+				/>
+			)}
+
+			{/* ── Why Now (JTBD pull / urgency) ── */}
+			{!f.showMirrorFor && f.currentStep === "why_now" && (
+				<CardSelectionStep
+					title={f.t("why_now.title")}
+					subtitle={f.t("why_now.subtitle")}
+					options={whyNowOptions}
+					onSelect={(v) => {
+						f.update("whyNow", v);
 						f.next();
 					}}
 				/>

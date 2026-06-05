@@ -722,6 +722,26 @@ model BusinessProfile {
   // Captured for legal/abuse posture if a domain is ever disputed.
   ownershipConfirmedAt DateTime?
 
+  // Wave-22.6 onboarding redesign — JTBD discovery embedded in the
+  // form. All three fields are stable IDs, nullable for legacy rows.
+  // Used to (a) re-weight finding ranking, (b) inject into MCP
+  // context, (c) personalize the monthly Strategy Plan narrative.
+  //
+  // primaryConcern: what's bothering the buyer most.
+  //   (traffic_no_sales | low_conversion | unknown_leak |
+  //    scale_efficiency | prioritization)
+  // currentOptimizationMethod: what they use today instead of
+  // Vestigio — competitive context.
+  //   (analytics_tools | session_replay | agency_consultant |
+  //    team_judgment | spreadsheets | nothing)
+  // whyNow: the triggering event that brought them in — urgency
+  // signal for the buyer's mental model.
+  //   (scaling_paid_traffic | recent_drop | prove_roi |
+  //    competitive_pressure | chronic_pain | exploring)
+  primaryConcern             String?
+  currentOptimizationMethod  String?
+  whyNow                     String?
+
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
 

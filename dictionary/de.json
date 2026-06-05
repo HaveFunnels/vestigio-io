@@ -2855,11 +2855,54 @@
 		},
 		"onboard": {
 			"step_indicator": "__TODO__",
+			"primary_concern": {
+				"title": "Was beschäftigt Sie aktuell am meisten?",
+				"subtitle": "Damit erkennen wir die Engpässe, die Ihr Wachstum am stärksten bremsen.",
+				"options": {
+					"traffic_no_sales": "Ich habe Traffic, aber kaum Verkäufe",
+					"low_conversion": "Meine Conversion liegt unter Erwartung",
+					"unknown_leak": "Ich weiß nicht, wo Geld verloren geht",
+					"scale_efficiency": "Ich will skalieren, ohne Budget zu verbrennen",
+					"prioritization": "Ich weiß nicht, welchen Engpass ich zuerst beheben soll"
+				}
+			},
+			"current_method": {
+				"title": "Wie wissen Sie heute, was Sie optimieren sollen?",
+				"subtitle": "Ohne Urteil — wir wollen verstehen, woher Vestigio bei Ihnen ankommt.",
+				"options": {
+					"analytics_tools": "GA/Mixpanel/Amplitude analysieren",
+					"session_replay": "Hotjar, FullStory oder anderes Session Replay",
+					"agency_consultant": "Agentur oder Berater macht das für uns",
+					"team_judgment": "Bauchgefühl und Team-Erfahrung",
+					"spreadsheets": "Tabellen und manuelle Analyse",
+					"nothing": "Ehrlich gesagt — wir wissen es nicht"
+				}
+			},
+			"why_now": {
+				"title": "Warum genau jetzt?",
+				"subtitle": "Etwas hat Sie heute hierher gebracht, nicht vor 6 Monaten. Was war es?",
+				"options": {
+					"scaling_paid_traffic": "Wir erhöhen die Paid-Traffic-Investitionen",
+					"recent_drop": "Etwas ist abgesackt — ich weiß nicht was",
+					"prove_roi": "Ich muss ROI nachweisen / die Investition rechtfertigen",
+					"competitive_pressure": "Ein Wettbewerber wächst schneller als wir",
+					"chronic_pain": "Chronischer Schmerz, der nie gelöst wurde",
+					"exploring": "Reine Neugier — ich erkunde Optionen"
+				}
+			},
 			"mirror": {
 				"continue": "Verstanden",
 				"business_type": {
-					"headline": "Das ändert, wie wir Ihren Verlust in Zahlen ausdrücken.",
-					"body": "Vestigio nutzt pro Geschäftsmodell ein eigenes Modell für die finanzielle Wirkung. Ihre Wahl bestimmt, wie wir jedes Leck ab jetzt beziffern."
+					"headline": "Wir analysieren {domain} als {answer}-Geschäft.",
+					"body": "Jetzt verstehe ich Ihr Szenario in ~3 schnellen Fragen — was Sie stört, wie Sie heute ohne Vestigio zurechtkommen und warum gerade jetzt. Das prägt Ihren Monatsplan und sortiert die Liste korrekt."
+				},
+				"why_now": {
+					"headline": "Verstanden — wir haben das ganze Bild.",
+					"body": "Sie wollen einen Schmerz lösen, heute helfen Sie sich auf eine Weise, und jetzt ist der Moment. Wir priorisieren Findings unter diesem Winkel, schreiben Ihren Monatsplan mit diesem Kontext und füttern Vestigio AI für direkte Antworten. Nur noch eine Kalibrierung der Geldbeträge."
+				},
+				"revenue": {
+					"headline": "Alles kalibriert — los geht's.",
+					"body": "Mit {answer}/Monat als Basis bringt jeder Finding eine echte Geldspanne. Audit startet jetzt; erster Bericht in ~60 Sekunden."
 				},
 				"industry": {
 					"headline": "Wir vergleichen Sie mit Ihrem Branchen-Benchmark.",

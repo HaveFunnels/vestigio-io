@@ -3913,11 +3913,54 @@
 		},
 		"onboard": {
 			"step_indicator": "Paso {current}/{total}",
+			"primary_concern": {
+				"title": "¿Qué te preocupa más ahora?",
+				"subtitle": "Esto nos ayuda a identificar los cuellos de botella que más afectan tu crecimiento.",
+				"options": {
+					"traffic_no_sales": "Tengo tráfico pero pocas ventas",
+					"low_conversion": "Mi conversión está por debajo de lo esperado",
+					"unknown_leak": "No sé dónde estoy perdiendo dinero",
+					"scale_efficiency": "Quiero escalar sin desperdiciar presupuesto",
+					"prioritization": "No sé qué cuello de botella corregir primero"
+				}
+			},
+			"current_method": {
+				"title": "¿Cómo sabes qué optimizar hoy?",
+				"subtitle": "Sin juicio — solo queremos entender de dónde viene Vestigio.",
+				"options": {
+					"analytics_tools": "Mirando GA/Mixpanel/Amplitude",
+					"session_replay": "Hotjar, FullStory u otro session replay",
+					"agency_consultant": "Agencia o consultor lo hace por nosotros",
+					"team_judgment": "Intuición del equipo y experiencia",
+					"spreadsheets": "Hojas de cálculo y análisis manual",
+					"nothing": "Sinceramente, todavía no sabemos"
+				}
+			},
+			"why_now": {
+				"title": "¿Por qué ahora es el momento?",
+				"subtitle": "Algo te trajo aquí hoy, no hace 6 meses. ¿Qué fue?",
+				"options": {
+					"scaling_paid_traffic": "Vamos a aumentar la inversión en medios",
+					"recent_drop": "Algo empeoró y no sé qué",
+					"prove_roi": "Necesito probar ROI / justificar la inversión",
+					"competitive_pressure": "Un competidor crece más que nosotros",
+					"chronic_pain": "Dolor crónico que nunca se resolvió",
+					"exploring": "Curiosidad — explorando opciones"
+				}
+			},
 			"mirror": {
 				"continue": "Entendido",
 				"business_type": {
-					"headline": "Esto cambia cómo cuantificamos tu pérdida.",
-					"body": "Vestigio aplica un modelo de impacto financiero distinto por tipo de negocio. Tu elección calibra cómo ponemos cifras a cada fuga desde ahora."
+					"headline": "Vamos a analizar {domain} como {answer}.",
+					"body": "Ahora necesito entender tu escenario en ~3 preguntas rápidas — qué te incomoda, cómo te las arreglas hoy sin Vestigio, y por qué ahora. Eso pinta tu Plan Mensual y prioriza la cola correctamente."
+				},
+				"why_now": {
+					"headline": "Recibido — tenemos la historia completa.",
+					"body": "Quieres resolver tu inquietud principal, hoy te las arreglas de una forma, y ahora es el momento. Vamos a priorizar findings desde ese ángulo, escribir tu Plan Mensual con este contexto, y alimentar a Vestigio AI para responderte directo. Solo falta calibrar las cifras."
+				},
+				"revenue": {
+					"headline": "Todo calibrado — vamos a ejecutar.",
+					"body": "Con {answer}/mes como base, cada finding trae un rango real en dinero. La auditoría empieza ahora; primer informe en ~60 segundos."
 				},
 				"industry": {
 					"headline": "Vamos a compararte con tu sector.",

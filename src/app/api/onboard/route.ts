@@ -39,6 +39,38 @@ const onboardSchema = z.object({
   monthlyRevenue: z.number().nullable().optional(),
   averageOrderValue: z.number().nullable().optional(),
   conversionModel: z.enum(["checkout", "whatsapp", "form", "external"]),
+  primaryConcern: z
+    .enum([
+      "traffic_no_sales",
+      "low_conversion",
+      "unknown_leak",
+      "scale_efficiency",
+      "prioritization",
+    ])
+    .optional()
+    .nullable(),
+  currentOptimizationMethod: z
+    .enum([
+      "analytics_tools",
+      "session_replay",
+      "agency_consultant",
+      "team_judgment",
+      "spreadsheets",
+      "nothing",
+    ])
+    .optional()
+    .nullable(),
+  whyNow: z
+    .enum([
+      "scaling_paid_traffic",
+      "recent_drop",
+      "prove_roi",
+      "competitive_pressure",
+      "chronic_pain",
+      "exploring",
+    ])
+    .optional()
+    .nullable(),
   priceId: z.string(),
   paymentProvider: z.enum(["stripe", "paddle"]).optional().default("stripe"),
   // Industry vertical captured in the onboarding "Industry" step. Mirrors

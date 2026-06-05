@@ -4251,11 +4251,54 @@
 		},
 		"onboard": {
 			"step_indicator": "Step {current}/{total}",
+			"primary_concern": {
+				"title": "What's bothering you most right now?",
+				"subtitle": "This helps us spot the bottlenecks that hit your growth hardest.",
+				"options": {
+					"traffic_no_sales": "I have traffic but few sales",
+					"low_conversion": "My conversion is below where it should be",
+					"unknown_leak": "I don't know where I'm losing money",
+					"scale_efficiency": "I want to scale without burning budget",
+					"prioritization": "I don't know which bottleneck to fix first"
+				}
+			},
+			"current_method": {
+				"title": "How do you figure out what to optimize today?",
+				"subtitle": "No judgment — we just want to understand where Vestigio fits.",
+				"options": {
+					"analytics_tools": "Watching GA/Mixpanel/Amplitude",
+					"session_replay": "Hotjar, FullStory, or another session replay",
+					"agency_consultant": "An agency or consultant does it for us",
+					"team_judgment": "Team gut and experience",
+					"spreadsheets": "Spreadsheets and manual analysis",
+					"nothing": "Honestly, we don't really know"
+				}
+			},
+			"why_now": {
+				"title": "Why now is the right time?",
+				"subtitle": "Something brought you here today, not 6 months ago. What was it?",
+				"options": {
+					"scaling_paid_traffic": "We're ramping up paid traffic spend",
+					"recent_drop": "Something dropped and I don't know what",
+					"prove_roi": "I need to prove ROI / justify the investment",
+					"competitive_pressure": "A competitor is growing faster than us",
+					"chronic_pain": "Chronic pain we've never been able to fix",
+					"exploring": "Just exploring — researching options"
+				}
+			},
 			"mirror": {
 				"continue": "Got it",
 				"business_type": {
-					"headline": "This changes how we quantify your losses.",
-					"body": "Vestigio uses a distinct financial impact model per business type. Your pick calibrates how we put a dollar amount on every leak from here on."
+					"headline": "We'll analyze {domain} as a {answer} business.",
+					"body": "Now I need to understand your situation in ~3 quick questions — what's bothering you, how you get by today without Vestigio, and why now. That's what shapes your Monthly Plan and ranks the queue correctly."
+				},
+				"why_now": {
+					"headline": "Got it — we have the full picture now.",
+					"body": "You want to solve a specific pain, today you cope a certain way, and now is the moment. We'll prioritize findings from that angle, write your Monthly Plan with this context baked in, and feed Vestigio AI so it can answer you directly. Just one more thing to calibrate the dollar amounts."
+				},
+				"revenue": {
+					"headline": "All calibrated — let's run it.",
+					"body": "With {answer}/mo as a base, every finding ships with a real dollar range. The audit starts now; first report in ~60 seconds."
 				},
 				"industry": {
 					"headline": "We'll benchmark you against your sector.",

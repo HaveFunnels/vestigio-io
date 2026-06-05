@@ -24,13 +24,52 @@ declare global {
 export type BusinessType = "ecommerce" | "lead_gen" | "saas" | "hybrid";
 export type ConversionModel = "checkout" | "whatsapp" | "form" | "external";
 export type IndustryVertical = "fashion" | "food" | "health" | "electronics" | "education" | "services" | "home_garden" | "other";
-export type StepId = "org" | "domain" | "business_type" | "industry" | "conversion_model" | "revenue" | "ticket" | "plan";
+// Wave-22.6 onboarding redesign — JTBD discovery embedded in the
+// form. Stable IDs; new entries can be appended without breaking
+// persisted rows. Used downstream to (a) re-rank findings, (b)
+// inject MCP context, (c) personalize the Monthly Strategy Plan
+// narrative.
+export type PrimaryConcern =
+	| "traffic_no_sales"
+	| "low_conversion"
+	| "unknown_leak"
+	| "scale_efficiency"
+	| "prioritization";
+export type CurrentOptimizationMethod =
+	| "analytics_tools"
+	| "session_replay"
+	| "agency_consultant"
+	| "team_judgment"
+	| "spreadsheets"
+	| "nothing";
+export type WhyNow =
+	| "scaling_paid_traffic"
+	| "recent_drop"
+	| "prove_roi"
+	| "competitive_pressure"
+	| "chronic_pain"
+	| "exploring";
+export type StepId =
+	| "org"
+	| "domain"
+	| "business_type"
+	| "concern"
+	| "current_method"
+	| "why_now"
+	| "industry"
+	| "conversion_model"
+	| "revenue"
+	| "ticket"
+	| "plan";
 
 export interface OnboardState {
 	organizationName: string;
 	domain: string;
 	ownershipConfirmed: boolean;
 	businessType: BusinessType;
+	primaryConcern: PrimaryConcern | "";
+	currentOptimizationMethod: CurrentOptimizationMethod | "";
+	whyNow: WhyNow | "";
 	industryVertical: IndustryVertical | "";
 	monthlyRevenue: number;
 	averageTicket: number;
@@ -90,21 +129,23 @@ const SKIP_CONVERSION_MODEL = new Set(["saas", "hybrid"]);
 // where industry is implied or too diverse to categorize simply).
 const SHOW_INDUSTRY = new Set(["ecommerce", "lead_gen"]);
 
-function getSteps(hasActiveOrg: boolean, businessType?: string): StepId[] {
-	const includeConversion = !SKIP_CONVERSION_MODEL.has(businessType || "");
-	const includeIndustry = SHOW_INDUSTRY.has(businessType || "");
-	if (hasActiveOrg) {
-		const steps: StepId[] = ["domain", "business_type"];
-		if (includeIndustry) steps.push("industry");
-		if (includeConversion) steps.push("conversion_model");
-		steps.push("revenue", "ticket");
-		return steps;
-	}
-	const steps: StepId[] = ["org", "domain", "business_type"];
-	if (includeIndustry) steps.push("industry");
-	if (includeConversion) steps.push("conversion_model");
-	steps.push("revenue", "ticket", "plan");
-	return steps;
+function getSteps(hasActiveOrg: boolean, _businessType?: string): StepId[] {
+	// Wave-22.6 onboarding redesign — 6-step minimum (7 with plan
+	// for self-serve). Earlier versions ran 11 steps and felt like an
+	// interrogation by the time the user reached "ticket". The cuts:
+	//   - org           → auto-derived from domain at submit time
+	//   - industry      → deferred to Settings (also inferable from crawl)
+	//   - conversion_model → inferred from the crawl, ask later if needed
+	//   - ticket        → deferred to Settings; not load-bearing for
+	//                     the first audit's impact estimates
+	//
+	// JTBD trio (concern → current_method → why_now) is grouped
+	// in a single "wave" so the user feels like they had ONE
+	// conversation, not three pop-ups. Mirrors only fire at the end
+	// of each natural phase, not after every question.
+	const JTBD_STEPS: StepId[] = ["concern", "current_method", "why_now"];
+	const coreSteps: StepId[] = ["domain", "business_type", ...JTBD_STEPS, "revenue"];
+	return hasActiveOrg ? coreSteps : [...coreSteps, "plan"];
 }
 
 // ---------------------------------------------------------------------------
@@ -191,6 +232,9 @@ export default function useOnboardingForm() {
 		domain: prefillDomain,
 		ownershipConfirmed: false,
 		businessType: prefill.businessType ?? "ecommerce",
+		primaryConcern: "",
+		currentOptimizationMethod: "",
+		whyNow: "",
 		industryVertical: "",
 		monthlyRevenue: prefill.revenue ?? 100000,
 		averageTicket: 300,
@@ -432,12 +476,17 @@ export default function useOnboardingForm() {
 	// Skip on: org (name doesn't unlock anything), domain (the crawl
 	// loading screen is its own moment), plan (activation is the
 	// final moment).
+	// Mirror cadence — strategically placed at end of each "wave",
+	// not after every step. The JTBD trio (concern + current_method
+	// + why_now) feels like ONE conversation because only the last
+	// step gets a mirror that synthesizes all three answers.
+	//   business_type → confirms technical setup
+	//   why_now       → synthesizes the entire JTBD conversation
+	//   revenue       → confirms financial calibration
 	const MIRROR_STEPS = new Set<StepId>([
 		"business_type",
-		"industry",
-		"conversion_model",
+		"why_now",
 		"revenue",
-		"ticket",
 	]);
 
 	// ── Navigation ──
@@ -511,6 +560,9 @@ export default function useOnboardingForm() {
 						domain: form.domain,
 						businessModel: form.businessType,
 						conversionModel: form.conversionModel,
+						primaryConcern: form.primaryConcern || null,
+						currentOptimizationMethod: form.currentOptimizationMethod || null,
+						whyNow: form.whyNow || null,
 						monthlyRevenue: form.monthlyRevenue,
 						averageOrderValue: form.averageTicket || null,
 						targetIndustry: form.industryVertical || null,
@@ -542,18 +594,33 @@ export default function useOnboardingForm() {
 			return;
 		}
 
-		// Self-serve: create org + open Paddle
+		// Self-serve: create org + open Paddle.
+		// Wave-22.6 — org name auto-derived from the domain so we
+		// don't need a dedicated step. "havefunnels.com" → "Have
+		// Funnels". User can rename in Settings afterward.
+		const autoOrgName =
+			form.organizationName ||
+			form.domain
+				.replace(/^https?:\/\//, "")
+				.replace(/\/.*$/, "")
+				.split(".")[0]
+				.split("-")
+				.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+				.join(" ");
 		try {
 			const response = await fetch("/api/onboard", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
-					organizationName: form.organizationName,
+					organizationName: autoOrgName,
 					domain: form.domain,
 					businessModel: form.businessType,
 					monthlyRevenue: form.monthlyRevenue,
 					averageOrderValue: form.averageTicket,
 					conversionModel: form.conversionModel,
+					primaryConcern: form.primaryConcern || null,
+					currentOptimizationMethod: form.currentOptimizationMethod || null,
+					whyNow: form.whyNow || null,
 					priceId: selectedPlan.paddlePriceId,
 					paymentProvider: "paddle",
 					targetIndustry: form.industryVertical || null,
@@ -594,15 +661,15 @@ export default function useOnboardingForm() {
 
 	// ── Can advance? ──
 	const canAdvance =
-		(currentStep === "org" && form.organizationName.length > 0) ||
 		(currentStep === "domain" &&
 			form.domain.length > 0 &&
 			form.ownershipConfirmed &&
 			!domainChecking) ||
 		currentStep === "business_type" ||
-		currentStep === "conversion_model" ||
-		currentStep === "revenue" ||
-		currentStep === "ticket";
+		currentStep === "concern" ||
+		currentStep === "current_method" ||
+		currentStep === "why_now" ||
+		currentStep === "revenue";
 
 	return {
 		// State

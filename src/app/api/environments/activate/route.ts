@@ -36,6 +36,38 @@ const activateSchema = z.object({
 		.enum(["checkout", "whatsapp", "form", "external"])
 		.optional()
 		.default("checkout"),
+	primaryConcern: z
+		.enum([
+			"traffic_no_sales",
+			"low_conversion",
+			"unknown_leak",
+			"scale_efficiency",
+			"prioritization",
+		])
+		.optional()
+		.nullable(),
+	currentOptimizationMethod: z
+		.enum([
+			"analytics_tools",
+			"session_replay",
+			"agency_consultant",
+			"team_judgment",
+			"spreadsheets",
+			"nothing",
+		])
+		.optional()
+		.nullable(),
+	whyNow: z
+		.enum([
+			"scaling_paid_traffic",
+			"recent_drop",
+			"prove_roi",
+			"competitive_pressure",
+			"chronic_pain",
+			"exploring",
+		])
+		.optional()
+		.nullable(),
 	monthlyRevenue: z.number().nullable().optional(),
 	averageOrderValue: z.number().nullable().optional(),
 	// Industry vertical captured in the onboarding "Industry" step. The
@@ -181,6 +213,9 @@ export const POST = withErrorTracking(
 					organizationId: org.id,
 					businessModel: data.businessModel,
 					conversionModel: data.conversionModel,
+					primaryConcern: data.primaryConcern ?? null,
+					currentOptimizationMethod: data.currentOptimizationMethod ?? null,
+					whyNow: data.whyNow ?? null,
 					monthlyRevenue: data.monthlyRevenue ?? null,
 					averageOrderValue: data.averageOrderValue ?? null,
 					targetIndustry,
@@ -189,6 +224,9 @@ export const POST = withErrorTracking(
 				update: {
 					businessModel: data.businessModel,
 					conversionModel: data.conversionModel,
+					primaryConcern: data.primaryConcern ?? null,
+					currentOptimizationMethod: data.currentOptimizationMethod ?? null,
+					whyNow: data.whyNow ?? null,
 					monthlyRevenue: data.monthlyRevenue ?? null,
 					averageOrderValue: data.averageOrderValue ?? null,
 					targetIndustry,

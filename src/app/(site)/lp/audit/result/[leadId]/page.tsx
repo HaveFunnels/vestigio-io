@@ -502,8 +502,8 @@ export default function MiniAuditResultPage() {
 						</header>
 
 						<ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-2">
-							{blurredFindings.map((b) => (
-								<LockedFindingCard key={b.id} blurred={b} onCheckout={openCheckout} />
+							{blurredFindings.map((b, i) => (
+								<LockedFindingCard key={b.id} blurred={b} index={i} onCheckout={openCheckout} />
 							))}
 						</ul>
 
@@ -629,9 +629,47 @@ function ResultHeader({
 
 // ── PlanPreviewSection (Wave-22.6 spec — block #1 of the new result) ──
 // Sits at the top of the result page. Lays out the Monthly Strategy
-// Plan the visitor WOULD get as a paid Vestigio user, with strategic
-// content cuts (NOT blur — DevTools-immune) so they see the shape
-// and feel the want without us giving away the value.
+// Plan the visitor WOULD get as a paid Vestigio user. The locked
+// regions render synthetic-but-plausible content under a CSS blur
+// (shimmer was the wrong primitive — it signals "still loading"
+// when the truth is "blocked behind paywall"). Synthetic content
+// keeps the page DevTools-safe: there are no real values to reveal.
+
+// Hero metric placeholders. Numbers chosen to look plausible at SMB
+// SaaS scale (R$ 5-50k). Rendered blurred — visitor sees a number
+// in a shape they can recognize.
+const PLAN_HERO_FAKE = ["R$ 28.400", "R$ 11.900", "R$ 6.200"];
+
+// Locked next-step pool — title + one-line hint. Server-rendered
+// blurred. Drawn from concerns we actually find in production audits
+// so the SHAPE of the text reads true (long-ish titles, short hints).
+const PLAN_STEP_FAKE: Array<{ title: string; hint: string }> = [
+	{
+		title: "Reduzir fricção do checkout em 3 etapas",
+		hint: "Impacto estimado: R$ 4.800 – R$ 7.200 / mês",
+	},
+	{
+		title: "Reescrever CTA principal para outcome-frame",
+		hint: "Impacto estimado: R$ 2.100 – R$ 3.400 / mês",
+	},
+	{
+		title: "Adicionar prova social verificável no terço inferior",
+		hint: "Impacto estimado: R$ 1.900 – R$ 2.800 / mês",
+	},
+	{
+		title: "Endereçar regressão de velocidade em mobile",
+		hint: "Impacto estimado: R$ 1.400 – R$ 2.100 / mês",
+	},
+	{
+		title: "Habilitar guest checkout como opção primária",
+		hint: "Impacto estimado: R$ 3.200 – R$ 4.900 / mês",
+	},
+	{
+		title: "Conectar Meta Ads para correlação UTM × conversão",
+		hint: "Impacto estimado: R$ 2.600 – R$ 3.800 / mês",
+	},
+];
+
 function PlanPreviewSection({
 	domain,
 	organizationName,
@@ -704,15 +742,20 @@ function PlanPreviewSection({
 				</h2>
 			</div>
 
-			{/* Hero metric stub — skeleton shimmer for the real numbers */}
+			{/* Hero metric stub — the labels render in full but the values
+			    are server-rendered blurred placeholders. Shimmer was the
+			    wrong primitive here: it signals "API loading" when the
+			    truth is "blocked behind paywall". Blur on synthetic but
+			    coherent values communicates the actual state — there
+			    IS a number, you just have to unlock to see it. */}
 			<div className="mb-6 grid grid-cols-3 gap-3">
 				{[0, 1, 2].map((i) => (
 					<div key={i} className="rounded-xl border border-edge bg-surface-inset p-3">
 						<div className="text-[9px] font-medium uppercase tracking-wider text-content-muted">
 							{t(`plan_preview.hero.label_${i}` as never)}
 						</div>
-						<div className="mt-2 h-6 w-3/4 overflow-hidden rounded-md">
-							<div className="skeleton-shimmer h-full w-full" />
+						<div className="mt-2 select-none font-mono text-base font-semibold tabular-nums text-content blur-[5px]" aria-hidden>
+							{PLAN_HERO_FAKE[i]}
 						</div>
 					</div>
 				))}
@@ -755,19 +798,25 @@ function PlanPreviewSection({
 							</div>
 						</li>
 					))}
-					{/* Server-cut: rest of steps are not in the DOM. We show
-					    skeleton-shimmer placeholders for them. */}
+					{/* Locked steps — fake but plausible titles + hints rendered
+					    blurred. "Blur on real text behind lock" reads as
+					    paywalled content; "shimmer" reads as still loading,
+					    which isn't true. PLAN_STEP_FAKE pool below. */}
 					{Array.from({ length: Math.max(0, nextStepCount - 2) }).map((_, i) => (
 						<li
-							key={`shim-${i}`}
+							key={`locked-${i}`}
 							className="flex items-start gap-3 rounded-xl border border-edge bg-surface-inset/60 p-3"
 						>
 							<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-inset font-[family-name:var(--font-fraunces)] text-[13px] font-semibold text-content-faint">
 								{i + 3}
 							</span>
-							<div className="min-w-0 flex-1 space-y-1.5">
-								<div className="skeleton-shimmer h-3 w-3/4 rounded-md" />
-								<div className="skeleton-shimmer h-2.5 w-1/2 rounded-md" />
+							<div className="min-w-0 flex-1 space-y-1">
+								<div className="select-none truncate text-[13px] font-medium text-content blur-[5px]" aria-hidden>
+									{PLAN_STEP_FAKE[i % PLAN_STEP_FAKE.length].title}
+								</div>
+								<div className="select-none truncate text-[11px] text-content-muted blur-[4px]" aria-hidden>
+									{PLAN_STEP_FAKE[i % PLAN_STEP_FAKE.length].hint}
+								</div>
 							</div>
 							<svg className="mt-1 h-3.5 w-3.5 shrink-0 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
 								<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
@@ -865,7 +914,7 @@ function WorkspacesAccordion({
 							<WorkspaceFindingRow key={f.id} title={f.title} severity={f.severity} />
 						))}
 						{Array.from({ length: Math.max(0, revenueBlurred) }).map((_, i) => (
-							<WorkspaceShimmerRow key={`r-shim-${i}`} />
+							<WorkspaceShimmerRow key={`r-shim-${i}`} index={i} />
 						))}
 					</ul>
 				</WorkspaceCard>
@@ -891,7 +940,7 @@ function WorkspacesAccordion({
 							<WorkspaceFindingRow key={f.id} title={f.title} severity={f.severity} />
 						))}
 						{Array.from({ length: Math.max(0, trustBlurred) }).map((_, i) => (
-							<WorkspaceShimmerRow key={`t-shim-${i}`} />
+							<WorkspaceShimmerRow key={`t-shim-${i}`} index={i + 3} />
 						))}
 					</ul>
 				</WorkspaceCard>
@@ -1079,11 +1128,29 @@ function WorkspaceFindingRow({ title, severity }: { title: string; severity: str
 	);
 }
 
-function WorkspaceShimmerRow() {
+// Locked rows inside the expanded workspaces. Synthetic-but-plausible
+// titles drawn from the same pool the LockedFindingCard uses, blurred.
+const WORKSPACE_ROW_FAKE = [
+	"Selos de segurança ausentes na finalização",
+	"Microcopy do CTA gera fricção mensurável",
+	"Tap-target principal abaixo de 44 px no mobile",
+	"Carrinho perde estado em transição checkout",
+	"Hierarquia de H1/H2 conflitante no PDP",
+	"Política de privacidade sem data de revisão",
+	"Depoimentos sem link verificável",
+	"Campo telefone obrigatório no cadastro",
+];
+
+function WorkspaceShimmerRow({ index = 0 }: { index?: number }) {
 	return (
 		<li className="flex items-center gap-3">
 			<span className="h-1.5 w-1.5 shrink-0 rounded-full bg-content-faint" />
-			<span className="skeleton-shimmer h-3 flex-1 rounded-md" />
+			<span
+				className="flex-1 select-none truncate text-[13px] leading-snug text-content-secondary blur-[5px]"
+				aria-hidden
+			>
+				{WORKSPACE_ROW_FAKE[index % WORKSPACE_ROW_FAKE.length]}
+			</span>
 			<svg className="h-3 w-3 shrink-0 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
 				<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 			</svg>
@@ -1790,7 +1857,37 @@ function UnlockSection({
 	);
 }
 
-function LockedFindingCard({ blurred, onCheckout }: { blurred: BlurredFinding; onCheckout: () => void }) {
+// Synthetic blurred impact ranges for locked findings. Indexed
+// deterministically by card position so the same R$ shape stays
+// stable across renders. The numbers are visually shaped — the
+// blur hides exact values but preserves the order of magnitude
+// signal ("this one's R$ thousands, not hundreds"). The card title
+// itself stays cleartext because blurred.teaser_title is already
+// the server's safe teaser. The IMPACT was the curiosity gap
+// missing before; now every locked card carries one.
+const LOCKED_IMPACT_FAKE = [
+	"R$ 1.800 – 3.200 / mês",
+	"R$ 4.200 – 6.900 / mês",
+	"R$ 2.100 – 3.800 / mês",
+	"R$ 6.500 – 9.400 / mês",
+	"R$ 1.200 – 2.400 / mês",
+	"R$ 3.800 – 5.700 / mês",
+	"R$ 2.700 – 4.100 / mês",
+	"R$ 5.100 – 7.200 / mês",
+	"R$ 1.500 – 2.600 / mês",
+	"R$ 4.600 – 6.800 / mês",
+];
+
+function LockedFindingCard({
+	blurred,
+	index,
+	onCheckout,
+}: {
+	blurred: BlurredFinding;
+	index: number;
+	onCheckout: () => void;
+}) {
+	const fakeImpact = LOCKED_IMPACT_FAKE[index % LOCKED_IMPACT_FAKE.length];
 	return (
 		<li>
 			<button
@@ -1805,6 +1902,12 @@ function LockedFindingCard({ blurred, onCheckout }: { blurred: BlurredFinding; o
 					</div>
 					<div className="mt-0.5 truncate text-xs font-medium text-zinc-300 sm:text-sm">
 						{blurred.teaser_title}
+					</div>
+					<div
+						className="mt-1 select-none truncate font-mono text-[10px] tabular-nums text-red-400/90 blur-[4px] sm:text-[11px]"
+						aria-hidden
+					>
+						↓ {fakeImpact}
 					</div>
 				</div>
 			</button>

@@ -9710,7 +9710,32 @@
 			"auditing_complete_title": "Diagnóstico de {domain} completado",
 			"auditing_complete_desc": "Encontramos hallazgos en tu sitio. Haz clic abajo para ver los resultados.",
 			"auditing_desc": "Esto generalmente toma 5–10 segundos. No cierres esta pestaña.",
-			"auditing_view": "Ver mi diagnóstico",
+			"auditing_view": "Ver mi análisis",
+			"loading": {
+				"headline": "Analizando {domain}",
+				"headline_complete": "Análisis de {domain} listo",
+				"subtitle": "Primer informe en ~60 segundos. Construimos tu Pulse mientras tanto.",
+				"subtitle_complete": "Todo calibrado. Puedes entrar.",
+				"active_label": "Ahora — Análisis rápido",
+				"teaser_label": "Próximas fases — Análisis completo",
+				"teaser_locked": "Bloqueado",
+				"unlock_hint": "Crear cuenta desbloquea las 6 próximas fases →",
+				"active_phases": [
+					"Conociendo tu dominio",
+					"Mapeando tu funnel de venta",
+					"Evaluando tu copy contra 5 frameworks consagrados",
+					"Calculando cuánto se está fugando de tu cuenta",
+					"Armando tu plan de ataque"
+				],
+				"teaser_phases": [
+					"Recorriendo tu sitio entero como un cliente curioso",
+					"Visitando tus páginas como un usuario simulado",
+					"Capa de machine learning sobre cada hallazgo",
+					"Conectando señales que solas no dicen nada",
+					"Leyendo el comportamiento real de tus visitantes",
+					"Qué significa todo esto para ti, en una narrativa"
+				]
+			},
 			"timeout_title": "El diagnóstico está tardando más de lo esperado",
 			"timeout_desc": "Esto puede ocurrir si el sitio es lento o está temporalmente no disponible. Verifica que el dominio sea correcto e intenta nuevamente.",
 			"timeout_retry": "Intentar de nuevo",

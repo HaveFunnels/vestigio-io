@@ -813,22 +813,42 @@ function AuditingState({
 }) {
 	const t = useTranslations("lp.audit_result");
 	const [stageIdx, setStageIdx] = useState(0);
-	const stagesRaw = t.raw("stages") as string[];
-	const stages = stagesRaw;
+	const activePhases = t.raw("loading.active_phases") as string[];
+	const teaserPhases = t.raw("loading.teaser_phases") as string[];
 
-	const allStagesDone = completed || stageIdx >= stages.length - 1;
+	// Minimum 18s on the loading screen even if the backend finishes
+	// faster — gives the user time to read the phase list + register
+	// the depth of what's coming. PR-spec: 5 active phases × ~3.6s each
+	// = 18s floor. Once allReadyAt fires (both backend done AND
+	// minimum elapsed), the "view results" CTA appears.
+	const MIN_LOADING_MS = 18_000;
+	const PER_PHASE_MS = MIN_LOADING_MS / activePhases.length;
+	const [mountedAt] = useState(() => Date.now());
+	const [minElapsed, setMinElapsed] = useState(false);
 
 	useEffect(() => {
-		if (completed) {
-			// Jump to all done
-			setStageIdx(stages.length - 1);
+		const remaining = MIN_LOADING_MS - (Date.now() - mountedAt);
+		if (remaining <= 0) {
+			setMinElapsed(true);
+			return;
+		}
+		const id = setTimeout(() => setMinElapsed(true), remaining);
+		return () => clearTimeout(id);
+	}, [mountedAt]);
+
+	const allReady = completed && minElapsed;
+	const allStagesDone = allReady || stageIdx >= activePhases.length - 1;
+
+	useEffect(() => {
+		if (allReady) {
+			setStageIdx(activePhases.length - 1);
 			return;
 		}
 		const interval = setInterval(() => {
-			setStageIdx((i) => Math.min(stages.length - 1, i + 1));
-		}, 2200);
+			setStageIdx((i) => Math.min(activePhases.length - 1, i + 1));
+		}, PER_PHASE_MS);
 		return () => clearInterval(interval);
-	}, [stages.length, completed]);
+	}, [activePhases.length, allReady, PER_PHASE_MS]);
 
 	// Prefer real favicon from audit result; fall back to Google's API
 	const googleFavicon = lead.domain
@@ -875,97 +895,131 @@ function AuditingState({
 		);
 	}
 
-	// Show the "view results" button when all stages are done AND data is ready
-	const showButton = allStagesDone && completed && onViewResults;
+	// Show the "view results" button when all phases are visually
+	// done AND the backend actually finished AND the minimum loading
+	// time has elapsed. All three together.
+	const showButton = allStagesDone && allReady && onViewResults;
 
 	return (
-		<div className="relative flex min-h-screen items-center justify-center bg-[#070710] px-4">
-			<DotGrid />
-			<div className="relative w-full max-w-md text-center">
-				{/* Favicon + animated ping */}
-				<div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center">
-					<span className="relative flex h-12 w-12">
-						{!showButton && (
-							<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-30" />
-						)}
-						{faviconUrl ? (
-							/* eslint-disable-next-line @next/next/no-img-element */
+		<div className="relative flex min-h-screen items-start justify-center bg-[#fafafa] px-5 py-10 sm:py-14">
+			<div className="relative mx-auto w-full max-w-[560px]">
+				{/* Hero */}
+				<div className="mb-7 flex flex-col items-center text-center">
+					<Image
+						src={logoDark}
+						alt="Vestigio"
+						height={22}
+						className="mb-6"
+					/>
+					{faviconUrl && (
+						<span className="mb-4 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
+							{/* eslint-disable-next-line @next/next/no-img-element */}
 							<img
 								src={faviconUrl}
 								alt=""
-								className={`relative inline-flex h-12 w-12 rounded-full border-2 bg-zinc-900 object-cover p-1.5 ${showButton ? "border-emerald-400" : "border-emerald-400"}`}
+								className="h-full w-full object-contain"
 								onError={(e) => { if (googleFavicon && e.currentTarget.src !== googleFavicon) e.currentTarget.src = googleFavicon; }}
 							/>
-						) : (
-							<span className="relative inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-emerald-400 bg-emerald-500/10 text-emerald-300">
-								<svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-									<path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-								</svg>
-							</span>
-						)}
-					</span>
+						</span>
+					)}
+					<h1 className="font-[family-name:var(--font-fraunces)] text-[24px] font-medium leading-tight text-zinc-900 sm:text-[28px]">
+						{showButton
+							? t("loading.headline_complete", { domain: lead.domain || t("your_site") })
+							: t("loading.headline", { domain: lead.domain || t("your_site") })}
+					</h1>
+					<p className="mt-2 text-[13px] text-zinc-500">
+						{showButton ? t("loading.subtitle_complete") : t("loading.subtitle")}
+					</p>
 				</div>
 
-				<h1 className="text-2xl font-semibold text-zinc-100">
-					{showButton
-						? t("auditing_complete_title", { domain: lead.domain || t("your_site") })
-						: t("auditing_title", { domain: lead.domain || t("your_site") })
-					}
-				</h1>
-				<p className="mt-2 text-sm text-zinc-500">
-					{showButton ? t("auditing_complete_desc") : t("auditing_desc")}
-				</p>
-
-				{/* Domain confirmation */}
-				{!showButton && (
-					<div className="mt-4 inline-flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 py-1.5">
-						{/* eslint-disable-next-line @next/next/no-img-element */}
-						{faviconUrl && <img src={faviconUrl} alt="" className="h-4 w-4 rounded" onError={(e) => { if (googleFavicon && e.currentTarget.src !== googleFavicon) e.currentTarget.src = googleFavicon; }} />}
-						<span className="font-mono text-xs text-zinc-400">{lead.domain}</span>
+				{/* Active phases (5) — the análise rápida happening now */}
+				<div className="rounded-2xl border border-zinc-200 bg-white p-5">
+					<div className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+						{t("loading.active_label")}
 					</div>
-				)}
+					<ul className="space-y-2.5">
+						{activePhases.map((label, idx) => {
+							const isDone = allReady ? true : idx < stageIdx;
+							const isActive = !allReady && idx === stageIdx;
+							return (
+								<li
+									key={label}
+									className="flex items-center gap-3 text-[13px]"
+								>
+									{isDone ? (
+										<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-white">
+											<svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+												<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+											</svg>
+										</span>
+									) : isActive ? (
+										<span className="relative flex h-5 w-5 shrink-0 items-center justify-center">
+											<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+											<span className="relative h-2.5 w-2.5 rounded-full bg-emerald-500" />
+										</span>
+									) : (
+										<span className="h-5 w-5 shrink-0 rounded-full border border-zinc-200" />
+									)}
+									<span
+										className={
+											isDone
+												? "text-zinc-700"
+												: isActive
+													? "text-zinc-900"
+													: "text-zinc-400"
+										}
+									>
+										{label}
+									</span>
+								</li>
+							);
+						})}
+					</ul>
+				</div>
 
-				<ul className="mt-8 space-y-2 text-left">
-					{stages.map((label, idx) => {
-						const isDone = completed ? true : idx < stageIdx;
-						const isActive = !completed && idx === stageIdx;
-						return (
+				{/* Teaser phases (6) — what unlocks with an account */}
+				<div className="mt-3 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/60 p-5">
+					<div className="mb-3 flex items-baseline justify-between">
+						<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+							{t("loading.teaser_label")}
+						</div>
+						<div className="text-[10px] font-medium text-emerald-700">
+							{t("loading.teaser_locked")}
+						</div>
+					</div>
+					<ul className="space-y-2.5">
+						{teaserPhases.map((label) => (
 							<li
 								key={label}
-								className={`flex items-center gap-3 rounded-md border px-3.5 py-2.5 text-sm transition-colors ${
-									isDone
-										? "border-emerald-500/20 bg-emerald-500/5 text-zinc-300"
-										: isActive
-											? "border-zinc-700 bg-zinc-900 text-zinc-200"
-											: "border-zinc-800 bg-zinc-950 text-zinc-700"
-								}`}
+								className="flex items-center gap-3 text-[13px] text-zinc-500"
 							>
-								{isDone ? (
-									<svg className="h-4 w-4 text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-										<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+								<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-zinc-400">
+									<svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
+										<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 									</svg>
-								) : isActive ? (
-									<span className="relative flex h-3.5 w-3.5">
-										<span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-										<span className="relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-emerald-400" />
-									</span>
-								) : (
-									<span className="h-3.5 w-3.5 rounded-full border border-zinc-800" />
-								)}
+								</span>
 								<span>{label}</span>
 							</li>
-						);
-					})}
-				</ul>
+						))}
+					</ul>
+				</div>
 
-				{/* CTA button — appears only when audit is done */}
+				{/* Sub-CTA banner */}
+				<div className="mt-4 text-center text-[11px] text-zinc-500">
+					{t("loading.unlock_hint")}
+				</div>
+
+				{/* View results CTA — only when ALL three conditions met */}
 				{showButton && (
 					<button
 						type="button"
 						onClick={onViewResults}
-						className="mt-8 w-full rounded-xl bg-emerald-500 px-7 py-3.5 text-sm font-semibold text-emerald-950 shadow-[0_0_30px_rgba(16,185,129,0.25)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)]"
+						className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-100 px-6 py-4 text-[15px] font-semibold text-zinc-900 transition-colors hover:bg-emerald-200"
 					>
 						{t("auditing_view")}
+						<svg className="h-4 w-4 text-emerald-600" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+							<path d="M3 8h10M9 4l4 4-4 4" />
+						</svg>
 					</button>
 				)}
 			</div>

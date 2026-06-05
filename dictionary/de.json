@@ -8185,7 +8185,32 @@
 			"auditing_complete_title": "Diagnose von {domain} abgeschlossen",
 			"auditing_complete_desc": "Wir haben Befunde auf Ihrer Website gefunden. Klicken Sie unten, um die Ergebnisse zu sehen.",
 			"auditing_desc": "Dies dauert normalerweise 5–10 Sekunden. Schließen Sie diesen Tab nicht.",
-			"auditing_view": "Meine Diagnose ansehen",
+			"auditing_view": "Meine Analyse ansehen",
+			"loading": {
+				"headline": "{domain} wird analysiert",
+				"headline_complete": "Analyse von {domain} fertig",
+				"subtitle": "Erster Bericht in ~60 Sekunden. Wir bauen Ihren Pulse währenddessen auf.",
+				"subtitle_complete": "Alles kalibriert. Sie können hinein.",
+				"active_label": "Jetzt — Schnellanalyse",
+				"teaser_label": "Nächste Phasen — Vollständige Analyse",
+				"teaser_locked": "Gesperrt",
+				"unlock_hint": "Konto anlegen entsperrt die 6 nächsten Phasen →",
+				"active_phases": [
+					"Ihre Domain kennenlernen",
+					"Ihren Verkaufstrichter kartieren",
+					"Ihre Copy gegen 5 bewährte Frameworks bewerten",
+					"Ausrechnen, wie viel von Ihrem Konto wegfließt",
+					"Ihren Angriffsplan zusammenstellen"
+				],
+				"teaser_phases": [
+					"Ihre ganze Website wie ein neugieriger Kunde durchsuchen",
+					"Ihre Seiten als simulierter Nutzer besuchen",
+					"Machine-Learning-Schicht auf jedem Befund",
+					"Signale verbinden, die alleine nichts sagen",
+					"Das echte Verhalten Ihrer Besucher lesen",
+					"Was das alles für Sie bedeutet, in einer Erzählung"
+				]
+			},
 			"timeout_title": "Die Diagnose dauert länger als erwartet",
 			"timeout_desc": "Dies kann passieren, wenn die Website langsam oder vorübergehend nicht verfügbar ist. Überprüfen Sie die Domain und versuchen Sie es erneut.",
 			"timeout_retry": "Erneut versuchen",

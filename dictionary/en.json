@@ -9942,7 +9942,32 @@
 			"auditing_complete_title": "Diagnostic for {domain} complete",
 			"auditing_complete_desc": "We found findings on your site. Click below to see the results.",
 			"auditing_desc": "This usually takes 5–10 seconds. Do not close this tab.",
-			"auditing_view": "See my diagnostic",
+			"auditing_view": "See my analysis",
+			"loading": {
+				"headline": "Analyzing {domain}",
+				"headline_complete": "Analysis of {domain} ready",
+				"subtitle": "First report in ~60 seconds. We're building your Pulse in the meantime.",
+				"subtitle_complete": "All calibrated. You can come in.",
+				"active_label": "Now — Quick analysis",
+				"teaser_label": "Next phases — Full analysis",
+				"teaser_locked": "Locked",
+				"unlock_hint": "Creating an account unlocks the 6 next phases →",
+				"active_phases": [
+					"Getting to know your domain",
+					"Mapping your sales funnel",
+					"Evaluating your copy against 5 proven frameworks",
+					"Calculating how much is leaving your account",
+					"Drafting your attack plan"
+				],
+				"teaser_phases": [
+					"Crawling your entire site like a curious customer",
+					"Visiting your pages as a simulated user",
+					"Machine-learning layer over each finding",
+					"Connecting signals that don't say much alone",
+					"Reading the real behavior of your visitors",
+					"What it all means for you, in one narrative"
+				]
+			},
 			"timeout_title": "The diagnostic is taking longer than expected",
 			"timeout_desc": "This can happen if the site is slow or temporarily unavailable. Verify the domain is correct and try again.",
 			"timeout_retry": "Try again",

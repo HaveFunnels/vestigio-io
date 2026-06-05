@@ -77,10 +77,21 @@ export default function ImpactBadge({
     );
   }
 
+  // Wave-22.6 — wide ranges (spread > 50% of midpoint) read as
+  // expert hedging instead of expert opinion. When the range is
+  // wider than that threshold, surface the midpoint only; the full
+  // range stays available inside the MethodologyPopover for the
+  // curious buyer. Threshold derived from a buyer-credibility lens:
+  // a confident financial estimate stays within ±25% of its center.
+  const spread = midpoint > 0 ? (max - min) / midpoint : 0;
+  const showRange = spread <= 0.5;
+
   return (
     <span className="inline-flex items-center">
       <span className={`font-mono text-xs ${color}`}>
-        {formatCurrency(min, sym)} – {formatCurrency(max, sym)}
+        {showRange
+          ? `${formatCurrency(min, sym)} – ${formatCurrency(max, sym)}`
+          : formatCurrency(midpoint, sym)}
         {t("per_month_short")}
       </span>
       {showMethodology && (

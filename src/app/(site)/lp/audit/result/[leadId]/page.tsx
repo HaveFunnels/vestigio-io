@@ -395,6 +395,19 @@ export default function MiniAuditResultPage() {
 					{/* Cost summary banner */}
 					<CostSummaryBanner findings={negativeFindings} hiddenCount={blurredFindings.length} revealed={revealed} />
 
+					{/* CTA final emotional block — JTBD-personalized close. */}
+					<CTAFinalSection
+						organizationName={lead.organizationName || lead.domain || ""}
+						primaryConcern={lead.primaryConcern ?? null}
+						whyNow={lead.whyNow ?? null}
+						currentOptimizationMethod={lead.currentOptimizationMethod ?? null}
+						negativeCount={negativeFindings.length}
+						blurredCount={blurredFindings.length}
+						revealed={revealed}
+						onCheckout={openCheckout}
+						launching={launching}
+					/>
+
 					{/* Locked findings grid */}
 					<section className={`mt-10 transition-opacity duration-1000 delay-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<header className="mb-4">
@@ -1224,6 +1237,102 @@ function McpChatMockup({
 						<path d="M3 8h10M9 4l4 4-4 4" />
 					</svg>
 				</button>
+			</div>
+		</section>
+	);
+}
+
+// ── CTAFinalSection (Wave-22.6 spec block #6) ──
+// The emotional close. JTBD-personalized using primaryConcern,
+// whyNow, currentOptimizationMethod when present. Single Create
+// Account CTA.
+function CTAFinalSection({
+	organizationName,
+	primaryConcern,
+	whyNow,
+	currentOptimizationMethod,
+	negativeCount,
+	blurredCount,
+	revealed,
+	onCheckout,
+	launching,
+}: {
+	organizationName: string;
+	primaryConcern: string | null;
+	whyNow: string | null;
+	currentOptimizationMethod: string | null;
+	negativeCount: number;
+	blurredCount: number;
+	revealed: boolean;
+	onCheckout: () => void;
+	launching: boolean;
+}) {
+	const t = useTranslations("lp.audit_result");
+	const totalCount = negativeCount + blurredCount;
+	const criticalEstimate = Math.max(
+		1,
+		Math.ceil(blurredCount * 0.25) + Math.floor(negativeCount * 0.3),
+	);
+	const whyNowClause = whyNow ? t(`cta_final.why_now_clauses.${whyNow}` as never) : null;
+	const concernClose = primaryConcern
+		? t(`cta_final.concern_closes.${primaryConcern}` as never, { org: organizationName })
+		: null;
+	const methodLine = currentOptimizationMethod
+		? t(`cta_final.method_lines.${currentOptimizationMethod}` as never)
+		: null;
+
+	return (
+		<section
+			className={`mt-10 overflow-hidden rounded-3xl border border-emerald-500/20 bg-emerald-50/40 p-7 transition-opacity duration-700 sm:mt-12 sm:p-10 ${revealed ? "opacity-100" : "opacity-0"}`}
+		>
+			<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+				{t("cta_final.eyebrow")}
+			</div>
+			<h2 className="mt-3 font-[family-name:var(--font-fraunces)] text-[28px] font-medium leading-tight text-zinc-900 sm:text-[36px]">
+				{t("cta_final.headline", { org: organizationName })}
+			</h2>
+
+			{/* JTBD-personalized line OR fallback close */}
+			<p className="mt-4 max-w-xl text-[15px] leading-relaxed text-zinc-700">
+				{whyNowClause ? (
+					<>
+						{t("cta_final.you_told_us")} <strong className="text-zinc-900">{whyNowClause}</strong>.{" "}
+					</>
+				) : null}
+				{concernClose ?? t("cta_final.generic_close", { count: criticalEstimate })}
+			</p>
+
+			{methodLine && (
+				<p className="mt-3 max-w-xl text-[13px] leading-relaxed text-zinc-500">
+					{methodLine}
+				</p>
+			)}
+
+			<div className="mt-6 max-w-xl space-y-2">
+				{(["plan", "queue", "ai", "map"] as const).map((item) => (
+					<div key={item} className="flex items-start gap-2 text-[13px] text-zinc-700">
+						<svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={2.4} stroke="currentColor">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+						</svg>
+						<span>{t(`cta_final.bullets.${item}`)}</span>
+					</div>
+				))}
+			</div>
+
+			<button
+				type="button"
+				onClick={onCheckout}
+				disabled={launching}
+				className="mt-7 flex w-full max-w-md items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-4 text-[15px] font-semibold text-white shadow-lg shadow-emerald-500/25 transition-colors hover:bg-emerald-600 disabled:opacity-60"
+			>
+				{t("cta_create_account")}
+				<svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+					<path d="M3 8h10M9 4l4 4-4 4" />
+				</svg>
+			</button>
+
+			<div className="mt-3 text-[11px] text-zinc-500">
+				{t("cta_final.trust_line")}
 			</div>
 		</section>
 	);

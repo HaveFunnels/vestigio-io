@@ -7826,6 +7826,42 @@
 				"critical_label": "críticos",
 				"actions_label": "ações priorizadas"
 			},
+			"cta_final": {
+				"eyebrow": "Hora de entrar",
+				"headline": "{org} está perdendo dinheiro agora.",
+				"you_told_us": "Você nos disse que",
+				"generic_close": "Há {count} achados críticos esperando a primeira ação.",
+				"concern_closes": {
+					"traffic_no_sales": "Em {org}, tráfego entra e venda não. Encontramos onde a fuga concentra.",
+					"low_conversion": "Em {org}, conversão tá abaixo do que poderia. Localizamos os 3 pontos de fricção principais.",
+					"unknown_leak": "Em {org}, o vazamento não tá onde você imagina. Vimos onde ele tá de fato.",
+					"scale_efficiency": "Em {org}, escalar agora vai amplificar o que tá perdendo. Vimos o que arrumar antes.",
+					"prioritization": "Em {org}, vimos quais 3 movimentos movem o ponteiro mais agora — não os 20 que parecem mover."
+				},
+				"why_now_clauses": {
+					"scaling_paid_traffic": "vão aumentar investimento em mídia",
+					"recent_drop": "algo piorou e vocês não sabem o quê",
+					"prove_roi": "precisa provar ROI",
+					"competitive_pressure": "concorrente está crescendo mais",
+					"chronic_pain": "tem uma dor crônica que nunca foi resolvida",
+					"exploring": "estão explorando opções"
+				},
+				"method_lines": {
+					"analytics_tools": "GA/Mixpanel/Amplitude mostram o que aconteceu. A Vestigio mostra o porquê — em reais.",
+					"session_replay": "Session replay mostra como o visitante se mexeu. A Vestigio mostra quanto isso te custou e o que fazer.",
+					"agency_consultant": "Sua agência entrega um relatório por mês. A Vestigio entrega o relatório atualizado todo dia — automaticamente.",
+					"team_judgment": "Palpite do time é rápido. A Vestigio é rápida e tem números reais por trás de cada decisão.",
+					"spreadsheets": "Planilha demora horas. A Vestigio leva 60 segundos e atualiza sozinha.",
+					"nothing": "Antes era no escuro. Agora é com narrativa, fila priorizada e valores em reais."
+				},
+				"bullets": {
+					"plan": "Plano de Estratégia mensal completo",
+					"queue": "Fila de ações priorizada por impacto financeiro",
+					"ai": "Vestigio AI conectada às suas fontes (Meta, Google, Stripe, etc.)",
+					"map": "Mapa de causa-raiz interativo"
+				},
+				"trust_line": "Você está dentro em minutos. Sem trial, sem amarração — só o produto."
+			},
 			"map": {
 				"title": "Mapa de causa-raiz",
 				"counts": "{nodes} nós · {edges} conexões",

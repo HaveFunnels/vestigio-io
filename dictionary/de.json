@@ -8188,6 +8188,42 @@
 				"critical_label": "kritisch",
 				"actions_label": "priorisierte Maßnahmen"
 			},
+			"cta_final": {
+				"eyebrow": "Zeit reinzukommen",
+				"headline": "{org} verliert gerade Geld.",
+				"you_told_us": "Sie sagten uns,",
+				"generic_close": "Es warten {count} kritische Befunde auf den ersten Zug.",
+				"concern_closes": {
+					"traffic_no_sales": "Bei {org} kommt Traffic, kommen aber keine Verkäufe. Wir haben gefunden, wo das Leck sich konzentriert.",
+					"low_conversion": "Bei {org} liegt die Conversion unter dem Möglichen. Wir lokalisierten die 3 Hauptfriktionspunkte.",
+					"unknown_leak": "Bei {org} ist das Leck nicht dort, wo Sie denken. Wir sahen, wo es wirklich ist.",
+					"scale_efficiency": "Bei {org} würde Skalierung jetzt verstärken, was leckt. Wir sahen, was vorher zu fixen ist.",
+					"prioritization": "Bei {org} sahen wir, welche 3 Schritte den Hebel am meisten bewegen — nicht die 20, die so aussehen, als würden sie es tun."
+				},
+				"why_now_clauses": {
+					"scaling_paid_traffic": "Sie erhöhen Paid-Traffic-Ausgaben",
+					"recent_drop": "etwas ist abgesackt und Sie wissen nicht was",
+					"prove_roi": "Sie müssen ROI nachweisen",
+					"competitive_pressure": "ein Wettbewerber wächst schneller",
+					"chronic_pain": "es gibt einen chronischen Schmerz, der nie gelöst wurde",
+					"exploring": "Sie erkunden Optionen"
+				},
+				"method_lines": {
+					"analytics_tools": "GA/Mixpanel/Amplitude zeigen, was passiert ist. Vestigio zeigt das Warum — in Euro.",
+					"session_replay": "Session Replay zeigt, wie sich ein Besucher bewegte. Vestigio zeigt, wie viel es Sie kostete und was zu tun ist.",
+					"agency_consultant": "Ihre Agentur liefert einmal im Monat einen Bericht. Vestigio liefert täglich einen aktualisierten — automatisch.",
+					"team_judgment": "Team-Intuition ist schnell. Vestigio ist schnell UND hat echte Zahlen unter jeder Entscheidung.",
+					"spreadsheets": "Tabellen brauchen Stunden. Vestigio läuft in 60 Sekunden und aktualisiert sich selbst.",
+					"nothing": "Vorher Blindflug. Jetzt Erzählung, priorisierte Liste und Eurobeträge."
+				},
+				"bullets": {
+					"plan": "Vollständiger monatlicher Strategieplan",
+					"queue": "Aktionsliste sortiert nach finanzieller Wirkung",
+					"ai": "Vestigio AI verbunden mit Ihren Quellen (Meta, Google, Stripe, etc.)",
+					"map": "Interaktive Ursache-Karte"
+				},
+				"trust_line": "Sie sind in Minuten drin. Kein Trial, keine Bindung — nur das Produkt."
+			},
 			"map": {
 				"title": "Ursache-Karte",
 				"counts": "{nodes} Knoten · {edges} Verbindungen",

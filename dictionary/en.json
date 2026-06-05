@@ -9945,6 +9945,42 @@
 				"critical_label": "critical",
 				"actions_label": "priority actions"
 			},
+			"cta_final": {
+				"eyebrow": "Time to come in",
+				"headline": "{org} is losing money right now.",
+				"you_told_us": "You told us",
+				"generic_close": "There are {count} critical findings waiting for the first move.",
+				"concern_closes": {
+					"traffic_no_sales": "At {org}, traffic comes in, sales don't. We found where the leak concentrates.",
+					"low_conversion": "At {org}, conversion is below where it could be. We located the 3 main friction spots.",
+					"unknown_leak": "At {org}, the leak isn't where you think. We saw where it actually is.",
+					"scale_efficiency": "At {org}, scaling now would amplify what's leaking. We saw what to fix first.",
+					"prioritization": "At {org}, we saw which 3 moves shift the needle the most — not the 20 that look like they would."
+				},
+				"why_now_clauses": {
+					"scaling_paid_traffic": "you're ramping up paid traffic spend",
+					"recent_drop": "something dropped and you don't know what",
+					"prove_roi": "you need to prove ROI",
+					"competitive_pressure": "a competitor is growing faster",
+					"chronic_pain": "there's a chronic pain that's never been fixed",
+					"exploring": "you're exploring options"
+				},
+				"method_lines": {
+					"analytics_tools": "GA/Mixpanel/Amplitude show what happened. Vestigio shows why — in dollars.",
+					"session_replay": "Session replay shows how a visitor moved. Vestigio shows how much it cost you and what to do.",
+					"agency_consultant": "Your agency ships a report once a month. Vestigio ships an updated one every day — automatically.",
+					"team_judgment": "Team intuition is fast. Vestigio is fast AND has real numbers under every decision.",
+					"spreadsheets": "Spreadsheets take hours. Vestigio runs in 60 seconds and updates itself.",
+					"nothing": "Before, it was guesswork. Now it's narrative, ranked queue, and dollar amounts."
+				},
+				"bullets": {
+					"plan": "Full Monthly Strategy Plan",
+					"queue": "Action queue ranked by financial impact",
+					"ai": "Vestigio AI connected to your sources (Meta, Google, Stripe, etc.)",
+					"map": "Interactive root-cause map"
+				},
+				"trust_line": "You're in within minutes. No trial, no lock-in — just the product."
+			},
 			"map": {
 				"title": "Root-cause map",
 				"counts": "{nodes} nodes · {edges} connections",

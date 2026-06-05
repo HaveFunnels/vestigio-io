@@ -80,10 +80,13 @@ export default function DemoSurface() {
 	const unmute = useCallback(() => {
 		const v = videoRef.current;
 		if (!v) return;
-		v.currentTime = 0;
 		v.muted = false;
-		v.play();
-		setAudio("playing");
+		v.play().then(() => {
+			setAudio("playing");
+		}).catch(() => {
+			v.muted = true;
+			setAudio("muted");
+		});
 	}, []);
 
 	const handleVideoClick = useCallback(() => {

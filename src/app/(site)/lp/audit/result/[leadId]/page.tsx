@@ -24,6 +24,7 @@ import {
 	summarizeMiniImpact,
 } from "../../../../../../../packages/impact/mini-impact";
 import logoDark from "@/../public/images/logo/logo.png";
+import logoLight from "@/../public/images/logo/logo-light.png";
 import { trackLpEvent } from "@/lib/lp-audit-track";
 
 // ──────────────────────────────────────────────
@@ -270,18 +271,19 @@ export default function MiniAuditResultPage() {
 			{/* Paddle script */}
 			<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
 
-			<div className="relative min-h-screen bg-[#fafafa]">
+			<div className="relative min-h-screen bg-surface-shell">
 				{/* Brand strip — light theme, sticky CTA */}
-				<header className="sticky top-0 z-30 border-b border-zinc-200 bg-[#fafafa]/85 backdrop-blur-md px-4 py-3">
+				<header className="sticky top-0 z-30 border-b border-edge bg-surface-shell/85 backdrop-blur-md px-4 py-3">
 					<div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
 						<Link href="/lp" className="flex items-center">
-							<Image src={logoDark} alt="Vestigio" height={22} />
+							<Image src={logoDark} alt="Vestigio" height={22} className="dark:hidden" />
+							<Image src={logoLight} alt="Vestigio" height={22} className="hidden dark:block" />
 						</Link>
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
 								onClick={copyShareLink}
-								className="hidden items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:border-zinc-300 hover:text-zinc-900 sm:flex"
+								className="hidden items-center gap-1.5 rounded-md border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary transition-colors hover:border-edge-focus hover:text-content sm:flex"
 							>
 								{shareCopied ? (
 									<>
@@ -301,10 +303,10 @@ export default function MiniAuditResultPage() {
 								type="button"
 								onClick={openCheckout}
 								disabled={launching}
-								className="flex items-center gap-1.5 rounded-lg bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-zinc-900 transition-colors hover:bg-emerald-200 disabled:opacity-60"
+								className="flex items-center gap-1.5 rounded-lg bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-zinc-900 transition-colors hover:bg-emerald-200 disabled:opacity-60 dark:bg-emerald-500/20 dark:text-content dark:hover:bg-emerald-500/30"
 							>
 								{t("cta_create_account")}
-								<svg className="h-3 w-3 text-emerald-600" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+								<svg className="h-3 w-3 text-emerald-600 dark:text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
 									<path d="M3 8h10M9 4l4 4-4 4" />
 								</svg>
 							</button>
@@ -368,10 +370,10 @@ export default function MiniAuditResultPage() {
 					<section className={`mt-10 transition-opacity duration-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<header className="mb-3 flex items-end justify-between">
 							<div>
-								<span className="mb-2 inline-block rounded-full border border-zinc-300 bg-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+								<span className="mb-2 inline-block rounded-full border border-edge bg-surface-card px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-content-secondary">
 									{t("badge_free")}
 								</span>
-								<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
+								<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
 									{negativeFindings.length === 1 ? t("findings_unlocked_one", { count: negativeFindings.length }) : t("findings_unlocked_other", { count: negativeFindings.length })}
 								</h2>
 							</div>
@@ -415,12 +417,12 @@ export default function MiniAuditResultPage() {
 					<section className={`mt-10 transition-opacity duration-1000 delay-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<header className="mb-4">
 							<span
-								className="mb-2 inline-block rounded-full border border-emerald-500/30 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700"
+								className="mb-2 inline-block rounded-full border border-emerald-500/30 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
 							>
 								<Sparkles className="mr-1 inline h-3 w-3" />
 								{t("badge_premium")}
 							</span>
-							<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
+							<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
 								{t("findings_to_unlock", { count: blurredFindings.length })}
 							</h2>
 						</header>
@@ -436,7 +438,7 @@ export default function MiniAuditResultPage() {
 					</section>
 
 					{/* Footer */}
-					<footer className="mt-12 border-t border-zinc-200 pt-6 text-center text-xs text-zinc-500">
+					<footer className="mt-12 border-t border-edge pt-6 text-center text-xs text-content-muted">
 						{t("footer", { visible: negativeFindings.length, total: totalFindings })}
 					</footer>
 				</main>
@@ -522,7 +524,7 @@ function ResultHeader({
 		<div
 			className={`mb-8 flex flex-col items-start gap-4 transition-opacity duration-700 sm:flex-row sm:items-center sm:gap-5 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			<span className="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
+			<span className="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-edge bg-surface-card p-2 shadow-sm">
 				{/* eslint-disable-next-line @next/next/no-img-element */}
 				<img
 					src={faviconSrc}
@@ -534,20 +536,20 @@ function ResultHeader({
 				/>
 			</span>
 			<div className="min-w-0 flex-1">
-				<h1 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-tight text-zinc-900 sm:text-[30px]">
+				<h1 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-tight text-content sm:text-[30px]">
 					{t("header.title", { domain })}
 				</h1>
 				<div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
-					<span className="font-semibold text-zinc-900">
+					<span className="font-semibold text-content">
 						{totalCount}
 					</span>
-					<span className="text-zinc-500">{t("header.findings_label")}</span>
-					<span className="text-zinc-300">·</span>
-					<span className="font-semibold text-rose-600">{criticalEstimate}</span>
-					<span className="text-zinc-500">{t("header.critical_label")}</span>
-					<span className="text-zinc-300">·</span>
-					<span className="font-semibold text-zinc-900">{totalCount}</span>
-					<span className="text-zinc-500">{t("header.actions_label")}</span>
+					<span className="text-content-muted">{t("header.findings_label")}</span>
+					<span className="text-content-faint">·</span>
+					<span className="font-semibold text-rose-600 dark:text-rose-400">{criticalEstimate}</span>
+					<span className="text-content-muted">{t("header.critical_label")}</span>
+					<span className="text-content-faint">·</span>
+					<span className="font-semibold text-content">{totalCount}</span>
+					<span className="text-content-muted">{t("header.actions_label")}</span>
 				</div>
 			</div>
 		</div>
@@ -596,14 +598,14 @@ function PlanPreviewSection({
 
 	return (
 		<section
-			className={`relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-6 transition-opacity duration-700 sm:p-8 ${revealed ? "opacity-100" : "opacity-0"}`}
+			className={`relative overflow-hidden rounded-3xl border border-edge bg-surface-card p-6 transition-opacity duration-700 sm:p-8 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
 			{/* Header */}
 			<div className="mb-5 flex items-baseline justify-between gap-3">
-				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-content-muted">
 					{t("plan_preview.eyebrow")}
 				</div>
-				<div className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+				<div className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
 					<Sparkles className="h-2.5 w-2.5" />
 					{t("plan_preview.preview_badge")}
 				</div>
@@ -611,7 +613,7 @@ function PlanPreviewSection({
 
 			{/* Plan title + month */}
 			<div className="mb-6">
-				<h2 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-tight text-zinc-900 sm:text-[30px]">
+				<h2 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-tight text-content sm:text-[30px]">
 					{t("plan_preview.title", { month: monthLabel, org: organizationName })}
 				</h2>
 			</div>
@@ -619,8 +621,8 @@ function PlanPreviewSection({
 			{/* Hero metric stub — skeleton shimmer for the real numbers */}
 			<div className="mb-6 grid grid-cols-3 gap-3">
 				{[0, 1, 2].map((i) => (
-					<div key={i} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-						<div className="text-[9px] font-medium uppercase tracking-wider text-zinc-500">
+					<div key={i} className="rounded-xl border border-edge bg-surface-inset p-3">
+						<div className="text-[9px] font-medium uppercase tracking-wider text-content-muted">
 							{t(`plan_preview.hero.label_${i}` as never)}
 						</div>
 						<div className="mt-2 h-6 w-3/4 overflow-hidden rounded-md">
@@ -632,36 +634,36 @@ function PlanPreviewSection({
 
 			{/* Narrative — 2 sentences visible, rest server-cut */}
 			<div className="mb-6">
-				<div className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+				<div className="text-[10px] font-medium uppercase tracking-wider text-content-muted">
 					{t("plan_preview.narrative_label")}
 				</div>
-				<p className="mt-2 font-[family-name:var(--font-fraunces)] text-[16px] leading-relaxed text-zinc-800">
+				<p className="mt-2 font-[family-name:var(--font-fraunces)] text-[16px] leading-relaxed text-content-secondary">
 					{narrativeOpening}
 				</p>
-				<p className="mt-2 text-[12px] text-zinc-400">
+				<p className="mt-2 text-[12px] text-content-faint">
 					{t("plan_preview.narrative_continues")}
 				</p>
 			</div>
 
 			{/* Next steps — first 2 titles visible, rest cut */}
 			<div className="mb-6">
-				<div className="mb-3 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+				<div className="mb-3 text-[10px] font-medium uppercase tracking-wider text-content-muted">
 					{t("plan_preview.next_steps_label", { count: nextStepCount })}
 				</div>
 				<ol className="space-y-2.5">
 					{[1, 2].map((order) => (
 						<li
 							key={order}
-							className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3"
+							className="flex items-start gap-3 rounded-xl border border-edge bg-surface-inset p-3"
 						>
-							<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 font-[family-name:var(--font-fraunces)] text-[13px] font-semibold text-emerald-700">
+							<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 font-[family-name:var(--font-fraunces)] text-[13px] font-semibold text-emerald-700 dark:text-emerald-300">
 								{order}
 							</span>
 							<div className="min-w-0 flex-1">
-								<div className="text-[13px] font-medium text-zinc-900">
+								<div className="text-[13px] font-medium text-content">
 									{t(`plan_preview.next_step_${order}` as never)}
 								</div>
-								<div className="mt-0.5 text-[11px] text-zinc-500">
+								<div className="mt-0.5 text-[11px] text-content-muted">
 									{t(`plan_preview.next_step_${order}_hint` as never)}
 								</div>
 							</div>
@@ -672,16 +674,16 @@ function PlanPreviewSection({
 					{Array.from({ length: Math.max(0, nextStepCount - 2) }).map((_, i) => (
 						<li
 							key={`shim-${i}`}
-							className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3"
+							className="flex items-start gap-3 rounded-xl border border-edge bg-surface-inset/60 p-3"
 						>
-							<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-200 font-[family-name:var(--font-fraunces)] text-[13px] font-semibold text-zinc-400">
+							<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-inset font-[family-name:var(--font-fraunces)] text-[13px] font-semibold text-content-faint">
 								{i + 3}
 							</span>
 							<div className="min-w-0 flex-1 space-y-1.5">
 								<div className="skeleton-shimmer h-3 w-3/4 rounded-md" />
 								<div className="skeleton-shimmer h-2.5 w-1/2 rounded-md" />
 							</div>
-							<svg className="mt-1 h-3.5 w-3.5 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
+							<svg className="mt-1 h-3.5 w-3.5 shrink-0 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
 								<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 							</svg>
 						</li>
@@ -747,10 +749,10 @@ function WorkspacesAccordion({
 			className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
 			<div className="mb-4 flex items-baseline justify-between">
-				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
+				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
 					{t("workspaces.title")}
 				</h2>
-				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-content-muted">
 					{t("workspaces.subtitle")}
 				</div>
 			</div>
@@ -821,7 +823,7 @@ function WorkspacesAccordion({
 					open={openKey === "copy"}
 					onToggle={() => toggle("copy")}
 				>
-					<div className="mb-3 text-[12px] text-zinc-600">
+					<div className="mb-3 text-[12px] text-content-secondary">
 						{t("workspaces.copy.intro")}
 					</div>
 					<div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
@@ -833,27 +835,27 @@ function WorkspacesAccordion({
 							{ key: "Cialdini", status: "fail" },
 						].map((fw) => {
 							const config = {
-								ok: { bg: "bg-emerald-50", border: "border-emerald-500/40", text: "text-emerald-700", symbol: "✓" },
-								warn: { bg: "bg-amber-50", border: "border-amber-500/40", text: "text-amber-700", symbol: "△" },
-								fail: { bg: "bg-rose-50", border: "border-rose-500/40", text: "text-rose-700", symbol: "✕" },
+								ok: { bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-500/40", text: "text-emerald-700 dark:text-emerald-300", symbol: "✓" },
+								warn: { bg: "bg-amber-50 dark:bg-amber-500/10", border: "border-amber-500/40", text: "text-amber-700 dark:text-amber-300", symbol: "△" },
+								fail: { bg: "bg-rose-50 dark:bg-rose-500/10", border: "border-rose-500/40", text: "text-rose-700 dark:text-rose-300", symbol: "✕" },
 							}[fw.status as "ok" | "warn" | "fail"];
 							return (
 								<div
 									key={fw.key}
 									className={`flex items-center justify-between rounded-xl border px-3 py-2 ${config.bg} ${config.border}`}
 								>
-									<span className="font-mono text-[11px] font-semibold text-zinc-700">{fw.key}</span>
+									<span className="font-mono text-[11px] font-semibold text-content-secondary">{fw.key}</span>
 									<span className={`font-mono text-[13px] font-bold ${config.text}`}>{config.symbol}</span>
 								</div>
 							);
 						})}
 					</div>
 					{copyFindings.length > 0 && (
-						<div className="mt-3 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-[11px] text-zinc-600">
+						<div className="mt-3 rounded-xl border border-edge bg-surface-inset px-3 py-2 text-[11px] text-content-secondary">
 							{t("workspaces.copy.example")}
 						</div>
 					)}
-					<div className="mt-3 text-[11px] text-zinc-500">
+					<div className="mt-3 text-[11px] text-content-muted">
 						{t("workspaces.copy.unlock", { count: copyBlurred + Math.max(0, copyFindings.length - 2) })}
 					</div>
 				</WorkspaceCard>
@@ -871,28 +873,28 @@ function WorkspacesAccordion({
 					open={openKey === "behavioral"}
 					onToggle={() => toggle("behavioral")}
 				>
-					<div className="mb-3 text-[12px] text-zinc-600">
+					<div className="mb-3 text-[12px] text-content-secondary">
 						{t("workspaces.behavioral.intro")}
 					</div>
 					<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
 						{INTEGRATION_LOGOS.map((logo) => (
 							<div
 								key={logo.name}
-								className="flex flex-col items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2 py-3 text-center"
+								className="flex flex-col items-center gap-1.5 rounded-xl border border-edge bg-surface-card px-2 py-3 text-center"
 							>
 								{logo.svg ? (
 									/* eslint-disable-next-line @next/next/no-img-element */
 									<img src={logo.svg} alt={logo.name} className="h-6 w-auto opacity-70 grayscale" />
 								) : (
-									<span className="font-[family-name:var(--font-jetbrains-mono)] text-[9px] font-medium uppercase tracking-wider text-zinc-500">
+									<span className="font-[family-name:var(--font-jetbrains-mono)] text-[9px] font-medium uppercase tracking-wider text-content-muted">
 										{logo.name}
 									</span>
 								)}
-								<span className="text-[9px] text-zinc-400">{logo.name}</span>
+								<span className="text-[9px] text-content-faint">{logo.name}</span>
 							</div>
 						))}
 					</div>
-					<div className="mt-3 text-[11px] text-zinc-500">
+					<div className="mt-3 text-[11px] text-content-muted">
 						{t("workspaces.behavioral.unlock")}
 					</div>
 				</WorkspaceCard>
@@ -933,18 +935,18 @@ function WorkspaceCard({
 	children: React.ReactNode;
 }) {
 	const accentClass = {
-		rose: "bg-rose-50 text-rose-700",
-		amber: "bg-amber-50 text-amber-700",
-		sky: "bg-sky-50 text-sky-700",
-		violet: "bg-violet-50 text-violet-700",
+		rose: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
+		amber: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
+		sky: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300",
+		violet: "bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-300",
 	}[accent];
 
 	return (
-		<div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+		<div className="overflow-hidden rounded-2xl border border-edge bg-surface-card">
 			<button
 				type="button"
 				onClick={onToggle}
-				className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-50"
+				className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-card-hover"
 			>
 				<span
 					className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${accentClass}`}
@@ -952,15 +954,15 @@ function WorkspaceCard({
 					{icon}
 				</span>
 				<div className="min-w-0 flex-1">
-					<div className="text-[14px] font-semibold leading-tight text-zinc-900">
+					<div className="text-[14px] font-semibold leading-tight text-content">
 						{title}
 					</div>
-					<div className="mt-0.5 font-[family-name:var(--font-jetbrains-mono)] text-[11px] tabular-nums text-zinc-500">
+					<div className="mt-0.5 font-[family-name:var(--font-jetbrains-mono)] text-[11px] tabular-nums text-content-muted">
 						{subtitle}
 					</div>
 				</div>
 				<svg
-					className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${open ? "rotate-180" : ""}`}
+					className={`h-4 w-4 shrink-0 text-content-faint transition-transform ${open ? "rotate-180" : ""}`}
 					fill="none"
 					viewBox="0 0 24 24"
 					strokeWidth={2}
@@ -969,7 +971,7 @@ function WorkspaceCard({
 					<path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
 				</svg>
 			</button>
-			{open && <div className="border-t border-zinc-100 px-4 py-3">{children}</div>}
+			{open && <div className="border-t border-edge-subtle px-4 py-3">{children}</div>}
 		</div>
 	);
 }
@@ -980,11 +982,11 @@ function WorkspaceFindingRow({ title, severity }: { title: string; severity: str
 		high: "bg-amber-500",
 		medium: "bg-sky-500",
 		low: "bg-emerald-500",
-	}[severity as "critical" | "high" | "medium" | "low"] || "bg-zinc-400";
+	}[severity as "critical" | "high" | "medium" | "low"] || "bg-content-faint";
 	return (
 		<li className="flex items-start gap-3">
 			<span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${dot}`} />
-			<span className="min-w-0 flex-1 text-[13px] leading-snug text-zinc-700">
+			<span className="min-w-0 flex-1 text-[13px] leading-snug text-content-secondary">
 				{title}
 			</span>
 		</li>
@@ -994,9 +996,9 @@ function WorkspaceFindingRow({ title, severity }: { title: string; severity: str
 function WorkspaceShimmerRow() {
 	return (
 		<li className="flex items-center gap-3">
-			<span className="h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-300" />
+			<span className="h-1.5 w-1.5 shrink-0 rounded-full bg-content-faint" />
 			<span className="skeleton-shimmer h-3 flex-1 rounded-md" />
-			<svg className="h-3 w-3 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
+			<svg className="h-3 w-3 shrink-0 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
 				<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 			</svg>
 		</li>
@@ -1028,16 +1030,16 @@ function MapPreviewSection({
 			className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
 			<div className="mb-4 flex items-baseline justify-between">
-				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
+				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
 					{t("map.title")}
 				</h2>
-				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-content-muted">
 					{t("map.counts", { nodes: nodeCount, edges: edgeCount })}
 				</div>
 			</div>
 
-			<div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-				<div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-zinc-50 to-zinc-100">
+			<div className="overflow-hidden rounded-2xl border border-edge bg-surface-card">
+				<div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-surface-inset to-surface-card-hover">
 					{/* Synthetic SVG map illustration */}
 					<svg
 						className="absolute inset-0 h-full w-full"
@@ -1112,9 +1114,9 @@ function MapPreviewSection({
 					</svg>
 
 					{/* Locked overlay */}
-					<div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-white/80 via-white/0 to-transparent">
-						<div className="mb-4 inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white/95 px-3 py-1.5 text-[11px] font-medium text-zinc-700 shadow-sm backdrop-blur-sm">
-							<svg className="h-3 w-3 text-zinc-500" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+					<div className="absolute inset-0 flex items-end justify-center bg-gradient-to-t from-surface-card/80 via-surface-card/0 to-transparent">
+						<div className="mb-4 inline-flex items-center gap-2 rounded-full border border-edge bg-surface-card/95 px-3 py-1.5 text-[11px] font-medium text-content-secondary shadow-sm backdrop-blur-sm">
+							<svg className="h-3 w-3 text-content-muted" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
 								<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 							</svg>
 							{t("map.locked")}
@@ -1184,16 +1186,16 @@ function McpChatMockup({
 			className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
 			<div className="mb-4 flex items-baseline justify-between">
-				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
+				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
 					{t("mcp_mockup.title")}
 				</h2>
-				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-zinc-500">
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] uppercase tracking-[0.15em] text-content-muted">
 					{t("mcp_mockup.subtitle")}
 				</div>
 			</div>
 
-			<div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-				<div className="border-b border-zinc-100 px-4 py-3 text-[12px] font-medium text-zinc-700">
+			<div className="overflow-hidden rounded-2xl border border-edge bg-surface-card">
+				<div className="border-b border-edge-subtle px-4 py-3 text-[12px] font-medium text-content-secondary">
 					<span className="mr-2 inline-block h-2 w-2 rounded-full bg-emerald-500" />
 					{t("mcp_mockup.header", { domain })}
 				</div>
@@ -1204,7 +1206,7 @@ function McpChatMockup({
 							phase === "idle" ? "translate-y-2 opacity-0" : "translate-y-0 opacity-100"
 						}`}
 					>
-						<div className="max-w-[80%] rounded-2xl rounded-br-sm bg-emerald-100 px-4 py-2.5 text-[13px] text-zinc-900">
+						<div className="max-w-[80%] rounded-2xl rounded-br-sm bg-emerald-100 px-4 py-2.5 text-[13px] text-zinc-900 dark:bg-emerald-500/20 dark:text-content">
 							{question}
 						</div>
 					</div>
@@ -1212,17 +1214,17 @@ function McpChatMockup({
 					{/* AI bubble — typing indicator */}
 					{(phase === "ai_typing" || phase === "ai_response" || phase === "done") && (
 						<div className="flex justify-start">
-							<div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-zinc-200 bg-zinc-50 px-4 py-3 text-[13px] text-zinc-700">
+							<div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-edge bg-surface-inset px-4 py-3 text-[13px] text-content-secondary">
 								{phase === "ai_typing" ? (
 									<span className="inline-flex items-center gap-1.5">
-										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:0ms]" />
-										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:150ms]" />
-										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-400 [animation-delay:300ms]" />
+										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-content-faint [animation-delay:0ms]" />
+										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-content-faint [animation-delay:150ms]" />
+										<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-content-faint [animation-delay:300ms]" />
 									</span>
 								) : (
 									<span className="leading-relaxed">
 										{responseFull.slice(0, typedChars)}
-										<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-zinc-600 align-middle" />
+										<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-content-secondary align-middle" />
 									</span>
 								)}
 							</div>
@@ -1233,7 +1235,7 @@ function McpChatMockup({
 					type="button"
 					onClick={onCheckout}
 					disabled={launching}
-					className="flex w-full items-center justify-center gap-1.5 border-t border-zinc-100 px-5 py-3 text-[12px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60"
+					className="flex w-full items-center justify-center gap-1.5 border-t border-edge-subtle px-5 py-3 text-[12px] font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-60 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
 				>
 					{t("mcp_mockup.cta")}
 					<svg className="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -1286,35 +1288,35 @@ function CTAFinalSection({
 
 	return (
 		<section
-			className={`mt-10 overflow-hidden rounded-3xl border border-emerald-500/20 bg-emerald-50/40 p-7 transition-opacity duration-700 sm:mt-12 sm:p-10 ${revealed ? "opacity-100" : "opacity-0"}`}
+			className={`mt-10 overflow-hidden rounded-3xl border border-emerald-500/20 bg-emerald-50/40 p-7 transition-opacity duration-700 sm:mt-12 sm:p-10 dark:bg-emerald-500/[0.04] ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700">
+			<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.18em] text-emerald-700 dark:text-emerald-300">
 				{t("cta_final.eyebrow")}
 			</div>
-			<h2 className="mt-3 font-[family-name:var(--font-fraunces)] text-[28px] font-medium leading-tight text-zinc-900 sm:text-[36px]">
+			<h2 className="mt-3 font-[family-name:var(--font-fraunces)] text-[28px] font-medium leading-tight text-content sm:text-[36px]">
 				{t("cta_final.headline", { org: organizationName })}
 			</h2>
 
 			{/* JTBD-personalized line OR fallback close */}
-			<p className="mt-4 max-w-xl text-[15px] leading-relaxed text-zinc-700">
+			<p className="mt-4 max-w-xl text-[15px] leading-relaxed text-content-secondary">
 				{whyNowClause ? (
 					<>
-						{t("cta_final.you_told_us")} <strong className="text-zinc-900">{whyNowClause}</strong>.{" "}
+						{t("cta_final.you_told_us")} <strong className="text-content">{whyNowClause}</strong>.{" "}
 					</>
 				) : null}
 				{concernClose ?? t("cta_final.generic_close", { count: criticalEstimate })}
 			</p>
 
 			{methodLine && (
-				<p className="mt-3 max-w-xl text-[13px] leading-relaxed text-zinc-500">
+				<p className="mt-3 max-w-xl text-[13px] leading-relaxed text-content-muted">
 					{methodLine}
 				</p>
 			)}
 
 			<div className="mt-6 max-w-xl space-y-2">
 				{(["plan", "queue", "ai", "map"] as const).map((item) => (
-					<div key={item} className="flex items-start gap-2 text-[13px] text-zinc-700">
-						<svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={2.4} stroke="currentColor">
+					<div key={item} className="flex items-start gap-2 text-[13px] text-content-secondary">
+						<svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.4} stroke="currentColor">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
 						</svg>
 						<span>{t(`cta_final.bullets.${item}`)}</span>
@@ -1334,7 +1336,7 @@ function CTAFinalSection({
 				</svg>
 			</button>
 
-			<div className="mt-3 text-[11px] text-zinc-500">
+			<div className="mt-3 text-[11px] text-content-muted">
 				{t("cta_final.trust_line")}
 			</div>
 		</section>
@@ -1798,7 +1800,7 @@ function AuditingState({
 	const showButton = allStagesDone && allReady && onViewResults;
 
 	return (
-		<div className="relative flex min-h-screen items-start justify-center bg-[#fafafa] px-5 py-10 sm:py-14">
+		<div className="relative flex min-h-screen items-start justify-center bg-surface-shell px-5 py-10 sm:py-14">
 			<div className="relative mx-auto w-full max-w-[560px]">
 				{/* Hero */}
 				<div className="mb-7 flex flex-col items-center text-center">
@@ -1806,10 +1808,16 @@ function AuditingState({
 						src={logoDark}
 						alt="Vestigio"
 						height={22}
-						className="mb-6"
+						className="mb-6 dark:hidden"
+					/>
+					<Image
+						src={logoLight}
+						alt="Vestigio"
+						height={22}
+						className="mb-6 hidden dark:block"
 					/>
 					{faviconUrl && (
-						<span className="mb-4 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
+						<span className="mb-4 inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl border border-edge bg-surface-card p-2 shadow-sm">
 							{/* eslint-disable-next-line @next/next/no-img-element */}
 							<img
 								src={faviconUrl}
@@ -1819,19 +1827,19 @@ function AuditingState({
 							/>
 						</span>
 					)}
-					<h1 className="font-[family-name:var(--font-fraunces)] text-[24px] font-medium leading-tight text-zinc-900 sm:text-[28px]">
+					<h1 className="font-[family-name:var(--font-fraunces)] text-[24px] font-medium leading-tight text-content sm:text-[28px]">
 						{showButton
 							? t("loading.headline_complete", { domain: lead.domain || t("your_site") })
 							: t("loading.headline", { domain: lead.domain || t("your_site") })}
 					</h1>
-					<p className="mt-2 text-[13px] text-zinc-500">
+					<p className="mt-2 text-[13px] text-content-muted">
 						{showButton ? t("loading.subtitle_complete") : t("loading.subtitle")}
 					</p>
 				</div>
 
 				{/* Active phases (5) — the análise rápida happening now */}
-				<div className="rounded-2xl border border-zinc-200 bg-white p-5">
-					<div className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+				<div className="rounded-2xl border border-edge bg-surface-card p-5">
+					<div className="mb-3 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-content-muted">
 						{t("loading.active_label")}
 					</div>
 					<ul className="space-y-2.5">
@@ -1855,15 +1863,15 @@ function AuditingState({
 											<span className="relative h-2.5 w-2.5 rounded-full bg-emerald-500" />
 										</span>
 									) : (
-										<span className="h-5 w-5 shrink-0 rounded-full border border-zinc-200" />
+										<span className="h-5 w-5 shrink-0 rounded-full border border-edge" />
 									)}
 									<span
 										className={
 											isDone
-												? "text-zinc-700"
+												? "text-content-secondary"
 												: isActive
-													? "text-zinc-900"
-													: "text-zinc-400"
+													? "text-content"
+													: "text-content-faint"
 										}
 									>
 										{label}
@@ -1875,12 +1883,12 @@ function AuditingState({
 				</div>
 
 				{/* Teaser phases (6) — what unlocks with an account */}
-				<div className="mt-3 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/60 p-5">
+				<div className="mt-3 rounded-2xl border border-dashed border-edge bg-surface-inset/60 p-5">
 					<div className="mb-3 flex items-baseline justify-between">
-						<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+						<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-content-muted">
 							{t("loading.teaser_label")}
 						</div>
-						<div className="text-[10px] font-medium text-emerald-700">
+						<div className="text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
 							{t("loading.teaser_locked")}
 						</div>
 					</div>
@@ -1888,9 +1896,9 @@ function AuditingState({
 						{teaserPhases.map((label) => (
 							<li
 								key={label}
-								className="flex items-center gap-3 text-[13px] text-zinc-500"
+								className="flex items-center gap-3 text-[13px] text-content-muted"
 							>
-								<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-300 text-zinc-400">
+								<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-edge text-content-faint">
 									<svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
 										<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 									</svg>
@@ -1902,7 +1910,7 @@ function AuditingState({
 				</div>
 
 				{/* Sub-CTA banner */}
-				<div className="mt-4 text-center text-[11px] text-zinc-500">
+				<div className="mt-4 text-center text-[11px] text-content-muted">
 					{t("loading.unlock_hint")}
 				</div>
 
@@ -1911,10 +1919,10 @@ function AuditingState({
 					<button
 						type="button"
 						onClick={onViewResults}
-						className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-100 px-6 py-4 text-[15px] font-semibold text-zinc-900 transition-colors hover:bg-emerald-200"
+						className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-100 px-6 py-4 text-[15px] font-semibold text-zinc-900 transition-colors hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-content dark:hover:bg-emerald-500/30"
 					>
 						{t("auditing_view")}
-						<svg className="h-4 w-4 text-emerald-600" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+						<svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
 							<path d="M3 8h10M9 4l4 4-4 4" />
 						</svg>
 					</button>

@@ -61,11 +61,11 @@ export default function CardSelectionStep<T extends string = string>({
 		<div className="flex flex-1 flex-col">
 			{/* Title + subtitle pinned to top */}
 			<div>
-				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl">
+				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-content sm:text-3xl">
 					{title}
 				</h2>
 				{subtitle && (
-					<p className="mt-2 text-[15px] leading-relaxed text-zinc-500 sm:text-base">
+					<p className="mt-2 text-[15px] leading-relaxed text-content-muted sm:text-base">
 						{subtitle}
 					</p>
 				)}
@@ -87,25 +87,27 @@ export default function CardSelectionStep<T extends string = string>({
 							disabled={!!pending}
 							className={`group relative flex items-center gap-4 rounded-2xl border px-4 py-4 text-left transition-all duration-200 sm:px-5 sm:py-5 ${
 								isSelected
-									? "border-emerald-500/60 bg-emerald-50 ring-1 ring-emerald-500/20"
-									: "border-zinc-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40"
+									? "border-emerald-500/60 bg-emerald-50 ring-1 ring-emerald-500/20 dark:bg-emerald-500/10"
+									: "border-edge bg-surface-card hover:border-emerald-200 hover:bg-emerald-50/40 dark:hover:bg-emerald-500/5"
 							} ${pending && !isSelected ? "opacity-40" : ""}`}
 						>
 							{Icon && (
 								<div
 									className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors ${
-										isSelected ? "bg-emerald-200/70" : "bg-emerald-50"
+										isSelected
+											? "bg-emerald-200/70 dark:bg-emerald-500/30"
+											: "bg-emerald-50 dark:bg-emerald-500/10"
 									}`}
 								>
 									<Icon size={20} weight="duotone" />
 								</div>
 							)}
 							<div className="min-w-0 flex-1">
-								<div className="text-[15px] font-semibold leading-tight text-zinc-900 sm:text-base">
+								<div className="text-[15px] font-semibold leading-tight text-content sm:text-base">
 									{option.label}
 								</div>
 								{option.description && (
-									<div className="mt-0.5 text-[13px] leading-snug text-zinc-500">
+									<div className="mt-0.5 text-[13px] leading-snug text-content-muted">
 										{option.description}
 									</div>
 								)}

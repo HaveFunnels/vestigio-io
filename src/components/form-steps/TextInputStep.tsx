@@ -67,11 +67,11 @@ export default function TextInputStep({
 		<div className="flex flex-1 flex-col">
 			{/* Top: title + subtitle */}
 			<div>
-				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl">
+				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-content sm:text-3xl">
 					{title}
 				</h2>
 				{subtitle && (
-					<p className="mt-2 text-[15px] leading-relaxed text-zinc-500 sm:text-base">
+					<p className="mt-2 text-[15px] leading-relaxed text-content-muted sm:text-base">
 						{subtitle}
 					</p>
 				)}
@@ -91,12 +91,10 @@ export default function TextInputStep({
 					placeholder={placeholder}
 					autoComplete={inputType === "email" ? "email" : inputType === "url" ? "url" : "off"}
 					// The shared .shiny-input class defaults to a dark
-					// (#12121e) fill for marketing-site use. The funnel
-					// sits on a white card with near-black text, so we
-					// override the bg var inline to make the typed value
-					// readable instead of black-on-near-black.
-					style={{ ["--shiny-input-bg" as string]: "#ffffff" } as React.CSSProperties}
-					className={`shiny-input w-full rounded-xl px-4 py-3.5 text-sm text-zinc-900 placeholder:text-zinc-400 outline-none ${
+					// (#12121e) fill. The funnel can be light or dark
+					// depending on theme; use surface-card via CSS var
+					// override so the typed value stays readable both ways.
+					className={`shiny-input w-full rounded-xl bg-surface-card px-4 py-3.5 text-sm text-content placeholder:text-content-faint outline-none ${
 						error ? "!border-red-400 !bg-red-50" : ""
 					}`}
 				/>
@@ -112,7 +110,7 @@ export default function TextInputStep({
 				)}
 
 				{hint && !error && !warning && (
-					<p className="mt-2 text-xs text-zinc-400">{hint}</p>
+					<p className="mt-2 text-xs text-content-faint">{hint}</p>
 				)}
 
 				{children && <div className="mt-4">{children}</div>}
@@ -123,8 +121,8 @@ export default function TextInputStep({
 					disabled={!canSubmit}
 					className={`mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-[15px] font-semibold transition-all ${
 						canSubmit
-							? "bg-emerald-100 text-zinc-900 hover:bg-emerald-200 active:scale-[0.99]"
-							: "cursor-not-allowed bg-zinc-100 text-zinc-400"
+							? "bg-emerald-100 text-zinc-900 hover:bg-emerald-200 active:scale-[0.99] dark:bg-emerald-500/20 dark:text-content dark:hover:bg-emerald-500/30"
+							: "cursor-not-allowed bg-surface-inset text-content-faint"
 					}`}
 				>
 					{loading ? (
@@ -138,7 +136,7 @@ export default function TextInputStep({
 						<>
 							{buttonLabel}
 							<svg
-								className={`h-4 w-4 transition-transform ${canSubmit ? "text-emerald-600" : "text-zinc-400"}`}
+								className={`h-4 w-4 transition-transform ${canSubmit ? "text-emerald-600 dark:text-emerald-400" : "text-content-faint"}`}
 								viewBox="0 0 16 16"
 								fill="none"
 								stroke="currentColor"

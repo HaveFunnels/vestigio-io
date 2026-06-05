@@ -15,6 +15,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import logoDark from "@/../public/images/logo/logo.png";
+import logoLight from "@/../public/images/logo/logo-light.png";
 import StepProgressChips, { type StepKind } from "./StepProgressChips";
 
 interface StepShellProps {
@@ -43,7 +44,7 @@ export default function StepShell({
 
 	return (
 		<div
-			className={`relative flex min-h-[100dvh] flex-col bg-[#fafafa] px-5 pb-8 pt-6 sm:px-6 sm:py-10 ${className}`}
+			className={`relative flex min-h-[100dvh] flex-col bg-surface-shell px-5 pb-8 pt-6 sm:px-6 sm:py-10 ${className}`}
 		>
 			{/* Back arrow — absolute top-left so it doesn't take layout
 			    space when hidden. */}
@@ -53,7 +54,7 @@ export default function StepShell({
 				disabled={!showBackArrow}
 				className={`absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full transition-colors sm:left-6 sm:top-6 ${
 					showBackArrow
-						? "text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-800"
+						? "text-content-muted hover:bg-surface-card-hover hover:text-content"
 						: "pointer-events-none opacity-0"
 				}`}
 				aria-label="Voltar"
@@ -76,7 +77,13 @@ export default function StepShell({
 				<Image
 					src={logoDark}
 					alt="Vestigio"
-					className="h-6 w-auto"
+					className="h-6 w-auto dark:hidden"
+					priority
+				/>
+				<Image
+					src={logoLight}
+					alt="Vestigio"
+					className="hidden h-6 w-auto dark:block"
 					priority
 				/>
 				{steps && steps.length > 1 && (

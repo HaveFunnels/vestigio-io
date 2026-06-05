@@ -74,10 +74,10 @@ export default function StepProgressChips({ steps, activeIndex }: Props) {
 						<div
 							className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors ${
 								state === "active"
-									? "bg-emerald-100 ring-2 ring-emerald-500/50"
+									? "bg-emerald-100 ring-2 ring-emerald-500/50 dark:bg-emerald-500/20"
 									: state === "done"
-										? "bg-emerald-50"
-										: "bg-zinc-100"
+										? "bg-emerald-50 dark:bg-emerald-500/10"
+										: "bg-surface-inset"
 							}`}
 							aria-current={isActive ? "step" : undefined}
 						>
@@ -92,7 +92,7 @@ export default function StepProgressChips({ steps, activeIndex }: Props) {
 						{i < steps.length - 1 && (
 							<span
 								className={`mx-0.5 h-px w-3 sm:w-4 ${
-									state === "done" ? "bg-emerald-300" : "bg-zinc-300"
+									state === "done" ? "bg-emerald-300 dark:bg-emerald-500/40" : "bg-edge"
 								}`}
 								aria-hidden
 							/>

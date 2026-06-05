@@ -53,11 +53,11 @@ export default function SliderInputStep({
 		<div className="flex flex-1 flex-col">
 			{/* Top: title + subtitle */}
 			<div>
-				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-zinc-900 sm:text-3xl">
+				<h2 className="text-[1.625rem] font-bold leading-[1.15] tracking-tight text-content sm:text-3xl">
 					{title}
 				</h2>
 				{subtitle && (
-					<p className="mt-2 text-[15px] leading-relaxed text-zinc-500 sm:text-base">
+					<p className="mt-2 text-[15px] leading-relaxed text-content-muted sm:text-base">
 						{subtitle}
 					</p>
 				)}
@@ -70,7 +70,7 @@ export default function SliderInputStep({
 			<div>
 				{/* Current value — large, centered */}
 				<div className="mb-6 text-center">
-					<span className="text-3xl font-bold tabular-nums tracking-tight text-zinc-900 sm:text-4xl">
+					<span className="text-3xl font-bold tabular-nums tracking-tight text-content sm:text-4xl">
 						{formatValue(value)}
 					</span>
 				</div>
@@ -86,14 +86,14 @@ export default function SliderInputStep({
 						onChange={handleChange}
 						className="step-slider w-full"
 						style={{
-							background: `linear-gradient(to right, #18181b ${progress}%, #e4e4e7 ${progress}%)`,
+							background: `linear-gradient(to right, rgb(var(--text-primary)) ${progress}%, rgb(var(--bg-inset)) ${progress}%)`,
 						}}
 					/>
 				</div>
 
 				{/* Min/max labels */}
 				{(minLabel || maxLabel) && (
-					<div className="mb-6 flex justify-between text-[11px] text-zinc-400">
+					<div className="mb-6 flex justify-between text-[11px] text-content-faint">
 						<span>{minLabel}</span>
 						<span>{maxLabel}</span>
 					</div>
@@ -106,14 +106,14 @@ export default function SliderInputStep({
 					disabled={loading}
 					className={`flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-[15px] font-semibold transition-all ${
 						loading
-							? "cursor-not-allowed bg-zinc-100 text-zinc-400"
-							: "bg-emerald-100 text-zinc-900 hover:bg-emerald-200 active:scale-[0.99]"
+							? "cursor-not-allowed bg-surface-inset text-content-faint"
+							: "bg-emerald-100 text-zinc-900 hover:bg-emerald-200 active:scale-[0.99] dark:bg-emerald-500/20 dark:text-content dark:hover:bg-emerald-500/30"
 					}`}
 				>
 					{buttonLabel}
 					{!loading && (
 						<svg
-							className="h-4 w-4 text-emerald-600"
+							className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
 							viewBox="0 0 16 16"
 							fill="none"
 							stroke="currentColor"
@@ -147,8 +147,8 @@ export default function SliderInputStep({
 					width: 32px;
 					height: 32px;
 					border-radius: 50%;
-					background: #18181b;
-					border: 3px solid #ffffff;
+					background: rgb(var(--text-primary));
+					border: 3px solid rgb(var(--bg-card));
 					box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 					cursor: pointer;
 					transition: box-shadow 0.15s;
@@ -161,8 +161,8 @@ export default function SliderInputStep({
 					width: 32px;
 					height: 32px;
 					border-radius: 50%;
-					background: #18181b;
-					border: 3px solid #ffffff;
+					background: rgb(var(--text-primary));
+					border: 3px solid rgb(var(--bg-card));
 					box-shadow: 0 2px 6px rgba(0,0,0,0.25);
 					cursor: pointer;
 				}
@@ -173,7 +173,7 @@ export default function SliderInputStep({
 				.step-slider::-moz-range-track {
 					height: 10px;
 					border-radius: 5px;
-					background: #e4e4e7;
+					background: rgb(var(--bg-inset));
 				}
 			`}</style>
 		</div>

@@ -117,7 +117,7 @@ export default function DemoSurface() {
 				<div className={`ds-dissolve transition-all duration-500 ease-out ${
 					phase === "dissolve" ? "pointer-events-none opacity-0 scale-[0.97]" : ""
 				}`}>
-					<div className="relative z-1 px-4 py-4 sm:px-8 sm:py-6 xl:px-0">
+					<div className="relative z-1 px-4 pt-2 pb-4 sm:px-8 sm:pt-3 sm:pb-6 xl:px-0">
 						<div className="mx-auto max-w-[960px]">
 							<div
 								className="relative cursor-pointer overflow-hidden rounded-2xl border border-white/[0.06] bg-zinc-900"

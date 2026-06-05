@@ -8181,6 +8181,38 @@
 				"Bewertung der Formularreibung",
 				"Erstellung Ihrer Diagnose"
 			],
+			"cta_create_account": "Konto jetzt erstellen",
+			"header": {
+				"title": "Analyse von {domain}",
+				"findings_label": "Befunde",
+				"critical_label": "kritisch",
+				"actions_label": "priorisierte Maßnahmen"
+			},
+			"plan_preview": {
+				"eyebrow": "Monatlicher Strategieplan",
+				"preview_badge": "Vorschau",
+				"title": "{month} für {org}",
+				"hero": {
+					"label_0": "Gesichert / Mo",
+					"label_1": "Zurückgewonnen / Mo",
+					"label_2": "Offene Kritische"
+				},
+				"narrative_label": "Was wir sehen",
+				"narrative_continues": "4 weitere Absätze — Fortsetzung im Pulse.",
+				"concern_openings": {
+					"traffic_no_sales": "{org} hat das klassische Funnel-Problem: Traffic rein, Verkäufe nicht. Wir sehen, wo es leckt.",
+					"low_conversion": "{org} steckt in einer Conversion-Klemme. Die Schnellanalyse hat schon gefunden, wo sich die Friktion konzentriert.",
+					"unknown_leak": "{org} verliert Umsatz — aber nicht dort, wo Sie denken. Die Analyse hat konkrete Punkte vor dem Checkout lokalisiert.",
+					"scale_efficiency": "Bevor Sie das Werbebudget für {org} hochfahren, sollten Sie wissen, was leckt. Wir haben Punkte zum Reparieren gefunden.",
+					"prioritization": "In {org} hat jedes Team 20 Ideen, was zu verbessern wäre. Wir haben gefunden, welche 3 jetzt am meisten bewegen."
+				},
+				"next_steps_label": "Priorisierte nächste Schritte ({count})",
+				"next_step_1": "Das identifizierte primäre Umsatzleck angehen",
+				"next_step_1_hint": "Geschätzte Wirkung: Geldspanne kalibriert auf Ihr Volumen",
+				"next_step_2": "Die erste Verhaltensfriktion im Funnel angehen",
+				"next_step_2_hint": "Inklusive Ursachenanalyse und Schritt-für-Schritt-Vorgehen",
+				"unlock_cta": "Vollständigen Plan ansehen"
+			},
 			"auditing_title": "Diagnose von {domain}…",
 			"auditing_complete_title": "Diagnose von {domain} abgeschlossen",
 			"auditing_complete_desc": "Wir haben Befunde auf Ihrer Website gefunden. Klicken Sie unten, um die Ergebnisse zu sehen.",

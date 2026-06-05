@@ -9938,6 +9938,38 @@
 				"Evaluating form friction",
 				"Compiling your diagnostic"
 			],
+			"cta_create_account": "Create account now",
+			"header": {
+				"title": "Analysis of {domain}",
+				"findings_label": "findings",
+				"critical_label": "critical",
+				"actions_label": "priority actions"
+			},
+			"plan_preview": {
+				"eyebrow": "Monthly Strategy Plan",
+				"preview_badge": "Preview",
+				"title": "{month} for {org}",
+				"hero": {
+					"label_0": "Retained / mo",
+					"label_1": "Captured / mo",
+					"label_2": "Open critical"
+				},
+				"narrative_label": "What we're seeing",
+				"narrative_continues": "4 more paragraphs — continues in Pulse.",
+				"concern_openings": {
+					"traffic_no_sales": "{org} has the classic funnel mismatch: traffic in, sales not. We can see where it's leaking.",
+					"low_conversion": "{org} is in a conversion squeeze. The quick analysis already found where friction concentrates.",
+					"unknown_leak": "{org} is leaking — but not where you think. The analysis located specific spots before checkout.",
+					"scale_efficiency": "Before scaling spend on {org}, you want to know what's leaking. We found things to fix first.",
+					"prioritization": "At {org}, every team has 20 ideas of what to improve. We found which 3 move the needle the most right now."
+				},
+				"next_steps_label": "Priority next steps ({count})",
+				"next_step_1": "Attack the primary revenue leak identified",
+				"next_step_1_hint": "Estimated impact: dollar range calibrated to your volume",
+				"next_step_2": "Address the first behavioral friction in the funnel",
+				"next_step_2_hint": "Includes root cause analysis and a step-by-step procedure",
+				"unlock_cta": "See the full plan"
+			},
 			"auditing_title": "Diagnosing {domain}…",
 			"auditing_complete_title": "Diagnostic for {domain} complete",
 			"auditing_complete_desc": "We found findings on your site. Click below to see the results.",

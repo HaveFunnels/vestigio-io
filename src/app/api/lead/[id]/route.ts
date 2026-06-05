@@ -119,6 +119,13 @@ export async function GET(
 		domain: lead.domain,
 		organizationName: lead.organizationName,
 		businessModel: lead.businessModel,
+		monthlyRevenue: lead.monthlyRevenue,
+		// Wave-22.6 — JTBD answers surfaced so the result page can
+		// personalize the Plan + CTA copy. None of these contain PII
+		// — they're stable IDs.
+		primaryConcern: lead.primaryConcern,
+		currentOptimizationMethod: lead.currentOptimizationMethod,
+		whyNow: lead.whyNow,
 		// PII redacted from public response
 		emailMasked: lead.email ? maskEmail(lead.email) : null,
 		createdAt: lead.createdAt.toISOString(),

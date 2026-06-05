@@ -9706,6 +9706,38 @@
 				"Evaluando fricción de formularios",
 				"Compilando tu diagnóstico"
 			],
+			"cta_create_account": "Crear cuenta ahora",
+			"header": {
+				"title": "Análisis de {domain}",
+				"findings_label": "hallazgos",
+				"critical_label": "críticos",
+				"actions_label": "acciones prioritarias"
+			},
+			"plan_preview": {
+				"eyebrow": "Plan de Estrategia mensual",
+				"preview_badge": "Vista previa",
+				"title": "{month} para {org}",
+				"hero": {
+					"label_0": "Retenido / mes",
+					"label_1": "Capturado / mes",
+					"label_2": "Críticos abiertos"
+				},
+				"narrative_label": "Lo que estamos viendo",
+				"narrative_continues": "4 párrafos más — continúa en el Pulse.",
+				"concern_openings": {
+					"traffic_no_sales": "{org} tiene el clásico desajuste de funnel: entra tráfico, no salen ventas. Vemos dónde se fuga.",
+					"low_conversion": "{org} está en una compresión de conversión. El análisis rápido ya encontró dónde concentra la fricción.",
+					"unknown_leak": "{org} tiene fugas — pero no donde piensas. El análisis ubicó puntos específicos antes del checkout.",
+					"scale_efficiency": "Antes de escalar el gasto en {org}, conviene saber qué se está fugando. Encontramos cosas para arreglar primero.",
+					"prioritization": "En {org}, cada equipo tiene 20 ideas de qué mejorar. Encontramos cuáles 3 mueven la aguja más ahora."
+				},
+				"next_steps_label": "Próximos pasos prioritarios ({count})",
+				"next_step_1": "Atacar la fuga principal de ingresos identificada",
+				"next_step_1_hint": "Impacto estimado: rango en dinero calibrado a tu volumen",
+				"next_step_2": "Abordar la primera fricción comportamental del funnel",
+				"next_step_2_hint": "Incluye análisis de causa raíz y procedimiento paso a paso",
+				"unlock_cta": "Ver el plan completo"
+			},
 			"auditing_title": "Diagnosticando {domain}…",
 			"auditing_complete_title": "Diagnóstico de {domain} completado",
 			"auditing_complete_desc": "Encontramos hallazgos en tu sitio. Haz clic abajo para ver los resultados.",

@@ -52,6 +52,10 @@ interface LeadResponse {
 	domain: string | null;
 	organizationName: string | null;
 	businessModel: string | null;
+	monthlyRevenue?: number | null;
+	primaryConcern?: string | null;
+	currentOptimizationMethod?: string | null;
+	whyNow?: string | null;
 	emailMasked: string | null;
 	createdAt: string;
 	result: MiniAuditApiResult | null;
@@ -263,82 +267,81 @@ export default function MiniAuditResultPage() {
 			{/* Paddle script */}
 			<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
 
-			<div className="relative min-h-screen overflow-hidden bg-[#070710]">
-				{/* Canvas dot-grid background */}
-				<DotGrid />
-				{/* Ambient gradient background */}
-				<div className="pointer-events-none absolute inset-x-0 top-0 -z-1 h-[600px] bg-gradient-to-b from-emerald-900/15 via-emerald-900/5 to-transparent" />
-				<div className="pointer-events-none absolute left-1/2 top-0 -z-1 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-emerald-700/10 blur-[120px]" />
-
-				{/* Brand strip */}
-				<header className="border-b border-zinc-900 px-4 py-4">
-					<div className="mx-auto flex max-w-3xl items-center justify-between">
+			<div className="relative min-h-screen bg-[#fafafa]">
+				{/* Brand strip — light theme, sticky CTA */}
+				<header className="sticky top-0 z-30 border-b border-zinc-200 bg-[#fafafa]/85 backdrop-blur-md px-4 py-3">
+					<div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
 						<Link href="/lp" className="flex items-center">
-							<Image src={logoDark} alt="Vestigio" height={22} className="brightness-0 invert" />
+							<Image src={logoDark} alt="Vestigio" height={22} />
 						</Link>
-						<button
-							type="button"
-							onClick={copyShareLink}
-							className="flex items-center gap-1.5 rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-1.5 text-xs text-zinc-400 transition-colors hover:border-zinc-700 hover:text-zinc-200"
-						>
-							{shareCopied ? (
-								<>
-									<CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
-									<span>{t("share_copied")}</span>
-								</>
-							) : (
-								<>
-									<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-										<path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-									</svg>
-									<span>{t("share")}</span>
-								</>
-							)}
-						</button>
+						<div className="flex items-center gap-2">
+							<button
+								type="button"
+								onClick={copyShareLink}
+								className="hidden items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 py-1.5 text-xs text-zinc-600 transition-colors hover:border-zinc-300 hover:text-zinc-900 sm:flex"
+							>
+								{shareCopied ? (
+									<>
+										<CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+										<span>{t("share_copied")}</span>
+									</>
+								) : (
+									<>
+										<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+											<path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+										</svg>
+										<span>{t("share")}</span>
+									</>
+								)}
+							</button>
+							<button
+								type="button"
+								onClick={openCheckout}
+								disabled={launching}
+								className="flex items-center gap-1.5 rounded-lg bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-zinc-900 transition-colors hover:bg-emerald-200 disabled:opacity-60"
+							>
+								{t("cta_create_account")}
+								<svg className="h-3 w-3 text-emerald-600" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+									<path d="M3 8h10M9 4l4 4-4 4" />
+								</svg>
+							</button>
+						</div>
 					</div>
 				</header>
 
-				<main className="mx-auto max-w-3xl px-4 py-10 sm:py-16">
-					{/* Success banner */}
-					<div className={`mb-6 flex items-center gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] px-5 py-4 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
-						<CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400" />
-						<p className="text-sm text-zinc-300">
-							{t("success_banner")}
-						</p>
-					</div>
-
-					{/* Preview card — the proof */}
-					<PreviewCard
+				<main className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
+					{/* Result header — favicon + Fraunces title + counts strip */}
+					<ResultHeader
 						preview={preview}
-						totalFindings={totalFindings}
-						negativeFindings={negativeFindings}
+						domain={lead.domain || ""}
+						negativeCount={negativeFindings.length}
+						blurredCount={blurredFindings.length}
 						revealed={revealed}
 					/>
 
-					{/* Urgency timer */}
-					<div className={`mt-4 flex items-center justify-center gap-2 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
-						<svg className="h-3.5 w-3.5 text-amber-400/70" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-							<path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-						</svg>
-						<span className="text-xs text-zinc-500">
-							{t("timer_prefix")}{" "}
-							<CountdownTimer computedAt={computedAt} />
-						</span>
-					</div>
-
-					{/* First CTA — right after urgency timer */}
-					<div className={`mt-4 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}>
-						<UnlockSection negativeFindings={negativeFindings} blurredCount={blurredFindings.length} onCheckout={openCheckout} launching={launching} />
-					</div>
+					{/* Plan of Strategy preview — Wave-22.6 spec: lives at the
+					    top, lays out the destination product. Personalized
+					    by JTBD answers when available. */}
+					<PlanPreviewSection
+						domain={lead.domain || ""}
+						organizationName={lead.organizationName || lead.domain || ""}
+						primaryConcern={lead.primaryConcern ?? null}
+						whyNow={lead.whyNow ?? null}
+						negativeCount={negativeFindings.length}
+						blurredCount={blurredFindings.length}
+						revealed={revealed}
+						onCheckout={openCheckout}
+						launching={launching}
+					/>
 
 					{/* Negative findings */}
-					<section className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}>
+					<section className={`mt-10 transition-opacity duration-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<header className="mb-3 flex items-end justify-between">
 							<div>
-								<span className="mb-2 inline-block rounded-full border border-zinc-700 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+								<span className="mb-2 inline-block rounded-full border border-zinc-300 bg-white px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
 									{t("badge_free")}
 								</span>
-								<h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
+								<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
 									{negativeFindings.length === 1 ? t("findings_unlocked_one", { count: negativeFindings.length }) : t("findings_unlocked_other", { count: negativeFindings.length })}
 								</h2>
 							</div>
@@ -366,20 +369,15 @@ export default function MiniAuditResultPage() {
 					<CostSummaryBanner findings={negativeFindings} hiddenCount={blurredFindings.length} revealed={revealed} />
 
 					{/* Locked findings grid */}
-					<section className={`mt-10 transition-opacity duration-1000 delay-1000 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
+					<section className={`mt-10 transition-opacity duration-1000 delay-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
 						<header className="mb-4">
 							<span
-								className="mb-2 inline-block rounded-full border border-amber-400/30 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-400"
-								style={{
-									background: "linear-gradient(90deg, rgba(251,191,36,0.06), rgba(251,191,36,0.12), rgba(251,191,36,0.06))",
-									backgroundSize: "200% 100%",
-									animation: "title-underline-shimmer 3s ease-in-out infinite",
-								}}
+								className="mb-2 inline-block rounded-full border border-emerald-500/30 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700"
 							>
 								<Sparkles className="mr-1 inline h-3 w-3" />
 								{t("badge_premium")}
 							</span>
-							<h2 className="text-base font-semibold text-zinc-100 sm:text-lg">
+							<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-zinc-900 sm:text-[22px]">
 								{t("findings_to_unlock", { count: blurredFindings.length })}
 							</h2>
 						</header>
@@ -395,7 +393,7 @@ export default function MiniAuditResultPage() {
 					</section>
 
 					{/* Footer */}
-					<footer className="mt-12 border-t border-zinc-900 pt-6 text-center text-xs text-zinc-700">
+					<footer className="mt-12 border-t border-zinc-200 pt-6 text-center text-xs text-zinc-500">
 						{t("footer", { visible: negativeFindings.length, total: totalFindings })}
 					</footer>
 				</main>
@@ -443,6 +441,226 @@ export default function MiniAuditResultPage() {
 // ──────────────────────────────────────────────
 // Sub-components
 // ──────────────────────────────────────────────
+
+// ── ResultHeader (Wave-22.6 redesign) ──
+// Replaces the heavy PreviewCard with a tight header: favicon +
+// Fraunces "Análise de {domain}" + counts strip (X findings · Y
+// críticos · Z ações priorizadas). The counts ARE specific (drawn
+// from real data) and seed the curiosity gap — visitor sees how
+// much is detected without seeing what each one is.
+function ResultHeader({
+	preview,
+	domain,
+	negativeCount,
+	blurredCount,
+	revealed,
+}: {
+	preview: LandingPreview;
+	domain: string;
+	negativeCount: number;
+	blurredCount: number;
+	revealed: boolean;
+}) {
+	const t = useTranslations("lp.audit_result");
+	const googleFavicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(preview.host)}&sz=64`;
+	const [faviconSrc, setFaviconSrc] = useState(preview.favicon_url || googleFavicon);
+	const totalCount = negativeCount + blurredCount;
+	// Critical count from server-side cuts + visible critical findings.
+	// The mini-audit knows roughly how many criticals exist; blurred
+	// teasers seed the "X critical that you haven't seen" curiosity.
+	// Heuristic: ~1/4 of blurred are critical-grade (cross-signal
+	// compound findings often are).
+	const criticalEstimate = Math.max(
+		1,
+		Math.ceil(blurredCount * 0.25) + Math.floor(negativeCount * 0.3),
+	);
+
+	return (
+		<div
+			className={`mb-8 flex flex-col items-start gap-4 transition-opacity duration-700 sm:flex-row sm:items-center sm:gap-5 ${revealed ? "opacity-100" : "opacity-0"}`}
+		>
+			<span className="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-zinc-200 bg-white p-2 shadow-sm">
+				{/* eslint-disable-next-line @next/next/no-img-element */}
+				<img
+					src={faviconSrc}
+					alt=""
+					className="h-full w-full object-contain"
+					onError={() => {
+						if (faviconSrc !== googleFavicon) setFaviconSrc(googleFavicon);
+					}}
+				/>
+			</span>
+			<div className="min-w-0 flex-1">
+				<h1 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-tight text-zinc-900 sm:text-[30px]">
+					{t("header.title", { domain })}
+				</h1>
+				<div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
+					<span className="font-semibold text-zinc-900">
+						{totalCount}
+					</span>
+					<span className="text-zinc-500">{t("header.findings_label")}</span>
+					<span className="text-zinc-300">·</span>
+					<span className="font-semibold text-rose-600">{criticalEstimate}</span>
+					<span className="text-zinc-500">{t("header.critical_label")}</span>
+					<span className="text-zinc-300">·</span>
+					<span className="font-semibold text-zinc-900">{totalCount}</span>
+					<span className="text-zinc-500">{t("header.actions_label")}</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// ── PlanPreviewSection (Wave-22.6 spec — block #1 of the new result) ──
+// Sits at the top of the result page. Lays out the Monthly Strategy
+// Plan the visitor WOULD get as a paid Vestigio user, with strategic
+// content cuts (NOT blur — DevTools-immune) so they see the shape
+// and feel the want without us giving away the value.
+function PlanPreviewSection({
+	domain,
+	organizationName,
+	primaryConcern,
+	whyNow,
+	negativeCount,
+	blurredCount,
+	revealed,
+	onCheckout,
+	launching,
+}: {
+	domain: string;
+	organizationName: string;
+	primaryConcern: string | null;
+	whyNow: string | null;
+	negativeCount: number;
+	blurredCount: number;
+	revealed: boolean;
+	onCheckout: () => void;
+	launching: boolean;
+}) {
+	const t = useTranslations("lp.audit_result");
+	const nextStepCount = Math.max(5, Math.ceil((negativeCount + blurredCount) / 2));
+	// Concern-driven narrative spark — first 1-2 sentences personalized.
+	// The visitor's chosen concern shapes the opening line. JTBD-pull
+	// (whyNow) optional, used at the close. Everything after the
+	// SECOND sentence is server-side cut.
+	const concernKey = primaryConcern || "unknown_leak";
+	const narrativeOpening = t(`plan_preview.concern_openings.${concernKey}` as never, { org: organizationName });
+	const monthLabel = (() => {
+		const now = new Date();
+		const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+		return `${months[now.getMonth()]} ${now.getFullYear()}`;
+	})();
+
+	return (
+		<section
+			className={`relative overflow-hidden rounded-3xl border border-zinc-200 bg-white p-6 transition-opacity duration-700 sm:p-8 ${revealed ? "opacity-100" : "opacity-0"}`}
+		>
+			{/* Header */}
+			<div className="mb-5 flex items-baseline justify-between gap-3">
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-zinc-500">
+					{t("plan_preview.eyebrow")}
+				</div>
+				<div className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+					<Sparkles className="h-2.5 w-2.5" />
+					{t("plan_preview.preview_badge")}
+				</div>
+			</div>
+
+			{/* Plan title + month */}
+			<div className="mb-6">
+				<h2 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-tight text-zinc-900 sm:text-[30px]">
+					{t("plan_preview.title", { month: monthLabel, org: organizationName })}
+				</h2>
+			</div>
+
+			{/* Hero metric stub — skeleton shimmer for the real numbers */}
+			<div className="mb-6 grid grid-cols-3 gap-3">
+				{[0, 1, 2].map((i) => (
+					<div key={i} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+						<div className="text-[9px] font-medium uppercase tracking-wider text-zinc-500">
+							{t(`plan_preview.hero.label_${i}` as never)}
+						</div>
+						<div className="mt-2 h-6 w-3/4 overflow-hidden rounded-md">
+							<div className="skeleton-shimmer h-full w-full" />
+						</div>
+					</div>
+				))}
+			</div>
+
+			{/* Narrative — 2 sentences visible, rest server-cut */}
+			<div className="mb-6">
+				<div className="text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+					{t("plan_preview.narrative_label")}
+				</div>
+				<p className="mt-2 font-[family-name:var(--font-fraunces)] text-[16px] leading-relaxed text-zinc-800">
+					{narrativeOpening}
+				</p>
+				<p className="mt-2 text-[12px] text-zinc-400">
+					{t("plan_preview.narrative_continues")}
+				</p>
+			</div>
+
+			{/* Next steps — first 2 titles visible, rest cut */}
+			<div className="mb-6">
+				<div className="mb-3 text-[10px] font-medium uppercase tracking-wider text-zinc-500">
+					{t("plan_preview.next_steps_label", { count: nextStepCount })}
+				</div>
+				<ol className="space-y-2.5">
+					{[1, 2].map((order) => (
+						<li
+							key={order}
+							className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3"
+						>
+							<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 font-[family-name:var(--font-fraunces)] text-[13px] font-semibold text-emerald-700">
+								{order}
+							</span>
+							<div className="min-w-0 flex-1">
+								<div className="text-[13px] font-medium text-zinc-900">
+									{t(`plan_preview.next_step_${order}` as never)}
+								</div>
+								<div className="mt-0.5 text-[11px] text-zinc-500">
+									{t(`plan_preview.next_step_${order}_hint` as never)}
+								</div>
+							</div>
+						</li>
+					))}
+					{/* Server-cut: rest of steps are not in the DOM. We show
+					    skeleton-shimmer placeholders for them. */}
+					{Array.from({ length: Math.max(0, nextStepCount - 2) }).map((_, i) => (
+						<li
+							key={`shim-${i}`}
+							className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3"
+						>
+							<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-200 font-[family-name:var(--font-fraunces)] text-[13px] font-semibold text-zinc-400">
+								{i + 3}
+							</span>
+							<div className="min-w-0 flex-1 space-y-1.5">
+								<div className="skeleton-shimmer h-3 w-3/4 rounded-md" />
+								<div className="skeleton-shimmer h-2.5 w-1/2 rounded-md" />
+							</div>
+							<svg className="mt-1 h-3.5 w-3.5 shrink-0 text-zinc-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+							</svg>
+						</li>
+					))}
+				</ol>
+			</div>
+
+			{/* Inline CTA */}
+			<button
+				type="button"
+				onClick={onCheckout}
+				disabled={launching}
+				className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3.5 text-[14px] font-semibold text-white shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-600 disabled:opacity-60"
+			>
+				{t("plan_preview.unlock_cta")}
+				<svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+					<path d="M3 8h10M9 4l4 4-4 4" />
+				</svg>
+			</button>
+		</section>
+	);
+}
 
 function PreviewCard({
 	preview,

@@ -458,10 +458,10 @@ const detectMissingAnalytics: Detector = ({ rawHtml, parsed, business }) => {
 			id: "mini_missing_analytics",
 			severity: "high",
 			category: "structure",
-			title: "Nenhum analytics ou pixel de conversão detectado",
-			body: `Não encontramos Google Analytics, GTM, Meta Pixel, nem qualquer plataforma de analytics no HTML da página. Sem medição, você não sabe quais canais trazem receita, quais páginas vazam visitantes, ou se mudanças melhoram ou pioram conversão. Todo investimento em tráfego está voando cego.`,
-			impact_hint: "Atribuição impossível — ROI invisível",
-			suggestion: "Instale o Google Tag Manager e configure GA4 com eventos de conversão (compra, lead, clique no WhatsApp). Se investe em ads, adicione o Meta Pixel. Setup básico leva 30 minutos e permite saber exatamente de onde vem cada real.",
+			title: "Você pode estar escalando o canal que mais te faz perder",
+			body: `Sem pixel nem analytics no HTML, cada real investido em mídia paga vai pro mesmo balde: você não consegue separar o canal que vende do canal que só queima orçamento. O risco real não é "atribuição imperfeita" — é multiplicar o investimento exatamente no canal que tá perdendo dinheiro, porque ele parece estar trazendo tráfego.`,
+			impact_hint: "Mídia paga rolando sem como medir qual canal dá retorno",
+			suggestion: "Instale Google Tag Manager + GA4 com eventos de compra/lead/clique no WhatsApp. Se roda Meta ou Google Ads, adicione o pixel correspondente. Setup leva ~30 min; o ROI desbloqueia a primeira decisão real de realocar verba.",
 			evidence_refs: ["Sem GA/GTM no HTML", "Sem Meta Pixel", "Sem scripts de analytics"],
 		},
 		"measurement_coverage",
@@ -580,10 +580,10 @@ const detectRedirectChain: Detector = ({ response, business }) => {
 			id: "mini_redirect_chain",
 			severity: "medium",
 			category: "performance",
-			title: `${response.redirect_chain.length} redirecionamentos antes de carregar`,
-			body: `Sua página passa por ${response.redirect_chain.length} redirects antes de renderizar (${response.redirect_chain.map((r) => r.status_code).join(" → ")}). Cada redirecionamento adiciona 100-500ms e perde ~5% dos visitantes mobile. Além da lentidão, crawlers de busca podem indexar a URL errada.`,
-			impact_hint: "~5% perda por hop em mobile",
-			suggestion: "Configure redirecionamentos para resolver em no máximo 1 hop. Se usa www → non-www (ou vice-versa), faça direto no servidor/CDN sem intermediários. Verifique se HTTP → HTTPS também não passa por múltiplos saltos.",
+			title: `Cada visitante mobile passa por ${response.redirect_chain.length} saltos antes de chegar`,
+			body: `Pra abrir sua página, o navegador faz ${response.redirect_chain.length} pulos seguidos (${response.redirect_chain.map((r) => r.status_code).join(" → ")}). No desktop, ninguém percebe. No 3G/4G é diferente: a tela fica em branco por 1-2 segundos a mais, e cada salto é uma oportunidade nova pro visitante fechar a aba. Em campanhas de mídia paga, esse é o gap silencioso entre "tráfego pago" e "tráfego que de fato chega".`,
+			impact_hint: "Aba mobile fecha antes de carregar",
+			suggestion: "Resolva tudo em 1 salto direto. www→non-www ou HTTP→HTTPS faz no CDN/servidor sem rota intermediária. Em mobile, 1 salto a menos costuma valer 3-5% de visitantes a mais entrando.",
 			evidence_refs: response.redirect_chain.slice(0, 3).map((r) => `${r.status_code} → ${new URL(r.url).hostname}`),
 		},
 		"friction_on_critical_path",
@@ -643,10 +643,10 @@ const detectExcessiveExternalScripts: Detector = ({ parsed, business }) => {
 			id: "mini_excessive_scripts",
 			severity: "medium",
 			category: "performance",
-			title: `${externalScripts.length} scripts externos de ${uniqueHosts.length} domínios diferentes`,
-			body: `Sua página carrega ${externalScripts.length} scripts de ${uniqueHosts.length} domínios (${uniqueHosts.slice(0, 4).join(", ")}${uniqueHosts.length > 4 ? "…" : ""}). Cada script externo adiciona latência de DNS, TLS e download. Além do peso, cada domínio é uma dependência — se um CDN travar, sua página pode quebrar. O custo composto em performance mobile é significativo.`,
-			impact_hint: `${uniqueHosts.length} dependências externas`,
-			suggestion: "Audite cada script externo: remova os que não usa mais (chat widgets antigos, pixels inativos). Adie scripts não-críticos com async ou defer. Considere self-hosting de fontes ao invés de carregar do Google Fonts. Cada script removido melhora o tempo de carregamento.",
+			title: `${externalScripts.length} integrações terceirizadas competindo pelo seu mobile`,
+			body: `Sua página depende de ${externalScripts.length} scripts vindos de ${uniqueHosts.length} domínios diferentes (${uniqueHosts.slice(0, 4).join(", ")}${uniqueHosts.length > 4 ? "…" : ""}). Cada um normalmente é um chat widget esquecido, pixel de campanha antiga, ferramenta que ninguém usa mais. No 3G mobile, essa pilha vira tempo de tela branca e bateria queimando — exatamente o momento em que o usuário decide se vai esperar ou fechar. O custo não é "perf score" — é gente fechando aba antes do seu produto aparecer.`,
+			impact_hint: `${uniqueHosts.length} dependências externas pesando no mobile`,
+			suggestion: "Liste as 3 mais antigas: chat widget que o suporte trocou, pixel de campanha de 6 meses atrás, ferramenta que o time não usa. Remova-as. Pra qualquer que precise ficar, async/defer. Trocar Google Fonts por self-host é ganho fácil. Cada script removido = velocidade de carregamento de volta.",
 			evidence_refs: uniqueHosts.slice(0, 3).map((h) => `Scripts de ${h}`),
 		},
 		"friction_on_critical_path",
@@ -1038,20 +1038,19 @@ export function deriveMiniAuditFindings(input: DeriveInput): MiniAuditFindings {
 		detectCompetingCtas,
 		detectVagueCta,
 		detectFormFriction,
-		// New pure-parser detectors
+		// New pure-parser detectors. Wave-22.6 STEP 0 — slop detectors
+		// removed (NoLazyImages, WeakMetaDescription, MissingStructuredData,
+		// MissingCanonical, MissingLang, IframeOveruse). Survived
+		// detectors carry buyer-behavior + money narratives, not SEO
+		// hygiene. Reframes applied to Analytics, RedirectChain,
+		// ExcessiveExternalScripts — see each function for the new copy.
 		detectMissingAnalytics,
-		detectNoLazyImages,
-		detectWeakMetaDescription,
-		detectMissingStructuredData,
 		detectNoSocialProof,
 		detectRedirectChain,
-		detectMissingCanonical,
 		detectThinContent,
 		detectExcessiveExternalScripts,
 		detectNoH1,
 		detectExternalForms,
-		detectMissingLang,
-		detectIframeOveruse,
 		// Cross-signal detectors (Vestigio moat)
 		detectSpeedTrustCompound,
 		detectWeakConversionPath,
@@ -1090,18 +1089,25 @@ export function deriveMiniAuditFindings(input: DeriveInput): MiniAuditFindings {
 	const cappedNegatives = negatives.slice(0, 5);
 	const visible = [...cappedNegatives, ...positives];
 
-	// Blurred placeholders — never computed, purely teaser for paid tier.
+	// Blurred placeholders — these never get computed in the mini path;
+	// they preview the kinds of findings the full produto entrega (cross-
+	// signal compound inferences, behavioral patterns from pixel/ad
+	// integrations, copy framework deep analysis). Each title here
+	// describes a category the engine produces, not the specific finding.
+	// The result page renders these as "+N descobertas a desbloquear"
+	// teasers with counts derived from what the engine WOULD see if it
+	// ran the full pipeline.
 	const blurred: BlurredFinding[] = [
-		{ id: "blur_1", category: "checkout", teaser_title: "Integridade do fluxo de checkout" },
-		{ id: "blur_2", category: "trust", teaser_title: "Déficit de confiança na etapa de pagamento" },
-		{ id: "blur_3", category: "friction", teaser_title: "Padrão de fricção com custo mensurável" },
-		{ id: "blur_4", category: "mobile", teaser_title: "Revenue leak específico do mobile" },
-		{ id: "blur_5", category: "performance", teaser_title: "Imposto de velocidade sobre conversão" },
-		{ id: "blur_6", category: "policy", teaser_title: "Gap de política de reembolso e risco de chargeback" },
-		{ id: "blur_7", category: "cta", teaser_title: "Problema de timing e visibilidade de CTA" },
-		{ id: "blur_8", category: "structure", teaser_title: "Bloqueador superficial de conversão" },
-		{ id: "blur_9", category: "trust", teaser_title: "Quebra de continuidade de confiança no handoff" },
-		{ id: "blur_10", category: "checkout", teaser_title: "Risco de integração de gateway de pagamento" },
+		{ id: "blur_1", category: "checkout", teaser_title: "Cadeia causal: por que o checkout vaza nesse passo específico" },
+		{ id: "blur_2", category: "trust", teaser_title: "Padrão comportamental: sessões que abandonam no mesmo gesto" },
+		{ id: "blur_3", category: "friction", teaser_title: "Cross-signal: copy + speed + trust se cancelando" },
+		{ id: "blur_4", category: "mobile", teaser_title: "Heatmap implícito: onde o dedo não chega no mobile" },
+		{ id: "blur_5", category: "performance", teaser_title: "Análise comportamental via pixel — bloqueada sem integração" },
+		{ id: "blur_6", category: "policy", teaser_title: "Análise de framework: AIDA quebra no AROUSAL, faltam 3 elementos" },
+		{ id: "blur_7", category: "cta", teaser_title: "Decisão de chargeback: 4 vetores de risco antes do gateway" },
+		{ id: "blur_8", category: "structure", teaser_title: "Síntese de inteligência: o vazamento que conecta 3 packs" },
+		{ id: "blur_9", category: "trust", teaser_title: "Análise de copy: o gap entre headline e CTA" },
+		{ id: "blur_10", category: "checkout", teaser_title: "Compound finding: pagamento + tempo + indecisão" },
 	];
 
 	return { visible, blurred };

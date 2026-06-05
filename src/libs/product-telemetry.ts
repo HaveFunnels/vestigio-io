@@ -35,6 +35,15 @@ export const PRODUCT_EVENT_TYPES = new Set<string>([
 	"chat_still_working",
 	"chat_context_attached",
 	"chat_context_removed",
+	// Wave-22.6 — LP audit funnel (anonymous; leadId-keyed). These
+	// fire from /lp/audit + the result page. Same table; the admin
+	// platform can pivot on event prefix to render conversion funnels.
+	"lp_audit_landing",
+	"lp_audit_form_step",
+	"lp_audit_audit_started",
+	"lp_audit_result_viewed",
+	"lp_audit_cta_clicked",
+	"lp_audit_checkout_complete",
 ]);
 
 /** Feature name → User model field mapping for adoption timestamps. */
@@ -46,8 +55,12 @@ const FEATURE_FLAG_MAP: Record<string, string> = {
 };
 
 export interface ProductEventInput {
-	userId: string;
-	orgId: string;
+	// Wave-22.6 — both userId+orgId and leadId paths are valid. For
+	// authenticated events both userId AND orgId must be present; for
+	// anonymous LP funnel events leadId carries the trace.
+	userId?: string;
+	orgId?: string;
+	leadId?: string;
 	environmentId?: string;
 	event: string;
 	properties?: Record<string, unknown> | null;
@@ -63,11 +76,18 @@ export interface ProductEventInput {
 export function recordProductEvent(input: ProductEventInput): void {
 	if (!PRODUCT_EVENT_TYPES.has(input.event)) return;
 
+	// Either authenticated context OR anonymous leadId context. Drop
+	// silently if neither is provided — no orphan rows.
+	const isAuth = !!input.userId && !!input.orgId;
+	const isAnon = !!input.leadId;
+	if (!isAuth && !isAnon) return;
+
 	prisma.productEvent
 		.create({
 			data: {
-				userId: input.userId,
-				orgId: input.orgId,
+				userId: input.userId || null,
+				orgId: input.orgId || null,
+				leadId: input.leadId || null,
 				environmentId: input.environmentId || null,
 				event: input.event,
 				properties: (input.properties as any) || undefined,
@@ -77,13 +97,14 @@ export function recordProductEvent(input: ProductEventInput): void {
 		})
 		.catch((err) => {
 			console.warn(
-				`[product-telemetry] failed to record ${input.event} for user=${input.userId}:`,
+				`[product-telemetry] failed to record ${input.event}:`,
 				err instanceof Error ? err.message : err,
 			);
 		});
 
-	// Set feature adoption flag (idempotent — only fires on first use)
-	if (input.event === "feature_first_use" && input.properties?.feature) {
+	// Set feature adoption flag (idempotent — only fires on first use).
+	// Skipped for anonymous events since there's no userId to flag.
+	if (input.event === "feature_first_use" && input.userId && input.properties?.feature) {
 		setFeatureAdoptionFlag(
 			input.userId,
 			String(input.properties.feature),

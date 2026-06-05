@@ -2170,11 +2170,16 @@ model UserAction {
 
 model ProductEvent {
   id            String   @id @default(cuid())
-  userId        String
-  orgId         String
+  // Wave-22.6 — userId/orgId nullable so the same table can hold
+  // anonymous LP funnel events. When the lead converts (lead →
+  // user promotion), the leadId stays for trace continuity; userId
+  // gets backfilled at promotion time.
+  userId        String?
+  orgId         String?
   environmentId String?
-  event         String // page_view, feature_first_use, workspace_drill, finding_action, drawer_open, playbook_run
-  properties    Json? // event-specific payload: { from, to, time_on_previous_ms, feature, finding_id, ... }
+  leadId        String? // set for anonymous funnel events; null after signup
+  event         String // page_view, feature_first_use, lp_audit_*, etc.
+  properties    Json? // event-specific payload
   pathname      String
   sessionId     String // client-generated per-tab
   createdAt     DateTime @default(now())
@@ -2182,6 +2187,7 @@ model ProductEvent {
   @@index([orgId, event, createdAt])
   @@index([environmentId, createdAt])
   @@index([userId, event])
+  @@index([leadId, event, createdAt])
   @@index([createdAt]) // for 90-day retention pruning
 }
 

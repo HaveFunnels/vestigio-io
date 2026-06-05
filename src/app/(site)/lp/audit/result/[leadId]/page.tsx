@@ -24,6 +24,7 @@ import {
 	summarizeMiniImpact,
 } from "../../../../../../../packages/impact/mini-impact";
 import logoDark from "@/../public/images/logo/logo.png";
+import { trackLpEvent } from "@/lib/lp-audit-track";
 
 // ──────────────────────────────────────────────
 // /lp/audit/result/[leadId] — Mini-Audit Result
@@ -128,6 +129,7 @@ export default function MiniAuditResultPage() {
 			setError(t("error_prices_missing"));
 			return;
 		}
+		trackLpEvent(leadId, "lp_audit_cta_clicked");
 		setLaunching(true);
 
 		// BUG-11 fix: Mark lead as checkout_started so we can distinguish
@@ -247,6 +249,7 @@ export default function MiniAuditResultPage() {
 				timedOut={timedOut}
 				completed
 				onViewResults={() => {
+					trackLpEvent(leadId, "lp_audit_result_viewed");
 					setShowResults(true);
 					setTimeout(() => setRevealed(true), 80);
 				}}

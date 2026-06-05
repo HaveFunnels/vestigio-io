@@ -17,6 +17,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { trackLpEvent } from "@/lib/lp-audit-track";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -240,6 +241,7 @@ export default function useLpAuditForm() {
 				if (data.leadId && data.formToken) {
 					setLeadId(data.leadId);
 					setFormToken(data.formToken);
+					trackLpEvent(data.leadId, "lp_audit_landing");
 				} else {
 					setGlobalError(data.message || "Não foi possível iniciar o diagnóstico. Atualize a página.");
 				}
@@ -418,12 +420,17 @@ export default function useLpAuditForm() {
 			inFlightRef.current = false;
 			return;
 		}
+		trackLpEvent(leadId, "lp_audit_form_step", {
+			step: backendStep,
+			screen: currentScreen,
+		});
 
 		// Email is the terminal step — fire audit and persist the
 		// JTBD answers to localStorage so the paid onboarding form
 		// can prefill them and skip 5 of its 7 steps.
 		if (currentScreen === "email") {
 			writeLocalStorageHandoff(form);
+			trackLpEvent(leadId, "lp_audit_audit_started");
 			const fired = await fireAudit();
 			if (fired) {
 				router.push(`/lp/audit/result/${leadId}`);

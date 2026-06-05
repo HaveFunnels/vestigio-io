@@ -388,7 +388,7 @@ export default function MiniAuditResultPage() {
 					<ResultHeader
 						preview={preview}
 						domain={lead.domain || ""}
-						negativeCount={negativeFindings.length}
+						negativeFindings={negativeFindings}
 						blurredCount={blurredFindings.length}
 						revealed={revealed}
 					/>
@@ -571,19 +571,28 @@ export default function MiniAuditResultPage() {
 function ResultHeader({
 	preview,
 	domain,
-	negativeCount,
+	negativeFindings,
 	blurredCount,
 	revealed,
 }: {
 	preview: LandingPreview;
 	domain: string;
-	negativeCount: number;
+	negativeFindings: MiniFinding[];
 	blurredCount: number;
 	revealed: boolean;
 }) {
 	const t = useTranslations("lp.audit_result");
 	const googleFavicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(preview.host)}&sz=64`;
 	const [faviconSrc, setFaviconSrc] = useState(preview.favicon_url || googleFavicon);
+	const negativeCount = negativeFindings.length;
+	// Max-anchor: ceiling of monthly leak summed across visible
+	// (non-positive) findings. Honest — only what the buyer can verify
+	// in the badge list below. summarizeMiniImpact returns null when
+	// no finding carries a typed impact range; we then fall back to
+	// the descriptive title.
+	const impactSummary = summarizeMiniImpact(negativeFindings.map((f) => f.impact));
+	const maxBrlCents = impactSummary?.max_brl_cents ?? 0;
+	const hasMoneyAnchor = maxBrlCents > 0;
 
 	return (
 		<div
@@ -602,7 +611,9 @@ function ResultHeader({
 			</span>
 			<div className="min-w-0 flex-1">
 				<h1 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-tight text-content sm:text-[30px]">
-					{t("header.title", { domain })}
+					{hasMoneyAnchor
+						? t("header.title_anchor", { amount: formatBRL(maxBrlCents), domain })
+						: t("header.title", { domain })}
 				</h1>
 				<div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
 					<span className="font-semibold text-content">{negativeCount}</span>

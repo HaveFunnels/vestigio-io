@@ -9941,6 +9941,7 @@
 			"cta_create_account": "Create account now",
 			"header": {
 				"title": "Analysis of {domain}",
+				"title_anchor": "Up to {amount}/mo leaking from {domain}",
 				"visible_label": "visible leaks",
 				"blocked_label": "locked",
 				"findings_label": "leaks",

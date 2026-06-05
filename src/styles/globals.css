@@ -342,6 +342,35 @@
 		100% { background-position: 200% 0; }
 	}
 
+	/* ── Skeleton shimmer — horizontal gradient sweep ──
+	   Used by FirstAuditCard and any other deferred surface where
+	   we render the shape of upcoming content while it loads. Pairs
+	   with `bg-skeleton` (defined inline per call site if a custom
+	   color is needed). Stays subtle in both light and dark themes.
+	*/
+	@keyframes skeleton-shimmer {
+		0%   { background-position: -200% 0; }
+		100% { background-position: 200% 0; }
+	}
+	.skeleton-shimmer {
+		background-image: linear-gradient(
+			90deg,
+			rgb(var(--bg-skeleton-base) / 0.85) 0%,
+			rgb(var(--bg-skeleton-highlight) / 1) 50%,
+			rgb(var(--bg-skeleton-base) / 0.85) 100%
+		);
+		background-size: 200% 100%;
+		animation: skeleton-shimmer 1.6s ease-in-out infinite;
+	}
+	:root {
+		--bg-skeleton-base: 229 229 234;
+		--bg-skeleton-highlight: 244 244 247;
+	}
+	.dark {
+		--bg-skeleton-base: 39 39 47;
+		--bg-skeleton-highlight: 55 55 65;
+	}
+
 	@keyframes shiny-breathe {
 		from,
 		to {

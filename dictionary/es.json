@@ -3084,6 +3084,22 @@
 			"elapsed": "{seconds}s transcurridos",
 			"in_progress": "En progreso...",
 			"done": "Completado",
+			"analyzing": "Analizando {domain}",
+			"analyzing_generic": "Analizando tu dominio",
+			"dismiss": "Ocultar",
+			"subtitle_eta": "Primer informe en ~60 segundos. Construimos tu Pulse mientras tanto.",
+			"trust_line": "Solo leemos páginas públicas. Tus datos son tuyos.",
+			"per_month_short": "/mes",
+			"healing_stuck_generic": "Recuperando el paso actual…",
+			"healing_heartbeat": "Reconectando con el worker — vamos a continuar desde donde paramos.",
+			"failed": "La auditoría falló. El sistema reintentará automáticamente en unos minutos.",
+			"blocks": {
+				"total_at_risk": "Total en riesgo",
+				"top_finding": "Mayor hallazgo",
+				"inventory": "Inventario",
+				"inventory_count": "{count} URLs",
+				"inventory_row_filled": "Página crawleada"
+			},
 			"stages": {
 				"discover": "Descubriendo la estructura de tu sitio...",
 				"classify": "Clasificando páginas por intención comercial...",

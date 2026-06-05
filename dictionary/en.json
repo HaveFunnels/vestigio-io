@@ -3233,6 +3233,17 @@
 			"analyzing_generic": "Analyzing your domain",
 			"starting": "Starting analysis...",
 			"dismiss": "Dismiss",
+			"subtitle_eta": "First report in ~60 seconds. We're building your Pulse in the meantime.",
+			"trust_line": "We read public pages only. Your data stays yours.",
+			"per_month_short": "/mo",
+			"healing_stuck_generic": "Recovering the current step…",
+			"blocks": {
+				"total_at_risk": "Total at risk",
+				"top_finding": "Top finding",
+				"inventory": "Inventory",
+				"inventory_count": "{count} URLs",
+				"inventory_row_filled": "Page crawled"
+			},
 			"progress": "Progress",
 			"pages": "Pages",
 			"findings": "Findings",

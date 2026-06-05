@@ -3351,6 +3351,22 @@
 			"elapsed": "{seconds}s vergangen",
 			"in_progress": "In Bearbeitung...",
 			"done": "Abgeschlossen",
+			"analyzing": "{domain} wird analysiert",
+			"analyzing_generic": "Ihre Domain wird analysiert",
+			"dismiss": "Ausblenden",
+			"subtitle_eta": "Erster Bericht in ~60 Sekunden. Wir bauen Ihren Pulse in der Zwischenzeit auf.",
+			"trust_line": "Wir lesen nur öffentliche Seiten. Ihre Daten bleiben bei Ihnen.",
+			"per_month_short": "/Mo",
+			"healing_stuck_generic": "Aktuellen Schritt wird wiederhergestellt…",
+			"healing_heartbeat": "Verbindung zum Worker wird wiederhergestellt — wir machen weiter, wo wir aufgehört haben.",
+			"failed": "Das Audit ist fehlgeschlagen. Das System versucht es in wenigen Minuten automatisch erneut.",
+			"blocks": {
+				"total_at_risk": "Gesamt im Risiko",
+				"top_finding": "Größter Befund",
+				"inventory": "Inventar",
+				"inventory_count": "{count} URLs",
+				"inventory_row_filled": "Seite gecrawlt"
+			},
 			"stages": {
 				"discover": "Deine Seitenstruktur wird erkundet...",
 				"classify": "Seiten werden nach kommerzieller Absicht klassifiziert...",

@@ -3317,6 +3317,17 @@
 			"analyzing_generic": "Analisando seu domínio",
 			"starting": "Iniciando análise...",
 			"dismiss": "Esconder",
+			"subtitle_eta": "Primeiro relatório em ~60 segundos. Construímos seu Pulse enquanto isso.",
+			"trust_line": "Lemos só páginas públicas. Seus dados ficam com você.",
+			"per_month_short": "/mês",
+			"healing_stuck_generic": "Recuperando a etapa atual…",
+			"blocks": {
+				"total_at_risk": "Total em risco",
+				"top_finding": "Maior achado",
+				"inventory": "Inventário",
+				"inventory_count": "{count} URLs",
+				"inventory_row_filled": "Página coletada"
+			},
 			"progress": "Progresso",
 			"pages": "Páginas",
 			"findings": "Findings",

@@ -157,6 +157,7 @@ export default function OnboardPage() {
 			stepIndex={f.stepIndex}
 			totalSteps={f.totalSteps}
 			onBack={f.prev}
+			steps={f.steps as any}
 		>
 			{f.showMirrorFor && (
 				<MirrorMoment

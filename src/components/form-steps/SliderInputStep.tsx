@@ -104,13 +104,27 @@ export default function SliderInputStep({
 					type="button"
 					onClick={() => onSubmit(value)}
 					disabled={loading}
-					className={`w-full rounded-xl px-6 py-3.5 text-sm font-semibold transition-all ${
+					className={`flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-[15px] font-semibold transition-all ${
 						loading
-							? "cursor-not-allowed bg-zinc-200 text-zinc-400"
-							: "bg-zinc-900 text-white hover:bg-zinc-800 active:scale-[0.98]"
+							? "cursor-not-allowed bg-zinc-100 text-zinc-400"
+							: "bg-emerald-100 text-zinc-900 hover:bg-emerald-200 active:scale-[0.99]"
 					}`}
 				>
 					{buttonLabel}
+					{!loading && (
+						<svg
+							className="h-4 w-4 text-emerald-600"
+							viewBox="0 0 16 16"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.8"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							aria-hidden
+						>
+							<path d="M3 8h10M9 4l4 4-4 4" />
+						</svg>
+					)}
 				</button>
 			</div>
 

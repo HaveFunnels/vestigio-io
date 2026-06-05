@@ -121,10 +121,10 @@ export default function TextInputStep({
 					type="button"
 					onClick={onSubmit}
 					disabled={!canSubmit}
-					className={`mt-6 w-full rounded-xl px-6 py-3.5 text-sm font-semibold transition-all ${
+					className={`mt-6 flex w-full items-center justify-center gap-2 rounded-2xl px-6 py-4 text-[15px] font-semibold transition-all ${
 						canSubmit
-							? "bg-zinc-900 text-white hover:bg-zinc-800 active:scale-[0.98]"
-							: "cursor-not-allowed bg-zinc-200 text-zinc-400"
+							? "bg-emerald-100 text-zinc-900 hover:bg-emerald-200 active:scale-[0.99]"
+							: "cursor-not-allowed bg-zinc-100 text-zinc-400"
 					}`}
 				>
 					{loading ? (
@@ -135,7 +135,21 @@ export default function TextInputStep({
 							{buttonLabel}
 						</span>
 					) : (
-						buttonLabel
+						<>
+							{buttonLabel}
+							<svg
+								className={`h-4 w-4 transition-transform ${canSubmit ? "text-emerald-600" : "text-zinc-400"}`}
+								viewBox="0 0 16 16"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="1.8"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								aria-hidden
+							>
+								<path d="M3 8h10M9 4l4 4-4 4" />
+							</svg>
+						</>
 					)}
 				</button>
 			</div>

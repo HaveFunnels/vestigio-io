@@ -78,10 +78,10 @@ export default function MirrorMoment({
 						exit={{ opacity: 0 }}
 						transition={{ duration: 0.35 }}
 						onClick={onContinue}
-						className="mx-auto flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-[14px] font-semibold text-white shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-600"
+						className="mx-auto flex items-center gap-2 rounded-2xl bg-emerald-100 px-6 py-3.5 text-[15px] font-semibold text-zinc-900 transition-colors hover:bg-emerald-200"
 					>
 						{continueLabel}
-						<ArrowRightIcon size={14} weight="bold" />
+						<ArrowRightIcon size={14} weight="bold" className="text-emerald-600" />
 					</motion.button>
 				)}
 			</AnimatePresence>

@@ -78,26 +78,18 @@ export default function CardSelectionStep<T extends string = string>({
 								type="button"
 								onClick={() => handleTap(option.value)}
 								disabled={!!pending}
-								className={`relative flex min-h-[88px] flex-col justify-center rounded-xl border px-6 py-6 text-left transition-all duration-200 sm:py-7 ${
+								className={`relative flex min-h-[88px] flex-col justify-center rounded-2xl border px-6 py-6 text-left transition-all duration-200 sm:py-7 ${
 									isSelected
-										? "border-zinc-900 bg-zinc-900 scale-[1.02] shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
-										: "border-zinc-200 bg-zinc-50 hover:border-zinc-300 hover:bg-zinc-100"
+										? "border-emerald-500/60 bg-emerald-50 ring-2 ring-emerald-500/15 scale-[1.01]"
+										: "border-zinc-200 bg-white hover:border-emerald-200 hover:bg-emerald-50/40"
 								} ${pending && !isSelected ? "opacity-40" : ""}`}
 							>
-								<span
-									className={`text-base font-semibold sm:text-lg ${
-										isSelected ? "text-white" : "text-zinc-900"
-									}`}
-								>
+								<span className="text-base font-semibold text-zinc-900 sm:text-lg">
 									{option.label}
 								</span>
 
 								{option.description && (
-									<span
-										className={`mt-1 text-sm ${
-											isSelected ? "text-zinc-400" : "text-zinc-500"
-										}`}
-									>
+									<span className="mt-1 text-sm text-zinc-500">
 										{option.description}
 									</span>
 								)}
@@ -109,11 +101,11 @@ export default function CardSelectionStep<T extends string = string>({
 										transition={{ type: "spring", stiffness: 300, damping: 20 }}
 										className="absolute right-4 top-4"
 									>
-										<div className="flex h-5 w-5 items-center justify-center rounded-full bg-white">
+										<div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
 											<svg
 												viewBox="0 0 12 12"
 												fill="none"
-												stroke="#18181b"
+												stroke="white"
 												strokeWidth="2"
 												strokeLinecap="round"
 												strokeLinejoin="round"

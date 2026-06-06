@@ -1777,13 +1777,17 @@ function LockedFindingCard({
 					<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
 						{t(`category_labels.${blurred.category}` as never)}
 					</div>
-					<div className="mt-0.5 truncate text-xs font-medium text-content sm:text-sm">
-						{blurred.teaser_title}
-					</div>
+					{/* Title blurred — the "what" stays a mystery so the
+					    buyer's curiosity hooks on unlocking. Impact below
+					    is cleartext so the magnitude of what they're
+					    missing is concrete. */}
 					<div
-						className="mt-1 select-none truncate font-mono text-[10px] tabular-nums text-rose-600 blur-[4px] dark:text-rose-300 sm:text-[11px]"
+						className="mt-0.5 select-none truncate text-xs font-medium text-content blur-[5px] sm:text-sm"
 						aria-hidden
 					>
+						{blurred.teaser_title}
+					</div>
+					<div className="mt-1 truncate font-mono text-[10px] tabular-nums text-rose-600 dark:text-rose-300 sm:text-[11px]">
 						↓ {fakeImpact}
 					</div>
 				</div>

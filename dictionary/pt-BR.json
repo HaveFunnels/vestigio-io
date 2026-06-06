@@ -7847,8 +7847,12 @@
 				"actions_label": "ações priorizadas"
 			},
 			"cta_final": {
-				"eyebrow": "Hora de entrar",
+				"eyebrow": "Próximo passo",
 				"headline": "{org} está perdendo dinheiro agora.",
+				"headline_l1": "Pare de sangrar receita.",
+				"headline_l2": "A Análise completa começa em 60s.",
+				"guarantee_title": "Garantia 4x ou seu dinheiro de volta",
+				"guarantee_desc": "Recupere pelo menos 4x o valor pago em 90 dias. Se não, devolvemos seu dinheiro inteiro. Sem perguntas.",
 				"you_told_us": "Você nos disse que",
 				"generic_close": "Há {count, plural, one {# vazamento crítico} other {# vazamentos críticos}} esperando a primeira ação.",
 				"concern_closes": {

@@ -9966,8 +9966,12 @@
 				"actions_label": "priority actions"
 			},
 			"cta_final": {
-				"eyebrow": "Time to come in",
+				"eyebrow": "Next move",
 				"headline": "{org} is losing money right now.",
+				"headline_l1": "Stop the bleeding.",
+				"headline_l2": "Your full Analysis starts in 60s.",
+				"guarantee_title": "4x guarantee or your money back",
+				"guarantee_desc": "Recover at least 4x what you paid within 90 days. If not, we refund every cent. No questions asked.",
 				"you_told_us": "You told us",
 				"generic_close": "There {count, plural, one {is # critical leak} other {are # critical leaks}} waiting for the first move.",
 				"concern_closes": {

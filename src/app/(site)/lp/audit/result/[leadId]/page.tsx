@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
 import Link from "next/link";
 import Image from "next/image";
-import { Trophy, ShieldCheck, ShieldX, Lock, Sparkles, CheckCircle2, ChevronDown } from "lucide-react";
+import { Trophy, ShieldCheck, ShieldX, Lock, Sparkles, ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 declare global {
@@ -100,7 +100,6 @@ export default function MiniAuditResultPage() {
 		previewScenarioId === "course-br";
 	const [error, setError] = useState<string | null>(null);
 	const [revealed, setRevealed] = useState(skipViewGate);
-	const [shareCopied, setShareCopied] = useState(false);
 	const [showResults, setShowResults] = useState(skipViewGate);
 	const [timedOut, setTimedOut] = useState(false);
 	const [paddleReady, setPaddleReady] = useState(false);
@@ -246,21 +245,6 @@ export default function MiniAuditResultPage() {
 		};
 	}, [isPreview, previewTheme]);
 
-	// ── Share handling ──
-	function copyShareLink() {
-		if (typeof window === "undefined") return;
-		const url = window.location.href;
-		navigator.clipboard
-			.writeText(url)
-			.then(() => {
-				setShareCopied(true);
-				setTimeout(() => setShareCopied(false), 2000);
-			})
-			.catch(() => {
-				setError(t("error_copy_failed"));
-			});
-	}
-
 	// ── Render branches ──
 
 	const previewWidget = isPreview ? (
@@ -350,38 +334,17 @@ export default function MiniAuditResultPage() {
 							<Image src={logoDark} alt="Vestigio" height={22} className="dark:hidden" />
 							<Image src={logoLight} alt="Vestigio" height={22} className="hidden dark:block" />
 						</Link>
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={copyShareLink}
-								className="hidden items-center gap-1.5 rounded-md border border-edge bg-surface-card px-3 py-1.5 text-xs text-content-secondary transition-colors hover:border-edge-focus hover:text-content sm:flex"
-							>
-								{shareCopied ? (
-									<>
-										<CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-										<span>{t("share_copied")}</span>
-									</>
-								) : (
-									<>
-										<svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-											<path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-										</svg>
-										<span>{t("share")}</span>
-									</>
-								)}
-							</button>
-							<button
-								type="button"
-								onClick={openCheckout}
-								disabled={launching}
-								className="flex items-center gap-1.5 rounded-lg bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-zinc-900 transition-colors hover:bg-emerald-200 disabled:opacity-60 dark:bg-emerald-500/20 dark:text-content dark:hover:bg-emerald-500/30"
-							>
-								{t("cta_create_account")}
-								<svg className="h-3 w-3 text-emerald-600 dark:text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-									<path d="M3 8h10M9 4l4 4-4 4" />
-								</svg>
-							</button>
-						</div>
+						<button
+							type="button"
+							onClick={openCheckout}
+							disabled={launching}
+							className="flex items-center gap-1.5 rounded-lg bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-zinc-900 transition-colors hover:bg-emerald-200 disabled:opacity-60 dark:bg-emerald-500/20 dark:text-content dark:hover:bg-emerald-500/30"
+						>
+							{t("cta_create_account")}
+							<svg className="h-3 w-3 text-emerald-600 dark:text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+								<path d="M3 8h10M9 4l4 4-4 4" />
+							</svg>
+						</button>
 					</div>
 				</header>
 
@@ -390,6 +353,7 @@ export default function MiniAuditResultPage() {
 					<ResultHeader
 						preview={preview}
 						domain={lead.domain || ""}
+						organizationName={lead.organizationName || lead.domain || ""}
 						negativeFindings={negativeFindings}
 						blurredCount={blurredFindings.length}
 						revealed={revealed}
@@ -578,12 +542,14 @@ export default function MiniAuditResultPage() {
 function ResultHeader({
 	preview,
 	domain,
+	organizationName,
 	negativeFindings,
 	blurredCount,
 	revealed,
 }: {
 	preview: LandingPreview;
 	domain: string;
+	organizationName: string;
 	negativeFindings: MiniFinding[];
 	blurredCount: number;
 	revealed: boolean;
@@ -592,14 +558,6 @@ function ResultHeader({
 	const googleFavicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(preview.host)}&sz=64`;
 	const [faviconSrc, setFaviconSrc] = useState(preview.favicon_url || googleFavicon);
 	const negativeCount = negativeFindings.length;
-	// Max-anchor: ceiling of monthly leak summed across visible
-	// (non-positive) findings. Honest — only what the buyer can verify
-	// in the badge list below. summarizeMiniImpact returns null when
-	// no finding carries a typed impact range; we then fall back to
-	// the descriptive title.
-	const impactSummary = summarizeMiniImpact(negativeFindings.map((f) => f.impact));
-	const maxBrlCents = impactSummary?.max_brl_cents ?? 0;
-	const hasMoneyAnchor = maxBrlCents > 0;
 
 	return (
 		<div
@@ -617,12 +575,14 @@ function ResultHeader({
 				/>
 			</span>
 			<div className="min-w-0 flex-1">
-				<h1 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-tight text-content sm:text-[30px]">
-					{hasMoneyAnchor
-						? t("header.title_anchor", { amount: formatBRL(maxBrlCents), domain })
-						: t("header.title", { domain })}
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.18em] text-content-muted">
+					{t("header.eyebrow")}
+				</div>
+				<h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-[1.1] tracking-tight text-content sm:text-[32px]">
+					{t("header.title_preliminary", { org: organizationName })}
 				</h1>
-				<div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
+				<div className="mt-1.5 font-mono text-[12px] text-content-muted">{domain}</div>
+				<div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
 					<span className="font-semibold text-content">{negativeCount}</span>
 					<span className="text-content-muted">{t("header.visible_label")}</span>
 					<span className="text-content-faint">·</span>

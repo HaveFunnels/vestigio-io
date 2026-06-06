@@ -7821,6 +7821,8 @@
 			],
 			"cta_create_account": "Criar conta agora",
 			"header": {
+				"eyebrow": "Análise Preliminar",
+				"title_preliminary": "{org}",
 				"title": "Análise de {domain}",
 				"title_anchor": "Até {amount}/mês escapando em {domain}",
 				"visible_label": "vazamentos visíveis",

@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
 import Link from "next/link";
 import Image from "next/image";
-import { Trophy, ShieldCheck, ShieldX, Lock, Sparkles, ChevronDown } from "lucide-react";
+import { Trophy, ShieldCheck, ShieldX, Lock, Sparkles, ChevronDown, Target, ShieldHalf } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 declare global {
@@ -715,47 +715,66 @@ function PlanPreviewSection({
 					{t("plan_preview.next_steps_label", { count: nextStepCount })}
 				</div>
 				<ol className="space-y-2.5">
-					{[1, 2].map((order) => (
-						<li
-							key={order}
-							className="flex items-start gap-3 rounded-xl border border-edge bg-surface-inset p-3"
-						>
-							<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 font-[family-name:var(--font-fraunces)] text-[13px] font-semibold text-emerald-700 dark:text-emerald-300">
-								{order}
-							</span>
-							<div className="min-w-0 flex-1">
-								<div className="text-[13px] font-medium text-content">
-									{t(`plan_preview.next_step_${order}` as never)}
+					{[
+						{ order: 1, Icon: Target, accent: "rose" as const },
+						{ order: 2, Icon: ShieldHalf, accent: "amber" as const },
+					].map(({ order, Icon, accent }) => {
+						const accentClass =
+							accent === "rose"
+								? "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300"
+								: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300";
+						return (
+							<li
+								key={order}
+								className="flex items-start gap-3 rounded-2xl border border-edge bg-surface-inset p-4"
+							>
+								<span
+									className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accentClass}`}
+								>
+									<Icon size={18} strokeWidth={2.2} />
+								</span>
+								<div className="min-w-0 flex-1">
+									<div className="flex items-baseline gap-2">
+										<span className="font-mono text-[10px] font-semibold tabular-nums text-content-faint">
+											0{order}
+										</span>
+										<div className="text-[14px] font-semibold leading-tight text-content">
+											{t(`plan_preview.next_step_${order}` as never)}
+										</div>
+									</div>
+									<div className="mt-1 text-[12px] leading-relaxed text-content-muted">
+										{t(`plan_preview.next_step_${order}_hint` as never)}
+									</div>
 								</div>
-								<div className="mt-0.5 text-[11px] text-content-muted">
-									{t(`plan_preview.next_step_${order}_hint` as never)}
-								</div>
-							</div>
-						</li>
-					))}
+							</li>
+						);
+					})}
 					{/* Locked steps — fake but plausible titles + hints rendered
 					    blurred. "Blur on real text behind lock" reads as
 					    paywalled content; "shimmer" reads as still loading,
-					    which isn't true. PLAN_STEP_FAKE pool below. */}
+					    which isn't true. PLAN_STEP_FAKE pool above. */}
 					{Array.from({ length: Math.max(0, nextStepCount - 2) }).map((_, i) => (
 						<li
 							key={`locked-${i}`}
-							className="flex items-start gap-3 rounded-xl border border-edge bg-surface-inset/60 p-3"
+							onClick={onCheckout}
+							className="flex cursor-pointer items-start gap-3 rounded-2xl border border-edge bg-surface-inset/50 p-4 transition-colors hover:bg-surface-inset/80"
 						>
-							<span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-inset font-[family-name:var(--font-fraunces)] text-[13px] font-semibold text-content-faint">
-								{i + 3}
+							<span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-inset text-content-faint">
+								<Lock size={16} strokeWidth={2.2} />
 							</span>
 							<div className="min-w-0 flex-1 space-y-1">
-								<div className="select-none truncate text-[13px] font-medium text-content blur-[5px]" aria-hidden>
-									{PLAN_STEP_FAKE[i % PLAN_STEP_FAKE.length].title}
+								<div className="flex items-baseline gap-2">
+									<span className="font-mono text-[10px] font-semibold tabular-nums text-content-faint">
+										0{i + 3}
+									</span>
+									<div className="select-none truncate text-[14px] font-semibold leading-tight text-content blur-[5px]" aria-hidden>
+										{PLAN_STEP_FAKE[i % PLAN_STEP_FAKE.length].title}
+									</div>
 								</div>
-								<div className="select-none truncate text-[11px] text-content-muted blur-[4px]" aria-hidden>
+								<div className="select-none truncate text-[12px] text-content-muted blur-[4px]" aria-hidden>
 									{PLAN_STEP_FAKE[i % PLAN_STEP_FAKE.length].hint}
 								</div>
 							</div>
-							<svg className="mt-1 h-3.5 w-3.5 shrink-0 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-							</svg>
 						</li>
 					))}
 				</ol>

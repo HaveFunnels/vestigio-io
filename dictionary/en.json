@@ -10072,10 +10072,10 @@
 					"prioritization": "At {org}, every team has 20 ideas of what to improve. We found which 3 move the needle the most right now."
 				},
 				"next_steps_label": "Priority next steps ({count})",
-				"next_step_1": "Attack the primary revenue leak identified",
-				"next_step_1_hint": "Estimated impact: dollar range calibrated to your volume",
-				"next_step_2": "Address the first behavioral friction in the funnel",
-				"next_step_2_hint": "Includes root cause analysis and a step-by-step procedure",
+				"next_step_1": "Plug the biggest leak first",
+				"next_step_1_hint": "Your biggest monthly loss — fixing this recovers cash fast",
+				"next_step_2": "Lift trust where the customer hesitates to decide",
+				"next_step_2_hint": "Customer sees the choice but stalls — let's remove what's blocking",
 				"unlock_cta": "See the full plan"
 			},
 			"auditing_title": "Analyzing {domain}…",

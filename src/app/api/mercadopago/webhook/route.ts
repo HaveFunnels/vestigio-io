@@ -123,6 +123,18 @@ async function handlePreapprovalEvent(preapprovalId: string) {
 		return;
 	}
 
+	// Idempotency snapshot — captured BEFORE the write so the paywall
+	// branch below can tell whether THIS event is the first to flip the
+	// user into an authorized paywall subscription. MP retries on 5xx
+	// and re-fires events when an admin clicks "resend" in the
+	// dashboard, so without this snapshot a duplicate event would
+	// re-link the lead, re-send the welcome email, and re-activate the
+	// org — all observable mistakes for the buyer.
+	const wasAlreadyAuthorized =
+		user.mpPreapprovalId === sub.id &&
+		user.subscriptionId === sub.id &&
+		sub.status === "authorized";
+
 	// Persist subscription state. We use `subscriptionId` to hold the
 	// MP preapproval id (single semantic slot across providers) and
 	// also write `mpPreapprovalId` for unambiguous MP-side queries.
@@ -176,11 +188,10 @@ async function handlePreapprovalEvent(preapprovalId: string) {
 		log("preapproval.authorized", `org=${org.id} plan=${planKey}`);
 
 		// Paywall path — link the audit lead + send the welcome email.
-		// The handler for one-shot Pix already does this in
-		// reconcilePaywallActivation; the preapproval (card) path needs
-		// the same closing moves so both methods land the buyer in the
-		// same state.
-		if (isPaywall) {
+		// Gated by !wasAlreadyAuthorized so MP retries (or admin
+		// resend-event clicks) can't re-fire the side effects after the
+		// first successful processing.
+		if (isPaywall && !wasAlreadyAuthorized) {
 			if (paywallLeadId) {
 				await prisma.anonymousLead
 					.update({

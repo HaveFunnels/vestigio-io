@@ -47,5 +47,9 @@ scripts/create-nuvemshop-demo.ts
 
 journey-*.png
 verify-*.png
+audit-*.png
+activate-*.png
+pricing-*.png
+signup-*.png
 .playwright-mcp/
 scripts/_dev-*.mjs

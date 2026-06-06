@@ -292,7 +292,7 @@ export default function MiniAuditResultPage() {
 	if (!lead) {
 		return (
 			<>
-				<LoadingState message={t("loading")} />
+				<LoadingState message={t("loading.subtitle")} />
 				{previewWidget}
 			</>
 		);

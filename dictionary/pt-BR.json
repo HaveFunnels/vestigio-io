@@ -7892,12 +7892,21 @@
 				"locked": "Abrir mapa interativo"
 			},
 			"funnel_map": {
+				"subtitle": "Onde no caminho do seu cliente o dinheiro está vazando.",
+				"hint_default": "Clique num estágio pra ver o que está acontecendo lá.",
 				"stages": {
 					"awareness": "Descoberta",
 					"consideration": "Consideração",
 					"decision": "Decisão",
 					"conversion": "Conversão",
 					"post_conversion": "Pós-conversão"
+				},
+				"stages_desc": {
+					"awareness": "Primeira vez que alguém ouve falar do seu negócio. Anúncio, busca, indicação.",
+					"consideration": "Cliente entende o que você vende e começa a comparar com alternativas.",
+					"decision": "Ele se prepara pra escolher — verifica preço, prova social, dúvidas finais.",
+					"conversion": "Ele clica em comprar, preenche dados, fecha pagamento. O momento mais frágil.",
+					"post_conversion": "Depois da compra — primeira experiência, suporte, recompra e indicação."
 				},
 				"ok": "Sem fricção",
 				"findings_count": "{visible} visíveis · {locked} bloqueados"

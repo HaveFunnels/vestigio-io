@@ -17,6 +17,7 @@
  * the real product map uses surface-classifier for actual URLs.
  */
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import type {
 	MiniFinding,
@@ -144,6 +145,13 @@ export default function MiniFunnelMap({
 
 	return (
 		<div>
+			{/* Section subtitle — anchors what the buyer is looking at
+			    before they read the chart. Single sentence, neutral,
+			    typographic. */}
+			<p className="mb-4 max-w-md text-[13px] leading-relaxed text-content-muted sm:text-[14px]">
+				{t("subtitle")}
+			</p>
+
 			{/* Stage card row — horizontal funnel */}
 			<div className="flex items-stretch gap-1.5">
 				{STAGE_IDS.map((id, i) => {
@@ -224,13 +232,47 @@ export default function MiniFunnelMap({
 				})}
 			</div>
 
+			{/* Description strip — anchored to the selected stage, swaps
+			    when the buyer clicks a different one. When no stage is
+			    selected, prompts a tap. Animates a tiny y-translate +
+			    fade so the swap feels like the same surface rotating. */}
+			<div className="mt-3 min-h-[36px]">
+				<AnimatePresence mode="wait">
+					<motion.div
+						key={expandedStage ?? "default"}
+						initial={{ opacity: 0, y: 4 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -4 }}
+						transition={{ duration: 0.18, ease: "easeOut" }}
+						className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px] leading-relaxed"
+					>
+						{expandedStage ? (
+							<>
+								<span className="font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-content">
+									{t(`stages.${expandedStage}`)}
+								</span>
+								<span className="text-content-muted">
+									{t(`stages_desc.${expandedStage}`)}
+								</span>
+							</>
+						) : (
+							<span className="text-content-muted">
+								{t("hint_default")}
+							</span>
+						)}
+					</motion.div>
+				</AnimatePresence>
+			</div>
+
 			{/* Expanded stage detail */}
 			{expandedStage && (expandedItems.length > 0 || expandedHasLocked) && (
 				<div
 					className={`mt-3 rounded-xl border p-4 ${expandedClasses.container}`}
 				>
+					{/* Stage label moved to the description strip above; the
+					    detail header now just shows the counts so it doesn't
+					    repeat the eyebrow. */}
 					<div className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						{t(`stages.${expandedStage}`)} —{" "}
 						{t("findings_count", {
 							visible: expandedItems.length,
 							locked: expandedLockedCount,

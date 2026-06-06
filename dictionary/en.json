@@ -10011,12 +10011,21 @@
 				"locked": "Open interactive map"
 			},
 			"funnel_map": {
+				"subtitle": "Where the money is leaking along your customer's path.",
+				"hint_default": "Tap a stage to see what's happening there.",
 				"stages": {
 					"awareness": "Awareness",
 					"consideration": "Consideration",
 					"decision": "Decision",
 					"conversion": "Conversion",
 					"post_conversion": "Post-conversion"
+				},
+				"stages_desc": {
+					"awareness": "The first time someone hears about you — ad, search, referral.",
+					"consideration": "They get what you sell and start comparing you with alternatives.",
+					"decision": "They line up to choose — price, social proof, last-minute doubts.",
+					"conversion": "They click buy, fill in data, settle payment. The most fragile moment.",
+					"post_conversion": "After the sale — first experience, support, repurchase and referral."
 				},
 				"ok": "Clean",
 				"findings_count": "{visible} visible · {locked} locked"

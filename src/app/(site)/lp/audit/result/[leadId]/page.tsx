@@ -1539,7 +1539,9 @@ function FindingCard({
 	return (
 		<li
 			className={`overflow-hidden rounded-2xl border transition-colors ${
-				isPositive ? "border-emerald-500/15 bg-emerald-500/[0.03]" : "border-zinc-800 bg-zinc-950/60 hover:border-zinc-700"
+				isPositive
+					? "border-emerald-500/30 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/[0.04]"
+					: "border-edge bg-surface-card hover:border-edge-focus"
 			} ${revealed ? "lp-card-anim" : "opacity-0"}`}
 			style={{ animationDelay: revealed ? `${index * 200}ms` : undefined }}
 		>
@@ -1554,21 +1556,21 @@ function FindingCard({
 						<span className={`rounded border px-2 py-0.5 text-[10px] font-medium ${severityClass.label}`}>
 							{severityLabel}
 						</span>
-						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
 							{t(`category_labels.${finding.category}` as never)}
 						</span>
 					</div>
-					<h3 className="mt-1 text-[13px] font-semibold leading-snug text-zinc-100 sm:text-sm">
+					<h3 className="mt-1 text-[13px] font-semibold leading-snug text-content sm:text-sm">
 						{finding.title}
 					</h3>
 					{impact && !isPositive && (
-						<p className="mt-1 font-mono text-[11px] tabular-nums text-red-400/90">
+						<p className="mt-1 font-mono text-[11px] tabular-nums text-rose-600 dark:text-rose-300">
 							{t("impact_estimated")}: ↓ {formatBRL(impact.min_brl_cents)}–{formatBRL(impact.max_brl_cents)}/mês
 						</p>
 					)}
 					{expanded && (
-						<div className="mt-3 space-y-3 border-t border-zinc-800/50 pt-3">
-							<p className="text-[13px] leading-relaxed text-zinc-400 sm:text-sm">
+						<div className="mt-3 space-y-3 border-t border-edge-subtle pt-3">
+							<p className="text-[13px] leading-relaxed text-content-secondary sm:text-sm">
 								{cleanBody}
 							</p>
 							{finding.evidence_refs && finding.evidence_refs.length > 0 && (
@@ -1576,9 +1578,9 @@ function FindingCard({
 									{finding.evidence_refs.map((ref, i) => (
 										<li
 											key={i}
-											className="inline-flex items-center gap-1 rounded border border-zinc-800 bg-zinc-900/60 px-2 py-0.5 text-[11px] text-zinc-400"
+											className="inline-flex items-center gap-1 rounded border border-edge bg-surface-inset px-2 py-0.5 text-[11px] text-content-secondary"
 										>
-											<span className="text-zinc-600">›</span>
+											<span className="text-content-faint">›</span>
 											<span>{ref}</span>
 										</li>
 									))}
@@ -1586,23 +1588,23 @@ function FindingCard({
 							)}
 							{/* Impact hint */}
 							{!isPositive && finding.impact_hint && (
-								<p className="inline-flex items-center gap-1.5 text-xs text-red-400/80">
+								<p className="inline-flex items-center gap-1.5 text-xs text-rose-600 dark:text-rose-300">
 									<span>↳</span>
 									<span>{finding.impact_hint}</span>
 								</p>
 							)}
 							{/* Como corrigir */}
 							{!isPositive && finding.suggestion && (
-								<div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-4 py-3">
-									<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-400">{t("how_to_fix")}</p>
-									<p className="mt-1 text-[13px] leading-relaxed text-zinc-300">{finding.suggestion}</p>
+								<div className="rounded-xl border border-emerald-500/30 bg-emerald-50 px-4 py-3 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]">
+									<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">{t("how_to_fix")}</p>
+									<p className="mt-1 text-[13px] leading-relaxed text-content sm:text-sm">{finding.suggestion}</p>
 								</div>
 							)}
 						</div>
 					)}
 				</div>
 				<ChevronDown
-					className={`mt-1 h-4 w-4 shrink-0 text-zinc-600 transition-transform ${expanded ? "rotate-180" : ""}`}
+					className={`mt-1 h-4 w-4 shrink-0 text-content-faint transition-transform ${expanded ? "rotate-180" : ""}`}
 				/>
 			</button>
 		</li>
@@ -1624,16 +1626,16 @@ function CostSummaryBanner({
 
 	return (
 		<div
-			className={`relative mt-6 overflow-hidden rounded-2xl border border-red-500/20 bg-gradient-to-br from-red-950/30 via-zinc-950 to-zinc-950 px-5 py-5 transition-opacity duration-1000 delay-500 sm:mt-8 sm:px-6 sm:py-6 ${
+			className={`relative mt-6 overflow-hidden rounded-2xl border border-rose-500/30 bg-rose-50 px-5 py-5 transition-opacity duration-1000 delay-500 dark:border-rose-500/30 dark:bg-rose-500/[0.08] sm:mt-8 sm:px-6 sm:py-6 ${
 				revealed ? "opacity-100" : "opacity-0"
 			}`}
 		>
-			<div className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-red-500/10 blur-[80px]" />
+			<div className="pointer-events-none absolute -left-16 -top-16 h-48 w-48 rounded-full bg-rose-500/15 blur-[80px]" />
 			<div className="relative">
-				<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-red-400/80">
+				<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-700 dark:text-rose-300">
 					{t("exposure_label")}
 				</p>
-				<h3 className="mt-2 font-mono text-lg font-semibold leading-tight tabular-nums text-zinc-100 sm:text-2xl">
+				<h3 className="mt-2 font-mono text-lg font-semibold leading-tight tabular-nums text-rose-700 dark:text-rose-200 sm:text-2xl">
 					{t("exposure_text", { count: findings.length + hiddenCount, min: formatBRL(summary.min_brl_cents), max: formatBRL(summary.max_brl_cents) })}
 				</h3>
 			</div>
@@ -1727,18 +1729,18 @@ function LockedFindingCard({
 			<button
 				type="button"
 				onClick={onCheckout}
-				className="group flex w-full items-start gap-2.5 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950/60 px-3 py-3 text-left transition-all hover:border-amber-400/30 hover:bg-amber-500/[0.03] sm:gap-3 sm:px-4 sm:py-4"
+				className="group flex w-full items-start gap-2.5 overflow-hidden rounded-2xl border border-edge bg-surface-card px-3 py-3 text-left transition-all hover:border-amber-500/40 hover:bg-amber-50/40 dark:hover:bg-amber-500/[0.04] sm:gap-3 sm:px-5 sm:py-4"
 			>
-				<Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-amber-400 sm:h-4 sm:w-4" />
+				<Lock className="mt-1 h-3.5 w-3.5 shrink-0 text-content-faint transition-colors group-hover:text-amber-600 dark:group-hover:text-amber-400 sm:h-4 sm:w-4" />
 				<div className="min-w-0 flex-1">
-					<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
+					<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
 						{t(`category_labels.${blurred.category}` as never)}
 					</div>
-					<div className="mt-0.5 truncate text-xs font-medium text-zinc-300 sm:text-sm">
+					<div className="mt-0.5 truncate text-xs font-medium text-content sm:text-sm">
 						{blurred.teaser_title}
 					</div>
 					<div
-						className="mt-1 select-none truncate font-mono text-[10px] tabular-nums text-red-400/90 blur-[4px] sm:text-[11px]"
+						className="mt-1 select-none truncate font-mono text-[10px] tabular-nums text-rose-600 blur-[4px] dark:text-rose-300 sm:text-[11px]"
 						aria-hidden
 					>
 						↓ {fakeImpact}
@@ -2139,13 +2141,25 @@ function ErrorState({
 function severityClasses(severity: MiniFindingSeverity): { dot: string; label: string } {
 	switch (severity) {
 		case "critical":
-			return { dot: "bg-red-400", label: "border-red-500/20 bg-red-500/10 text-red-400" };
+			return {
+				dot: "bg-rose-500",
+				label: "border-rose-500/40 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300",
+			};
 		case "high":
-			return { dot: "bg-orange-400", label: "border-orange-500/20 bg-orange-500/10 text-orange-400" };
+			return {
+				dot: "bg-orange-500",
+				label: "border-orange-500/40 bg-orange-50 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/15 dark:text-orange-300",
+			};
 		case "medium":
-			return { dot: "bg-amber-400", label: "border-amber-500/20 bg-amber-500/10 text-amber-400" };
+			return {
+				dot: "bg-amber-500",
+				label: "border-amber-500/40 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300",
+			};
 		case "positive":
-			return { dot: "bg-emerald-400", label: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400" };
+			return {
+				dot: "bg-emerald-500",
+				label: "border-emerald-500/40 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300",
+			};
 	}
 }
 

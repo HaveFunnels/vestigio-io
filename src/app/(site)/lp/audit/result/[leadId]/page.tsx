@@ -377,7 +377,7 @@ export default function MiniAuditResultPage() {
 						organizationName={lead.organizationName || lead.domain || ""}
 						primaryConcern={lead.primaryConcern ?? null}
 						whyNow={lead.whyNow ?? null}
-						negativeCount={negativeFindings.length}
+						negativeFindings={negativeFindings}
 						blurredCount={blurredFindings.length}
 						revealed={revealed}
 						onCheckout={openCheckout}
@@ -554,11 +554,6 @@ function ResultHeader({
 // when the truth is "blocked behind paywall"). Synthetic content
 // keeps the page DevTools-safe: there are no real values to reveal.
 
-// Hero metric placeholders. Numbers chosen to look plausible at SMB
-// SaaS scale (R$ 5-50k). Rendered blurred — visitor sees a number
-// in a shape they can recognize.
-const PLAN_HERO_FAKE = ["R$ 28.400", "R$ 11.900", "R$ 6.200"];
-
 // Locked next-step pool — title + one-line hint. Server-rendered
 // blurred. Drawn from concerns we actually find in production audits
 // so the SHAPE of the text reads true (long-ish titles, short hints).
@@ -594,7 +589,7 @@ function PlanPreviewSection({
 	organizationName,
 	primaryConcern,
 	whyNow,
-	negativeCount,
+	negativeFindings,
 	blurredCount,
 	revealed,
 	onCheckout,
@@ -604,12 +599,18 @@ function PlanPreviewSection({
 	organizationName: string;
 	primaryConcern: string | null;
 	whyNow: string | null;
-	negativeCount: number;
+	negativeFindings: MiniFinding[];
 	blurredCount: number;
 	revealed: boolean;
 	onCheckout: () => void;
 	launching: boolean;
 }) {
+	const negativeCount = negativeFindings.length;
+	// Real numbers for the 3 hero stat cards. No blur — these are
+	// derived from data the buyer can verify in the leaks list below.
+	const totalLeaks = negativeCount + blurredCount;
+	const impactSummary = summarizeMiniImpact(negativeFindings.map((f) => f.impact));
+	const exposedMaxCents = impactSummary?.max_brl_cents ?? 0;
 	const t = useTranslations("lp.audit_result");
 	const nextStepCount = Math.max(5, Math.ceil((negativeCount + blurredCount) / 2));
 	// Concern-driven narrative spark — first 1-2 sentences personalized.
@@ -661,23 +662,38 @@ function PlanPreviewSection({
 				</h2>
 			</div>
 
-			{/* Hero metric stub — the labels render in full but the values
-			    are server-rendered blurred placeholders. Shimmer was the
-			    wrong primitive here: it signals "API loading" when the
-			    truth is "blocked behind paywall". Blur on synthetic but
-			    coherent values communicates the actual state — there
-			    IS a number, you just have to unlock to see it. */}
+			{/* Hero metric stub — real numbers, no blur. Each card maps to
+			    a value the buyer can verify in other sections of the page
+			    (count = unified leaks list; exposed = CostSummary above;
+			    actions = next_steps below). Showing the actual data is
+			    stronger than hiding it — there is no "paywall reveal"
+			    payoff to be gained by blurring numbers the buyer has
+			    already seen one section ago. */}
 			<div className="mb-6 grid grid-cols-3 gap-3">
-				{[0, 1, 2].map((i) => (
-					<div key={i} className="rounded-xl border border-edge bg-surface-inset p-3">
-						<div className="text-[9px] font-medium uppercase tracking-wider text-content-muted">
-							{t(`plan_preview.hero.label_${i}` as never)}
-						</div>
-						<div className="mt-2 select-none font-mono text-base font-semibold tabular-nums text-content blur-[5px]" aria-hidden>
-							{PLAN_HERO_FAKE[i]}
-						</div>
+				<div className="rounded-xl border border-edge bg-surface-inset p-3">
+					<div className="text-[9px] font-medium uppercase tracking-wider text-content-muted">
+						{t("plan_preview.hero.label_leaks")}
 					</div>
-				))}
+					<div className="mt-2 font-mono text-base font-semibold tabular-nums text-content sm:text-lg">
+						{totalLeaks}
+					</div>
+				</div>
+				<div className="rounded-xl border border-edge bg-surface-inset p-3">
+					<div className="text-[9px] font-medium uppercase tracking-wider text-content-muted">
+						{t("plan_preview.hero.label_exposed")}
+					</div>
+					<div className="mt-2 font-mono text-base font-semibold tabular-nums text-rose-600 dark:text-rose-300 sm:text-lg">
+						{exposedMaxCents > 0 ? formatBRL(exposedMaxCents) : "—"}
+					</div>
+				</div>
+				<div className="rounded-xl border border-edge bg-surface-inset p-3">
+					<div className="text-[9px] font-medium uppercase tracking-wider text-content-muted">
+						{t("plan_preview.hero.label_actions")}
+					</div>
+					<div className="mt-2 font-mono text-base font-semibold tabular-nums text-emerald-600 dark:text-emerald-300 sm:text-lg">
+						{nextStepCount}
+					</div>
+				</div>
 			</div>
 
 			{/* Narrative — 2 sentences visible, rest server-cut */}

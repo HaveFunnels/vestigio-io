@@ -7926,6 +7926,9 @@
 				"preview_badge": "Prévia",
 				"title": "{month} para {org}",
 				"hero": {
+					"label_leaks": "Vazamentos",
+					"label_exposed": "Valor exposto",
+					"label_actions": "Ações abertas",
 					"label_0": "Retido / mês",
 					"label_1": "Capturado / mês",
 					"label_2": "Críticos abertos"

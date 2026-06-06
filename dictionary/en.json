@@ -10045,6 +10045,9 @@
 				"preview_badge": "Preview",
 				"title": "{month} for {org}",
 				"hero": {
+					"label_leaks": "Leaks",
+					"label_exposed": "Exposed value",
+					"label_actions": "Open actions",
 					"label_0": "Retained / mo",
 					"label_1": "Captured / mo",
 					"label_2": "Open critical"

@@ -40,8 +40,12 @@ const STAGE_IDS: readonly StageId[] = [
 	"post_conversion",
 ] as const;
 
-// Same palette as console FunnelIntegrityMap. Conversion stays cyan
-// when clean and flips red when issues land there.
+// Vivid stage palette — fill is the same hue as the outline (per
+// customer feedback "o fill deveria usar a mesma cor do outline").
+// Each stage uses a single color family, mapping clean → /20 fill +
+// /60 border, issues → /30 fill + /80 border. The "negativeBg" name
+// is kept from the parent FunnelIntegrityMap for consistency, even
+// though here it just means "this stage has leaks".
 const STAGE_COLORS: Record<
 	StageId,
 	{
@@ -55,49 +59,49 @@ const STAGE_COLORS: Record<
 	}
 > = {
 	awareness: {
-		bg: "bg-blue-500/10",
-		text: "text-blue-400",
-		border: "border-blue-500/30",
-		activeBg: "bg-blue-500/15",
-		negativeText: "text-blue-300",
-		negativeBg: "bg-blue-500/15",
-		negativeBorder: "border-blue-500/40",
+		bg: "bg-blue-500/20",
+		text: "text-blue-700 dark:text-blue-300",
+		border: "border-blue-500/60",
+		activeBg: "bg-blue-500/25",
+		negativeText: "text-blue-700 dark:text-blue-200",
+		negativeBg: "bg-blue-500/30",
+		negativeBorder: "border-blue-500/80",
 	},
 	consideration: {
-		bg: "bg-violet-500/10",
-		text: "text-violet-400",
-		border: "border-violet-500/30",
-		activeBg: "bg-violet-500/15",
-		negativeText: "text-violet-300",
-		negativeBg: "bg-violet-500/15",
-		negativeBorder: "border-violet-500/40",
+		bg: "bg-violet-500/20",
+		text: "text-violet-700 dark:text-violet-300",
+		border: "border-violet-500/60",
+		activeBg: "bg-violet-500/25",
+		negativeText: "text-violet-700 dark:text-violet-200",
+		negativeBg: "bg-violet-500/30",
+		negativeBorder: "border-violet-500/80",
 	},
 	decision: {
-		bg: "bg-amber-500/10",
-		text: "text-amber-400",
-		border: "border-amber-500/30",
-		activeBg: "bg-amber-500/15",
-		negativeText: "text-amber-300",
-		negativeBg: "bg-amber-500/15",
-		negativeBorder: "border-amber-500/40",
+		bg: "bg-amber-500/20",
+		text: "text-amber-700 dark:text-amber-300",
+		border: "border-amber-500/60",
+		activeBg: "bg-amber-500/25",
+		negativeText: "text-amber-700 dark:text-amber-200",
+		negativeBg: "bg-amber-500/30",
+		negativeBorder: "border-amber-500/80",
 	},
 	conversion: {
-		bg: "bg-cyan-500/10",
-		text: "text-cyan-400",
-		border: "border-cyan-500/30",
-		activeBg: "bg-cyan-500/15",
-		negativeText: "text-red-400",
-		negativeBg: "bg-red-500/10",
-		negativeBorder: "border-red-500/30",
+		bg: "bg-cyan-500/20",
+		text: "text-cyan-700 dark:text-cyan-300",
+		border: "border-cyan-500/60",
+		activeBg: "bg-cyan-500/25",
+		negativeText: "text-rose-700 dark:text-rose-200",
+		negativeBg: "bg-rose-500/30",
+		negativeBorder: "border-rose-500/80",
 	},
 	post_conversion: {
-		bg: "bg-emerald-500/10",
-		text: "text-emerald-400",
-		border: "border-emerald-500/30",
-		activeBg: "bg-emerald-500/15",
-		negativeText: "text-emerald-300",
-		negativeBg: "bg-emerald-500/15",
-		negativeBorder: "border-emerald-500/40",
+		bg: "bg-emerald-500/20",
+		text: "text-emerald-700 dark:text-emerald-300",
+		border: "border-emerald-500/60",
+		activeBg: "bg-emerald-500/25",
+		negativeText: "text-emerald-700 dark:text-emerald-200",
+		negativeBg: "bg-emerald-500/30",
+		negativeBorder: "border-emerald-500/80",
 	},
 };
 
@@ -192,7 +196,7 @@ export default function MiniFunnelMap({
 						<div key={id} className="flex flex-1 items-center">
 							{i > 0 && (
 								<svg
-									className="mx-0.5 h-3 w-3 shrink-0 text-content-faint/50"
+									className="mx-0.5 h-3 w-3 shrink-0 text-content-muted"
 									viewBox="0 0 8 8"
 									fill="none"
 									aria-hidden
@@ -200,7 +204,7 @@ export default function MiniFunnelMap({
 									<path
 										d="M2 1l4 3-4 3"
 										stroke="currentColor"
-										strokeWidth="1"
+										strokeWidth="1.5"
 										strokeLinecap="round"
 										strokeLinejoin="round"
 									/>
@@ -213,7 +217,7 @@ export default function MiniFunnelMap({
 								onClick={() =>
 									setExpandedStage(isExpanded ? null : id)
 								}
-								className={`w-full rounded-lg border px-2 py-3 text-center transition-all ${
+								className={`w-full rounded-xl border-2 px-2 py-3 text-center transition-all ${
 									isExpanded
 										? `${
 												hasIssues
@@ -223,7 +227,7 @@ export default function MiniFunnelMap({
 												hasIssues
 													? colors.negativeBorder
 													: colors.border
-											} ring-1 ring-inset ring-white/5`
+											} ring-2 ring-inset ring-white/10`
 										: `${
 												hasIssues
 													? colors.negativeBg
@@ -231,31 +235,37 @@ export default function MiniFunnelMap({
 											} ${
 												hasIssues
 													? colors.negativeBorder
-													: "border-edge/30"
+													: colors.border
 											}`
 								} ${
 									isClickable
-										? "cursor-pointer hover:border-white/10"
-										: "cursor-default"
+										? "cursor-pointer hover:brightness-110"
+										: "cursor-default opacity-90"
 								}`}
 							>
-								<div className="text-[10px] font-medium uppercase tracking-wider text-content-secondary">
+								<div
+									className={`text-[10px] font-bold uppercase tracking-wider ${
+										hasIssues ? colors.negativeText : colors.text
+									}`}
+								>
 									{t(`stages.${id}`)}
 								</div>
 								{hasIssues ? (
 									<>
 										<div
-											className={`mt-1.5 text-base font-bold ${colors.negativeText}`}
+											className={`mt-1.5 text-lg font-bold tabular-nums ${colors.negativeText}`}
 										>
 											{data.count}
 										</div>
 										{data.impactCents > 0 ? (
-											<div className="font-mono text-[10px] text-content-muted">
+											<div
+												className={`font-mono text-[10px] font-semibold ${colors.negativeText} opacity-80`}
+											>
 												↓ {formatBRL(data.impactCents)}/mês
 											</div>
 										) : (
 											<div
-												className="select-none font-mono text-[10px] text-content-muted blur-[3px]"
+												className={`select-none font-mono text-[10px] font-semibold blur-[3px] ${colors.negativeText} opacity-80`}
 												aria-hidden
 											>
 												↓ R$ 2.400/mês
@@ -263,7 +273,7 @@ export default function MiniFunnelMap({
 										)}
 									</>
 								) : (
-									<div className="mt-1.5 text-xs font-medium text-emerald-400">
+									<div className={`mt-1.5 text-xs font-semibold ${colors.text}`}>
 										{t("ok")}
 									</div>
 								)}

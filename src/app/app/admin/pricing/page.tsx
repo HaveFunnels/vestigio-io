@@ -61,6 +61,43 @@ export default function AdminPricingPage() {
   const [mpSyncStatus, setMpSyncStatus] = useState<string | null>(null);
   const [mpSyncError, setMpSyncError] = useState<string | null>(null);
 
+  // Active payment provider — admin override for which gateway serves
+  // the LP funnel + new signup checkouts. `null` override = use the
+  // env-based default surfaced as `providerDefault`.
+  const [providerOverride, setProviderOverride] = useState<"mercadopago" | "paddle" | null>(null);
+  const [providerDefault, setProviderDefault] = useState<"mercadopago" | "paddle">("mercadopago");
+  const [providerSaving, setProviderSaving] = useState(false);
+  const [providerSaved, setProviderSaved] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/admin/payment-provider")
+      .then((r) => r.json())
+      .then((data) => {
+        setProviderOverride(data.override ?? null);
+        setProviderDefault(data.default ?? "mercadopago");
+      })
+      .catch(() => {});
+  }, []);
+
+  const saveProvider = async (next: "mercadopago" | "paddle") => {
+    setProviderSaving(true);
+    setProviderSaved(false);
+    try {
+      const res = await fetch("/api/admin/payment-provider", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: next }),
+      });
+      if (res.ok) {
+        setProviderOverride(next);
+        setProviderSaved(true);
+        setTimeout(() => setProviderSaved(false), 2000);
+      }
+    } finally {
+      setProviderSaving(false);
+    }
+  };
+
   useEffect(() => {
     fetch("/api/admin/pricing")
       .then((r) => r.json())
@@ -248,6 +285,99 @@ export default function AdminPricingPage() {
           <p className="text-sm text-red-400">{error}</p>
         </div>
       )}
+
+      {/* Active payment provider */}
+      <div className="rounded-lg border border-edge bg-surface-card p-5">
+        <div className="mb-1 flex items-baseline justify-between gap-3">
+          <h2 className="text-sm font-semibold text-content">Active payment provider</h2>
+          {providerSaved && (
+            <span className="inline-flex items-center gap-1.5 rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Saved
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-content-faint">
+          Which gateway runs the LP funnel + new signup checkouts. Default is{" "}
+          <span className="font-mono text-content-muted">{providerDefault}</span>{" "}
+          (resolved from env vars). Setting an override here flips the active
+          gateway without redeploying.
+        </p>
+
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          {([
+            {
+              key: "mercadopago" as const,
+              label: "Mercado Pago",
+              desc: "Pix + cartão. BRL only.",
+            },
+            {
+              key: "paddle" as const,
+              label: "Paddle",
+              desc: "USD/global card checkout.",
+            },
+          ]).map((opt) => {
+            const isActive = (providerOverride ?? providerDefault) === opt.key;
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => saveProvider(opt.key)}
+                disabled={providerSaving}
+                className={`flex flex-col items-start gap-1 rounded-lg border px-4 py-3 text-left transition-colors disabled:opacity-60 ${
+                  isActive
+                    ? "border-emerald-500/50 bg-emerald-500/[0.06]"
+                    : "border-edge bg-surface-card hover:border-edge-focus"
+                }`}
+              >
+                <div className="flex w-full items-center justify-between">
+                  <span className="text-sm font-semibold text-content">
+                    {opt.label}
+                  </span>
+                  {isActive && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                      <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                      Active
+                    </span>
+                  )}
+                  {providerOverride === null && opt.key === providerDefault && (
+                    <span className="text-[10px] text-content-faint">default</span>
+                  )}
+                </div>
+                <span className="text-xs text-content-muted">{opt.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {providerOverride !== null && (
+          <button
+            type="button"
+            onClick={async () => {
+              // Clearing the override = revert to env-based default.
+              setProviderSaving(true);
+              try {
+                const res = await fetch("/api/admin/payment-provider", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ provider: providerDefault }),
+                });
+                if (res.ok) {
+                  setProviderOverride(null);
+                  setProviderSaved(true);
+                  setTimeout(() => setProviderSaved(false), 2000);
+                }
+              } finally {
+                setProviderSaving(false);
+              }
+            }}
+            disabled={providerSaving}
+            className="mt-3 text-xs text-content-faint underline-offset-2 hover:text-content-muted hover:underline disabled:opacity-60"
+          >
+            Reset to env default
+          </button>
+        )}
+      </div>
 
       {/* Plan configs */}
       <div className="rounded-lg border border-edge bg-surface-card">

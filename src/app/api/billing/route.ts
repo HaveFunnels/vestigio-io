@@ -105,7 +105,7 @@ export const GET = withErrorTracking(async function GET() {
   // The billing UI uses userProvider when subscriptionId is set, else
   // activeProvider. Keeps existing Paddle users on Paddle UI without
   // forced migration.
-  const activeProvider = getActiveProvider();
+  const activeProvider = await getActiveProvider();
   const userProvider = user
     ? resolveUserProvider({
         paymentProvider: user.paymentProvider,

@@ -2,9 +2,10 @@
 // Payment Provider Resolver
 //
 // Single point that decides which gateway owns a given user/checkout.
-// Hardcoded to `mercadopago` for now (BRL-only, single market). When
-// we internationalize we'll extend `getActiveProvider` to inspect
-// locale / feature flags before falling through to MP.
+// Default is `mercadopago` (BRL-only, single market). Admin can
+// override via PlatformConfig.payment_provider (see /app/admin/
+// pricing) — useful for switching the LP funnel + new-user signup
+// to Paddle temporarily without flipping env vars.
 //
 // Two distinct concerns this helper separates:
 //
@@ -23,15 +24,39 @@
 // ──────────────────────────────────────────────
 
 import { isMpConfigured } from "@/libs/mp-api";
+import { prisma } from "@/libs/prismaDb";
 
 export type PaymentProvider = "mercadopago" | "paddle";
 
+export const PROVIDER_CONFIG_KEY = "payment_provider";
+
 /**
- * Provider for a brand-new checkout. Until internationalization lands,
- * always returns `mercadopago` when MP is configured, else falls back
- * to `paddle` (so dev environments without MP creds still work).
+ * Provider for a brand-new checkout. Resolution order:
+ *   1. PlatformConfig.payment_provider (admin override, if set)
+ *   2. Default → "mercadopago" if MP env is configured
+ *   3. Fallback → "paddle" (dev environments without MP creds)
+ *
+ * Async because step 1 hits the DB. Cache-safe to call per-request;
+ * the single PlatformConfig row read is cheap and the value rarely
+ * changes outside admin action.
  */
-export function getActiveProvider(): PaymentProvider {
+export async function getActiveProvider(): Promise<PaymentProvider> {
+	const override = await prisma.platformConfig
+		.findUnique({ where: { configKey: PROVIDER_CONFIG_KEY } })
+		.catch(() => null);
+	if (override?.value === "mercadopago" || override?.value === "paddle") {
+		return override.value;
+	}
+	if (isMpConfigured()) return "mercadopago";
+	return "paddle";
+}
+
+/**
+ * Synchronous default for code paths that can't await (e.g. SDK init
+ * helpers). Uses env-based detection only — no DB read. Callers that
+ * need the admin override must use `getActiveProvider()`.
+ */
+export function getDefaultProvider(): PaymentProvider {
 	if (isMpConfigured()) return "mercadopago";
 	return "paddle";
 }

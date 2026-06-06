@@ -96,10 +96,22 @@ async function handlePreapprovalEvent(preapprovalId: string) {
 	// payer id lookup when MP delivers a webhook for a subscription we
 	// didn't create directly (rare, but possible via dashboard ops).
 	let userId: string | null = null;
+	let isPaywall = false; // C23d — extends preapproval ref with "paywall" marker
+	let paywallPlanKey: string | null = null;
+	let paywallCycle: string | null = null;
+	let paywallLeadId: string | null = null;
 	if (sub.external_reference) {
 		const parsed = parseExternalRef(sub.external_reference);
 		if (parsed.tag === "preapproval" && parsed.parts[0]) {
 			userId = parsed.parts[0];
+			// preapproval:<userId>:paywall:<planKey>:<cycle>:<leadIdOrNone>:<nonce>
+			if (parsed.parts[1] === "paywall") {
+				isPaywall = true;
+				paywallPlanKey = parsed.parts[2] ?? null;
+				paywallCycle = parsed.parts[3] ?? null;
+				const lead = parsed.parts[4];
+				paywallLeadId = lead && lead !== "none" ? lead : null;
+			}
 		}
 	}
 	let user = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
@@ -126,7 +138,31 @@ async function handlePreapprovalEvent(preapprovalId: string) {
 		},
 	});
 
-	const org = await findUserOrg(user.id);
+	let org = await findUserOrg(user.id);
+	// Paywall path (C23d): lazy-materialize org + membership when the
+	// user came through /activate and doesn't have one yet. Billing-page
+	// renewals always have an org, so the materialization only happens
+	// for fresh signups.
+	if (!org && isPaywall && paywallPlanKey) {
+		await prisma.$transaction(async (tx) => {
+			const newOrg = await tx.organization.create({
+				data: {
+					name: user.email?.split("@")[0] || "Vestigio",
+					ownerId: user.id,
+					plan: paywallPlanKey!,
+					status: "active",
+				},
+			});
+			await tx.membership.create({
+				data: {
+					userId: user.id,
+					organizationId: newOrg.id,
+					role: "owner",
+				},
+			});
+		});
+		org = await findUserOrg(user.id);
+	}
 	if (!org) {
 		log("preapproval", `user ${user.id} has no org — subscription state saved but not propagated`);
 		return;
@@ -138,6 +174,59 @@ async function handlePreapprovalEvent(preapprovalId: string) {
 			data: { plan: planKey, status: "active" },
 		});
 		log("preapproval.authorized", `org=${org.id} plan=${planKey}`);
+
+		// Paywall path — link the audit lead + send the welcome email.
+		// The handler for one-shot Pix already does this in
+		// reconcilePaywallActivation; the preapproval (card) path needs
+		// the same closing moves so both methods land the buyer in the
+		// same state.
+		if (isPaywall) {
+			if (paywallLeadId) {
+				await prisma.anonymousLead
+					.update({
+						where: { id: paywallLeadId },
+						data: {
+							status: "converted",
+							promotedToUserId: user.id,
+							promotedToOrgId: org.id,
+						},
+					})
+					.catch((err) => {
+						log(
+							"preapproval.lead-link-failed",
+							`leadId=${paywallLeadId} err=${(err as Error).message}`,
+						);
+					});
+			}
+			if (user.email) {
+				try {
+					const { sendPaywallActivatedEmail } = await import(
+						"@/libs/notification-triggers"
+					);
+					let auditDomain: string | null = null;
+					if (paywallLeadId) {
+						const lead = await prisma.anonymousLead.findUnique({
+							where: { id: paywallLeadId },
+							select: { domain: true },
+						});
+						auditDomain = lead?.domain ?? null;
+					}
+					await sendPaywallActivatedEmail({
+						email: user.email,
+						name: user.name ?? user.email.split("@")[0] ?? "",
+						userId: user.id,
+						cycle: paywallCycle === "annually" ? "annually" : "monthly",
+						auditDomain,
+						locale: user.locale,
+					});
+				} catch (err) {
+					log(
+						"preapproval.email-failed",
+						`userId=${user.id} err=${(err as Error).message}`,
+					);
+				}
+			}
+		}
 	} else if (sub.status === "paused") {
 		await prisma.organization.update({
 			where: { id: org.id },

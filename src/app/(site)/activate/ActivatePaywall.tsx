@@ -266,25 +266,32 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 				return;
 			}
 			const data = await res.json();
-			if (data.status === "approved") {
+			// Preapproval response statuses:
+			//   "authorized" → card accepted, subscription live, first
+			//                  charge already taken by MP
+			//   "pending"    → MP couldn't activate synchronously; the
+			//                  webhook will confirm later
+			//   "cancelled"  → declined / cancelled
+			if (data.status === "authorized") {
 				setPayment({ kind: "success" });
 				setTimeout(() => {
 					window.location.href = "/app";
 				}, 1200);
-			} else if (data.status === "rejected" || data.status === "cancelled") {
+			} else if (data.status === "cancelled" || data.status === "rejected") {
 				setPayment({
 					kind: "error",
 					message:
 						"O cartão foi recusado. Verifique com o banco ou tente outro cartão.",
 				});
 			} else {
-				// in_process / pending — keep showing the spinner; the
-				// webhook will activate on confirmation. We don't poll
-				// card status (different from Pix); MP usually clears
-				// cards inside the same request.
+				// pending — MP usually clears card subscriptions
+				// synchronously, but if it doesn't, the webhook will
+				// activate the user. We surface a friendly message
+				// pointing to the inbox in case the email lands first.
 				setPayment({
 					kind: "error",
-					message: "Estamos confirmando seu pagamento. Atualize a página em alguns segundos.",
+					message:
+						"Estamos confirmando sua assinatura. Você receberá um email assim que estiver ativa.",
 				});
 			}
 		} catch (err) {

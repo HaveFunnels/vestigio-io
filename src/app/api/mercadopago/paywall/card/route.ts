@@ -7,8 +7,7 @@ import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
 import {
-	centsToReais,
-	createCardPayment,
+	createPreapproval,
 	isMpConfigured,
 } from "@/libs/mp-api";
 import { getPlanByKey } from "@/libs/plan-config";
@@ -16,20 +15,23 @@ import { getPlanByKey } from "@/libs/plan-config";
 // ──────────────────────────────────────────────
 // POST /api/mercadopago/paywall/card
 //
-// One-shot card charge for the post-signup paywall. Token comes from
-// the MP cardForm client SDK (paywall UI tokenizes locally → posts
-// token here → we charge).
+// Sets up a recurring MP Preapproval for the post-signup paywall.
+// The cardForm SDK tokenizes the card client-side → posts the token
+// here → we mint a Preapproval against the plan's mpPreapprovalPlanId
+// (admin-synced; see /api/admin/mp-sync). MP charges immediately
+// (status=authorized) and then auto-renews every cycle.
 //
-// First-month-only flow:
-//   - This endpoint charges ONE billing period upfront (matches the
-//     Pix path's first-charge semantics).
-//   - Renewal switches to MP Preapproval when the webhook activates
-//     the user's subscription (C22e wires that). The cardholder is
-//     prompted before the second cycle.
+// Why preapproval and not a one-shot payment:
+//   - The buyer ends up with a real subscription that renews without
+//     coming back — what they expect of a SaaS card flow.
+//   - Failure handling (declines, expiries, retries) is handled by
+//     MP + our existing webhook handlers; no separate dunning code.
 //
-// Like the Pix endpoint, no DB row is written here — the webhook
-// (C22e) owns org/membership materialization keyed on the external
-// reference embedded in the payment.
+// External reference shape extends the existing `preapproval:` prefix
+// the billing-page renewal flow uses, with a "paywall" marker so the
+// webhook router can lazy-materialize org + membership for fresh
+// signups (billing-page renewals already have an org):
+//   preapproval:<userId>:paywall:<planKey>:<cycle>:<leadIdOrNone>:<nonce>
 // ──────────────────────────────────────────────
 
 const bodySchema = z.object({
@@ -37,8 +39,10 @@ const bodySchema = z.object({
 	cycle: z.enum(["monthly", "annually"]).default("monthly"),
 	leadId: z.string().optional(),
 	cardTokenId: z.string(),
-	paymentMethodId: z.string(), // "visa" | "master" | "amex" | "elo" | ...
-	installments: z.number().int().min(1).max(12).default(1),
+	// kept on the wire for compat with the C22d client but no longer
+	// used — preapproval picks the payment method off the token.
+	paymentMethodId: z.string().optional(),
+	installments: z.number().int().min(1).max(12).optional(),
 });
 
 const POST = withErrorTracking(
@@ -62,7 +66,7 @@ const POST = withErrorTracking(
 				{ status: 400 },
 			);
 		}
-		const { planKey, cycle, leadId, cardTokenId, paymentMethodId, installments } = parsed.data;
+		const { planKey, cycle, leadId, cardTokenId } = parsed.data;
 
 		const userId = (session.user as any).id as string;
 		const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -75,53 +79,54 @@ const POST = withErrorTracking(
 			return NextResponse.json({ message: "Unknown plan" }, { status: 400 });
 		}
 
-		const monthlyCentsBrl =
-			(plan as any).monthlyPriceCentsBrl ?? plan.monthlyPriceCents;
-		const amountCents =
-			cycle === "annually" ? monthlyCentsBrl * 10 : monthlyCentsBrl;
-		const amountBrl = centsToReais(amountCents);
-
-		if (!amountBrl || amountBrl <= 0) {
+		// Resolve which preapproval plan ID to attach. Admin syncs these
+		// via /api/admin/mp-sync per plan + cycle; without an ID we can't
+		// create the subscription — surface a clean error instead of a
+		// silent 4xx from MP.
+		const preapprovalPlanId =
+			cycle === "annually"
+				? (plan as any).mpAnnualPreapprovalPlanId
+				: (plan as any).mpPreapprovalPlanId;
+		if (!preapprovalPlanId) {
 			return NextResponse.json(
-				{ message: "Plan has no BRL price configured" },
+				{
+					message:
+						"Plano de assinatura não configurado para este ciclo. Tente Pix ou contate o suporte.",
+				},
 				{ status: 503 },
 			);
 		}
 
 		const nonce = crypto.randomBytes(6).toString("hex");
+		// Format extends the existing preapproval ref convention with a
+		// "paywall" marker in slot 1 so the webhook router knows to
+		// lazy-materialize org+membership when no membership exists yet.
+		// Billing-page renewals don't include "paywall" and skip that
+		// branch.
 		const externalReference = [
-			"paywall_card",
+			"preapproval",
 			userId,
+			"paywall",
 			planKey,
 			cycle,
 			leadId ?? "none",
 			nonce,
 		].join(":");
 
-		const description = `Vestigio ${plan.label} — ${cycle === "annually" ? "anual" : "mensal"}`;
+		const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.vestigio.io";
 
-		const mpResp = await createCardPayment({
-			amountBrl,
-			cardTokenId,
-			installments,
-			paymentMethodId,
+		const mpResp = await createPreapproval({
+			preapprovalPlanId,
 			payerEmail: user.email,
-			description,
 			externalReference,
+			backUrl: `${appUrl}/app`,
+			cardTokenId,
 			idempotencyKey: externalReference,
-			metadata: {
-				flow: "paywall",
-				userId,
-				planKey,
-				cycle,
-				leadId: leadId ?? null,
-			},
 		});
 
 		return NextResponse.json({
-			paymentId: String(mpResp.id),
+			preapprovalId: mpResp.id,
 			status: mpResp.status,
-			statusDetail: mpResp.status_detail,
 		});
 	},
 	{ endpoint: "/api/mercadopago/paywall/card", method: "POST" },

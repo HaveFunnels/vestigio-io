@@ -97,14 +97,13 @@ const POST = withErrorTracking(
 
 		const nonce = crypto.randomBytes(6).toString("hex");
 		const externalReference = [
-			"pw",
-			"pix",
+			"paywall_pix",
 			userId,
 			planKey,
 			cycle,
 			leadId ?? "none",
 			nonce,
-		].join("_");
+		].join(":");
 
 		const description = `Vestigio ${plan.label} — ${cycle === "annually" ? "anual" : "mensal"}`;
 

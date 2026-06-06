@@ -180,7 +180,161 @@ async function handlePaymentEvent(paymentId: string) {
 		await reconcileCreditPack(payment, parsed.parts);
 		return;
 	}
+	if (parsed.tag === "paywall_pix" || parsed.tag === "paywall_card") {
+		await reconcilePaywallActivation(payment, parsed.parts);
+		return;
+	}
 	log("payment.unmatched", `id=${payment.id} status=${payment.status} ref=${ref || "(empty)"}`);
+}
+
+// ──────────────────────────────────────────────
+// Paywall activation handler — post-signup MP charge
+//
+// Triggered when MP fires payment.created/updated on a payment
+// originating from /activate (the unified-funnel paywall page).
+//
+// external_reference shape:
+//   paywall_pix:<userId>:<planKey>:<cycle>:<leadIdOrNone>:<nonce>
+//   paywall_card:<userId>:<planKey>:<cycle>:<leadIdOrNone>:<nonce>
+//
+// Side effects on first approved event (idempotent — re-deliveries
+// or polling refetches that hit this path again are no-ops):
+//   1. Lazy-materialize Organization + Membership for the user (they
+//      just signed up; signup doesn't create an org).
+//   2. Update User: paymentProvider=mercadopago, subscriptionId, plan,
+//      currentPeriodEnd, customerId (MP customer).
+//   3. If leadId carries a real value, link the AnonymousLead row
+//      (promotedToUserId / promotedToOrgId) and flip status →
+//      "converted" so the LP funnel telemetry closes properly.
+// ──────────────────────────────────────────────
+async function reconcilePaywallActivation(
+	payment: MpPaymentResponse,
+	parts: string[],
+) {
+	// parts after parseExternalRef strips the tag:
+	// [userId, planKey, cycle, leadIdOrNone, nonce]
+	const [userId, planKey, cycle, leadIdRaw] = parts;
+	if (!userId || !planKey || !cycle) {
+		log("paywall.malformed", `payment ${payment.id} ref parts=${parts.join("|")}`);
+		return;
+	}
+	const leadId = leadIdRaw && leadIdRaw !== "none" ? leadIdRaw : null;
+
+	// Only act on terminal approved status. Pending / in_process events
+	// just log — they'll re-fire when MP clears the payment.
+	if (payment.status !== "approved") {
+		log(
+			"paywall.non-approved",
+			`payment ${payment.id} status=${payment.status} userId=${userId}`,
+		);
+		return;
+	}
+
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: {
+			id: true,
+			email: true,
+			subscriptionId: true,
+			paymentProvider: true,
+		},
+	});
+	if (!user) {
+		log("paywall.user-missing", `payment ${payment.id} userId=${userId}`);
+		return;
+	}
+
+	// Idempotency guard — if THIS payment already drove an activation
+	// (subscriptionId set to this MP payment id), bail. MP retries the
+	// same notification on 5xx + status polls re-issue webhooks, so a
+	// duplicate approved event must not re-extend the period or create
+	// a second org.
+	const mpId = String(payment.id);
+	if (user.subscriptionId === mpId) {
+		log("paywall.dup-approved", `payment ${payment.id} userId=${userId} skipping`);
+		return;
+	}
+
+	// Compute next cycle end. Annual = +365 days, monthly = +30. We
+	// anchor from now; renewal extends from this base on subsequent
+	// cycles (Pix renewal logic in the dunning cron, card preapproval
+	// auto-renews via MP).
+	const days = cycle === "annually" ? 365 : 30;
+	const periodEnd = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+
+	// Lazy org + membership materialization. Single transaction so a
+	// crash mid-write doesn't leave the user with half-state.
+	await prisma.$transaction(async (tx) => {
+		let orgId: string | null = null;
+		const existingMembership = await tx.membership.findFirst({
+			where: { userId: user.id },
+			select: { organizationId: true },
+		});
+
+		if (existingMembership) {
+			orgId = existingMembership.organizationId;
+			// Reactivate the org if it was pending/cancelled.
+			await tx.organization.update({
+				where: { id: orgId },
+				data: { plan: planKey, status: "active" },
+			});
+		} else {
+			const org = await tx.organization.create({
+				data: {
+					name: user.email?.split("@")[0] || "Vestigio",
+					ownerId: user.id,
+					plan: planKey,
+					status: "active",
+				},
+			});
+			orgId = org.id;
+			await tx.membership.create({
+				data: {
+					userId: user.id,
+					organizationId: org.id,
+					role: "owner",
+				},
+			});
+		}
+
+		await tx.user.update({
+			where: { id: user.id },
+			data: {
+				paymentProvider: "mercadopago",
+				subscriptionId: mpId,
+				priceId: planKey,
+				currentPeriodEnd: periodEnd,
+			},
+		});
+
+		// Lead → user link (Path B of the funnel only)
+		if (leadId) {
+			await tx.anonymousLead
+				.update({
+					where: { id: leadId },
+					data: {
+						status: "converted",
+						promotedToUserId: user.id,
+						promotedToOrgId: orgId,
+					},
+				})
+				.catch((err) => {
+					// Lead may have expired and been cleaned up between audit
+					// and payment — that's fine, the activation already
+					// succeeded. Log so it's visible without crashing the
+					// webhook.
+					log(
+						"paywall.lead-link-failed",
+						`payment ${payment.id} leadId=${leadId} err=${(err as Error).message}`,
+					);
+				});
+		}
+	});
+
+	log(
+		"paywall.activated",
+		`payment ${payment.id} userId=${userId} plan=${planKey} cycle=${cycle} leadId=${leadId ?? "-"}`,
+	);
 }
 
 async function reconcilePixCharge(payment: MpPaymentResponse) {

@@ -447,12 +447,18 @@ export function buildCreditPackExternalRef(opts: {
 
 /** Parse an external reference back to its tag for routing in the webhook. */
 export function parseExternalRef(ref: string): {
-	tag: "pixrenew" | "creditpack" | "preapproval" | "unknown";
+	tag: "pixrenew" | "creditpack" | "preapproval" | "paywall_pix" | "paywall_card" | "unknown";
 	parts: string[];
 } {
 	const parts = ref.split(":");
 	const tag = parts[0];
-	if (tag === "pixrenew" || tag === "creditpack" || tag === "preapproval") {
+	if (
+		tag === "pixrenew" ||
+		tag === "creditpack" ||
+		tag === "preapproval" ||
+		tag === "paywall_pix" ||
+		tag === "paywall_card"
+	) {
 		return { tag, parts: parts.slice(1) };
 	}
 	return { tag: "unknown", parts };

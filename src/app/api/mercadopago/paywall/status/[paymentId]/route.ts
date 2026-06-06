@@ -44,9 +44,13 @@ const GET = withErrorTracking(
 
 		// Verify the payment belongs to THIS user — the external_reference
 		// carries the userId so we can compare without an extra DB read.
+		// Format: paywall_pix:userId:planKey:cycle:leadIdOrNone:nonce
 		const ref = payment.external_reference ?? "";
 		const sessionUserId = (session.user as any).id as string;
-		if (ref.startsWith("pw_") && !ref.includes(`_${sessionUserId}_`)) {
+		if (
+			(ref.startsWith("paywall_pix:") || ref.startsWith("paywall_card:")) &&
+			ref.split(":")[1] !== sessionUserId
+		) {
 			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 		}
 

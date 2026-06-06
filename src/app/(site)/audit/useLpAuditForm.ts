@@ -433,7 +433,7 @@ export default function useLpAuditForm() {
 			trackLpEvent(leadId, "lp_audit_audit_started");
 			const fired = await fireAudit();
 			if (fired) {
-				router.push(`/lp/audit/result/${leadId}`);
+				router.push(`/audit/result/${leadId}`);
 			} else {
 				setSubmitting(false);
 				inFlightRef.current = false;

@@ -190,6 +190,26 @@ const nextConfig = {
 			},
 		];
 	},
+	// Preserve external links + ads pointing at the old funnel path.
+	// The mini-audit lived at /lp/audit/* through Wave 22; C22 moved
+	// it to /audit/* to align with the new "single landing at /"
+	// information architecture. 301 here keeps SEO, paid traffic, and
+	// any embedded /lp/audit links in customer-facing emails/comms
+	// working without code changes elsewhere.
+	async redirects() {
+		return [
+			{
+				source: "/lp/audit",
+				destination: "/audit",
+				permanent: true,
+			},
+			{
+				source: "/lp/audit/:path*",
+				destination: "/audit/:path*",
+				permanent: true,
+			},
+		];
+	},
 };
 
 module.exports = withNextIntl(nextConfig);

@@ -9,15 +9,15 @@ import Link from "next/link";
 //
 // Public, shareable result page for admin-initiated prospect scans.
 // Visited by people who got a cold email or LinkedIn DM with the
-// share link. Different from /lp/audit/result/[leadId] in that:
+// share link. Different from /audit/result/[leadId] in that:
 //
 //   - No "Unlock the full audit" CTA (this is outreach, not closing)
-//   - Soft CTA at the bottom: "Want this for your own site?" → /lp/audit
+//   - Soft CTA at the bottom: "Want this for your own site?" → /audit
 //   - Token is 32 hex chars, not guessable
 //   - Reads from ProspectScan via /api/scans/[token]
 //
 // Goal: visitor sees the audit, recognizes their site, gets curious,
-// clicks through to /lp/audit to run their own.
+// clicks through to /audit to run their own.
 // ──────────────────────────────────────────────
 
 interface ScanData {
@@ -109,7 +109,7 @@ export default function PublicScanPage() {
 					</div>
 					<h1 className="text-xl font-semibold text-zinc-100">{error}</h1>
 					<Link
-						href="/lp/audit"
+						href="/audit"
 						className="mt-6 inline-block rounded-md bg-emerald-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
 					>
 						Run a free audit on your site
@@ -307,7 +307,7 @@ export default function PublicScanPage() {
 							</p>
 							<div className="mt-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
 								<Link
-									href="/lp/audit"
+									href="/audit"
 									className="rounded-xl bg-emerald-500 px-7 py-3 text-center text-sm font-semibold text-emerald-950 shadow-[0_0_30px_rgba(16,185,129,0.25)] transition-all hover:bg-emerald-400 hover:shadow-[0_0_40px_rgba(16,185,129,0.4)]"
 								>
 									Start my free audit →

@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // ──────────────────────────────────────────────
 // Lead Form Anti-Bot Defense Stack
 //
-// Multi-layer defenses for the /lp/audit funnel that don't show ANY
+// Multi-layer defenses for the /audit funnel that don't show ANY
 // captcha to the user (zero friction). The goal isn't to stop a
 // determined adversary — it's to make automated abuse uneconomical
 // while keeping the human path completely smooth.
@@ -27,7 +27,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // ──────────────────────────────────────────────
 // 1. Form session token (HMAC)
 //
-// Issued when the visitor lands on /lp/audit. Encodes IP + ts. Verified
+// Issued when the visitor lands on /audit. Encodes IP + ts. Verified
 // on every step submission. Expires after 30 min so the bot can't reuse
 // a leaked token indefinitely.
 // ──────────────────────────────────────────────

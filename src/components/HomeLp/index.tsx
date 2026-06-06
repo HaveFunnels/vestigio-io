@@ -20,10 +20,10 @@ const CallToAction = dynamic(() => import("@/components/Home/CallToAction"));
 //
 // Identical to Home except:
 // 1. Hero uses `homepage.hero_lp` i18n namespace
-// 2. All CTAs point to `/lp/audit` instead of `/auth/signup`
+// 2. All CTAs point to `/audit` instead of `/auth/signup`
 // ──────────────────────────────────────────────
 
-const LP_CTA_HREF = "/lp/audit";
+const LP_CTA_HREF = "/audit";
 
 const HomeLp = () => {
 	return (

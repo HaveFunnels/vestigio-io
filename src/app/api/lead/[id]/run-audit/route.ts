@@ -6,7 +6,7 @@ import { verifyFormToken } from "@/libs/lead-defense";
 // POST /api/lead/[id]/run-audit
 //
 // Fires the mini-audit worker fire-and-forget. Called by the frontend
-// after step 4 of the /lp/audit form is persisted (PATCH .../step/4
+// after step 4 of the /audit form is persisted (PATCH .../step/4
 // returned ok). Returns immediately so the frontend can redirect to
 // the result page where polling takes over.
 //

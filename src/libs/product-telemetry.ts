@@ -36,7 +36,7 @@ export const PRODUCT_EVENT_TYPES = new Set<string>([
 	"chat_context_attached",
 	"chat_context_removed",
 	// Wave-22.6 — LP audit funnel (anonymous; leadId-keyed). These
-	// fire from /lp/audit + the result page. Same table; the admin
+	// fire from /audit + the result page. Same table; the admin
 	// platform can pivot on event prefix to render conversion funnels.
 	"lp_audit_landing",
 	"lp_audit_form_step",

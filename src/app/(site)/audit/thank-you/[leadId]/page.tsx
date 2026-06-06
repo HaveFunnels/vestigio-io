@@ -3,19 +3,19 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import type { LandingPreview } from "../../../../../../../workers/ingestion/landing-preview";
+import type { LandingPreview } from "../../../../../../workers/ingestion/landing-preview";
 import type {
 	MiniFinding,
 	BlurredFinding,
 	MiniFindingSeverity,
-} from "../../../../../../../workers/ingestion/mini-audit-findings";
+} from "../../../../../../workers/ingestion/mini-audit-findings";
 import {
 	formatBRL,
 	summarizeMiniImpact,
-} from "../../../../../../../packages/impact/mini-impact";
+} from "../../../../../../packages/impact/mini-impact";
 
 // ──────────────────────────────────────────────
-// /lp/audit/thank-you/[leadId] — Post-checkout Bridge
+// /audit/thank-you/[leadId] — Post-checkout Bridge
 //
 // Visitor lands here after Paddle Checkout returns successUrl. Purpose
 // is twofold:
@@ -251,7 +251,7 @@ export default function LeadThankYouPage() {
 								Recap do diagnóstico
 							</h2>
 							<Link
-								href={`/lp/audit/result/${leadId}`}
+								href={`/audit/result/${leadId}`}
 								className="text-xs text-zinc-500 transition-colors hover:text-zinc-300"
 							>
 								Abrir report completo →

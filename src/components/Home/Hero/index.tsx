@@ -100,7 +100,7 @@ const TrailLayer = () => (
  * Section
  * ──────────────────────────────────────────────────────────────── */
 
-const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/lp/audit" }: { i18nNamespace?: string; primaryCtaHref?: string } = {}) => {
+const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/audit" }: { i18nNamespace?: string; primaryCtaHref?: string } = {}) => {
 	const t = await getTranslations(i18nNamespace);
 	const pills = t.raw("pills") as Pill[];
 

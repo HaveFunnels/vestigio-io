@@ -3,7 +3,7 @@
  * every event through /api/lead/{id}/track which lands them in the
  * shared ProductEvent table with leadId set + userId/orgId null.
  *
- * Designed to be called freely from anywhere in /lp/audit — never
+ * Designed to be called freely from anywhere in /audit — never
  * throws, never blocks, never serialises tracking work.
  */
 

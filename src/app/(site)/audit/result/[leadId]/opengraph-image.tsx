@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 // ──────────────────────────────────────────────
-// Dynamic OpenGraph image — /lp/audit/result/[leadId]
+// Dynamic OpenGraph image — /audit/result/[leadId]
 //
 // Next.js file convention: this file becomes a route that serves
 // a 1200x630 PNG. The image is regenerated per leadId, cached at

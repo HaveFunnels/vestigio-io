@@ -13,9 +13,9 @@
  *   - Audit-runner heal cron (60s) — recovers AuditCycles whose worker
  *     died (process restart, crash). Boots once on startup, then runs
  *     periodically. See apps/audit-runner/run-cycle.ts.
- *   - AnonymousLead cleanup cron (1h) — deletes /lp/audit lead drafts
+ *   - AnonymousLead cleanup cron (1h) — deletes /audit lead drafts
  *     that have passed their expiresAt timestamp. Keeps the lead table
- *     bounded and respects the data retention promise on /lp/audit.
+ *     bounded and respects the data retention promise on /audit.
  *   - Behavioral rate-limit prune (5m) — Wave 0.2 in-memory rate
  *     buckets for /api/behavioral/ingest. Just stops the Map from
  *     growing forever; doesn't touch DB.

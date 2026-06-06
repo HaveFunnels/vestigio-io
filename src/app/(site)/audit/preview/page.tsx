@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * /lp/audit/preview — dev-only scenario picker.
+ * /audit/preview — dev-only scenario picker.
  *
  * Lets us inspect the mini-audit pages (loading + result) without
  * walking through the funnel each time. Each scenario links to
- * `/lp/audit/result/<leadId>?preview=<id>&theme=<light|dark>`,
+ * `/audit/result/<leadId>?preview=<id>&theme=<light|dark>`,
  * which the result page short-circuits with mocked data.
  *
  * In production this route still renders, but the result page
@@ -85,7 +85,7 @@ export default function PreviewPicker() {
 					{PREVIEW_SCENARIO_LIST.map((s) => (
 						<Link
 							key={s.id}
-							href={`/lp/audit/result/${s.lead.id}?preview=${s.id}&theme=${theme}`}
+							href={`/audit/result/${s.lead.id}?preview=${s.id}&theme=${theme}`}
 							className="group block rounded-2xl border border-edge bg-surface-card p-5 transition-all hover:border-emerald-500/50 hover:bg-emerald-50/40 dark:hover:bg-emerald-500/5"
 						>
 							<div className="mb-1.5 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">

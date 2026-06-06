@@ -14,8 +14,8 @@ function safeJsonParse(value: string | null | undefined): unknown {
 // GET /api/lead/[id]
 //
 // Public endpoint used by:
-//   1. /lp/audit form to resume mid-step (refresh-tolerant)
-//   2. /lp/audit/result/[leadId] to poll status while audit runs
+//   1. /audit form to resume mid-step (refresh-tolerant)
+//   2. /audit/result/[leadId] to poll status while audit runs
 //   3. The OG image generator (opengraph-image.tsx) to read preview
 //
 // Returns lead state + (when audit_complete) the linked MiniAuditResult.

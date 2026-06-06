@@ -5,7 +5,7 @@ import { issueFormToken } from "@/libs/lead-defense";
 // ──────────────────────────────────────────────
 // POST /api/lead/start
 //
-// Called when the visitor lands on /lp/audit. Creates an empty
+// Called when the visitor lands on /audit. Creates an empty
 // AnonymousLead row in `draft` status and returns:
 //   - leadId  → used as the path/state key for the multi-step form
 //   - formToken → HMAC token required by every subsequent step submit

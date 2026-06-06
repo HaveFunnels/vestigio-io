@@ -5,7 +5,7 @@
  * without spinning up a real lead through the funnel each time.
  *
  * Gated by `process.env.NODE_ENV !== "production"` at the
- * consuming sites. Delete this whole file (and `/lp/audit/preview`)
+ * consuming sites. Delete this whole file (and `/audit/preview`)
  * once the design has been validated end-to-end.
  */
 

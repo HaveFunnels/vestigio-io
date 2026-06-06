@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /lp/audit — 3-screen lead form.
+ * /audit — 3-screen lead form.
  *
  * Screen 1: Domain (no authorization checkbox)
  * Screen 2: Business type (cards, auto-advance)

@@ -6,7 +6,7 @@ import { Metadata } from "next";
 //
 // Sister page to "/" (home). Identical sections for now (per product
 // brief: "it's just an exact copy of the home for now"), but every
-// primary CTA points to the anonymous lead funnel /lp/audit instead
+// primary CTA points to the anonymous lead funnel /audit instead
 // of /auth/signup.
 //
 // SEO: noindex on purpose. We don't want this page competing with

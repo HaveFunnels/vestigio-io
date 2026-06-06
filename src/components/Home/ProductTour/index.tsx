@@ -601,7 +601,7 @@ interface ProductTourProps {
 	primaryCtaHref?: string;
 }
 
-export default function ProductTour({ primaryCtaHref = "/lp/audit" }: ProductTourProps) {
+export default function ProductTour({ primaryCtaHref = "/audit" }: ProductTourProps) {
 	const t = useTranslations("homepage.product_tour");
 	const tg = useTranslations("homepage.product_tour.guided");
 	const [currentStep, setCurrentStep] = useState<Step>(0);

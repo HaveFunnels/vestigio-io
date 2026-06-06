@@ -13,7 +13,7 @@ import { normalizeDomain, validateLeadDomain } from "@/libs/lead-validation";
 // POST → create a new scan, dispatch the worker fire-and-forget
 //
 // Admin-only. Both routes go through the same admin role check.
-// Domains are validated through the same blocklist used by /lp/audit
+// Domains are validated through the same blocklist used by /audit
 // (no FAANG, no IPs, no localhost) — admins can audit anything else
 // even if the domain isn't owned by them.
 // ──────────────────────────────────────────────

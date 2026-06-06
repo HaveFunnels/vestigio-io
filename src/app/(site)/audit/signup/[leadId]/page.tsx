@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * /lp/audit/signup/[leadId] — STUB page (Mercado Pago path)
+ * /audit/signup/[leadId] — STUB page (Mercado Pago path)
  *
  * Final destination for the LP funnel when paymentProvider =
  * "mercadopago". The real flow is mini-audit → account creation

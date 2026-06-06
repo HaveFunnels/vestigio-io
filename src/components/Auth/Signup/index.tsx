@@ -46,20 +46,38 @@ export default function Signup() {
 	// kept it. Empty when they arrived without one (organic /auth/signup).
 	const [stashedDomain, setStashedDomain] = useState<string | null>(null);
 
-	// Persist domain from MiniCalc
+	// Post-signup destination. Defaults to /app (the existing console).
+	// LP funnel callers pass ?callbackUrl=/audit/paywall/[leadId] so
+	// new users land on the paywall after the account is created instead
+	// of the console. Validated to stay on-origin — any external URL
+	// silently falls back to the safe default.
+	const rawCallback = searchParams?.get("callbackUrl") ?? "";
+	const callbackUrl = rawCallback.startsWith("/") && !rawCallback.startsWith("//")
+		? rawCallback
+		: "/app";
+
+	// Persist domain from MiniCalc + leadId from the LP funnel
 	useEffect(() => {
 		const domain = searchParams.get("domain");
 		if (domain) {
 			try { localStorage.setItem("vestigio_onboard_domain", domain); } catch {}
 			setStashedDomain(domain);
-			return;
+		} else {
+			// Re-display the previously stashed domain so a refresh on the
+			// signup page doesn't make the carried context invisible.
+			try {
+				const saved = localStorage.getItem("vestigio_onboard_domain");
+				if (saved) setStashedDomain(saved);
+			} catch {}
 		}
-		// Re-display the previously stashed domain so a refresh on the
-		// signup page doesn't make the carried context invisible.
-		try {
-			const saved = localStorage.getItem("vestigio_onboard_domain");
-			if (saved) setStashedDomain(saved);
-		} catch {}
+
+		// LP funnel — stash leadId for the paywall page to recover after
+		// signup. The paywall reads it to attach the charge to the
+		// originating lead (lead → user conversion tracking).
+		const leadId = searchParams.get("leadId");
+		if (leadId) {
+			try { localStorage.setItem("vestigio_lp_leadId", leadId); } catch {}
+		}
 	}, [searchParams]);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

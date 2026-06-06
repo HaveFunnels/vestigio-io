@@ -215,13 +215,13 @@ function BusinessTypeSelect({
 
 interface MiniCalculatorProps {
 	// Optional CTA destination override. Default = signup flow.
-	// /lp variant passes "/lp/audit" so the result-state CTA jumps
+	// /lp variant passes "/audit" so the result-state CTA jumps
 	// straight into the anonymous lead funnel.
 	primaryCtaHref?: string;
 }
 
 const MiniCalculator = ({
-	primaryCtaHref = "/lp/audit",
+	primaryCtaHref = "/audit",
 }: MiniCalculatorProps = {}) => {
 	const t = useTranslations("homepage.mini_calculator");
 	const tCard = useTranslations("homepage.mini_calc_card");

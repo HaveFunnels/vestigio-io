@@ -57,7 +57,7 @@ export async function POST(
 		leadId: lead.id,
 		event: body.event,
 		properties: body.properties ?? null,
-		pathname: typeof body.pathname === "string" ? body.pathname : "/lp/audit",
+		pathname: typeof body.pathname === "string" ? body.pathname : "/audit",
 		sessionId: typeof body.sessionId === "string" ? body.sessionId : lead.id,
 	});
 

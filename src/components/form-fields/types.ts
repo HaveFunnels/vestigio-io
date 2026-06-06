@@ -1,7 +1,7 @@
 // ──────────────────────────────────────────────
 // Shared form field type definitions.
 //
-// These types are referenced by both /onboard and /lp/audit so the two
+// These types are referenced by both /onboard and /audit so the two
 // funnels stay in lockstep. If a field's domain changes (e.g. new
 // business model added), edit it here and both forms pick it up.
 // ──────────────────────────────────────────────
@@ -36,7 +36,7 @@ export const CONVERSION_MODEL_OPTIONS: ConversionModelOption[] = [
 
 // ──────────────────────────────────────────────
 // Revenue parser — accepts "$50k", "50000", "1.5m", "R$ 200k" etc.
-// Returns null on unparseable input. Used by both onboard and /lp/audit
+// Returns null on unparseable input. Used by both onboard and /audit
 // to normalize the optional monthly revenue field into a number.
 // ──────────────────────────────────────────────
 export function parseRevenue(value: string): number | null {

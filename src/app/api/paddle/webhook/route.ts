@@ -544,7 +544,7 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 //       creates Org+Env+BusinessProfile BEFORE the checkout → Paddle
 //       checkout opens with custom_data { organizationId, userId,
 //       onboarding: 'true' }. We just activate the existing rows.
-//   (b) /lp anonymous funnel — visitor fills 4-step form on /lp/audit
+//   (b) /lp anonymous funnel — visitor fills 4-step form on /audit
 //       → mini-audit → result page → Paddle checkout opens with
 //       custom_data { leadId, lpFunnel: 'true' }. NO Org/Env exist
 //       yet. We have to create them from the AnonymousLead row.

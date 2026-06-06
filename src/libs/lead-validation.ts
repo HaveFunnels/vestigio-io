@@ -216,7 +216,7 @@ export function validateLeadRevenue(revenue: number | null | undefined): Validat
 // ──────────────────────────────────────────────
 // Domain blocklist
 //
-// Top-100 sites that we never let anyone audit via /lp/audit:
+// Top-100 sites that we never let anyone audit via /audit:
 //   - Prevents abuse (auditing google.com 10000 times)
 //   - Prevents the cache cap from being poisoned
 //   - Prevents the prospect from being told "your audit of facebook.com is ready"

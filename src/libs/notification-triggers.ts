@@ -373,7 +373,7 @@ export async function sendMiniAuditEmail(args: {
 	totalImpactMax: number;
 }): Promise<void> {
 	const baseUrl = getBaseUrl();
-	const resultUrl = `${baseUrl}/lp/audit/result/${args.leadId}`;
+	const resultUrl = `${baseUrl}/audit/result/${args.leadId}`;
 	const negativeCount = args.findings.filter((f) => f.severity !== "positive").length;
 
 	const findingsHtml = buildFindingsHtml(

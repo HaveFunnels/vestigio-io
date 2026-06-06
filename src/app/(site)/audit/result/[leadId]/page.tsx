@@ -13,16 +13,16 @@ declare global {
 		Paddle: any;
 	}
 }
-import type { LandingPreview } from "../../../../../../../workers/ingestion/landing-preview";
+import type { LandingPreview } from "../../../../../../workers/ingestion/landing-preview";
 import type {
 	MiniFinding,
 	BlurredFinding,
 	MiniFindingSeverity,
-} from "../../../../../../../workers/ingestion/mini-audit-findings";
+} from "../../../../../../workers/ingestion/mini-audit-findings";
 import {
 	formatBRL,
 	summarizeMiniImpact,
-} from "../../../../../../../packages/impact/mini-impact";
+} from "../../../../../../packages/impact/mini-impact";
 import logoDark from "@/../public/images/logo/logo.png";
 import logoLight from "@/../public/images/logo/logo-light.png";
 import { trackLpEvent } from "@/lib/lp-audit-track";
@@ -31,7 +31,7 @@ import MiniFunnelMap from "@/components/lp/MiniFunnelMap";
 import CopilotPanel from "@/components/lp/CopilotPanel";
 
 // ──────────────────────────────────────────────
-// /lp/audit/result/[leadId] — Mini-Audit Result
+// /audit/result/[leadId] — Mini-Audit Result
 // ──────────────────────────────────────────────
 
 const POLL_INTERVAL_MS = 3000;
@@ -78,7 +78,7 @@ export default function MiniAuditResultPage() {
 	const leadId = params?.leadId;
 
 	// ── Dev-only preview mode ──
-	// /lp/audit/result/anything?preview=<scenarioId>&theme=light|dark
+	// /audit/result/anything?preview=<scenarioId>&theme=light|dark
 	// short-circuits the fetch + polling and renders mocked data.
 	// Production builds ignore the query param entirely.
 	const previewScenarioId =
@@ -126,7 +126,7 @@ export default function MiniAuditResultPage() {
 				token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN,
 				eventCallback: (event: any) => {
 					if (event.name === "checkout.completed" && event.data?.status === "completed") {
-						router.push(`/lp/audit/thank-you/${leadId}`);
+						router.push(`/audit/thank-you/${leadId}`);
 					}
 				},
 			});
@@ -171,7 +171,7 @@ export default function MiniAuditResultPage() {
 			// open a checkout overlay anymore for MP — account creation
 			// happens first, paywall is the next page.
 			trackLpEvent(leadId, "lp_audit_cta_clicked");
-			window.location.href = `/lp/audit/signup/${leadId}`;
+			window.location.href = `/audit/signup/${leadId}`;
 			return;
 		}
 		if (!leadId || !window.Paddle || !paddleReady) {
@@ -195,7 +195,7 @@ export default function MiniAuditResultPage() {
 				items: [{ priceId: LP_PRICE_ID, quantity: 1 }],
 				...(checkoutEmail ? { customer: { email: checkoutEmail } } : {}),
 				customData: { leadId, lpFunnel: "true" },
-				successUrl: `${window.location.origin}/lp/audit/thank-you/${leadId}`,
+				successUrl: `${window.location.origin}/audit/thank-you/${leadId}`,
 				settings: { displayMode: "overlay" },
 			});
 		} catch (err) {
@@ -210,7 +210,7 @@ export default function MiniAuditResultPage() {
 		if (!leadId) return;
 		const link = document.createElement("link");
 		link.rel = "canonical";
-		link.href = `${window.location.origin}/lp/audit/result/${leadId}`;
+		link.href = `${window.location.origin}/audit/result/${leadId}`;
 		document.head.appendChild(link);
 		return () => { document.head.removeChild(link); };
 	}, [leadId]);
@@ -1906,7 +1906,7 @@ function AuditingState({
 					</div>
 					<div className="mt-6 flex flex-col items-center gap-3">
 						<a
-							href="/lp/audit"
+							href="/audit"
 							className="rounded-xl bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_24px_-12px_rgba(16,185,129,0.5)] transition-colors hover:bg-emerald-500"
 						>
 							{t("timeout_retry")}
@@ -2268,7 +2268,7 @@ function CountdownTimer({ computedAt }: { computedAt: string }) {
 // Floating widget shown when the page is rendered in preview mode.
 // Lets the reviewer flip the theme and jump back to the picker
 // without losing context. Whole component (and its consumers)
-// gets deleted alongside `/lp/audit/preview`.
+// gets deleted alongside `/audit/preview`.
 function PreviewToggle({
 	scenarioId,
 	theme,
@@ -2291,7 +2291,7 @@ function PreviewToggle({
 				{theme === "light" ? "→ dark" : "→ light"}
 			</a>
 			<a
-				href="/lp/audit/preview"
+				href="/audit/preview"
 				className="rounded-full border border-zinc-700 px-2.5 py-1 hover:border-emerald-400 hover:text-emerald-300"
 			>
 				← picker

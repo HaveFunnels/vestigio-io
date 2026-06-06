@@ -17,7 +17,7 @@ import { parseRevenue } from "@/components/form-fields/types";
 // ──────────────────────────────────────────────
 // PATCH /api/lead/[id]/step/[n]
 //
-// Persists the data for a specific step of the /lp/audit form. Each
+// Persists the data for a specific step of the /audit form. Each
 // step submission goes through the full anti-bot defense stack +
 // per-step input validation.
 //

@@ -1667,7 +1667,7 @@ function CostSummaryBanner({
 
 	return (
 		<div
-			className={`relative mt-6 overflow-hidden rounded-2xl border border-rose-500/30 bg-rose-50 px-5 py-5 transition-opacity duration-1000 delay-500 dark:border-rose-500/30 dark:bg-rose-500/[0.08] sm:mt-8 sm:px-6 sm:py-6 ${
+			className={`relative mb-8 mt-6 overflow-hidden rounded-2xl border border-rose-500/30 bg-rose-50 px-5 py-5 transition-opacity duration-1000 delay-500 dark:border-rose-500/30 dark:bg-rose-500/[0.08] sm:mb-10 sm:mt-8 sm:px-6 sm:py-6 ${
 				revealed ? "opacity-100" : "opacity-0"
 			}`}
 		>

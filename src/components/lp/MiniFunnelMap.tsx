@@ -40,70 +40,28 @@ const STAGE_IDS: readonly StageId[] = [
 	"post_conversion",
 ] as const;
 
-// Vivid stage palette — fill is the same hue as the outline (per
-// customer feedback "o fill deveria usar a mesma cor do outline").
-// Each stage uses a single color family, mapping clean → /20 fill +
-// /60 border, issues → /30 fill + /80 border. The "negativeBg" name
-// is kept from the parent FunnelIntegrityMap for consistency, even
-// though here it just means "this stage has leaks".
-const STAGE_COLORS: Record<
-	StageId,
-	{
-		bg: string;
-		text: string;
-		border: string;
-		activeBg: string;
-		negativeText: string;
-		negativeBg: string;
-		negativeBorder: string;
-	}
-> = {
-	awareness: {
-		bg: "bg-blue-500/20",
-		text: "text-blue-700 dark:text-blue-300",
-		border: "border-blue-500/60",
-		activeBg: "bg-blue-500/25",
-		negativeText: "text-blue-700 dark:text-blue-200",
-		negativeBg: "bg-blue-500/30",
-		negativeBorder: "border-blue-500/80",
-	},
-	consideration: {
-		bg: "bg-violet-500/20",
-		text: "text-violet-700 dark:text-violet-300",
-		border: "border-violet-500/60",
-		activeBg: "bg-violet-500/25",
-		negativeText: "text-violet-700 dark:text-violet-200",
-		negativeBg: "bg-violet-500/30",
-		negativeBorder: "border-violet-500/80",
-	},
-	decision: {
-		bg: "bg-amber-500/20",
-		text: "text-amber-700 dark:text-amber-300",
-		border: "border-amber-500/60",
-		activeBg: "bg-amber-500/25",
-		negativeText: "text-amber-700 dark:text-amber-200",
-		negativeBg: "bg-amber-500/30",
-		negativeBorder: "border-amber-500/80",
-	},
-	conversion: {
-		bg: "bg-cyan-500/20",
-		text: "text-cyan-700 dark:text-cyan-300",
-		border: "border-cyan-500/60",
-		activeBg: "bg-cyan-500/25",
-		negativeText: "text-rose-700 dark:text-rose-200",
-		negativeBg: "bg-rose-500/30",
-		negativeBorder: "border-rose-500/80",
-	},
-	post_conversion: {
-		bg: "bg-emerald-500/20",
-		text: "text-emerald-700 dark:text-emerald-300",
-		border: "border-emerald-500/60",
-		activeBg: "bg-emerald-500/25",
-		negativeText: "text-emerald-700 dark:text-emerald-200",
-		negativeBg: "bg-emerald-500/30",
-		negativeBorder: "border-emerald-500/80",
-	},
-};
+// Two states only — clean and issue. Single accent (rose) for any
+// stage with at least one leak, neutral surface for everything else.
+// The original rainbow palette read as "AI generated" (per customer
+// feedback "ainda parece AI slop"); editorial direction wants
+// restraint. The per-stage hue can come back later as a secondary
+// signal if needed — for now, color earns its place ONLY by
+// communicating loss.
+const CLEAN_CLASSES = {
+	container: "border-edge bg-surface-inset",
+	expandedContainer:
+		"border-edge bg-surface-inset ring-1 ring-inset ring-content/5",
+	stageLabel: "text-content-muted",
+	stageValue: "text-content",
+} as const;
+
+const ISSUE_CLASSES = {
+	container: "border-rose-500/40 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/[0.08]",
+	expandedContainer:
+		"border-rose-500/60 bg-rose-100 ring-1 ring-inset ring-rose-500/10 dark:border-rose-500/40 dark:bg-rose-500/[0.12]",
+	stageLabel: "text-rose-700/80 dark:text-rose-300/80",
+	stageValue: "text-rose-700 dark:text-rose-200",
+} as const;
 
 // Mini-audit categories → funnel stage. The mapping is conservative:
 // CTA/structure read as consideration; trust/friction as the decision
@@ -174,29 +132,32 @@ export default function MiniFunnelMap({
 	}
 
 	const expandedItems = expandedStage ? stageVisible[expandedStage] : [];
-	const expandedColors = expandedStage ? STAGE_COLORS[expandedStage] : null;
+	const expandedHasIssues = expandedStage
+		? stageData[expandedStage].count > 0
+		: false;
 	const expandedHasLocked =
 		expandedStage && stageData[expandedStage].hasLockedOnly;
 	const expandedLockedCount = expandedStage
 		? stageData[expandedStage].count - expandedItems.length
 		: 0;
+	const expandedClasses = expandedHasIssues ? ISSUE_CLASSES : CLEAN_CLASSES;
 
 	return (
 		<div>
 			{/* Stage card row — horizontal funnel */}
-			<div className="flex items-stretch gap-1">
+			<div className="flex items-stretch gap-1.5">
 				{STAGE_IDS.map((id, i) => {
 					const data = stageData[id];
-					const colors = STAGE_COLORS[id];
 					const isExpanded = expandedStage === id;
 					const isClickable = data.count > 0;
 					const hasIssues = data.count > 0;
+					const classes = hasIssues ? ISSUE_CLASSES : CLEAN_CLASSES;
 
 					return (
 						<div key={id} className="flex flex-1 items-center">
 							{i > 0 && (
 								<svg
-									className="mx-0.5 h-3 w-3 shrink-0 text-content-muted"
+									className="mx-0.5 h-3 w-3 shrink-0 text-content-faint"
 									viewBox="0 0 8 8"
 									fill="none"
 									aria-hidden
@@ -217,63 +178,43 @@ export default function MiniFunnelMap({
 								onClick={() =>
 									setExpandedStage(isExpanded ? null : id)
 								}
-								className={`w-full rounded-xl border-2 px-2 py-3 text-center transition-all ${
-									isExpanded
-										? `${
-												hasIssues
-													? colors.negativeBg
-													: colors.activeBg
-											} ${
-												hasIssues
-													? colors.negativeBorder
-													: colors.border
-											} ring-2 ring-inset ring-white/10`
-										: `${
-												hasIssues
-													? colors.negativeBg
-													: colors.bg
-											} ${
-												hasIssues
-													? colors.negativeBorder
-													: colors.border
-											}`
+								className={`w-full rounded-xl border px-2 py-3 text-center transition-all ${
+									isExpanded ? classes.expandedContainer : classes.container
 								} ${
 									isClickable
-										? "cursor-pointer hover:brightness-110"
-										: "cursor-default opacity-90"
+										? "cursor-pointer hover:brightness-[0.98] dark:hover:brightness-110"
+										: "cursor-default"
 								}`}
 							>
 								<div
-									className={`text-[10px] font-bold uppercase tracking-wider ${
-										hasIssues ? colors.negativeText : colors.text
-									}`}
+									className={`text-[9px] font-semibold uppercase tracking-[0.12em] ${classes.stageLabel}`}
 								>
 									{t(`stages.${id}`)}
 								</div>
 								{hasIssues ? (
 									<>
 										<div
-											className={`mt-1.5 text-lg font-bold tabular-nums ${colors.negativeText}`}
+											className={`mt-1.5 font-[family-name:var(--font-fraunces)] text-2xl font-medium leading-none tabular-nums ${classes.stageValue}`}
 										>
 											{data.count}
 										</div>
 										{data.impactCents > 0 ? (
 											<div
-												className={`font-mono text-[10px] font-semibold ${colors.negativeText} opacity-80`}
+												className={`mt-1 font-mono text-[10px] tabular-nums ${classes.stageValue} opacity-75`}
 											>
-												↓ {formatBRL(data.impactCents)}/mês
+												{formatBRL(data.impactCents)}
 											</div>
 										) : (
 											<div
-												className={`select-none font-mono text-[10px] font-semibold blur-[3px] ${colors.negativeText} opacity-80`}
+												className={`mt-1 select-none font-mono text-[10px] tabular-nums blur-[3px] ${classes.stageValue} opacity-75`}
 												aria-hidden
 											>
-												↓ R$ 2.400/mês
+												R$ 2.400
 											</div>
 										)}
 									</>
 								) : (
-									<div className={`mt-1.5 text-xs font-semibold ${colors.text}`}>
+									<div className={`mt-1.5 text-[11px] font-medium ${classes.stageLabel}`}>
 										{t("ok")}
 									</div>
 								)}
@@ -284,11 +225,11 @@ export default function MiniFunnelMap({
 			</div>
 
 			{/* Expanded stage detail */}
-			{expandedStage && (expandedItems.length > 0 || expandedHasLocked) && expandedColors && (
+			{expandedStage && (expandedItems.length > 0 || expandedHasLocked) && (
 				<div
-					className={`mt-3 rounded-lg border ${expandedColors.negativeBorder} ${expandedColors.negativeBg} p-3`}
+					className={`mt-3 rounded-xl border p-4 ${expandedClasses.container}`}
 				>
-					<div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-content-muted">
+					<div className="mb-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						{t(`stages.${expandedStage}`)} —{" "}
 						{t("findings_count", {
 							visible: expandedItems.length,
@@ -299,16 +240,16 @@ export default function MiniFunnelMap({
 						{expandedItems.map((f) => (
 							<div
 								key={f.id}
-								className="flex items-center gap-3 rounded-md bg-surface-card/60 px-3 py-2 text-left"
+								className="flex items-center gap-3 rounded-lg border border-edge bg-surface-card px-3 py-2 text-left"
 							>
 								<div className="min-w-0 flex-1">
-									<div className="truncate text-xs text-content-secondary">
+									<div className="truncate text-xs text-content">
 										{f.title}
 									</div>
 								</div>
 								{f.impact?.max_brl_cents ? (
-									<span className="shrink-0 font-mono text-[10px] text-content-muted">
-										↓ {formatBRL(f.impact.max_brl_cents)}/mês
+									<span className="shrink-0 font-mono text-[10px] tabular-nums text-rose-600 dark:text-rose-300">
+										{formatBRL(f.impact.max_brl_cents)}
 									</span>
 								) : null}
 							</div>
@@ -317,19 +258,19 @@ export default function MiniFunnelMap({
 							<button
 								type="button"
 								onClick={onUnlock}
-								className="flex w-full items-center gap-3 rounded-md bg-surface-card/40 px-3 py-2 text-left transition-colors hover:bg-surface-card/70"
+								className="flex w-full items-center gap-3 rounded-lg border border-edge bg-surface-card px-3 py-2 text-left transition-colors hover:border-content/30"
 							>
 								<div
-									className="min-w-0 flex-1 select-none truncate text-xs text-content-secondary blur-[5px]"
+									className="min-w-0 flex-1 select-none truncate text-xs text-content blur-[5px]"
 									aria-hidden
 								>
 									Vazamento bloqueado neste estágio
 								</div>
 								<span
-									className="shrink-0 select-none font-mono text-[10px] text-content-muted blur-[4px]"
+									className="shrink-0 select-none font-mono text-[10px] tabular-nums text-content-muted blur-[4px]"
 									aria-hidden
 								>
-									↓ R$ 3.400/mês
+									R$ 3.400
 								</span>
 							</button>
 						)}

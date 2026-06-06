@@ -47,10 +47,9 @@ export default function Signup() {
 	const [stashedDomain, setStashedDomain] = useState<string | null>(null);
 
 	// Post-signup destination. Defaults to /app (the existing console).
-	// LP funnel callers pass ?callbackUrl=/audit/paywall/[leadId] so
-	// new users land on the paywall after the account is created instead
-	// of the console. Validated to stay on-origin — any external URL
-	// silently falls back to the safe default.
+	// LP/Pricing callers pass ?callbackUrl=/activate so new users land on
+	// the paywall after the account is created. Validated to stay
+	// on-origin — any external URL silently falls back to /app.
 	const rawCallback = searchParams?.get("callbackUrl") ?? "";
 	const callbackUrl = rawCallback.startsWith("/") && !rawCallback.startsWith("//")
 		? rawCallback
@@ -77,6 +76,18 @@ export default function Signup() {
 		const leadId = searchParams.get("leadId");
 		if (leadId) {
 			try { localStorage.setItem("vestigio_lp_leadId", leadId); } catch {}
+		}
+		// Pricing → Signup → Paywall path. The pricing CTA passes the
+		// selected plan key + billing cycle so /activate boots already
+		// pre-selected. Stays in localStorage so it survives the OAuth
+		// round-trip (Google/GitHub navigate off-origin).
+		const plan = searchParams.get("plan");
+		if (plan) {
+			try { localStorage.setItem("vestigio_lp_plan", plan); } catch {}
+		}
+		const cycle = searchParams.get("cycle");
+		if (cycle) {
+			try { localStorage.setItem("vestigio_lp_cycle", cycle); } catch {}
 		}
 	}, [searchParams]);
 
@@ -107,7 +118,7 @@ export default function Signup() {
 				setLoading(false);
 			} else if (res?.ok) {
 				toast.success(t("form.success"));
-				window.location.href = "/app";
+				window.location.href = callbackUrl;
 			}
 		} catch (error) {
 			if (error instanceof AxiosError) toast.error(error.response?.data.message);
@@ -117,12 +128,12 @@ export default function Signup() {
 
 	const handleGoogle = () => {
 		if (!integrations.isAuthEnabled) return toast.error(messages.auth);
-		signIn("google", { callbackUrl: "/app" });
+		signIn("google", { callbackUrl });
 	};
 
 	const handleGithub = () => {
 		if (!integrations.isAuthEnabled) return toast.error(messages.auth);
-		signIn("github", { callbackUrl: "/app" });
+		signIn("github", { callbackUrl });
 	};
 
 	return (

@@ -166,12 +166,18 @@ export default function MiniAuditResultPage() {
 			return;
 		}
 		if (activeProvider === "mercadopago") {
-			// MP path: redirect to the post-signup paywall page, which
-			// runs the Pix + cartão tabbed flow (C22). The LP doesn't
-			// open a checkout overlay anymore for MP — account creation
-			// happens first, paywall is the next page.
+			// MP path: account creation FIRST, then paywall. We send the
+			// visitor to the existing /auth/signup with a callbackUrl
+			// pointing at /activate (the Pix + cartão paywall page).
+			// leadId + domain carry over so the paywall can recover the
+			// audit context after the OAuth/email round-trip.
 			trackLpEvent(leadId, "lp_audit_cta_clicked");
-			window.location.href = `/audit/signup/${leadId}`;
+			const params = new URLSearchParams({
+				callbackUrl: "/activate",
+				leadId: leadId ?? "",
+			});
+			if (lead?.domain) params.set("domain", lead.domain);
+			window.location.href = `/auth/signup?${params.toString()}`;
 			return;
 		}
 		if (!leadId || !window.Paddle || !paddleReady) {

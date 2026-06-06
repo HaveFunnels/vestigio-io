@@ -17,8 +17,18 @@ const HomePricing = () => {
   const router = useRouter();
   const { plans, loading, currencySymbol, annualReady } = usePricingPlans();
 
-  const handlePlanSelect = () => {
-    router.push("/auth/signup");
+  const handlePlanSelect = (planId: string, billingCycle: BillingCycle) => {
+    // Path A of the unified funnel: home/pricing → signup → /activate
+    // (paywall). We carry plan + cycle through the signup hop via
+    // search params so /activate boots with the right tab + tier
+    // selected. Signup stashes plan to localStorage to survive the
+    // OAuth round-trip.
+    const params = new URLSearchParams({
+      callbackUrl: "/activate",
+      plan: planId,
+      cycle: billingCycle,
+    });
+    router.push(`/auth/signup?${params.toString()}`);
   };
 
   if (loading) return null;

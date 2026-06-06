@@ -1,10 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import Script from "next/script";
 import { ShieldCheck, Loader2, Check } from "lucide-react";
 import logoLight from "@/../public/images/logo/logo-light.png";
+
+declare global {
+	interface Window {
+		MercadoPago?: any;
+		__mp?: any;
+	}
+}
 
 interface Plan {
 	key: string;
@@ -184,23 +192,138 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 		}
 	};
 
-	// Card flow needs MP cardForm SDK loaded client-side to tokenize the
-	// card before posting to /api/mercadopago/paywall/card. That SDK
-	// wiring lands in a separate commit; for now the button surfaces
-	// a controlled "em construção" state so the page is fully
-	// previewable while the Pix path carries the traffic.
-	const submitCard = async () => {
+	// Card flow — MP SDK tokenizes the raw card data client-side so we
+	// never touch PAN on our server. Two-step network: (1) MP's
+	// /v1/payment_methods/search to resolve paymentMethodId from the
+	// BIN, (2) mp.createCardToken to mint the single-use token, then
+	// POST { cardTokenId, paymentMethodId, ... } to our endpoint.
+	const submitCard = async (form: {
+		number: string;
+		expiry: string;
+		cvv: string;
+		name: string;
+		cpf: string;
+	}) => {
+		if (!mpReady || !window.__mp) {
+			setPayment({
+				kind: "error",
+				message: "Aguarde um momento — sistema de pagamento carregando.",
+			});
+			return;
+		}
 		setPayment({ kind: "card_processing" });
-		await new Promise((r) => setTimeout(r, 600));
-		setPayment({
-			kind: "error",
-			message:
-				"Pagamento por cartão chega em breve. Por enquanto, use Pix — assina na hora.",
-		});
+		try {
+			// Resolve payment method (visa / master / elo / amex) from BIN
+			const bin = form.number.replace(/\D/g, "").slice(0, 8);
+			const pmRes = await window.__mp.getPaymentMethods({ bin });
+			const pm = pmRes?.results?.[0];
+			if (!pm?.id) {
+				setPayment({
+					kind: "error",
+					message: "Cartão não reconhecido. Verifique o número.",
+				});
+				return;
+			}
+
+			// Tokenize
+			const [mm, yy] = form.expiry.split("/").map((s) => s.trim());
+			const token = await window.__mp.createCardToken({
+				cardNumber: form.number.replace(/\D/g, ""),
+				cardholderName: form.name.trim(),
+				cardExpirationMonth: mm,
+				cardExpirationYear: yy?.length === 2 ? `20${yy}` : yy,
+				securityCode: form.cvv.replace(/\D/g, ""),
+				identificationType: "CPF",
+				identificationNumber: form.cpf.replace(/\D/g, ""),
+			});
+			if (!token?.id) {
+				setPayment({
+					kind: "error",
+					message: "Não foi possível validar o cartão. Confira os dados.",
+				});
+				return;
+			}
+
+			// Submit to backend
+			const res = await fetch("/api/mercadopago/paywall/card", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					planKey: selectedPlan?.key ?? "vestigio",
+					cycle,
+					leadId: leadId ?? undefined,
+					cardTokenId: token.id,
+					paymentMethodId: pm.id,
+					installments: 1,
+				}),
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				setPayment({
+					kind: "error",
+					message: err.message ?? "Pagamento falhou. Tente outro cartão.",
+				});
+				return;
+			}
+			const data = await res.json();
+			if (data.status === "approved") {
+				setPayment({ kind: "success" });
+				setTimeout(() => {
+					window.location.href = "/app";
+				}, 1200);
+			} else if (data.status === "rejected" || data.status === "cancelled") {
+				setPayment({
+					kind: "error",
+					message:
+						"O cartão foi recusado. Verifique com o banco ou tente outro cartão.",
+				});
+			} else {
+				// in_process / pending — keep showing the spinner; the
+				// webhook will activate on confirmation. We don't poll
+				// card status (different from Pix); MP usually clears
+				// cards inside the same request.
+				setPayment({
+					kind: "error",
+					message: "Estamos confirmando seu pagamento. Atualize a página em alguns segundos.",
+				});
+			}
+		} catch (err) {
+			setPayment({
+				kind: "error",
+				message: "Erro ao processar o cartão. Tente novamente.",
+			});
+			console.error("[activate.card]", err);
+		}
+	};
+
+	// MP SDK loader — required for card tokenization (createCardToken
+	// + getPaymentMethods). Initialized once on window.__mp; mounted
+	// here at the page level so it's ready by the time the buyer
+	// switches to the Cartão tab.
+	const [mpReady, setMpReady] = useState(false);
+	const initMp = () => {
+		if (typeof window === "undefined") return;
+		if (window.__mp) {
+			setMpReady(true);
+			return;
+		}
+		const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY;
+		if (!publicKey || !window.MercadoPago) return;
+		try {
+			window.__mp = new window.MercadoPago(publicKey, { locale: "pt-BR" });
+			setMpReady(true);
+		} catch (err) {
+			console.error("[activate] MP init failed:", err);
+		}
 	};
 
 	return (
 		<div className="relative min-h-screen bg-surface-shell px-4 py-8 sm:py-12">
+			<Script
+				src="https://sdk.mercadopago.com/js/v2"
+				onLoad={initMp}
+				strategy="afterInteractive"
+			/>
 			{/* Top brand strip */}
 			<div className="mx-auto mb-8 flex max-w-3xl items-center justify-between">
 				<Link href="/" className="flex items-center">
@@ -533,7 +656,13 @@ function CardTab({
 	userName,
 }: {
 	payment: PaymentState;
-	onSubmit: () => void;
+	onSubmit: (form: {
+		number: string;
+		expiry: string;
+		cvv: string;
+		name: string;
+		cpf: string;
+	}) => void;
 	priceCents: number;
 	userEmail: string;
 	userName: string;
@@ -563,7 +692,7 @@ function CardTab({
 		<form
 			onSubmit={(e) => {
 				e.preventDefault();
-				onSubmit();
+				onSubmit(form);
 			}}
 			className="space-y-3"
 		>

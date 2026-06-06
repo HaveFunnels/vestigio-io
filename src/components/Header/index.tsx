@@ -236,7 +236,7 @@ const Header = () => {
 								</Link>
 
 								<Link
-									href='/auth/signup'
+									href='/auth/signup?callbackUrl=/activate'
 									className={`whitespace-nowrap rounded-full border border-white/20 bg-white text-center text-sm font-medium text-black transition-all duration-300 hover:bg-zinc-100 ${
 										compact ? "px-4 py-1.5" : "px-5 py-2"
 									}`}

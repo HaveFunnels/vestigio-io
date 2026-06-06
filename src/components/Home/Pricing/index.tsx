@@ -46,6 +46,9 @@ const HomePricing = () => {
         annualPricingEnabled={annualReady}
       />
       <SocialProof />
+      {/* ROI calculator and the bottom Final CTA both default to the
+          paywall-aware signup URL (see their own files). No override
+          needed here — every "Começar agora" is buying intent now. */}
       <ROICalculator />
       <PricingFAQ />
       <FinalCTA />

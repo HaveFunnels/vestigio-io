@@ -39,7 +39,9 @@ export function ROICalculator({
   locale = "pt-BR",
   heading,
   ctaText,
-  ctaHref = "/auth/signup",
+  // Default routes through the paywall (signup → /activate) per the
+  // unified-funnel architecture.
+  ctaHref = "/auth/signup?callbackUrl=/activate",
 }: ROICalculatorProps) {
   const l = LABELS[locale] ?? LABELS["pt-BR"];
   const resolvedHeading = heading ?? l.heading;

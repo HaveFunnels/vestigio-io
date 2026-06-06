@@ -24,7 +24,10 @@ export function FinalCTA({
   headline = "Pare de escalar no escuro.",
   subheadline = "Descubra onde seu negócio digital está vazando dinheiro. Comece em 60 segundos.",
   primaryLabel = "Começar agora",
-  primaryHref = "/auth/signup",
+  // Default routes through the paywall (signup → /activate) per the
+  // unified-funnel architecture. Every "Começar agora" lands on the
+  // paywall page after account creation.
+  primaryHref = "/auth/signup?callbackUrl=/activate",
   secondaryLabel = "Falar com time",
   secondaryHref = "/support",
   trustBadges = DEFAULT_TRUST_BADGES,

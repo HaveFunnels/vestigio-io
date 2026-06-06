@@ -9914,6 +9914,16 @@
 				"title": "{count, plural, one {# leak found} other {# leaks found}}",
 				"subtitle": "{visible} visible in the preliminary Analysis · {locked} locked in the full Analysis"
 			},
+			"category_labels": {
+				"trust": "Trust",
+				"cta": "Call-to-action",
+				"friction": "Friction",
+				"checkout": "Checkout",
+				"performance": "Speed",
+				"structure": "Page structure",
+				"mobile": "Mobile",
+				"policy": "Policy"
+			},
 			"response_excellent": "Excellent",
 			"response_good": "Good",
 			"response_slow": "Slow",

@@ -555,32 +555,32 @@ function ResultHeader({
 // keeps the page DevTools-safe: there are no real values to reveal.
 
 // Locked next-step pool — title + one-line hint. Server-rendered
-// blurred. Drawn from concerns we actually find in production audits
-// so the SHAPE of the text reads true (long-ish titles, short hints).
+// blurred. Linguagem buyer-friendly (C10) — frases que um dono de
+// SMB lê e entende sem dicionário técnico.
 const PLAN_STEP_FAKE: Array<{ title: string; hint: string }> = [
 	{
-		title: "Reduzir fricção do checkout em 3 etapas",
-		hint: "Impacto estimado: R$ 4.800 – R$ 7.200 / mês",
+		title: "Simplificar as 3 etapas do checkout",
+		hint: "Pode recuperar R$ 4.800 – R$ 7.200 por mês",
 	},
 	{
-		title: "Reescrever CTA principal para outcome-frame",
-		hint: "Impacto estimado: R$ 2.100 – R$ 3.400 / mês",
+		title: "Reescrever o botão principal pra prometer o resultado",
+		hint: "Pode recuperar R$ 2.100 – R$ 3.400 por mês",
 	},
 	{
-		title: "Adicionar prova social verificável no terço inferior",
-		hint: "Impacto estimado: R$ 1.900 – R$ 2.800 / mês",
+		title: "Adicionar 3 depoimentos reais com foto e nome",
+		hint: "Pode recuperar R$ 1.900 – R$ 2.800 por mês",
 	},
 	{
-		title: "Endereçar regressão de velocidade em mobile",
-		hint: "Impacto estimado: R$ 1.400 – R$ 2.100 / mês",
+		title: "Acelerar o site no celular",
+		hint: "Pode recuperar R$ 1.400 – R$ 2.100 por mês",
 	},
 	{
-		title: "Habilitar guest checkout como opção primária",
-		hint: "Impacto estimado: R$ 3.200 – R$ 4.900 / mês",
+		title: "Liberar a opção de comprar sem criar conta",
+		hint: "Pode recuperar R$ 3.200 – R$ 4.900 por mês",
 	},
 	{
-		title: "Conectar Meta Ads para correlação UTM × conversão",
-		hint: "Impacto estimado: R$ 2.600 – R$ 3.800 / mês",
+		title: "Conectar o Meta Ads pra ver quem realmente compra",
+		hint: "Pode recuperar R$ 2.600 – R$ 3.800 por mês",
 	},
 ];
 
@@ -896,13 +896,13 @@ function WorkspacesAccordion({
 					<div className="mb-3 text-[12px] text-content-secondary">
 						{t("workspaces.copy.intro")}
 					</div>
-					<div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+					<div className="space-y-2">
 						{[
-							{ key: "PAS", status: "ok" },
-							{ key: "AIDA", status: "warn" },
-							{ key: "BAB", status: "fail" },
-							{ key: "4P", status: "ok" },
-							{ key: "Cialdini", status: "fail" },
+							{ key: "PAS", status: "ok", desc: "Problema → Agitação → Solução" },
+							{ key: "AIDA", status: "warn", desc: "Atenção → Interesse → Desejo → Ação" },
+							{ key: "BAB", status: "fail", desc: "Antes → Depois → Ponte" },
+							{ key: "4P", status: "ok", desc: "Promessa → Imagem → Prova → Pedido" },
+							{ key: "Cialdini", status: "fail", desc: "6 gatilhos de persuasão (escassez, prova social…)" },
 						].map((fw) => {
 							const config = {
 								ok: { bg: "bg-emerald-50 dark:bg-emerald-500/10", border: "border-emerald-500/40", text: "text-emerald-700 dark:text-emerald-300", symbol: "✓" },
@@ -912,10 +912,13 @@ function WorkspacesAccordion({
 							return (
 								<div
 									key={fw.key}
-									className={`flex items-center justify-between rounded-xl border px-3 py-2 ${config.bg} ${config.border}`}
+									className={`flex items-center justify-between gap-3 rounded-xl border px-3 py-2 ${config.bg} ${config.border}`}
 								>
-									<span className="font-mono text-[11px] font-semibold text-content-secondary">{fw.key}</span>
-									<span className={`font-mono text-[13px] font-bold ${config.text}`}>{config.symbol}</span>
+									<div className="min-w-0 flex-1">
+										<div className="font-mono text-[11px] font-semibold text-content-secondary">{fw.key}</div>
+										<div className="mt-0.5 truncate text-[11px] text-content-muted">{fw.desc}</div>
+									</div>
+									<span className={`shrink-0 font-mono text-[13px] font-bold ${config.text}`}>{config.symbol}</span>
 								</div>
 							);
 						})}
@@ -1063,17 +1066,17 @@ function WorkspaceFindingRow({ title, severity }: { title: string; severity: str
 	);
 }
 
-// Locked rows inside the expanded workspaces. Synthetic-but-plausible
-// titles drawn from the same pool the LockedFindingCard uses, blurred.
+// Locked rows inside the expanded workspaces. Linguagem buyer-
+// friendly (C10) — mesmas regras dos COMMON_BLURRED e do step pool.
 const WORKSPACE_ROW_FAKE = [
-	"Selos de segurança ausentes na finalização",
-	"Microcopy do CTA gera fricção mensurável",
-	"Tap-target principal abaixo de 44 px no mobile",
-	"Carrinho perde estado em transição checkout",
-	"Hierarquia de H1/H2 conflitante no PDP",
-	"Política de privacidade sem data de revisão",
-	"Depoimentos sem link verificável",
-	"Campo telefone obrigatório no cadastro",
+	"Falta selo de segurança na tela de pagamento",
+	"Texto do botão deixa o cliente em dúvida",
+	"Botões pequenos demais pra clicar no celular",
+	"Carrinho perde os itens ao ir pro checkout",
+	"Títulos da página do produto brigam por atenção",
+	"Política de privacidade está desatualizada",
+	"Depoimentos sem foto ou link verificável",
+	"Cadastro pede telefone obrigatoriamente",
 ];
 
 function WorkspaceShimmerRow({ index = 0 }: { index?: number }) {
@@ -1533,7 +1536,7 @@ function FindingCard({
 							{severityLabel}
 						</span>
 						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
-							{finding.category}
+							{t(`category_labels.${finding.category}` as never)}
 						</span>
 					</div>
 					<h3 className="mt-1 text-[13px] font-semibold leading-snug text-zinc-100 sm:text-sm">
@@ -1698,6 +1701,7 @@ function LockedFindingCard({
 	index: number;
 	onCheckout: () => void;
 }) {
+	const t = useTranslations("lp.audit_result");
 	const fakeImpact = LOCKED_IMPACT_FAKE[index % LOCKED_IMPACT_FAKE.length];
 	return (
 		<li>
@@ -1709,7 +1713,7 @@ function LockedFindingCard({
 				<Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-amber-400 sm:h-4 sm:w-4" />
 				<div className="min-w-0 flex-1">
 					<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-600">
-						{blurred.category}
+						{t(`category_labels.${blurred.category}` as never)}
 					</div>
 					<div className="mt-0.5 truncate text-xs font-medium text-zinc-300 sm:text-sm">
 						{blurred.teaser_title}

@@ -7795,6 +7795,16 @@
 				"title": "{count, plural, one {# vazamento encontrado} other {# vazamentos encontrados}}",
 				"subtitle": "{visible} visíveis na Análise preliminar · {locked} bloqueados na Análise completa"
 			},
+			"category_labels": {
+				"trust": "Confiança",
+				"cta": "Botão de ação",
+				"friction": "Fricção",
+				"checkout": "Checkout",
+				"performance": "Velocidade",
+				"structure": "Estrutura da página",
+				"mobile": "Mobile",
+				"policy": "Política"
+			},
 			"response_excellent": "Ótimo",
 			"response_good": "Bom",
 			"response_slow": "Lento",

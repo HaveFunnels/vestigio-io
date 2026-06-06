@@ -64,6 +64,11 @@ export type NotificationEvent =
 	// activation_celebrated:{userId}.
 	| "welcome"
 	| "activation_celebrated"
+	// Post-paywall activation (C23c) — fired by the MP webhook when a
+	// paywall payment is approved and the user's org+membership are
+	// materialized. Lands a transactional "you're in" email so the
+	// buyer has a deliverable they can forward or reference.
+	| "paywall_activated"
 	// Wave 22.6 Step 7 — Monthly Strategy Plan ready notification.
 	// Fired when MonthlyStrategyPlan.status flips from 'generating'
 	// to 'ready' (either via day-1 cron OR first-cycle trigger).
@@ -522,6 +527,11 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 			// celebrated fires once per user when they first mark an
 			// action in-progress. Both have user-level dedup tags so
 			// they can't spam.
+			return true;
+		case "paywall_activated":
+			// Transactional — fires once on first paywall payment
+			// approved. User-level day-tagged dedup, so a duplicate
+			// webhook the same day can't re-send.
 			return true;
 	}
 }

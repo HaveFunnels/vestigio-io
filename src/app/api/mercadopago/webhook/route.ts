@@ -235,6 +235,8 @@ async function reconcilePaywallActivation(
 		select: {
 			id: true,
 			email: true,
+			name: true,
+			locale: true,
 			subscriptionId: true,
 			paymentProvider: true,
 		},
@@ -335,6 +337,40 @@ async function reconcilePaywallActivation(
 		"paywall.activated",
 		`payment ${payment.id} userId=${userId} plan=${planKey} cycle=${cycle} leadId=${leadId ?? "-"}`,
 	);
+
+	// Welcome email — best-effort, never block the webhook return.
+	// The notifyDirect path is idempotent on its own tag, so a retry
+	// of this same payment won't double-send.
+	if (user.email) {
+		try {
+			const { sendPaywallActivatedEmail } = await import(
+				"@/libs/notification-triggers"
+			);
+			// Fetch the audited domain from the lead if available — empty
+			// when this user came through Path A (pricing → signup).
+			let auditDomain: string | null = null;
+			if (leadId) {
+				const lead = await prisma.anonymousLead.findUnique({
+					where: { id: leadId },
+					select: { domain: true },
+				});
+				auditDomain = lead?.domain ?? null;
+			}
+			await sendPaywallActivatedEmail({
+				email: user.email,
+				name: user.name ?? user.email.split("@")[0] ?? "",
+				userId: user.id,
+				cycle: cycle === "annually" ? "annually" : "monthly",
+				auditDomain,
+				locale: user.locale,
+			});
+		} catch (err) {
+			log(
+				"paywall.email-failed",
+				`payment ${payment.id} userId=${userId} err=${(err as Error).message}`,
+			);
+		}
+	}
 }
 
 async function reconcilePixCharge(payment: MpPaymentResponse) {

@@ -258,6 +258,60 @@ export async function sendActivationEmail(
 	});
 }
 
+/**
+ * Post-paywall activation email — sent once when the MP webhook
+ * materializes the user's org+membership after an approved payment
+ * (Pix or card). Idempotent via tag paywall_activated:{userId}:{date}
+ * so a duplicate webhook delivery on the same day doesn't double-send.
+ *
+ * `auditDomain` is optional — when the lead came through /audit the
+ * email mentions that the Analysis is now attached to the account.
+ * When absent (Path A — pricing → signup → paywall) the audit clause
+ * is empty so the email reads as a clean welcome.
+ */
+export async function sendPaywallActivatedEmail(args: {
+	email: string;
+	name: string;
+	userId: string;
+	cycle: "monthly" | "annually";
+	auditDomain?: string | null;
+	locale?: string | null;
+}): Promise<void> {
+	const cycleLabel = args.cycle === "annually" ? "anual" : "mensal";
+	const auditClause = args.auditDomain
+		? `Sua Análise de <strong>${args.auditDomain.replace(/[<>&"']/g, "")}</strong> já foi atribuída à conta.<br/><br/>`
+		: "";
+	const vars = {
+		name: args.name || "",
+		cycleLabel,
+		auditClause,
+	};
+
+	const rendered = renderEmailFromTemplate(
+		"paywall_activated",
+		vars,
+		getBaseUrl(),
+		args.locale,
+	);
+	const smsText = renderSmsFromTemplate(
+		"paywall_activated",
+		vars,
+		args.locale,
+	);
+	if (!rendered || !smsText) return;
+
+	const dayTag = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+	const { notifyDirect } = await import("@/libs/notifications");
+	await notifyDirect({
+		event: "paywall_activated",
+		to: { email: args.email },
+		subject: rendered.subject,
+		bodyHtml: rendered.html,
+		bodyText: smsText,
+		tag: `paywall_activated:${args.userId}:${dayTag}`,
+	});
+}
+
 // ──────────────────────────────────────────────
 // Gap 7: New workspace notification — sent to existing users
 // when a new org is silently attached to their account via

@@ -899,6 +899,71 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 			},
 		},
 	},
+
+	// Post-paywall activation. Sent once when the MP webhook materializes
+	// the buyer's org+membership after an approved Pix or card charge.
+	paywall_activated: {
+		"pt-BR": {
+			sms: {
+				body: "Vestigio: sua conta está ativa. Entre em app.vestigio.io",
+			},
+			email: {
+				subject: "Sua conta Vestigio está ativa",
+				headline: "Bem-vindo, {name}",
+				intro:
+					"Seu pagamento foi confirmado e sua conta Vestigio está pronta.<br/><br/>{auditClause}A primeira cobrança cobre o ciclo <strong>{cycleLabel}</strong>. Você pode cancelar a qualquer momento na página de cobrança.",
+				ctaLabel: "Entrar no Vestigio",
+				ctaPath: "/app",
+				footerNote:
+					"Garantia 4x — recupere 4× o valor pago em 90 dias ou devolvemos. Falamos com você se algo travar.",
+			},
+		},
+		en: {
+			sms: {
+				body: "Vestigio: your account is active. Sign in at app.vestigio.io",
+			},
+			email: {
+				subject: "Your Vestigio account is active",
+				headline: "Welcome, {name}",
+				intro:
+					"Your payment cleared and your Vestigio account is ready.<br/><br/>{auditClause}Your first invoice covers the <strong>{cycleLabel}</strong> cycle. Cancel anytime from the billing page.",
+				ctaLabel: "Sign in to Vestigio",
+				ctaPath: "/app",
+				footerNote:
+					"4× guarantee — recover at least 4× what you paid in 90 days or we refund. We are here if anything sticks.",
+			},
+		},
+		es: {
+			sms: {
+				body: "Vestigio: tu cuenta esta activa. Entra en app.vestigio.io",
+			},
+			email: {
+				subject: "Tu cuenta Vestigio esta activa",
+				headline: "Bienvenido, {name}",
+				intro:
+					"Tu pago se confirmo y tu cuenta Vestigio esta lista.<br/><br/>{auditClause}Tu primera factura cubre el ciclo <strong>{cycleLabel}</strong>. Puedes cancelar cuando quieras desde la pagina de facturacion.",
+				ctaLabel: "Entrar en Vestigio",
+				ctaPath: "/app",
+				footerNote:
+					"Garantia 4x — recupera 4x lo pagado en 90 dias o te lo devolvemos. Avisanos si algo no funciona.",
+			},
+		},
+		de: {
+			sms: {
+				body: "Vestigio: dein Konto ist aktiv. Anmelden auf app.vestigio.io",
+			},
+			email: {
+				subject: "Dein Vestigio-Konto ist aktiv",
+				headline: "Willkommen, {name}",
+				intro:
+					"Deine Zahlung wurde bestaetigt und dein Vestigio-Konto ist bereit.<br/><br/>{auditClause}Die erste Rechnung deckt den Zyklus <strong>{cycleLabel}</strong>. Du kannst jederzeit ueber die Abrechnungsseite kuendigen.",
+				ctaLabel: "In Vestigio anmelden",
+				ctaPath: "/app",
+				footerNote:
+					"4x-Garantie — hol mindestens 4x deines Einsatzes in 90 Tagen zurueck oder wir erstatten. Melde dich, wenn etwas hakt.",
+			},
+		},
+	},
 };
 
 // ──────────────────────────────────────────────

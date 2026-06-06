@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPlanConfigs } from "@/libs/plan-config";
 import { previewPrices, isPaddleConfigured } from "@/libs/paddle-api";
+import { getActiveProvider } from "@/libs/payment-provider";
 
 // ──────────────────────────────────────────────
 // GET /api/pricing-preview
@@ -28,6 +29,42 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 
 export async function GET(req: NextRequest) {
 	const plans = await getPlanConfigs();
+	const activeProvider = await getActiveProvider();
+
+	// MP-first: when Mercado Pago is the active gateway, return BRL
+	// prices straight from PlatformConfig — no Paddle preview round-
+	// trip needed (Paddle isn't going to charge the buyer anyway).
+	// Falls through to the Paddle preview path when an admin has
+	// flipped active provider back to "paddle".
+	if (activeProvider === "mercadopago") {
+		const brlPlans = plans.map((p) => ({
+			key: p.key,
+			label: p.label,
+			monthlyPriceCents: p.monthlyPriceCentsBrl ?? p.monthlyPriceCents,
+			monthlyPriceCentsBrl: p.monthlyPriceCentsBrl ?? 0,
+			formattedPrice: null,
+			paddlePriceId: p.paddlePriceId || "",
+			paddleAnnualPriceId: p.paddleAnnualPriceId || "",
+			maxMcpCalls: p.maxMcpCalls,
+			continuousAudits: p.continuousAudits,
+			creditsEnabled: p.creditsEnabled,
+			maxEnvironments: p.maxEnvironments,
+			maxMembers: p.maxMembers,
+		}));
+		return NextResponse.json(
+			{
+				plans: brlPlans,
+				currencyCode: "BRL",
+				currencySymbol: "R$",
+				localized: true,
+			},
+			{
+				headers: {
+					"Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
+				},
+			},
+		);
+	}
 
 	// Extract visitor IP for Paddle's geo-pricing
 	const forwarded = req.headers.get("x-forwarded-for");

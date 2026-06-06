@@ -40,7 +40,21 @@ const GET = withErrorTracking(
 			return NextResponse.json({ message: "Missing paymentId" }, { status: 400 });
 		}
 
-		const payment = await getPayment(paymentId);
+		let payment;
+		try {
+			payment = await getPayment(paymentId);
+		} catch (err) {
+			// MP returns 404 for unknown payment ids. Surface as a clean
+			// 404 instead of letting the throw bubble up to a 500 — the
+			// UI polls this endpoint and "unknown payment" is a real
+			// state (e.g., user reloaded the paywall after MP cleaned
+			// the charge).
+			const msg = (err as Error)?.message ?? "";
+			if (msg.includes("404")) {
+				return NextResponse.json({ message: "Payment not found" }, { status: 404 });
+			}
+			throw err;
+		}
 
 		// Verify the payment belongs to THIS user — the external_reference
 		// carries the userId so we can compare without an extra DB read.

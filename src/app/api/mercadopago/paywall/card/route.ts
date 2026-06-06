@@ -113,7 +113,16 @@ const POST = withErrorTracking(
 			nonce,
 		].join(":");
 
-		const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.vestigio.io";
+		// MP preapproval requires a real https back_url. In dev we point
+		// at the public production URL so the cardholder can return to a
+		// live page if MP redirects them; this never fires for direct
+		// (card-token) preapprovals which stay in-page, but it's mandatory
+		// in the API contract.
+		const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+		const appUrl =
+			rawAppUrl.startsWith("https://") && !rawAppUrl.includes("localhost")
+				? rawAppUrl
+				: "https://app.vestigio.io";
 
 		const mpResp = await createPreapproval({
 			preapprovalPlanId,

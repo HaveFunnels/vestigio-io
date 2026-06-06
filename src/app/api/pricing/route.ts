@@ -15,6 +15,9 @@ export const GET = withErrorTracking(async function GET() {
     key: p.key,
     label: p.label,
     monthlyPriceCents: p.monthlyPriceCents,
+    // BRL price for MP-fronted markets. The public homepage pricing
+    // component picks BRL when present + active provider is MP.
+    monthlyPriceCentsBrl: p.monthlyPriceCentsBrl || 0,
     paddlePriceId: p.paddlePriceId || "",
     // Empty when no annual price has been synced yet — the billing
     // page hides the annual toggle unless ALL plans expose a non-empty

@@ -107,12 +107,24 @@ const POST = withErrorTracking(
 
 		const description = `Vestigio ${plan.label} — ${cycle === "annually" ? "anual" : "mensal"}`;
 
+		// MP rejects notification_url when it's empty, localhost-ish, or
+		// otherwise not a real https URL. In dev we omit it entirely;
+		// the UI poll path (/api/mercadopago/paywall/status/[paymentId])
+		// covers the confirmation flow when webhooks aren't wired. In
+		// prod NEXT_PUBLIC_APP_URL must be a public https origin for
+		// the webhook to land.
+		const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+		const notificationUrl =
+			appUrl.startsWith("https://") && !appUrl.includes("localhost")
+				? `${appUrl}/api/mercadopago/webhook`
+				: undefined;
+
 		const mpResp = await createPixPayment({
 			amountBrl,
 			payerEmail: user.email,
 			description,
 			externalReference,
-			notificationUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/api/mercadopago/webhook`,
+			notificationUrl,
 			expiresInMinutes: 30, // tight TTL on the QR; UI surfaces a "gerar novo" recourse
 			idempotencyKey: externalReference,
 			metadata: {

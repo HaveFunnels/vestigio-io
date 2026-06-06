@@ -108,8 +108,12 @@ export default function MiniAuditResultPage() {
 	const pollAttemptsRef = useRef(0);
 
 	// ── Paddle initialization ──
+	// Preview mode never opens checkout, so we skip both the Script
+	// tag and the SDK init entirely (no network call, no env-var
+	// errors with the placeholder Paddle envs).
 	const initPaddle = useCallback(() => {
 		if (typeof window === "undefined" || !window.Paddle) return;
+		if (isPreview) return;
 		try {
 			window.Paddle.Environment.set(
 				process.env.NEXT_PUBLIC_PADDLE_ENV === "production" ? "production" : "sandbox",
@@ -233,16 +237,17 @@ export default function MiniAuditResultPage() {
 	}, [lead, fetchLead, isPreview]);
 
 	// ── Preview theme: force-apply ?theme= to <html> ──
+	// The previous version had a cleanup that restored the original
+	// .dark state on dep change — which fought the next effect run
+	// (cleanup added .dark back, then the new effect removed it,
+	// causing a flicker and sometimes no light at all). Now we just
+	// set the class to match previewTheme; no cleanup needed because
+	// preview is dev-only.
 	useEffect(() => {
 		if (!isPreview || !previewTheme) return;
 		const html = document.documentElement;
-		const wasDark = html.classList.contains("dark");
 		if (previewTheme === "light") html.classList.remove("dark");
 		else html.classList.add("dark");
-		return () => {
-			if (wasDark) html.classList.add("dark");
-			else html.classList.remove("dark");
-		};
 	}, [isPreview, previewTheme]);
 
 	// ── Render branches ──
@@ -275,7 +280,9 @@ export default function MiniAuditResultPage() {
 	if (lead.status === "expired") {
 		return (
 			<>
-				<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
+				{!isPreview && (
+					<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
+				)}
 				<ExpiredState lead={lead} onCheckout={openCheckout} launching={launching} />
 				{previewWidget}
 			</>
@@ -322,8 +329,11 @@ export default function MiniAuditResultPage() {
 
 	return (
 		<>
-			{/* Paddle script */}
-			<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
+			{/* Paddle script — skipped in preview mode so the demo never
+			    triggers a real SDK init or env-var errors. */}
+			{!isPreview && (
+				<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
+			)}
 
 			<div className="relative min-h-screen bg-surface-shell">
 				{/* Brand strip — light theme, sticky CTA */}

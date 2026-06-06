@@ -155,7 +155,7 @@ export default async function RootLayout({
 					</>
 				)}
 			</head>
-			<body className="flex min-h-screen flex-col bg-[#090911] font-satoshi text-white">
+			<body className="flex min-h-screen flex-col bg-surface-shell font-satoshi text-content">
 				<JsonLd />
 				{/* IntlProviderClient is a "use client" wrapper around
 				    NextIntlClientProvider — needed because we pass the

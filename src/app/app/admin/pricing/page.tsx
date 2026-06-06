@@ -389,7 +389,8 @@ export default function AdminPricingPage() {
             <thead>
               <tr className="border-b border-edge">
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_plan")}</th>
-                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_price")}</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_price")} (USD)</th>
+                <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_price")} (BRL)</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_mcp_calls")}</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_envs")}</th>
                 <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">{t("col_members")}</th>
@@ -407,6 +408,15 @@ export default function AdminPricingPage() {
                       value={plan.monthlyPriceCents / 100}
                       onChange={(e) => updatePlan(i, "monthlyPriceCents", Math.round(parseFloat(e.target.value) * 100))}
                       className={`${inputClass} w-20`}
+                    />
+                  </td>
+                  <td className="px-5 py-3">
+                    <input
+                      type="number"
+                      value={(plan.monthlyPriceCentsBrl ?? 0) / 100}
+                      onChange={(e) => updatePlan(i, "monthlyPriceCentsBrl", Math.round(parseFloat(e.target.value) * 100))}
+                      className={`${inputClass} w-24`}
+                      placeholder="—"
                     />
                   </td>
                   <td className="px-5 py-3">

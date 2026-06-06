@@ -40,6 +40,10 @@ const planSchema = z.object({
   paddleAnnualPriceId: z.string().optional(),
   lemonSqueezyPriceId: z.string().optional(),
   monthlyPriceCents: z.number(),
+  // BRL price in centavos. Admin-managed; used by the MP paywall
+  // (/activate) and the renewal endpoints. Optional so legacy rows
+  // saved before this field existed still validate.
+  monthlyPriceCentsBrl: z.number().optional(),
   maxMcpCalls: z.number(),
   continuousAudits: z.boolean(),
   creditsEnabled: z.boolean(),
@@ -70,9 +74,9 @@ async function requireAdmin() {
 
 // Default plans (used when no DB config exists yet)
 const DEFAULT_PLANS = [
-  { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 9900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
-  { key: "pro", label: "Vestigio Pro", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 19900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3 },
-  { key: "max", label: "Vestigio Max", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 39900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10 },
+  { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 9900, monthlyPriceCentsBrl: 4900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
+  { key: "pro", label: "Vestigio Pro", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 19900, monthlyPriceCentsBrl: 9900, maxMcpCalls: 250, continuousAudits: true, creditsEnabled: false, maxEnvironments: 3, maxMembers: 3 },
+  { key: "max", label: "Vestigio Max", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 39900, monthlyPriceCentsBrl: 19900, maxMcpCalls: 1000, continuousAudits: true, creditsEnabled: true, maxEnvironments: 10, maxMembers: 10 },
 ];
 
 const DEFAULT_CREDITS = { baseCostPerCall: 0.05, markupMultiplier: 2.0 };

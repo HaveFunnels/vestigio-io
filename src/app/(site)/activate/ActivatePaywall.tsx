@@ -81,23 +81,58 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 	const [tab, setTab] = useState<Tab>("pix");
 	const [payment, setPayment] = useState<PaymentState>({ kind: "idle" });
 
-	// Poll Pix status while waiting. Backend (C22d) will return updated
-	// status from the /api/mercadopago/paywall/status/[paymentId] endpoint.
-	// For now we just count down toward expiry — the actual status check
-	// is a stub until C22d lands.
+	// Poll Pix status while waiting. Hits MP via our /status endpoint
+	// every 4s; flips to success when MP returns "approved". Stops at
+	// expiry too — if the Pix QR's TTL passes without payment, we
+	// switch the UI to an error/regenerate state.
 	useEffect(() => {
 		if (payment.kind !== "pix_waiting") return;
-		const id = window.setInterval(() => {
-			// Replace with real /status fetch in C22d.
+		let cancelled = false;
+		const id = window.setInterval(async () => {
+			if (cancelled) return;
 			if (Date.now() > payment.expiresAt) {
 				setPayment({
 					kind: "error",
 					message: "O Pix expirou. Gere um novo pra continuar.",
 				});
 				window.clearInterval(id);
+				return;
+			}
+			try {
+				const res = await fetch(
+					`/api/mercadopago/paywall/status/${payment.paymentId}`,
+					{ cache: "no-store" },
+				);
+				if (!res.ok) return;
+				const data = await res.json();
+				if (data.status === "approved") {
+					setPayment({ kind: "success" });
+					window.clearInterval(id);
+					// Land the user on /app — the webhook will have already
+					// activated their org by the time they arrive (or it
+					// arrives soon after; the app gates on subscription
+					// status).
+					setTimeout(() => {
+						window.location.href = "/app";
+					}, 1200);
+				} else if (
+					data.status === "rejected" ||
+					data.status === "cancelled"
+				) {
+					setPayment({
+						kind: "error",
+						message: "O pagamento foi recusado. Tente novamente ou troque de método.",
+					});
+					window.clearInterval(id);
+				}
+			} catch {
+				// Network blips — keep polling, the next tick will retry.
 			}
 		}, 4000);
-		return () => window.clearInterval(id);
+		return () => {
+			cancelled = true;
+			window.clearInterval(id);
+		};
 	}, [payment]);
 
 	const priceCents =
@@ -108,31 +143,59 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 		(selectedPlan?.monthlyPriceCents ?? 0) * 12 -
 		(selectedPlan?.annualPriceCents ?? 0);
 
-	// ── Mock payment actions — C22d swaps these for real MP calls ──
+	// ── Payment actions ──
 	const startPix = async () => {
 		setPayment({ kind: "creating" });
-		// Simulate network + return a fake Pix payload so the UI flow
-		// is exercised end-to-end. Real implementation calls
-		// /api/mercadopago/paywall/pix in C22d.
-		await new Promise((r) => setTimeout(r, 900));
-		setPayment({
-			kind: "pix_waiting",
-			qrBase64: "",
-			copyPaste:
-				"00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540" +
-				priceCents.toString().padStart(8, "0") +
-				"5802BR5913Vestigio6009Sao Paulo62070503***6304ABCD",
-			expiresAt: Date.now() + 10 * 60 * 1000,
-			paymentId: "stub_pix_" + Math.random().toString(36).slice(2, 10),
-		});
+		try {
+			const res = await fetch("/api/mercadopago/paywall/pix", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					planKey: selectedPlan?.key ?? "vestigio",
+					cycle,
+					leadId: leadId ?? undefined,
+				}),
+			});
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({}));
+				setPayment({
+					kind: "error",
+					message: err.message ?? "Não foi possível gerar o Pix. Tente novamente.",
+				});
+				return;
+			}
+			const data = await res.json();
+			const expiresAt =
+				typeof data.expiresAt === "string"
+					? new Date(data.expiresAt).getTime()
+					: Date.now() + 30 * 60 * 1000;
+			setPayment({
+				kind: "pix_waiting",
+				qrBase64: data.qrCodeBase64 ?? "",
+				copyPaste: data.qrCode ?? "",
+				expiresAt,
+				paymentId: data.paymentId,
+			});
+		} catch {
+			setPayment({
+				kind: "error",
+				message: "Erro de rede. Tente novamente em alguns segundos.",
+			});
+		}
 	};
 
+	// Card flow needs MP cardForm SDK loaded client-side to tokenize the
+	// card before posting to /api/mercadopago/paywall/card. That SDK
+	// wiring lands in a separate commit; for now the button surfaces
+	// a controlled "em construção" state so the page is fully
+	// previewable while the Pix path carries the traffic.
 	const submitCard = async () => {
 		setPayment({ kind: "card_processing" });
-		await new Promise((r) => setTimeout(r, 1500));
+		await new Promise((r) => setTimeout(r, 600));
 		setPayment({
 			kind: "error",
-			message: "Backend MP ainda não está pronto (C22d).",
+			message:
+				"Pagamento por cartão chega em breve. Por enquanto, use Pix — assina na hora.",
 		});
 	};
 
@@ -389,13 +452,21 @@ function PixTab({
 		const secs = Math.floor((remaining % 60000) / 1000);
 		return (
 			<div className="space-y-4">
-				{/* QR placeholder — backend returns base64 PNG in C22d */}
+				{/* QR — base64 PNG returned by MP. Inline data: URL so the
+				    image renders without an extra network hop. */}
 				<div className="flex flex-col items-center gap-3 rounded-2xl border border-edge bg-surface-inset p-6">
-					<div className="grid h-48 w-48 place-items-center rounded-lg border border-content/20 bg-content text-[10px] font-mono text-surface-card">
-						QR Pix
-						<br />
-						(C22d)
-					</div>
+					{payment.qrBase64 ? (
+						/* eslint-disable-next-line @next/next/no-img-element */
+						<img
+							src={`data:image/png;base64,${payment.qrBase64}`}
+							alt="QR Pix"
+							className="h-48 w-48 rounded-lg border border-edge bg-white p-2"
+						/>
+					) : (
+						<div className="grid h-48 w-48 place-items-center rounded-lg border border-edge bg-content text-[10px] font-mono text-surface-card">
+							QR indisponível — use o código abaixo
+						</div>
+					)}
 					<div className="text-center text-[11px] text-content-muted">
 						Aponte o app do seu banco pro QR — ou copie o código abaixo.
 					</div>

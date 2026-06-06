@@ -1,0 +1,576 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ShieldCheck, Loader2, Check } from "lucide-react";
+import logoLight from "@/../public/images/logo/logo-light.png";
+
+interface Plan {
+	key: string;
+	label: string;
+	monthlyPriceCents: number;
+	annualPriceCents: number;
+}
+
+interface Props {
+	plans: Plan[];
+	userEmail: string;
+	userName: string;
+}
+
+type Cycle = "monthly" | "annually";
+type Tab = "pix" | "card";
+type PaymentState =
+	| { kind: "idle" }
+	| { kind: "creating" }
+	| { kind: "pix_waiting"; qrBase64: string; copyPaste: string; expiresAt: number; paymentId: string }
+	| { kind: "card_processing" }
+	| { kind: "success" }
+	| { kind: "error"; message: string };
+
+function formatBRL(cents: number): string {
+	const reais = cents / 100;
+	return reais.toLocaleString("pt-BR", {
+		style: "currency",
+		currency: "BRL",
+		minimumFractionDigits: 0,
+	});
+}
+
+export function ActivatePaywall({ plans, userEmail, userName }: Props) {
+	// LP-funnel context recovered from localStorage. Pricing → Signup
+	// stashed plan + cycle; audit → Signup stashed leadId + domain.
+	const [stashedPlan, setStashedPlan] = useState<string | null>(null);
+	const [stashedCycle, setStashedCycle] = useState<string | null>(null);
+	const [leadId, setLeadId] = useState<string | null>(null);
+	const [auditedDomain, setAuditedDomain] = useState<string | null>(null);
+
+	useEffect(() => {
+		try {
+			setStashedPlan(localStorage.getItem("vestigio_lp_plan"));
+			setStashedCycle(localStorage.getItem("vestigio_lp_cycle"));
+			setLeadId(localStorage.getItem("vestigio_lp_leadId"));
+			setAuditedDomain(localStorage.getItem("vestigio_onboard_domain"));
+		} catch {}
+	}, []);
+
+	// Default selection — stash if present, else first plan + monthly.
+	const defaultPlanKey =
+		(stashedPlan && plans.find((p) => p.key === stashedPlan)?.key) ||
+		plans[0]?.key ||
+		"";
+	const [selectedPlanKey, setSelectedPlanKey] = useState(defaultPlanKey);
+	const [cycle, setCycle] = useState<Cycle>(
+		stashedCycle === "annually" ? "annually" : "monthly",
+	);
+
+	// Keep state in sync once localStorage is read on mount.
+	useEffect(() => {
+		if (stashedPlan && plans.find((p) => p.key === stashedPlan)) {
+			setSelectedPlanKey(stashedPlan);
+		}
+		if (stashedCycle === "annually" || stashedCycle === "monthly") {
+			setCycle(stashedCycle);
+		}
+	}, [stashedPlan, stashedCycle, plans]);
+
+	const selectedPlan =
+		plans.find((p) => p.key === selectedPlanKey) ?? plans[0];
+
+	const [tab, setTab] = useState<Tab>("pix");
+	const [payment, setPayment] = useState<PaymentState>({ kind: "idle" });
+
+	// Poll Pix status while waiting. Backend (C22d) will return updated
+	// status from the /api/mercadopago/paywall/status/[paymentId] endpoint.
+	// For now we just count down toward expiry — the actual status check
+	// is a stub until C22d lands.
+	useEffect(() => {
+		if (payment.kind !== "pix_waiting") return;
+		const id = window.setInterval(() => {
+			// Replace with real /status fetch in C22d.
+			if (Date.now() > payment.expiresAt) {
+				setPayment({
+					kind: "error",
+					message: "O Pix expirou. Gere um novo pra continuar.",
+				});
+				window.clearInterval(id);
+			}
+		}, 4000);
+		return () => window.clearInterval(id);
+	}, [payment]);
+
+	const priceCents =
+		cycle === "monthly"
+			? selectedPlan?.monthlyPriceCents ?? 0
+			: selectedPlan?.annualPriceCents ?? 0;
+	const annualSavings =
+		(selectedPlan?.monthlyPriceCents ?? 0) * 12 -
+		(selectedPlan?.annualPriceCents ?? 0);
+
+	// ── Mock payment actions — C22d swaps these for real MP calls ──
+	const startPix = async () => {
+		setPayment({ kind: "creating" });
+		// Simulate network + return a fake Pix payload so the UI flow
+		// is exercised end-to-end. Real implementation calls
+		// /api/mercadopago/paywall/pix in C22d.
+		await new Promise((r) => setTimeout(r, 900));
+		setPayment({
+			kind: "pix_waiting",
+			qrBase64: "",
+			copyPaste:
+				"00020126360014BR.GOV.BCB.PIX0114+5511999999999520400005303986540" +
+				priceCents.toString().padStart(8, "0") +
+				"5802BR5913Vestigio6009Sao Paulo62070503***6304ABCD",
+			expiresAt: Date.now() + 10 * 60 * 1000,
+			paymentId: "stub_pix_" + Math.random().toString(36).slice(2, 10),
+		});
+	};
+
+	const submitCard = async () => {
+		setPayment({ kind: "card_processing" });
+		await new Promise((r) => setTimeout(r, 1500));
+		setPayment({
+			kind: "error",
+			message: "Backend MP ainda não está pronto (C22d).",
+		});
+	};
+
+	return (
+		<div className="relative min-h-screen bg-surface-shell px-4 py-8 sm:py-12">
+			{/* Top brand strip */}
+			<div className="mx-auto mb-8 flex max-w-3xl items-center justify-between">
+				<Link href="/" className="flex items-center">
+					<Image src={logoLight} alt="Vestigio" height={24} className="dark:block hidden" />
+					<Image src={logoLight} alt="Vestigio" height={24} className="dark:hidden invert" />
+				</Link>
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+					Passo 2 de 2
+				</div>
+			</div>
+
+			{/* Progress bar */}
+			<div className="mx-auto mb-8 flex max-w-3xl items-center gap-2">
+				<div className="h-1 flex-1 rounded-full bg-emerald-500" />
+				<div className="h-1 flex-1 rounded-full bg-content/80" />
+			</div>
+
+			<div className="mx-auto grid max-w-3xl gap-6 lg:grid-cols-[1fr_360px]">
+				{/* Left: payment surface */}
+				<div className="space-y-6">
+					{/* Audit context banner (Path B only) */}
+					{auditedDomain && leadId && (
+						<div className="flex items-start gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-50 p-4 dark:bg-emerald-500/[0.08]">
+							<Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" />
+							<div className="text-[13px] leading-relaxed text-content">
+								Sua Análise de{" "}
+								<span className="font-mono font-semibold">{auditedDomain}</span>{" "}
+								libera assim que o pagamento for confirmado.
+							</div>
+						</div>
+					)}
+
+					{/* Headline */}
+					<div>
+						<h1 className="font-[family-name:var(--font-fraunces)] text-3xl font-medium leading-tight text-content sm:text-4xl">
+							Ativar sua conta
+						</h1>
+						<p className="mt-2 text-[14px] text-content-muted">
+							Olá, {userName || userEmail}. Escolha como pagar pra liberar a Análise completa.
+						</p>
+					</div>
+
+					{/* Cycle toggle */}
+					<div className="inline-flex rounded-xl border border-edge bg-surface-card p-1">
+						{(["monthly", "annually"] as Cycle[]).map((c) => (
+							<button
+								key={c}
+								type="button"
+								onClick={() => setCycle(c)}
+								className={`rounded-lg px-4 py-2 text-[13px] font-semibold transition-colors ${
+									cycle === c
+										? "bg-content text-surface-card"
+										: "text-content-muted hover:text-content"
+								}`}
+							>
+								{c === "monthly" ? "Mensal" : "Anual"}
+								{c === "annually" && annualSavings > 0 && (
+									<span className="ml-2 text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+										−{formatBRL(annualSavings)}
+									</span>
+								)}
+							</button>
+						))}
+					</div>
+
+					{/* Payment method tabs */}
+					<div>
+						<div className="flex border-b border-edge">
+							{(
+								[
+									{ id: "pix" as const, label: "Pix" },
+									{ id: "card" as const, label: "Cartão" },
+								]
+							).map((t) => (
+								<button
+									key={t.id}
+									type="button"
+									onClick={() => {
+										setTab(t.id);
+										setPayment({ kind: "idle" });
+									}}
+									className={`relative -mb-px px-5 py-3 text-[14px] font-semibold transition-colors ${
+										tab === t.id
+											? "border-b-2 border-content text-content"
+											: "text-content-muted hover:text-content"
+									}`}
+								>
+									{t.label}
+								</button>
+							))}
+						</div>
+
+						{/* Tab body */}
+						<div className="pt-5">
+							{tab === "pix" && (
+								<PixTab
+									payment={payment}
+									onStart={startPix}
+									priceCents={priceCents}
+								/>
+							)}
+							{tab === "card" && (
+								<CardTab
+									payment={payment}
+									onSubmit={submitCard}
+									priceCents={priceCents}
+									userEmail={userEmail}
+									userName={userName}
+								/>
+							)}
+						</div>
+					</div>
+				</div>
+
+				{/* Right: order summary + trust */}
+				<aside className="space-y-4">
+					<div className="rounded-2xl border border-edge bg-surface-card p-5">
+						<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
+							Seu plano
+						</div>
+
+						{/* Plan selector (when more than 1 plan exists) */}
+						{plans.length > 1 ? (
+							<select
+								value={selectedPlanKey}
+								onChange={(e) => setSelectedPlanKey(e.target.value)}
+								className="mt-2 w-full rounded-lg border border-edge bg-surface-inset px-3 py-2 text-[15px] font-semibold text-content focus:border-content/40 focus:outline-none"
+							>
+								{plans.map((p) => (
+									<option key={p.key} value={p.key}>
+										{p.label}
+									</option>
+								))}
+							</select>
+						) : (
+							<div className="mt-2 text-[16px] font-semibold text-content">
+								{selectedPlan?.label}
+							</div>
+						)}
+
+						<div className="mt-4 flex items-baseline gap-1">
+							<span className="font-mono text-3xl font-bold tabular-nums text-content">
+								{formatBRL(priceCents)}
+							</span>
+							<span className="text-[12px] text-content-muted">
+								/{cycle === "monthly" ? "mês" : "ano"}
+							</span>
+						</div>
+
+						{cycle === "annually" && annualSavings > 0 && (
+							<div className="mt-2 text-[12px] text-emerald-700 dark:text-emerald-300">
+								Você economiza {formatBRL(annualSavings)} no ano.
+							</div>
+						)}
+
+						<div className="mt-4 border-t border-edge-subtle pt-4 text-[12px] text-content-muted">
+							{tab === "pix"
+								? cycle === "monthly"
+									? "Pagamento via Pix. Renovação manual por email todo mês."
+									: "Pagamento via Pix. Renovação anual."
+								: cycle === "monthly"
+									? "Assinatura recorrente no cartão. Cancele a qualquer momento."
+									: "Assinatura anual no cartão. Cancele a qualquer momento."}
+						</div>
+					</div>
+
+					{/* Trust: Garantia 4x */}
+					<div className="flex items-start gap-3 rounded-2xl border border-edge bg-surface-inset p-4">
+						<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
+							<ShieldCheck size={18} strokeWidth={2.2} />
+						</div>
+						<div className="min-w-0 flex-1">
+							<div className="font-[family-name:var(--font-fraunces)] text-[14px] font-medium text-content">
+								Garantia 4x
+							</div>
+							<p className="mt-0.5 text-[12px] leading-relaxed text-content-muted">
+								Recupere ao menos 4× em 90 dias ou devolvemos todo o valor.
+							</p>
+						</div>
+					</div>
+
+					{/* MP security tag */}
+					<div className="flex items-center justify-center gap-1.5 text-[11px] text-content-faint">
+						<span className="h-1 w-1 rounded-full bg-content-faint" />
+						<span>Pagamento seguro via Mercado Pago</span>
+					</div>
+				</aside>
+			</div>
+
+			{/* Already-have-account */}
+			<div className="mx-auto mt-12 max-w-3xl text-center text-[12px] text-content-muted">
+				Já tem conta?{" "}
+				<Link href="/auth/signin" className="font-semibold text-content underline-offset-2 hover:underline">
+					Entrar
+				</Link>
+			</div>
+		</div>
+	);
+}
+
+// ── Pix tab ──
+function PixTab({
+	payment,
+	onStart,
+	priceCents,
+}: {
+	payment: PaymentState;
+	onStart: () => void;
+	priceCents: number;
+}) {
+	if (payment.kind === "idle" || payment.kind === "error") {
+		return (
+			<div className="space-y-4">
+				<p className="text-[13px] leading-relaxed text-content-muted">
+					Gere um QR Pix válido por 10 minutos. Pague pelo app do seu banco e
+					sua conta ativa em segundos.
+				</p>
+				{payment.kind === "error" && (
+					<div className="rounded-lg border border-rose-500/30 bg-rose-50 px-3 py-2 text-[12px] text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+						{payment.message}
+					</div>
+				)}
+				<button
+					type="button"
+					onClick={onStart}
+					className="flex w-full items-center justify-center gap-2 rounded-2xl bg-content px-6 py-4 font-[family-name:var(--font-fraunces)] text-[16px] font-medium text-surface-card transition-colors hover:bg-content-secondary"
+				>
+					Gerar Pix de {formatBRL(priceCents)}
+					<svg className="h-4 w-4 text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+						<path d="M3 8h10M9 4l4 4-4 4" />
+					</svg>
+				</button>
+			</div>
+		);
+	}
+
+	if (payment.kind === "creating") {
+		return (
+			<div className="flex flex-col items-center gap-3 py-8 text-content-muted">
+				<Loader2 className="h-5 w-5 animate-spin" />
+				<div className="text-[13px]">Gerando seu Pix…</div>
+			</div>
+		);
+	}
+
+	if (payment.kind === "pix_waiting") {
+		const remaining = Math.max(0, payment.expiresAt - Date.now());
+		const mins = Math.floor(remaining / 60000);
+		const secs = Math.floor((remaining % 60000) / 1000);
+		return (
+			<div className="space-y-4">
+				{/* QR placeholder — backend returns base64 PNG in C22d */}
+				<div className="flex flex-col items-center gap-3 rounded-2xl border border-edge bg-surface-inset p-6">
+					<div className="grid h-48 w-48 place-items-center rounded-lg border border-content/20 bg-content text-[10px] font-mono text-surface-card">
+						QR Pix
+						<br />
+						(C22d)
+					</div>
+					<div className="text-center text-[11px] text-content-muted">
+						Aponte o app do seu banco pro QR — ou copie o código abaixo.
+					</div>
+				</div>
+
+				{/* Copy/paste */}
+				<div>
+					<div className="mb-1 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] text-content-muted">
+						Pix copia e cola
+					</div>
+					<div className="flex gap-2">
+						<input
+							readOnly
+							value={payment.copyPaste}
+							className="flex-1 rounded-lg border border-edge bg-surface-card px-3 py-2 font-mono text-[11px] text-content"
+						/>
+						<button
+							type="button"
+							onClick={() => navigator.clipboard?.writeText(payment.copyPaste)}
+							className="rounded-lg bg-content px-3 py-2 text-[12px] font-semibold text-surface-card hover:bg-content-secondary"
+						>
+							Copiar
+						</button>
+					</div>
+				</div>
+
+				{/* Waiting state */}
+				<div className="flex items-center justify-between rounded-lg border border-edge bg-surface-inset px-4 py-3 text-[13px]">
+					<div className="flex items-center gap-2 text-content">
+						<Loader2 className="h-3.5 w-3.5 animate-spin" />
+						Aguardando pagamento…
+					</div>
+					<div className="font-mono tabular-nums text-content-muted">
+						{mins}:{secs.toString().padStart(2, "0")}
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	if (payment.kind === "success") {
+		return (
+			<div className="flex flex-col items-center gap-3 py-8">
+				<div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white">
+					<Check className="h-6 w-6" strokeWidth={3} />
+				</div>
+				<div className="text-[14px] font-semibold text-content">
+					Pagamento confirmado!
+				</div>
+				<div className="text-[12px] text-content-muted">Redirecionando…</div>
+			</div>
+		);
+	}
+
+	return null;
+}
+
+// ── Cartão tab ──
+function CardTab({
+	payment,
+	onSubmit,
+	priceCents,
+	userEmail,
+	userName,
+}: {
+	payment: PaymentState;
+	onSubmit: () => void;
+	priceCents: number;
+	userEmail: string;
+	userName: string;
+}) {
+	const [form, setForm] = useState({
+		number: "",
+		expiry: "",
+		cvv: "",
+		name: userName,
+		cpf: "",
+	});
+
+	const onChange = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => {
+		setForm((f) => ({ ...f, [field]: e.target.value }));
+	};
+
+	if (payment.kind === "card_processing") {
+		return (
+			<div className="flex flex-col items-center gap-3 py-8 text-content-muted">
+				<Loader2 className="h-5 w-5 animate-spin" />
+				<div className="text-[13px]">Processando pagamento…</div>
+			</div>
+		);
+	}
+
+	return (
+		<form
+			onSubmit={(e) => {
+				e.preventDefault();
+				onSubmit();
+			}}
+			className="space-y-3"
+		>
+			<input
+				name="card-email"
+				type="email"
+				placeholder="Email de cobrança"
+				autoComplete="email"
+				defaultValue={userEmail}
+				readOnly
+				className="w-full rounded-lg border border-edge bg-surface-inset px-3 py-2.5 text-[14px] text-content-muted"
+			/>
+			<input
+				name="card-number"
+				type="text"
+				inputMode="numeric"
+				autoComplete="cc-number"
+				placeholder="Número do cartão"
+				value={form.number}
+				onChange={onChange("number")}
+				className="w-full rounded-lg border border-edge bg-surface-card px-3 py-2.5 text-[14px] text-content focus:border-content/40 focus:outline-none"
+			/>
+			<div className="grid grid-cols-2 gap-3">
+				<input
+					name="card-expiry"
+					type="text"
+					inputMode="numeric"
+					autoComplete="cc-exp"
+					placeholder="MM/AA"
+					value={form.expiry}
+					onChange={onChange("expiry")}
+					className="rounded-lg border border-edge bg-surface-card px-3 py-2.5 text-[14px] text-content focus:border-content/40 focus:outline-none"
+				/>
+				<input
+					name="card-cvv"
+					type="text"
+					inputMode="numeric"
+					autoComplete="cc-csc"
+					placeholder="CVV"
+					value={form.cvv}
+					onChange={onChange("cvv")}
+					className="rounded-lg border border-edge bg-surface-card px-3 py-2.5 text-[14px] text-content focus:border-content/40 focus:outline-none"
+				/>
+			</div>
+			<input
+				name="card-name"
+				type="text"
+				autoComplete="cc-name"
+				placeholder="Nome impresso no cartão"
+				value={form.name}
+				onChange={onChange("name")}
+				className="w-full rounded-lg border border-edge bg-surface-card px-3 py-2.5 text-[14px] text-content focus:border-content/40 focus:outline-none"
+			/>
+			<input
+				name="cpf"
+				type="text"
+				inputMode="numeric"
+				placeholder="CPF do titular"
+				value={form.cpf}
+				onChange={onChange("cpf")}
+				className="w-full rounded-lg border border-edge bg-surface-card px-3 py-2.5 text-[14px] text-content focus:border-content/40 focus:outline-none"
+			/>
+
+			{payment.kind === "error" && (
+				<div className="rounded-lg border border-rose-500/30 bg-rose-50 px-3 py-2 text-[12px] text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
+					{payment.message}
+				</div>
+			)}
+
+			<button
+				type="submit"
+				className="flex w-full items-center justify-center gap-2 rounded-2xl bg-content px-6 py-4 font-[family-name:var(--font-fraunces)] text-[16px] font-medium text-surface-card transition-colors hover:bg-content-secondary"
+			>
+				Pagar {formatBRL(priceCents)}
+				<svg className="h-4 w-4 text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+					<path d="M3 8h10M9 4l4 4-4 4" />
+				</svg>
+			</button>
+		</form>
+	);
+}

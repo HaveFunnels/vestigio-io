@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/libs/prismaDb";
+import { getActiveProvider } from "@/libs/payment-provider";
 
 // BUG-06 fix: Safe JSON parse that returns null on corrupt/empty data
 // instead of throwing and crashing the response with a 500.
@@ -112,6 +113,11 @@ export async function GET(
 			}
 		: null;
 
+	// Active payment provider for any checkout the LP page might
+	// open. Resolved from admin override → env default. Per-request
+	// because we want to react to admin toggles without a redeploy.
+	const paymentProvider = await getActiveProvider();
+
 	return NextResponse.json({
 		id: lead.id,
 		status: lead.status,
@@ -130,6 +136,7 @@ export async function GET(
 		emailMasked: lead.email ? maskEmail(lead.email) : null,
 		createdAt: lead.createdAt.toISOString(),
 		result,
+		paymentProvider,
 	});
 }
 

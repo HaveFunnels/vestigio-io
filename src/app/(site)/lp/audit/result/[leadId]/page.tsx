@@ -64,6 +64,10 @@ interface LeadResponse {
 	emailMasked: string | null;
 	createdAt: string;
 	result: MiniAuditApiResult | null;
+	/** Active checkout gateway, resolved server-side from the admin
+	 *  override + env default. Determines which SDK the page loads
+	 *  and which flow openCheckout dispatches to. */
+	paymentProvider?: "mercadopago" | "paddle";
 }
 
 export default function MiniAuditResultPage() {
@@ -151,12 +155,23 @@ export default function MiniAuditResultPage() {
 		return () => { cancelled = true; };
 	}, [leadId, lead, checkoutEmail]);
 
-	// ── Open Paddle checkout ──
+	// ── Open checkout (gateway picked server-side) ──
+	const activeProvider = lead?.paymentProvider ?? "paddle";
+
 	function openCheckout() {
 		if (isPreview) {
-			// In preview mode we never want to actually open Paddle —
+			// In preview mode we never want to actually open a gateway —
 			// just acknowledge the click so the buttons feel alive.
 			console.info("[preview] checkout would open here");
+			return;
+		}
+		if (activeProvider === "mercadopago") {
+			// MP path: redirect to the post-signup paywall page, which
+			// runs the Pix + cartão tabbed flow (C22). The LP doesn't
+			// open a checkout overlay anymore for MP — account creation
+			// happens first, paywall is the next page.
+			trackLpEvent(leadId, "lp_audit_cta_clicked");
+			window.location.href = `/lp/audit/signup/${leadId}`;
 			return;
 		}
 		if (!leadId || !window.Paddle || !paddleReady) {
@@ -280,7 +295,7 @@ export default function MiniAuditResultPage() {
 	if (lead.status === "expired") {
 		return (
 			<>
-				{!isPreview && (
+				{!isPreview && activeProvider === "paddle" && (
 					<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
 				)}
 				<ExpiredState lead={lead} onCheckout={openCheckout} launching={launching} />
@@ -331,7 +346,7 @@ export default function MiniAuditResultPage() {
 		<>
 			{/* Paddle script — skipped in preview mode so the demo never
 			    triggers a real SDK init or env-var errors. */}
-			{!isPreview && (
+			{!isPreview && activeProvider === "paddle" && (
 				<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
 			)}
 

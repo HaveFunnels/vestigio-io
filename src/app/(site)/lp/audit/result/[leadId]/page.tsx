@@ -337,10 +337,10 @@ export default function MiniAuditResultPage() {
 							type="button"
 							onClick={openCheckout}
 							disabled={launching}
-							className="flex items-center gap-1.5 rounded-lg bg-emerald-100 px-4 py-1.5 text-xs font-semibold text-zinc-900 transition-colors hover:bg-emerald-200 disabled:opacity-60 dark:bg-emerald-500/20 dark:text-content dark:hover:bg-emerald-500/30"
+							className="flex items-center gap-1.5 rounded-lg bg-content px-4 py-1.5 text-xs font-semibold text-surface-card transition-colors hover:bg-content-secondary disabled:opacity-60"
 						>
 							{t("cta_create_account")}
-							<svg className="h-3 w-3 text-emerald-600 dark:text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+							<svg className="h-3 w-3 text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
 								<path d="M3 8h10M9 4l4 4-4 4" />
 							</svg>
 						</button>
@@ -649,8 +649,7 @@ function PlanPreviewSection({
 				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-content-muted">
 					{t("plan_preview.eyebrow")}
 				</div>
-				<div className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
-					<Sparkles className="h-2.5 w-2.5" />
+				<div className="inline-flex items-center gap-1.5 rounded-sm border border-content/80 bg-content px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-surface-card">
 					{t("plan_preview.preview_badge")}
 				</div>
 			</div>
@@ -785,10 +784,10 @@ function PlanPreviewSection({
 				type="button"
 				onClick={onCheckout}
 				disabled={launching}
-				className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3.5 text-[14px] font-semibold text-white shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-600 disabled:opacity-60"
+				className="flex w-full items-center justify-center gap-2 rounded-2xl bg-content px-6 py-3.5 text-[14px] font-semibold text-surface-card transition-colors hover:bg-content-secondary disabled:opacity-60"
 			>
 				{t("plan_preview.unlock_cta")}
-				<svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+				<svg className="h-4 w-4 text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
 					<path d="M3 8h10M9 4l4 4-4 4" />
 				</svg>
 			</button>
@@ -1239,37 +1238,33 @@ function CTAFinalSection({
 
 	return (
 		<section
-			className={`relative mt-12 overflow-hidden rounded-[2rem] border border-emerald-500/30 bg-emerald-50 px-7 py-10 transition-opacity duration-700 dark:border-emerald-500/25 dark:bg-emerald-500/[0.06] sm:mt-16 sm:px-12 sm:py-14 ${revealed ? "opacity-100" : "opacity-0"}`}
+			className={`relative mt-12 overflow-hidden rounded-[2rem] border border-edge bg-surface-card px-7 py-10 transition-opacity duration-700 sm:mt-16 sm:px-12 sm:py-14 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			{/* Atmospheric blur orb top-right (light + dark) */}
+			{/* Subtle dot-grid texture in content color so the
+			    background feels constructed without using brand
+			    accent. Stays muted in both themes. */}
 			<div
-				className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-emerald-400/20 blur-[100px] dark:bg-emerald-400/10"
-				aria-hidden
-			/>
-			{/* Decorative grain pattern */}
-			<div
-				className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-multiply dark:opacity-[0.08]"
+				className="pointer-events-none absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
 				style={{
 					backgroundImage:
 						"radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
 					backgroundSize: "24px 24px",
-					color: "rgb(16 185 129)",
 				}}
 				aria-hidden
 			/>
 
 			<div className="relative">
 				{/* Eyebrow */}
-				<div className="flex items-center gap-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold uppercase tracking-[0.22em] text-emerald-700 dark:text-emerald-300">
-					<span className="h-px w-6 bg-emerald-700/60 dark:bg-emerald-300/60" />
+				<div className="flex items-center gap-2 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold uppercase tracking-[0.22em] text-content-muted">
+					<span className="h-px w-6 bg-content-muted/60" />
 					{t("cta_final.eyebrow")}
 				</div>
 
-				{/* Display headline */}
+				{/* Display headline — single tone, Fraunces, no emerald tint */}
 				<h2 className="mt-4 max-w-2xl font-[family-name:var(--font-fraunces)] text-[34px] font-medium leading-[1.05] tracking-tight text-content sm:text-[48px]">
 					{t("cta_final.headline_l1")}
 					<br />
-					<span className="text-emerald-700 dark:text-emerald-300">
+					<span className="text-content-secondary">
 						{t("cta_final.headline_l2")}
 					</span>
 				</h2>
@@ -1303,16 +1298,16 @@ function CTAFinalSection({
 					))}
 				</ul>
 
-				{/* CTA stack */}
+				{/* CTA — solid black with emerald arrow accent */}
 				<div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
 					<button
 						type="button"
 						onClick={onCheckout}
 						disabled={launching}
-						className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-emerald-600 px-8 py-4 font-[family-name:var(--font-fraunces)] text-[17px] font-medium tracking-tight text-white shadow-[0_8px_32px_-8px_rgba(16,185,129,0.5)] transition-all hover:bg-emerald-700 hover:shadow-[0_12px_40px_-8px_rgba(16,185,129,0.6)] disabled:opacity-60 sm:w-auto sm:px-10"
+						className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-content px-8 py-4 font-[family-name:var(--font-fraunces)] text-[17px] font-medium tracking-tight text-surface-card transition-all hover:bg-content-secondary disabled:opacity-60 sm:w-auto sm:px-10"
 					>
 						<span className="relative">{t("cta_create_account")}</span>
-						<svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+						<svg className="h-4 w-4 text-emerald-400 transition-transform group-hover:translate-x-0.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
 							<path d="M3 8h10M9 4l4 4-4 4" />
 						</svg>
 					</button>
@@ -1321,9 +1316,9 @@ function CTAFinalSection({
 					</div>
 				</div>
 
-				{/* Trust factor: Garantia 4x */}
-				<div className="mt-8 flex items-start gap-4 rounded-2xl border border-emerald-500/30 bg-surface-card/60 p-5 dark:bg-emerald-500/[0.03]">
-					<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+				{/* Trust factor: Garantia 4x — neutral card, emerald only on shield */}
+				<div className="mt-8 flex items-start gap-4 rounded-2xl border border-edge bg-surface-inset p-5">
+					<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
 						<ShieldCheck size={20} strokeWidth={2} />
 					</div>
 					<div className="min-w-0 flex-1">
@@ -2021,10 +2016,10 @@ function AuditingState({
 					<button
 						type="button"
 						onClick={onViewResults}
-						className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-100 px-6 py-4 text-[15px] font-semibold text-zinc-900 transition-colors hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-content dark:hover:bg-emerald-500/30"
+						className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-content px-6 py-4 text-[15px] font-semibold text-surface-card transition-colors hover:bg-content-secondary"
 					>
 						{t("auditing_view")}
-						<svg className="h-4 w-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+						<svg className="h-4 w-4 text-emerald-400" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
 							<path d="M3 8h10M9 4l4 4-4 4" />
 						</svg>
 					</button>

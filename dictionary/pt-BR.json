@@ -7790,6 +7790,11 @@
 			"findings_unlocked_one": "{count} vazamento desbloqueado gratuitamente",
 			"findings_unlocked_other": "{count} vazamentos desbloqueados gratuitamente",
 			"findings_to_unlock": "{count, plural, one {# vazamento bloqueado} other {# vazamentos bloqueados}} para você desbloquear",
+			"leaks_section": {
+				"eyebrow": "Onde está vazando",
+				"title": "{count, plural, one {# vazamento encontrado} other {# vazamentos encontrados}}",
+				"subtitle": "{visible} visíveis na Análise preliminar · {locked} bloqueados na Análise completa"
+			},
 			"response_excellent": "Ótimo",
 			"response_good": "Bom",
 			"response_slow": "Lento",

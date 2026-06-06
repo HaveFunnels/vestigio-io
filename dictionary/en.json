@@ -9909,6 +9909,11 @@
 			"findings_unlocked_one": "{count} leak unlocked for free",
 			"findings_unlocked_other": "{count} leaks unlocked for free",
 			"findings_to_unlock": "{count, plural, one {# locked leak} other {# locked leaks}} for you to unlock",
+			"leaks_section": {
+				"eyebrow": "Where it's leaking",
+				"title": "{count, plural, one {# leak found} other {# leaks found}}",
+				"subtitle": "{visible} visible in the preliminary Analysis · {locked} locked in the full Analysis"
+			},
 			"response_excellent": "Excellent",
 			"response_good": "Good",
 			"response_slow": "Slow",

@@ -319,7 +319,6 @@ export default function MiniAuditResultPage() {
 	// Separate negative vs positive — both shown, but only negatives count toward limit
 	const negativeFindings = visibleFindings.filter((f) => f.severity !== "positive");
 	const positiveFindings = visibleFindings.filter((f) => f.severity === "positive");
-	const totalFindings = negativeFindings.length + blurredFindings.length;
 
 	return (
 		<>
@@ -364,9 +363,15 @@ export default function MiniAuditResultPage() {
 					    eroding trust. ResultHeader now uses honest counts:
 					    visible vs blurred. */}
 
-					{/* Plan of Strategy preview — Wave-22.6 spec: lives at the
-					    top, lays out the destination product. Personalized
-					    by JTBD answers when available. */}
+					{/* Cost summary — the loss-aversion anchor. Lives right
+					    under the header so the buyer hits the money
+					    framing before anything else competes for attention. */}
+					<CostSummaryBanner findings={negativeFindings} hiddenCount={blurredFindings.length} revealed={revealed} />
+
+					{/* Plan of Strategy preview — the destination product, the
+					    "here's what you get" answer to the cost framing
+					    just above. JTBD-personalized when concern/whyNow
+					    were captured upstream. */}
 					<PlanPreviewSection
 						domain={lead.domain || ""}
 						organizationName={lead.organizationName || lead.domain || ""}
@@ -379,7 +384,7 @@ export default function MiniAuditResultPage() {
 						launching={launching}
 					/>
 
-					{/* Workspaces accordion — 4 lenses on the same análise.
+					{/* Workspaces accordion — 4 lenses on the same Análise.
 					    Copy flaunts framework analysis; Behavioral exposes
 					    the integration grid. */}
 					<WorkspacesAccordion
@@ -388,12 +393,10 @@ export default function MiniAuditResultPage() {
 						revealed={revealed}
 					/>
 
-					{/* Funnel map — the same horizontal funnel widget used in
-					    the product (Awareness → Conversion → Post). Standalone
-					    LP variant (MiniFunnelMap) renders without console
-					    context provider. Real visible findings drive the
-					    counts and R$; stages with locked-only contribution
-					    show a blurred R$ teaser. */}
+					{/* Funnel map — the same horizontal widget used in the
+					    product. Real visible findings drive the counts and
+					    R$; stages with locked-only contribution show a
+					    blurred teaser. */}
 					<MapPreviewSection
 						visibleFindings={visibleFindings}
 						blurredFindings={blurredFindings}
@@ -402,45 +405,23 @@ export default function MiniAuditResultPage() {
 						domain={lead.domain || ""}
 					/>
 
-					{/* Vestigio AI lives as a CopilotPanel pinned to the right
-					    (desktop) / bottom-sheet (mobile) — mounted below at
-					    the page level so it floats over every section. */}
+					{/* Unified leaks list — visible + locked rendered in the
+					    same section so the buyer sees the gap inline ("I see
+					    5, I can't see these 10"). The previous design split
+					    them into two separate sections with different visual
+					    languages, which read as two different products. */}
+					<UnifiedLeaksSection
+						negativeFindings={negativeFindings}
+						positiveFindings={positiveFindings}
+						blurredFindings={blurredFindings}
+						revealed={revealed}
+						onCheckout={openCheckout}
+					/>
 
-					{/* Negative findings */}
-					<section className={`mt-10 transition-opacity duration-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
-						<header className="mb-3 flex items-end justify-between">
-							<div>
-								<span className="mb-2 inline-block rounded-full border border-edge bg-surface-card px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-content-secondary">
-									{t("badge_free")}
-								</span>
-								<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
-									{negativeFindings.length === 1 ? t("findings_unlocked_one", { count: negativeFindings.length }) : t("findings_unlocked_other", { count: negativeFindings.length })}
-								</h2>
-							</div>
-						</header>
-
-						<ul className="space-y-1.5">
-							{negativeFindings.map((f, i) => (
-								<FindingCard key={f.id} finding={f} index={i} revealed={revealed} />
-							))}
-						</ul>
-					</section>
-
-					{/* Positive findings */}
-					{positiveFindings.length > 0 && (
-						<section className={`mt-6 transition-opacity duration-700 sm:mt-8 ${revealed ? "opacity-100" : "opacity-0"}`}>
-							<ul className="space-y-1.5">
-								{positiveFindings.map((f, i) => (
-									<FindingCard key={f.id} finding={f} index={i} revealed={revealed} />
-								))}
-							</ul>
-						</section>
-					)}
-
-					{/* Cost summary banner */}
-					<CostSummaryBanner findings={negativeFindings} hiddenCount={blurredFindings.length} revealed={revealed} />
-
-					{/* CTA final emotional block — JTBD-personalized close. */}
+					{/* CTA final emotional block — JTBD-personalized close.
+					    Trust factors (Garantia 4x etc.) render inside it,
+					    replacing the previous gray "Análise por Vestigio"
+					    footer line. */}
 					<CTAFinalSection
 						organizationName={lead.organizationName || lead.domain || ""}
 						primaryConcern={lead.primaryConcern ?? null}
@@ -452,35 +433,6 @@ export default function MiniAuditResultPage() {
 						onCheckout={openCheckout}
 						launching={launching}
 					/>
-
-					{/* Locked findings grid */}
-					<section className={`mt-10 transition-opacity duration-1000 delay-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}>
-						<header className="mb-4">
-							<span
-								className="mb-2 inline-block rounded-full border border-emerald-500/30 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-							>
-								<Sparkles className="mr-1 inline h-3 w-3" />
-								{t("badge_premium")}
-							</span>
-							<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
-								{t("findings_to_unlock", { count: blurredFindings.length })}
-							</h2>
-						</header>
-
-						<ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-2">
-							{blurredFindings.map((b, i) => (
-								<LockedFindingCard key={b.id} blurred={b} index={i} onCheckout={openCheckout} />
-							))}
-						</ul>
-
-						{/* Unlock section — horizontal CTA card → Paddle checkout */}
-						<UnlockSection negativeFindings={negativeFindings} blurredCount={blurredFindings.length} onCheckout={openCheckout} launching={launching} />
-					</section>
-
-					{/* Footer */}
-					<footer className="mt-12 border-t border-edge pt-6 text-center text-xs text-content-muted">
-						{t("footer", { visible: negativeFindings.length, total: totalFindings })}
-					</footer>
 				</main>
 			</div>
 
@@ -1459,6 +1411,72 @@ function useSeverityLabel(severity: string): string {
 		positive: t("severity_positive"),
 	};
 	return map[severity] || severity;
+}
+
+// ── UnifiedLeaksSection ──
+// All leaks live here: visible negatives first, then positives,
+// then locked teasers. One header, one continuous list. Replaces
+// the old split (one section for "X desbloqueados" + a separate
+// section for "Y bloqueados") that read as two different products.
+function UnifiedLeaksSection({
+	negativeFindings,
+	positiveFindings,
+	blurredFindings,
+	revealed,
+	onCheckout,
+}: {
+	negativeFindings: MiniFinding[];
+	positiveFindings: MiniFinding[];
+	blurredFindings: BlurredFinding[];
+	revealed: boolean;
+	onCheckout: () => void;
+}) {
+	const t = useTranslations("lp.audit_result");
+	const totalCount =
+		negativeFindings.length + positiveFindings.length + blurredFindings.length;
+
+	return (
+		<section
+			className={`mt-10 transition-opacity duration-700 sm:mt-12 ${revealed ? "opacity-100" : "opacity-0"}`}
+		>
+			<header className="mb-4">
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.18em] text-content-muted">
+					{t("leaks_section.eyebrow")}
+				</div>
+				<h2 className="mt-1 font-[family-name:var(--font-fraunces)] text-[22px] font-medium leading-tight text-content sm:text-[24px]">
+					{t("leaks_section.title", { count: totalCount })}
+				</h2>
+				<p className="mt-1 text-[13px] leading-relaxed text-content-muted">
+					{t("leaks_section.subtitle", {
+						visible: negativeFindings.length + positiveFindings.length,
+						locked: blurredFindings.length,
+					})}
+				</p>
+			</header>
+
+			<ul className="space-y-1.5">
+				{negativeFindings.map((f, i) => (
+					<FindingCard key={f.id} finding={f} index={i} revealed={revealed} />
+				))}
+				{positiveFindings.map((f, i) => (
+					<FindingCard
+						key={f.id}
+						finding={f}
+						index={negativeFindings.length + i}
+						revealed={revealed}
+					/>
+				))}
+				{blurredFindings.map((b, i) => (
+					<LockedFindingCard
+						key={b.id}
+						blurred={b}
+						index={i}
+						onCheckout={onCheckout}
+					/>
+				))}
+			</ul>
+		</section>
+	);
 }
 
 function FindingCard({

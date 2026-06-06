@@ -7908,7 +7908,24 @@
 				"header": "conectada às fontes de {domain}",
 				"question": "Quanto perdi com checkout esse mês?",
 				"response_cut": "Olhando seus últimos 30 dias, você perdeu R$ ░░░░ em 3 fricções no checkout. A maior: a tela de pagamento carrega ░░░░ ms ░░░░",
-				"cta": "Ver a resposta completa"
+				"cta": "Ver a resposta completa",
+				"rich": {
+					"intro_prefix": "Olhando seus últimos 30 dias, você perdeu",
+					"intro_amount": "R$ 14.200",
+					"intro_suffix": "com fricções no checkout.",
+					"causes_label": "Causa principal:",
+					"cause_1_main": "Tela de pagamento carrega em",
+					"cause_1_bold": "3.8 s",
+					"cause_2": "Sem opção de Pix one-click",
+					"cause_3": "Validação assíncrona derruba 11%",
+					"table_label": "Por onde está escapando:",
+					"col_where": "Onde",
+					"col_cost": "Custo / mês",
+					"row_checkout": "Checkout",
+					"row_cart": "Carrinho",
+					"row_more": "+ 4 outros",
+					"cut_hint": "Resposta completa no painel da sua conta."
+				}
 			},
 			"workspaces": {
 				"title": "Quatro lentes sobre a mesma Análise",

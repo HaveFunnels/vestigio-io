@@ -10027,7 +10027,24 @@
 				"header": "connected to {domain}'s sources",
 				"question": "How much did I lose at checkout this month?",
 				"response_cut": "Looking at your last 30 days, you lost $ ░░░░ across 3 checkout frictions. The biggest: the payment screen loads in ░░░░ ms ░░░░",
-				"cta": "See the full answer"
+				"cta": "See the full answer",
+				"rich": {
+					"intro_prefix": "Looking at your last 30 days, you lost",
+					"intro_amount": "$ 14,200",
+					"intro_suffix": "across checkout frictions.",
+					"causes_label": "Main cause:",
+					"cause_1_main": "Payment screen loads in",
+					"cause_1_bold": "3.8 s",
+					"cause_2": "No one-click Pix option",
+					"cause_3": "Async validation drops 11%",
+					"table_label": "Where it's leaking:",
+					"col_where": "Where",
+					"col_cost": "Cost / mo",
+					"row_checkout": "Checkout",
+					"row_cart": "Cart",
+					"row_more": "+ 4 others",
+					"cut_hint": "Full answer in your account panel."
+				}
 			},
 			"workspaces": {
 				"title": "Four lenses on the same Analysis",

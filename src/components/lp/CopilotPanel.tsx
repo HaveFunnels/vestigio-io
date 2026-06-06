@@ -47,7 +47,10 @@ export default function CopilotPanel({
 	const [isDesktop, setIsDesktop] = useState(false);
 
 	const question = t("mcp_mockup.question");
-	const responseFull = t("mcp_mockup.response_cut");
+	// Rich response is split into intro (streamed char-by-char for
+	// the "alive" effect) + structured chunks (causes list, mini
+	// table, cut hint) that mount when streaming finishes.
+	const introText = `${t("mcp_mockup.rich.intro_prefix")} ${t("mcp_mockup.rich.intro_amount")} ${t("mcp_mockup.rich.intro_suffix")}`;
 	const scrollRef = useRef<HTMLDivElement>(null);
 
 	// Slide direction switches with viewport: desktop slides in from the
@@ -83,7 +86,7 @@ export default function CopilotPanel({
 		if (phase !== "ai_response") return;
 		const id = window.setInterval(() => {
 			setTypedChars((n) => {
-				if (n >= responseFull.length) {
+				if (n >= introText.length) {
 					window.clearInterval(id);
 					setPhase("done");
 					return n;
@@ -92,7 +95,7 @@ export default function CopilotPanel({
 			});
 		}, 22);
 		return () => window.clearInterval(id);
-	}, [phase, responseFull.length]);
+	}, [phase, introText.length]);
 
 	// Auto-scroll the chat to the bottom as the response types.
 	useEffect(() => {
@@ -203,7 +206,7 @@ export default function CopilotPanel({
 								</div>
 							</motion.div>
 
-							{/* AI bubble — typing dots or streamed text */}
+							{/* AI bubble — typing dots, streamed intro, or full rich response */}
 							{(phase === "ai_typing" ||
 								phase === "ai_response" ||
 								phase === "done") && (
@@ -213,7 +216,7 @@ export default function CopilotPanel({
 									transition={{ duration: 0.3 }}
 									className="flex justify-start"
 								>
-									<div className="max-w-[85%] rounded-2xl rounded-bl-sm border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-[13px] text-zinc-300">
+									<div className="w-full max-w-[92%] space-y-3 rounded-2xl rounded-bl-sm border border-zinc-800 bg-zinc-900/80 px-4 py-3 text-[13px] text-zinc-300">
 										{phase === "ai_typing" ? (
 											<span className="inline-flex items-center gap-1.5">
 												<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-500 [animation-delay:0ms]" />
@@ -221,10 +224,113 @@ export default function CopilotPanel({
 												<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-zinc-500 [animation-delay:300ms]" />
 											</span>
 										) : (
-											<span className="leading-relaxed">
-												{responseFull.slice(0, typedChars)}
-												<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-emerald-400 align-middle" />
-											</span>
+											<>
+												{/* Intro — streamed char-by-char while typing,
+												   then re-rendered with the R$ value highlighted
+												   once we hit done. */}
+												{phase === "ai_response" ? (
+													<p className="leading-relaxed">
+														{introText.slice(0, typedChars)}
+														<span className="ml-0.5 inline-block h-3.5 w-[2px] animate-pulse bg-emerald-400 align-middle" />
+													</p>
+												) : (
+													<p className="leading-relaxed">
+														{t("mcp_mockup.rich.intro_prefix")}{" "}
+														<strong className="font-semibold text-rose-300">
+															{t("mcp_mockup.rich.intro_amount")}
+														</strong>{" "}
+														{t("mcp_mockup.rich.intro_suffix")}
+													</p>
+												)}
+
+												{/* Structured chunks appear after the streamed intro
+												   completes. Each chunk fades in with a tiny stagger
+												   so it reads as "the AI is composing this for you". */}
+												{phase === "done" && (
+													<>
+														<motion.div
+															initial={{ opacity: 0, y: 4 }}
+															animate={{ opacity: 1, y: 0 }}
+															transition={{ delay: 0.1, duration: 0.25 }}
+														>
+															<p className="text-zinc-100">
+																<strong className="font-semibold">
+																	{t("mcp_mockup.rich.causes_label")}
+																</strong>
+															</p>
+															<ol className="mt-1.5 space-y-1 text-zinc-300">
+																<li className="flex gap-2">
+																	<span className="text-zinc-500">1.</span>
+																	<span>
+																		{t("mcp_mockup.rich.cause_1_main")}{" "}
+																		<strong className="font-semibold text-amber-300">
+																			{t("mcp_mockup.rich.cause_1_bold")}
+																		</strong>
+																	</span>
+																</li>
+																<li className="flex gap-2">
+																	<span className="text-zinc-500">2.</span>
+																	<span>{t("mcp_mockup.rich.cause_2")}</span>
+																</li>
+																<li className="flex gap-2">
+																	<span className="text-zinc-500">3.</span>
+																	<span>{t("mcp_mockup.rich.cause_3")}</span>
+																</li>
+															</ol>
+														</motion.div>
+
+														<motion.div
+															initial={{ opacity: 0, y: 4 }}
+															animate={{ opacity: 1, y: 0 }}
+															transition={{ delay: 0.4, duration: 0.25 }}
+														>
+															<p className="mb-1.5 text-zinc-100">
+																<strong className="font-semibold">
+																	{t("mcp_mockup.rich.table_label")}
+																</strong>
+															</p>
+															<div className="overflow-hidden rounded-lg border border-zinc-800 bg-zinc-950/50">
+																<div className="grid grid-cols-[1fr_auto] border-b border-zinc-800 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+																	<span>{t("mcp_mockup.rich.col_where")}</span>
+																	<span>{t("mcp_mockup.rich.col_cost")}</span>
+																</div>
+																<div className="grid grid-cols-[1fr_auto] border-b border-zinc-800/60 px-3 py-2 text-[12px]">
+																	<span className="text-zinc-200">{t("mcp_mockup.rich.row_checkout")}</span>
+																	<span className="font-mono tabular-nums text-rose-300">R$ 14.200</span>
+																</div>
+																<div className="grid grid-cols-[1fr_auto] border-b border-zinc-800/60 px-3 py-2 text-[12px]">
+																	<span className="text-zinc-200">{t("mcp_mockup.rich.row_cart")}</span>
+																	<span className="font-mono tabular-nums text-rose-300">R$ 4.800</span>
+																</div>
+																<div className="grid grid-cols-[1fr_auto] px-3 py-2 text-[12px]">
+																	<span
+																		className="select-none truncate text-zinc-400 blur-[5px]"
+																		aria-hidden
+																	>
+																		{t("mcp_mockup.rich.row_more")}
+																	</span>
+																	<span
+																		className="select-none font-mono tabular-nums text-zinc-500 blur-[4px]"
+																		aria-hidden
+																	>
+																		R$ 6.100
+																	</span>
+																</div>
+															</div>
+														</motion.div>
+
+														<motion.div
+															initial={{ opacity: 0, y: 4 }}
+															animate={{ opacity: 1, y: 0 }}
+															transition={{ delay: 0.7, duration: 0.25 }}
+															className="flex items-center gap-1.5 pt-1 text-[11px] text-zinc-500"
+														>
+															<span className="inline-block h-1 w-1 rounded-full bg-emerald-400" />
+															<span>{t("mcp_mockup.rich.cut_hint")}</span>
+														</motion.div>
+													</>
+												)}
+											</>
 										)}
 									</div>
 								</motion.div>

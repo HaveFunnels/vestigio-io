@@ -104,16 +104,16 @@ const mkBlurred = (
 ): BlurredFinding => ({ id, category, teaser_title });
 
 const COMMON_BLURRED: BlurredFinding[] = [
-	mkBlurred("b1", "checkout", "Checkout tem 3 etapas no celular"),
-	mkBlurred("b2", "cta", "Botão principal se confunde com o fundo"),
-	mkBlurred("b3", "trust", "Falta selo de segurança no pagamento"),
-	mkBlurred("b4", "friction", "Cadastro pede telefone obrigatoriamente"),
-	mkBlurred("b5", "performance", "Site demora pra carregar no celular"),
-	mkBlurred("b6", "structure", "Títulos da página competem entre si"),
-	mkBlurred("b7", "mobile", "Botões pequenos demais pra clicar no celular"),
-	mkBlurred("b8", "policy", "Política de privacidade está desatualizada"),
-	mkBlurred("b9", "cta", "Texto do botão deixa o cliente em dúvida"),
-	mkBlurred("b10", "trust", "Depoimentos sem foto nem nome real"),
+	mkBlurred("b1", "trust", "Domínios competindo pela sua marca no Google (você não cadastrou nenhum)"),
+	mkBlurred("b2", "checkout", "Quanto seu checkout perde entre 22h e 8h (sem monitoramento noturno)"),
+	mkBlurred("b3", "cta", "Suas 5 campanhas pagas vs o que sua landing entrega (gap quantificado)"),
+	mkBlurred("b4", "structure", "Como o Google ranqueia suas 3 páginas mais importantes hoje"),
+	mkBlurred("b5", "trust", "DMARC ausente: alguém pode mandar email se passando por você"),
+	mkBlurred("b6", "structure", "Seus 3 maiores concorrentes lado a lado: copy, preço, CTA"),
+	mkBlurred("b7", "trust", "Onde seus visitantes hesitam 2.4s antes de fechar a aba"),
+	mkBlurred("b8", "structure", "Sua página de preço usa charm pricing — só que sem âncora"),
+	mkBlurred("b9", "checkout", "4 vetores de risco de chargeback antes do gateway processar"),
+	mkBlurred("b10", "performance", "40% das suas conversões mobile não estão sendo medidas"),
 ];
 
 // ──────────────────────────────────────────────

@@ -1045,6 +1045,27 @@ function PlanPreviewSection({
 				</ol>
 			</div>
 
+			{/* Upside banner — gain frame counterpart to the cost
+			    summary banner at the top of the page. Marketing-
+			    psychology: the page opens with loss aversion
+			    ("Problems are costing you ~R$X") and closes the
+			    plan section with prospect-of-gain ("Seguindo este
+			    plano você pode recuperar até R$X"). Same anchor
+			    number, opposite emotional valence. Uses Fraunces +
+			    emerald tint so it visually rhymes with the cost
+			    banner above (which uses rose). Only renders when
+			    we have a real impact number to show. */}
+			{exposedMaxCents > 0 && (
+				<div className="mb-6 mt-4 overflow-hidden rounded-2xl border border-emerald-500/30 bg-emerald-50 px-5 py-5 dark:border-emerald-500/30 dark:bg-emerald-500/[0.08] sm:px-6 sm:py-6">
+					<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">
+						{t("plan_preview.upside_label")}
+					</p>
+					<p className="mt-2 font-[family-name:var(--font-fraunces)] text-[22px] font-medium leading-tight text-emerald-700 dark:text-emerald-200 sm:text-[28px]">
+						{t("plan_preview.upside_text", { amount: formatBRL(exposedMaxCents) })}
+					</p>
+				</div>
+			)}
+
 			{/* Inline CTA */}
 			<button
 				type="button"

@@ -1799,16 +1799,16 @@ export function deriveMiniAuditFindings(input: DeriveInput): MiniAuditFindings {
 	// teasers with counts derived from what the engine WOULD see if it
 	// ran the full pipeline.
 	const blurred: BlurredFinding[] = [
-		{ id: "blur_1", category: "checkout", teaser_title: "Cadeia causal: por que o checkout vaza nesse passo específico" },
-		{ id: "blur_2", category: "trust", teaser_title: "Padrão comportamental: sessões que abandonam no mesmo gesto" },
-		{ id: "blur_3", category: "friction", teaser_title: "Cross-signal: copy + speed + trust se cancelando" },
-		{ id: "blur_4", category: "mobile", teaser_title: "Heatmap implícito: onde o dedo não chega no mobile" },
-		{ id: "blur_5", category: "performance", teaser_title: "Análise comportamental via pixel — bloqueada sem integração" },
-		{ id: "blur_6", category: "policy", teaser_title: "Análise de framework: AIDA quebra no AROUSAL, faltam 3 elementos" },
-		{ id: "blur_7", category: "cta", teaser_title: "Decisão de chargeback: 4 vetores de risco antes do gateway" },
-		{ id: "blur_8", category: "structure", teaser_title: "Síntese de inteligência: o vazamento que conecta 3 packs" },
-		{ id: "blur_9", category: "trust", teaser_title: "Análise de copy: o gap entre headline e CTA" },
-		{ id: "blur_10", category: "checkout", teaser_title: "Compound finding: pagamento + tempo + indecisão" },
+		{ id: "blur_1", category: "trust", teaser_title: "Domínios competindo pela sua marca no Google (você não cadastrou nenhum)" },
+		{ id: "blur_2", category: "checkout", teaser_title: "Quanto seu checkout perde entre 22h e 8h (sem monitoramento noturno)" },
+		{ id: "blur_3", category: "cta", teaser_title: "Suas 5 campanhas pagas vs o que sua landing entrega (gap quantificado)" },
+		{ id: "blur_4", category: "structure", teaser_title: "Como o Google ranqueia suas 3 páginas mais importantes hoje" },
+		{ id: "blur_5", category: "trust", teaser_title: "DMARC ausente: alguém pode mandar email se passando por você" },
+		{ id: "blur_6", category: "structure", teaser_title: "Seus 3 maiores concorrentes lado a lado: copy, preço, CTA" },
+		{ id: "blur_7", category: "trust", teaser_title: "Onde seus visitantes hesitam 2.4s antes de fechar a aba" },
+		{ id: "blur_8", category: "structure", teaser_title: "Sua página de preço usa charm pricing — só que sem âncora" },
+		{ id: "blur_9", category: "checkout", teaser_title: "4 vetores de risco de chargeback antes do gateway processar" },
+		{ id: "blur_10", category: "performance", teaser_title: "40% das suas conversões mobile não estão sendo medidas" },
 	];
 
 	return { visible, blurred };

@@ -7991,7 +7991,9 @@
 				"next_step_1_hint": "Sua maior perda mensal — atacar isso recupera grana rápido",
 				"next_step_2": "Subir a confiança onde o cliente trava de decidir",
 				"next_step_2_hint": "Cliente vê opção, mas hesita — vamos remover o que trava",
-				"unlock_cta": "Ver o plano completo"
+				"unlock_cta": "Ver o plano completo",
+				"upside_label": "Recuperação potencial",
+				"upside_text": "Seguindo este plano, você pode recuperar até {amount}/mês"
 			},
 			"auditing_title": "Analisando {domain}…",
 			"auditing_complete_title": "Análise de {domain} concluída",

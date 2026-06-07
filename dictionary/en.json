@@ -10110,7 +10110,9 @@
 				"next_step_1_hint": "Your biggest monthly loss — fixing this recovers cash fast",
 				"next_step_2": "Lift trust where the customer hesitates to decide",
 				"next_step_2_hint": "Customer sees the choice but stalls — let's remove what's blocking",
-				"unlock_cta": "See the full plan"
+				"unlock_cta": "See the full plan",
+				"upside_label": "Recovery potential",
+				"upside_text": "Following this plan, you can recover up to {amount}/mo"
 			},
 			"auditing_title": "Analyzing {domain}…",
 			"auditing_complete_title": "Analysis of {domain} complete",

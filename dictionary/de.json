@@ -8291,7 +8291,9 @@
 				"next_step_1_hint": "Geschätzte Wirkung: Geldspanne kalibriert auf Ihr Volumen",
 				"next_step_2": "Die erste Verhaltensfriktion im Funnel angehen",
 				"next_step_2_hint": "Inklusive Ursachenanalyse und Schritt-für-Schritt-Vorgehen",
-				"unlock_cta": "Vollständigen Plan ansehen"
+				"unlock_cta": "Vollständigen Plan ansehen",
+				"upside_label": "Wiederherstellungspotenzial",
+				"upside_text": "Mit diesem Plan können Sie bis zu {amount}/Monat zurückgewinnen"
 			},
 			"auditing_title": "Diagnose von {domain}…",
 			"auditing_complete_title": "Diagnose von {domain} abgeschlossen",

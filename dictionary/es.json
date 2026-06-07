@@ -9816,7 +9816,9 @@
 				"next_step_1_hint": "Impacto estimado: rango en dinero calibrado a tu volumen",
 				"next_step_2": "Abordar la primera fricción comportamental del funnel",
 				"next_step_2_hint": "Incluye análisis de causa raíz y procedimiento paso a paso",
-				"unlock_cta": "Ver el plan completo"
+				"unlock_cta": "Ver el plan completo",
+				"upside_label": "Potencial de recuperación",
+				"upside_text": "Siguiendo este plan, puedes recuperar hasta {amount}/mes"
 			},
 			"auditing_title": "Diagnosticando {domain}…",
 			"auditing_complete_title": "Diagnóstico de {domain} completado",

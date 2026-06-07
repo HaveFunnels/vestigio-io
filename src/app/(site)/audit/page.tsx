@@ -37,6 +37,12 @@ import {
 	HandshakeIcon,
 	BriefcaseIcon,
 	BrainIcon,
+	HeartbeatIcon,
+	GavelIcon,
+	CalculatorIcon,
+	CodeIcon,
+	MegaphoneIcon,
+	ShieldIcon,
 	TableIcon,
 	XCircleIcon,
 	TrendUpIcon,
@@ -52,6 +58,7 @@ import type {
 	PrimaryConcern,
 	CurrentOptimizationMethod,
 	WhyNow,
+	ServiceCategory,
 } from "./useLpAuditForm";
 
 // Business model options shown in the audit form. Copy is written in
@@ -66,6 +73,23 @@ const BUSINESS_TYPE_OPTIONS: CardOption<BusinessType>[] = [
 	{ value: "lead_gen", label: "Captação de clientes", description: "Capto leads e fecho depois", icon: UsersThreeIcon },
 	{ value: "saas", label: "SaaS / Software", description: "Software por assinatura", icon: CloudIcon },
 	{ value: "hybrid", label: "Mais de um", description: "Misturo modelos diferentes", icon: StackIcon },
+];
+
+// Service category options — only shown when the visitor picks
+// "services" on the previous step. Labels are buyer-natural (a
+// dentista picks "Saúde" because that's how she describes her own
+// office), descriptions give a 2-3 example anchor so the visitor
+// recognizes themselves immediately. No "vertical" jargon, no
+// "B2B / B2C" classification — just "o que vocês fazem".
+const SERVICE_CATEGORY_OPTIONS: CardOption<ServiceCategory>[] = [
+	{ value: "health", label: "Saúde", description: "Dentista, clínica, médico, fisio, psicólogo", icon: HeartbeatIcon },
+	{ value: "legal", label: "Jurídico", description: "Advogado, escritório de advocacia", icon: GavelIcon },
+	{ value: "accounting", label: "Contábil / financeiro", description: "Contador, escritório contábil", icon: CalculatorIcon },
+	{ value: "software_house", label: "Software house / TI", description: "Desenvolvimento sob demanda, TI especializada", icon: CodeIcon },
+	{ value: "marketing_agency", label: "Agência / marketing", description: "Agência, growth, social media, conteúdo", icon: MegaphoneIcon },
+	{ value: "consulting", label: "Consultoria", description: "Estratégia, RH, negócios, processos", icon: BrainIcon },
+	{ value: "security", label: "Segurança", description: "Vigilância patrimonial, segurança eletrônica", icon: ShieldIcon },
+	{ value: "other", label: "Outro tipo", description: "Não me encaixo nas categorias acima", icon: QuestionIcon },
 ];
 
 const CONCERN_OPTIONS: CardOption<PrimaryConcern>[] = [
@@ -177,6 +201,25 @@ export default function LpAuditPage() {
 						options={BUSINESS_TYPE_OPTIONS}
 						onSelect={(v) => {
 							f.update("businessModel", v);
+							f.next();
+						}}
+					/>
+				)}
+
+				{/* ── Screen 2b (services only): Service category ──
+				    Conditional follow-up to business_type. Shown
+				    automatically by the navigation layer when the
+				    visitor picked "services" on screen 2. Plain-
+				    language labels (Saúde / Jurídico / Contábil /
+				    etc.) so the buyer recognizes themselves in
+				    half a glance. */}
+				{f.currentScreen === "service_category" && (
+					<CardSelectionStep
+						title="O que vocês fazem?"
+						subtitle="Escolha o que mais se aproxima — usamos isso pra calibrar a análise."
+						options={SERVICE_CATEGORY_OPTIONS}
+						onSelect={(v) => {
+							f.update("serviceCategory", v);
 							f.next();
 						}}
 					/>

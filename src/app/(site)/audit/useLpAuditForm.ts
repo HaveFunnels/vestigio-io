@@ -15,7 +15,7 @@
  *   Screen 5 (email)       → Backend step 4
  */
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { trackLpEvent } from "@/lib/lp-audit-track";
 
@@ -52,6 +52,21 @@ export type WhyNow =
 	| "chronic_pain"
 	| "exploring";
 
+// Services-only sub-segmentation. The categories are written for the
+// BR SMB market — each one a recognizable professional segment with
+// distinct funnel + trust patterns (e.g. healthcare needs CRO/ANVISA
+// signals, legal needs OAB, accounting needs CRC). Used downstream to
+// gate which services-vertical findings fire per visitor.
+export type ServiceCategory =
+	| "health"           // dentista, médico, fisioterapeuta, psicólogo, clínica
+	| "legal"            // advogado, escritório de advocacia
+	| "accounting"       // contador, escritório contábil
+	| "software_house"   // desenvolvimento sob demanda, TI especializada
+	| "marketing_agency" // agência, growth, social media
+	| "consulting"       // consultoria de negócios, estratégia, RH
+	| "security"         // vigilância patrimonial, segurança eletrônica
+	| "other";
+
 export interface LeadState {
 	domain: string;
 	ownershipConfirmed: boolean;
@@ -63,6 +78,8 @@ export interface LeadState {
 	currentOptimizationMethod: CurrentOptimizationMethod | "";
 	whyNow: WhyNow | "";
 	email: string;
+	/** Only populated when businessModel === "services". Empty otherwise. */
+	serviceCategory: ServiceCategory | "";
 }
 
 // Infer conversion model from business type — fewer questions for the user
@@ -101,37 +118,51 @@ const DEFAULT_TICKET: Record<BusinessType, number> = {
 	hybrid: 350,
 };
 
-// Frontend screens → backend step mapping (v3 — 7 screens).
-//   Screen 1 (domain)         → Backend step 1
-//   Screen 2 (business_type)  → Backend step 2 (conversionModel inferred client-side)
-//   Screen 3 (revenue)        → Backend step 3
-//   Screen 4 (concern)        → Backend step 4
-//   Screen 5 (current_method) → Backend step 5
-//   Screen 6 (why_now)        → Backend step 6
-//   Screen 7 (email)          → Backend step 7 (terminal — fires audit)
+// Frontend screens → backend step mapping. v3 had 7 fixed screens.
+// v4 inserts an optional "service_category" screen between
+// business_type and revenue when the visitor picks services as
+// their business type — services-specific findings need to know
+// which segment the visitor is in (saúde, jurídico, contábil,
+// software house, etc.) to fire the right detectors.
+//   Screen 1 (domain)            → Backend step 1
+//   Screen 2 (business_type)     → Backend step 2 (conversionModel inferred)
+//   Screen 2b (service_category) → Backend step 2 (same row, extends business_type data)
+//   Screen 3 (revenue)           → Backend step 3
+//   Screen 4 (concern)           → Backend step 4
+//   Screen 5 (current_method)    → Backend step 5
+//   Screen 6 (why_now)           → Backend step 6
+//   Screen 7 (email)             → Backend step 7 (terminal — fires audit)
 type ScreenId =
 	| "domain"
 	| "business_type"
+	| "service_category"
 	| "revenue"
 	| "concern"
 	| "current_method"
 	| "why_now"
 	| "email";
-const SCREENS: ScreenId[] = [
-	"domain",
-	"business_type",
-	"revenue",
-	"concern",
-	"current_method",
-	"why_now",
-	"email",
-];
-const TOTAL_SCREENS = SCREENS.length;
+
+// Compute the active screen list. The service_category screen is
+// included only when the visitor self-identifies as services on the
+// preceding business_type screen. Memoized in the hook below.
+function computeScreens(businessModel: BusinessType): ScreenId[] {
+	const base: ScreenId[] = [
+		"domain",
+		"business_type",
+	];
+	if (businessModel === "services") base.push("service_category");
+	base.push("revenue", "concern", "current_method", "why_now", "email");
+	return base;
+}
 
 function backendStepForScreen(screen: ScreenId): number {
 	switch (screen) {
 		case "domain": return 1;
 		case "business_type": return 2;
+		// service_category piggybacks on step 2 — the backend step
+		// stays the same because both screens commit to the same
+		// AnonymousLead row (businessModel + serviceCategory).
+		case "service_category": return 2;
 		case "revenue": return 3;
 		case "concern": return 4;
 		case "current_method": return 5;
@@ -188,6 +219,7 @@ function writeLocalStorageHandoff(form: LeadState): void {
 		if (form.primaryConcern) write("vestigio_onboard_concern", form.primaryConcern);
 		if (form.currentOptimizationMethod) write("vestigio_onboard_current_method", form.currentOptimizationMethod);
 		if (form.whyNow) write("vestigio_onboard_why_now", form.whyNow);
+		if (form.serviceCategory) write("vestigio_onboard_service_category", form.serviceCategory);
 	} catch {
 		// best effort
 	}
@@ -239,6 +271,7 @@ export default function useLpAuditForm() {
 			currentOptimizationMethod: fromStorage.currentMethod ?? "",
 			whyNow: fromStorage.whyNow ?? "",
 			email: "",
+			serviceCategory: "",
 		};
 	});
 
@@ -354,6 +387,10 @@ export default function useLpAuditForm() {
 			currentOptimizationMethod: form.currentOptimizationMethod || undefined,
 			whyNow: form.whyNow || undefined,
 			email: form.email,
+			// Only emitted when the visitor is on the services track —
+			// the backend persists into AnonymousLead.serviceCategory if
+			// the schema column exists, else gracefully ignores.
+			serviceCategory: form.serviceCategory || undefined,
 		};
 
 		try {
@@ -412,8 +449,16 @@ export default function useLpAuditForm() {
 		}
 	}, [leadId, formToken]);
 
+	// ── Active screen list ──
+	// Recomputed whenever businessModel flips so picking "services"
+	// on screen 2 instantly inserts the service_category screen for
+	// the rest of the flow. stepIndex is preserved across the change
+	// because we only ADD a screen — never reorder existing ones.
+	const screens = useMemo(() => computeScreens(form.businessModel), [form.businessModel]);
+	const totalScreens = screens.length;
+
 	// ── Advance to next screen ──
-	const currentScreen = SCREENS[stepIndex];
+	const currentScreen = screens[stepIndex] ?? "domain";
 
 	const next = useCallback(async () => {
 		// BUG-03: Synchronous ref guard — prevents concurrent invocations
@@ -458,10 +503,10 @@ export default function useLpAuditForm() {
 		}
 
 		// Advance
-		setStepIndex((s) => Math.min(s + 1, TOTAL_SCREENS - 1));
+		setStepIndex((s) => Math.min(s + 1, totalScreens - 1));
 		setSubmitting(false);
 		inFlightRef.current = false;
-	}, [currentScreen, checkDomainReachability, submitToBackend, fireAudit, leadId, router, form]);
+	}, [currentScreen, checkDomainReachability, submitToBackend, fireAudit, leadId, router, form, totalScreens]);
 
 	const prev = useCallback(() => {
 		setFieldError(null);
@@ -475,7 +520,7 @@ export default function useLpAuditForm() {
 		update,
 		// Navigation
 		stepIndex,
-		totalSteps: TOTAL_SCREENS,
+		totalSteps: totalScreens,
 		currentScreen,
 		next,
 		prev,

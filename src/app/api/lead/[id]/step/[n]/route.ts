@@ -67,6 +67,10 @@ interface StepBody {
 	currentOptimizationMethod?: string;
 	whyNow?: string;
 	email?: string;
+	// Services-vertical sub-segmentation (Wave-22.7). Only emitted when
+	// the visitor self-identifies as services on step 2 and picks a
+	// category on step 2b. Persisted into AnonymousLead.serviceCategory.
+	serviceCategory?: string;
 	phone?: string;
 	// Honeypot
 	website?: string;
@@ -164,7 +168,7 @@ export async function PATCH(
 		// Step 5: currentOptimizationMethod
 		// Step 6: whyNow
 		// Step 7: email (terminal)
-		const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "hybrid"]);
+		const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "services", "hybrid"]);
 		const VALID_CONCERN = new Set([
 			"traffic_no_sales",
 			"low_conversion",
@@ -222,6 +226,25 @@ export async function PATCH(
 				const VALID_CONVERSION_MODELS = new Set(["checkout", "whatsapp", "form", "external"]);
 				if (VALID_CONVERSION_MODELS.has(body.conversionModel)) {
 					updates.conversionModel = body.conversionModel;
+				}
+			}
+			// serviceCategory piggybacks on step 2 (services-only sub-
+			// step). Validate against the allowed set; accept on any
+			// businessModel because the v3 client only emits it when
+			// the visitor is on the services track.
+			if (body.serviceCategory) {
+				const VALID_SERVICE_CATEGORIES = new Set([
+					"health",
+					"legal",
+					"accounting",
+					"software_house",
+					"marketing_agency",
+					"consulting",
+					"security",
+					"other",
+				]);
+				if (VALID_SERVICE_CATEGORIES.has(body.serviceCategory)) {
+					updates.serviceCategory = body.serviceCategory;
 				}
 			}
 		}
@@ -308,7 +331,7 @@ export async function PATCH(
 
 		if (stepNum === 2) {
 			// BUG-02 fix: Validate against allowed enum values
-			const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "hybrid"]);
+			const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "services", "hybrid"]);
 			const VALID_CONVERSION_MODELS = new Set(["checkout", "whatsapp", "form", "external"]);
 			if (!body.businessModel || !VALID_BUSINESS_MODELS.has(body.businessModel)) {
 				return NextResponse.json(

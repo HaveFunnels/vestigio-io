@@ -128,6 +128,16 @@ const POST = withErrorTracking(
 				? rawAppUrl
 				: "https://app.vestigio.io";
 
+		// Notification URL pinned per-request rather than inherited from
+		// the preapproval_plan. Prevents webhooks from going to the wrong
+		// env when a single MP plan is shared across staging/prod, and
+		// makes the binding explicit at audit time. Dev (no public URL)
+		// omits — webhook can't reach localhost anyway.
+		const notificationUrl =
+			rawAppUrl.startsWith("https://") && !rawAppUrl.includes("localhost")
+				? `${rawAppUrl}/api/mercadopago/webhook`
+				: undefined;
+
 		let mpResp;
 		try {
 			mpResp = await createPreapproval({
@@ -138,6 +148,7 @@ const POST = withErrorTracking(
 				cardTokenId,
 				idempotencyKey: externalReference,
 				deviceSessionId,
+				notificationUrl,
 			});
 		} catch (err: any) {
 			// MP sandbox returns 404 "Card token service not found" / 400

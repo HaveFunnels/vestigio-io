@@ -227,6 +227,11 @@ export async function createPreapproval(input: {
 	idempotencyKey: string;
 	/** MP_DEVICE_SESSION_ID from MP.js — forwarded as X-meli-session-id */
 	deviceSessionId?: string;
+	/** Per-request webhook URL. Overrides the preapproval plan's
+	 *  notification_url for this subscription only. Useful when the
+	 *  plan was synced against one env (prod) but a request comes
+	 *  from another (staging) and needs callbacks back to itself. */
+	notificationUrl?: string;
 }): Promise<MpPreapproval> {
 	const body: Record<string, unknown> = {
 		preapproval_plan_id: input.preapprovalPlanId,
@@ -237,6 +242,9 @@ export async function createPreapproval(input: {
 	if (input.cardTokenId) {
 		body.card_token_id = input.cardTokenId;
 		body.status = "authorized"; // tell MP to activate immediately
+	}
+	if (input.notificationUrl) {
+		body.notification_url = input.notificationUrl;
 	}
 	return mpRequest<MpPreapproval>(
 		"POST",

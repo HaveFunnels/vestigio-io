@@ -81,6 +81,10 @@ const POST = withErrorTracking(
 		const externalReference = `preapproval:${user.id}:${planKey}:${cycle}:${nonce}`;
 		const siteUrl = process.env.SITE_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
 		const backUrl = `${siteUrl}/app/billing?mp=preapproval`;
+		const notificationUrl =
+			siteUrl.startsWith("https://") && !siteUrl.includes("localhost")
+				? `${siteUrl}/api/mercadopago/webhook`
+				: undefined;
 
 		const sub = await createPreapproval({
 			preapprovalPlanId,
@@ -89,6 +93,7 @@ const POST = withErrorTracking(
 			backUrl,
 			cardTokenId,
 			idempotencyKey: externalReference,
+			notificationUrl,
 		});
 
 		return NextResponse.json(

@@ -617,13 +617,16 @@ async function handleChargebackEvent(chargebackId: string) {
 	const ref = payment.external_reference || "";
 	const parsed = parseExternalRef(ref);
 
-	// Identify the user. Three paths depending on what kind of payment
-	// was disputed:
-	//   - preapproval recurring → match by payer email or customerId
-	//   - pixrenew              → ref carries userId
-	//   - creditpack            → ref carries orgId (no plan suspension,
-	//                             but we still log; credits already
-	//                             granted, accountant follow-up)
+	// Identify the user. The external_reference shape varies by what kind
+	// of payment was disputed. We try direct extraction first, then fall
+	// back to payer email lookup. Direct extraction is preferred because
+	// it avoids ambiguity when an MP customer ever uses multiple emails.
+	//
+	//   pixrenew:<orgId>:<userId>:...                          → orgId+userId
+	//   creditpack:<orgId>:<packKey>:...                       → orgId
+	//   preapproval:<userId>:paywall:<plan>:<cycle>:<lead>:... → userId (paywall card)
+	//   preapproval:<userId>:<plan>:<nonce>                    → userId (billing portal upgrade)
+	//   paywall_pix:<userId>:<plan>:<cycle>:<lead>:<nonce>     → userId (paywall pix one-shot)
 	let userId: string | null = null;
 	let orgId: string | null = null;
 
@@ -632,6 +635,9 @@ async function handleChargebackEvent(chargebackId: string) {
 		orgId = parsed.parts[0] || null;
 	} else if (parsed.tag === "creditpack") {
 		orgId = parsed.parts[0] || null;
+	} else if (parsed.tag === "preapproval" || parsed.tag === "paywall_pix") {
+		// userId is always parts[0] in both ref shapes
+		userId = parsed.parts[0] || null;
 	}
 
 	if (!userId && payment.payer?.email) {
@@ -828,6 +834,16 @@ export const POST = withErrorTracking(
 						}
 					}
 				}
+			} else if (type === "card_updater") {
+				// MP fires this when the cardholder's issuer rotates the PAN
+				// or extends the expiry (renewal, lost-card replacement) and
+				// MP updates the card token reference transparently. For our
+				// preapproval-based subscriptions this is a no-op — MP keeps
+				// the existing preapproval pointing at the refreshed card
+				// without our involvement. We just log so support can audit
+				// "why did the card on file change without buyer interaction?"
+				// when troubleshooting later.
+				log("card_updater", `dataId=${dataId} action=${action}`);
 			} else {
 				log("unhandled", `type=${type} action=${action}`);
 			}

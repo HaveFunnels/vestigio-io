@@ -9711,7 +9711,10 @@
 				"title": "Análisis de {domain}",
 				"findings_label": "hallazgos",
 				"critical_label": "críticos",
-				"actions_label": "acciones prioritarias"
+				"actions_label": "acciones prioritarias",
+				"visible_label": "fugas visibles",
+				"blocked_label": "bloqueadas",
+				"score_label": "Salud del embudo"
 			},
 			"unlock_divider": "Desbloquea el Análisis completo",
 			"cta_final": {
@@ -9743,10 +9746,12 @@
 					"nothing": "Antes era a ciegas. Ahora es narrativa, cola priorizada y montos en dinero."
 				},
 				"bullets": {
-					"plan": "Plan de Estrategia mensual completo",
-					"queue": "Cola de acciones priorizada por impacto financiero",
-					"ai": "Vestigio AI conectada a tus fuentes (Meta, Google, Stripe, etc.)",
-					"map": "Mapa de causa raíz interactivo"
+					"plan": "Plan de Estrategia reeditado cada mes con tus números reales",
+					"queue": "Cola de acciones ranqueada por el $ que cada una recupera",
+					"ai": "Vestigio AI lee Meta, Google y Stripe — pregunta cualquier cosa sobre ingresos",
+					"continuous": "Monitoreo continuo: alerta directa cuando aparece una fuga nueva",
+					"history": "Histórico mes a mes de lo que cambió y cuánto recuperó",
+					"map": "Mapa de causa raíz: hallazgo → embudo → impacto en $"
 				},
 				"trust_line": "Acceso inmediato tras el pago. Cancela cuando quieras."
 			},

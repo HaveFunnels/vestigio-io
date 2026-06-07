@@ -581,6 +581,75 @@ function ResultHeader({
 	const [faviconSrc, setFaviconSrc] = useState(preview.favicon_url || googleFavicon);
 	const negativeCount = negativeFindings.length;
 
+	// Composite funnel health score (0-100). Subtracts severity weight
+	// for each visible negative finding and a moderate flat penalty per
+	// locked finding (severity unknown but assumed non-trivial). Caps at
+	// 0 so heavily-leaked sites don't underflow into nonsense. Empty
+	// audits return 100.
+	const healthScore = (() => {
+		let score = 100;
+		for (const f of negativeFindings) {
+			if (f.severity === "critical") score -= 12;
+			else if (f.severity === "high") score -= 8;
+			else if (f.severity === "medium") score -= 5;
+			else if (f.severity === "low") score -= 2;
+		}
+		score -= blurredCount * 3;
+		return Math.max(0, Math.min(100, Math.round(score)));
+	})();
+	// Color band: matches the cost-summary banner tonality so the
+	// score and the exposure number agree on whether things are fine.
+	const scoreTone =
+		healthScore >= 70
+			? { ring: "text-emerald-500", value: "text-emerald-600 dark:text-emerald-300" }
+			: healthScore >= 40
+				? { ring: "text-amber-500", value: "text-amber-600 dark:text-amber-300" }
+				: { ring: "text-rose-500", value: "text-rose-600 dark:text-rose-300" };
+	const RADIAL_CIRCUMFERENCE = 2 * Math.PI * 22; // r=22, viewBox 56
+
+	const healthRadial = (
+		// Compact radial dial sitting in the header's top-right
+		// corner. Editorial sizing (56px) — visible but doesn't compete
+		// with the title. Score in the middle, label below.
+		<div className="flex shrink-0 flex-col items-center gap-1">
+			<div className="relative h-14 w-14">
+				<svg viewBox="0 0 56 56" className="h-full w-full -rotate-90">
+					<circle
+						cx="28"
+						cy="28"
+						r="22"
+						stroke="currentColor"
+						strokeWidth="4"
+						fill="none"
+						className="text-edge"
+					/>
+					<circle
+						cx="28"
+						cy="28"
+						r="22"
+						stroke="currentColor"
+						strokeWidth="4"
+						fill="none"
+						strokeLinecap="round"
+						strokeDasharray={RADIAL_CIRCUMFERENCE}
+						strokeDashoffset={
+							RADIAL_CIRCUMFERENCE * (1 - healthScore / 100)
+						}
+						className={`${scoreTone.ring} transition-[stroke-dashoffset] duration-700 ease-out`}
+					/>
+				</svg>
+				<div
+					className={`absolute inset-0 flex items-center justify-center font-[family-name:var(--font-fraunces)] text-[18px] font-medium leading-none tabular-nums ${scoreTone.value}`}
+				>
+					{healthScore}
+				</div>
+			</div>
+			<div className="text-center font-[family-name:var(--font-jetbrains-mono)] text-[8px] font-medium uppercase leading-tight tracking-[0.14em] text-content-muted">
+				{t("header.score_label")}
+			</div>
+		</div>
+	);
+
 	const favicon = (
 		// Container IS the favicon — no inner padding, no surface
 		// color peeking around the image. Border + rounded-2xl crop the
@@ -639,10 +708,14 @@ function ResultHeader({
 		<div
 			className={`mb-8 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			{/* Mobile layout: eyebrow on top, then favicon + title
-			    inline as one identity row, then divided strip. */}
+			{/* Mobile layout: eyebrow + radial on the top row, then
+			    favicon + title inline as one identity row, then
+			    divided strip below. */}
 			<div className="sm:hidden">
-				{eyebrow}
+				<div className="flex items-start justify-between gap-3">
+					<div className="min-w-0 flex-1">{eyebrow}</div>
+					{healthRadial}
+				</div>
 				<div className="mt-2 flex items-center gap-3">
 					{favicon}
 					{titleBlock}
@@ -650,8 +723,8 @@ function ResultHeader({
 				{leakStrip}
 			</div>
 
-			{/* Desktop layout: favicon left, eyebrow+title+strip stacked
-			    to its right — the original two-column posture. */}
+			{/* Desktop layout: favicon left column, eyebrow+title+strip
+			    middle column, radial in the top-right corner. */}
 			<div className="hidden items-start gap-5 sm:flex">
 				{favicon}
 				<div className="min-w-0 flex-1">
@@ -659,6 +732,7 @@ function ResultHeader({
 					<div className="mt-1.5">{titleBlock}</div>
 					{leakStrip}
 				</div>
+				{healthRadial}
 			</div>
 		</div>
 	);
@@ -671,6 +745,33 @@ function ResultHeader({
 // (shimmer was the wrong primitive — it signals "still loading"
 // when the truth is "blocked behind paywall"). Synthetic content
 // keeps the page DevTools-safe: there are no real values to reveal.
+
+// Locked narrative paragraphs in the Plan Preview — title visible,
+// body collapsed-blurred. Tapping a title reveals the blurred body
+// underneath, hinting at the depth of analysis without giving away
+// any actual content. Editorial titles that sound like real Strategy
+// Plan section headers a paid customer would see. PT-BR only —
+// matches the preview-scenario locale of our primary customer (the
+// HaveFunnels.com BR audience). Translation can come later if the
+// audit gains EN/ES/DE traffic at scale.
+const LOCKED_PARAGRAPHS: Array<{ title: string; body: string }> = [
+	{
+		title: "O padrão que aparece em todos os achados",
+		body: "Os 14 vazamentos compartilham uma mesma raiz: o funil pede confiança antes de entregar contexto. Cada vez que o visitante encontra essa inversão, o custo se acumula. Quantificamos abaixo quanto cada inversão tira do mês.",
+	},
+	{
+		title: "Por que isso está se intensificando agora",
+		body: "Três sinais convergem este mês: aumento do CAC em tráfego pago, queda de retorno orgânico nas páginas de produto, e mudança de comportamento na tela de pagamento desde a última atualização. Detalhamos cada um com a métrica que muda.",
+	},
+	{
+		title: "O movimento que move mais ponteiro",
+		body: "Entre as 8 ações abertas, uma única intervenção concentra 41% da recuperação estimada. Mostramos qual é, por que ela tem prioridade sobre as outras 7, e a sequência exata pra executá-la em 14 dias.",
+	},
+	{
+		title: "Como medir que funcionou",
+		body: "Cada ação vem com um par de métricas — uma de processo (que confirma execução) e uma de outcome (que confirma impacto). Definimos baseline, janela de leitura e nível de confiança esperado pra cada par.",
+	},
+];
 
 // Locked next-step pool — title + one-line hint. Server-rendered
 // blurred. Linguagem buyer-friendly (C10) — frases que um dono de
@@ -824,7 +925,15 @@ function PlanPreviewSection({
 				</div>
 			</div>
 
-			{/* Narrative — 2 sentences visible, rest server-cut */}
+			{/* Narrative section. First paragraph is the JTBD-personalized
+			    opening rendered cleartext — the buyer has to read at
+			    least one piece of real content so they can judge whether
+			    the analysis sounds smart. The remaining 4 paragraphs are
+			    real-sounding section titles with a click affordance: tap
+			    to expand reveals a blurred body below, signaling "there's
+			    written analysis here, behind the paywall." Hides the
+			    cliché "Mais N parágrafos seguem no Plano completo"
+			    string. */}
 			<div className="mb-6">
 				<div className="text-[10px] font-medium uppercase tracking-wider text-content-muted">
 					{t("plan_preview.narrative_label")}
@@ -832,9 +941,16 @@ function PlanPreviewSection({
 				<p className="mt-2 font-[family-name:var(--font-fraunces)] text-[16px] leading-relaxed text-content-secondary">
 					{narrativeOpening}
 				</p>
-				<p className="mt-2 text-[12px] text-content-faint">
-					{t("plan_preview.narrative_continues")}
-				</p>
+				<div className="mt-4 space-y-1">
+					{LOCKED_PARAGRAPHS.map((p) => (
+						<LockedNarrativeRow
+							key={p.title}
+							title={p.title}
+							body={p.body}
+							onCheckout={onCheckout}
+						/>
+					))}
+				</div>
 			</div>
 
 			{/* Next steps — first 2 titles visible, rest cut */}
@@ -1489,9 +1605,16 @@ function CTAFinalSection({
 					</p>
 				)}
 
-				{/* Outcome bullets — outcome-frame, not feature list */}
-				<ul className="mt-7 grid max-w-xl gap-2.5 sm:grid-cols-2">
-					{(["plan", "queue", "ai", "map"] as const).map((item) => (
+				{/* Outcome bullets — six items in 2 cols. signup-flow-cro
+				    principle: each bullet stands on its own outcome
+				    (what the buyer GETS), uses a specific mechanism
+				    or unit (R$, "each month", "Meta, Google e Stripe"),
+				    and earns its line. The list is wider now and grew
+				    from 4 → 6 because the buyer is at the very end of
+				    a long page and the moment of CTA decision benefits
+				    from more concrete proof, not less. */}
+				<ul className="mt-7 grid max-w-2xl gap-x-6 gap-y-2.5 sm:grid-cols-2">
+					{(["plan", "queue", "ai", "continuous", "history", "map"] as const).map((item) => (
 						<li key={item} className="flex items-start gap-2 text-[13px] leading-relaxed text-content-secondary">
 							<svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
 								<path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -1956,6 +2079,76 @@ const LOCKED_IMPACT_FAKE = [
 	"R$1.500 – 2.600 / mês",
 	"R$4.600 – 6.800 / mês",
 ];
+
+// Single row in the Plan Preview narrative section. Title visible
+// (real, plausible section header); body collapsed-blurred and only
+// renders when the buyer taps the chevron. Body reveal is opt-in to
+// the curiosity gap, but tapping the row itself (anywhere outside
+// the chevron) routes to checkout — for buyers who want to skip
+// the tease and just unlock everything.
+function LockedNarrativeRow({
+	title,
+	body,
+	onCheckout,
+}: {
+	title: string;
+	body: string;
+	onCheckout: () => void;
+}) {
+	const [open, setOpen] = useState(false);
+	return (
+		<div className="overflow-hidden rounded-xl border border-edge bg-surface-inset/40">
+			<div className="flex items-center gap-2">
+				<button
+					type="button"
+					onClick={onCheckout}
+					className="flex flex-1 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-amber-50/40 dark:hover:bg-amber-500/[0.05]"
+				>
+					<Lock className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+					<span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-snug text-content">
+						{title}
+					</span>
+				</button>
+				<button
+					type="button"
+					onClick={() => setOpen((v) => !v)}
+					className="flex h-9 w-9 shrink-0 items-center justify-center text-content-faint transition-colors hover:text-content-muted"
+					aria-label={open ? "Recolher" : "Expandir"}
+				>
+					<ChevronDown
+						className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+					/>
+				</button>
+			</div>
+			<AnimatePresence initial={false}>
+				{open && (
+					<motion.div
+						key="body"
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: "auto", opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{
+							height: { duration: 0.24, ease: [0.22, 1, 0.36, 1] },
+							opacity: { duration: 0.15, ease: "easeOut" },
+						}}
+						className="overflow-hidden"
+					>
+						<button
+							type="button"
+							onClick={onCheckout}
+							className="block w-full select-none border-t border-edge-subtle px-3 py-3 text-left blur-[3px] transition-opacity hover:opacity-90"
+							aria-hidden
+						>
+							<p className="text-[12px] leading-relaxed text-content-secondary">
+								{body}
+							</p>
+						</button>
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</div>
+	);
+}
 
 function LockedFindingCard({
 	blurred,

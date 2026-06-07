@@ -7842,6 +7842,7 @@
 				"title_anchor": "Até {amount}/mês escapando em {domain}",
 				"visible_label": "vazamentos visíveis",
 				"blocked_label": "bloqueados",
+				"score_label": "Saúde do funil",
 				"findings_label": "vazamentos",
 				"critical_label": "críticos",
 				"actions_label": "ações priorizadas"
@@ -7880,10 +7881,12 @@
 					"nothing": "Antes era no escuro. Agora é com narrativa, fila priorizada e valores em reais."
 				},
 				"bullets": {
-					"plan": "Plano de Estratégia mensal completo",
-					"queue": "Fila de ações priorizada por impacto financeiro",
-					"ai": "Vestigio AI conectada às suas fontes (Meta, Google, Stripe, etc.)",
-					"map": "Mapa de causa-raiz interativo"
+					"plan": "Plano de Estratégia editado todo mês com seus números reais",
+					"queue": "Fila de ações ranqueada pelo R$ que cada uma recupera",
+					"ai": "Vestigio AI lê Meta, Google e Stripe — pergunta qualquer coisa de receita",
+					"continuous": "Monitoramento contínuo: alerta direto quando vazamento novo surge",
+					"history": "Histórico mês-a-mês do que mudou e o quanto recuperou",
+					"map": "Mapa de causa-raiz: achado → funil → impacto em R$"
 				},
 				"trust_line": "Acesso imediato após o pagamento. Cancele quando quiser."
 			},

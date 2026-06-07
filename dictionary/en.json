@@ -9961,6 +9961,7 @@
 				"title_anchor": "Up to {amount}/mo leaking from {domain}",
 				"visible_label": "visible leaks",
 				"blocked_label": "locked",
+				"score_label": "Funnel health",
 				"findings_label": "leaks",
 				"critical_label": "critical",
 				"actions_label": "priority actions"
@@ -9999,10 +10000,12 @@
 					"nothing": "Before, it was guesswork. Now it's narrative, ranked queue, and dollar amounts."
 				},
 				"bullets": {
-					"plan": "Full Monthly Strategy Plan",
-					"queue": "Action queue ranked by financial impact",
-					"ai": "Vestigio AI connected to your sources (Meta, Google, Stripe, etc.)",
-					"map": "Interactive root-cause map"
+					"plan": "Strategy plan re-edited each month against your live numbers",
+					"queue": "Action queue ranked by the $ each one is worth",
+					"ai": "Vestigio AI reads Meta, Google and Stripe — ask any revenue question",
+					"continuous": "Continuous monitoring: direct alert when a new leak appears",
+					"history": "Month-over-month history of what changed and how much it recovered",
+					"map": "Root-cause map: finding → funnel → $ impact"
 				},
 				"trust_line": "Instant access after payment. Cancel anytime."
 			},

@@ -8186,7 +8186,10 @@
 				"title": "Analyse von {domain}",
 				"findings_label": "Befunde",
 				"critical_label": "kritisch",
-				"actions_label": "priorisierte Maßnahmen"
+				"actions_label": "priorisierte Maßnahmen",
+				"visible_label": "sichtbare Lecks",
+				"blocked_label": "gesperrt",
+				"score_label": "Funnel-Gesundheit"
 			},
 			"unlock_divider": "Vollständige Analyse freischalten",
 			"cta_final": {
@@ -8218,10 +8221,12 @@
 					"nothing": "Vorher Blindflug. Jetzt Erzählung, priorisierte Liste und Eurobeträge."
 				},
 				"bullets": {
-					"plan": "Vollständiger monatlicher Strategieplan",
-					"queue": "Aktionsliste sortiert nach finanzieller Wirkung",
-					"ai": "Vestigio AI verbunden mit Ihren Quellen (Meta, Google, Stripe, etc.)",
-					"map": "Interaktive Ursache-Karte"
+					"plan": "Strategieplan jeden Monat mit Ihren echten Zahlen neu erstellt",
+					"queue": "Aktionsliste nach € sortiert, die jede einzelne zurückholt",
+					"ai": "Vestigio AI liest Meta, Google und Stripe — fragen Sie alles zum Umsatz",
+					"continuous": "Kontinuierliche Überwachung: direkte Warnung bei neuen Lecks",
+					"history": "Monat-für-Monat-Historie: was sich geändert hat und wie viel zurückkam",
+					"map": "Ursache-Karte: Befund → Funnel → € Wirkung"
 				},
 				"trust_line": "Sofortiger Zugang nach Zahlung. Jederzeit kündbar."
 			},

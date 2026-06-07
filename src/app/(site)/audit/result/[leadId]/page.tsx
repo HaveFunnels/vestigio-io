@@ -580,40 +580,83 @@ function ResultHeader({
 	const [faviconSrc, setFaviconSrc] = useState(preview.favicon_url || googleFavicon);
 	const negativeCount = negativeFindings.length;
 
+	const favicon = (
+		// Container IS the favicon — no inner padding, no surface
+		// color peeking around the image. Border + rounded-2xl crop the
+		// favicon to a rounded square so the brand mark reads as one
+		// shape. object-cover so a non-square favicon fills without
+		// letterbox stripes.
+		<span className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-edge shadow-sm sm:h-12 sm:w-12">
+			{/* eslint-disable-next-line @next/next/no-img-element */}
+			<img
+				src={faviconSrc}
+				alt=""
+				className="h-full w-full object-cover"
+				onError={() => {
+					if (faviconSrc !== googleFavicon) setFaviconSrc(googleFavicon);
+				}}
+			/>
+		</span>
+	);
+
+	const eyebrow = (
+		<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.18em] text-content-muted">
+			{t("header.eyebrow")}
+		</div>
+	);
+
+	const titleBlock = (
+		<div className="min-w-0 flex-1">
+			<h1 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-[1.1] tracking-tight text-content sm:text-[32px]">
+				{t("header.title_preliminary", { org: organizationName })}
+			</h1>
+			<div className="mt-1 font-mono text-[12px] text-content-muted">{domain}</div>
+		</div>
+	);
+
+	// Single divided strip for the leak counts. Centered, with a
+	// hairline vertical divider between the visible and blocked
+	// halves. Replaces the inline "N · label · N · label" run that
+	// read as a sentence rather than a stat strip. Both halves share
+	// the same typography so neither dominates; the only color is the
+	// rose on the blocked count to flag the gap.
+	const leakStrip = (
+		<div className="mt-4 flex items-stretch overflow-hidden rounded-xl border border-edge bg-surface-card sm:mt-5">
+			<div className="flex flex-1 items-baseline justify-center gap-1.5 px-4 py-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
+				<span className="font-semibold text-content">{negativeCount}</span>
+				<span className="text-content-muted">{t("header.visible_label")}</span>
+			</div>
+			<div className="w-px self-stretch bg-edge" aria-hidden />
+			<div className="flex flex-1 items-baseline justify-center gap-1.5 px-4 py-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
+				<span className="font-semibold text-rose-600 dark:text-rose-400">{blurredCount}</span>
+				<span className="text-content-muted">{t("header.blocked_label")}</span>
+			</div>
+		</div>
+	);
+
 	return (
 		<div
-			className={`mb-8 flex flex-col items-start gap-4 transition-opacity duration-700 sm:flex-row sm:items-center sm:gap-5 ${revealed ? "opacity-100" : "opacity-0"}`}
+			className={`mb-8 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			{/* Container IS the favicon — no inner padding, no surface
-			    color peeking around the image. Border + rounded-2xl
-			    crop the favicon to a rounded square so the brand mark
-			    reads as one shape. object-cover so a non-square
-			    favicon fills without letterbox stripes. */}
-			<span className="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-edge shadow-sm">
-				{/* eslint-disable-next-line @next/next/no-img-element */}
-				<img
-					src={faviconSrc}
-					alt=""
-					className="h-full w-full object-cover"
-					onError={() => {
-						if (faviconSrc !== googleFavicon) setFaviconSrc(googleFavicon);
-					}}
-				/>
-			</span>
-			<div className="min-w-0 flex-1">
-				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.18em] text-content-muted">
-					{t("header.eyebrow")}
+			{/* Mobile layout: eyebrow on top, then favicon + title
+			    inline as one identity row, then divided strip. */}
+			<div className="sm:hidden">
+				{eyebrow}
+				<div className="mt-2 flex items-center gap-3">
+					{favicon}
+					{titleBlock}
 				</div>
-				<h1 className="mt-1 font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-[1.1] tracking-tight text-content sm:text-[32px]">
-					{t("header.title_preliminary", { org: organizationName })}
-				</h1>
-				<div className="mt-1.5 font-mono text-[12px] text-content-muted">{domain}</div>
-				<div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
-					<span className="font-semibold text-content">{negativeCount}</span>
-					<span className="text-content-muted">{t("header.visible_label")}</span>
-					<span className="text-content-faint">·</span>
-					<span className="font-semibold text-rose-600 dark:text-rose-400">{blurredCount}</span>
-					<span className="text-content-muted">{t("header.blocked_label")}</span>
+				{leakStrip}
+			</div>
+
+			{/* Desktop layout: favicon left, eyebrow+title+strip stacked
+			    to its right — the original two-column posture. */}
+			<div className="hidden items-start gap-5 sm:flex">
+				{favicon}
+				<div className="min-w-0 flex-1">
+					{eyebrow}
+					<div className="mt-1.5">{titleBlock}</div>
+					{leakStrip}
 				</div>
 			</div>
 		</div>
@@ -718,13 +761,19 @@ function PlanPreviewSection({
 		<section
 			className={`relative overflow-hidden rounded-3xl border border-edge bg-surface-card p-6 transition-opacity duration-700 sm:p-8 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
+			{/* "Prévia" notch — hangs from the top center edge of the
+			    card, only the bottom corners rounded so it looks
+			    pasted onto the card top like an iPhone notch. Sits
+			    inside the card's overflow boundary so nothing escapes,
+			    but appears to tongue down INTO the card from above. */}
+			<div className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 rounded-b-xl bg-content px-3 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-surface-card">
+				{t("plan_preview.preview_badge")}
+			</div>
+
 			{/* Header */}
 			<div className="mb-5 flex items-baseline justify-between gap-3">
 				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-content-muted">
 					{t("plan_preview.eyebrow")}
-				</div>
-				<div className="inline-flex items-center gap-1.5 rounded-sm border border-content/80 bg-content px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.16em] text-surface-card">
-					{t("plan_preview.preview_badge")}
 				</div>
 			</div>
 
@@ -742,28 +791,33 @@ function PlanPreviewSection({
 			    stronger than hiding it — there is no "paywall reveal"
 			    payoff to be gained by blurring numbers the buyer has
 			    already seen one section ago. */}
+			{/* Hero stat strip — three counts (Vazamentos, Valor exposto,
+			    Ações abertas) rendered with the same Fraunces editorial
+			    treatment as the funnel-map carousel counts so the page
+			    type rhythm stays consistent. Label on top center, big
+			    number underneath center. */}
 			<div className="mb-6 grid grid-cols-3 gap-3">
-				<div className="rounded-xl border border-edge bg-surface-inset p-3">
+				<div className="flex flex-col items-center rounded-xl border border-edge bg-surface-inset p-3 text-center">
 					<div className="text-[9px] font-medium uppercase tracking-wider text-content-muted">
 						{t("plan_preview.hero.label_leaks")}
 					</div>
-					<div className="mt-2 font-mono text-base font-semibold tabular-nums text-content sm:text-lg">
+					<div className="mt-2 font-[family-name:var(--font-fraunces)] text-[28px] font-medium leading-none tabular-nums text-content sm:text-[32px]">
 						{totalLeaks}
 					</div>
 				</div>
-				<div className="rounded-xl border border-edge bg-surface-inset p-3">
+				<div className="flex flex-col items-center rounded-xl border border-edge bg-surface-inset p-3 text-center">
 					<div className="text-[9px] font-medium uppercase tracking-wider text-content-muted">
 						{t("plan_preview.hero.label_exposed")}
 					</div>
-					<div className="mt-2 font-mono text-base font-semibold tabular-nums text-rose-600 dark:text-rose-300 sm:text-lg">
+					<div className="mt-2 font-[family-name:var(--font-fraunces)] text-[22px] font-medium leading-none tabular-nums text-rose-600 dark:text-rose-300 sm:text-[26px]">
 						{exposedMaxCents > 0 ? formatBRL(exposedMaxCents) : "—"}
 					</div>
 				</div>
-				<div className="rounded-xl border border-edge bg-surface-inset p-3">
+				<div className="flex flex-col items-center rounded-xl border border-edge bg-surface-inset p-3 text-center">
 					<div className="text-[9px] font-medium uppercase tracking-wider text-content-muted">
 						{t("plan_preview.hero.label_actions")}
 					</div>
-					<div className="mt-2 font-mono text-base font-semibold tabular-nums text-emerald-600 dark:text-emerald-300 sm:text-lg">
+					<div className="mt-2 font-[family-name:var(--font-fraunces)] text-[28px] font-medium leading-none tabular-nums text-emerald-600 dark:text-emerald-300 sm:text-[32px]">
 						{nextStepCount}
 					</div>
 				</div>
@@ -912,7 +966,9 @@ function WorkspacesAccordion({
 		<section
 			className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			<div className="mb-4 flex items-baseline justify-between">
+			{/* Mobile: subtitle drops under title left-aligned. Desktop:
+			    title left, subtitle right, baselines aligned. */}
+			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
 					{t("workspaces.title")}
 				</h2>
@@ -1242,7 +1298,9 @@ function MapPreviewSection({
 		<section
 			className={`mt-8 transition-opacity duration-700 sm:mt-10 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			<div className="mb-4 flex items-baseline justify-between gap-3">
+			{/* Mobile: subtitle drops under title left-aligned. Desktop:
+			    title left, count right, baselines aligned. */}
+			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-[family-name:var(--font-fraunces)] text-[20px] font-medium leading-tight text-content sm:text-[22px]">
 					{t("map.title", { domain })}
 				</h2>

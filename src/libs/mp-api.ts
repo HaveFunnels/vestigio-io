@@ -306,6 +306,9 @@ export interface MpPaymentResponse {
 export async function createPixPayment(input: {
 	amountBrl: number; // reais decimal
 	payerEmail: string;
+	/** Used for payer first/last split + additional_info — MP's risk
+	 *  engine cross-references it. Optional: we omit cleanly if absent. */
+	payerName?: string;
 	description: string;
 	externalReference: string;
 	notificationUrl?: string;
@@ -315,19 +318,39 @@ export async function createPixPayment(input: {
 	deviceSessionId?: string;
 }): Promise<MpPaymentResponse> {
 	const expires = new Date(Date.now() + (input.expiresInMinutes ?? 60) * 60_000);
+	// Split full name → first / last for MP's risk engine. Single-word
+	// names (common in BR test data) go in first_name, last empty.
+	const trimmedName = input.payerName?.trim();
+	const nameParts = trimmedName ? trimmedName.split(/\s+/) : [];
+	const firstName = nameParts.shift();
+	const lastName = nameParts.join(" ") || undefined;
+
+	const payer: Record<string, unknown> = { email: input.payerEmail };
+	if (firstName) payer.first_name = firstName;
+	if (lastName) payer.last_name = lastName;
+
+	const body: Record<string, unknown> = {
+		transaction_amount: input.amountBrl,
+		description: input.description,
+		payment_method_id: "pix",
+		payer,
+		external_reference: input.externalReference,
+		notification_url: input.notificationUrl,
+		date_of_expiration: expires.toISOString(),
+		metadata: input.metadata,
+	};
+	// additional_info is what MP's risk engine actually consults
+	// for non-card payments. Echoes payer details so the score has
+	// redundant signal even if the top-level payer block is sparse.
+	if (firstName || lastName) {
+		body.additional_info = {
+			payer: { first_name: firstName, last_name: lastName },
+		};
+	}
 	return mpRequest<MpPaymentResponse>(
 		"POST",
 		"/v1/payments",
-		{
-			transaction_amount: input.amountBrl,
-			description: input.description,
-			payment_method_id: "pix",
-			payer: { email: input.payerEmail },
-			external_reference: input.externalReference,
-			notification_url: input.notificationUrl,
-			date_of_expiration: expires.toISOString(),
-			metadata: input.metadata,
-		},
+		body,
 		input.idempotencyKey,
 		input.deviceSessionId,
 	);

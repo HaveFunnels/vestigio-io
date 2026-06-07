@@ -145,6 +145,7 @@ const POST = withErrorTracking(
 			const payment = await createPixPayment({
 				amountBrl: centsToReais(amountCents),
 				payerEmail: user.email,
+				payerName: user.name ?? undefined,
 				description: `Vestigio ${plan.label} — ${cycle === "annually" ? "Anual" : "Mensal"}`,
 				externalReference,
 				notificationUrl,

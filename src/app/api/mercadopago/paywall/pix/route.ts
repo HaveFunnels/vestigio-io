@@ -123,6 +123,7 @@ const POST = withErrorTracking(
 		const mpResp = await createPixPayment({
 			amountBrl,
 			payerEmail: user.email,
+			payerName: user.name ?? undefined,
 			description,
 			externalReference,
 			notificationUrl,

@@ -7,6 +7,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Trophy, ShieldCheck, ShieldX, Lock, Sparkles, ChevronDown, Target, ShieldHalf } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useTheme } from "next-themes";
 
 declare global {
 	interface Window {
@@ -257,19 +258,19 @@ export default function MiniAuditResultPage() {
 		return () => clearTimeout(timer);
 	}, [lead, fetchLead, isPreview]);
 
-	// ── Preview theme: force-apply ?theme= to <html> ──
-	// The previous version had a cleanup that restored the original
-	// .dark state on dep change — which fought the next effect run
-	// (cleanup added .dark back, then the new effect removed it,
-	// causing a flicker and sometimes no light at all). Now we just
-	// set the class to match previewTheme; no cleanup needed because
-	// preview is dev-only.
+	// ── Preview theme: drive next-themes from ?theme= ──
+	// We used to mutate <html class="dark"> directly, but next-themes
+	// owns that class and re-applies it on every render from its
+	// internal state + localStorage. Our manual mutation lost the race
+	// and the page stayed dark even with ?theme=light. Now we go
+	// through the canonical setTheme() so next-themes is the source of
+	// truth. The (site) provider already drops forcedTheme when
+	// ?preview= is present, otherwise this setTheme would be ignored.
+	const { setTheme } = useTheme();
 	useEffect(() => {
 		if (!isPreview || !previewTheme) return;
-		const html = document.documentElement;
-		if (previewTheme === "light") html.classList.remove("dark");
-		else html.classList.add("dark");
-	}, [isPreview, previewTheme]);
+		setTheme(previewTheme);
+	}, [isPreview, previewTheme, setTheme]);
 
 	// ── Render branches ──
 

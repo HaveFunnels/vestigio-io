@@ -9693,7 +9693,7 @@
 			"score_desc_ok": "Tu landing funciona, pero está perdiendo ingresos en puntos específicos.",
 			"score_desc_bad": "Tu landing tiene problemas que te están costando dinero todos los días.",
 			"exposure_label": "Exposición mensual estimada",
-			"exposure_text": "{count} problemas costando entre {min} y {max} por mes",
+			"exposure_text": "Los problemas te están costando ~{amount}/mes",
 			"unlock_title": "Desbloquear diagnóstico completo",
 			"unlock_launching": "Abriendo checkout…",
 			"unlock_desc": "El diagnóstico completo analiza 15.000+ señales incluyendo navegación automatizada, análisis de copy y monitoreo continuo. Recupera hasta {amount}/mes.",
@@ -9712,8 +9712,8 @@
 				"findings_label": "hallazgos",
 				"critical_label": "críticos",
 				"actions_label": "acciones prioritarias",
-				"visible_label": "fugas visibles",
-				"blocked_label": "bloqueadas",
+				"visible_label": "mostradas",
+				"blocked_label": "a desbloquear",
 				"score_label": "Salud del embudo"
 			},
 			"unlock_divider": "Desbloquea el Análisis completo",
@@ -9746,7 +9746,7 @@
 					"nothing": "Antes era a ciegas. Ahora es narrativa, cola priorizada y montos en dinero."
 				},
 				"bullets": {
-					"plan": "Plan de Estrategia reeditado cada mes con tus números reales",
+					"plan": "Análisis corriendo 24/7 — Plan de Estrategia siempre vivo + snapshot mensual de evolución",
 					"queue": "Cola de acciones ranqueada por el $ que cada una recupera",
 					"ai": "Vestigio AI lee Meta, Google y Stripe — pregunta cualquier cosa sobre ingresos",
 					"continuous": "Monitoreo continuo: alerta directa cuando aparece una fuga nueva",

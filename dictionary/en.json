@@ -9940,7 +9940,7 @@
 			"score_desc_ok": "Your landing page works, but it is leaking revenue at specific points.",
 			"score_desc_bad": "Your landing page has problems that are costing you money every day.",
 			"exposure_label": "Estimated monthly exposure",
-			"exposure_text": "{count, plural, one {# leak costing} other {# leaks costing}} between {min} and {max} per month",
+			"exposure_text": "Problems are costing you ~{amount}/mo",
 			"unlock_title": "Unlock the full Analysis",
 			"unlock_launching": "Opening checkout…",
 			"unlock_desc": "The full Analysis covers 15,000+ signals, including automated navigation, copy, and continuous monitoring. Recover up to {amount}/mo.",
@@ -9959,8 +9959,8 @@
 				"title_preliminary": "{org}",
 				"title": "Analysis of {domain}",
 				"title_anchor": "Up to {amount}/mo leaking from {domain}",
-				"visible_label": "visible leaks",
-				"blocked_label": "locked",
+				"visible_label": "shown",
+				"blocked_label": "to unlock",
 				"score_label": "Funnel health",
 				"findings_label": "leaks",
 				"critical_label": "critical",
@@ -10000,7 +10000,7 @@
 					"nothing": "Before, it was guesswork. Now it's narrative, ranked queue, and dollar amounts."
 				},
 				"bullets": {
-					"plan": "Strategy plan re-edited each month against your live numbers",
+					"plan": "Analysis runs 24/7 — Strategy Plan stays live + monthly evolution snapshot",
 					"queue": "Action queue ranked by the $ each one is worth",
 					"ai": "Vestigio AI reads Meta, Google and Stripe — ask any revenue question",
 					"continuous": "Continuous monitoring: direct alert when a new leak appears",

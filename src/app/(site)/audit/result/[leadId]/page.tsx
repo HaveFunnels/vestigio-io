@@ -502,6 +502,16 @@ export default function MiniAuditResultPage() {
 						onCheckout={openCheckout}
 						launching={launching}
 					/>
+
+					{/* FAQ — last buyer surface before they leave the page
+					    or click create account. signup-flow-cro principle:
+					    answer the 6 objections that are actively live in
+					    the buyer's head at this moment (time-to-value,
+					    risk reversal, cancel, differentiation, security,
+					    fit). marketing-psychology applied: loss-aversion
+					    antidote in #2, status-quo bias antidote in #3,
+					    authority signal in #5. */}
+					<FAQSection revealed={revealed} onCheckout={openCheckout} />
 				</main>
 			</div>
 
@@ -675,23 +685,31 @@ function ResultHeader({
 		</div>
 	);
 
-	const titleBlock = (
-		<div className="min-w-0 flex-1">
+	// Title + URL are inline (same baseline) right of the favicon —
+	// title big in Fraunces, URL small in mono, sharing a single text
+	// row so the brand reads as one identity unit instead of stacked.
+	// Used on both mobile and desktop.
+	const titleInline = (
+		<div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
 			<h1 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-[1.1] tracking-tight text-content sm:text-[32px]">
 				{t("header.title_preliminary", { org: organizationName })}
 			</h1>
-			<div className="mt-1 font-mono text-[12px] text-content-muted">{domain}</div>
+			<span className="font-mono text-[12px] text-content-muted sm:text-[13px]">
+				{domain}
+			</span>
 		</div>
 	);
 
-	// Single divided strip for the leak counts. Centered, with a
-	// hairline vertical divider between the visible and blocked
-	// halves. Replaces the inline "N · label · N · label" run that
-	// read as a sentence rather than a stat strip. Both halves share
-	// the same typography so neither dominates; the only color is the
-	// rose on the blocked count to flag the gap.
+	// Divided strip for the leak counts. Sized to the full
+	// content width — matches the width of the cost-summary card
+	// and every other card below in the page rhythm. Both halves
+	// share the same typography so neither dominates; the only
+	// color is the rose on the still-locked count to flag the gap
+	// (visible/locked binary kept, but the labels read "Mostrados"
+	// and "A desbloquear" now — action-oriented instead of
+	// observational).
 	const leakStrip = (
-		<div className="mt-4 flex items-stretch overflow-hidden rounded-xl border border-edge bg-surface-card sm:mt-5">
+		<div className="mt-4 flex w-full items-stretch overflow-hidden rounded-xl border border-edge bg-surface-card sm:mt-5">
 			<div className="flex flex-1 items-baseline justify-center gap-1.5 px-4 py-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
 				<span className="font-semibold text-content">{negativeCount}</span>
 				<span className="text-content-muted">{t("header.visible_label")}</span>
@@ -708,32 +726,27 @@ function ResultHeader({
 		<div
 			className={`mb-8 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			{/* Mobile layout: eyebrow + radial on the top row, then
-			    favicon + title inline as one identity row, then
-			    divided strip below. */}
-			<div className="sm:hidden">
-				<div className="flex items-start justify-between gap-3">
-					<div className="min-w-0 flex-1">{eyebrow}</div>
-					{healthRadial}
-				</div>
-				<div className="mt-2 flex items-center gap-3">
-					{favicon}
-					{titleBlock}
-				</div>
-				{leakStrip}
-			</div>
-
-			{/* Desktop layout: favicon left column, eyebrow+title+strip
-			    middle column, radial in the top-right corner. */}
-			<div className="hidden items-start gap-5 sm:flex">
-				{favicon}
-				<div className="min-w-0 flex-1">
-					{eyebrow}
-					<div className="mt-1.5">{titleBlock}</div>
-					{leakStrip}
-				</div>
+			{/* Top row across both viewports: PRELIMINARY ANALYSIS
+			    eyebrow on the left, radial health score on the right.
+			    Both anchor to the same horizontal band so the radial
+			    visually aligns with the eyebrow + the cost-summary
+			    card edge below. */}
+			<div className="flex items-start justify-between gap-3">
+				<div className="min-w-0 flex-1">{eyebrow}</div>
 				{healthRadial}
 			</div>
+
+			{/* Brand identity row: favicon left, title + URL inline on a
+			    single baseline to its right. Same structure across mobile
+			    and desktop — the previous two-layout split caused
+			    misalignment between favicon and title and the radial
+			    floated independently. */}
+			<div className="mt-3 flex items-center gap-3 sm:mt-4 sm:gap-4">
+				{favicon}
+				{titleInline}
+			</div>
+
+			{leakStrip}
 		</div>
 	);
 }
@@ -970,21 +983,25 @@ function PlanPreviewSection({
 						return (
 							<li
 								key={order}
-								className="flex items-start gap-3 rounded-2xl border border-edge bg-surface-inset p-4"
+								// Counter "01" / "02" sits absolute in the
+								// top-left corner of the card overlapping the
+								// border — releases the inline space inside
+								// the content row so title can flow full width.
+								// pt-3.5 to give the title room above where
+								// the counter would otherwise crowd it.
+								className="relative flex items-start gap-3 rounded-2xl border border-edge bg-surface-inset p-4 pt-5"
 							>
+								<span className="absolute left-3 top-2 font-mono text-[10px] font-semibold tabular-nums text-content-faint">
+									0{order}
+								</span>
 								<span
 									className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accentClass}`}
 								>
 									<Icon size={18} strokeWidth={2.2} />
 								</span>
 								<div className="min-w-0 flex-1">
-									<div className="flex items-baseline gap-2">
-										<span className="font-mono text-[10px] font-semibold tabular-nums text-content-faint">
-											0{order}
-										</span>
-										<div className="text-[14px] font-semibold leading-tight text-content">
-											{t(`plan_preview.next_step_${order}` as never)}
-										</div>
+									<div className="text-[14px] font-semibold leading-tight text-content">
+										{t(`plan_preview.next_step_${order}` as never)}
 									</div>
 									<div className="mt-1 text-[12px] leading-relaxed text-content-muted">
 										{t(`plan_preview.next_step_${order}_hint` as never)}
@@ -1001,19 +1018,20 @@ function PlanPreviewSection({
 						<li
 							key={`locked-${i}`}
 							onClick={onCheckout}
-							className="flex cursor-pointer items-start gap-3 rounded-2xl border border-edge bg-surface-inset/50 p-4 transition-colors hover:bg-surface-inset/80"
+							// Same overlapped-counter pattern as the visible
+							// rows above so the locked rows feel continuous,
+							// just blurred.
+							className="relative flex cursor-pointer items-start gap-3 rounded-2xl border border-edge bg-surface-inset/50 p-4 pt-5 transition-colors hover:bg-surface-inset/80"
 						>
+							<span className="absolute left-3 top-2 font-mono text-[10px] font-semibold tabular-nums text-content-faint">
+								0{i + 3}
+							</span>
 							<span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-inset text-content-faint">
 								<Lock size={16} strokeWidth={2.2} />
 							</span>
 							<div className="min-w-0 flex-1 space-y-1">
-								<div className="flex items-baseline gap-2">
-									<span className="font-mono text-[10px] font-semibold tabular-nums text-content-faint">
-										0{i + 3}
-									</span>
-									<div className="select-none truncate text-[14px] font-semibold leading-tight text-content blur-[5px]" aria-hidden>
-										{PLAN_STEP_FAKE[i % PLAN_STEP_FAKE.length].title}
-									</div>
+								<div className="select-none truncate text-[14px] font-semibold leading-tight text-content blur-[5px]" aria-hidden>
+									{PLAN_STEP_FAKE[i % PLAN_STEP_FAKE.length].title}
 								</div>
 								<div className="select-none truncate text-[12px] text-content-muted blur-[4px]" aria-hidden>
 									{PLAN_STEP_FAKE[i % PLAN_STEP_FAKE.length].hint}
@@ -1861,7 +1879,16 @@ function UnifiedLeaksSection({
 
 			<ul className="space-y-1.5">
 				{negativeFindings.map((f, i) => (
-					<FindingCard key={f.id} finding={f} index={i} revealed={revealed} />
+					<FindingCard
+						key={f.id}
+						finding={f}
+						index={i}
+						revealed={revealed}
+						// First finding opens by default so the buyer
+						// sees what the unfolded card looks like without
+						// having to click first. Still collapsible.
+						defaultOpen={i === 0}
+					/>
 				))}
 				{positiveFindings.map((f, i) => (
 					<FindingCard
@@ -1888,13 +1915,15 @@ function FindingCard({
 	finding,
 	index,
 	revealed,
+	defaultOpen = false,
 }: {
 	finding: MiniFinding;
 	index: number;
 	revealed: boolean;
+	defaultOpen?: boolean;
 }) {
 	const t = useTranslations("lp.audit_result");
-	const [expanded, setExpanded] = useState(false);
+	const [expanded, setExpanded] = useState(defaultOpen);
 	const severityClass = severityClasses(finding.severity);
 	const severityLabel = useSeverityLabel(finding.severity);
 	const impact = finding.impact;
@@ -1991,6 +2020,14 @@ function CostSummaryBanner({
 	const summary = summarizeMiniImpact(findings.map((f) => f.impact));
 	if (!summary || summary.count === 0) return null;
 
+	// Midpoint cost — single anchor instead of a range. Range
+	// numbers fight for attention (which one is "the" loss?) and
+	// reduce the cognitive impact of loss aversion; a single number
+	// reads as decisive measurement. The "~" prefix keeps honest
+	// about it being an estimate without surfacing the math.
+	const midCents = Math.round(
+		(summary.min_brl_cents + summary.max_brl_cents) / 2,
+	);
 	return (
 		<div
 			className={`relative mb-8 mt-6 overflow-hidden rounded-2xl border border-rose-500/30 bg-rose-50 px-5 py-5 transition-opacity duration-1000 delay-500 dark:border-rose-500/30 dark:bg-rose-500/[0.08] sm:mb-10 sm:mt-8 sm:px-6 sm:py-6 ${
@@ -2002,8 +2039,8 @@ function CostSummaryBanner({
 				<p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-rose-700 dark:text-rose-300">
 					{t("exposure_label")}
 				</p>
-				<h3 className="mt-2 font-mono text-lg font-semibold leading-tight tabular-nums text-rose-700 dark:text-rose-200 sm:text-2xl">
-					{t("exposure_text", { count: findings.length + hiddenCount, min: formatBRL(summary.min_brl_cents), max: formatBRL(summary.max_brl_cents) })}
+				<h3 className="mt-2 font-[family-name:var(--font-fraunces)] text-[24px] font-medium leading-tight text-rose-700 dark:text-rose-200 sm:text-[30px]">
+					{t("exposure_text", { amount: formatBRL(midCents) })}
 				</h3>
 			</div>
 		</div>
@@ -2079,6 +2116,149 @@ const LOCKED_IMPACT_FAKE = [
 	"R$1.500 – 2.600 / mês",
 	"R$4.600 – 6.800 / mês",
 ];
+
+// ─────────────────────────────────────────────────────────────
+// FAQ — final buyer surface, six Q/As crafted from
+// signup-flow-cro principles (each Q addresses one live objection
+// at the click-to-pay moment) plus marketing-psychology levers
+// (loss aversion antidote, status-quo bias antidote, authority
+// signal). PT-BR copy hardcoded because our customer base is BR;
+// translation later if needed.
+// ─────────────────────────────────────────────────────────────
+const FAQ_ITEMS: Array<{ q: string; a: string }> = [
+	{
+		q: "Quanto tempo até a Análise completa abrir?",
+		a: "Aproximadamente 60 segundos depois que o pagamento confirma. Vestigio AI roda imediatamente sobre seu site e suas integrações, e seu primeiro Plano de Estratégia personalizado fica pronto no mesmo intervalo.",
+	},
+	{
+		q: "Como funciona a garantia 4x?",
+		a: "Se em 90 dias você não recuperou pelo menos 4x do que pagou — medido pelos vazamentos corrigidos e impacto registrado em R$ — devolvemos cada centavo. Sem perguntas, sem perícia, sem letra miúda.",
+	},
+	{
+		q: "Posso cancelar quando quiser?",
+		a: "Sim. Um clique antes da próxima renovação, sem multa, sem fidelidade contratual. Você paga enquanto Vestigio está te dando retorno. Se parar de dar, você para de pagar.",
+	},
+	{
+		q: "Como Vestigio difere do GA4, Hotjar ou consultoria de CRO?",
+		a: "GA4 te dá métrica (\"sua taxa de checkout caiu 8%\"). Hotjar te dá hipótese (\"talvez sejam os formulários\"). Consultor de CRO te dá opinião (\"sugiro testar X\"). Vestigio te dá decisão: o que está vazando, quanto custa em R$/mês, qual ação recupera e em qual ordem. Plano executável, não relatório pra interpretar.",
+	},
+	{
+		q: "Vocês acessam dados sensíveis dos meus clientes?",
+		a: "Não. Vestigio lê só páginas públicas do seu site + as integrações que você autoriza explicitamente (Meta Ads, Google Ads, Stripe, Shopify, etc.). Nenhum acesso à sua base de clientes, e-mails ou sistemas internos. Compliance SOC2 + LGPD.",
+	},
+	{
+		q: "Funciona pro meu tipo de negócio?",
+		a: "Se você vende online — e-commerce, SaaS, infoproduto, curso, agência B2B, marketplace — sim. Vestigio é otimizado pra negócios com canal digital de aquisição e conversão. Se você opera 100% offline (loja física sem e-commerce, serviços porta-a-porta), Vestigio não é pra você ainda.",
+	},
+];
+
+function FAQSection({
+	revealed,
+	onCheckout,
+}: {
+	revealed: boolean;
+	onCheckout: () => void;
+}) {
+	const [openIdx, setOpenIdx] = useState<number | null>(null);
+	return (
+		<section
+			className={`mt-12 transition-opacity duration-700 sm:mt-16 ${revealed ? "opacity-100" : "opacity-0"}`}
+		>
+			<header className="mb-6 sm:mb-8">
+				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.18em] text-content-muted">
+					Antes de entrar
+				</div>
+				<h2 className="mt-1 font-[family-name:var(--font-fraunces)] text-[24px] font-medium leading-tight text-content sm:text-[28px]">
+					Tudo que você quer saber antes do primeiro clique
+				</h2>
+				<p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-content-muted sm:text-[14px]">
+					Seis perguntas, seis respostas curtas. Se a sua não estiver aqui, o suporte responde direto no chat dentro do app.
+				</p>
+			</header>
+
+			<ul className="space-y-2">
+				{FAQ_ITEMS.map((item, i) => {
+					const open = openIdx === i;
+					return (
+						<li
+							key={item.q}
+							className={`overflow-hidden rounded-2xl border bg-surface-card transition-colors ${
+								open ? "border-content/20" : "border-edge"
+							}`}
+						>
+							<button
+								type="button"
+								onClick={() => setOpenIdx(open ? null : i)}
+								className="flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-surface-card-hover"
+							>
+								<span
+									className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-mono text-[10px] font-semibold tabular-nums transition-colors ${
+										open
+											? "bg-content text-surface-card"
+											: "bg-surface-inset text-content-muted"
+									}`}
+								>
+									{i + 1}
+								</span>
+								<span className="min-w-0 flex-1 text-[14px] font-medium leading-snug text-content sm:text-[15px]">
+									{item.q}
+								</span>
+								<ChevronDown
+									className={`h-4 w-4 shrink-0 text-content-faint transition-transform ${open ? "rotate-180" : ""}`}
+								/>
+							</button>
+							<AnimatePresence initial={false}>
+								{open && (
+									<motion.div
+										key="answer"
+										initial={{ height: 0, opacity: 0 }}
+										animate={{ height: "auto", opacity: 1 }}
+										exit={{ height: 0, opacity: 0 }}
+										transition={{
+											height: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+											opacity: { duration: 0.18, ease: "easeOut" },
+										}}
+										className="overflow-hidden"
+									>
+										<div className="border-t border-edge-subtle px-5 pb-5 pt-4 pl-[3.25rem]">
+											<p className="text-[13px] leading-relaxed text-content-secondary sm:text-[14px]">
+												{item.a}
+											</p>
+										</div>
+									</motion.div>
+								)}
+							</AnimatePresence>
+						</li>
+					);
+				})}
+			</ul>
+
+			{/* Quiet fallback CTA — for buyers who scrolled the FAQ
+			    instead of clicking the mega-CTA above. Editorial weight
+			    so it doesn't duplicate the urgency of the section
+			    above; just a "ok, ready" affordance. */}
+			<button
+				type="button"
+				onClick={onCheckout}
+				className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-edge bg-surface-card px-6 py-4 text-[14px] font-medium text-content transition-colors hover:bg-surface-card-hover sm:mt-8"
+			>
+				Ainda em dúvida? Veja por dentro
+				<svg
+					className="h-3.5 w-3.5 text-emerald-500"
+					viewBox="0 0 16 16"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="2.2"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					aria-hidden
+				>
+					<path d="M3 8h10M9 4l4 4-4 4" />
+				</svg>
+			</button>
+		</section>
+	);
+}
 
 // Single row in the Plan Preview narrative section. Title visible
 // (real, plausible section header); body collapsed-blurred and only

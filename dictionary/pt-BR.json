@@ -7821,7 +7821,7 @@
 			"score_desc_ok": "Sua landing funciona, mas está vazando receita em pontos específicos.",
 			"score_desc_bad": "Sua landing tem problemas que estão custando dinheiro todos os dias.",
 			"exposure_label": "Exposição mensal estimada",
-			"exposure_text": "{count, plural, one {# vazamento custando} other {# vazamentos custando}} entre {min} e {max} por mês",
+			"exposure_text": "Problemas estão te custando ~{amount}/mês",
 			"unlock_title": "Desbloquear Análise completa",
 			"unlock_launching": "Abrindo checkout…",
 			"unlock_desc": "A Análise completa cobre 15.000+ sinais, incluindo navegação automatizada, copy e monitoramento contínuo. Recupere até {amount}/mês.",
@@ -7840,8 +7840,8 @@
 				"title_preliminary": "{org}",
 				"title": "Análise de {domain}",
 				"title_anchor": "Até {amount}/mês escapando em {domain}",
-				"visible_label": "vazamentos visíveis",
-				"blocked_label": "bloqueados",
+				"visible_label": "mostrados",
+				"blocked_label": "a desbloquear",
 				"score_label": "Saúde do funil",
 				"findings_label": "vazamentos",
 				"critical_label": "críticos",
@@ -7881,7 +7881,7 @@
 					"nothing": "Antes era no escuro. Agora é com narrativa, fila priorizada e valores em reais."
 				},
 				"bullets": {
-					"plan": "Plano de Estratégia editado todo mês com seus números reais",
+					"plan": "Análise rodando 24/7, com Plano de Estratégia sempre vivo + snapshot mensal de evolução",
 					"queue": "Fila de ações ranqueada pelo R$ que cada uma recupera",
 					"ai": "Vestigio AI lê Meta, Google e Stripe — pergunta qualquer coisa de receita",
 					"continuous": "Monitoramento contínuo: alerta direto quando vazamento novo surge",

@@ -2138,12 +2138,13 @@ const FAQ_ITEMS: Array<{ q: string; a: string }> = [
 		a: "Vestigio é uma camada de inteligência de receita que mostra onde seu negócio digital está perdendo dinheiro e o que fazer primeiro. Lemos seu site público + as integrações que você conecta (Meta Ads, Google Ads, Stripe, Shopify e outras) e geramos uma fila de ações ranqueada pelo R$ que cada uma recupera. Toda finding vem com evidência verificada no navegador — você mostra prova pro seu time, não opinião. A saída não é dashboard pra interpretar nem relatório pra ler. É decisão: o que vazou, quanto custa em R$, qual ação recupera e em qual ordem.",
 	},
 	{
-		// Time-to-value — 15 to 20 minutes confirmed by the user as
-		// the current actual time. Outline transforms "tempo morto"
-		// into "tempo de trabalho" so the buyer stops resenting the
-		// wait once they see what's actually running.
+		// Time-to-value — 15-20 min confirmed by user. Customer-facing
+		// description: convey complexity in buyer language without
+		// leaking pipeline mechanics. Brand naming: "Vestigio" (the
+		// product), NOT "Vestigio AI" (which is the Pulse chat layer
+		// per the product-marketing context glossary).
 		q: "Quanto tempo até a Análise completa abrir?",
-		a: "Entre 15 e 20 minutos depois que o pagamento confirma — não é instantâneo de propósito. Nesse intervalo a Vestigio AI executa, em paralelo: (1) crawl do seu site público página por página; (2) snapshot visual e estrutural de cada landing; (3) avaliação da sua copy contra 5 frameworks consagrados (PAS, AIDA, BAB, 4P, Cialdini); (4) leitura das integrações que você autorizar (Meta, Google, Stripe etc.) com até 90 dias retroativos; (5) mapeamento do seu funil e correlação dos sinais comportamentais; (6) ranqueamento das findings pelo R$ que cada uma vale; (7) geração do seu Plano de Estratégia personalizado + fila de ações priorizada. A prévia de 60 segundos que você viu antes do paywall é só teaser; a Análise completa traz evidência verificada no navegador em cada finding e é o que justifica esses 15-20 minutos.",
+		a: "Entre 15 e 20 minutos depois que o pagamento confirma. Não é instantâneo de propósito — Vestigio lê seu site página por página, conversa com as integrações que você autorizar (Meta, Google, Stripe e outras) com até 90 dias de histórico, mapeia seu funil de ponta a ponta, calcula o R$ que cada problema está custando, e monta seu Plano de Estratégia + a fila de ações já ranqueada pelo retorno de cada uma. A prévia de 60 segundos que você viu antes do paywall é só teaser. A Análise completa é a versão de verdade, com evidência verificada em cada finding — é o que justifica esses 15-20 minutos.",
 	},
 	{
 		q: "Como funciona a garantia 4x?",

@@ -390,7 +390,96 @@ const LOADING_DONE: PreviewScenario = {
 };
 
 // ──────────────────────────────────────────────
-// Scenario 6: Expired
+// Scenario 6: Services BR (clínica odontológica)
+// Wave-22.7 — flagship case for the services-vertical extension.
+// Concrete, recognizable: dentista de bairro, R$60k/mês, foco em
+// captação via WhatsApp + Google Business. Findings exercícios os
+// 7 detectors services-específicos.
+// ──────────────────────────────────────────────
+const SERVICES_BR: PreviewScenario = {
+	id: "services-br",
+	label: "Serviços — Clínica odontológica",
+	description: "Clínica de bairro, R$ 60k/mês, foco em captação via WhatsApp + Google",
+	lead: {
+		id: "preview-services-br",
+		status: "audit_complete",
+		currentStep: 12,
+		domain: "sorrisofelizodonto.com.br",
+		organizationName: "Sorriso Feliz Odontologia",
+		businessModel: "services",
+		monthlyRevenue: 60_000,
+		primaryConcern: "low_conversion",
+		currentOptimizationMethod: "nothing",
+		whyNow: "scaling_paid_traffic",
+		emailMasked: "c***@sorrisofelizodonto.com.br",
+		createdAt: nowIso(),
+		result: {
+			id: "preview-result-services-br",
+			preview: mkPreview(
+				"sorrisofelizodonto.com.br",
+				"Sorriso Feliz Odontologia — Atendimento Familiar",
+			),
+			visibleFindings: [
+				mkFinding(
+					"v1",
+					"critical",
+					"cta",
+					"Sem WhatsApp na página — você está deixando dinheiro na mesa",
+					"No Brasil, quem procura dentista abre o WhatsApp antes de qualquer formulário. Sua página não tem botão de WhatsApp visível em nenhum lugar. Cada paciente que poderia ter chamado vai pro concorrente que tem.",
+					"30-50% dos contatos viram concorrente",
+					"Coloca um botão flutuante de WhatsApp visível em todas as páginas (canto inferior direito, verde, com ícone). Inclua o número também no topo do site e na seção 'Fale conosco'.",
+					mkImpact(4_800, 9_600),
+				),
+				mkFinding(
+					"v2",
+					"high",
+					"trust",
+					"Falta o registro de saúde (CRO, CRM, CRP, CREFITO etc.) na página",
+					"Quem procura clínica odontológica checa antes se você tem CRO em dia. Se o número do conselho não aparece no rodapé nem na página 'Quem somos', o paciente desconfia e vai pra concorrência que mostra.",
+					"Falta de registro reduz confiança em 40%+",
+					"Adicione o CRO no rodapé do site (ex: 'CRO/SP 12345'). Se você tem equipe, mostre o CRO de cada dentista na página dele.",
+					mkImpact(3_600, 7_200),
+				),
+				mkFinding(
+					"v3",
+					"high",
+					"trust",
+					"Sem link pro seu Google Business Profile",
+					"Paciente que procura dentista quase sempre passa pelo Google Maps antes de te chamar (pra ver foto da fachada, horário, avaliação). Seu site não linka pro seu perfil no Google.",
+					"Tráfego perdido pro concorrente nas reviews",
+					"Crie ou reivindique seu perfil em business.google.com e adicione o link no rodapé + página 'Onde estamos'. Mostre também a nota geral ('4.8 ⭐ no Google, 87 avaliações') na primeira dobra.",
+					mkImpact(2_400, 4_800),
+				),
+				mkFinding(
+					"v4",
+					"medium",
+					"trust",
+					"Falta informação básica que todo paciente quer ver",
+					"Quem chega no site procura logo o básico: endereço físico, horário de atendimento, área de atuação. Se não aparece em até 2 cliques, o paciente assume amador e fecha a aba.",
+					"Paciente sem essas infos abandona em 6-8 segundos",
+					"Crie uma seção 'Onde estamos' visível no menu principal e no footer, com: endereço completo, horário de atendimento (incluindo finais de semana se for o caso), telefone e WhatsApp. Use um mapa do Google embutido.",
+					mkImpact(1_800, 3_600),
+				),
+				mkFinding(
+					"v5",
+					"medium",
+					"trust",
+					"Seus depoimentos não dão pra checar — soa fake",
+					"Você tem uma seção de depoimentos, mas eles não trazem nome completo + cidade ou link pra avaliação real. Paciente em pesquisa desconta depoimento sem prova como 'invenção do site'.",
+					"Depoimento sem prova quase não move a agulha",
+					"Pra cada depoimento, inclua: nome real + foto (com autorização), cidade-estado, e link pro perfil dele ou avaliação no Google. Mostre também a nota geral do Google em destaque.",
+					mkImpact(1_200, 2_400),
+				),
+			],
+			blurredFindings: COMMON_BLURRED,
+			durationMs: 13_800,
+			computedAt: nowIso(),
+		},
+	},
+};
+
+// ──────────────────────────────────────────────
+// Scenario 7: Expired
 // ──────────────────────────────────────────────
 const EXPIRED: PreviewScenario = {
 	id: "expired",
@@ -403,6 +492,7 @@ export const PREVIEW_SCENARIOS: Record<string, PreviewScenario> = {
 	[SAAS_BR.id]: SAAS_BR,
 	[ECOM_BR.id]: ECOM_BR,
 	[COURSE_BR.id]: COURSE_BR,
+	[SERVICES_BR.id]: SERVICES_BR,
 	[LOADING.id]: LOADING,
 	[LOADING_DONE.id]: LOADING_DONE,
 	[EXPIRED.id]: EXPIRED,
@@ -412,6 +502,7 @@ export const PREVIEW_SCENARIO_LIST: PreviewScenario[] = [
 	SAAS_BR,
 	ECOM_BR,
 	COURSE_BR,
+	SERVICES_BR,
 	LOADING,
 	LOADING_DONE,
 	EXPIRED,

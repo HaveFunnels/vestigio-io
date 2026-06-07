@@ -150,14 +150,36 @@ function withImpact(
 }
 
 /**
+ * Safe hostname extraction. Returns the URL's hostname or a sane
+ * fallback when the input isn't a valid absolute URL. Used by
+ * detectors that interpolate the host into evidence/body copy —
+ * a thrown TypeError there would silently lose the whole finding
+ * via the per-detector try/catch.
+ */
+function safeHostname(url: string | null | undefined, fallback = "unknown"): string {
+	if (!url) return fallback;
+	try {
+		return new URL(url).hostname;
+	} catch {
+		return fallback;
+	}
+}
+
+/**
  * Cheap off-domain check — does URL's host share the lead's root domain?
  * Accepts subdomains ("pay.store.com" is still on-domain for "store.com").
+ *
+ * Important: uses `host === root || host.endsWith("." + root)` rather
+ * than the naive `host.endsWith(root)`, because the naive form would
+ * false-match `mystore.com` as on-domain for `store.com` — and worse,
+ * `paystore.com.br` as on-domain for `store.com.br`. The dot prefix
+ * is what distinguishes a subdomain from a partial-suffix collision.
  */
 function isOffDomain(url: string, rootDomain: string): boolean {
 	try {
 		const host = new URL(url).hostname.toLowerCase();
 		const root = rootDomain.toLowerCase().replace(/^www\./, "");
-		return !host.endsWith(root);
+		return !(host === root || host.endsWith("." + root));
 	} catch {
 		return false;
 	}
@@ -205,7 +227,7 @@ const detectRevenuePathFragility: Detector = ({
 	const evidence_refs = [
 		checkoutBroken
 			? `Checkout HTTP ${checkoutStatus}`
-			: `Checkout off-domain (${checkoutFinalUrl ? new URL(checkoutFinalUrl).hostname : "unknown"})`,
+			: `Checkout off-domain (${safeHostname(checkoutFinalUrl)})`,
 		hasTrustBadge
 			? "Trust badge presente no topo"
 			: "Sem trust badge visível no topo",
@@ -566,7 +588,7 @@ const detectNoSocialProof: Detector = ({ rawHtml, business }) => {
 			suggestion: "Adicione pelo menos 3 depoimentos reais na landing page — com nome, foto e resultado concreto ('Aumentei 40% em 2 meses'). Se tiver avaliações em Google ou Reclame Aqui, mostre a nota com link. Depoimentos em vídeo convertem 2x mais que texto.",
 			evidence_refs: ["Sem depoimentos", "Sem estrelas/ratings", "Sem plataformas de review"],
 		},
-		"trust_boundary_crossed",
+		"no_social_proof",
 		business,
 	);
 };
@@ -584,7 +606,7 @@ const detectRedirectChain: Detector = ({ response, business }) => {
 			body: `Pra abrir sua página, o navegador faz ${response.redirect_chain.length} pulos seguidos (${response.redirect_chain.map((r) => r.status_code).join(" → ")}). No desktop, ninguém percebe. No 3G/4G é diferente: a tela fica em branco por 1-2 segundos a mais, e cada salto é uma oportunidade nova pro visitante fechar a aba. Em campanhas de mídia paga, esse é o gap silencioso entre "tráfego pago" e "tráfego que de fato chega".`,
 			impact_hint: "Aba mobile fecha antes de carregar",
 			suggestion: "Resolva tudo em 1 salto direto. www→non-www ou HTTP→HTTPS faz no CDN/servidor sem rota intermediária. Em mobile, 1 salto a menos costuma valer 3-5% de visitantes a mais entrando.",
-			evidence_refs: response.redirect_chain.slice(0, 3).map((r) => `${r.status_code} → ${new URL(r.url).hostname}`),
+			evidence_refs: response.redirect_chain.slice(0, 3).map((r) => `${r.status_code} → ${safeHostname(r.url, r.url)}`),
 		},
 		"friction_on_critical_path",
 		business,
@@ -725,10 +747,10 @@ const detectIframeOveruse: Detector = ({ parsed, business }) => {
 			severity: "medium",
 			category: "performance",
 			title: `${parsed.iframes.length} iframes carregando simultaneamente`,
-			body: `Sua página embarca ${parsed.iframes.length} iframes (${parsed.iframes.slice(0, 3).map((i) => new URL(i.src).hostname).join(", ")}${parsed.iframes.length > 3 ? "…" : ""}). Cada iframe abre uma nova "mini-página" dentro da sua, com seu próprio DOM, CSS, JS e requests de rede. O custo de memória e CPU em mobile é multiplicativo, não aditivo.`,
+			body: `Sua página embarca ${parsed.iframes.length} iframes (${parsed.iframes.slice(0, 3).map((i) => safeHostname(i.src, i.src || "?")).join(", ")}${parsed.iframes.length > 3 ? "…" : ""}). Cada iframe abre uma nova "mini-página" dentro da sua, com seu próprio DOM, CSS, JS e requests de rede. O custo de memória e CPU em mobile é multiplicativo, não aditivo.`,
 			impact_hint: "Performance mobile degradada",
 			suggestion: "Carregue iframes com lazy loading (loading='lazy') e considere substituir embeds pesados por imagens placeholder que só carregam o iframe ao clicar. Mapas do Google e vídeos do YouTube são os maiores vilões — use thumbnail + play button.",
-			evidence_refs: parsed.iframes.slice(0, 3).map((i) => `iframe: ${new URL(i.src).hostname}`),
+			evidence_refs: parsed.iframes.slice(0, 3).map((i) => `iframe: ${safeHostname(i.src, i.src || "?")}`),
 		},
 		"friction_on_critical_path",
 		business,
@@ -980,7 +1002,12 @@ const detectServicesProfessionalRegistry: Detector = ({ rawHtml, business }) => 
 const detectServicesAddressHoursMissing: Detector = ({ rawHtml, business }) => {
 	if (!isServicesLead(business)) return null;
 	const lower = rawHtml.toLowerCase();
-	const hasAddress = /(rua|avenida|alameda|travessa|praça|av\.|r\.\s)\s+[a-záéíóú]/i.test(rawHtml);
+	// Tested against `lower` rather than `rawHtml` because the
+	// `[a-z]` character class doesn't expand under the /i flag —
+	// addresses rendered ALL-CAPS on legacy themes would miss the
+	// match on rawHtml. \S after the keyword is enough to confirm
+	// a non-empty token follows the address word.
+	const hasAddress = /(rua|avenida|alameda|travessa|praça|av\.|r\.\s)\s+\S/i.test(lower);
 	const hasHours = /(segunda|seg\.|seg\s+a\s+sex|horário\s+de\s+atendimento|horário\s+de\s+funcionamento|aberto\s+das)/i.test(lower);
 	const hasServiceArea = /(atendemos\s+em|área\s+de\s+atuação|cidades\s+atendidas|região\s+de\s+atuação)/i.test(lower);
 	const missing = [];
@@ -1012,7 +1039,11 @@ const detectServicesUnverifiableTestimonials: Detector = ({ rawHtml, business })
 		/o\s+que\s+(nossos|os)\s+(clientes|pacientes)\s+dizem/i.test(lower) ||
 		/avalia[çc][aã]o(\s+do\s+google)?/i.test(lower);
 	if (!hasTestimonialKeyword) return null;
-	const hasGoogleReviewsLink = /google\.com\/maps|google\.com\/search\?.*reviews|seekraj|search\?q.*reviews/i.test(lower);
+	// Recognized BR review platforms — Doctoralia (health), Reclame
+	// Aqui (e-commerce / services trust), Trustpilot, plus the two
+	// Google flavors. The previous "seekraj" token was a typo that
+	// never matched anything.
+	const hasGoogleReviewsLink = /google\.com\/maps|google\.com\/search\?.*reviews|doctoralia\.com\.br|reclameaqui\.com\.br|trustpilot\.com|search\?q.*reviews/i.test(lower);
 	const hasNamedCities = /([A-ZÁÉÍÓÚ][a-záéíóú]+(\s+das?\s+[A-ZÁÉÍÓÚ][a-záéíóú]+)?\s*[-–]\s*[A-Z]{2})/.test(rawHtml);
 	// Heuristic: has testimonial section but no verifiable proof
 	// (no city/state tag, no Google reviews link).
@@ -1455,7 +1486,11 @@ const detectEnterpriseNoRecognizableLogos: Detector = ({ rawHtml, business }) =>
 const detectEnterpriseNoSecurityPage: Detector = ({ parsed, business }) => {
 	if (!isEnterpriseLead(business)) return null;
 	const hasSecurityLink = parsed.links?.some((l) =>
-		/\/(security|trust|seguranca|seguranca|conformidade)\b/i.test(l.href || "") ||
+		// The href variant matches both unaccented ("/seguranca")
+		// and accented ("/segurança") slugs via the [çc] character
+		// class — the previous form had `seguranca` listed twice,
+		// missing the accented form entirely.
+		/\/(security|trust|seguran[çc]a|conformidade)\b/i.test(l.href || "") ||
 		/security|trust\s+center|trust\s+&|conformidade|seguran[çc]a/i.test(l.text || ""),
 	);
 	if (hasSecurityLink) return null;

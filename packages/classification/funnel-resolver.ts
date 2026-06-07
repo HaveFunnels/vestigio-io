@@ -64,6 +64,14 @@ const MODEL_TEMPLATES: Record<string, FunnelStageDefinition[]> = {
   lead_gen: LEAD_GEN_STAGES,
   leadgen: LEAD_GEN_STAGES,
   services: SERVICES_STAGES,
+  // Wave-22.7 — vertical extensions. app_conversion funnels like
+  // lead_gen because the website's job is to capture intent and
+  // hand off to the store, mirroring contact-form → close offline.
+  // enterprise funnels like saas because the relevant pages are
+  // pricing / security / docs / demo-request, overlapping with
+  // SaaS more than ecommerce.
+  app_conversion: LEAD_GEN_STAGES,
+  enterprise: SAAS_STAGES,
   content: LEAD_GEN_STAGES, // content businesses funnel like lead-gen
 };
 
@@ -126,6 +134,12 @@ function normalizeModelType(raw: string | null | undefined): string | null {
     'services': 'services',
     'serviços': 'services',
     'agency': 'services',
+    // Wave-22.7 — vertical extensions
+    'app_conversion': 'app_conversion',
+    'app_download': 'app_conversion',
+    'mobile_app': 'app_conversion',
+    'enterprise': 'enterprise',
+    'b2b': 'enterprise',
     'content': 'content',
     'media': 'content',
     'hybrid': 'saas', // hybrid defaults to SaaS-like funnel

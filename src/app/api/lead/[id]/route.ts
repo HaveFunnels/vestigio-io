@@ -82,6 +82,9 @@ export async function GET(
 			domain: lead.domain,
 			organizationName: lead.organizationName,
 			businessModel: lead.businessModel,
+			serviceCategory: (lead as { serviceCategory?: string | null }).serviceCategory ?? null,
+			appPlatform: (lead as { appPlatform?: string | null }).appPlatform ?? null,
+			enterpriseSegment: (lead as { enterpriseSegment?: string | null }).enterpriseSegment ?? null,
 			emailMasked: lead.email ? maskEmail(lead.email) : null,
 			createdAt: lead.createdAt.toISOString(),
 			result: expiredResult,
@@ -132,6 +135,14 @@ export async function GET(
 		primaryConcern: lead.primaryConcern,
 		currentOptimizationMethod: lead.currentOptimizationMethod,
 		whyNow: lead.whyNow,
+		// Wave-22.7 — vertical sub-segmentation. Needed by the result
+		// page to render vertical-specific CTA copy / strategy plan
+		// scoping. Cast-through because the Prisma client types lag
+		// behind a schema add in some deploys until generate runs;
+		// the columns are nullable so `??` keeps it safe.
+		serviceCategory: (lead as { serviceCategory?: string | null }).serviceCategory ?? null,
+		appPlatform: (lead as { appPlatform?: string | null }).appPlatform ?? null,
+		enterpriseSegment: (lead as { enterpriseSegment?: string | null }).enterpriseSegment ?? null,
 		// PII redacted from public response
 		emailMasked: lead.email ? maskEmail(lead.email) : null,
 		createdAt: lead.createdAt.toISOString(),

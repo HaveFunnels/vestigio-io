@@ -34,6 +34,12 @@ interface PreviewLead {
 	primaryConcern?: string | null;
 	currentOptimizationMethod?: string | null;
 	whyNow?: string | null;
+	// Wave-22.7 — vertical sub-segmentation. Preview scenarios must
+	// surface these so result-page code paths gated on the sub-
+	// segmentation actually exercise during dev testing.
+	serviceCategory?: string | null;
+	appPlatform?: string | null;
+	enterpriseSegment?: string | null;
 	emailMasked: string | null;
 	createdAt: string;
 	result: {
@@ -407,6 +413,7 @@ const SERVICES_BR: PreviewScenario = {
 		domain: "sorrisofelizodonto.com.br",
 		organizationName: "Sorriso Feliz Odontologia",
 		businessModel: "services",
+		serviceCategory: "health",
 		monthlyRevenue: 60_000,
 		primaryConcern: "low_conversion",
 		currentOptimizationMethod: "nothing",
@@ -495,6 +502,7 @@ const MOBILE_BR: PreviewScenario = {
 		domain: "rotaesperta.app",
 		organizationName: "Rota Esperta",
 		businessModel: "app_conversion",
+		appPlatform: "both",
 		monthlyRevenue: 40_000,
 		primaryConcern: "low_conversion",
 		currentOptimizationMethod: "analytics_tools",
@@ -585,6 +593,7 @@ const ENTERPRISE_BR: PreviewScenario = {
 		domain: "paragonpay.com.br",
 		organizationName: "ParagonPay",
 		businessModel: "enterprise",
+		enterpriseSegment: "fintech",
 		monthlyRevenue: 1_500_000,
 		primaryConcern: "prioritization",
 		currentOptimizationMethod: "agency_consultant",

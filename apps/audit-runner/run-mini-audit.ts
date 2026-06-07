@@ -97,10 +97,18 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 	}
 
 	const normalized = normalizeDomain(lead.domain);
-	const domainHash = hashDomain(lead.domain);
+	// Cache key now also includes the visitor's self-declared
+	// businessModel (Wave-22.7) so two visitors at the same domain
+	// who picked different verticals don't share results — they need
+	// different vertical-specific findings to fire. Falls back to
+	// "default" when missing so legacy leads still hit a stable key.
+	const businessModelKey = lead.businessModel || "default";
+	const domainHash = hashDomain(`${lead.domain}|${businessModelKey}`);
 
-	// 1. Cache lookup — if we already audited this domain in the last
-	//    14 days, reuse the result. This is the spam-mitigation core.
+	// 1. Cache lookup — if we already audited this (domain, vertical)
+	//    pair in the last 14 days, reuse the result. Spam-mitigation
+	//    survives intact (the heaviest cost is still the HTTP fetch,
+	//    and the per-(domain, vertical) cache rarely exceeds 7 entries).
 	const cached = await prisma.miniAuditResult.findUnique({
 		where: { domainHash },
 	});
@@ -227,9 +235,20 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 			domain: normalized,
 		});
 
-		// 6b. Infer business type from crawl signals
+		// 6b. Infer business type from crawl signals.
+		//
+		// Only fires when the visitor DIDN'T pick a vertical themselves
+		// (legacy leads + leads where the form short-circuited). The
+		// inferer scores against ecommerce/lead_gen/saas only — it has
+		// no signal for services/app_conversion/enterprise. If we let
+		// it overwrite a user-declared services/app/enterprise pick,
+		// we silently corrupt the lead's businessModel to one of the
+		// three legacy types, breaking every downstream personalization
+		// (CTA copy, funnel resolver, page-priority etc.). Treat the
+		// user's pick as authoritative when it exists.
+		const userDeclaredBusinessModel = !!lead.businessModel;
 		const inference = inferBusinessType(parsed, response.body);
-		if (inference.confidence >= 0.3) {
+		if (inference.confidence >= 0.3 && !userDeclaredBusinessModel) {
 			await prisma.anonymousLead.update({
 				where: { id: leadId },
 				data: {
@@ -241,6 +260,12 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 			});
 			console.log(
 				`[mini-audit ${leadId}] inferred business type: ${inference.type} (confidence: ${inference.confidence.toFixed(2)}, signals: ${inference.signals.join(", ")})`,
+			);
+		} else if (inference.confidence >= 0.3) {
+			// User-declared model takes precedence; log the inference
+			// for telemetry but don't overwrite.
+			console.log(
+				`[mini-audit ${leadId}] inference would have written "${inference.type}" (confidence ${inference.confidence.toFixed(2)}), but visitor declared "${lead.businessModel}" — keeping user pick.`,
 			);
 		}
 

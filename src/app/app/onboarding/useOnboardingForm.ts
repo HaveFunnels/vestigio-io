@@ -21,7 +21,22 @@ declare global {
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-export type BusinessType = "ecommerce" | "lead_gen" | "saas" | "hybrid";
+// Wave-22.7 — extended business type union. Onboarding maps the new
+// LP-side verticals (services, app_conversion, enterprise) into the
+// closest existing onboarding BusinessType for now since the paid
+// onboarding form hasn't yet rebuilt its vertical-aware flow. The
+// localStorage handoff carries the original LP-side value too, so
+// any future onboarding-side refactor can read the precise vertical
+// from there. Kept as a union here so prefill reading from the
+// handoff doesn't reject the LP value.
+export type BusinessType =
+	| "ecommerce"
+	| "lead_gen"
+	| "saas"
+	| "services"
+	| "app_conversion"
+	| "enterprise"
+	| "hybrid";
 export type ConversionModel = "checkout" | "whatsapp" | "form" | "external";
 export type IndustryVertical = "fashion" | "food" | "health" | "electronics" | "education" | "services" | "home_garden" | "other";
 // Wave-22.6 onboarding redesign — JTBD discovery embedded in the
@@ -216,22 +231,35 @@ export default function useOnboardingForm() {
 		const currentMethodRaw = read("vestigio_onboard_current_method");
 		const whyNowRaw = read("vestigio_onboard_why_now");
 		const revenue = revenueRaw ? Number(revenueRaw) : null;
-		// MiniCalc has six business types; onboarding accepts four. Map the
-		// less-specific ones to the closest match so the prefill survives
-		// without sneaking an invalid value past the form.
+		// LP audit form emits any of: ecommerce, saas, lead_gen, services,
+		// app_conversion, enterprise, hybrid (plus legacy values from
+		// pre-Wave-22.7 leads). Onboarding accepts the same set now —
+		// map identity for the standard ones, fall back for legacy.
 		const businessTypeMap: Record<string, BusinessType> = {
 			ecommerce: "ecommerce",
 			saas: "saas",
-			services: "lead_gen",
-			institutional: "lead_gen",
-			app_download: "saas",
-			blog: "lead_gen",
+			services: "services",
+			app_conversion: "app_conversion",
+			enterprise: "enterprise",
 			lead_gen: "lead_gen",
 			hybrid: "hybrid",
+			// Legacy values from older form versions
+			institutional: "lead_gen",
+			app_download: "app_conversion",
+			blog: "lead_gen",
 		};
 		const businessType: BusinessType | null = businessTypeRaw
 			? businessTypeMap[businessTypeRaw] ?? null
 			: null;
+		// Wave-22.7 — also forward the sub-segmentation pick if the
+		// visitor made one on the LP form. Kept as raw strings on the
+		// onboarding side; downstream consumers (org provisioning,
+		// strategy plan first-month generator) read them off
+		// localStorage directly to avoid expanding OnboardState
+		// surface area for fields the form itself doesn't ask.
+		const serviceCategory = read("vestigio_onboard_service_category");
+		const appPlatform = read("vestigio_onboard_app_platform");
+		const enterpriseSegment = read("vestigio_onboard_enterprise_segment");
 		// Wave-22.6 — JTBD handoff from the LP audit form. Each value is
 		// either a known ID (mirrored from BusinessProfile) or null.
 		const VALID_CONCERN = new Set<PrimaryConcern>([
@@ -253,6 +281,9 @@ export default function useOnboardingForm() {
 			primaryConcern: VALID_CONCERN.has(concernRaw as PrimaryConcern) ? (concernRaw as PrimaryConcern) : null,
 			currentOptimizationMethod: VALID_METHOD.has(currentMethodRaw as CurrentOptimizationMethod) ? (currentMethodRaw as CurrentOptimizationMethod) : null,
 			whyNow: VALID_WHY.has(whyNowRaw as WhyNow) ? (whyNowRaw as WhyNow) : null,
+			serviceCategory: serviceCategory || null,
+			appPlatform: appPlatform || null,
+			enterpriseSegment: enterpriseSegment || null,
 		};
 	}, []);
 

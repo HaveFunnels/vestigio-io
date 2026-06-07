@@ -39,7 +39,11 @@ export type StepKind =
 	| "concern"
 	| "current_method"
 	| "why_now"
-	| "email";
+	| "email"
+	// Wave-22.7 — vertical-specific sub-step kinds
+	| "service_category"
+	| "app_platform"
+	| "enterprise_segment";
 
 interface Props {
 	steps: readonly StepKind[];
@@ -59,6 +63,13 @@ const ICON: Record<StepKind, ComponentType<{ size?: number; weight?: any }>> = {
 	current_method: BrainIcon,
 	why_now: HourglassIcon,
 	email: EnvelopeIcon,
+	// Wave-22.7 — vertical-specific sub-step icons. Each reuses an
+	// existing import to avoid bundle churn; chips for the new
+	// sub-steps lean on the existing icons rather than introducing
+	// new visual vocabulary at the progress-bar level.
+	service_category: BriefcaseIcon,
+	app_platform: TargetIcon,
+	enterprise_segment: StorefrontIcon,
 };
 
 export default function StepProgressChips({ steps, activeIndex }: Props) {

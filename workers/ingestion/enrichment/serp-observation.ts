@@ -79,6 +79,9 @@ function extractBrandTokens(rootDomain: string, businessModel: string | null, in
 	else if (businessModel === "ecommerce") cats.push("loja online");
 	else if (businessModel === "lead_gen") cats.push("plataforma de gestão");
 	else if (businessModel === "services") cats.push("serviços profissionais");
+	else if (businessModel === "app_conversion") cats.push("aplicativo mobile");
+	else if (businessModel === "enterprise") cats.push("software empresarial");
+	else if (businessModel === "hybrid") cats.push("plataforma digital");
 	return { primary, categoryKeywords: cats.slice(0, 3), locale: "pt-BR" };
 }
 

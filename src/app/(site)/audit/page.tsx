@@ -145,11 +145,44 @@ const CURRENT_METHOD_OPTIONS: CardOption<CurrentOptimizationMethod>[] = [
 	{ value: "nothing", label: "Sinceramente, ainda não sabemos", icon: XCircleIcon },
 ];
 
-// Step icons for the StepShell progress chip row. Mirrors the
-// SCREENS order in useLpAuditForm.
-const LP_STEPS = [
+// Step keys for the StepShell progress chip row. Mirrors the
+// SCREENS order in useLpAuditForm. Two variants: the canonical
+// 7-step flow and the 8-step variants when the visitor picks one
+// of the Wave-22.7 verticals (services / app_conversion /
+// enterprise) and goes through a sub-segmentation sub-step.
+const LP_STEPS_BASE = [
 	"domain",
 	"business_type",
+	"revenue",
+	"concern",
+	"current_method",
+	"why_now",
+	"email",
+] as const;
+const LP_STEPS_SERVICES = [
+	"domain",
+	"business_type",
+	"service_category",
+	"revenue",
+	"concern",
+	"current_method",
+	"why_now",
+	"email",
+] as const;
+const LP_STEPS_APP_CONVERSION = [
+	"domain",
+	"business_type",
+	"app_platform",
+	"revenue",
+	"concern",
+	"current_method",
+	"why_now",
+	"email",
+] as const;
+const LP_STEPS_ENTERPRISE = [
+	"domain",
+	"business_type",
+	"enterprise_segment",
 	"revenue",
 	"concern",
 	"current_method",
@@ -168,6 +201,19 @@ const WHY_NOW_OPTIONS: CardOption<WhyNow>[] = [
 
 export default function LpAuditPage() {
 	const f = useLpAuditForm();
+
+	// Pick the step labels list matching the visitor's vertical so
+	// the progress chip row stays aligned with the actual screen
+	// they're on. computeScreens in useLpAuditForm is the source of
+	// truth for navigation; this list just mirrors its visual labels.
+	const stepLabels =
+		f.form.businessModel === "services"
+			? LP_STEPS_SERVICES
+			: f.form.businessModel === "app_conversion"
+				? LP_STEPS_APP_CONVERSION
+				: f.form.businessModel === "enterprise"
+					? LP_STEPS_ENTERPRISE
+					: LP_STEPS_BASE;
 
 	return (
 		<>
@@ -199,7 +245,7 @@ export default function LpAuditPage() {
 				stepIndex={f.stepIndex}
 				totalSteps={f.totalSteps}
 				onBack={f.prev}
-				steps={LP_STEPS}
+				steps={stepLabels}
 			>
 				{/* ── Screen 1: Domain ── */}
 				{f.currentScreen === "domain" && (

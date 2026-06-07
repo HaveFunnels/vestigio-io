@@ -2131,28 +2131,34 @@ const LOCKED_IMPACT_FAKE = [
 // follow the "Words to use" / "Words to avoid" list in that doc.
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
 	{
-		// Intro Q — the one-liner from the product-marketing context,
-		// expanded into a single paragraph for the buyer who scrolled
-		// past everything without forming a mental model.
+		// Intro Q — orientation, not objection. Buyer just needs the
+		// mental model. Keep it tight: what we do + how + what they
+		// walk away with. No bullet lists, no jargon.
 		q: "O que é a Vestigio e o que ela faz?",
-		a: "Vestigio é uma camada de inteligência de receita que mostra onde seu negócio digital está perdendo dinheiro e o que fazer primeiro. Lemos seu site público + as integrações que você conecta (Meta Ads, Google Ads, Stripe, Shopify e outras) e geramos uma fila de ações ranqueada pelo R$ que cada uma recupera. Toda finding vem com evidência verificada no navegador — você mostra prova pro seu time, não opinião. A saída não é dashboard pra interpretar nem relatório pra ler. É decisão: o que vazou, quanto custa em R$, qual ação recupera e em qual ordem.",
+		a: "Vestigio mostra onde seu negócio digital está perdendo dinheiro e o que fazer primeiro. Lê seu site público + as integrações que você conecta (Meta Ads, Google Ads, Stripe, Shopify) e te entrega uma fila de ações ranqueada pelo R$ que cada uma recupera. Toda finding vem com evidência verificada — você mostra prova pro seu time, não opinião.",
 	},
 	{
-		// Time-to-value — 15-20 min confirmed by user. Customer-facing
-		// description: convey complexity in buyer language without
-		// leaking pipeline mechanics. Brand naming: "Vestigio" (the
-		// product), NOT "Vestigio AI" (which is the Pulse chat layer
-		// per the product-marketing context glossary).
+		// Time-to-value — objection: "15-20 min é muito". Counter:
+		// frame the wait as value, name the boundary against the 60s
+		// teaser, close with "decisão não hipótese". Brand: "Vestigio"
+		// (not "Vestigio AI", which is reserved for Pulse chat).
 		q: "Quanto tempo até a Análise completa abrir?",
-		a: "Entre 15 e 20 minutos depois que o pagamento confirma. Não é instantâneo de propósito — Vestigio lê seu site página por página, conversa com as integrações que você autorizar (Meta, Google, Stripe e outras) com até 90 dias de histórico, mapeia seu funil de ponta a ponta, calcula o R$ que cada problema está custando, e monta seu Plano de Estratégia + a fila de ações já ranqueada pelo retorno de cada uma. A prévia de 60 segundos que você viu antes do paywall é só teaser. A Análise completa é a versão de verdade, com evidência verificada em cada finding — é o que justifica esses 15-20 minutos.",
+		a: "15 a 20 minutos. Não é scan superficial — Vestigio lê seu site inteiro, integra até 90 dias das suas fontes (Meta, Google, Stripe e outras) e quantifica em R$ cada problema. A prévia de 60 segundos que você viu antes do paywall é teaser. A Análise completa te entrega decisão, não hipótese — vale esses 15-20 minutos.",
 	},
 	{
+		// Guarantee — loss-aversion antidote. Buyer's fear: "vou
+		// gastar e não vai funcionar". Counter: refund + frame that
+		// the guarantee is for safety, not for the typical case.
 		q: "Como funciona a garantia 4x?",
-		a: "Se em 90 dias você não recuperou pelo menos 4x do que pagou — medido pelos vazamentos corrigidos da fila de ações e impacto contabilizado em R$ — devolvemos cada centavo. Sem perguntas, sem perícia, sem letra miúda. A garantia existe porque a maior parte dos clientes recupera muito mais que 4x já no primeiro mês.",
+		a: "Se em 90 dias você não recuperou 4x do que pagou, devolvemos cada centavo. Sem perícia, sem letra miúda. A garantia existe porque a maioria recupera muito mais que isso já no primeiro mês.",
 	},
 	{
+		// Cancel — status-quo bias antidote. Buyer's fear: "vou ficar
+		// preso". Counter: 1 click + reciprocity frame (paga enquanto
+		// está dando retorno). Drops "Vestigio é assinatura não
+		// contrato" — implicit in the rest.
 		q: "Posso cancelar quando quiser?",
-		a: "Sim. Um clique antes da próxima renovação, sem multa, sem fidelidade contratual. Vestigio é assinatura, não contrato — você paga enquanto a fila de ações está te dando retorno. Se parar de dar, você para de pagar.",
+		a: "Sim. Um clique antes da próxima cobrança, sem multa, sem contrato. Você paga enquanto a fila de ações está dando retorno; se parar de dar, você para de pagar.",
 	},
 	{
 		// Differentiation — objection-break, not descriptive matrix.
@@ -2165,15 +2171,19 @@ const FAQ_ITEMS: Array<{ q: string; a: string }> = [
 		a: "O que você tem hoje te ajuda a entender. Vestigio te ajuda a decidir — R$ em cada vazamento, ações ranqueadas pelo retorno. Sem você virar analista.",
 	},
 	{
+		// Security — trust + authority. Buyer's fear: "vou expor
+		// minha base". Counter: state the boundary in plain
+		// language, give buyer control (you authorize, you revoke).
+		// Long defensive answers actually reduce trust here.
 		q: "Vocês acessam dados sensíveis dos meus clientes?",
-		a: "Não. Vestigio lê apenas (1) páginas públicas do seu site — o que qualquer visitante anônimo veria; e (2) as integrações que você autoriza explicitamente via OAuth (Meta Ads, Google Ads, Stripe, Shopify e outras). Não temos acesso à sua base de clientes, e-mails, mensagens internas ou sistemas de backoffice. As autorizações ficam por sua conta — você revoga a qualquer momento direto no provedor. Compliance LGPD.",
+		a: "Não. Vestigio só lê o que qualquer visitante anônimo veria no seu site + as integrações que VOCÊ autoriza via OAuth (Meta, Google, Stripe e outras). Nada da sua base de clientes, e-mails ou sistemas internos. Você revoga qualquer integração quando quiser. LGPD.",
 	},
 	{
-		// Fit qualifier — uses the persona + revenue band from the
-		// product-marketing context to filter bad-fit signups upstream
-		// and qualify the right ones with specificity.
+		// Fit — self-qualification. Buyer's fear: "será que é pra
+		// mim?". Counter: instant mirror — "you're me / you're not me"
+		// in one breath. Filters bad-fit signups upstream.
 		q: "Funciona pro meu tipo de negócio?",
-		a: "Vestigio é otimizado pra empresas com canal digital de aquisição rodando tráfego pago — principalmente SaaS B2B, e-commerce, infoproduto, curso online, agências e marketplaces. O sweet spot é faturamento mensal entre R$50 mil e R$5 milhões, em fase de escala. Se você opera 100% offline (loja física sem e-commerce, serviço porta-a-porta sem funil digital) ou está em pré-faturamento sem tráfego ainda, Vestigio não é pra você ainda — volta quando ligar o primeiro canal pago.",
+		a: "É pra quem vende online e roda tráfego pago — SaaS B2B, e-commerce, infoproduto, curso, agência ou marketplace, faturando entre R$50 mil e R$5 milhões/mês. Não é pra negócio 100% offline ou pré-faturamento sem tráfego ainda.",
 	},
 ];
 

@@ -26,6 +26,19 @@ export interface MiniBusinessInputs {
 	monthly_revenue: number | null;
 	/** Average order value in R$. From the /lp form step 3. */
 	average_ticket: number | null;
+	/**
+	 * Self-declared business model from the form (step 2). Optional —
+	 * legacy leads predating Wave-22.7 don't carry it, so detectors
+	 * gated on businessModel must tolerate `null` cleanly. Used by the
+	 * services-vertical detectors + (future) mobile/enterprise.
+	 */
+	business_model?: string | null;
+	/**
+	 * Services-only sub-segmentation (step 2b). Same shape contract as
+	 * business_model — nullable, downstream detectors gracefully skip
+	 * when absent.
+	 */
+	service_category?: string | null;
 }
 
 export interface MiniImpact {

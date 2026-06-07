@@ -210,6 +210,11 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 		const business = {
 			monthly_revenue: lead.monthlyRevenue ?? null,
 			average_ticket: lead.averageTicket ?? null,
+			// Wave-22.7 — vertical hints. Used by services-specific
+			// detectors to gate themselves. Tolerates null cleanly for
+			// legacy leads.
+			business_model: lead.businessModel ?? null,
+			service_category: (lead as { serviceCategory?: string | null }).serviceCategory ?? null,
 		};
 		const findings = deriveMiniAuditFindings({
 			parsed,

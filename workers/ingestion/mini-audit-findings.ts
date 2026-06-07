@@ -868,6 +868,252 @@ const detectTrustlessCheckout: Detector = ({ parsed, rawHtml, business }) => {
 };
 
 // ──────────────────────────────────────────────
+// Services-vertical detectors. Fire only when the visitor self-
+// identified as "services" on form step 2. Copy is plain-language
+// (the audience is dentista / advogado / contador / dono de software
+// house — not tech buyers); each finding states a buyer behavior +
+// money consequence in everyday Portuguese, no jargon.
+//
+// Every detector here gates on `business.business_model === "services"`
+// and returns null otherwise, so the existing 4 verticals stay
+// unaffected.
+// ──────────────────────────────────────────────
+
+const isServicesLead = (business: MiniBusinessInputs): boolean =>
+	business.business_model === "services";
+
+// ── S1. WhatsApp / contato direto fora do primeiro scroll ─────
+// BR services market is WhatsApp-first — dentista, advogado e
+// contador esperam contato direto, não compra no botão.
+const detectServicesWhatsappBuried: Detector = ({ parsed, rawHtml, business }) => {
+	if (!isServicesLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasWhatsappAnchor = /wa\.me\/|api\.whatsapp\.com|whatsapp\.com\/send/.test(lower);
+	const hasWhatsappWord = /whats?app/.test(lower);
+	// Naive "above the fold" approximation: appears in the first 8000
+	// chars of body OR there's an anchor link with wa.me/.
+	const firstChunk = rawHtml.slice(0, 8000).toLowerCase();
+	const whatsappAboveFold = hasWhatsappAnchor && /wa\.me\/|whats?app/.test(firstChunk);
+	if (whatsappAboveFold) return null;
+	if (!hasWhatsappWord && !hasWhatsappAnchor) {
+		// No WhatsApp at all anywhere on the page.
+		return withImpact(
+			{
+				id: "mini_services_no_whatsapp",
+				severity: "critical",
+				category: "cta",
+				title: "Sem WhatsApp na página — você está deixando dinheiro na mesa",
+				body: "No Brasil, quem procura um serviço (dentista, advogado, contador) abre o WhatsApp antes de qualquer formulário. Sua página não tem botão de WhatsApp visível em nenhum lugar. Cada visitante que poderia ter chamado vai pro concorrente que tem.",
+				impact_hint: "30-50% dos contatos viram concorrente",
+				suggestion: "Coloque um botão flutuante de WhatsApp visível em todas as páginas (canto inferior direito, verde, com ícone). Inclua o número também no topo do site e na seção 'Fale conosco'. O link deve abrir direto a conversa: https://wa.me/55SEUDDDSEUNUMERO.",
+				evidence_refs: ["Nenhuma menção a WhatsApp detectada na página"],
+			},
+			"missing_contact_channel",
+			business,
+		);
+	}
+	// WhatsApp existe mas está enterrado.
+	return withImpact(
+		{
+			id: "mini_services_whatsapp_buried",
+			severity: "high",
+			category: "cta",
+			title: "Seu WhatsApp está escondido — o cliente desiste antes de achar",
+			body: "Encontramos menção a WhatsApp na sua página, mas ele não aparece nos primeiros segundos de scroll. Quem procura um serviço quer um contato direto antes de ler o resto — se precisa rolar pra achar, abre o Google e vai pra próxima opção.",
+			impact_hint: "Cada scroll a mais derruba 10-15% do interesse",
+			suggestion: "Coloque um botão de WhatsApp flutuante (canto inferior direito) que aparece em todas as páginas, e adicione o número também na primeira dobra (header ou hero). Botão verde, com ícone do WhatsApp, sem precisar pensar.",
+			evidence_refs: ["WhatsApp detectado, mas não aparece na primeira dobra"],
+		},
+		"weak_cta_above_fold",
+		business,
+	);
+};
+
+// ── S2. Registro profissional ausente ─────────────────────────
+// Cliente que contrata serviço (saúde, jurídico, contábil) procura
+// validação: CRM, OAB, CRC, ANVISA. Sem isso, o site parece amador.
+const detectServicesProfessionalRegistry: Detector = ({ rawHtml, business }) => {
+	if (!isServicesLead(business)) return null;
+	const category = business.service_category;
+	// Only fire for segments where a registry is expected.
+	const expectsRegistry = ["health", "legal", "accounting", "security"].includes(
+		category || "",
+	);
+	if (!expectsRegistry) return null;
+	const lower = rawHtml.toLowerCase();
+	const registries = [
+		/cro[\s/-]?\d/, // dentista
+		/crm[\s/-]?\d/, // médico
+		/crp[\s/-]?\d/, // psicólogo
+		/crefito[\s/-]?\d/, // fisio
+		/oab[\s/-]?\w{2}[\s/-]?\d/, // advogado
+		/crc[\s/-]?\w{2}[\s/-]?\d/, // contador
+		/cnpj[\s/-]?\d/, // razão social pelo menos
+		/registro\s+(profissional|na\s+anvisa|no\s+conselho)/,
+	];
+	const hasAny = registries.some((re) => re.test(lower));
+	if (hasAny) return null;
+	const segmentName: Record<string, string> = {
+		health: "saúde (CRM, CRO, CRP, CREFITO etc.)",
+		legal: "advocacia (OAB)",
+		accounting: "contabilidade (CRC)",
+		security: "segurança patrimonial (Polícia Federal / autorização)",
+	};
+	const expectedRegistry = segmentName[category!] || "do conselho profissional";
+	return withImpact(
+		{
+			id: "mini_services_no_registry",
+			severity: "high",
+			category: "trust",
+			title: `Falta o registro ${expectedRegistry} na página`,
+			body: "Quem contrata serviço regulamentado checa antes se você está com o registro em dia. Se o número do conselho não aparece em lugar nenhum no site (footer, página 'Quem somos', página de cada profissional), o cliente desconfia e vai pra concorrência que mostra.",
+			impact_hint: "Falta de registro reduz confiança em 40%+",
+			suggestion: "Adicione o número do registro profissional no rodapé do site (ex: 'CRO/SP 12345' ou 'OAB/SP 123.456'). Se você tem equipe, mostre o registro de cada profissional na página dele. Esse é o sinal nº 1 que cliente de serviço regulamentado procura antes de fechar.",
+			evidence_refs: ["Nenhum registro profissional detectado no HTML da página"],
+		},
+		"trust_break_in_checkout",
+		business,
+	);
+};
+
+// ── S3. Endereço, horário e área de atuação ausentes ─────────
+const detectServicesAddressHoursMissing: Detector = ({ rawHtml, business }) => {
+	if (!isServicesLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasAddress = /(rua|avenida|alameda|travessa|praça|av\.|r\.\s)\s+[a-záéíóú]/i.test(rawHtml);
+	const hasHours = /(segunda|seg\.|seg\s+a\s+sex|horário\s+de\s+atendimento|horário\s+de\s+funcionamento|aberto\s+das)/i.test(lower);
+	const hasServiceArea = /(atendemos\s+em|área\s+de\s+atuação|cidades\s+atendidas|região\s+de\s+atuação)/i.test(lower);
+	const missing = [];
+	if (!hasAddress) missing.push("endereço físico");
+	if (!hasHours) missing.push("horário de atendimento");
+	if (!hasServiceArea) missing.push("área de atuação");
+	if (missing.length < 2) return null;
+	return withImpact(
+		{
+			id: "mini_services_address_hours_missing",
+			severity: "medium",
+			category: "trust",
+			title: "Falta informação básica que todo cliente quer ver",
+			body: `Quem chega no site procura logo o básico: ${missing.join(", ")}. Se essas informações não aparecem em até 2 cliques, o cliente assume que você é amador ou que não atende ele e fecha a aba.`,
+			impact_hint: "Cliente sem essas infos abandona em 6-8 segundos",
+			suggestion: "Crie uma seção 'Onde estamos' visível no menu principal e no footer, com: endereço completo, horário de atendimento (incluindo finais de semana se for o caso), cidades / bairros que você atende, telefone e WhatsApp. Use um mapa do Google embutido pra dar ainda mais confiança.",
+			evidence_refs: missing.map((m) => `Não encontrei ${m} na página`),
+		},
+		"missing_contact_channel",
+		business,
+	);
+};
+
+// ── S4. Depoimentos sem prova ──────────────────────────────────
+const detectServicesUnverifiableTestimonials: Detector = ({ rawHtml, business }) => {
+	if (!isServicesLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasTestimonialKeyword = /(depoimento|cliente|paciente)s?\s*[:.]/i.test(lower) ||
+		/o\s+que\s+(nossos|os)\s+(clientes|pacientes)\s+dizem/i.test(lower) ||
+		/avalia[çc][aã]o(\s+do\s+google)?/i.test(lower);
+	if (!hasTestimonialKeyword) return null;
+	const hasGoogleReviewsLink = /google\.com\/maps|google\.com\/search\?.*reviews|seekraj|search\?q.*reviews/i.test(lower);
+	const hasNamedCities = /([A-ZÁÉÍÓÚ][a-záéíóú]+(\s+das?\s+[A-ZÁÉÍÓÚ][a-záéíóú]+)?\s*[-–]\s*[A-Z]{2})/.test(rawHtml);
+	// Heuristic: has testimonial section but no verifiable proof
+	// (no city/state tag, no Google reviews link).
+	if (hasGoogleReviewsLink || hasNamedCities) return null;
+	return withImpact(
+		{
+			id: "mini_services_testimonials_unverifiable",
+			severity: "medium",
+			category: "trust",
+			title: "Seus depoimentos não dão pra checar — soa fake",
+			body: "Você tem uma seção de depoimentos, mas eles não trazem nome completo + cidade ou link pra avaliação real (Google Reviews, Doctoralia, ReclameAqui). Cliente que está pesquisando contratar serviço sabe disso e desconta depoimento sem prova como 'invenção do site'.",
+			impact_hint: "Depoimento sem prova quase não move a agulha",
+			suggestion: "Pra cada depoimento, inclua: nome real + foto (com autorização), cidade-estado, e um link pro perfil dele ou pra avaliação no Google. Mostre também a nota geral do Google Reviews em destaque ('4.8 ⭐ no Google, 127 avaliações') — esse número faz mais efeito que 10 depoimentos genéricos.",
+			evidence_refs: ["Seção de depoimentos detectada", "Sem nomes verificáveis ou link pra reviews públicas"],
+		},
+		"no_social_proof",
+		business,
+	);
+};
+
+// ── S5. CTA com tom errado (compra em vez de agenda) ──────────
+const detectServicesWrongCtaTone: Detector = ({ parsed, rawHtml, business }) => {
+	if (!isServicesLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const buyTerms = /(comprar\s+agora|adicionar\s+ao\s+carrinho|finalizar\s+compra|comprar\s+já|garantir\s+o\s+meu|adquirir)/;
+	const serviceTerms = /(agendar|marcar\s+consulta|solicitar\s+or[çc]amento|falar\s+com\s+(um\s+)?especialista|tirar\s+d[uú]vida|atendimento)/;
+	const hasBuyTone = buyTerms.test(lower);
+	const hasServiceTone = serviceTerms.test(lower);
+	if (hasServiceTone) return null;
+	if (!hasBuyTone) {
+		// Neither — also bad, but lower-severity (covered by other CTA detectors).
+		return null;
+	}
+	return withImpact(
+		{
+			id: "mini_services_wrong_cta_tone",
+			severity: "medium",
+			category: "cta",
+			title: "Botões falam 'comprar', mas seu cliente quer 'agendar'",
+			body: "Detectamos botões com tom de venda direta ('Comprar', 'Garantir o meu', 'Adicionar ao carrinho'). Quem procura serviço espera 'Agendar consulta', 'Solicitar orçamento', 'Falar com especialista'. Botão com tom errado faz o cliente pensar 'isso aqui não é pra mim' e fechar.",
+			impact_hint: "CTA errado afasta 20-30% dos visitantes certos",
+			suggestion: "Troque os botões pra linguagem de serviço: 'Agendar primeira consulta', 'Solicitar orçamento sem compromisso', 'Falar com um especialista', 'Tirar dúvida no WhatsApp'. Mantenha a mesma cor e formato, só ajuste o texto. Funciona mesmo se você cobra valor fixo — o tom é o que importa.",
+			evidence_refs: ["Botões com termos de venda direta detectados", "Sem botões com tom de serviço"],
+		},
+		"weak_cta_above_fold",
+		business,
+	);
+};
+
+// ── S6. Google Business Profile não linkado ────────────────────
+const detectServicesNoGbpLink: Detector = ({ rawHtml, business }) => {
+	if (!isServicesLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasGbpLink = /google\.com\/maps\/place|maps\.app\.goo\.gl|share\.google\/|g\.page\//.test(lower);
+	if (hasGbpLink) return null;
+	return withImpact(
+		{
+			id: "mini_services_no_gbp_link",
+			severity: "medium",
+			category: "trust",
+			title: "Sem link pro seu Google Business Profile",
+			body: "Cliente que procura serviço quase sempre passa pelo Google Maps antes de te chamar (pra ver foto da fachada, horário, avaliação). Seu site não linka pro seu perfil no Google — isso significa que quem chega no site e quer conferir antes vai pra busca, e pode acabar caindo num concorrente que aparece logo abaixo de você.",
+			impact_hint: "Tráfego que perdeu pro concorrente nas reviews",
+			suggestion: "Crie ou reivindique seu perfil em business.google.com e adicione o link no site (rodapé + página 'Onde estamos' + sidebar de contato). Coloque também o badge 'Veja avaliações no Google' com a nota — isso transfere a credibilidade do Google pra você direto na primeira dobra.",
+			evidence_refs: ["Nenhum link pro Google Maps ou Google Business detectado"],
+		},
+		"no_social_proof",
+		business,
+	);
+};
+
+// ── S7. Lista de serviços enterrada ────────────────────────────
+const detectServicesCategoriesBuried: Detector = ({ parsed, rawHtml, business }) => {
+	if (!isServicesLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	// Look for service-listing signals in the first 12000 chars
+	// (rough "above the fold + hero section").
+	const heroChunk = rawHtml.slice(0, 12000).toLowerCase();
+	const hasServiceList = /(nossos\s+servi[çc]os|servi[çc]os\s+oferecidos|especialidades|áreas\s+de\s+atua[çc][aã]o|o\s+que\s+fazemos)/i.test(heroChunk);
+	if (hasServiceList) return null;
+	// Check if there's any service listing later in the page — if yes,
+	// they buried it; if no, that's a different problem (thin content).
+	const hasAnywhere = /(nossos\s+servi[çc]os|especialidades|áreas\s+de\s+atua[çc][aã]o)/i.test(lower);
+	if (!hasAnywhere) return null;
+	return withImpact(
+		{
+			id: "mini_services_categories_buried",
+			severity: "medium",
+			category: "structure",
+			title: "Sua lista de serviços está enterrada — cliente não sabe se você atende ele",
+			body: "Quando o cliente cai na sua página, ele precisa entender em 5 segundos: 'Esse profissional atende o que eu preciso?'. Sua lista de serviços / especialidades existe, mas não aparece na primeira dobra. Quem rola até achar é minoria — a maioria sai antes.",
+			impact_hint: "Lista enterrada perde 25-40% do interesse inicial",
+			suggestion: "Mostre na primeira dobra (acima do scroll) os 3 a 6 serviços principais que você oferece, cada um com 1 frase do que cobre. Pode ser em cards, lista com ícones, ou texto curto. O cliente precisa se reconhecer ali — 'sim, é isso que eu preciso' — antes de descer.",
+			evidence_refs: ["Lista de serviços detectada", "Mas não aparece na primeira dobra"],
+		},
+		"weak_conversion_path",
+		business,
+	);
+};
+
+// ──────────────────────────────────────────────
 // Positive fallbacks — only kick in when fewer than 5 negatives hit.
 // ──────────────────────────────────────────────
 
@@ -1061,6 +1307,16 @@ export function deriveMiniAuditFindings(input: DeriveInput): MiniAuditFindings {
 		detectWeakConversionPath,
 		detectSlowHeavyPage,
 		detectTrustlessCheckout,
+		// Wave-22.7 — Services vertical. Each gates internally on
+		// businessModel === "services" so non-services leads pay
+		// zero cost (null return, no impact computation).
+		detectServicesWhatsappBuried,
+		detectServicesProfessionalRegistry,
+		detectServicesAddressHoursMissing,
+		detectServicesUnverifiableTestimonials,
+		detectServicesWrongCtaTone,
+		detectServicesNoGbpLink,
+		detectServicesCategoriesBuried,
 	];
 
 	const detected: MiniFinding[] = [];

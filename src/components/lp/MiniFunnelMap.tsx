@@ -19,12 +19,40 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
+import {
+	Eye,
+	Compass,
+	Target,
+	ShoppingBag,
+	Repeat,
+	type LucideIcon,
+} from "lucide-react";
 import type {
 	MiniFinding,
 	BlurredFinding,
 	MiniFindingCategory,
 } from "../../../workers/ingestion/mini-audit-findings";
 import { formatBRL } from "../../../packages/impact/mini-impact";
+
+// Per-stage icon — visual anchor so the buyer reads the funnel
+// stage at a glance on the mobile carousel where there are no
+// chevrons to imply flow. Each icon is a metaphor for the buyer's
+// state at that point in the journey:
+//   awareness → Eye (just landed, eyeing the offer)
+//   consideration → Compass (exploring, comparing)
+//   decision → Target (zeroing in on the choice)
+//   conversion → ShoppingBag (the transaction moment)
+//   post_conversion → Repeat (retention / return / renew)
+const STAGE_ICONS: Record<
+	"awareness" | "consideration" | "decision" | "conversion" | "post_conversion",
+	LucideIcon
+> = {
+	awareness: Eye,
+	consideration: Compass,
+	decision: Target,
+	conversion: ShoppingBag,
+	post_conversion: Repeat,
+};
 
 type StageId =
 	| "awareness"
@@ -286,7 +314,7 @@ export default function MiniFunnelMap({
 						const isExpanded = expandedStage === id;
 						const isClickable = data.count > 0;
 						const hasIssues = data.count > 0;
-						const classes = hasIssues ? ISSUE_CLASSES : CLEAN_CLASSES;
+						const Icon = STAGE_ICONS[id];
 
 						return (
 							<button
@@ -298,44 +326,57 @@ export default function MiniFunnelMap({
 								onClick={() =>
 									setExpandedStage(isExpanded ? null : id)
 								}
-								className={`relative flex w-[78%] shrink-0 snap-center flex-col items-start gap-3 rounded-2xl border px-5 py-5 text-left shadow-sm transition-all ${
-									isExpanded ? classes.expandedContainer : classes.container
+								// Card stays on a neutral editorial surface.
+								// Previous version flooded every stage with a
+								// leak in rose and read as five panic boxes
+								// stacked — wrong tone for an analysis surface.
+								// The leak signal now lives in the icon chip
+								// (tinted bg) and the impact line (rose mono),
+								// while the card chrome is calm.
+								className={`relative flex w-[78%] shrink-0 snap-center flex-col gap-4 rounded-2xl border border-edge bg-surface-card px-5 py-5 text-left shadow-sm transition-all ${
+									isExpanded ? "ring-1 ring-inset ring-content/10" : ""
 								} ${
 									isClickable
 										? "cursor-pointer active:scale-[0.985]"
 										: "cursor-default"
 								}`}
 							>
-								{/* Step pill — anchors the visitor to where they
-								    are in the 5-stage flow. */}
+								{/* Top row: icon chip + step counter.
+								    Icon carries the stage metaphor (Eye for
+								    awareness, Compass for consideration, etc.)
+								    and its tinted bg signals issue vs clean. */}
 								<div className="flex w-full items-center justify-between">
 									<span
-										className={`inline-flex items-center gap-1.5 rounded-full border border-current/15 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${classes.stageLabel}`}
+										className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
+											hasIssues
+												? "bg-rose-500/12 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300"
+												: "bg-surface-inset text-content-muted"
+										}`}
 									>
-										<span className="font-mono text-[10px] tabular-nums opacity-60">
-											{i + 1}/{STAGE_IDS.length}
-										</span>
-										<span className="h-3 w-px bg-current/30" />
-										{t(`stages.${id}`)}
+										<Icon className="h-4 w-4" strokeWidth={2} />
 									</span>
+									<span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] tabular-nums text-content-faint">
+										{i + 1}/{STAGE_IDS.length}
+									</span>
+								</div>
+
+								{/* Stage label — full, no truncate. */}
+								<div className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted">
+									{t(`stages.${id}`)}
 								</div>
 
 								{hasIssues ? (
 									<div className="flex w-full items-baseline justify-between gap-3">
-										<div
-											className={`font-[family-name:var(--font-fraunces)] text-[44px] font-medium leading-none tabular-nums ${classes.stageValue}`}
-										>
+										<div className="font-[family-name:var(--font-fraunces)] text-[44px] font-medium leading-none tabular-nums text-content">
 											{data.count}
 										</div>
 										{data.impactCents > 0 ? (
-											<div
-												className={`font-mono text-[13px] tabular-nums ${classes.stageValue} opacity-80`}
-											>
+											<div className="font-mono text-[13px] tabular-nums text-rose-600 dark:text-rose-300">
 												{formatBRL(data.impactCents)}
 											</div>
 										) : (
 											<div
-												className={`select-none font-mono text-[13px] tabular-nums blur-[3px] ${classes.stageValue} opacity-80`}
+												className="select-none font-mono text-[13px] tabular-nums text-rose-600 blur-[3px] dark:text-rose-300"
 												aria-hidden
 											>
 												R$ 2.400
@@ -343,7 +384,7 @@ export default function MiniFunnelMap({
 										)}
 									</div>
 								) : (
-									<div className={`mt-1 text-[14px] font-medium ${classes.stageLabel}`}>
+									<div className="text-[14px] font-medium text-content-muted">
 										{t("ok")}
 									</div>
 								)}

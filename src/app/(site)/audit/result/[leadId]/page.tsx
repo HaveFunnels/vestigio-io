@@ -599,10 +599,12 @@ function ResultHeader({
 	const healthScore = (() => {
 		let score = 100;
 		for (const f of negativeFindings) {
+			// MiniFindingSeverity only has critical | high | medium | positive.
+			// negativeFindings is already filtered to exclude positives, so
+			// the three branches cover all valid cases.
 			if (f.severity === "critical") score -= 12;
 			else if (f.severity === "high") score -= 8;
 			else if (f.severity === "medium") score -= 5;
-			else if (f.severity === "low") score -= 2;
 		}
 		score -= blurredCount * 3;
 		return Math.max(0, Math.min(100, Math.round(score)));

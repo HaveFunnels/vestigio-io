@@ -2338,28 +2338,20 @@ function LockedNarrativeRow({
 	const [open, setOpen] = useState(false);
 	return (
 		<div className="overflow-hidden rounded-xl border border-edge bg-surface-inset/40">
-			<div className="flex items-center gap-2">
-				<button
-					type="button"
-					onClick={onCheckout}
-					className="flex flex-1 items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-amber-50/40 dark:hover:bg-amber-500/[0.05]"
-				>
-					<Lock className="h-3.5 w-3.5 shrink-0 text-content-faint" />
-					<span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-snug text-content">
-						{title}
-					</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => setOpen((v) => !v)}
-					className="flex h-9 w-9 shrink-0 items-center justify-center text-content-faint transition-colors hover:text-content-muted"
-					aria-label={open ? "Recolher" : "Expandir"}
-				>
-					<ChevronDown
-						className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
-					/>
-				</button>
-			</div>
+			<button
+				type="button"
+				onClick={() => setOpen((v) => !v)}
+				className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-inset"
+				aria-expanded={open}
+			>
+				<Lock className="h-3.5 w-3.5 shrink-0 text-content-faint" />
+				<span className="min-w-0 flex-1 truncate text-[13px] font-medium leading-snug text-content">
+					{title}
+				</span>
+				<ChevronDown
+					className={`h-4 w-4 shrink-0 text-content-faint transition-transform ${open ? "rotate-180" : ""}`}
+				/>
+			</button>
 			<AnimatePresence initial={false}>
 				{open && (
 					<motion.div

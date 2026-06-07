@@ -2159,7 +2159,7 @@ const FAQ_ITEMS: Array<{ q: string; a: string }> = [
 		// marketing-context "How alternatives fall short" + "Words to
 		// use" lists. Three named alternatives, one sentence each,
 		// followed by what Vestigio is.
-		q: "Como Vestigio difere do GA4, Hotjar ou consultoria de CRO?",
+		q: "Como isso é diferente do que eu já uso hoje?",
 		a: "Cada um te entrega coisa diferente. GA4 / Amplitude / Mixpanel te dizem o que aconteceu (\"taxa de checkout caiu 8%\") — não te dizem por que, quanto custa, nem o que fazer. Hotjar / FullStory te dão hipótese visual via heatmap e session replay — você ainda interpreta sozinho. Consultor de CRO te entrega um relatório — opinião humana qualificada, mas cara, lenta (semanas) e que envelhece no momento que vira PDF. Vestigio é uma layer diferente: causal inference + quantificação financeira em R$ + evidência verificada por navegador em cada finding. A saída é uma fila de ações ranqueada pelo R$ que cada uma recupera. Você não vira analista. Você executa.",
 	},
 	{

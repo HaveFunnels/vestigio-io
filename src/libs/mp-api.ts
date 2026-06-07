@@ -30,7 +30,10 @@ export function isMpTestMode(): boolean {
 	return !!t && t.startsWith("TEST-");
 }
 
-function headers(idempotencyKey?: string): Record<string, string> {
+function headers(
+	idempotencyKey?: string,
+	deviceSessionId?: string,
+): Record<string, string> {
 	const h: Record<string, string> = {
 		"Content-Type": "application/json",
 		Authorization: `Bearer ${getAccessToken()}`,
@@ -40,6 +43,13 @@ function headers(idempotencyKey?: string): Record<string, string> {
 	// avoid double-charging. Caller decides the key (typically the
 	// PixCharge.externalReference or a uuid).
 	if (idempotencyKey) h["X-Idempotency-Key"] = idempotencyKey;
+	// MP-recommended antifraud signal. MP.js drops MP_DEVICE_SESSION_ID
+	// on `window` when initialized; we forward it as a request header so
+	// MP's risk engine ties this server call to that browser session.
+	// Approval-rate uplift is material — MP cites it explicitly in their
+	// "improving approval rate" guide. Optional: requests without it
+	// still succeed, just with a lower-confidence risk score.
+	if (deviceSessionId) h["X-meli-session-id"] = deviceSessionId;
 	return h;
 }
 
@@ -48,13 +58,14 @@ async function mpRequest<T>(
 	path: string,
 	body?: unknown,
 	idempotencyKey?: string,
+	deviceSessionId?: string,
 ): Promise<T> {
 	if (!isMpConfigured()) {
 		throw new Error("MP_ACCESS_TOKEN not configured");
 	}
 	const res = await fetch(`${BASE_URL}${path}`, {
 		method,
-		headers: headers(idempotencyKey),
+		headers: headers(idempotencyKey, deviceSessionId),
 		body: body ? JSON.stringify(body) : undefined,
 	});
 	if (!res.ok) {
@@ -214,6 +225,8 @@ export async function createPreapproval(input: {
 	backUrl: string;
 	cardTokenId?: string;
 	idempotencyKey: string;
+	/** MP_DEVICE_SESSION_ID from MP.js — forwarded as X-meli-session-id */
+	deviceSessionId?: string;
 }): Promise<MpPreapproval> {
 	const body: Record<string, unknown> = {
 		preapproval_plan_id: input.preapprovalPlanId,
@@ -225,7 +238,13 @@ export async function createPreapproval(input: {
 		body.card_token_id = input.cardTokenId;
 		body.status = "authorized"; // tell MP to activate immediately
 	}
-	return mpRequest<MpPreapproval>("POST", "/preapproval", body, input.idempotencyKey);
+	return mpRequest<MpPreapproval>(
+		"POST",
+		"/preapproval",
+		body,
+		input.idempotencyKey,
+		input.deviceSessionId,
+	);
 }
 
 export async function getPreapproval(preapprovalId: string): Promise<MpPreapproval> {
@@ -293,6 +312,7 @@ export async function createPixPayment(input: {
 	expiresInMinutes?: number; // default 60
 	idempotencyKey: string;
 	metadata?: Record<string, unknown>;
+	deviceSessionId?: string;
 }): Promise<MpPaymentResponse> {
 	const expires = new Date(Date.now() + (input.expiresInMinutes ?? 60) * 60_000);
 	return mpRequest<MpPaymentResponse>(
@@ -309,6 +329,7 @@ export async function createPixPayment(input: {
 			metadata: input.metadata,
 		},
 		input.idempotencyKey,
+		input.deviceSessionId,
 	);
 }
 

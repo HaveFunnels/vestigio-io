@@ -43,6 +43,7 @@ const bodySchema = z.object({
 	planKey: z.enum(["vestigio", "pro", "max"]),
 	cycle: z.enum(["monthly", "annually"]).default("monthly"),
 	leadId: z.string().optional(),
+	deviceSessionId: z.string().optional(),
 });
 
 const POST = withErrorTracking(
@@ -66,7 +67,7 @@ const POST = withErrorTracking(
 				{ status: 400 },
 			);
 		}
-		const { planKey, cycle, leadId } = parsed.data;
+		const { planKey, cycle, leadId, deviceSessionId } = parsed.data;
 
 		const userId = (session.user as any).id as string;
 		const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -127,6 +128,7 @@ const POST = withErrorTracking(
 			notificationUrl,
 			expiresInMinutes: 30, // tight TTL on the QR; UI surfaces a "gerar novo" recourse
 			idempotencyKey: externalReference,
+			deviceSessionId,
 			metadata: {
 				flow: "paywall",
 				userId,

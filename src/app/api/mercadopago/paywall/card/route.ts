@@ -43,6 +43,10 @@ const bodySchema = z.object({
 	// used — preapproval picks the payment method off the token.
 	paymentMethodId: z.string().optional(),
 	installments: z.number().int().min(1).max(12).optional(),
+	// MP_DEVICE_SESSION_ID minted by MP.js in the browser. Forwarded
+	// to MP as X-meli-session-id for antifraud — sober uplift in
+	// approval rate per MP's own guidance.
+	deviceSessionId: z.string().optional(),
 });
 
 const POST = withErrorTracking(
@@ -66,7 +70,7 @@ const POST = withErrorTracking(
 				{ status: 400 },
 			);
 		}
-		const { planKey, cycle, leadId, cardTokenId } = parsed.data;
+		const { planKey, cycle, leadId, cardTokenId, deviceSessionId } = parsed.data;
 
 		const userId = (session.user as any).id as string;
 		const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -133,6 +137,7 @@ const POST = withErrorTracking(
 				backUrl: `${appUrl}/app`,
 				cardTokenId,
 				idempotencyKey: externalReference,
+				deviceSessionId,
 			});
 		} catch (err: any) {
 			// MP sandbox returns 404 "Card token service not found" / 400

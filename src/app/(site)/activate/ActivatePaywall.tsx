@@ -155,6 +155,9 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 	const startPix = async () => {
 		setPayment({ kind: "creating" });
 		try {
+			const deviceSessionId = (window as any).MP_DEVICE_SESSION_ID as
+				| string
+				| undefined;
 			const res = await fetch("/api/mercadopago/paywall/pix", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -162,6 +165,7 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 					planKey: selectedPlan?.key ?? "vestigio",
 					cycle,
 					leadId: leadId ?? undefined,
+					deviceSessionId,
 				}),
 			});
 			if (!res.ok) {
@@ -244,6 +248,17 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 				return;
 			}
 
+			// Device fingerprint — MP.js drops MP_DEVICE_SESSION_ID on the
+			// global as a side effect of `new MercadoPago(...)`. Forwarding
+			// it on every request raises the antifraud signal materially
+			// (MP recommends explicitly and tracks approval-rate uplift).
+			// Falls back to undefined if SDK didn't populate (e.g. blocker
+			// extension) — the backend still posts, just with degraded
+			// signal, same behavior as before this commit.
+			const deviceSessionId = (window as any).MP_DEVICE_SESSION_ID as
+				| string
+				| undefined;
+
 			// Submit to backend
 			const res = await fetch("/api/mercadopago/paywall/card", {
 				method: "POST",
@@ -255,6 +270,7 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 					cardTokenId: token.id,
 					paymentMethodId: pm.id,
 					installments: 1,
+					deviceSessionId,
 				}),
 			});
 			if (!res.ok) {

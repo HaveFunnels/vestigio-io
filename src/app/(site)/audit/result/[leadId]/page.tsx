@@ -148,6 +148,7 @@ export default function MiniAuditResultPage() {
 	// ── Fetch unmasked email for Paddle pre-fill ──
 	useEffect(() => {
 		if (!leadId || !lead) return;
+		if (isPreview) return;
 		if (!["audit_complete", "expired"].includes(lead.status)) return;
 		if (checkoutEmail) return;
 		let cancelled = false;
@@ -162,7 +163,7 @@ export default function MiniAuditResultPage() {
 			} catch { /* Paddle will prompt for email if we can't prefill */ }
 		})();
 		return () => { cancelled = true; };
-	}, [leadId, lead, checkoutEmail]);
+	}, [leadId, lead, checkoutEmail, isPreview]);
 
 	// ── Open checkout (gateway picked server-side) ──
 	const activeProvider = lead?.paymentProvider ?? "paddle";
@@ -592,6 +593,7 @@ function ResultHeader({
 	const t = useTranslations("lp.audit_result");
 	const googleFavicon = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(preview.host)}&sz=64`;
 	const [faviconSrc, setFaviconSrc] = useState(preview.favicon_url || googleFavicon);
+	const [faviconFailed, setFaviconFailed] = useState(false);
 	const negativeCount = negativeFindings.length;
 
 	// Composite funnel health score (0-100). Subtracts severity weight
@@ -672,15 +674,29 @@ function ResultHeader({
 		// shape. object-cover so a non-square favicon fills without
 		// letterbox stripes.
 		<span className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-edge shadow-sm sm:h-12 sm:w-12">
-			{/* eslint-disable-next-line @next/next/no-img-element */}
-			<img
-				src={faviconSrc}
-				alt=""
-				className="h-full w-full object-cover"
-				onError={() => {
-					if (faviconSrc !== googleFavicon) setFaviconSrc(googleFavicon);
-				}}
-			/>
+			{faviconFailed ? (
+				// Both the page-declared favicon AND Google's favicon
+				// service returned nothing for this host. Render a
+				// letter-mark fallback so we don't ship a broken-image
+				// icon (and don't keep retrying the 404).
+				<span className="flex h-full w-full items-center justify-center bg-surface-inset font-[family-name:var(--font-fraunces)] text-[18px] font-medium text-content-muted">
+					{(organizationName || preview.host || "?").charAt(0).toUpperCase()}
+				</span>
+			) : (
+				/* eslint-disable-next-line @next/next/no-img-element */
+				<img
+					src={faviconSrc}
+					alt=""
+					className="h-full w-full object-cover"
+					onError={() => {
+						if (faviconSrc !== googleFavicon) {
+							setFaviconSrc(googleFavicon);
+						} else {
+							setFaviconFailed(true);
+						}
+					}}
+				/>
+			)}
 		</span>
 	);
 

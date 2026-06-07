@@ -222,10 +222,10 @@ export default function MiniFunnelMap({
 					const Icon = STAGE_ICONS[id];
 
 					return (
-						<div key={id} className="flex min-w-0 flex-1 items-center">
+						<div key={id} className="flex min-w-0 flex-1 items-stretch">
 							{i > 0 && (
 								<svg
-									className="mx-0.5 h-3 w-3 shrink-0 text-content-faint"
+									className="mx-0.5 h-3 w-3 shrink-0 self-center text-content-faint"
 									viewBox="0 0 8 8"
 									fill="none"
 									aria-hidden
@@ -251,8 +251,11 @@ export default function MiniFunnelMap({
 								// leak signal lives in the icon-chip tint and
 								// the impact number; the card chrome stays
 								// calm so five issue stages don't stack as five
-								// panic boxes.
-								className={`min-w-0 w-full rounded-xl border border-edge bg-surface-card px-2 py-3 text-center transition-all ${
+								// panic boxes. Flex column + mt-auto on the
+								// bottom block keeps all 5 cards the same
+								// height even when a clean stage only renders
+								// the "OK" label.
+								className={`flex min-w-0 w-full flex-col items-center rounded-xl border border-edge bg-surface-card px-2 py-3 text-center transition-all ${
 									isExpanded ? "ring-1 ring-inset ring-content/10" : ""
 								} ${
 									isClickable
@@ -261,7 +264,7 @@ export default function MiniFunnelMap({
 								}`}
 							>
 								<span
-									className={`mx-auto mb-1.5 inline-flex h-7 w-7 items-center justify-center rounded-lg ${
+									className={`mb-1.5 inline-flex h-7 w-7 items-center justify-center rounded-lg ${
 										hasIssues
 											? "bg-rose-500/12 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300"
 											: "bg-surface-inset text-content-muted"
@@ -269,32 +272,34 @@ export default function MiniFunnelMap({
 								>
 									<Icon className="h-3.5 w-3.5" strokeWidth={2} />
 								</span>
-								<div className="truncate text-[9px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+								<div className="w-full truncate text-[9px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 									{t(`stages.${id}`)}
 								</div>
-								{hasIssues ? (
-									<>
-										<div className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-medium leading-none tabular-nums text-content">
-											{data.count}
+								<div className="mt-auto w-full pt-1">
+									{hasIssues ? (
+										<>
+											<div className="font-[family-name:var(--font-fraunces)] text-2xl font-medium leading-none tabular-nums text-content">
+												{data.count}
+											</div>
+											{data.impactCents > 0 ? (
+												<div className="mt-1 truncate font-mono text-[10px] tabular-nums text-rose-600 dark:text-rose-300">
+													{formatBRL(data.impactCents)}
+												</div>
+											) : (
+												<div
+													className="mt-1 select-none truncate font-mono text-[10px] tabular-nums text-rose-600 blur-[3px] dark:text-rose-300"
+													aria-hidden
+												>
+													R$2.400
+												</div>
+											)}
+										</>
+									) : (
+										<div className="text-[11px] font-medium text-content-muted">
+											{t("ok")}
 										</div>
-										{data.impactCents > 0 ? (
-											<div className="mt-1 truncate font-mono text-[10px] tabular-nums text-rose-600 dark:text-rose-300">
-												{formatBRL(data.impactCents)}
-											</div>
-										) : (
-											<div
-												className="mt-1 select-none truncate font-mono text-[10px] tabular-nums text-rose-600 blur-[3px] dark:text-rose-300"
-												aria-hidden
-											>
-												R$2.400
-											</div>
-										)}
-									</>
-								) : (
-									<div className="mt-1.5 text-[11px] font-medium text-content-muted">
-										{t("ok")}
-									</div>
-								)}
+									)}
+								</div>
 							</button>
 						</div>
 					);
@@ -316,7 +321,7 @@ export default function MiniFunnelMap({
 			<div className="sm:hidden">
 				<div
 					ref={carouselRef}
-					className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+					className="-mx-4 flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
 				>
 					{STAGE_IDS.map((id, i) => {
 						const data = stageData[id];
@@ -353,7 +358,11 @@ export default function MiniFunnelMap({
 									}
 									// Neutral editorial surface; leak signal
 									// only in the icon chip + impact mono.
-									className={`relative flex w-full flex-col gap-4 rounded-2xl border-2 border-black bg-surface-card px-5 py-5 text-left shadow-sm transition-all ${
+									// flex-1 fills the wrapper height (set by
+									// items-stretch on the carousel) so a
+									// clean "OK" card matches the height of
+									// stages with full count + impact rows.
+									className={`relative flex w-full flex-1 flex-col gap-4 rounded-2xl border-2 border-black bg-surface-card px-5 py-5 text-left shadow-sm transition-all ${
 										isExpanded ? "ring-1 ring-inset ring-content/10" : ""
 									} ${
 										isClickable
@@ -379,29 +388,31 @@ export default function MiniFunnelMap({
 										</span>
 									</div>
 
-									{hasIssues ? (
-										<div className="flex w-full items-baseline justify-between gap-3">
-											<div className="font-[family-name:var(--font-fraunces)] text-[44px] font-medium leading-none tabular-nums text-content">
-												{data.count}
+									<div className="mt-auto">
+										{hasIssues ? (
+											<div className="flex w-full items-baseline justify-between gap-3">
+												<div className="font-[family-name:var(--font-fraunces)] text-[44px] font-medium leading-none tabular-nums text-content">
+													{data.count}
+												</div>
+												{data.impactCents > 0 ? (
+													<div className="font-mono text-[13px] tabular-nums text-rose-600 dark:text-rose-300">
+														{formatBRL(data.impactCents)}
+													</div>
+												) : (
+													<div
+														className="select-none font-mono text-[13px] tabular-nums text-rose-600 blur-[3px] dark:text-rose-300"
+														aria-hidden
+													>
+														R$2.400
+													</div>
+												)}
 											</div>
-											{data.impactCents > 0 ? (
-												<div className="font-mono text-[13px] tabular-nums text-rose-600 dark:text-rose-300">
-													{formatBRL(data.impactCents)}
-												</div>
-											) : (
-												<div
-													className="select-none font-mono text-[13px] tabular-nums text-rose-600 blur-[3px] dark:text-rose-300"
-													aria-hidden
-												>
-													R$2.400
-												</div>
-											)}
-										</div>
-									) : (
-										<div className="text-[14px] font-medium text-content-muted">
-											{t("ok")}
-										</div>
-									)}
+										) : (
+											<div className="text-[14px] font-medium text-content-muted">
+												{t("ok")}
+											</div>
+										)}
+									</div>
 								</button>
 							</div>
 						);

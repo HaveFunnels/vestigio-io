@@ -2155,15 +2155,14 @@ const FAQ_ITEMS: Array<{ q: string; a: string }> = [
 		a: "Sim. Um clique antes da próxima renovação, sem multa, sem fidelidade contratual. Vestigio é assinatura, não contrato — você paga enquanto a fila de ações está te dando retorno. Se parar de dar, você para de pagar.",
 	},
 	{
-		// Differentiation — answer matches the buyer-voice question
-		// ("o que eu já uso hoje"). Opens acknowledging they
-		// probably have something running, maps "what you have" into
-		// the three canonical categories from the product-marketing
-		// context "Why alternatives fall short" section (analytics;
-		// session replay; CRO consultancy), then positions Vestigio
-		// as a different layer rather than a head-to-head replacement.
+		// Differentiation — objection-break, not descriptive matrix.
+		// One sentence that names the gap (entender vs decidir),
+		// one that names what fills it (R$ + ranked queue), one that
+		// dissolves the "but I'll have to learn another tool" fear.
+		// Buyer's underlying objection isn't "are these features
+		// different" — it's "do I really need ANOTHER thing".
 		q: "Como isso é diferente do que eu já uso hoje?",
-		a: "Provavelmente você já tem alguma coisa rodando — e cada categoria resolve uma parte que não é a que importa. Analytics (GA4, Amplitude, Mixpanel) te mostra o que aconteceu (\"taxa de checkout caiu 8%\") — não te diz por que, quanto custa, nem o que fazer. Session replay e heatmap (Hotjar, FullStory) te mostram comportamento, mas você ainda interpreta e prioriza sozinho. Consultoria de CRO te entrega opinião humana qualificada — cara, lenta, e que envelhece no momento que vira PDF. Vestigio é uma layer diferente: causal inference + quantificação financeira em R$ + evidência verificada por navegador. A saída não é dashboard nem relatório — é uma fila de ações ranqueada pelo R$ que cada uma recupera. Você não vira analista. Você executa.",
+		a: "O que você tem hoje te ajuda a entender. Vestigio te ajuda a decidir — R$ em cada vazamento, ações ranqueadas pelo retorno. Sem você virar analista.",
 	},
 	{
 		q: "Vocês acessam dados sensíveis dos meus clientes?",

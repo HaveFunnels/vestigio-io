@@ -1294,6 +1294,210 @@ const detectAppPermissionsScary: Detector = ({ rawHtml, business }) => {
 };
 
 // ──────────────────────────────────────────────
+// Enterprise B2B detectors. Fire only when the visitor self-identified
+// as "enterprise" on form step 2. The audience here is CTO / Head of
+// Growth / CISO / Revenue Ops — technical copy is appropriate and
+// expected. Each finding states the procurement-stage friction +
+// pipeline consequence, using the language a buyer in that role
+// actually uses.
+//
+// Each detector gates on `business.business_model === "enterprise"`
+// (and sometimes on `business.enterprise_segment`) and returns null
+// otherwise.
+// ──────────────────────────────────────────────
+
+const isEnterpriseLead = (business: MiniBusinessInputs): boolean =>
+	business.business_model === "enterprise";
+
+// ── E1. Compliance/certificações ausentes ─────────────────────
+// Enterprise buyer's first procurement check: SOC2, ISO 27001, LGPD
+// certification, PCI DSS (for fintech). Without these surfaced, the
+// security review team kicks the deal out before sales gets a meeting.
+const detectEnterpriseNoCompliance: Detector = ({ rawHtml, business }) => {
+	if (!isEnterpriseLead(business)) return null;
+	const segment = business.enterprise_segment;
+	const lower = rawHtml.toLowerCase();
+	const has_soc2 = /soc\s*2|soc-?2|soc\s*ii/i.test(lower);
+	const has_iso27001 = /iso\s*27001|iso-?27001/i.test(lower);
+	const has_lgpd = /lgpd|conformidade\s+lgpd|lgpd-?ready/i.test(lower);
+	const has_pci = /pci\s*dss|pci-?dss|pci\s*compliant/i.test(lower);
+	const has_gdpr = /gdpr|conformidade\s+gdpr/i.test(lower);
+	const certCount = [has_soc2, has_iso27001, has_lgpd, has_pci, has_gdpr].filter(Boolean).length;
+	if (certCount >= 2) return null;
+	// Fintech segment expects PCI DSS at minimum.
+	const fintechMissingPci = segment === "fintech" && !has_pci;
+	const severity = certCount === 0 ? "critical" : "high";
+	return withImpact(
+		{
+			id: "mini_enterprise_no_compliance",
+			severity,
+			category: "trust",
+			title: "Missing compliance certifications expected at security review",
+			body: `Enterprise procurement runs a security questionnaire before any contract closes. Detected ${certCount} of the 5 expected attestations surfaced on the site (SOC 2, ISO 27001, LGPD, PCI DSS${fintechMissingPci ? " — required for fintech" : ""}, GDPR). Without these visible on the trust/security page or footer, the deal stalls in security review for weeks while sales engineering scrambles to produce evidence.`,
+			impact_hint: "Compliance gap blocks ~30% of mid-market deals at security review",
+			suggestion: "Surface the certifications on a dedicated /security or /trust page linked from header + footer. List the attestation, audit firm, date, and an inline link to the SOC 2 report request flow. For pre-SOC 2 startups: state the timeline + the controls framework you operate under (SOC 2 Type I in progress, ISO mapping completed, etc.) — being explicit beats silence.",
+			evidence_refs: [`${certCount} compliance attestations detected in HTML`, ...(fintechMissingPci ? ["PCI DSS not surfaced for fintech segment"] : [])],
+		},
+		"trust_break_in_checkout",
+		business,
+	);
+};
+
+// ── E2. Case studies sem números ──────────────────────────────
+const detectEnterpriseNoCaseStudyMetrics: Detector = ({ rawHtml, business }) => {
+	if (!isEnterpriseLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasCaseStudyKeyword = /(case\s+stud|customer\s+stor|cliente?s?\s+como|histórias?\s+de\s+sucesso|caso\s+de\s+sucesso)/i.test(lower);
+	if (!hasCaseStudyKeyword) return null;
+	// Look for quantified metrics: percentages, dollar amounts, time savings.
+	const hasQuantifiedMetric = /\b\d{1,3}(\.\d+)?%\b|R\$\s*\d|US\$\s*\d|\bx\s*\d+\b|\b\d+x\b/i.test(rawHtml);
+	if (hasQuantifiedMetric) return null;
+	return withImpact(
+		{
+			id: "mini_enterprise_unquantified_case_studies",
+			severity: "high",
+			category: "trust",
+			title: "Case studies present but unquantified — fails the CFO buy-in test",
+			body: "Case studies / customer stories detected on the site, but no quantified outcomes (% revenue lift, time saved, $ recovered, NPS delta, etc.). Enterprise champions need numbers to take the business case to the buying committee. Qualitative testimonials don't survive the procurement review — the CFO asks 'what's the ROI' and the champion has no answer.",
+			impact_hint: "Champion can't sell upward without metrics — 40% of deals stall here",
+			suggestion: "For every case study, lead with the metric: 'reduced fraud losses by 38% in 90 days' / 'cut chargebacks from 1.8% to 0.4%' / 'increased trial-to-paid by 22%'. Three quantified results per case beats five qualitative ones. If you don't have hard metrics, write hard implications: 'customer recovered an estimated $X/mo previously lost to checkout abandonment'.",
+			evidence_refs: ["Case study section detected", "No quantified outcomes found in case study copy"],
+		},
+		"no_social_proof",
+		business,
+	);
+};
+
+// ── E3. Sem pricing visible ────────────────────────────────────
+const detectEnterpriseNoPricingDisclosure: Detector = ({ rawHtml, business }) => {
+	if (!isEnterpriseLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasPricingPage = /(\/pricing|pre[çc]o|planos|tabela\s+de\s+pre[çc]o)/i.test(lower);
+	const hasContactSalesOnly = /(contact\s+sales|fale\s+com\s+vendas|solicite\s+(uma\s+)?proposta|sob\s+consulta)/i.test(lower);
+	// "Hidden pricing" pattern: only "contact sales" exists, no price ranges, no tier names.
+	if (hasPricingPage && !hasContactSalesOnly) return null;
+	const hasAnyPriceSignal = /R\$\s*\d{2,}|US\$\s*\d{2,}|starting\s+at|a\s+partir\s+de/i.test(rawHtml);
+	if (hasAnyPriceSignal) return null;
+	return withImpact(
+		{
+			id: "mini_enterprise_no_pricing_disclosure",
+			severity: "medium",
+			category: "structure",
+			title: "Zero pricing transparency — buyer leaves before booking the call",
+			body: "No price ranges, starting-at anchors, or tier comparisons detected. 'Contact sales for pricing' is the only path. Modern enterprise buyers research before they engage — if your competitor publishes 'starting at $50k ACV' and you publish nothing, your discovery call rate drops because the buyer can't shortlist you without a budget signal.",
+			impact_hint: "Hidden pricing cuts pipeline qualification by 25%+",
+			suggestion: "Publish at minimum a 'starting at' price for each tier (Self-serve / Team / Enterprise) — full pricing is fine to gate behind 'contact sales', but the anchor matters. Add 1-sentence positioning per tier so the buyer can self-qualify before the call. Counter-example for the security-conscious: Stripe, Snowflake, Datadog all publish starting prices and still close enterprise contracts.",
+			evidence_refs: ["No pricing page or starting-at anchor detected", "Only 'contact sales' / 'sob consulta' surfaced"],
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── E4. Demo CTA buried / weak ────────────────────────────────
+const detectEnterpriseWeakDemoCta: Detector = ({ rawHtml, business }) => {
+	if (!isEnterpriseLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasBookDemo = /(book\s+a?\s+demo|schedule\s+a?\s+demo|agendar\s+(uma\s+)?demo|request\s+a?\s+demo)/i.test(lower);
+	if (hasBookDemo) {
+		// Check whether the demo CTA appears in the first scroll.
+		const heroChunk = rawHtml.slice(0, 10000).toLowerCase();
+		const demoAboveFold = /(book\s+a?\s+demo|schedule\s+a?\s+demo|agendar\s+(uma\s+)?demo|request\s+a?\s+demo)/i.test(heroChunk);
+		if (demoAboveFold) return null;
+	}
+	return withImpact(
+		{
+			id: "mini_enterprise_weak_demo_cta",
+			severity: "high",
+			category: "cta",
+			title: "Demo CTA missing or buried — primary conversion path broken",
+			body: "Enterprise sites convert through one mechanism: the demo request form. No demo CTA was surfaced in the first scroll (or no demo CTA at all). Visitors hitting the page from outbound, paid, or LinkedIn don't have an obvious next step — they bounce to a competitor whose 'Book a demo' button is the first thing they see.",
+			impact_hint: "Buried demo CTA drops pipeline by 30-40%",
+			suggestion: "Place the 'Book a demo' / 'Talk to sales' CTA as the primary above-the-fold action in the hero — distinct visual weight from secondary CTAs ('See how it works'). Use Chili Piper / Calendly inline so the buyer books in 2 clicks without filling out a form first; or use a 3-field form (name + work email + company) and skip everything else.",
+			evidence_refs: ["No demo CTA detected in first 10k chars of HTML"],
+		},
+		"weak_cta_above_fold",
+		business,
+	);
+};
+
+// ── E5. Customer logo bar without recognizable names ──────────
+const detectEnterpriseNoRecognizableLogos: Detector = ({ rawHtml, business }) => {
+	if (!isEnterpriseLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasLogoSection = /(trusted\s+by|customers?\s+include|nossos?\s+clientes|empresas?\s+que\s+confiam|powered\s+by|usado\s+por)/i.test(lower);
+	if (!hasLogoSection) return null;
+	// Heuristic: count <img> tags with alt containing common enterprise
+	// patterns (capitalized brand names, ".com", "Inc", "S.A.", etc).
+	const imgMatches = rawHtml.match(/<img[^>]+>/gi) || [];
+	const enterpriseAltCount = imgMatches.filter((tag) => {
+		const alt = tag.match(/alt=["']([^"']*)["']/i)?.[1] || "";
+		return /^[A-Z][a-zA-Z]+(\s+[A-Z][a-zA-Z]+)*$|\.com$|Inc\.?$|S\.A\.|Corp\./i.test(alt);
+	}).length;
+	if (enterpriseAltCount >= 4) return null;
+	return withImpact(
+		{
+			id: "mini_enterprise_no_recognizable_logos",
+			severity: "medium",
+			category: "trust",
+			title: "Logo bar exists but no recognizable enterprise names",
+			body: "A 'trusted by' or 'customers include' section was found, but the logos surfaced don't appear to be recognizable enterprise brands (based on alt-text inspection). Enterprise procurement uses peer-validation heavily — if the buyer's CTO doesn't recognize 3+ logos in your customer bar, social proof fails and you fall into 'startup risk' bucket regardless of actual product quality.",
+			impact_hint: "Weak peer validation extends sales cycle by 4-6 weeks",
+			suggestion: "Curate the logo bar around 6-8 marquee logos from the buyer's segment / vertical (fintech sees fintech, retail sees retail). If you don't have enterprise marquee logos yet, use category leaders from adjacent verticals + analyst recognition (Gartner Cool Vendor, Forrester Wave) as substitute peer signal.",
+			evidence_refs: ["Trust-by section detected", `Only ${enterpriseAltCount} alt-tags match enterprise brand pattern`],
+		},
+		"no_social_proof",
+		business,
+	);
+};
+
+// ── E6. Security / trust page missing from main nav ───────────
+const detectEnterpriseNoSecurityPage: Detector = ({ parsed, business }) => {
+	if (!isEnterpriseLead(business)) return null;
+	const hasSecurityLink = parsed.links?.some((l) =>
+		/\/(security|trust|seguranca|seguranca|conformidade)\b/i.test(l.href || "") ||
+		/security|trust\s+center|trust\s+&|conformidade|seguran[çc]a/i.test(l.text || ""),
+	);
+	if (hasSecurityLink) return null;
+	return withImpact(
+		{
+			id: "mini_enterprise_no_security_page",
+			severity: "medium",
+			category: "trust",
+			title: "No /security or /trust page reachable from main nav",
+			body: "Enterprise procurement opens /security or /trust before they read a feature page. No such page reachable from main nav or footer. Even if you have compliance attestations, a published security posture (architecture overview, data residency, encryption posture, incident response policy, sub-processors list) is what shortens the security review from 4 weeks to 4 days.",
+			impact_hint: "Missing trust page extends procurement by 2-4 weeks",
+			suggestion: "Build a /security page covering: SOC 2 / ISO scope, data classification + encryption at rest / in transit, multi-region availability, data residency options, incident-response SLA, sub-processor list with link to each provider's compliance. Link to it from footer and from the demo-request thank-you page. SafeBase or similar Trust Center products bundle this if you don't want to build from scratch.",
+			evidence_refs: ["No security/trust link detected in navigation or links"],
+		},
+		"trust_break_in_checkout",
+		business,
+	);
+};
+
+// ── E7. Comparison page targeting old enterprise vendors ──────
+const detectEnterpriseNoComparison: Detector = ({ rawHtml, business }) => {
+	if (!isEnterpriseLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasComparison = /(\/vs\/|alternative\s+to|comparison|comparativo|migrate\s+from|migrating\s+from|migra[çc][aã]o\s+de)/i.test(lower);
+	if (hasComparison) return null;
+	return withImpact(
+		{
+			id: "mini_enterprise_no_comparison_content",
+			severity: "medium",
+			category: "structure",
+			title: "No competitor comparison or migration content surfaced",
+			body: "Enterprise buyers shortlist by comparison — they search 'X vs Y', 'alternative to legacy vendor', 'migrating from incumbent'. No comparison page or migration content detected on your site. You lose top-of-funnel intent traffic to competitors who publish '/vs/legacy' pages, even when your product wins on merit.",
+			impact_hint: "No vs/migration content cuts inbound enterprise pipeline by 20%+",
+			suggestion: "Publish at least 2-3 /vs/ pages targeting the legacy or category leader your buyers are leaving. Cover honest tradeoffs (where the incumbent wins, where you win), pricing transparency, and migration path. Avoid 'we win on everything' marketing — buyers detect it and bounce. Tools like Mutiny / Default can spin up vs pages dynamically per traffic source.",
+			evidence_refs: ["No /vs/ or alternative-to URLs detected in copy or nav"],
+		},
+		"weak_conversion_path",
+		business,
+	);
+};
+
+// ──────────────────────────────────────────────
 // Positive fallbacks — only kick in when fewer than 5 negatives hit.
 // ──────────────────────────────────────────────
 
@@ -1372,6 +1576,7 @@ export type InferredBusinessType =
 	| "saas"
 	| "services"
 	| "app_conversion"
+	| "enterprise"
 	| "hybrid";
 
 export interface BusinessTypeInference {
@@ -1506,6 +1711,17 @@ export function deriveMiniAuditFindings(input: DeriveInput): MiniAuditFindings {
 		detectAppWebMessageConflict,
 		detectAppNoScreenshots,
 		detectAppPermissionsScary,
+		// Wave-22.7 — Enterprise B2B vertical. Each gates internally
+		// on businessModel === "enterprise". Audience is technical
+		// (CTO/CISO/Head of Growth) so the copy can use industry
+		// jargon (SOC 2, procurement, ACV, security review, etc.).
+		detectEnterpriseNoCompliance,
+		detectEnterpriseNoCaseStudyMetrics,
+		detectEnterpriseNoPricingDisclosure,
+		detectEnterpriseWeakDemoCta,
+		detectEnterpriseNoRecognizableLogos,
+		detectEnterpriseNoSecurityPage,
+		detectEnterpriseNoComparison,
 	];
 
 	const detected: MiniFinding[] = [];

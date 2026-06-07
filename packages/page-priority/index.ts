@@ -24,6 +24,7 @@ export type BusinessModelHint =
 	| "lead_gen"
 	| "services"
 	| "app_conversion"
+	| "enterprise"
 	| "hybrid";
 
 /**
@@ -60,6 +61,13 @@ export function getCriticalPaths(businessModel?: string | null): string[] {
 			// the call-to-store" — extend with dedicated paths later
 			// if a real mobile-app benchmark dataset suggests it.
 			return [...LEAD_GEN_PATHS, ...universal];
+		case "enterprise":
+			// Enterprise B2B closes through a sales motion, but the
+			// website is still the credibility check before the buyer
+			// initiates contact. The path set overlaps with SaaS
+			// (pricing/security/compliance pages are the hot ones)
+			// rather than lead_gen.
+			return [...SAAS_PATHS, ...universal];
 		case "hybrid":
 		default:
 			// Hybrid + unknown gets the union of high-impact SaaS + ecom.
@@ -329,6 +337,7 @@ function normalizeBusinessModel(model?: string | null): BusinessModelHint | null
 		m === "lead_gen" ||
 		m === "services" ||
 		m === "app_conversion" ||
+		m === "enterprise" ||
 		m === "hybrid"
 	) {
 		return m as BusinessModelHint;

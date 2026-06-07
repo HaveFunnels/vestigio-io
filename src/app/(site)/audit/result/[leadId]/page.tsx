@@ -105,7 +105,8 @@ export default function MiniAuditResultPage() {
 		previewScenarioId === "ecom-br" ||
 		previewScenarioId === "course-br" ||
 		previewScenarioId === "services-br" ||
-		previewScenarioId === "mobile-br";
+		previewScenarioId === "mobile-br" ||
+		previewScenarioId === "enterprise-br";
 	const [error, setError] = useState<string | null>(null);
 	const [revealed, setRevealed] = useState(skipViewGate);
 	const [showResults, setShowResults] = useState(skipViewGate);

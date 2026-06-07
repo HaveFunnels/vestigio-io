@@ -46,6 +46,12 @@ import {
 	DeviceMobileIcon,
 	AppleLogoIcon,
 	AndroidLogoIcon,
+	BankIcon,
+	BuildingsIcon,
+	StorefrontIcon,
+	FactoryIcon,
+	HospitalIcon,
+	BroadcastIcon,
 	TableIcon,
 	XCircleIcon,
 	TrendUpIcon,
@@ -63,6 +69,7 @@ import type {
 	WhyNow,
 	ServiceCategory,
 	AppPlatform,
+	EnterpriseSegment,
 } from "./useLpAuditForm";
 
 // Business model options shown in the audit form. Copy is written in
@@ -77,6 +84,7 @@ const BUSINESS_TYPE_OPTIONS: CardOption<BusinessType>[] = [
 	{ value: "lead_gen", label: "Captação de clientes", description: "Capto leads e fecho depois", icon: UsersThreeIcon },
 	{ value: "saas", label: "SaaS / Software", description: "Software por assinatura", icon: CloudIcon },
 	{ value: "app_conversion", label: "App mobile", description: "Meu site existe pra levar pro app na Play / App Store", icon: DeviceMobileIcon },
+	{ value: "enterprise", label: "Enterprise / B2B", description: "Ciclo de venda longo, decisão em comitê, ACV alto", icon: BuildingsIcon },
 	{ value: "hybrid", label: "Mais de um", description: "Misturo modelos diferentes", icon: StackIcon },
 ];
 
@@ -105,6 +113,19 @@ const APP_PLATFORM_OPTIONS: CardOption<AppPlatform>[] = [
 	{ value: "ios_only", label: "Só iPhone", description: "App publicado só na App Store", icon: AppleLogoIcon },
 	{ value: "android_only", label: "Só Android", description: "App publicado só na Play Store", icon: AndroidLogoIcon },
 	{ value: "both", label: "iPhone e Android", description: "Publicado nas duas lojas", icon: DeviceMobileIcon },
+];
+
+// Enterprise segment options — shown only after the visitor picks
+// "enterprise" on the business-type step. Technical jargon is OK
+// here (audience: CTO / Head of Growth / Revenue Ops / CISO).
+const ENTERPRISE_SEGMENT_OPTIONS: CardOption<EnterpriseSegment>[] = [
+	{ value: "fintech", label: "Fintech / banking", description: "BaaS, payments, lending, crypto, insurtech", icon: BankIcon },
+	{ value: "insurance", label: "Seguradora", description: "Seguros, previdência, planos de saúde", icon: HospitalIcon },
+	{ value: "retail_chain", label: "Varejo / e-commerce de escala", description: "Rede de varejo, marketplace, D2C scaled", icon: StorefrontIcon },
+	{ value: "industrial", label: "Indústria / logística", description: "Manufatura, supply chain, distribuição", icon: FactoryIcon },
+	{ value: "healthcare", label: "Healthcare / operadora", description: "Operadora de saúde, rede hospitalar, healthtech", icon: HospitalIcon },
+	{ value: "telecom", label: "Telecom / ISP", description: "Operadora de telecom, provedor de internet", icon: BroadcastIcon },
+	{ value: "other_enterprise", label: "Outro segmento enterprise", description: "Não me encaixo nas categorias acima", icon: QuestionIcon },
 ];
 
 const CONCERN_OPTIONS: CardOption<PrimaryConcern>[] = [
@@ -252,6 +273,23 @@ export default function LpAuditPage() {
 						options={APP_PLATFORM_OPTIONS}
 						onSelect={(v) => {
 							f.update("appPlatform", v);
+							f.next();
+						}}
+					/>
+				)}
+
+				{/* ── Screen 2b (enterprise only): Vertical pick ──
+				    Gates compliance / regulatory / industry-specific
+				    enterprise detectors. Audience is technical (CTO /
+				    CISO / Head of Growth) so the labels and
+				    descriptions can use industry jargon. */}
+				{f.currentScreen === "enterprise_segment" && (
+					<CardSelectionStep
+						title="Qual o segmento da empresa?"
+						subtitle="Drives which compliance, regulatory and trust signals we evaluate."
+						options={ENTERPRISE_SEGMENT_OPTIONS}
+						onSelect={(v) => {
+							f.update("enterpriseSegment", v);
 							f.next();
 						}}
 					/>

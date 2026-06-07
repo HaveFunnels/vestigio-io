@@ -45,6 +45,12 @@ export interface MiniBusinessInputs {
 	 * Android-only, or both-platform variants.
 	 */
 	app_platform?: string | null;
+	/**
+	 * Enterprise sub-segmentation (step 2b alt). Same nullable
+	 * contract. Used by enterprise detectors to fire vertical-
+	 * specific compliance / trust signal checks.
+	 */
+	enterprise_segment?: string | null;
 }
 
 export interface MiniImpact {

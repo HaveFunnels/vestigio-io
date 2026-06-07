@@ -216,6 +216,7 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 			business_model: lead.businessModel ?? null,
 			service_category: (lead as { serviceCategory?: string | null }).serviceCategory ?? null,
 			app_platform: (lead as { appPlatform?: string | null }).appPlatform ?? null,
+			enterprise_segment: (lead as { enterpriseSegment?: string | null }).enterpriseSegment ?? null,
 		};
 		const findings = deriveMiniAuditFindings({
 			parsed,

@@ -75,6 +75,9 @@ interface StepBody {
 	// contract as serviceCategory, but for the mobile-app vertical.
 	// Persisted into AnonymousLead.appPlatform.
 	appPlatform?: string;
+	// Enterprise vertical sub-segmentation. Same contract. Persisted
+	// into AnonymousLead.enterpriseSegment.
+	enterpriseSegment?: string;
 	phone?: string;
 	// Honeypot
 	website?: string;
@@ -172,7 +175,7 @@ export async function PATCH(
 		// Step 5: currentOptimizationMethod
 		// Step 6: whyNow
 		// Step 7: email (terminal)
-		const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "services", "app_conversion", "hybrid"]);
+		const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "services", "app_conversion", "enterprise", "hybrid"]);
 		const VALID_CONCERN = new Set([
 			"traffic_no_sales",
 			"low_conversion",
@@ -264,6 +267,20 @@ export async function PATCH(
 					updates.appPlatform = body.appPlatform;
 				}
 			}
+			if (body.enterpriseSegment) {
+				const VALID_ENTERPRISE_SEGMENTS = new Set([
+					"fintech",
+					"insurance",
+					"retail_chain",
+					"industrial",
+					"healthcare",
+					"telecom",
+					"other_enterprise",
+				]);
+				if (VALID_ENTERPRISE_SEGMENTS.has(body.enterpriseSegment)) {
+					updates.enterpriseSegment = body.enterpriseSegment;
+				}
+			}
 		}
 
 		if (stepNum === 3) {
@@ -348,7 +365,7 @@ export async function PATCH(
 
 		if (stepNum === 2) {
 			// BUG-02 fix: Validate against allowed enum values
-			const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "services", "app_conversion", "hybrid"]);
+			const VALID_BUSINESS_MODELS = new Set(["ecommerce", "lead_gen", "saas", "services", "app_conversion", "enterprise", "hybrid"]);
 			const VALID_CONVERSION_MODELS = new Set(["checkout", "whatsapp", "form", "external"]);
 			if (!body.businessModel || !VALID_BUSINESS_MODELS.has(body.businessModel)) {
 				return NextResponse.json(

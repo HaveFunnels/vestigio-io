@@ -567,7 +567,97 @@ const MOBILE_BR: PreviewScenario = {
 };
 
 // ──────────────────────────────────────────────
-// Scenario 8: Expired
+// Scenario 8: Enterprise B2B fintech BR
+// Wave-22.7 — flagship case for the enterprise vertical. Mid-market
+// BR fintech, ACV around R$300k, sales cycle of 4-6 months. Findings
+// surface procurement-stage friction (compliance, case studies,
+// security review). Copy is technical — audience is CTO / CISO /
+// Head of Growth.
+// ──────────────────────────────────────────────
+const ENTERPRISE_BR: PreviewScenario = {
+	id: "enterprise-br",
+	label: "Enterprise B2B — Fintech",
+	description: "Mid-market fintech BR, ACV R$300k, sales cycle 4-6 meses",
+	lead: {
+		id: "preview-enterprise-br",
+		status: "audit_complete",
+		currentStep: 12,
+		domain: "paragonpay.com.br",
+		organizationName: "ParagonPay",
+		businessModel: "enterprise",
+		monthlyRevenue: 1_500_000,
+		primaryConcern: "prioritization",
+		currentOptimizationMethod: "agency_consultant",
+		whyNow: "prove_roi",
+		emailMasked: "g***@paragonpay.com.br",
+		createdAt: nowIso(),
+		result: {
+			id: "preview-result-enterprise-br",
+			preview: mkPreview(
+				"paragonpay.com.br",
+				"ParagonPay — Payment infrastructure for B2B platforms",
+			),
+			visibleFindings: [
+				mkFinding(
+					"v1",
+					"critical",
+					"trust",
+					"Missing compliance certifications expected at security review",
+					"Enterprise procurement runs a security questionnaire before any contract closes. Detected 0 of the 5 expected attestations surfaced on the site (SOC 2, ISO 27001, LGPD, PCI DSS — required for fintech, GDPR). Without these visible on the trust/security page or footer, the deal stalls in security review for weeks while sales engineering scrambles to produce evidence.",
+					"Compliance gap blocks ~30% of mid-market deals at security review",
+					"Surface the certifications on a dedicated /security or /trust page linked from header + footer. List the attestation, audit firm, date, and an inline link to the SOC 2 report request flow. For pre-SOC 2 startups: state the timeline + the controls framework you operate under.",
+					mkImpact(120_000, 285_000),
+				),
+				mkFinding(
+					"v2",
+					"high",
+					"trust",
+					"Case studies present but unquantified — fails the CFO buy-in test",
+					"Case studies / customer stories detected on the site, but no quantified outcomes (% revenue lift, time saved, $ recovered, NPS delta, etc.). Enterprise champions need numbers to take the business case to the buying committee.",
+					"Champion can't sell upward without metrics — 40% of deals stall here",
+					"For every case study, lead with the metric: 'reduced fraud losses by 38% in 90 days' / 'cut chargebacks from 1.8% to 0.4%' / 'increased trial-to-paid by 22%'. Three quantified results per case beats five qualitative ones.",
+					mkImpact(80_000, 192_000),
+				),
+				mkFinding(
+					"v3",
+					"high",
+					"cta",
+					"Demo CTA missing or buried — primary conversion path broken",
+					"Enterprise sites convert through one mechanism: the demo request form. No demo CTA was surfaced in the first scroll. Visitors hitting the page from outbound, paid, or LinkedIn don't have an obvious next step.",
+					"Buried demo CTA drops pipeline by 30-40%",
+					"Place the 'Book a demo' / 'Talk to sales' CTA as the primary above-the-fold action in the hero — distinct visual weight from secondary CTAs. Use Chili Piper / Calendly inline so the buyer books in 2 clicks.",
+					mkImpact(60_000, 144_000),
+				),
+				mkFinding(
+					"v4",
+					"medium",
+					"structure",
+					"Zero pricing transparency — buyer leaves before booking the call",
+					"No price ranges, starting-at anchors, or tier comparisons detected. 'Contact sales for pricing' is the only path. Modern enterprise buyers research before they engage — if your competitor publishes 'starting at $50k ACV' and you publish nothing, your discovery call rate drops.",
+					"Hidden pricing cuts pipeline qualification by 25%+",
+					"Publish at minimum a 'starting at' price for each tier — full pricing fine to gate behind 'contact sales', but the anchor matters. Counter-example: Stripe, Snowflake, Datadog all publish starting prices and still close enterprise contracts.",
+					mkImpact(30_000, 72_000),
+				),
+				mkFinding(
+					"v5",
+					"medium",
+					"trust",
+					"No /security or /trust page reachable from main nav",
+					"Enterprise procurement opens /security or /trust before they read a feature page. No such page reachable from main nav or footer. A published security posture is what shortens the security review from 4 weeks to 4 days.",
+					"Missing trust page extends procurement by 2-4 weeks",
+					"Build a /security page covering: SOC 2 / ISO scope, data classification + encryption posture, multi-region availability, data residency, incident-response SLA, sub-processor list. Link from footer + demo thank-you page.",
+					mkImpact(45_000, 108_000),
+				),
+			],
+			blurredFindings: COMMON_BLURRED,
+			durationMs: 14_400,
+			computedAt: nowIso(),
+		},
+	},
+};
+
+// ──────────────────────────────────────────────
+// Scenario 9: Expired
 // ──────────────────────────────────────────────
 const EXPIRED: PreviewScenario = {
 	id: "expired",
@@ -582,6 +672,7 @@ export const PREVIEW_SCENARIOS: Record<string, PreviewScenario> = {
 	[COURSE_BR.id]: COURSE_BR,
 	[SERVICES_BR.id]: SERVICES_BR,
 	[MOBILE_BR.id]: MOBILE_BR,
+	[ENTERPRISE_BR.id]: ENTERPRISE_BR,
 	[LOADING.id]: LOADING,
 	[LOADING_DONE.id]: LOADING_DONE,
 	[EXPIRED.id]: EXPIRED,
@@ -593,6 +684,7 @@ export const PREVIEW_SCENARIO_LIST: PreviewScenario[] = [
 	COURSE_BR,
 	SERVICES_BR,
 	MOBILE_BR,
+	ENTERPRISE_BR,
 	LOADING,
 	LOADING_DONE,
 	EXPIRED,

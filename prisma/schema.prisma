@@ -703,7 +703,7 @@ model PlanVersion {
 model BusinessProfile {
   id                  String @id @default(cuid())
   organizationId      String @unique
-  businessModel       String @default("ecommerce") // ecommerce | lead_gen | saas | services | app_conversion | hybrid
+  businessModel       String @default("ecommerce") // ecommerce | lead_gen | saas | services | app_conversion | enterprise | hybrid
   monthlyRevenue      Float?
   averageOrderValue   Float?
   monthlyTransactions Int?
@@ -1923,7 +1923,7 @@ model AnonymousLead {
   email            String?
   domain           String? // normalized (no protocol, no trailing slash)
   organizationName String?
-  businessModel    String? // ecommerce | lead_gen | saas | services | app_conversion | hybrid
+  businessModel    String? // ecommerce | lead_gen | saas | services | app_conversion | enterprise | hybrid
   monthlyRevenue   Float? // parsed from "$50k" → 50000
   averageTicket    Float?
   conversionModel  String? // checkout | whatsapp | form | external
@@ -1962,6 +1962,19 @@ model AnonymousLead {
   //                  install over its expected lifetime.
   appPlatform   String?
   appInstallLTV Float?
+
+  // Enterprise vertical extensions. Only populated when
+  // businessModel resolves to "enterprise". Used downstream by
+  // enterprise findings (compliance badges, case studies, trust
+  // signals at the level the procurement committee expects).
+  //   enterpriseSegment: "fintech" | "insurance" | "retail_chain" |
+  //                      "industrial" | "healthcare" | "telecom" |
+  //                      "other_enterprise"
+  //   avgAcvBrl:         Average annual contract value (BRL).
+  //   salesCycleMonths:  Typical sales cycle length in months.
+  enterpriseSegment String?
+  avgAcvBrl         Float?
+  salesCycleMonths  Int?
 
   // Funnel state
   status           String  @default("draft") // draft | auditing | audit_complete | checkout_started | converted | expired | spam

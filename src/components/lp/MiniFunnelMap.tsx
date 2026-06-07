@@ -316,79 +316,85 @@ export default function MiniFunnelMap({
 						const hasIssues = data.count > 0;
 						const Icon = STAGE_ICONS[id];
 
+						// Wrapper holds the "N/5" position counter ABOVE
+						// the card (not inside it — inside it stacked with
+						// the icon + label, it read like a credit card) and
+						// the card itself. The wrapper is the snap target
+						// so the counter + card travel as one unit.
 						return (
-							<button
+							<div
 								key={id}
-								type="button"
-								disabled={!isClickable}
-								data-stage-card
-								data-index={i}
-								onClick={() =>
-									setExpandedStage(isExpanded ? null : id)
-								}
-								// Card stays on a neutral editorial surface.
-								// Previous version flooded every stage with a
-								// leak in rose and read as five panic boxes
-								// stacked — wrong tone for an analysis surface.
-								// The leak signal now lives in the icon chip
-								// (tinted bg) and the impact line (rose mono),
-								// while the card chrome is calm.
-								className={`relative flex w-[78%] shrink-0 snap-center flex-col gap-4 rounded-2xl border-2 border-black bg-surface-card px-5 py-5 text-left shadow-sm transition-all ${
-									isExpanded ? "ring-1 ring-inset ring-content/10" : ""
-								} ${
-									isClickable
-										? "cursor-pointer active:scale-[0.985]"
-										: "cursor-default"
-								}`}
+								className="flex w-[78%] shrink-0 snap-center flex-col gap-2"
 							>
-								{/* Top row: icon chip + step counter.
-								    Icon carries the stage metaphor (Eye for
-								    awareness, Compass for consideration, etc.)
-								    and its tinted bg signals issue vs clean. */}
-								<div className="flex w-full items-center justify-between">
-									<span
-										className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${
-											hasIssues
-												? "bg-rose-500/12 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300"
-												: "bg-surface-inset text-content-muted"
-										}`}
-									>
-										<Icon className="h-4 w-4" strokeWidth={2} />
-									</span>
-									<span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] tabular-nums text-content-faint">
-										{i + 1}/{STAGE_IDS.length}
-									</span>
-								</div>
+								{/* Out-of-card position counter — small tag
+								    sitting just above the top edge of its
+								    card. Right-aligned to mirror the place
+								    it used to occupy inside. */}
+								<span className="self-end pr-1 font-mono text-[10px] font-semibold uppercase tracking-[0.2em] tabular-nums text-content-faint">
+									{i + 1}/{STAGE_IDS.length}
+								</span>
 
-								{/* Stage label — full, no truncate. */}
-								<div className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted">
-									{t(`stages.${id}`)}
-								</div>
+								<button
+									type="button"
+									disabled={!isClickable}
+									data-stage-card
+									data-index={i}
+									onClick={() =>
+										setExpandedStage(isExpanded ? null : id)
+									}
+									// Neutral editorial surface; leak signal
+									// only in the icon chip + impact mono.
+									className={`relative flex w-full flex-col gap-4 rounded-2xl border-2 border-black bg-surface-card px-5 py-5 text-left shadow-sm transition-all ${
+										isExpanded ? "ring-1 ring-inset ring-content/10" : ""
+									} ${
+										isClickable
+											? "cursor-pointer active:scale-[0.985]"
+											: "cursor-default"
+									}`}
+								>
+									{/* Top row: icon chip + label inline.
+									    Reads as one identity instead of
+									    two stacked pieces. */}
+									<div className="flex items-center gap-3">
+										<span
+											className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+												hasIssues
+													? "bg-rose-500/12 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300"
+													: "bg-surface-inset text-content-muted"
+											}`}
+										>
+											<Icon className="h-4 w-4" strokeWidth={2} />
+										</span>
+										<span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-content-muted">
+											{t(`stages.${id}`)}
+										</span>
+									</div>
 
-								{hasIssues ? (
-									<div className="flex w-full items-baseline justify-between gap-3">
-										<div className="font-[family-name:var(--font-fraunces)] text-[44px] font-medium leading-none tabular-nums text-content">
-											{data.count}
+									{hasIssues ? (
+										<div className="flex w-full items-baseline justify-between gap-3">
+											<div className="font-[family-name:var(--font-fraunces)] text-[44px] font-medium leading-none tabular-nums text-content">
+												{data.count}
+											</div>
+											{data.impactCents > 0 ? (
+												<div className="font-mono text-[13px] tabular-nums text-rose-600 dark:text-rose-300">
+													{formatBRL(data.impactCents)}
+												</div>
+											) : (
+												<div
+													className="select-none font-mono text-[13px] tabular-nums text-rose-600 blur-[3px] dark:text-rose-300"
+													aria-hidden
+												>
+													R$ 2.400
+												</div>
+											)}
 										</div>
-										{data.impactCents > 0 ? (
-											<div className="font-mono text-[13px] tabular-nums text-rose-600 dark:text-rose-300">
-												{formatBRL(data.impactCents)}
-											</div>
-										) : (
-											<div
-												className="select-none font-mono text-[13px] tabular-nums text-rose-600 blur-[3px] dark:text-rose-300"
-												aria-hidden
-											>
-												R$ 2.400
-											</div>
-										)}
-									</div>
-								) : (
-									<div className="text-[14px] font-medium text-content-muted">
-										{t("ok")}
-									</div>
-								)}
-							</button>
+									) : (
+										<div className="text-[14px] font-medium text-content-muted">
+											{t("ok")}
+										</div>
+									)}
+								</button>
+							</div>
 						);
 					})}
 				</div>

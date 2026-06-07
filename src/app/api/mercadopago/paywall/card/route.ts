@@ -124,14 +124,35 @@ const POST = withErrorTracking(
 				? rawAppUrl
 				: "https://app.vestigio.io";
 
-		const mpResp = await createPreapproval({
-			preapprovalPlanId,
-			payerEmail: user.email,
-			externalReference,
-			backUrl: `${appUrl}/app`,
-			cardTokenId,
-			idempotencyKey: externalReference,
-		});
+		let mpResp;
+		try {
+			mpResp = await createPreapproval({
+				preapprovalPlanId,
+				payerEmail: user.email,
+				externalReference,
+				backUrl: `${appUrl}/app`,
+				cardTokenId,
+				idempotencyKey: externalReference,
+			});
+		} catch (err: any) {
+			// MP sandbox returns 404 "Card token service not found" / 400
+			// "Invalid users involved" when the MP account doesn't have a
+			// proper buyer/seller separation (typical of unconfigured TEST
+			// credentials trying to self-pay). The upstream message is
+			// useless to the buyer, so map both to a friendly hint while
+			// preserving the original via the error tracker.
+			const msg = String(err?.message ?? "");
+			if (msg.includes("Card token service not found") || msg.includes("Invalid users involved")) {
+				return NextResponse.json(
+					{
+						message:
+							"Não foi possível autorizar este cartão no momento. Tente o Pix ou outro cartão — o time já foi avisado.",
+					},
+					{ status: 502 },
+				);
+			}
+			throw err;
+		}
 
 		return NextResponse.json({
 			preapprovalId: mpResp.id,

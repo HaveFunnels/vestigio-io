@@ -16,7 +16,7 @@
  * from the finding category. This is illustrative, not authoritative —
  * the real product map uses surface-classifier for actual URLs.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import type {
@@ -99,6 +99,34 @@ export default function MiniFunnelMap({
 }: Props) {
 	const t = useTranslations("lp.audit_result.funnel_map");
 	const [expandedStage, setExpandedStage] = useState<StageId | null>(null);
+	// Mobile carousel state: tracks which card is most-in-view so the
+	// dot indicator below can highlight it. Desktop ignores this.
+	const [snappedIndex, setSnappedIndex] = useState(0);
+	const carouselRef = useRef<HTMLDivElement>(null);
+	useEffect(() => {
+		const root = carouselRef.current;
+		if (!root) return;
+		const cards = root.querySelectorAll<HTMLElement>("[data-stage-card]");
+		const obs = new IntersectionObserver(
+			(entries) => {
+				let bestRatio = 0;
+				let bestIdx = snappedIndex;
+				for (const e of entries) {
+					if (e.intersectionRatio > bestRatio) {
+						bestRatio = e.intersectionRatio;
+						bestIdx = Number((e.target as HTMLElement).dataset.index);
+					}
+				}
+				if (!Number.isNaN(bestIdx)) setSnappedIndex(bestIdx);
+			},
+			{ root, threshold: [0.4, 0.6, 0.8, 1] },
+		);
+		cards.forEach((c) => obs.observe(c));
+		return () => obs.disconnect();
+		// snappedIndex intentionally excluded — observer keeps its own
+		// notion of which card is most visible and updates state.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	// Bucket findings into stages
 	const stageData: Record<StageId, StageData> = {
@@ -152,15 +180,12 @@ export default function MiniFunnelMap({
 				{t("subtitle")}
 			</p>
 
-			{/* Stage card row — horizontal funnel.
-			    Mobile: chevrons hidden to claim every pixel; stages shrink
-			    via min-w-0 + flex-1 + content using compact paddings and
-			    truncation. Above sm the original chevron-divided layout
-			    reappears. Without these tweaks the 5 stage labels
-			    ("AWARENESS"/"CONSIDERATION"/...) created intrinsic min
-			    widths that overflowed the 343px content area on iPhone-
-			    sized viewports, breaking the section. */}
-			<div className="flex items-stretch gap-1 sm:gap-1.5">
+			{/* ─────────────── Desktop layout: chevron-divided flex row ───────────── */}
+			{/* The funnel metaphor reads left-to-right with chevrons
+			    between stages — flow visible at a glance. Sized down
+			    to fit 5 stages within the section width. Hidden on
+			    mobile (gets the carousel below instead). */}
+			<div className="hidden items-stretch gap-1.5 sm:flex">
 				{STAGE_IDS.map((id, i) => {
 					const data = stageData[id];
 					const isExpanded = expandedStage === id;
@@ -172,7 +197,7 @@ export default function MiniFunnelMap({
 						<div key={id} className="flex min-w-0 flex-1 items-center">
 							{i > 0 && (
 								<svg
-									className="mx-0.5 hidden h-3 w-3 shrink-0 text-content-faint sm:block"
+									className="mx-0.5 h-3 w-3 shrink-0 text-content-faint"
 									viewBox="0 0 8 8"
 									fill="none"
 									aria-hidden
@@ -193,7 +218,7 @@ export default function MiniFunnelMap({
 								onClick={() =>
 									setExpandedStage(isExpanded ? null : id)
 								}
-								className={`min-w-0 w-full rounded-lg border px-1 py-2.5 text-center transition-all sm:rounded-xl sm:px-2 sm:py-3 ${
+								className={`min-w-0 w-full rounded-xl border px-2 py-3 text-center transition-all ${
 									isExpanded ? classes.expandedContainer : classes.container
 								} ${
 									isClickable
@@ -202,26 +227,26 @@ export default function MiniFunnelMap({
 								}`}
 							>
 								<div
-									className={`truncate text-[8px] font-semibold uppercase tracking-[0.08em] sm:text-[9px] sm:tracking-[0.12em] ${classes.stageLabel}`}
+									className={`truncate text-[9px] font-semibold uppercase tracking-[0.12em] ${classes.stageLabel}`}
 								>
 									{t(`stages.${id}`)}
 								</div>
 								{hasIssues ? (
 									<>
 										<div
-											className={`mt-1 font-[family-name:var(--font-fraunces)] text-xl font-medium leading-none tabular-nums sm:mt-1.5 sm:text-2xl ${classes.stageValue}`}
+											className={`mt-1.5 font-[family-name:var(--font-fraunces)] text-2xl font-medium leading-none tabular-nums ${classes.stageValue}`}
 										>
 											{data.count}
 										</div>
 										{data.impactCents > 0 ? (
 											<div
-												className={`mt-1 truncate font-mono text-[9px] tabular-nums sm:text-[10px] ${classes.stageValue} opacity-75`}
+												className={`mt-1 truncate font-mono text-[10px] tabular-nums ${classes.stageValue} opacity-75`}
 											>
 												{formatBRL(data.impactCents)}
 											</div>
 										) : (
 											<div
-												className={`mt-1 select-none truncate font-mono text-[9px] tabular-nums blur-[3px] sm:text-[10px] ${classes.stageValue} opacity-75`}
+												className={`mt-1 select-none truncate font-mono text-[10px] tabular-nums blur-[3px] ${classes.stageValue} opacity-75`}
 												aria-hidden
 											>
 												R$ 2.400
@@ -229,7 +254,7 @@ export default function MiniFunnelMap({
 										)}
 									</>
 								) : (
-									<div className={`mt-1.5 text-[10px] font-medium sm:text-[11px] ${classes.stageLabel}`}>
+									<div className={`mt-1.5 text-[11px] font-medium ${classes.stageLabel}`}>
 										{t("ok")}
 									</div>
 								)}
@@ -237,6 +262,113 @@ export default function MiniFunnelMap({
 						</div>
 					);
 				})}
+			</div>
+
+			{/* ─────────────── Mobile layout: showcase carousel ────────────────── */}
+			{/* 5 funnel stages presented as a snap-scrolling gallery
+			    of "showcase cards". Each card claims ~78% of viewport
+			    width so the next one peeks at the edge as an
+			    affordance for swipe, and snap-x snap-mandatory locks
+			    each card to center after release. Bleeds out of the
+			    section's px-4 via -mx-4 + matching px so the peek
+			    runs to the actual viewport edge rather than dying
+			    behind padding. Inside each card we get real room
+			    to use the editorial type system: full label, big
+			    Fraunces count, full BRL impact — none of the
+			    truncation pain from the desktop-shrunk version. */}
+			<div className="sm:hidden">
+				<div
+					ref={carouselRef}
+					className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+				>
+					{STAGE_IDS.map((id, i) => {
+						const data = stageData[id];
+						const isExpanded = expandedStage === id;
+						const isClickable = data.count > 0;
+						const hasIssues = data.count > 0;
+						const classes = hasIssues ? ISSUE_CLASSES : CLEAN_CLASSES;
+
+						return (
+							<button
+								key={id}
+								type="button"
+								disabled={!isClickable}
+								data-stage-card
+								data-index={i}
+								onClick={() =>
+									setExpandedStage(isExpanded ? null : id)
+								}
+								className={`relative flex w-[78%] shrink-0 snap-center flex-col items-start gap-3 rounded-2xl border px-5 py-5 text-left shadow-sm transition-all ${
+									isExpanded ? classes.expandedContainer : classes.container
+								} ${
+									isClickable
+										? "cursor-pointer active:scale-[0.985]"
+										: "cursor-default"
+								}`}
+							>
+								{/* Step pill — anchors the visitor to where they
+								    are in the 5-stage flow. */}
+								<div className="flex w-full items-center justify-between">
+									<span
+										className={`inline-flex items-center gap-1.5 rounded-full border border-current/15 px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-[0.14em] ${classes.stageLabel}`}
+									>
+										<span className="font-mono text-[10px] tabular-nums opacity-60">
+											{i + 1}/{STAGE_IDS.length}
+										</span>
+										<span className="h-3 w-px bg-current/30" />
+										{t(`stages.${id}`)}
+									</span>
+								</div>
+
+								{hasIssues ? (
+									<div className="flex w-full items-baseline justify-between gap-3">
+										<div
+											className={`font-[family-name:var(--font-fraunces)] text-[44px] font-medium leading-none tabular-nums ${classes.stageValue}`}
+										>
+											{data.count}
+										</div>
+										{data.impactCents > 0 ? (
+											<div
+												className={`font-mono text-[13px] tabular-nums ${classes.stageValue} opacity-80`}
+											>
+												{formatBRL(data.impactCents)}
+											</div>
+										) : (
+											<div
+												className={`select-none font-mono text-[13px] tabular-nums blur-[3px] ${classes.stageValue} opacity-80`}
+												aria-hidden
+											>
+												R$ 2.400
+											</div>
+										)}
+									</div>
+								) : (
+									<div className={`mt-1 text-[14px] font-medium ${classes.stageLabel}`}>
+										{t("ok")}
+									</div>
+								)}
+							</button>
+						);
+					})}
+				</div>
+
+				{/* Dot indicators — drift with the snapped card so the
+				    visitor always knows their position in the 5-stage
+				    sequence even when the swipe momentum hides peek
+				    cards momentarily. */}
+				<div className="mt-2 flex items-center justify-center gap-1.5">
+					{STAGE_IDS.map((id, i) => (
+						<span
+							key={id}
+							className={`h-1 rounded-full transition-all ${
+								i === snappedIndex
+									? "w-6 bg-content"
+									: "w-1 bg-content-faint/60"
+							}`}
+							aria-hidden
+						/>
+					))}
+				</div>
 			</div>
 
 			{/* Description strip — anchored to the selected stage, swaps

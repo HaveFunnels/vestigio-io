@@ -2123,43 +2123,54 @@ const LOCKED_IMPACT_FAKE = [
 // signal). PT-BR copy hardcoded because our customer base is BR;
 // translation later if needed.
 // ─────────────────────────────────────────────────────────────
+// Customer-facing FAQ — rewritten against
+// .agents/product-marketing-context.md so the voice, glossary and
+// differentiation claims are accurate and aligned with the live
+// product positioning (Revenue Intelligence / Decision Engine —
+// NOT analytics, NOT monitoring, NOT observability). Words used
+// follow the "Words to use" / "Words to avoid" list in that doc.
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
 	{
-		// Intro Q — for the buyer who scrolled past everything without
-		// ever forming a mental model of what they're being sold. Plain
-		// language, one paragraph, no jargon.
+		// Intro Q — the one-liner from the product-marketing context,
+		// expanded into a single paragraph for the buyer who scrolled
+		// past everything without forming a mental model.
 		q: "O que é a Vestigio e o que ela faz?",
-		a: "Vestigio é a camada de inteligência que audita, monitora e otimiza seu negócio digital — sem você precisar contratar um time inteiro pra isso. Ela lê seu site público, conecta nas suas fontes de dados (Meta, Google, Stripe, Shopify, etc.) e te entrega de forma contínua: onde está vazando receita, quanto cada vazamento custa em R$, qual ação corrige e em qual ordem executar. Trocando em miúdos: você vê quanto deixou de ganhar este mês e o passo-a-passo pra recuperar.",
+		a: "Vestigio é uma camada de inteligência de receita que mostra onde seu negócio digital está perdendo dinheiro e o que fazer primeiro. Lemos seu site público + as integrações que você conecta (Meta Ads, Google Ads, Stripe, Shopify e outras) e geramos uma fila de ações ranqueada pelo R$ que cada uma recupera. Toda finding vem com evidência verificada no navegador — você mostra prova pro seu time, não opinião. A saída não é dashboard pra interpretar nem relatório pra ler. É decisão: o que vazou, quanto custa em R$, qual ação recupera e em qual ordem.",
 	},
 	{
-		// Time-to-value — corrected: 15-20 minutes, not 60s, with a
-		// short outline that justifies the wait. signup-flow-cro
-		// principle: if you can't shorten the wait, make the buyer
-		// understand it. The outline transforms "tempo morto" into
-		// "tempo de trabalho", reducing the anxiety of staring at a
-		// loading screen.
+		// Time-to-value — 15 to 20 minutes confirmed by the user as
+		// the current actual time. Outline transforms "tempo morto"
+		// into "tempo de trabalho" so the buyer stops resenting the
+		// wait once they see what's actually running.
 		q: "Quanto tempo até a Análise completa abrir?",
-		a: "Entre 15 e 20 minutos depois que o pagamento confirma — não é instantâneo de propósito. Nesse intervalo a Vestigio AI executa, em paralelo: (1) crawl completo do seu site público página por página; (2) snapshot visual e estrutural de cada landing; (3) avaliação da sua copy contra 5 frameworks consagrados (PAS, AIDA, BAB, 4P, Cialdini); (4) sincronização das integrações que você conectar (Meta, Google, Stripe etc.) com leitura de até 90 dias retroativos; (5) mapeamento do seu funil e correlação dos sinais comportamentais; (6) ranqueamento dos vazamentos por R$ de impacto; (7) geração do seu Plano de Estratégia personalizado + fila de ações priorizada. A prévia de 60 segundos que você viu antes do paywall é só um teaser. A Análise completa é a versão de verdade, e ela merece esses 15-20 minutos.",
+		a: "Entre 15 e 20 minutos depois que o pagamento confirma — não é instantâneo de propósito. Nesse intervalo a Vestigio AI executa, em paralelo: (1) crawl do seu site público página por página; (2) snapshot visual e estrutural de cada landing; (3) avaliação da sua copy contra 5 frameworks consagrados (PAS, AIDA, BAB, 4P, Cialdini); (4) leitura das integrações que você autorizar (Meta, Google, Stripe etc.) com até 90 dias retroativos; (5) mapeamento do seu funil e correlação dos sinais comportamentais; (6) ranqueamento das findings pelo R$ que cada uma vale; (7) geração do seu Plano de Estratégia personalizado + fila de ações priorizada. A prévia de 60 segundos que você viu antes do paywall é só teaser; a Análise completa traz evidência verificada no navegador em cada finding e é o que justifica esses 15-20 minutos.",
 	},
 	{
 		q: "Como funciona a garantia 4x?",
-		a: "Se em 90 dias você não recuperou pelo menos 4x do que pagou — medido pelos vazamentos corrigidos e impacto registrado em R$ — devolvemos cada centavo. Sem perguntas, sem perícia, sem letra miúda.",
+		a: "Se em 90 dias você não recuperou pelo menos 4x do que pagou — medido pelos vazamentos corrigidos da fila de ações e impacto contabilizado em R$ — devolvemos cada centavo. Sem perguntas, sem perícia, sem letra miúda. A garantia existe porque a maior parte dos clientes recupera muito mais que 4x já no primeiro mês.",
 	},
 	{
 		q: "Posso cancelar quando quiser?",
-		a: "Sim. Um clique antes da próxima renovação, sem multa, sem fidelidade contratual. Você paga enquanto Vestigio está te dando retorno. Se parar de dar, você para de pagar.",
+		a: "Sim. Um clique antes da próxima renovação, sem multa, sem fidelidade contratual. Vestigio é assinatura, não contrato — você paga enquanto a fila de ações está te dando retorno. Se parar de dar, você para de pagar.",
 	},
 	{
+		// Differentiation — uses the exact framing from the product-
+		// marketing-context "How alternatives fall short" + "Words to
+		// use" lists. Three named alternatives, one sentence each,
+		// followed by what Vestigio is.
 		q: "Como Vestigio difere do GA4, Hotjar ou consultoria de CRO?",
-		a: "GA4 te dá métrica (\"sua taxa de checkout caiu 8%\"). Hotjar te dá hipótese (\"talvez sejam os formulários\"). Consultor de CRO te dá opinião (\"sugiro testar X\"). Vestigio te dá decisão: o que está vazando, quanto custa em R$/mês, qual ação recupera e em qual ordem. Plano executável, não relatório pra interpretar.",
+		a: "Cada um te entrega coisa diferente. GA4 / Amplitude / Mixpanel te dizem o que aconteceu (\"taxa de checkout caiu 8%\") — não te dizem por que, quanto custa, nem o que fazer. Hotjar / FullStory te dão hipótese visual via heatmap e session replay — você ainda interpreta sozinho. Consultor de CRO te entrega um relatório — opinião humana qualificada, mas cara, lenta (semanas) e que envelhece no momento que vira PDF. Vestigio é uma layer diferente: causal inference + quantificação financeira em R$ + evidência verificada por navegador em cada finding. A saída é uma fila de ações ranqueada pelo R$ que cada uma recupera. Você não vira analista. Você executa.",
 	},
 	{
 		q: "Vocês acessam dados sensíveis dos meus clientes?",
-		a: "Não. Vestigio lê só páginas públicas do seu site + as integrações que você autoriza explicitamente (Meta Ads, Google Ads, Stripe, Shopify, etc.). Nenhum acesso à sua base de clientes, e-mails ou sistemas internos. Compliance SOC2 + LGPD.",
+		a: "Não. Vestigio lê apenas (1) páginas públicas do seu site — o que qualquer visitante anônimo veria; e (2) as integrações que você autoriza explicitamente via OAuth (Meta Ads, Google Ads, Stripe, Shopify e outras). Não temos acesso à sua base de clientes, e-mails, mensagens internas ou sistemas de backoffice. As autorizações ficam por sua conta — você revoga a qualquer momento direto no provedor. Compliance LGPD.",
 	},
 	{
+		// Fit qualifier — uses the persona + revenue band from the
+		// product-marketing context to filter bad-fit signups upstream
+		// and qualify the right ones with specificity.
 		q: "Funciona pro meu tipo de negócio?",
-		a: "Se você vende online — e-commerce, SaaS, infoproduto, curso, agência B2B, marketplace — sim. Vestigio é otimizado pra negócios com canal digital de aquisição e conversão. Se você opera 100% offline (loja física sem e-commerce, serviços porta-a-porta), Vestigio não é pra você ainda.",
+		a: "Vestigio é otimizado pra empresas com canal digital de aquisição rodando tráfego pago — principalmente SaaS B2B, e-commerce, infoproduto, curso online, agências e marketplaces. O sweet spot é faturamento mensal entre R$50 mil e R$5 milhões, em fase de escala. Se você opera 100% offline (loja física sem e-commerce, serviço porta-a-porta sem funil digital) ou está em pré-faturamento sem tráfego ainda, Vestigio não é pra você ainda — volta quando ligar o primeiro canal pago.",
 	},
 ];
 

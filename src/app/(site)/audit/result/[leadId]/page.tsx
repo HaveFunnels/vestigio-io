@@ -685,18 +685,19 @@ function ResultHeader({
 		</div>
 	);
 
-	// Title + URL are inline (same baseline) right of the favicon —
-	// title big in Fraunces, URL small in mono, sharing a single text
-	// row so the brand reads as one identity unit instead of stacked.
-	// Used on both mobile and desktop.
-	const titleInline = (
-		<div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+	// Title stacked above the URL — site name in Fraunces with the
+	// domain reading like a subline mono caption underneath. Favicon
+	// sits to the left, vertically centered with the whole stack so
+	// it pairs visually with the entire identity unit, not just the
+	// title.
+	const titleStacked = (
+		<div className="min-w-0 flex-1">
 			<h1 className="font-[family-name:var(--font-fraunces)] text-[26px] font-medium leading-[1.1] tracking-tight text-content sm:text-[32px]">
 				{t("header.title_preliminary", { org: organizationName })}
 			</h1>
-			<span className="font-mono text-[12px] text-content-muted sm:text-[13px]">
+			<div className="mt-1 font-mono text-[12px] text-content-muted sm:text-[13px]">
 				{domain}
-			</span>
+			</div>
 		</div>
 	);
 
@@ -726,24 +727,21 @@ function ResultHeader({
 		<div
 			className={`mb-8 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			{/* Top row across both viewports: PRELIMINARY ANALYSIS
-			    eyebrow on the left, radial health score on the right.
-			    Both anchor to the same horizontal band so the radial
-			    visually aligns with the eyebrow + the cost-summary
-			    card edge below. */}
-			<div className="flex items-start justify-between gap-3">
-				<div className="min-w-0 flex-1">{eyebrow}</div>
-				{healthRadial}
-			</div>
+			{/* PRELIMINARY ANALYSIS eyebrow on its own row above the
+			    identity block — it's a section label, not a sibling of
+			    the identity. */}
+			{eyebrow}
 
-			{/* Brand identity row: favicon left, title + URL inline on a
-			    single baseline to its right. Same structure across mobile
-			    and desktop — the previous two-layout split caused
-			    misalignment between favicon and title and the radial
-			    floated independently. */}
-			<div className="mt-3 flex items-center gap-3 sm:mt-4 sm:gap-4">
+			{/* Identity row: favicon vertically centered against the
+			    title+URL stack on the left, radial health score
+			    flushed to the right wall on the same horizontal band.
+			    Three flex items in one row so all three baselines stay
+			    anchored to the same row even when the title wraps to
+			    two lines. */}
+			<div className="mt-2 flex items-center gap-3 sm:mt-3 sm:gap-4">
 				{favicon}
-				{titleInline}
+				{titleStacked}
+				{healthRadial}
 			</div>
 
 			{leakStrip}
@@ -2127,8 +2125,21 @@ const LOCKED_IMPACT_FAKE = [
 // ─────────────────────────────────────────────────────────────
 const FAQ_ITEMS: Array<{ q: string; a: string }> = [
 	{
+		// Intro Q — for the buyer who scrolled past everything without
+		// ever forming a mental model of what they're being sold. Plain
+		// language, one paragraph, no jargon.
+		q: "O que é a Vestigio e o que ela faz?",
+		a: "Vestigio é a camada de inteligência que audita, monitora e otimiza seu negócio digital — sem você precisar contratar um time inteiro pra isso. Ela lê seu site público, conecta nas suas fontes de dados (Meta, Google, Stripe, Shopify, etc.) e te entrega de forma contínua: onde está vazando receita, quanto cada vazamento custa em R$, qual ação corrige e em qual ordem executar. Trocando em miúdos: você vê quanto deixou de ganhar este mês e o passo-a-passo pra recuperar.",
+	},
+	{
+		// Time-to-value — corrected: 15-20 minutes, not 60s, with a
+		// short outline that justifies the wait. signup-flow-cro
+		// principle: if you can't shorten the wait, make the buyer
+		// understand it. The outline transforms "tempo morto" into
+		// "tempo de trabalho", reducing the anxiety of staring at a
+		// loading screen.
 		q: "Quanto tempo até a Análise completa abrir?",
-		a: "Aproximadamente 60 segundos depois que o pagamento confirma. Vestigio AI roda imediatamente sobre seu site e suas integrações, e seu primeiro Plano de Estratégia personalizado fica pronto no mesmo intervalo.",
+		a: "Entre 15 e 20 minutos depois que o pagamento confirma — não é instantâneo de propósito. Nesse intervalo a Vestigio AI executa, em paralelo: (1) crawl completo do seu site público página por página; (2) snapshot visual e estrutural de cada landing; (3) avaliação da sua copy contra 5 frameworks consagrados (PAS, AIDA, BAB, 4P, Cialdini); (4) sincronização das integrações que você conectar (Meta, Google, Stripe etc.) com leitura de até 90 dias retroativos; (5) mapeamento do seu funil e correlação dos sinais comportamentais; (6) ranqueamento dos vazamentos por R$ de impacto; (7) geração do seu Plano de Estratégia personalizado + fila de ações priorizada. A prévia de 60 segundos que você viu antes do paywall é só um teaser. A Análise completa é a versão de verdade, e ela merece esses 15-20 minutos.",
 	},
 	{
 		q: "Como funciona a garantia 4x?",
@@ -2172,7 +2183,7 @@ function FAQSection({
 					Tudo que você quer saber antes do primeiro clique
 				</h2>
 				<p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-content-muted sm:text-[14px]">
-					Seis perguntas, seis respostas curtas. Se a sua não estiver aqui, o suporte responde direto no chat dentro do app.
+					Sete perguntas, sete respostas diretas. Se a sua não estiver aqui, o suporte responde no chat dentro do app.
 				</p>
 			</header>
 
@@ -2233,18 +2244,21 @@ function FAQSection({
 				})}
 			</ul>
 
-			{/* Quiet fallback CTA — for buyers who scrolled the FAQ
-			    instead of clicking the mega-CTA above. Editorial weight
-			    so it doesn't duplicate the urgency of the section
-			    above; just a "ok, ready" affordance. */}
+			{/* Fallback CTA — for buyers who scrolled the FAQ instead
+			    of clicking the mega-CTA above. Same visual treatment
+			    as the mega-CTA (bg-content + Fraunces + emerald arrow)
+			    so the buyer reads it as the SAME button, not a
+			    secondary action. Width fills on mobile and on the
+			    full page width here (no sm:w-auto) so it commands
+			    the column. */}
 			<button
 				type="button"
 				onClick={onCheckout}
-				className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-edge bg-surface-card px-6 py-4 text-[14px] font-medium text-content transition-colors hover:bg-surface-card-hover sm:mt-8"
+				className="group relative mt-6 flex w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-content px-8 py-4 font-[family-name:var(--font-fraunces)] text-[17px] font-medium tracking-tight text-surface-card transition-all hover:bg-content-secondary sm:mt-8"
 			>
-				Ainda em dúvida? Veja por dentro
+				<span className="relative">Criar conta agora</span>
 				<svg
-					className="h-3.5 w-3.5 text-emerald-500"
+					className="h-4 w-4 text-emerald-400 transition-transform group-hover:translate-x-0.5"
 					viewBox="0 0 16 16"
 					fill="none"
 					stroke="currentColor"

@@ -30,6 +30,11 @@ interface Props {
 	/** When false, hide the trigger entirely (e.g., while the
 	 *  AuditingState is still showing). */
 	visible?: boolean;
+	/** Fired whenever the panel toggles. The parent uses it to push
+	 *  the page content to the left on desktop so the panel doesn't
+	 *  overlap mid-page reading. Mobile parent should ignore it
+	 *  (the bottom sheet already uses a backdrop, not a side push). */
+	onOpenChange?: (open: boolean) => void;
 }
 
 type Phase = "idle" | "user" | "ai_typing" | "ai_response" | "done";
@@ -39,6 +44,7 @@ export default function CopilotPanel({
 	onCheckout,
 	launching,
 	visible = true,
+	onOpenChange,
 }: Props) {
 	const t = useTranslations("lp.audit_result");
 	const [open, setOpen] = useState(false);
@@ -63,6 +69,12 @@ export default function CopilotPanel({
 		mq.addEventListener("change", handler);
 		return () => mq.removeEventListener("change", handler);
 	}, []);
+
+	// Notify parent on every toggle so it can adjust layout (push
+	// page content left on desktop).
+	useEffect(() => {
+		onOpenChange?.(open);
+	}, [open, onOpenChange]);
 
 	// Reset + restart the typing sequence every time the panel opens.
 	// The mid-sentence cut should always arrive fresh, never sit

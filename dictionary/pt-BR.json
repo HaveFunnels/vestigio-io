@@ -7846,6 +7846,7 @@
 				"critical_label": "críticos",
 				"actions_label": "ações priorizadas"
 			},
+			"unlock_divider": "Desbloqueie a Análise completa",
 			"cta_final": {
 				"eyebrow": "Próximo passo",
 				"headline": "{org} está perdendo dinheiro agora.",

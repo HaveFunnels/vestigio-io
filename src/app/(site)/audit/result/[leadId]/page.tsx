@@ -110,6 +110,10 @@ export default function MiniAuditResultPage() {
 	const [paddleReady, setPaddleReady] = useState(false);
 	const [checkoutEmail, setCheckoutEmail] = useState<string | null>(null);
 	const [launching, setLaunching] = useState(false);
+	// Copilot side-panel open state — drives the desktop "push content
+	// left" behavior so the panel doesn't overlay the page mid-read.
+	// Mobile uses a bottom sheet w/ backdrop instead and ignores this.
+	const [copilotOpen, setCopilotOpen] = useState(false);
 	const pollAttemptsRef = useRef(0);
 
 	// ── Paddle initialization ──
@@ -357,7 +361,20 @@ export default function MiniAuditResultPage() {
 				<Script src="https://cdn.paddle.com/paddle/v2/paddle.js" onLoad={initPaddle} strategy="afterInteractive" />
 			)}
 
-			<div className="relative min-h-screen bg-surface-shell">
+			<div
+				// The Copilot side-panel slides in from the right on
+				// desktop (>=sm). When open we slide the page's content
+				// area left by adding right padding equal to the panel
+				// width (380px). `mx-auto` inside <main> re-centers within
+				// the now-shorter horizontal space, pushing the content
+				// visually left. The CSS transition matches the panel's
+				// own 320ms ease so they slide together as one motion.
+				// Mobile (<sm) gets no padding — the panel is a bottom
+				// sheet there and the content stays put.
+				className={`relative min-h-screen bg-surface-shell transition-[padding] duration-300 ease-out ${
+					copilotOpen ? "sm:pr-[380px]" : "sm:pr-0"
+				}`}
+			>
 				{/* Brand strip — light theme, sticky CTA */}
 				<header className="sticky top-0 z-30 border-b border-edge bg-surface-shell/85 backdrop-blur-md px-4 py-3">
 					<div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
@@ -450,6 +467,24 @@ export default function MiniAuditResultPage() {
 						onCheckout={openCheckout}
 					/>
 
+					{/* Section break — visually marks the end of the
+					    preliminary analysis and primes the paywall ask.
+					    Hairline running edge-to-edge of the content with
+					    the unlock copy centered over it. Hairline color
+					    matches the surrounding edge tokens so it stays
+					    invisible from far away and earns the eye only
+					    when scrolling close. */}
+					<div
+						aria-hidden
+						className={`relative mt-12 flex items-center sm:mt-16 transition-opacity duration-700 ${revealed ? "opacity-100" : "opacity-0"}`}
+					>
+						<div className="h-px flex-1 bg-edge" />
+						<span className="px-4 font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold uppercase tracking-[0.22em] text-content-muted">
+							{t("unlock_divider")}
+						</span>
+						<div className="h-px flex-1 bg-edge" />
+					</div>
+
 					{/* CTA final emotional block — JTBD-personalized close.
 					    Trust factors (Garantia 4x etc.) render inside it,
 					    replacing the previous gray "Análise por Vestigio"
@@ -507,6 +542,7 @@ export default function MiniAuditResultPage() {
 				domain={lead.domain || ""}
 				onCheckout={openCheckout}
 				launching={launching}
+				onOpenChange={setCopilotOpen}
 			/>
 			{previewWidget}
 		</>
@@ -1270,7 +1306,11 @@ function CTAFinalSection({
 
 	return (
 		<section
-			className={`relative mt-12 overflow-hidden rounded-[2rem] border border-edge bg-surface-card px-7 py-10 transition-opacity duration-700 sm:mt-16 sm:px-12 sm:py-14 ${revealed ? "opacity-100" : "opacity-0"}`}
+			// mt collapsed from 12/16 to 6/8 because the new "Desbloqueie
+			// a análise completa" divider sits between this and the leak
+			// list above; it owns the section break now, this just needs
+			// breathing room from the divider line.
+			className={`relative mt-6 overflow-hidden rounded-[2rem] border border-edge bg-surface-card px-7 py-10 transition-opacity duration-700 sm:mt-8 sm:px-12 sm:py-14 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
 			{/* Subtle dot-grid texture in content color so the
 			    background feels constructed without using brand

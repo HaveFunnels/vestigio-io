@@ -152,8 +152,15 @@ export default function MiniFunnelMap({
 				{t("subtitle")}
 			</p>
 
-			{/* Stage card row — horizontal funnel */}
-			<div className="flex items-stretch gap-1.5">
+			{/* Stage card row — horizontal funnel.
+			    Mobile: chevrons hidden to claim every pixel; stages shrink
+			    via min-w-0 + flex-1 + content using compact paddings and
+			    truncation. Above sm the original chevron-divided layout
+			    reappears. Without these tweaks the 5 stage labels
+			    ("AWARENESS"/"CONSIDERATION"/...) created intrinsic min
+			    widths that overflowed the 343px content area on iPhone-
+			    sized viewports, breaking the section. */}
+			<div className="flex items-stretch gap-1 sm:gap-1.5">
 				{STAGE_IDS.map((id, i) => {
 					const data = stageData[id];
 					const isExpanded = expandedStage === id;
@@ -162,10 +169,10 @@ export default function MiniFunnelMap({
 					const classes = hasIssues ? ISSUE_CLASSES : CLEAN_CLASSES;
 
 					return (
-						<div key={id} className="flex flex-1 items-center">
+						<div key={id} className="flex min-w-0 flex-1 items-center">
 							{i > 0 && (
 								<svg
-									className="mx-0.5 h-3 w-3 shrink-0 text-content-faint"
+									className="mx-0.5 hidden h-3 w-3 shrink-0 text-content-faint sm:block"
 									viewBox="0 0 8 8"
 									fill="none"
 									aria-hidden
@@ -186,7 +193,7 @@ export default function MiniFunnelMap({
 								onClick={() =>
 									setExpandedStage(isExpanded ? null : id)
 								}
-								className={`w-full rounded-xl border px-2 py-3 text-center transition-all ${
+								className={`min-w-0 w-full rounded-lg border px-1 py-2.5 text-center transition-all sm:rounded-xl sm:px-2 sm:py-3 ${
 									isExpanded ? classes.expandedContainer : classes.container
 								} ${
 									isClickable
@@ -195,26 +202,26 @@ export default function MiniFunnelMap({
 								}`}
 							>
 								<div
-									className={`text-[9px] font-semibold uppercase tracking-[0.12em] ${classes.stageLabel}`}
+									className={`truncate text-[8px] font-semibold uppercase tracking-[0.08em] sm:text-[9px] sm:tracking-[0.12em] ${classes.stageLabel}`}
 								>
 									{t(`stages.${id}`)}
 								</div>
 								{hasIssues ? (
 									<>
 										<div
-											className={`mt-1.5 font-[family-name:var(--font-fraunces)] text-2xl font-medium leading-none tabular-nums ${classes.stageValue}`}
+											className={`mt-1 font-[family-name:var(--font-fraunces)] text-xl font-medium leading-none tabular-nums sm:mt-1.5 sm:text-2xl ${classes.stageValue}`}
 										>
 											{data.count}
 										</div>
 										{data.impactCents > 0 ? (
 											<div
-												className={`mt-1 font-mono text-[10px] tabular-nums ${classes.stageValue} opacity-75`}
+												className={`mt-1 truncate font-mono text-[9px] tabular-nums sm:text-[10px] ${classes.stageValue} opacity-75`}
 											>
 												{formatBRL(data.impactCents)}
 											</div>
 										) : (
 											<div
-												className={`mt-1 select-none font-mono text-[10px] tabular-nums blur-[3px] ${classes.stageValue} opacity-75`}
+												className={`mt-1 select-none truncate font-mono text-[9px] tabular-nums blur-[3px] sm:text-[10px] ${classes.stageValue} opacity-75`}
 												aria-hidden
 											>
 												R$ 2.400
@@ -222,7 +229,7 @@ export default function MiniFunnelMap({
 										)}
 									</>
 								) : (
-									<div className={`mt-1.5 text-[11px] font-medium ${classes.stageLabel}`}>
+									<div className={`mt-1.5 text-[10px] font-medium sm:text-[11px] ${classes.stageLabel}`}>
 										{t("ok")}
 									</div>
 								)}

@@ -9965,6 +9965,7 @@
 				"critical_label": "critical",
 				"actions_label": "priority actions"
 			},
+			"unlock_divider": "Unlock the full Analysis",
 			"cta_final": {
 				"eyebrow": "Next move",
 				"headline": "{org} is losing money right now.",

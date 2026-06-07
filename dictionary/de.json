@@ -8188,6 +8188,7 @@
 				"critical_label": "kritisch",
 				"actions_label": "priorisierte Maßnahmen"
 			},
+			"unlock_divider": "Vollständige Analyse freischalten",
 			"cta_final": {
 				"eyebrow": "Zeit reinzukommen",
 				"headline": "{org} verliert gerade Geld.",

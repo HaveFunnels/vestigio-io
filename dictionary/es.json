@@ -9713,6 +9713,7 @@
 				"critical_label": "críticos",
 				"actions_label": "acciones prioritarias"
 			},
+			"unlock_divider": "Desbloquea el Análisis completo",
 			"cta_final": {
 				"eyebrow": "Hora de entrar",
 				"headline": "{org} está perdiendo dinero ahora mismo.",

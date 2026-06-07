@@ -333,7 +333,7 @@ export default function MiniFunnelMap({
 								// The leak signal now lives in the icon chip
 								// (tinted bg) and the impact line (rose mono),
 								// while the card chrome is calm.
-								className={`relative flex w-[78%] shrink-0 snap-center flex-col gap-4 rounded-2xl border border-edge bg-surface-card px-5 py-5 text-left shadow-sm transition-all ${
+								className={`relative flex w-[78%] shrink-0 snap-center flex-col gap-4 rounded-2xl border-2 border-black bg-surface-card px-5 py-5 text-left shadow-sm transition-all ${
 									isExpanded ? "ring-1 ring-inset ring-content/10" : ""
 								} ${
 									isClickable

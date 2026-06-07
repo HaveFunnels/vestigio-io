@@ -703,7 +703,7 @@ model PlanVersion {
 model BusinessProfile {
   id                  String @id @default(cuid())
   organizationId      String @unique
-  businessModel       String @default("ecommerce") // ecommerce | lead_gen | saas | hybrid
+  businessModel       String @default("ecommerce") // ecommerce | lead_gen | saas | services | hybrid
   monthlyRevenue      Float?
   averageOrderValue   Float?
   monthlyTransactions Int?
@@ -1923,7 +1923,7 @@ model AnonymousLead {
   email            String?
   domain           String? // normalized (no protocol, no trailing slash)
   organizationName String?
-  businessModel    String? // ecommerce | lead_gen | saas | hybrid
+  businessModel    String? // ecommerce | lead_gen | saas | services | hybrid
   monthlyRevenue   Float? // parsed from "$50k" → 50000
   averageTicket    Float?
   conversionModel  String? // checkout | whatsapp | form | external
@@ -1937,6 +1937,20 @@ model AnonymousLead {
   primaryConcern             String?
   currentOptimizationMethod  String?
   whyNow                     String?
+
+  // Services-vertical extensions. Only populated when businessModel
+  // resolves to "services". Used downstream by the services-specific
+  // findings library + impact formula (avg LTV × leak% × leads/month).
+  // All nullable so existing flows for the other 4 verticals stay intact.
+  //   serviceCategory:   "legal" | "accounting" | "healthcare" |
+  //                      "security" | "software_house" | "consulting" |
+  //                      "marketing_agency" | "other"
+  //   avgClientLTV:      Average value of a client over the
+  //                      relationship lifecycle (BRL).
+  //   relationshipMonths: How long the typical client stays.
+  serviceCategory    String?
+  avgClientLTV       Float?
+  relationshipMonths Int?
 
   // Funnel state
   status           String  @default("draft") // draft | auditing | audit_complete | checkout_started | converted | expired | spam

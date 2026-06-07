@@ -78,6 +78,7 @@ function extractBrandTokens(rootDomain: string, businessModel: string | null, in
 	if (businessModel === "saas") cats.push("melhor saas");
 	else if (businessModel === "ecommerce") cats.push("loja online");
 	else if (businessModel === "lead_gen") cats.push("plataforma de gestão");
+	else if (businessModel === "services") cats.push("serviços profissionais");
 	return { primary, categoryKeywords: cats.slice(0, 3), locale: "pt-BR" };
 }
 

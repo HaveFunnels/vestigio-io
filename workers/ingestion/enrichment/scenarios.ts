@@ -192,6 +192,12 @@ export function pickCommercialPathScenario(
       return buildEcommerceCommercialPath(landingUrl);
     case "lead_gen":
       return buildLeadGenCommercialPath(landingUrl);
+    case "services":
+      // Services close offline (WhatsApp / form / call). The lead-gen
+      // commercial path scenario already exercises contact-form +
+      // WhatsApp surfaces; reusing it here avoids a parallel
+      // implementation that would diverge over time.
+      return buildLeadGenCommercialPath(landingUrl);
     case "saas":
       return buildSaasCommercialPath(landingUrl);
     case "hybrid":

@@ -22,7 +22,12 @@ import { trackLpEvent } from "@/lib/lp-audit-track";
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-export type BusinessType = "ecommerce" | "lead_gen" | "saas" | "hybrid";
+export type BusinessType =
+	| "ecommerce"
+	| "lead_gen"
+	| "saas"
+	| "services"
+	| "hybrid";
 export type ConversionModel = "checkout" | "whatsapp" | "form" | "external";
 // Wave-22.6 mini-audit JTBD — same IDs as BusinessProfile so the
 // localStorage handoff into the paid onboarding form is 1:1.
@@ -65,6 +70,9 @@ const DEFAULT_CONVERSION: Record<BusinessType, ConversionModel> = {
 	ecommerce: "checkout",
 	lead_gen: "form",
 	saas: "checkout",
+	// Services typically converge to WhatsApp or form on BR market
+	// (contador, advogado, dentista, software house etc).
+	services: "whatsapp",
 	hybrid: "checkout",
 };
 
@@ -74,6 +82,10 @@ const DEFAULT_REVENUE: Record<BusinessType, number> = {
 	ecommerce: 100000,
 	lead_gen: 50000,
 	saas: 80000,
+	// Services SMB BR — median consultório / escritório de serviços
+	// in the R$50-150k/mês band; default to the lower end so the
+	// slider doesn't anchor too high for typical solo practitioners.
+	services: 60000,
 	hybrid: 120000,
 };
 
@@ -82,6 +94,10 @@ const DEFAULT_TICKET: Record<BusinessType, number> = {
 	ecommerce: 250,
 	lead_gen: 500,
 	saas: 300,
+	// Services "ticket" reads as average value-per-client over the
+	// relationship — common services (dentista/contador/escritório
+	// de advocacia) sit in the R$1.5-3k median band per case/year.
+	services: 2000,
 	hybrid: 350,
 };
 
@@ -149,7 +165,7 @@ function readLocalStoragePrefill(): PrefillFromStorage {
 		const revenue = revenueRaw ? Number(revenueRaw) : undefined;
 		return {
 			domain: read("vestigio_onboard_domain"),
-			businessType: businessType && ["ecommerce", "lead_gen", "saas", "hybrid"].includes(businessType) ? businessType : undefined,
+			businessType: businessType && ["ecommerce", "lead_gen", "saas", "services", "hybrid"].includes(businessType) ? businessType : undefined,
 			revenue: revenue != null && Number.isFinite(revenue) && revenue > 0 ? revenue : undefined,
 			concern: read("vestigio_onboard_concern") as PrimaryConcern | undefined,
 			currentMethod: read("vestigio_onboard_current_method") as CurrentOptimizationMethod | undefined,

@@ -940,7 +940,12 @@ const SEVERITY_ORDER: Record<MiniFindingSeverity, number> = {
 // Business type inference from crawl signals
 // ──────────────────────────────────────────────
 
-export type InferredBusinessType = "ecommerce" | "lead_gen" | "saas" | "hybrid";
+export type InferredBusinessType =
+	| "ecommerce"
+	| "lead_gen"
+	| "saas"
+	| "services"
+	| "hybrid";
 
 export interface BusinessTypeInference {
 	type: InferredBusinessType;

@@ -18,7 +18,12 @@
 // German B2B SaaS we've seen still uses /pricing in English.
 // ──────────────────────────────────────────────
 
-export type BusinessModelHint = "saas" | "ecommerce" | "lead_gen" | "hybrid";
+export type BusinessModelHint =
+	| "saas"
+	| "ecommerce"
+	| "lead_gen"
+	| "services"
+	| "hybrid";
 
 /**
  * Speculative critical paths to seed into Stage C discovery. The crawler
@@ -40,6 +45,11 @@ export function getCriticalPaths(businessModel?: string | null): string[] {
 		case "ecommerce":
 			return [...ECOMMERCE_PATHS, ...universal];
 		case "lead_gen":
+			return [...LEAD_GEN_PATHS, ...universal];
+		case "services":
+			// Services share most critical paths with lead_gen (they
+			// capture leads + close offline), but the contact-form path
+			// is more important than the pricing path. Bias accordingly.
 			return [...LEAD_GEN_PATHS, ...universal];
 		case "hybrid":
 		default:
@@ -304,7 +314,13 @@ const ERROR_PATH_REGEX = new RegExp(
 function normalizeBusinessModel(model?: string | null): BusinessModelHint | null {
 	if (!model) return null;
 	const m = model.toLowerCase().trim();
-	if (m === "saas" || m === "ecommerce" || m === "lead_gen" || m === "hybrid") {
+	if (
+		m === "saas" ||
+		m === "ecommerce" ||
+		m === "lead_gen" ||
+		m === "services" ||
+		m === "hybrid"
+	) {
 		return m as BusinessModelHint;
 	}
 	return null;

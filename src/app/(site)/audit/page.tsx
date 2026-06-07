@@ -35,6 +35,7 @@ import {
 	ChartLineIcon,
 	VideoCameraIcon,
 	HandshakeIcon,
+	BriefcaseIcon,
 	BrainIcon,
 	TableIcon,
 	XCircleIcon,
@@ -53,11 +54,18 @@ import type {
 	WhyNow,
 } from "./useLpAuditForm";
 
+// Business model options shown in the audit form. Copy is written in
+// the buyer's voice for each segment — small-business owners (contador,
+// advogado, dentista, software house) don't think of themselves as
+// "service vertical SMB"; they think "eu presto serviço". Labels are
+// short and human, descriptions are one short concrete example so the
+// visitor picks the right card without having to read jargon.
 const BUSINESS_TYPE_OPTIONS: CardOption<BusinessType>[] = [
-	{ value: "ecommerce", label: "Ecommerce", description: "Vendas online diretas", icon: ShoppingCartIcon },
-	{ value: "lead_gen", label: "Lead Gen", description: "Captura e nutrição de leads", icon: UsersThreeIcon },
-	{ value: "saas", label: "SaaS", description: "Software por assinatura", icon: CloudIcon },
-	{ value: "hybrid", label: "Híbrido", description: "Modelo misto de negócio", icon: StackIcon },
+	{ value: "ecommerce", label: "Loja online", description: "Vendo produtos pela internet", icon: ShoppingCartIcon },
+	{ value: "services", label: "Serviços", description: "Presto serviço pro meu cliente", icon: BriefcaseIcon },
+	{ value: "lead_gen", label: "Captação de clientes", description: "Capto leads e fecho depois", icon: UsersThreeIcon },
+	{ value: "saas", label: "SaaS / Software", description: "Software por assinatura", icon: CloudIcon },
+	{ value: "hybrid", label: "Mais de um", description: "Misturo modelos diferentes", icon: StackIcon },
 ];
 
 const CONCERN_OPTIONS: CardOption<PrimaryConcern>[] = [

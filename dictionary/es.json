@@ -9714,6 +9714,7 @@
 				"actions_label": "acciones prioritarias",
 				"visible_label": "mostradas",
 				"blocked_label": "a desbloquear",
+				"full_plan_label": "Detalle completo en el plan",
 				"score_label": "Salud del embudo"
 			},
 			"unlock_divider": "Desbloquea el Análisis completo",
@@ -9773,24 +9774,24 @@
 				"subtitle": "4 workspaces",
 				"revenue": {
 					"title": "Inteligencia de Ingresos",
-					"count": "{visible} visibles · {hidden} bloqueados"
+					"count": "Checkout, estructura de página y móvil"
 				},
 				"trust": {
 					"title": "Confianza & Conversión",
-					"count": "{visible} visibles · {hidden} bloqueados"
+					"count": "Señales de confianza y política"
 				},
 				"copy": {
 					"title": "Frameworks de Copy",
-					"subtitle": "5 frameworks analizados",
+					"count": "AIDA, PAS, BAB, 4P y Cialdini evaluados",
 					"intro": "Evaluamos tu copy contra los 5 frameworks de persuasión más usados en CRO. Cada uno tiene sus criterios — ves dónde tu landing acierta y dónde rompe.",
 					"example": "Tu landing usa PAS bien, pero el traspaso a AIDA falla en la sub-headline.",
-					"unlock": "+{count} análisis frase a frase en el plan completo"
+					"unlock": "Cada bloque de la landing evaluado frase por frase en el plan completo."
 				},
 				"behavioral": {
 					"title": "Señales Comportamentales",
-					"subtitle": "{count} patrones esperando el pixel",
+					"count": "Cruce con fuentes de medios, e-commerce y pago",
 					"intro": "Conectamos tus integraciones de medios, ecommerce y analytics para leer el comportamiento real de visitantes — no solo lo que sale en el HTML.",
-					"unlock": "Conecta cualquier integración en el Pulse para desbloquear análisis comportamental"
+					"unlock": "Conecta una integración en tu cuenta y la lectura conductual se abre."
 				}
 			},
 			"plan_preview": {

@@ -7793,7 +7793,7 @@
 			"leaks_section": {
 				"eyebrow": "Onde está vazando",
 				"title": "{count, plural, one {# vazamento encontrado} other {# vazamentos encontrados}}",
-				"subtitle": "{visible} visíveis na Análise preliminar · {locked} bloqueados na Análise completa"
+				"subtitle": "Mostrando os principais. O plano completo abre cada um com causa, R$ exposto e como corrigir."
 			},
 			"category_labels": {
 				"trust": "Confiança",
@@ -7842,6 +7842,7 @@
 				"title_anchor": "Até {amount}/mês escapando em {domain}",
 				"visible_label": "mostrados",
 				"blocked_label": "a desbloquear",
+				"full_plan_label": "Detalhamento completo no plano",
 				"score_label": "Saúde do funil",
 				"findings_label": "vazamentos",
 				"critical_label": "críticos",
@@ -7913,7 +7914,7 @@
 					"post_conversion": "Depois da compra — primeira experiência, suporte, recompra e indicação."
 				},
 				"ok": "Sem fricção",
-				"findings_count": "{visible} visíveis · {locked} bloqueados"
+				"findings_count": "{visible, plural, one {# mostrado nessa etapa} other {# mostrados nessa etapa}}"
 			},
 			"mcp_mockup": {
 				"title": "Vestigio AI",
@@ -7945,24 +7946,24 @@
 				"subtitle": "4 workspaces",
 				"revenue": {
 					"title": "Inteligência de Receita",
-					"count": "{visible} visíveis · {hidden} bloqueados"
+					"count": "Checkout, estrutura da página e mobile"
 				},
 				"trust": {
 					"title": "Confiança & Conversão",
-					"count": "{visible} visíveis · {hidden} bloqueados"
+					"count": "Sinais de confiança e política"
 				},
 				"copy": {
 					"title": "Frameworks de Copy",
-					"count": "5 frameworks · {hidden} bloqueados",
+					"count": "AIDA, PAS, BAB, 4P e Cialdini avaliados",
 					"intro": "Avaliamos sua copy contra os 5 frameworks de persuasão mais usados em CRO. Cada um tem critério próprio — vemos onde sua landing acerta e onde quebra.",
 					"example": "Sua landing usa PAS bem, mas a transição pro AIDA falha na sub-headline.",
-					"unlock": "+{count} avaliações frase por frase no Plano completo"
+					"unlock": "Cada bloco da landing avaliado frase por frase no plano completo."
 				},
 				"behavioral": {
 					"title": "Sinais Comportamentais",
-					"count": "{count} integrações · {hidden} bloqueados",
+					"count": "Cruzamento com fontes de mídia, e-commerce e pagamento",
 					"intro": "Conectamos suas fontes de mídia, e-commerce e analytics para ler o comportamento real dos visitantes — não só o que aparece no HTML.",
-					"unlock": "Conecte qualquer integração na sua conta pra desbloquear sinais comportamentais"
+					"unlock": "Conecte uma integração na sua conta e a leitura comportamental abre."
 				}
 			},
 			"plan_preview": {

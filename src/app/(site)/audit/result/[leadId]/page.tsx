@@ -706,14 +706,11 @@ function ResultHeader({
 		</div>
 	);
 
-	// Divided strip for the leak counts. Sized to the full
-	// content width — matches the width of the cost-summary card
-	// and every other card below in the page rhythm. Both halves
-	// share the same typography so neither dominates; the only
-	// color is the rose on the still-locked count to flag the gap
-	// (visible/locked binary kept, but the labels read "Mostrados"
-	// and "A desbloquear" now — action-oriented instead of
-	// observational).
+	// Divided strip for the leak scope. Left half shows the visible
+	// count anchored in real data. Right half names what the buyer
+	// gets in the full plan as a SCOPE statement — no counter, no
+	// rose, no "unlock" framing. The previous "+N a desbloquear"
+	// pattern read as a sales tactic; replaced with value framing.
 	const leakStrip = (
 		<div className="mt-4 flex w-full items-stretch overflow-hidden rounded-xl border border-edge bg-surface-card sm:mt-5">
 			<div className="flex flex-1 items-baseline justify-center gap-1.5 px-4 py-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
@@ -721,9 +718,8 @@ function ResultHeader({
 				<span className="text-content-muted">{t("header.visible_label")}</span>
 			</div>
 			<div className="w-px self-stretch bg-edge" aria-hidden />
-			<div className="flex flex-1 items-baseline justify-center gap-1.5 px-4 py-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[12px] tabular-nums">
-				<span className="font-semibold text-rose-600 dark:text-rose-400">{blurredCount}</span>
-				<span className="text-content-muted">{t("header.blocked_label")}</span>
+			<div className="flex flex-1 items-center justify-center px-4 py-2.5 font-[family-name:var(--font-jetbrains-mono)] text-[12px]">
+				<span className="text-content-muted">{t("header.full_plan_label")}</span>
 			</div>
 		</div>
 	);

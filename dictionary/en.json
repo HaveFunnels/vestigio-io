@@ -9912,7 +9912,7 @@
 			"leaks_section": {
 				"eyebrow": "Where it's leaking",
 				"title": "{count, plural, one {# leak found} other {# leaks found}}",
-				"subtitle": "{visible} visible in the preliminary Analysis · {locked} locked in the full Analysis"
+				"subtitle": "Showing the main ones. The full plan opens each with cause, exposed amount, and how to fix it."
 			},
 			"category_labels": {
 				"trust": "Trust",
@@ -9961,6 +9961,7 @@
 				"title_anchor": "Up to {amount}/mo leaking from {domain}",
 				"visible_label": "shown",
 				"blocked_label": "to unlock",
+				"full_plan_label": "Full breakdown in the plan",
 				"score_label": "Funnel health",
 				"findings_label": "leaks",
 				"critical_label": "critical",
@@ -10032,7 +10033,7 @@
 					"post_conversion": "After the sale — first experience, support, repurchase and referral."
 				},
 				"ok": "Clean",
-				"findings_count": "{visible} visible · {locked} locked"
+				"findings_count": "{visible, plural, one {# shown in this stage} other {# shown in this stage}}"
 			},
 			"mcp_mockup": {
 				"title": "Vestigio AI",
@@ -10064,24 +10065,24 @@
 				"subtitle": "4 workspaces",
 				"revenue": {
 					"title": "Revenue Intelligence",
-					"count": "{visible} visible · {hidden} locked"
+					"count": "Checkout, page structure, and mobile"
 				},
 				"trust": {
 					"title": "Trust & Conversion",
-					"count": "{visible} visible · {hidden} locked"
+					"count": "Trust signals and policy"
 				},
 				"copy": {
 					"title": "Copy Frameworks",
-					"count": "5 frameworks · {hidden} locked",
+					"count": "AIDA, PAS, BAB, 4P, and Cialdini evaluated",
 					"intro": "We evaluated your copy against the 5 persuasion frameworks most used in CRO. Each has its own criteria — you see where your landing hits and where it breaks.",
 					"example": "Your landing uses PAS well, but the AIDA handoff fails at the sub-headline.",
-					"unlock": "+{count} sentence-by-sentence evaluations in the full Plan"
+					"unlock": "Every block of the landing evaluated sentence by sentence in the full plan."
 				},
 				"behavioral": {
 					"title": "Behavioral Signals",
-					"count": "{count} integrations · {hidden} locked",
+					"count": "Cross-read with media, commerce, and payment sources",
 					"intro": "We connect your ads, ecommerce, and analytics sources to read real visitor behavior — not just what's in the HTML.",
-					"unlock": "Connect any integration inside your account to unlock behavioral signals"
+					"unlock": "Connect an integration in your account and the behavioral read opens."
 				}
 			},
 			"plan_preview": {

@@ -8189,6 +8189,7 @@
 				"actions_label": "priorisierte Maßnahmen",
 				"visible_label": "gezeigt",
 				"blocked_label": "freischalten",
+				"full_plan_label": "Vollständige Aufschlüsselung im Plan",
 				"score_label": "Funnel-Gesundheit"
 			},
 			"unlock_divider": "Vollständige Analyse freischalten",
@@ -8248,24 +8249,24 @@
 				"subtitle": "4 Workspaces",
 				"revenue": {
 					"title": "Revenue Intelligence",
-					"count": "{visible} sichtbar · {hidden} gesperrt"
+					"count": "Checkout, Seitenstruktur und Mobile"
 				},
 				"trust": {
 					"title": "Vertrauen & Konversion",
-					"count": "{visible} sichtbar · {hidden} gesperrt"
+					"count": "Vertrauenssignale und Richtlinien"
 				},
 				"copy": {
 					"title": "Copy-Frameworks",
-					"subtitle": "5 Frameworks analysiert",
+					"count": "AIDA, PAS, BAB, 4P und Cialdini ausgewertet",
 					"intro": "Wir haben Ihre Copy gegen die 5 in CRO meistgenutzten Persuasion-Frameworks bewertet. Jedes hat eigene Kriterien — Sie sehen, wo Ihre Landing trifft und wo sie bricht.",
 					"example": "Ihre Landing nutzt PAS gut, aber der Übergang zu AIDA scheitert in der Sub-Headline.",
-					"unlock": "+{count} satzweise Analysen im vollständigen Plan"
+					"unlock": "Jeder Block der Landing Satz für Satz im vollständigen Plan ausgewertet."
 				},
 				"behavioral": {
 					"title": "Verhaltenssignale",
-					"subtitle": "{count} Muster warten auf das Pixel",
+					"count": "Querauswertung mit Medien-, Commerce- und Payment-Quellen",
 					"intro": "Wir verbinden Ihre Anzeigen-, E-Commerce- und Analytics-Integrationen, um echtes Besucherverhalten zu lesen — nicht nur, was im HTML steht.",
-					"unlock": "Verbinden Sie eine Integration im Pulse, um die Verhaltensanalyse zu entsperren"
+					"unlock": "Verbinden Sie eine Integration in Ihrem Konto, und die verhaltensbasierte Auswertung öffnet sich."
 				}
 			},
 			"plan_preview": {

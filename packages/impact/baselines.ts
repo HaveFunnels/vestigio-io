@@ -139,6 +139,55 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     base_metric: 'revenue',
   },
 
+  // ──────────────────────────────────────────────
+  // Wave-22.7 — baselines previously referenced by mini-audit
+  // detectors but never added to the corpus. Adding them now so
+  // those detectors stop failing closed (impact: null) and start
+  // returning real R$ ranges. Ranges chosen conservatively from
+  // CRO literature + our own benchmark dataset for SMB BR.
+  // ──────────────────────────────────────────────
+
+  missing_contact_channel: {
+    inference_key: 'missing_contact_channel',
+    impact_category: 'conversion_loss',
+    cause: 'No reachable contact channel from the landing surface',
+    effect: 'Visitors with buying intent cannot start a conversation — they leave for whichever competitor surfaces a phone, WhatsApp, or live chat in the first scroll',
+    high: { min: 0.08, max: 0.18 },
+    medium: { min: 0.03, max: 0.08 },
+    low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  weak_cta_above_fold: {
+    inference_key: 'weak_cta_above_fold',
+    impact_category: 'conversion_loss',
+    cause: 'Primary CTA absent, vague, or below the first scroll',
+    effect: 'The visitor decides to act in the first 5 seconds; when no obvious next step exists at that moment, the impulse passes and the page closes',
+    high: { min: 0.07, max: 0.16 },
+    medium: { min: 0.03, max: 0.07 },
+    low: { min: 0.01, max: 0.03 },
+    base_metric: 'revenue',
+  },
+  no_social_proof: {
+    inference_key: 'no_social_proof',
+    impact_category: 'conversion_loss',
+    cause: 'No verifiable third-party proof on the landing surface',
+    effect: 'Without reviews, named testimonials, customer logos or platform ratings, the visitor has no external validation to override their default skepticism — high-intent prospects bounce to research the brand elsewhere and rarely return',
+    high: { min: 0.05, max: 0.14 },
+    medium: { min: 0.02, max: 0.06 },
+    low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  weak_conversion_path: {
+    inference_key: 'weak_conversion_path',
+    impact_category: 'conversion_loss',
+    cause: 'No clear path from landing to a commercial action',
+    effect: 'Visitors land, scan, and leave because the page never declares what to do next — no commercial page is linked above the fold, the CTA is vague, and the conversion intent is buried',
+    high: { min: 0.09, max: 0.20 },
+    medium: { min: 0.04, max: 0.09 },
+    low: { min: 0.01, max: 0.04 },
+    base_metric: 'revenue',
+  },
+
   // ── Chargeback resilience ──────────────────────
   refund_policy_gap: {
     inference_key: 'refund_policy_gap',

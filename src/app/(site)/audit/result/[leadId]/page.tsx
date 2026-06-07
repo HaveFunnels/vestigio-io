@@ -583,12 +583,17 @@ function ResultHeader({
 		<div
 			className={`mb-8 flex flex-col items-start gap-4 transition-opacity duration-700 sm:flex-row sm:items-center sm:gap-5 ${revealed ? "opacity-100" : "opacity-0"}`}
 		>
-			<span className="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-edge bg-surface-card p-2 shadow-sm">
+			{/* Container IS the favicon — no inner padding, no surface
+			    color peeking around the image. Border + rounded-2xl
+			    crop the favicon to a rounded square so the brand mark
+			    reads as one shape. object-cover so a non-square
+			    favicon fills without letterbox stripes. */}
+			<span className="inline-flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-edge shadow-sm">
 				{/* eslint-disable-next-line @next/next/no-img-element */}
 				<img
 					src={faviconSrc}
 					alt=""
-					className="h-full w-full object-contain"
+					className="h-full w-full object-cover"
 					onError={() => {
 						if (faviconSrc !== googleFavicon) setFaviconSrc(googleFavicon);
 					}}

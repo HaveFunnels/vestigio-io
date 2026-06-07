@@ -8,6 +8,7 @@ import Image from "next/image";
 import { Trophy, ShieldCheck, ShieldX, Lock, Sparkles, ChevronDown, Target, ShieldHalf } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
+import { AnimatePresence, motion } from "framer-motion";
 
 declare global {
 	interface Window {
@@ -1092,28 +1093,50 @@ function WorkspacesAccordion({
 						</svg>
 					)}
 					title={t("workspaces.behavioral.title")}
-					subtitle={t("workspaces.behavioral.count", { count: 6, hidden: behavioralBlurred })}
+					subtitle={t("workspaces.behavioral.count", { count: INTEGRATION_LOGOS.length, hidden: behavioralBlurred })}
 					open={openKey === "behavioral"}
 					onToggle={() => toggle("behavioral")}
 				>
 					<div className="mb-3 text-[12px] text-content-secondary">
 						{t("workspaces.behavioral.intro")}
 					</div>
-					<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+					{/* Colored circle integrations — each in its brand tint
+					    so the buyer recognizes Meta, Stripe, Shopify et al
+					    at a glance. Logos full color (no grayscale) sitting
+					    on a soft tint of the same color. Name label below
+					    each circle. */}
+					<div className="flex flex-wrap items-start justify-center gap-x-5 gap-y-4">
 						{INTEGRATION_LOGOS.map((logo) => (
 							<div
 								key={logo.name}
-								className="flex flex-col items-center gap-1.5 rounded-xl border border-edge bg-surface-card px-2 py-3 text-center"
+								className="flex w-16 flex-col items-center gap-1.5 text-center"
 							>
-								{logo.svg ? (
-									/* eslint-disable-next-line @next/next/no-img-element */
-									<img src={logo.svg} alt={logo.name} className="h-6 w-auto opacity-70 grayscale" />
-								) : (
-									<span className="font-[family-name:var(--font-jetbrains-mono)] text-[9px] font-medium uppercase tracking-wider text-content-muted">
-										{logo.name}
-									</span>
-								)}
-								<span className="text-[9px] text-content-faint">{logo.name}</span>
+								<span
+									className="flex h-12 w-12 items-center justify-center rounded-full ring-1 ring-inset"
+									style={{
+										backgroundColor: `${logo.tint}1A`, // 10% tint
+										color: logo.tint,
+										// `ring` uses currentColor when no color set,
+										// but tints work better with an explicit
+										// inline ring color so the chip reads as a
+										// halo, not a flat solid.
+										boxShadow: `inset 0 0 0 1px ${logo.tint}33`,
+									}}
+								>
+									{logo.svg ? (
+										/* eslint-disable-next-line @next/next/no-img-element */
+										<img
+											src={logo.svg}
+											alt={logo.name}
+											className="h-6 w-auto"
+										/>
+									) : (
+										<span className="font-[family-name:var(--font-jetbrains-mono)] text-[9px] font-medium uppercase tracking-wider">
+											{logo.name.slice(0, 2)}
+										</span>
+									)}
+								</span>
+								<span className="text-[10px] text-content-muted">{logo.name}</span>
 							</div>
 						))}
 					</div>
@@ -1126,18 +1149,19 @@ function WorkspacesAccordion({
 	);
 }
 
-// Integration logos shown in the Behavioral workspace card. SVG
-// references files in /public/logos/. Items without `svg` fall back
-// to a text label.
-const INTEGRATION_LOGOS: Array<{ name: string; svg?: string }> = [
-	{ name: "Meta Ads", svg: "/logos/meta.svg" },
-	{ name: "Google Ads", svg: "/logos/google-ads.svg" },
-	{ name: "Stripe", svg: "/logos/stripe.svg" },
-	{ name: "Shopify", svg: "/logos/shopify.svg" },
-	{ name: "Nuvemshop", svg: "/logos/nuvemshop.svg" },
-	{ name: "GA4" },
-	{ name: "Hotjar" },
-	{ name: "Clarity" },
+// Integration logos shown in the Behavioral workspace card.
+// GA4 / Hotjar / Clarity dropped — those are observability tools the
+// user already pays for, not data sources Vestigio uniquely connects.
+// Keeping the list to ad/commerce platforms that define our buyer's
+// real data perimeter. Each `tint` is the brand's primary brand color
+// so the colored-circle treatment reads as "this is Meta / Stripe /
+// Shopify" at a glance instead of generic square cards.
+const INTEGRATION_LOGOS: Array<{ name: string; svg?: string; tint: string }> = [
+	{ name: "Meta Ads", svg: "/logos/meta.svg", tint: "#1877F2" },
+	{ name: "Google Ads", svg: "/logos/google-ads.svg", tint: "#4285F4" },
+	{ name: "Stripe", svg: "/logos/stripe.svg", tint: "#635BFF" },
+	{ name: "Shopify", svg: "/logos/shopify.svg", tint: "#95BF47" },
+	{ name: "Nuvemshop", svg: "/logos/nuvemshop.svg", tint: "#0084FF" },
 ];
 
 function WorkspaceCard({
@@ -1194,7 +1218,23 @@ function WorkspaceCard({
 					<path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
 				</svg>
 			</button>
-			{open && <div className="border-t border-edge-subtle px-4 py-3">{children}</div>}
+			<AnimatePresence initial={false}>
+				{open && (
+					<motion.div
+						key="content"
+						initial={{ height: 0, opacity: 0 }}
+						animate={{ height: "auto", opacity: 1 }}
+						exit={{ height: 0, opacity: 0 }}
+						transition={{
+							height: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+							opacity: { duration: 0.18, ease: "easeOut" },
+						}}
+						className="overflow-hidden border-t border-edge-subtle"
+					>
+						<div className="px-4 py-3">{children}</div>
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

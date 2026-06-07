@@ -219,7 +219,7 @@ export default function MiniFunnelMap({
 					const isExpanded = expandedStage === id;
 					const isClickable = data.count > 0;
 					const hasIssues = data.count > 0;
-					const classes = hasIssues ? ISSUE_CLASSES : CLEAN_CLASSES;
+					const Icon = STAGE_ICONS[id];
 
 					return (
 						<div key={id} className="flex min-w-0 flex-1 items-center">
@@ -246,35 +246,44 @@ export default function MiniFunnelMap({
 								onClick={() =>
 									setExpandedStage(isExpanded ? null : id)
 								}
-								className={`min-w-0 w-full rounded-xl border px-2 py-3 text-center transition-all ${
-									isExpanded ? classes.expandedContainer : classes.container
+								// Neutral editorial surface, identical tonal
+								// language to the mobile carousel cards. The
+								// leak signal lives in the icon-chip tint and
+								// the impact number; the card chrome stays
+								// calm so five issue stages don't stack as five
+								// panic boxes.
+								className={`min-w-0 w-full rounded-xl border border-edge bg-surface-card px-2 py-3 text-center transition-all ${
+									isExpanded ? "ring-1 ring-inset ring-content/10" : ""
 								} ${
 									isClickable
-										? "cursor-pointer hover:brightness-[0.98] dark:hover:brightness-110"
+										? "cursor-pointer hover:bg-surface-card-hover"
 										: "cursor-default"
 								}`}
 							>
-								<div
-									className={`truncate text-[9px] font-semibold uppercase tracking-[0.12em] ${classes.stageLabel}`}
+								<span
+									className={`mx-auto mb-1.5 inline-flex h-7 w-7 items-center justify-center rounded-lg ${
+										hasIssues
+											? "bg-rose-500/12 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300"
+											: "bg-surface-inset text-content-muted"
+									}`}
 								>
+									<Icon className="h-3.5 w-3.5" strokeWidth={2} />
+								</span>
+								<div className="truncate text-[9px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 									{t(`stages.${id}`)}
 								</div>
 								{hasIssues ? (
 									<>
-										<div
-											className={`mt-1.5 font-[family-name:var(--font-fraunces)] text-2xl font-medium leading-none tabular-nums ${classes.stageValue}`}
-										>
+										<div className="mt-1 font-[family-name:var(--font-fraunces)] text-2xl font-medium leading-none tabular-nums text-content">
 											{data.count}
 										</div>
 										{data.impactCents > 0 ? (
-											<div
-												className={`mt-1 truncate font-mono text-[10px] tabular-nums ${classes.stageValue} opacity-75`}
-											>
+											<div className="mt-1 truncate font-mono text-[10px] tabular-nums text-rose-600 dark:text-rose-300">
 												{formatBRL(data.impactCents)}
 											</div>
 										) : (
 											<div
-												className={`mt-1 select-none truncate font-mono text-[10px] tabular-nums blur-[3px] ${classes.stageValue} opacity-75`}
+												className="mt-1 select-none truncate font-mono text-[10px] tabular-nums text-rose-600 blur-[3px] dark:text-rose-300"
 												aria-hidden
 											>
 												R$2.400
@@ -282,7 +291,7 @@ export default function MiniFunnelMap({
 										)}
 									</>
 								) : (
-									<div className={`mt-1.5 text-[11px] font-medium ${classes.stageLabel}`}>
+									<div className="mt-1.5 text-[11px] font-medium text-content-muted">
 										{t("ok")}
 									</div>
 								)}

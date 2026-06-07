@@ -23,6 +23,7 @@ export type BusinessModelHint =
 	| "ecommerce"
 	| "lead_gen"
 	| "services"
+	| "app_conversion"
 	| "hybrid";
 
 /**
@@ -50,6 +51,14 @@ export function getCriticalPaths(businessModel?: string | null): string[] {
 			// Services share most critical paths with lead_gen (they
 			// capture leads + close offline), but the contact-form path
 			// is more important than the pricing path. Bias accordingly.
+			return [...LEAD_GEN_PATHS, ...universal];
+		case "app_conversion":
+			// Mobile-app sites have one job: get the visitor to the
+			// store. Most relevant paths are /download, /app, /baixar,
+			// and product-detail surfaces. We reuse LEAD_GEN_PATHS for
+			// now since the dominant signal is "did the visitor reach
+			// the call-to-store" — extend with dedicated paths later
+			// if a real mobile-app benchmark dataset suggests it.
 			return [...LEAD_GEN_PATHS, ...universal];
 		case "hybrid":
 		default:
@@ -319,6 +328,7 @@ function normalizeBusinessModel(model?: string | null): BusinessModelHint | null
 		m === "ecommerce" ||
 		m === "lead_gen" ||
 		m === "services" ||
+		m === "app_conversion" ||
 		m === "hybrid"
 	) {
 		return m as BusinessModelHint;

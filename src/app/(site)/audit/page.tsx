@@ -43,6 +43,9 @@ import {
 	CodeIcon,
 	MegaphoneIcon,
 	ShieldIcon,
+	DeviceMobileIcon,
+	AppleLogoIcon,
+	AndroidLogoIcon,
 	TableIcon,
 	XCircleIcon,
 	TrendUpIcon,
@@ -59,6 +62,7 @@ import type {
 	CurrentOptimizationMethod,
 	WhyNow,
 	ServiceCategory,
+	AppPlatform,
 } from "./useLpAuditForm";
 
 // Business model options shown in the audit form. Copy is written in
@@ -72,6 +76,7 @@ const BUSINESS_TYPE_OPTIONS: CardOption<BusinessType>[] = [
 	{ value: "services", label: "Serviços", description: "Presto serviço pro meu cliente", icon: BriefcaseIcon },
 	{ value: "lead_gen", label: "Captação de clientes", description: "Capto leads e fecho depois", icon: UsersThreeIcon },
 	{ value: "saas", label: "SaaS / Software", description: "Software por assinatura", icon: CloudIcon },
+	{ value: "app_conversion", label: "App mobile", description: "Meu site existe pra levar pro app na Play / App Store", icon: DeviceMobileIcon },
 	{ value: "hybrid", label: "Mais de um", description: "Misturo modelos diferentes", icon: StackIcon },
 ];
 
@@ -90,6 +95,16 @@ const SERVICE_CATEGORY_OPTIONS: CardOption<ServiceCategory>[] = [
 	{ value: "consulting", label: "Consultoria", description: "Estratégia, RH, negócios, processos", icon: BrainIcon },
 	{ value: "security", label: "Segurança", description: "Vigilância patrimonial, segurança eletrônica", icon: ShieldIcon },
 	{ value: "other", label: "Outro tipo", description: "Não me encaixo nas categorias acima", icon: QuestionIcon },
+];
+
+// App platform options — only shown when the visitor picks
+// "app_conversion" on the previous step. Labels are concrete and
+// instantly recognizable; descriptions name the store directly so
+// the buyer doesn't have to translate "iOS" → "Apple" etc.
+const APP_PLATFORM_OPTIONS: CardOption<AppPlatform>[] = [
+	{ value: "ios_only", label: "Só iPhone", description: "App publicado só na App Store", icon: AppleLogoIcon },
+	{ value: "android_only", label: "Só Android", description: "App publicado só na Play Store", icon: AndroidLogoIcon },
+	{ value: "both", label: "iPhone e Android", description: "Publicado nas duas lojas", icon: DeviceMobileIcon },
 ];
 
 const CONCERN_OPTIONS: CardOption<PrimaryConcern>[] = [
@@ -220,6 +235,23 @@ export default function LpAuditPage() {
 						options={SERVICE_CATEGORY_OPTIONS}
 						onSelect={(v) => {
 							f.update("serviceCategory", v);
+							f.next();
+						}}
+					/>
+				)}
+
+				{/* ── Screen 2b (app_conversion only): Platform pick ──
+				    Determines which mobile-specific detectors fire.
+				    iOS-only sites need Smart App Banner; Android-only
+				    need App Links setup; both-platform sites need
+				    smart-banner-with-fallback. */}
+				{f.currentScreen === "app_platform" && (
+					<CardSelectionStep
+						title="Em qual loja o seu app está?"
+						subtitle="Diferentes lojas pedem ajustes diferentes no site pra puxar mais install."
+						options={APP_PLATFORM_OPTIONS}
+						onSelect={(v) => {
+							f.update("appPlatform", v);
 							f.next();
 						}}
 					/>

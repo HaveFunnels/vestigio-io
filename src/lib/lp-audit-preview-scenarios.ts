@@ -479,7 +479,95 @@ const SERVICES_BR: PreviewScenario = {
 };
 
 // ──────────────────────────────────────────────
-// Scenario 7: Expired
+// Scenario 7: Mobile-app conversion BR
+// Wave-22.7 — flagship case for the app-conversion vertical. An
+// app de delivery / utilidade / consumer focado em install via
+// site. Exercises the 6 mobile detectors with plausible findings.
+// ──────────────────────────────────────────────
+const MOBILE_BR: PreviewScenario = {
+	id: "mobile-br",
+	label: "App mobile — Utilidade",
+	description: "App de utilidade / consumer com landing focada em install",
+	lead: {
+		id: "preview-mobile-br",
+		status: "audit_complete",
+		currentStep: 12,
+		domain: "rotaesperta.app",
+		organizationName: "Rota Esperta",
+		businessModel: "app_conversion",
+		monthlyRevenue: 40_000,
+		primaryConcern: "low_conversion",
+		currentOptimizationMethod: "analytics_tools",
+		whyNow: "scaling_paid_traffic",
+		emailMasked: "c***@rotaesperta.app",
+		createdAt: nowIso(),
+		result: {
+			id: "preview-result-mobile-br",
+			preview: mkPreview(
+				"rotaesperta.app",
+				"Rota Esperta — O melhor caminho até onde você quer chegar",
+			),
+			visibleFindings: [
+				mkFinding(
+					"v1",
+					"critical",
+					"cta",
+					"Sem botão de download pra App Store (iPhone)",
+					"Visitante que chega no site quer baixar o app — não ler mais sobre ele. Sua página não mostra o botão oficial da App Store em nenhum lugar. Cada visitante que veio com intenção de instalar e não encontrou o botão volta pro Google e pode acabar baixando um concorrente.",
+					"30-50% dos visitantes com intenção saem sem instalar",
+					"Coloque o badge oficial da App Store na primeira dobra do site, com link direto pra sua página na loja. Use a imagem oficial (developer.apple.com/app-store/marketing/guidelines/) — o cliente reconhece em meio segundo.",
+					mkImpact(3_200, 6_400),
+				),
+				mkFinding(
+					"v2",
+					"high",
+					"cta",
+					"Falta a barra do iPhone que abre o app direto do site",
+					"Quando alguém abre seu site no Safari do iPhone, existe uma faixa que aparece no topo dizendo 'Abrir no app' ou 'Baixar na App Store'. Sem isso, o usuário iOS precisa sair do navegador, abrir a App Store e procurar pelo nome — é quando você perde a maior parte deles.",
+					"Usuário iOS sem essa faixa raramente instala depois",
+					"Adicione a meta tag <meta name=\"apple-itunes-app\" content=\"app-id=SEU_APP_ID\"> no <head> de todas as páginas. Coloque o ID do seu app na App Store. A faixa aparece automaticamente no Safari — sem código adicional, sem custo de banda.",
+					mkImpact(2_400, 4_800),
+				),
+				mkFinding(
+					"v3",
+					"medium",
+					"trust",
+					"Você não mostra a nota do seu app na loja",
+					"Quem está pensando em baixar um app vai checar a nota na loja antes — todo mundo faz isso. Se você tem 4.5+ estrelas e milhares de avaliações, é a sua maior carta de vendas e ela não aparece no site.",
+					"Nota visível aumenta clique pro botão em 15-25%",
+					"Coloque na primeira dobra: nota geral ('4.7 ⭐ na App Store · 4.8 ⭐ na Play Store · 12 mil avaliações'). Pode usar widget oficial ou só renderizar como texto + ícone.",
+					mkImpact(1_800, 3_600),
+				),
+				mkFinding(
+					"v4",
+					"medium",
+					"structure",
+					"Sem prévia visual de como o app funciona",
+					"Visitante que está decidindo se baixa o app quer ver as telas antes. Sua landing não mostra screenshots do app. Quem visita só com texto não consegue imaginar o produto e desiste.",
+					"Sem prévia visual, install cai 25-40%",
+					"Adicione 3 a 5 screenshots da tela principal do app na primeira dobra, com legenda curta em cada uma. Use mockup de iPhone/Android pra ficar profissional.",
+					mkImpact(1_500, 3_000),
+				),
+				mkFinding(
+					"v5",
+					"medium",
+					"trust",
+					"Você pede permissões sem explicar o porquê — assusta",
+					"Seu site menciona que o app precisa de permissões (localização, notificações) mas não explica pra que cada uma serve. Usuário lê só 'precisa acessar sua localização' e pensa 'vão me espionar'.",
+					"Permissão sem contexto reduz install em 15-20%",
+					"Pra cada permissão que você pede, escreva 1 frase que diga o que ela libera no app. 'Localização: pra te mostrar opções perto de você. Notificação: pra avisar quando seu pedido sair pra entrega.'",
+					mkImpact(900, 1_800),
+				),
+			],
+			blurredFindings: COMMON_BLURRED,
+			durationMs: 11_200,
+			computedAt: nowIso(),
+		},
+	},
+};
+
+// ──────────────────────────────────────────────
+// Scenario 8: Expired
 // ──────────────────────────────────────────────
 const EXPIRED: PreviewScenario = {
 	id: "expired",
@@ -493,6 +581,7 @@ export const PREVIEW_SCENARIOS: Record<string, PreviewScenario> = {
 	[ECOM_BR.id]: ECOM_BR,
 	[COURSE_BR.id]: COURSE_BR,
 	[SERVICES_BR.id]: SERVICES_BR,
+	[MOBILE_BR.id]: MOBILE_BR,
 	[LOADING.id]: LOADING,
 	[LOADING_DONE.id]: LOADING_DONE,
 	[EXPIRED.id]: EXPIRED,
@@ -503,6 +592,7 @@ export const PREVIEW_SCENARIO_LIST: PreviewScenario[] = [
 	ECOM_BR,
 	COURSE_BR,
 	SERVICES_BR,
+	MOBILE_BR,
 	LOADING,
 	LOADING_DONE,
 	EXPIRED,

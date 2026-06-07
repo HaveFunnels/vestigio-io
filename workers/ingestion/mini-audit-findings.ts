@@ -1114,6 +1114,186 @@ const detectServicesCategoriesBuried: Detector = ({ parsed, rawHtml, business })
 };
 
 // ──────────────────────────────────────────────
+// Mobile-app conversion detectors. Fire only when the visitor self-
+// identified as "app_conversion" on form step 2. Copy is buyer-natural
+// (the audience is dono / fundador / growth lead de app, não engenheiro
+// iOS/Android), every finding states the user behavior + lost install
+// consequence in plain Portuguese. Avoid jargon: "Smart App Banner"
+// gets called "barra do iPhone que abre o app", "App Links" gets called
+// "link que abre direto no seu app".
+//
+// Each detector gates on `business.business_model === "app_conversion"`
+// (and sometimes on `business.app_platform`) and returns null otherwise.
+// ──────────────────────────────────────────────
+
+const isAppConversionLead = (business: MiniBusinessInputs): boolean =>
+	business.business_model === "app_conversion";
+
+// ── A1. Sem badges de loja na home ────────────────────────────
+// Cliente que chega no site procura instantaneamente o botão pra
+// baixar o app. Sem badges visíveis (Play / App Store), o visitante
+// fica perdido e abre o Google.
+const detectAppNoStoreBadges: Detector = ({ rawHtml, business }) => {
+	if (!isAppConversionLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasAppStoreLink = /apps\.apple\.com\/(\w{2}\/)?app|itunes\.apple\.com/.test(lower);
+	const hasPlayStoreLink = /play\.google\.com\/store\/apps/.test(lower);
+	const platform = business.app_platform;
+	const expectsIos = platform === "ios_only" || platform === "both" || !platform;
+	const expectsAndroid = platform === "android_only" || platform === "both" || !platform;
+	const missing: string[] = [];
+	if (expectsIos && !hasAppStoreLink) missing.push("App Store (iPhone)");
+	if (expectsAndroid && !hasPlayStoreLink) missing.push("Play Store (Android)");
+	if (missing.length === 0) return null;
+	return withImpact(
+		{
+			id: "mini_app_no_store_badges",
+			severity: missing.length === (expectsIos && expectsAndroid ? 2 : 1) ? "critical" : "high",
+			category: "cta",
+			title: `Sem botão de download pra ${missing.join(" + ")}`,
+			body: `Visitante que chega no site quer baixar o app — não ler mais sobre ele. Sua página não mostra o botão oficial da ${missing.join(" e da ")} em nenhum lugar. Cada visitante que veio com intenção de instalar e não encontrou o botão volta pro Google e pode acabar baixando um concorrente.`,
+			impact_hint: "30-50% dos visitantes com intenção saem sem instalar",
+			suggestion: `Coloque o badge oficial de cada loja (${missing.join(" e ")}) na primeira dobra do site, com link direto pra sua página na loja. Use as imagens oficiais (developer.apple.com/app-store/marketing/guidelines/ e play.google.com/intl/en_us/badges/) — o cliente reconhece em meio segundo.`,
+			evidence_refs: missing.map((m) => `Nenhum link pra ${m} detectado na página`),
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── A2. Sem Smart App Banner (iOS) ────────────────────────────
+// iPhone tem uma barra automática no Safari que abre direto o app
+// se estiver instalado, ou puxa pra App Store. Sem isso, usuário
+// iOS tem que sair do navegador, ir na loja e procurar manualmente.
+const detectAppNoSmartBanner: Detector = ({ parsed, rawHtml, business }) => {
+	if (!isAppConversionLead(business)) return null;
+	const platform = business.app_platform;
+	if (platform === "android_only") return null;
+	// ParsedPage.meta_tags is Record<string, string>, key = name attr.
+	// Smart App Banner uses <meta name="apple-itunes-app" content="...">.
+	const hasMetaAppBanner =
+		!!parsed.meta_tags?.["apple-itunes-app"] ||
+		/<meta[^>]+name=["']apple-itunes-app["']/i.test(rawHtml);
+	if (hasMetaAppBanner) return null;
+	return withImpact(
+		{
+			id: "mini_app_no_smart_banner",
+			severity: "high",
+			category: "cta",
+			title: "Falta a barra do iPhone que abre o app direto do site",
+			body: "Quando alguém abre seu site no Safari do iPhone, existe uma faixa que aparece no topo dizendo 'Abrir no app' ou 'Baixar na App Store'. Sem isso, o usuário iOS precisa sair do navegador, abrir a App Store e procurar pelo nome — é quando você perde a maior parte deles.",
+			impact_hint: "Usuário iOS sem essa faixa raramente instala depois",
+			suggestion: "Adicione a meta tag <meta name=\"apple-itunes-app\" content=\"app-id=SEU_APP_ID\"> no <head> de todas as páginas. Coloque o ID do seu app na App Store. A faixa aparece automaticamente no Safari — sem código adicional, sem custo de banda.",
+			evidence_refs: ["Meta tag apple-itunes-app não encontrada"],
+		},
+		"weak_cta_above_fold",
+		business,
+	);
+};
+
+// ── A3. Avaliação da loja não aparece no site ─────────────────
+const detectAppNoStoreRating: Detector = ({ rawHtml, business }) => {
+	if (!isAppConversionLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const hasRatingMention = /(\d[\.,]\d)\s*(★|⭐|estrela|stars?)\s*(na\s+)?(app\s+store|play\s+store|google\s+play|apple\s+store)/i.test(rawHtml) ||
+		/(nota\s+\d[\.,]\d|rating\s+\d[\.,]\d|\d[\.,]\d\s+(de\s+5|out\s+of\s+5))/i.test(lower);
+	if (hasRatingMention) return null;
+	return withImpact(
+		{
+			id: "mini_app_no_store_rating",
+			severity: "medium",
+			category: "trust",
+			title: "Você não mostra a nota do seu app na loja",
+			body: "Quem está pensando em baixar um app vai checar a nota na loja antes — todo mundo faz isso. Se você tem 4.5+ estrelas e milhares de avaliações, é a sua maior carta de vendas e ela não aparece no site. Visitante que poderia ter clicado direto vai abrir a loja, ver outros apps na lista de busca, e talvez nem voltar pro seu.",
+			impact_hint: "Nota visível aumenta clique pro botão em 15-25%",
+			suggestion: "Coloque na primeira dobra: nota geral ('4.7 ⭐ na App Store · 4.8 ⭐ na Play Store · 12 mil avaliações'). Pode usar widget oficial do AppFollow ou Storefly, ou só renderizar como texto + ícone. Cliente desconfia menos de texto + número específico do que de claim genérico.",
+			evidence_refs: ["Nenhuma menção a nota / rating / estrelas detectada"],
+		},
+		"no_social_proof",
+		business,
+	);
+};
+
+// ── A4. Mensagem confusa entre web e app ──────────────────────
+const detectAppWebMessageConflict: Detector = ({ rawHtml, business }) => {
+	if (!isAppConversionLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const offersWebVersion = /(use\s+no\s+navegador|vers[ãa]o\s+web|fa[çc]a\s+login\s+aqui|acesse\s+sua\s+conta|web\s+app)/i.test(lower);
+	const offersAppDownload = /(baixe\s+o\s+app|baixar\s+(o\s+)?aplicativo|app\s+gratuito|download\s+da?\s+app)/i.test(lower);
+	if (!(offersWebVersion && offersAppDownload)) return null;
+	return withImpact(
+		{
+			id: "mini_app_web_message_conflict",
+			severity: "medium",
+			category: "structure",
+			title: "Seu site não decide se é app ou web — visitante também não decide",
+			body: "Sua página oferece versão web ('acesse sua conta') E pede pra baixar o app na mesma dobra. Visitante na dúvida costuma escolher o caminho de menor fricção (web) e nunca instala o app. Você perde o engajamento de longo prazo que o app entrega.",
+			impact_hint: "Caminho duplo derruba install em 20-30%",
+			suggestion: "Decida o objetivo principal da landing. Se o app é o produto, faça login web entrar pela porta dos fundos ('Já tem conta? Acesse pelo app' linkando pra loja, com 'Continuar no navegador' bem pequeno). Se a web é equivalente, escolha qual contexto pede app (mobile?) e mostra a opção certa por device.",
+			evidence_refs: ["Convite pra usar versão web detectado", "Convite pra baixar o app detectado", "Sem hierarquia clara entre as duas opções"],
+		},
+		"unclear_conversion_intent",
+		business,
+	);
+};
+
+// ── A5. Sem prévia visual do app ──────────────────────────────
+const detectAppNoScreenshots: Detector = ({ rawHtml, business }) => {
+	if (!isAppConversionLead(business)) return null;
+	// ParsedPage doesn't surface <img> structured. Parse rawHtml for
+	// img tags whose alt OR src contains screenshot / mockup / preview
+	// keywords — same signal the structured form would carry.
+	const imgMatches = rawHtml.match(/<img[^>]+>/gi) || [];
+	const hasScreenshotImage = imgMatches.some((tag) => {
+		const alt = tag.match(/alt=["']([^"']*)["']/i)?.[1] || "";
+		const src = tag.match(/src=["']([^"']*)["']/i)?.[1] || "";
+		return (
+			/screenshot|tela\s+do\s+app|preview\s+do\s+app|app\s+screen/i.test(alt) ||
+			/screenshot|mockup|app-preview|phone-mockup/i.test(src)
+		);
+	});
+	if (hasScreenshotImage) return null;
+	return withImpact(
+		{
+			id: "mini_app_no_screenshots",
+			severity: "medium",
+			category: "structure",
+			title: "Sem prévia visual de como o app funciona",
+			body: "Visitante que está decidindo se baixa o app quer ver as telas antes — 80% do tempo no celular é em apps, e ninguém instala sem ter uma ideia do que vai ver dentro. Sua landing não mostra screenshots do app. Quem visita só com texto não consegue imaginar o produto e desiste.",
+			impact_hint: "Sem prévia visual, install cai 25-40%",
+			suggestion: "Adicione 3 a 5 screenshots da tela principal do app na primeira dobra (carousel ou grid), com legenda curta em cada uma explicando o que o usuário consegue fazer ali. Use mockup de iPhone/Android pra ficar profissional. Cliente vê o produto, se imagina usando, e baixa.",
+			evidence_refs: ["Nenhuma imagem detectada com alt/filename indicando screenshot do app"],
+		},
+		"no_social_proof",
+		business,
+	);
+};
+
+// ── A6. Permissões assustadoras sem contexto ──────────────────
+const detectAppPermissionsScary: Detector = ({ rawHtml, business }) => {
+	if (!isAppConversionLead(business)) return null;
+	const lower = rawHtml.toLowerCase();
+	const mentionsPermissions = /(localiza[çc][aã]o|c[âa]mera|microfone|notifica[çc][oõ]es|contatos|acesso\s+a\s+seus)/i.test(lower);
+	if (!mentionsPermissions) return null;
+	const explainsWhy = /(porque|por\s+que|usamos|servimos\s+pra|necess[áa]ria\s+pra|garantimos\s+que)/i.test(lower);
+	if (explainsWhy) return null;
+	return withImpact(
+		{
+			id: "mini_app_permissions_scary",
+			severity: "medium",
+			category: "trust",
+			title: "Você pede permissões sem explicar o porquê — assusta",
+			body: "Seu site menciona que o app precisa de permissões (localização, câmera, notificações, etc.) mas não explica pra que cada uma serve. Usuário lê só 'precisa acessar sua localização' e pensa 'vão me espionar', desinstala antes mesmo de abrir.",
+			impact_hint: "Permissão sem contexto reduz install em 15-20%",
+			suggestion: "Pra cada permissão que você pede, escreva 1 frase curta que diga o que ela libera no app. Ex: 'Localização: pra te mostrar opções perto de você. Notificação: pra avisar quando seu pedido sair pra entrega.' Coloque essa lista visível na landing — você reduz a ansiedade antes da loja pedir.",
+			evidence_refs: ["Menção a permissões sensíveis detectada", "Sem explicação do propósito de cada permissão"],
+		},
+		"trust_break_in_checkout",
+		business,
+	);
+};
+
+// ──────────────────────────────────────────────
 // Positive fallbacks — only kick in when fewer than 5 negatives hit.
 // ──────────────────────────────────────────────
 
@@ -1191,6 +1371,7 @@ export type InferredBusinessType =
 	| "lead_gen"
 	| "saas"
 	| "services"
+	| "app_conversion"
 	| "hybrid";
 
 export interface BusinessTypeInference {
@@ -1317,6 +1498,14 @@ export function deriveMiniAuditFindings(input: DeriveInput): MiniAuditFindings {
 		detectServicesWrongCtaTone,
 		detectServicesNoGbpLink,
 		detectServicesCategoriesBuried,
+		// Wave-22.7 — Mobile-app conversion vertical. Each gates
+		// internally on businessModel === "app_conversion".
+		detectAppNoStoreBadges,
+		detectAppNoSmartBanner,
+		detectAppNoStoreRating,
+		detectAppWebMessageConflict,
+		detectAppNoScreenshots,
+		detectAppPermissionsScary,
 	];
 
 	const detected: MiniFinding[] = [];

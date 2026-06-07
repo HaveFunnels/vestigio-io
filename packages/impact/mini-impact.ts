@@ -39,6 +39,12 @@ export interface MiniBusinessInputs {
 	 * when absent.
 	 */
 	service_category?: string | null;
+	/**
+	 * App-conversion sub-segmentation (step 2b alt). Same nullable
+	 * contract. Used by mobile-app detectors to fire iOS-only,
+	 * Android-only, or both-platform variants.
+	 */
+	app_platform?: string | null;
 }
 
 export interface MiniImpact {

@@ -27,6 +27,7 @@ export type BusinessType =
 	| "lead_gen"
 	| "saas"
 	| "services"
+	| "app_conversion"
 	| "hybrid";
 export type ConversionModel = "checkout" | "whatsapp" | "form" | "external";
 // Wave-22.6 mini-audit JTBD — same IDs as BusinessProfile so the
@@ -67,6 +68,15 @@ export type ServiceCategory =
 	| "security"         // vigilância patrimonial, segurança eletrônica
 	| "other";
 
+// App-conversion sub-segmentation. Each platform combination has its
+// own optimization surface: iOS needs Smart App Banner, Android needs
+// App Links, both-platform funnels have to make the platform choice
+// invisible to the visitor. Detectors gate on this.
+export type AppPlatform =
+	| "ios_only"
+	| "android_only"
+	| "both";
+
 export interface LeadState {
 	domain: string;
 	ownershipConfirmed: boolean;
@@ -80,6 +90,8 @@ export interface LeadState {
 	email: string;
 	/** Only populated when businessModel === "services". Empty otherwise. */
 	serviceCategory: ServiceCategory | "";
+	/** Only populated when businessModel === "app_conversion". Empty otherwise. */
+	appPlatform: AppPlatform | "";
 }
 
 // Infer conversion model from business type — fewer questions for the user
@@ -90,6 +102,10 @@ const DEFAULT_CONVERSION: Record<BusinessType, ConversionModel> = {
 	// Services typically converge to WhatsApp or form on BR market
 	// (contador, advogado, dentista, software house etc).
 	services: "whatsapp",
+	// Mobile-app sites convert to an external destination — the
+	// app store. Treated as "external" so downstream logic doesn't
+	// expect the conversion to complete on the same domain.
+	app_conversion: "external",
 	hybrid: "checkout",
 };
 
@@ -103,6 +119,11 @@ const DEFAULT_REVENUE: Record<BusinessType, number> = {
 	// in the R$50-150k/mês band; default to the lower end so the
 	// slider doesn't anchor too high for typical solo practitioners.
 	services: 60000,
+	// Mobile-app businesses (utility / consumer / lifestyle apps) on
+	// BR market range from indie devs with R$10k-30k/mês (subscription
+	// + IAP) to mid-size with R$200k+. Anchor at the meaningful-but-
+	// modest median.
+	app_conversion: 40000,
 	hybrid: 120000,
 };
 
@@ -115,6 +136,10 @@ const DEFAULT_TICKET: Record<BusinessType, number> = {
 	// relationship — common services (dentista/contador/escritório
 	// de advocacia) sit in the R$1.5-3k median band per case/year.
 	services: 2000,
+	// Mobile-app "ticket" reads as average revenue-per-install (LTV
+	// projected onto a single install). Consumer apps with IAP/sub
+	// commonly sit in the R$5-50 band; default mid.
+	app_conversion: 25,
 	hybrid: 350,
 };
 
@@ -136,21 +161,24 @@ type ScreenId =
 	| "domain"
 	| "business_type"
 	| "service_category"
+	| "app_platform"
 	| "revenue"
 	| "concern"
 	| "current_method"
 	| "why_now"
 	| "email";
 
-// Compute the active screen list. The service_category screen is
-// included only when the visitor self-identifies as services on the
-// preceding business_type screen. Memoized in the hook below.
+// Compute the active screen list. The service_category and app_platform
+// screens are inserted between business_type and revenue, but only when
+// the visitor self-identifies as that vertical on the preceding
+// business_type screen. Memoized in the hook below.
 function computeScreens(businessModel: BusinessType): ScreenId[] {
 	const base: ScreenId[] = [
 		"domain",
 		"business_type",
 	];
 	if (businessModel === "services") base.push("service_category");
+	if (businessModel === "app_conversion") base.push("app_platform");
 	base.push("revenue", "concern", "current_method", "why_now", "email");
 	return base;
 }
@@ -163,6 +191,7 @@ function backendStepForScreen(screen: ScreenId): number {
 		// stays the same because both screens commit to the same
 		// AnonymousLead row (businessModel + serviceCategory).
 		case "service_category": return 2;
+		case "app_platform": return 2;
 		case "revenue": return 3;
 		case "concern": return 4;
 		case "current_method": return 5;
@@ -196,7 +225,7 @@ function readLocalStoragePrefill(): PrefillFromStorage {
 		const revenue = revenueRaw ? Number(revenueRaw) : undefined;
 		return {
 			domain: read("vestigio_onboard_domain"),
-			businessType: businessType && ["ecommerce", "lead_gen", "saas", "services", "hybrid"].includes(businessType) ? businessType : undefined,
+			businessType: businessType && ["ecommerce", "lead_gen", "saas", "services", "app_conversion", "hybrid"].includes(businessType) ? businessType : undefined,
 			revenue: revenue != null && Number.isFinite(revenue) && revenue > 0 ? revenue : undefined,
 			concern: read("vestigio_onboard_concern") as PrimaryConcern | undefined,
 			currentMethod: read("vestigio_onboard_current_method") as CurrentOptimizationMethod | undefined,
@@ -220,6 +249,7 @@ function writeLocalStorageHandoff(form: LeadState): void {
 		if (form.currentOptimizationMethod) write("vestigio_onboard_current_method", form.currentOptimizationMethod);
 		if (form.whyNow) write("vestigio_onboard_why_now", form.whyNow);
 		if (form.serviceCategory) write("vestigio_onboard_service_category", form.serviceCategory);
+		if (form.appPlatform) write("vestigio_onboard_app_platform", form.appPlatform);
 	} catch {
 		// best effort
 	}
@@ -272,6 +302,7 @@ export default function useLpAuditForm() {
 			whyNow: fromStorage.whyNow ?? "",
 			email: "",
 			serviceCategory: "",
+			appPlatform: "",
 		};
 	});
 
@@ -391,6 +422,9 @@ export default function useLpAuditForm() {
 			// the backend persists into AnonymousLead.serviceCategory if
 			// the schema column exists, else gracefully ignores.
 			serviceCategory: form.serviceCategory || undefined,
+			// Mobile-app vertical sub-segmentation. Same emit-when-set
+			// contract as serviceCategory.
+			appPlatform: form.appPlatform || undefined,
 		};
 
 		try {

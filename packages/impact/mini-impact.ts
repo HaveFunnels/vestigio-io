@@ -159,19 +159,23 @@ export function summarizeMiniImpact(
 
 /**
  * Format a BRL cent value as a short display string suitable for
- * findings cards ("R$ 42.000" not "R$ 42.000,00"). Rounds to nearest
+ * findings cards ("R$42.000" not "R$42.000,00"). Rounds to nearest
  * 100 when >= R$1k so the display doesn't suggest false precision on
  * an already fuzzy heuristic.
+ *
+ * No space between R$ and the number — house style (per editorial
+ * decision logged on the mini-audit page review): "R$200.000" reads
+ * as one token, "R$ 200.000" splits the eye.
  */
 export function formatBRL(cents: number): string {
 	const reais = cents / 100;
 	if (reais >= 1_000_000) {
-		return `R$ ${(reais / 1_000_000).toFixed(1)}M`;
+		return `R$${(reais / 1_000_000).toFixed(1)}M`;
 	}
 	if (reais >= 10_000) {
-		// Round to nearest 100 — "R$ 42.000" reads cleaner than "R$ 41.873"
+		// Round to nearest 100 — "R$42.000" reads cleaner than "R$41.873"
 		const rounded = Math.round(reais / 100) * 100;
-		return `R$ ${rounded.toLocaleString("pt-BR")}`;
+		return `R$${rounded.toLocaleString("pt-BR")}`;
 	}
-	return `R$ ${Math.round(reais).toLocaleString("pt-BR")}`;
+	return `R$${Math.round(reais).toLocaleString("pt-BR")}`;
 }

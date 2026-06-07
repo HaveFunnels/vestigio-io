@@ -9751,8 +9751,8 @@
 				"trust_line": "Acceso inmediato tras el pago. Cancela cuando quieras."
 			},
 			"map": {
-				"title": "Mapa de causa raíz",
-				"counts": "{nodes} nodos · {edges} conexiones",
+				"title": "Problemas en tu embudo",
+				"counts": "{nodes} etapas · {edges} fricciones",
 				"locked": "El mapa real se desbloquea en el Pulse"
 			},
 			"mcp_mockup": {
@@ -9767,7 +9767,7 @@
 				"title": "Cuatro lentes sobre el mismo análisis",
 				"subtitle": "4 workspaces",
 				"revenue": {
-					"title": "Revenue Intelligence",
+					"title": "Inteligencia de Ingresos",
 					"count": "{visible} visibles · {hidden} bloqueados"
 				},
 				"trust": {

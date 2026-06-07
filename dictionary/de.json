@@ -8226,8 +8226,8 @@
 				"trust_line": "Sofortiger Zugang nach Zahlung. Jederzeit kündbar."
 			},
 			"map": {
-				"title": "Ursache-Karte",
-				"counts": "{nodes} Knoten · {edges} Verbindungen",
+				"title": "Probleme in Ihrem Funnel",
+				"counts": "{nodes} Stufen · {edges} Reibungspunkte",
 				"locked": "Echte Karte wird im Pulse freigeschaltet"
 			},
 			"mcp_mockup": {

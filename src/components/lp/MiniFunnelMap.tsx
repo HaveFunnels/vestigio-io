@@ -182,7 +182,7 @@ export default function MiniFunnelMap({
 	for (const b of blurredFindings) {
 		const stage = CATEGORY_TO_STAGE[b.category];
 		stageData[stage].count += 1;
-		// No impact data on blurred — flag for the blurred-R$ display
+		// No impact data on blurred — flag for the blurred-R$display
 		if (stageData[stage].impactCents === 0) {
 			stageData[stage].hasLockedOnly = true;
 		}
@@ -277,7 +277,7 @@ export default function MiniFunnelMap({
 												className={`mt-1 select-none truncate font-mono text-[10px] tabular-nums blur-[3px] ${classes.stageValue} opacity-75`}
 												aria-hidden
 											>
-												R$ 2.400
+												R$2.400
 											</div>
 										)}
 									</>
@@ -384,7 +384,7 @@ export default function MiniFunnelMap({
 													className="select-none font-mono text-[13px] tabular-nums text-rose-600 blur-[3px] dark:text-rose-300"
 													aria-hidden
 												>
-													R$ 2.400
+													R$2.400
 												</div>
 											)}
 										</div>
@@ -498,7 +498,7 @@ export default function MiniFunnelMap({
 									className="shrink-0 select-none font-mono text-[10px] tabular-nums text-content-muted blur-[4px]"
 									aria-hidden
 								>
-									R$ 3.400
+									R$3.400
 								</span>
 							</button>
 						)}

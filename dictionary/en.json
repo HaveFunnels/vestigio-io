@@ -10007,7 +10007,7 @@
 				"trust_line": "Instant access after payment. Cancel anytime."
 			},
 			"map": {
-				"title": "Funnel map for {domain}",
+				"title": "Problems in your funnel",
 				"counts": "{nodes} stages · {edges} frictions",
 				"locked": "Open interactive map"
 			},

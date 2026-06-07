@@ -238,7 +238,7 @@ export default function CopilotPanel({
 										) : (
 											<>
 												{/* Intro — streamed char-by-char while typing,
-												   then re-rendered with the R$ value highlighted
+												   then re-rendered with the R$value highlighted
 												   once we hit done. */}
 												{phase === "ai_response" ? (
 													<p className="leading-relaxed">
@@ -308,11 +308,11 @@ export default function CopilotPanel({
 																</div>
 																<div className="grid grid-cols-[1fr_auto] border-b border-zinc-800/60 px-3 py-2 text-[12px]">
 																	<span className="text-zinc-200">{t("mcp_mockup.rich.row_checkout")}</span>
-																	<span className="font-mono tabular-nums text-rose-300">R$ 14.200</span>
+																	<span className="font-mono tabular-nums text-rose-300">R$14.200</span>
 																</div>
 																<div className="grid grid-cols-[1fr_auto] border-b border-zinc-800/60 px-3 py-2 text-[12px]">
 																	<span className="text-zinc-200">{t("mcp_mockup.rich.row_cart")}</span>
-																	<span className="font-mono tabular-nums text-rose-300">R$ 4.800</span>
+																	<span className="font-mono tabular-nums text-rose-300">R$4.800</span>
 																</div>
 																<button
 																	type="button"
@@ -329,7 +329,7 @@ export default function CopilotPanel({
 																		className="select-none font-mono tabular-nums text-zinc-500 blur-[4px]"
 																		aria-hidden
 																	>
-																		R$ 6.100
+																		R$6.100
 																	</span>
 																</button>
 															</div>

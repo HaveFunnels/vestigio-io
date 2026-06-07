@@ -634,27 +634,27 @@ function ResultHeader({
 const PLAN_STEP_FAKE: Array<{ title: string; hint: string }> = [
 	{
 		title: "Simplificar as 3 etapas do checkout",
-		hint: "Pode recuperar R$ 4.800 – R$ 7.200 por mês",
+		hint: "Pode recuperar R$4.800 – R$7.200 por mês",
 	},
 	{
 		title: "Reescrever o botão principal pra prometer o resultado",
-		hint: "Pode recuperar R$ 2.100 – R$ 3.400 por mês",
+		hint: "Pode recuperar R$2.100 – R$3.400 por mês",
 	},
 	{
 		title: "Adicionar 3 depoimentos reais com foto e nome",
-		hint: "Pode recuperar R$ 1.900 – R$ 2.800 por mês",
+		hint: "Pode recuperar R$1.900 – R$2.800 por mês",
 	},
 	{
 		title: "Acelerar o site no celular",
-		hint: "Pode recuperar R$ 1.400 – R$ 2.100 por mês",
+		hint: "Pode recuperar R$1.400 – R$2.100 por mês",
 	},
 	{
 		title: "Liberar a opção de comprar sem criar conta",
-		hint: "Pode recuperar R$ 3.200 – R$ 4.900 por mês",
+		hint: "Pode recuperar R$3.200 – R$4.900 por mês",
 	},
 	{
 		title: "Conectar o Meta Ads pra ver quem realmente compra",
-		hint: "Pode recuperar R$ 2.600 – R$ 3.800 por mês",
+		hint: "Pode recuperar R$2.600 – R$3.800 por mês",
 	},
 ];
 
@@ -1804,7 +1804,7 @@ function UnlockSection({
 	const summary = summarizeMiniImpact(negativeFindings.map((f) => f.impact));
 	const totalImpact = summary && summary.count > 0
 		? formatBRL(summary.max_brl_cents)
-		: "R$ 22.000";
+		: "R$22.000";
 
 	return (
 		<button
@@ -1839,24 +1839,24 @@ function UnlockSection({
 }
 
 // Synthetic blurred impact ranges for locked findings. Indexed
-// deterministically by card position so the same R$ shape stays
+// deterministically by card position so the same R$shape stays
 // stable across renders. The numbers are visually shaped — the
 // blur hides exact values but preserves the order of magnitude
-// signal ("this one's R$ thousands, not hundreds"). The card title
+// signal ("this one's R$thousands, not hundreds"). The card title
 // itself stays cleartext because blurred.teaser_title is already
 // the server's safe teaser. The IMPACT was the curiosity gap
 // missing before; now every locked card carries one.
 const LOCKED_IMPACT_FAKE = [
-	"R$ 1.800 – 3.200 / mês",
-	"R$ 4.200 – 6.900 / mês",
-	"R$ 2.100 – 3.800 / mês",
-	"R$ 6.500 – 9.400 / mês",
-	"R$ 1.200 – 2.400 / mês",
-	"R$ 3.800 – 5.700 / mês",
-	"R$ 2.700 – 4.100 / mês",
-	"R$ 5.100 – 7.200 / mês",
-	"R$ 1.500 – 2.600 / mês",
-	"R$ 4.600 – 6.800 / mês",
+	"R$1.800 – 3.200 / mês",
+	"R$4.200 – 6.900 / mês",
+	"R$2.100 – 3.800 / mês",
+	"R$6.500 – 9.400 / mês",
+	"R$1.200 – 2.400 / mês",
+	"R$3.800 – 5.700 / mês",
+	"R$2.700 – 4.100 / mês",
+	"R$5.100 – 7.200 / mês",
+	"R$1.500 – 2.600 / mês",
+	"R$4.600 – 6.800 / mês",
 ];
 
 function LockedFindingCard({

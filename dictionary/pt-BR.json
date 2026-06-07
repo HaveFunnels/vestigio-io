@@ -242,7 +242,7 @@
 					},
 					{
 						"label": "Impacto Mensal Est.",
-						"value": "−R$ 336k",
+						"value": "−R$336k",
 						"sub": "Baseado em integrações"
 					},
 					{
@@ -433,7 +433,7 @@
 						"name": "Integridade de Faturamento",
 						"urgency": "FIX",
 						"tone": "orange",
-						"desc": "Vazamentos ativos em checkout, preços e onboarding. −R$ 270k/mês em risco."
+						"desc": "Vazamentos ativos em checkout, preços e onboarding. −R$270k/mês em risco."
 					},
 					{
 						"name": "Resiliência a Chargebacks",
@@ -464,7 +464,7 @@
 					},
 					{
 						"from": "ai",
-						"text": "Seu maior vazamento é no checkout — ele demora 2,4s a mais do que deveria e isso está custando **−R$ 91k a 210k por mês** em vendas perdidas. Criei uma ação P1 pra corrigir isso.",
+						"text": "Seu maior vazamento é no checkout — ele demora 2,4s a mais do que deveria e isso está custando **−R$91k a 210k por mês** em vendas perdidas. Criei uma ação P1 pra corrigir isso.",
 						"chips": [
 							"Usou 3 descobertas",
 							"Criou ação P1"
@@ -565,7 +565,7 @@
 			},
 			"overlay_recovery": {
 				"eyebrow": "Recuperável",
-				"value": "+R$ 112k",
+				"value": "+R$112k",
 				"unit": "/mês",
 				"sub": "em 9 ações priorizadas"
 			},
@@ -804,19 +804,19 @@
 				"rows": [
 					{
 						"title": "Investimento vazando na landing",
-						"impact": "−R$ 42.100"
+						"impact": "−R$42.100"
 					},
 					{
 						"title": "Quebra de confiança no formulário",
-						"impact": "−R$ 15.750"
+						"impact": "−R$15.750"
 					},
 					{
 						"title": "Confusão na página de preços",
-						"impact": "−R$ 9.600"
+						"impact": "−R$9.600"
 					},
 					{
 						"title": "Queda no onboarding",
-						"impact": "−R$ 5.700"
+						"impact": "−R$5.700"
 					}
 				]
 			},
@@ -829,17 +829,17 @@
 				"rows": [
 					{
 						"surface": "Funil de checkout",
-						"loss": "−R$ 38.400",
+						"loss": "−R$38.400",
 						"confidence": "94%"
 					},
 					{
 						"surface": "Copy da landing page",
-						"loss": "−R$ 14.200",
+						"loss": "−R$14.200",
 						"confidence": "88%"
 					},
 					{
 						"surface": "Fluxo de onboarding",
-						"loss": "−R$ 8.800",
+						"loss": "−R$8.800",
 						"confidence": "91%"
 					}
 				]
@@ -7857,11 +7857,11 @@
 				"you_told_us": "Você nos disse que",
 				"generic_close": "Há {count, plural, one {# vazamento crítico} other {# vazamentos críticos}} esperando a primeira ação.",
 				"concern_closes": {
-					"traffic_no_sales": "Em {org}, tráfego entra e venda não. Encontramos onde a fuga concentra.",
-					"low_conversion": "Em {org}, conversão tá abaixo do que poderia. Localizamos os 3 pontos de fricção principais.",
-					"unknown_leak": "Em {org}, o vazamento não tá onde você imagina. Vimos onde ele tá de fato.",
-					"scale_efficiency": "Em {org}, escalar agora vai amplificar o que tá perdendo. Vimos o que arrumar antes.",
-					"prioritization": "Em {org}, vimos quais 3 movimentos movem o ponteiro mais agora — não os 20 que parecem mover."
+					"traffic_no_sales": "Na {org}, tráfego entra e venda não. Encontramos onde a fuga concentra.",
+					"low_conversion": "Na {org}, conversão tá abaixo do que poderia. Localizamos os 3 pontos de fricção principais.",
+					"unknown_leak": "Na {org}, o vazamento não tá onde você imagina. Vimos onde ele tá de fato.",
+					"scale_efficiency": "Na {org}, escalar agora vai amplificar o que tá perdendo. Vimos o que arrumar antes.",
+					"prioritization": "Na {org}, vimos quais 3 movimentos movem o ponteiro mais agora — não os 20 que parecem mover."
 				},
 				"why_now_clauses": {
 					"scaling_paid_traffic": "vão aumentar investimento em mídia",
@@ -7888,7 +7888,7 @@
 				"trust_line": "Acesso imediato após o pagamento. Cancele quando quiser."
 			},
 			"map": {
-				"title": "Mapa do funil de {domain}",
+				"title": "Problemas no seu funil",
 				"counts": "{nodes} estágios · {edges} fricções",
 				"locked": "Abrir mapa interativo"
 			},
@@ -7917,11 +7917,11 @@
 				"subtitle": "Pergunta livre sobre seus dados",
 				"header": "conectada às fontes de {domain}",
 				"question": "Quanto perdi com checkout esse mês?",
-				"response_cut": "Olhando seus últimos 30 dias, você perdeu R$ ░░░░ em 3 fricções no checkout. A maior: a tela de pagamento carrega ░░░░ ms ░░░░",
+				"response_cut": "Olhando seus últimos 30 dias, você perdeu R$░░░░ em 3 fricções no checkout. A maior: a tela de pagamento carrega ░░░░ ms ░░░░",
 				"cta": "Ver a resposta completa",
 				"rich": {
 					"intro_prefix": "Olhando seus últimos 30 dias, você perdeu",
-					"intro_amount": "R$ 14.200",
+					"intro_amount": "R$14.200",
 					"intro_suffix": "com fricções no checkout.",
 					"causes_label": "Causa principal:",
 					"cause_1_main": "Tela de pagamento carrega em",
@@ -7941,7 +7941,7 @@
 				"title": "Quatro lentes sobre a mesma Análise",
 				"subtitle": "4 workspaces",
 				"revenue": {
-					"title": "Revenue Intelligence",
+					"title": "Inteligência de Receita",
 					"count": "{visible} visíveis · {hidden} bloqueados"
 				},
 				"trust": {
@@ -7981,7 +7981,7 @@
 					"low_conversion": "{org} está em um momento de aperto na conversão. A análise rápida já encontrou onde a fricção concentra.",
 					"unknown_leak": "{org} tem vazamento — mas não onde você espera. A análise localizou pontos específicos antes do checkout.",
 					"scale_efficiency": "Antes de escalar mídia em {org}, é melhor saber onde tá saindo. Encontramos pontos pra arrumar antes.",
-					"prioritization": "Em {org}, todo time tem 20 ideias do que melhorar. Encontramos quais 3 movem o ponteiro mais agora."
+					"prioritization": "Na {org}, todo time tem 20 ideias do que melhorar. Encontramos quais 3 movem o ponteiro mais agora."
 				},
 				"next_steps_label": "Próximos passos priorizados ({count})",
 				"next_step_1": "Tampar o vazamento que mais sangra primeiro",

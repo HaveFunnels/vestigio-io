@@ -440,6 +440,7 @@ export default function MiniAuditResultPage() {
 						negativeFindings={negativeFindings}
 						blurredCount={blurredFindings.length}
 						revealed={revealed}
+						onCheckout={openCheckout}
 					/>
 
 					{/* Funnel map — the same horizontal widget used in the
@@ -877,10 +878,12 @@ function WorkspacesAccordion({
 	negativeFindings,
 	blurredCount,
 	revealed,
+	onCheckout,
 }: {
 	negativeFindings: MiniFinding[];
 	blurredCount: number;
 	revealed: boolean;
+	onCheckout: () => void;
 }) {
 	const t = useTranslations("lp.audit_result");
 	const [openKey, setOpenKey] = useState<string | null>("revenue");
@@ -940,7 +943,7 @@ function WorkspacesAccordion({
 							<WorkspaceFindingRow key={f.id} title={f.title} severity={f.severity} />
 						))}
 						{Array.from({ length: Math.max(0, revenueBlurred) }).map((_, i) => (
-							<WorkspaceShimmerRow key={`r-shim-${i}`} index={i} />
+							<WorkspaceShimmerRow key={`r-shim-${i}`} index={i} onClick={onCheckout} />
 						))}
 					</ul>
 				</WorkspaceCard>
@@ -966,7 +969,7 @@ function WorkspacesAccordion({
 							<WorkspaceFindingRow key={f.id} title={f.title} severity={f.severity} />
 						))}
 						{Array.from({ length: Math.max(0, trustBlurred) }).map((_, i) => (
-							<WorkspaceShimmerRow key={`t-shim-${i}`} index={i + 3} />
+							<WorkspaceShimmerRow key={`t-shim-${i}`} index={i + 3} onClick={onCheckout} />
 						))}
 					</ul>
 				</WorkspaceCard>
@@ -1170,9 +1173,20 @@ const WORKSPACE_ROW_FAKE = [
 	"Cadastro pede telefone obrigatoriamente",
 ];
 
-function WorkspaceShimmerRow({ index = 0 }: { index?: number }) {
-	return (
-		<li className="flex items-center gap-3">
+function WorkspaceShimmerRow({
+	index = 0,
+	onClick,
+}: {
+	index?: number;
+	onClick?: () => void;
+}) {
+	// Whole row is a button when onClick is provided so tapping any
+	// blurred workspace finding lands on /auth/signup. Visually the
+	// row still looks identical — buyers reading the blur know it's
+	// locked content and pressing it should unlock, just like the
+	// LockedFindingCard in the unified leaks list.
+	const RowContent = (
+		<>
 			<span className="h-1.5 w-1.5 shrink-0 rounded-full bg-content-faint" />
 			<span
 				className="flex-1 select-none truncate text-[13px] leading-snug text-content-secondary blur-[5px]"
@@ -1183,8 +1197,22 @@ function WorkspaceShimmerRow({ index = 0 }: { index?: number }) {
 			<svg className="h-3 w-3 shrink-0 text-content-faint" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor">
 				<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
 			</svg>
-		</li>
+		</>
 	);
+	if (onClick) {
+		return (
+			<li>
+				<button
+					type="button"
+					onClick={onClick}
+					className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-3 rounded-lg px-2 py-1 text-left transition-colors hover:bg-amber-50/40 dark:hover:bg-amber-500/[0.05]"
+				>
+					{RowContent}
+				</button>
+			</li>
+		);
+	}
+	return <li className="flex items-center gap-3">{RowContent}</li>;
 }
 
 // ── MapPreviewSection (Wave-22.6 spec block #4) ──

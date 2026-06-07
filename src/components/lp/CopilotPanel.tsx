@@ -314,7 +314,11 @@ export default function CopilotPanel({
 																	<span className="text-zinc-200">{t("mcp_mockup.rich.row_cart")}</span>
 																	<span className="font-mono tabular-nums text-rose-300">R$ 4.800</span>
 																</div>
-																<div className="grid grid-cols-[1fr_auto] px-3 py-2 text-[12px]">
+																<button
+																	type="button"
+																	onClick={onCheckout}
+																	className="grid w-full grid-cols-[1fr_auto] gap-3 px-3 py-2 text-left text-[12px] transition-colors hover:bg-zinc-900/40"
+																>
 																	<span
 																		className="select-none truncate text-zinc-400 blur-[5px]"
 																		aria-hidden
@@ -327,7 +331,7 @@ export default function CopilotPanel({
 																	>
 																		R$ 6.100
 																	</span>
-																</div>
+																</button>
 															</div>
 														</motion.div>
 

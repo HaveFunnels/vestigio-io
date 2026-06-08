@@ -4625,6 +4625,8 @@
 			"last_audit_tooltip": "Última auditoria concluída em {time}"
 		},
 		"navigation": {
+			"plan": "Plano",
+			"more": "Mais",
 			"pulse": "Pulse",
 			"onboard": "Configuração inicial",
 			"actions": "Ações",

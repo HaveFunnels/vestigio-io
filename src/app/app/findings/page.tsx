@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { formatDate } from "@/lib/format-date";
@@ -812,12 +813,66 @@ export default function FindingsPage() {
 		},
 	];
 
+	// Phase 1 UX overhaul — two header banners:
+	//
+	// 1. ?from=plan breadcrumb. When the visitor came from a Plan
+	//    Next-Step drill-down, anchor them with a "← Plano" link so
+	//    they don't feel lost in the (still dense) findings table.
+	//
+	// 2. Cold-landing CTA. When no view / filter / search is active,
+	//    nudge the visitor toward the top 3 by impact — the default
+	//    sort already puts them at the top, so this educates rather
+	//    than forces a URL change. Solves the literal tester feedback
+	//    "muita informação, não sei por onde começar".
+	const fromParam = searchParams.get("from");
+	const monthParam = searchParams.get("month");
+	const isFromPlan = fromParam === "plan";
+	const planHref = monthParam
+		? `/app/library/strategy/${monthParam}`
+		: "/app/library";
+	const hasNoFilters =
+		!activeViewId
+		&& !isFromPlan
+		&& !searchParams.get("finding")
+		&& searchQuery === ""
+		&& surfaceFilter === "all";
+
 	return (
 		<div className="p-4 sm:p-6">
 			<PageHeader
 				title={tv("page_title") || t("title")}
 				tooltip={tc("page_tooltips.analysis")}
 			/>
+
+			{isFromPlan && (
+				<div className="mb-4 flex items-center gap-2 text-[12px] text-content-muted">
+					<Link
+						href={planHref}
+						className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-surface-card px-2.5 py-1 transition-colors hover:bg-surface-card-hover hover:text-content"
+					>
+						<svg className="h-3 w-3" viewBox="0 0 12 12" fill="none">
+							<path d="M7.5 2.5L4 6l3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+						</svg>
+						Voltar ao Plano
+					</Link>
+					<span className="text-content-faint">·</span>
+					<span>Findings ranqueados por impacto</span>
+				</div>
+			)}
+
+			{hasNoFilters && hasData && (
+				<div className="mb-5 rounded-2xl border border-edge bg-surface-card p-5">
+					<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+						Sugestão
+					</div>
+					<h3 className="mt-1 font-serif text-[20px] font-medium leading-tight text-content">
+						Comece pelos 3 maiores vazamentos
+					</h3>
+					<p className="mt-1.5 text-[13px] leading-relaxed text-content-muted">
+						Os findings estão ranqueados por impacto financeiro — os mais caros estão no topo. Clique em um para ver causa, remediação e R$ exposto.
+					</p>
+				</div>
+			)}
 
 			{/* Wave-22.6 review fix P1.3 — free-text search. Matches
 			    title, surface, root_cause, inference_key, pack. Pre-fix

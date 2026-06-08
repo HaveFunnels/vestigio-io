@@ -3093,6 +3093,8 @@
 			}
 		},
 		"navigation": {
+			"plan": "Plan",
+			"more": "Mehr",
 			"pulse": "Pulse",
 			"onboard": "Ersteinrichtung",
 			"actions": "Aktionen",

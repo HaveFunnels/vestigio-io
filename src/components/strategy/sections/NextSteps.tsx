@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import type {
@@ -355,6 +356,21 @@ function StepCard({
 						>
 							Ver actions linkadas ({step.linkedActionRefs.length}) →
 						</button>
+						{/* Phase 1 UX overhaul — drill-down from Plano into
+						    Findings. Testers wanted "vê o que tá por trás
+						    desse passo" without context-switching to a
+						    table. We route to /app/findings sorted by
+						    impact desc with ?from=plan so the destination
+						    can show a breadcrumb back. Future iteration
+						    will tie this to the specific finding IDs the
+						    step references; Phase 1 just establishes the
+						    journey. */}
+						<Link
+							href={`/app/findings?sort=impact_desc&from=plan&month=${month}`}
+							className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
+						>
+							Ver findings ranqueados →
+						</Link>
 					</div>
 				</div>
 

@@ -4197,6 +4197,8 @@
 			}
 		},
 		"navigation": {
+			"plan": "Plan",
+			"more": "Más",
 			"pulse": "Pulse",
 			"onboard": "Configuración inicial",
 			"actions": "Acciones",

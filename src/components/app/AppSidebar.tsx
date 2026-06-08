@@ -42,6 +42,38 @@ export default function AppSidebar({
 	const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const { pinnedViews } = usePinnedViews();
 
+	// Phase 1 UX overhaul — the "Plano" nav item links to the
+	// current month's strategy plan. productNav carries a "/current"
+	// sentinel so the data file stays declarative; we rewrite it at
+	// render time to the actual YYYY-MM. Recomputed on every render
+	// (cheap; new Date() + format), so month rollovers reflect
+	// without a hard refresh.
+	const currentPlanMonth = (() => {
+		const now = new Date();
+		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+	})();
+	const resolveItemHref = (href: string | undefined): string | undefined => {
+		if (!href) return href;
+		if (href === "/app/library/strategy/current") {
+			return `/app/library/strategy/${currentPlanMonth}`;
+		}
+		return href;
+	};
+
+	// "Mais" overflow group state — collapsed by default per the Phase 1
+	// IA decision (testers said "too complicated", we don't want the
+	// dense surfaces visible at first glance). Auto-opens when the
+	// current pathname lives inside one of the secondary surfaces so
+	// the active item stays discoverable.
+	const secondaryRoutes = ["/app/pulse", "/app/workspaces", "/app/library", "/app/inventory"];
+	const onSecondaryRoute = secondaryRoutes.some(
+		(r) => pathname === r || pathname.startsWith(r + "/"),
+	);
+	const [overflowOpen, setOverflowOpen] = useState(onSecondaryRoute);
+	useEffect(() => {
+		if (onSecondaryRoute) setOverflowOpen(true);
+	}, [onSecondaryRoute]);
+
 	// Expandable submenus — auto-open groups containing the active route
 	const [expandedMenus, setExpandedMenus] = useState<Set<string>>(() => {
 		const initial = new Set<string>();
@@ -115,6 +147,12 @@ export default function AppSidebar({
 	};
 
 	const isItemActive = (item: NavItem): boolean => {
+		// Plan item special case — sentinel href doesn't match any real
+		// pathname; treat any /app/library/strategy/<month> path as the
+		// Plano tab being active so the highlight follows the user.
+		if (item.id === "plan") {
+			return pathname.startsWith("/app/library/strategy/");
+		}
 		if (item.href) {
 			return pathname === item.href || pathname.startsWith(item.href + "/");
 		}
@@ -241,7 +279,7 @@ export default function AppSidebar({
 
 		// Leaf item
 		return (
-			<Link key={item.id} href={item.href!} className={itemClasses}>
+			<Link key={item.id} href={resolveItemHref(item.href)!} className={itemClasses}>
 				<svg
 					className='h-[18px] w-[18px] shrink-0'
 					fill='none'
@@ -299,48 +337,117 @@ export default function AppSidebar({
 	};
 
 	// ── Render a section (items only — no visible title when collapsed) ──
+	//
+	// Phase 1 — primary items render at full strength; items flagged
+	// secondary live behind a collapsible "Mais" toggle so the first
+	// glance shows only Plano · Findings · Actions. Admin nav opts out
+	// of the split (everything stays visible).
 
-	const renderSection = (title: string, items: NavItem[]) => (
-		<div className='mb-1'>
-			<div
-				className={cn(
-					"overflow-hidden transition-all duration-300",
-					isExpanded ? "mb-1 h-5 px-3 pt-3 opacity-60" : "mb-0 h-0 opacity-0"
-				)}
-			>
-				<span className='text-[10px] font-semibold uppercase tracking-widest text-content-faint'>
-					{title}
-				</span>
-			</div>
-			<div className='flex flex-col gap-0.5'>
-				{items.flatMap((item) => {
-					const node = renderNavItem(item);
-					const nodes = [node];
+	const renderItemWithExtras = (item: NavItem) => {
+		const nodes: React.ReactNode[] = [renderNavItem(item)];
+		if (item.id === "findings" && pinnedViews.length > 0) {
+			nodes.push(
+				<div key="pinned-views-section" className="flex flex-col gap-0.5">
+					{renderPinnedViews()}
+				</div>,
+			);
+		}
+		if (item.dividerAfter) {
+			nodes.push(
+				<div
+					key={`${item.id}-divider`}
+					role='separator'
+					aria-hidden='true'
+					className='mx-2 my-2 h-px bg-edge/40'
+				/>,
+			);
+		}
+		return nodes;
+	};
 
-					// Inject pinned views after Findings
-					if (item.id === "findings" && pinnedViews.length > 0) {
-						nodes.push(
-							<div key="pinned-views-section" className="flex flex-col gap-0.5">
-								{renderPinnedViews()}
+	const renderSection = (title: string, items: NavItem[]) => {
+		const hasSecondaryFlag = items.some((it) => it.secondary === true);
+		const primary = hasSecondaryFlag ? items.filter((it) => !it.secondary) : items;
+		const secondary = hasSecondaryFlag ? items.filter((it) => it.secondary) : [];
+		return (
+			<div className='mb-1'>
+				<div
+					className={cn(
+						"overflow-hidden transition-all duration-300",
+						isExpanded ? "mb-1 h-5 px-3 pt-3 opacity-60" : "mb-0 h-0 opacity-0"
+					)}
+				>
+					<span className='text-[10px] font-semibold uppercase tracking-widest text-content-faint'>
+						{title}
+					</span>
+				</div>
+				<div className='flex flex-col gap-0.5'>
+					{primary.flatMap(renderItemWithExtras)}
+				</div>
+
+				{secondary.length > 0 && (
+					<div className='mt-1'>
+						<button
+							type='button'
+							onClick={() => {
+								if (!isExpanded) setHovered(true);
+								setOverflowOpen((v) => !v);
+							}}
+							className={cn(
+								"flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium text-content-muted transition-all duration-200 hover:bg-surface-card-hover hover:text-content-secondary",
+							)}
+							aria-expanded={overflowOpen}
+						>
+							{/* Three-dot "more" glyph matches the pictographic
+							    weight of the leaf icons above so the row sits
+							    in the same visual rhythm. */}
+							<svg
+								className='h-[18px] w-[18px] shrink-0'
+								fill='none'
+								viewBox='0 0 24 24'
+								stroke='currentColor'
+								strokeWidth={1.5}
+							>
+								<path strokeLinecap='round' strokeLinejoin='round' d='M5 12h.01M12 12h.01M19 12h.01' />
+							</svg>
+							<span
+								className={cn(
+									"flex-1 whitespace-nowrap text-left transition-all duration-300",
+									isExpanded ? "w-auto opacity-100" : "w-0 opacity-0"
+								)}
+							>
+								{t("more")}
+							</span>
+							{isExpanded && (
+								<svg
+									className={cn(
+										"h-3.5 w-3.5 shrink-0 transition-transform duration-200",
+										overflowOpen && "rotate-90"
+									)}
+									fill='none'
+									viewBox='0 0 24 24'
+									stroke='currentColor'
+									strokeWidth={2}
+								>
+									<path strokeLinecap='round' strokeLinejoin='round' d='M8.25 4.5l7.5 7.5-7.5 7.5' />
+								</svg>
+							)}
+						</button>
+						<div
+							className={cn(
+								"grid transition-[grid-template-rows] duration-300 ease-out",
+								overflowOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+							)}
+						>
+							<div className='flex flex-col gap-0.5 overflow-hidden'>
+								{secondary.flatMap(renderItemWithExtras)}
 							</div>
-						);
-					}
-
-					if (item.dividerAfter) {
-						nodes.push(
-							<div
-								key={`${item.id}-divider`}
-								role='separator'
-								aria-hidden='true'
-								className='mx-2 my-2 h-px bg-edge/40'
-							/>,
-						);
-					}
-					return nodes;
-				})}
+						</div>
+					</div>
+				)}
 			</div>
-		</div>
-	);
+		);
+	};
 
 	// ── Sidebar content ──
 
@@ -523,11 +630,9 @@ export default function AppSidebar({
 							);
 
 							const renderTile = (item: NavItem) => {
-								const active = item.href
-									? pathname === item.href || pathname.startsWith(item.href + "/")
-									: false;
+								const active = isItemActive(item);
 								return (
-									<Link key={item.id} href={item.href!} onClick={() => setMobileOpen(false)} className={tileClass(active)}>
+									<Link key={item.id} href={resolveItemHref(item.href)!} onClick={() => setMobileOpen(false)} className={tileClass(active)}>
 										<div className={iconPillClass(active)}>
 											<svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
 												<path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
@@ -538,10 +643,18 @@ export default function AppSidebar({
 								);
 							};
 
+							// Phase 1 — same primary/secondary split as the
+							// desktop sidebar so the IA stays consistent
+							// across viewports. Admin nav (no secondary
+							// flag) renders the original flat grid.
+							const hasSecondary = gridItems.some((it) => it.secondary === true);
+							const primaryItems = hasSecondary ? gridItems.filter((it) => !it.secondary) : gridItems;
+							const secondaryItems = hasSecondary ? gridItems.filter((it) => it.secondary) : [];
+
 							return (
 								<>
 									<div className="grid grid-cols-3 gap-1">
-										{gridItems.flatMap((item) => {
+										{primaryItems.flatMap((item) => {
 											if (item.children) {
 												return item.children.map((child) => {
 													const childActive = child.href
@@ -562,6 +675,43 @@ export default function AppSidebar({
 											return [renderTile(item)];
 										})}
 									</div>
+
+									{secondaryItems.length > 0 && (
+										<div className="mt-4">
+											<button
+												type="button"
+												onClick={() => setOverflowOpen((v) => !v)}
+												className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content-secondary"
+												aria-expanded={overflowOpen}
+											>
+												<span>{t("more")}</span>
+												<svg
+													className={cn(
+														"h-3.5 w-3.5 transition-transform duration-200",
+														overflowOpen && "rotate-180"
+													)}
+													fill="none"
+													viewBox="0 0 24 24"
+													stroke="currentColor"
+													strokeWidth={2}
+												>
+													<path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+												</svg>
+											</button>
+											<div
+												className={cn(
+													"grid transition-[grid-template-rows] duration-300 ease-out",
+													overflowOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+												)}
+											>
+												<div className="overflow-hidden">
+													<div className="mt-2 grid grid-cols-3 gap-1">
+														{secondaryItems.map((item) => renderTile(item))}
+													</div>
+												</div>
+											</div>
+										</div>
+									)}
 
 									{/* Vestigio AI — ShinyButton-style outline */}
 									{chatItem && (

@@ -22,14 +22,19 @@ interface RouteParams {
 
 export async function GET(request: Request, { params }: RouteParams) {
 	const { month } = await params;
+	// Per-request diagnostic id so client failures can be correlated
+	// to the server log line via the `requestId` field that's echoed
+	// in every error response from this handler.
+	const requestId = Math.random().toString(36).slice(2, 10);
+	const tStart = Date.now();
 	if (!/^\d{4}-\d{2}$/.test(month)) {
-		return NextResponse.json({ message: "month must be YYYY-MM" }, { status: 400 });
+		return NextResponse.json({ message: "month must be YYYY-MM", requestId }, { status: 400 });
 	}
 
 	const url = new URL(request.url);
 	const envId = url.searchParams.get("envId");
 	if (!envId) {
-		return NextResponse.json({ message: "envId is required" }, { status: 400 });
+		return NextResponse.json({ message: "envId is required", requestId }, { status: 400 });
 	}
 
 	// Wave 22.6 Step 10 — accept an HMAC export token as alternative
@@ -45,17 +50,30 @@ export async function GET(request: Request, { params }: RouteParams) {
 	if (exportToken) {
 		const { isExportTokenWellFormed } = await import("@/libs/strategy-export-token");
 		if (!isExportTokenWellFormed(exportToken)) {
-			return NextResponse.json({ message: "Invalid export token" }, { status: 401 });
+			return NextResponse.json({ message: "Invalid export token", requestId }, { status: 401 });
 		}
 	}
 
 	let user: { id: string; role?: string } | null = null;
 	if (!exportToken) {
+		const tAuthStart = Date.now();
 		const authed = await isAuthorized();
-		if (!authed) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+		const authMs = Date.now() - tAuthStart;
+		if (!authed) {
+			// Diagnostic: capture whether the session was missing entirely vs
+			// returned a user without an id, plus how long isAuthorized took
+			// (so we can see if next-auth/JWT was warm or cold).
+			console.warn(
+				`[strategy-deny] ${requestId} reason=unauthorized envId=${envId} month=${month} authedShape=${
+					authed === null ? "null" : authed === undefined ? "undefined" : typeof authed
+				} authMs=${authMs}`,
+			);
+			return NextResponse.json({ message: "Unauthorized", requestId }, { status: 401 });
+		}
 		user = authed as any;
 	}
 
+	const tEnvStart = Date.now();
 	const env = await prisma.environment.findUnique({
 		where: { id: envId },
 		select: {
@@ -69,7 +87,13 @@ export async function GET(request: Request, { params }: RouteParams) {
 			},
 		},
 	});
-	if (!env) return NextResponse.json({ message: "Environment not found" }, { status: 404 });
+	const envMs = Date.now() - tEnvStart;
+	if (!env) {
+		console.warn(
+			`[strategy-deny] ${requestId} reason=env-not-found envId=${envId} month=${month} userId=${user?.id ?? "n/a"} envMs=${envMs}`,
+		);
+		return NextResponse.json({ message: "Environment not found", requestId }, { status: 404 });
+	}
 
 	let isOwner = false;
 	let myMembership: { userId: string; role: string } | undefined;
@@ -80,7 +104,17 @@ export async function GET(request: Request, { params }: RouteParams) {
 		myMembership = env.organization?.memberships?.find((m) => m.userId === user!.id);
 		const isMember = !!myMembership;
 		if (!isOwner && !isMember) {
-			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+			// Full membership-decision dump. Lets us tell apart the three
+			// realistic causes of an intermittent 403:
+			//   (a) wrong envId — userId is sent but no membership in this
+			//       env's org (cookie/URL race producing a foreign env).
+			//   (b) stale session — user.id resolves to a value that doesn't
+			//       match ownerId nor any membership (NextAuth JWT race).
+			//   (c) orphan env — env.organization is null (DB inconsistency).
+			console.warn(
+				`[strategy-deny] ${requestId} reason=membership-failed envId=${envId} envDomain=${env.domain} month=${month} userId=${user.id} ownerId=${env.organization?.ownerId ?? "null"} hasOrg=${!!env.organization} memberCount=${env.organization?.memberships?.length ?? 0} memberIds=${JSON.stringify(env.organization?.memberships?.map((m) => m.userId) ?? [])} envMs=${envMs} totalMs=${Date.now() - tStart}`,
+			);
+			return NextResponse.json({ message: "Forbidden", requestId }, { status: 403 });
 		}
 		isOrgAdmin =
 			isOwner || myMembership?.role === "admin" || myMembership?.role === "owner";

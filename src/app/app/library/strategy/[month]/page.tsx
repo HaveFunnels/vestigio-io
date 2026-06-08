@@ -66,15 +66,7 @@ export default function StrategyPlanPage() {
 		let cancelled = false;
 		let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
-		// Phase 1 polish — Havefunnels reported a transient 403 on the
-		// first call that resolves on its own ~1s later. Middleware
-		// doesn't touch /api/*, so the 403 is from the API route's
-		// owner/membership check. Most likely a cold-start race
-		// (Prisma pool warmup, session JWT refresh, or active_env
-		// cookie sync). Rather than instrument the server, we absorb
-		// the symptom client-side: ONE retry on 401/403 after 800ms.
-		// If the second call also fails we report it normally.
-		const load = async (attempt = 0): Promise<void> => {
+		const load = async () => {
 			try {
 				// Wave 22.6 Step 10 — when the page is fetched by the
 				// PDF exporter, ?export_token=X is forwarded so the
@@ -88,15 +80,10 @@ export default function StrategyPlanPage() {
 				);
 				if (cancelled) return;
 
-				if ((res.status === 401 || res.status === 403) && attempt === 0) {
-					// Transient auth race — wait, then retry once.
-					pollTimer = setTimeout(() => void load(1), 800);
-					return;
-				}
 				if (res.status === 423) {
 					setState({ status: "generating" });
 					// Poll every 5s while generating.
-					pollTimer = setTimeout(() => void load(0), 5000);
+					pollTimer = setTimeout(load, 5000);
 					return;
 				}
 				if (res.status === 404) {

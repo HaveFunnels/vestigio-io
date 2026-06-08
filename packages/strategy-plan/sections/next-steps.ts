@@ -57,9 +57,21 @@ function ownerFromCategory(category: string): string {
 }
 
 function titleFromAction(action: ActionRow): string {
-	// Until ActionProjection.title is migrated to the relational table,
-	// derive a readable label from inference + surface.
-	const ref = action.inferenceKeys[0] ?? action.decisionKey;
+	// Compound chains often share the FIRST triggering inference (e.g.
+	// both `compound_copy_pricing_confusion__` and
+	// `compound_copy_conversion_paralysis__` begin with
+	// `cta_clarity_weak_on_commercial`) yet are semantically distinct
+	// chains. Using inferenceKeys[0] as the title source collapsed two
+	// different chains into the same human label in the plan UI
+	// (havefunnels: order 1 and 2 both rendered as "Cta Clarity Weak
+	// On Commercial em /"). For compound decisionKeys, use the chain
+	// identifier itself — it's distinct by design and reads better
+	// than picking some inference inside the chain. For non-compound
+	// keys, inferenceKeys[0] still reads as the most specific cause.
+	const isCompound = action.decisionKey.startsWith("compound_");
+	const ref = isCompound
+		? action.decisionKey.replace(/^compound_/, "").replace(/_+$/, "")
+		: (action.inferenceKeys[0] ?? action.decisionKey);
 	const friendly = ref.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 	if (action.surface) return `${friendly} em ${action.surface}`;
 	return friendly;

@@ -69,14 +69,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN curl -fsSL -o /tmp/nuclei.zip \
     "https://github.com/projectdiscovery/nuclei/releases/download/v${NUCLEI_VERSION}/nuclei_${NUCLEI_VERSION}_linux_amd64.zip" \
-    && unzip /tmp/nuclei.zip -d /usr/local/bin/ \
+    && unzip -j -o /tmp/nuclei.zip nuclei -d /usr/local/bin/ \
     && rm /tmp/nuclei.zip \
     && chmod +x /usr/local/bin/nuclei \
     && /usr/local/bin/nuclei -version
 
+# `unzip -j -o ... <name>` extracts ONLY the named binary, junking
+# any internal paths and overwriting silently. Without -o, the LICENSE.md
+# shipped inside the katana zip collides with the one nuclei already
+# landed in /usr/local/bin/ — and in a non-TTY build context the
+# interactive overwrite prompt receives EOF and the layer fails. Pulling
+# just the binary is also cleaner: no stray LICENSE/README in PATH.
 RUN curl -fsSL -o /tmp/katana.zip \
     "https://github.com/projectdiscovery/katana/releases/download/v${KATANA_VERSION}/katana_${KATANA_VERSION}_linux_amd64.zip" \
-    && unzip /tmp/katana.zip -d /usr/local/bin/ \
+    && unzip -j -o /tmp/katana.zip katana -d /usr/local/bin/ \
     && rm /tmp/katana.zip \
     && chmod +x /usr/local/bin/katana \
     && /usr/local/bin/katana -version

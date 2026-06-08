@@ -27,6 +27,7 @@ import ColumnSelector, {
 import FindingDetailPanel from "@/components/console/FindingDetailPanel";
 import DiscutirPopover from "@/components/console/findings/DiscutirPopover";
 import FindingCard from "@/components/findings/FindingCard";
+import { LENS_LABEL, LENS_ORDER, isLensId, lensMatches, type LensId } from "@/lib/findings-lens";
 import { loadFindings, loadChangeReport } from "@/lib/console-data";
 import ChangeSummaryBanner from "@/components/console/ChangeSummaryBanner";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -140,6 +141,29 @@ export default function FindingsPage() {
 		setViewMode(next);
 		try { window.localStorage.setItem("vestigio.findings.view", next); } catch { /* ignore */ }
 	}, []);
+
+	// Phase 3.2 — lens filter. URL ?lens=<id> hydrates the initial
+	// value (so /app/workspaces redirects deep-link cleanly into the
+	// right lens) and changing the dropdown rewrites the URL so
+	// refresh / back-button hold the selection.
+	const lensFromUrl = searchParams.get("lens");
+	const initialLens: LensId = isLensId(lensFromUrl) ? lensFromUrl : "all";
+	const [lens, setLens] = useState<LensId>(initialLens);
+	useEffect(() => {
+		if (isLensId(lensFromUrl) && lensFromUrl !== lens) {
+			setLens(lensFromUrl);
+		}
+		// Intentionally only react to URL changes — local changes to `lens`
+		// are emitted to the URL inside updateLens.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [lensFromUrl]);
+	const updateLens = useCallback((next: LensId) => {
+		setLens(next);
+		const url = new URL(window.location.href);
+		if (next === "all") url.searchParams.delete("lens");
+		else url.searchParams.set("lens", next);
+		router.replace(`${url.pathname}${url.search ? "?" + url.searchParams.toString() : ""}`, { scroll: false });
+	}, [router]);
 
 	// "Criar ação" is per-row async; track which row is mid-flight so the
 	// popover can show "Criando…" instead of letting the user spam clicks.
@@ -403,10 +427,21 @@ export default function FindingsPage() {
 		});
 	}, [findings, activeView, surfaceFilter, debouncedQuery]);
 
+	// ── Lens filter (Phase 3.2) ──
+	// Applied between `filtered` (saved view + search + surface) and
+	// `sorted`. lens === "all" is a no-op pass-through. Findings with
+	// a pack outside the lens definition are excluded; findings with
+	// no pack pass through (defensive — engine bug shouldn't blank the
+	// list).
+	const lensFiltered = useMemo(() => {
+		if (lens === "all") return filtered;
+		return filtered.filter((f) => lensMatches(lens, f.pack));
+	}, [filtered, lens]);
+
 	// ── Sorted findings ──
 	const sorted = useMemo(() => {
 		const sortBy = activeView?.sortBy || "impact_desc";
-		const arr = [...filtered];
+		const arr = [...lensFiltered];
 
 		switch (sortBy) {
 			case "impact_desc":
@@ -433,7 +468,7 @@ export default function FindingsPage() {
 		}
 
 		return arr;
-	}, [filtered, activeView?.sortBy]);
+	}, [lensFiltered, activeView?.sortBy]);
 
 	// Phase 2 stage 5 — step-scoped drill-down. When the URL carries
 	// ?step=<id>&plan=<YYYY-MM>, fetch the plan and locate the
@@ -1043,7 +1078,34 @@ export default function FindingsPage() {
 						total: findings.length,
 					})}
 				</span>
-				<div className="flex items-center gap-2">
+				<div className="flex flex-wrap items-center gap-2">
+					{/* Lente — Phase 3.2 perspective dropdown. Replaces the
+					    standalone /app/workspaces page; "Todos" is the
+					    no-op pass-through. URL syncs via ?lens= so a
+					    reload or shared link preserves the choice. */}
+					<label className="relative inline-flex items-center gap-1.5">
+						<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+							Lente
+						</span>
+						<select
+							value={lens}
+							onChange={(e) => updateLens(e.currentTarget.value as LensId)}
+							className="appearance-none rounded-md border border-edge bg-surface-card py-1 pl-2.5 pr-7 text-[12px] font-medium text-content outline-none cursor-pointer hover:border-edge-focus"
+						>
+							{LENS_ORDER.map((id) => (
+								<option key={id} value={id}>{LENS_LABEL[id]}</option>
+							))}
+						</select>
+						<svg
+							className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 opacity-60"
+							viewBox="0 0 12 12"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.6"
+						>
+							<path d="M3 4.5L6 7.5L9 4.5" strokeLinecap="round" strokeLinejoin="round" />
+						</svg>
+					</label>
 					<div className="inline-flex overflow-hidden rounded-md border border-edge">
 						<button
 							type="button"

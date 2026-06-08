@@ -72,7 +72,7 @@ const ClientGallery = async () => {
 								src={logo.src}
 								alt={logo.name}
 								title={logo.name}
-								loading="lazy"
+								loading="eager"
 								className="h-6 w-auto max-w-[100px] shrink-0 object-contain grayscale opacity-[0.35] transition-opacity duration-300 hover:opacity-60 hover:grayscale-0 sm:h-7 sm:max-w-[120px]"
 							/>
 						))}

@@ -5,6 +5,7 @@ import SocialProofStrip from "./SocialProofStrip";
 import DemoSurface from "./DemoSurface";
 import ClientGallery from "./ClientGallery";
 import MiniCalculator from "./MiniCalculator";
+import ScrollReveal from "./ScrollReveal";
 
 // ── Below-the-fold: lazy-load JS chunks, keep SSR HTML ──
 // next/dynamic with ssr: true (default) renders full HTML on the
@@ -39,15 +40,33 @@ const Home = () => {
 				<DemoSurface />
 				<ClientGallery />
 			</HomeBigCard>
-			<MiniCalculator />
-			<SocialProof rows="row1" />
-			<SolutionLayers />
-			<VideoTestimonials />
-			<Counter />
-			<Features />
-			<SocialProof rows="row2" />
-			<FAQ />
-			<CallToAction />
+			<ScrollReveal>
+				<MiniCalculator />
+			</ScrollReveal>
+			<ScrollReveal>
+				<SocialProof rows="row1" />
+			</ScrollReveal>
+			<ScrollReveal>
+				<SolutionLayers />
+			</ScrollReveal>
+			<ScrollReveal>
+				<VideoTestimonials />
+			</ScrollReveal>
+			<ScrollReveal>
+				<Counter />
+			</ScrollReveal>
+			<ScrollReveal>
+				<Features />
+			</ScrollReveal>
+			<ScrollReveal>
+				<SocialProof rows="row2" />
+			</ScrollReveal>
+			<ScrollReveal>
+				<FAQ />
+			</ScrollReveal>
+			<ScrollReveal>
+				<CallToAction />
+			</ScrollReveal>
 		</>
 	);
 };

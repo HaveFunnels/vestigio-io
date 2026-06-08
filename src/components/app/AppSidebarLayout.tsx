@@ -508,12 +508,21 @@ export default function AppSidebarLayout({
 		try { sessionStorage.setItem("impersonation_banner_dismissed", "1"); } catch { /* ignore */ }
 	};
 
-	// Ensure active_env cookie is always set so client components
-	// (Data Sources, etc.) can resolve the real environment ID.
+	// Keep the active_env cookie in lockstep with the server-resolved
+	// envId on every layout mount. Previously this only WROTE the
+	// cookie when missing, which left stale values surviving across
+	// session switches: if the user visited the demo (cookie=demo_env)
+	// before logging in as a real customer, every page that fell back
+	// to cookie-based env resolution kept sending demo_env and the
+	// strategy API returned 403 (logged as [strategy-deny] reason=
+	// membership-failed). Always overwriting is safe — orgCtx.envId
+	// comes from resolveOrgContext on the server, which is the
+	// authoritative source.
 	useEffect(() => {
 		if (!orgCtx.envId || orgCtx.envId === "default") return;
-		const hasEnvCookie = document.cookie.includes("active_env=");
-		if (!hasEnvCookie) {
+		const current = document.cookie
+			.match(/(?:^|;\s*)active_env=([^;]*)/)?.[1];
+		if (current !== orgCtx.envId) {
 			document.cookie = `active_env=${orgCtx.envId};path=/;max-age=${60 * 60 * 24 * 365}`;
 		}
 	}, [orgCtx.envId]);

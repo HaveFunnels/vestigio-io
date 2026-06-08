@@ -49,5 +49,15 @@ export async function POST() {
     ipAddress: ip ?? undefined,
   });
 
-  return NextResponse.json({ adminEmail, token });
+  // Clear the active_env cookie. During impersonation, AppSidebarLayout
+  // syncs it to the impersonated user's envId (e.g. demo_env). On exit,
+  // the session goes back to the admin but the cookie stays — and every
+  // client-side env read (notably the strategy page's getEnvironmentId)
+  // trusts the cookie blindly, so the next API call carries demo_env
+  // and gets 403 (membership-failed). Caught by the [strategy-deny]
+  // diagnostic. We clear here as the authoritative reset; the layout
+  // also defends-in-depth by always syncing on render.
+  const response = NextResponse.json({ adminEmail, token });
+  response.cookies.set("active_env", "", { path: "/", maxAge: 0 });
+  return response;
 }

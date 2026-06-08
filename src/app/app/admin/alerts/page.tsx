@@ -49,7 +49,6 @@ function timeAgo(iso: string): string {
 const METRIC_LABELS: Record<string, string> = {
   error_rate: "Error Rate",
   mcp_usage: "MCP Usage",
-  health_check: "Health Check",
   org_over_limit: "Org Over Limit",
   new_signup: "New Signup",
 };

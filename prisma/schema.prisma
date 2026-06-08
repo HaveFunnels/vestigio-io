@@ -1802,7 +1802,7 @@ model AlertRule {
   id            String       @id @default(cuid())
   name          String
   description   String?
-  metric        String // error_rate, mcp_usage, health_check, org_over_limit, new_signup
+  metric        String // error_rate, mcp_usage, org_over_limit, new_signup
   condition     String // gt, lt, eq (greater than, less than, equal)
   threshold     Float
   window        Int          @default(10) // minutes
@@ -1825,17 +1825,6 @@ model AlertEvent {
 
   @@index([ruleId, createdAt])
   @@index([acknowledged, createdAt])
-}
-
-model UptimeCheck {
-  id        String   @id @default(cuid())
-  service   String // database, redis, mcp, api
-  status    String // ok, degraded, down
-  latencyMs Int?
-  message   String?
-  createdAt DateTime @default(now())
-
-  @@index([service, createdAt])
 }
 
 // ──────────────────────────────────────────────

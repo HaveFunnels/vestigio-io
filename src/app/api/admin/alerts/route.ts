@@ -15,7 +15,7 @@ const ruleSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1),
   description: z.string().optional(),
-  metric: z.enum(["error_rate", "mcp_usage", "health_check", "org_over_limit", "new_signup"]),
+  metric: z.enum(["error_rate", "mcp_usage", "org_over_limit", "new_signup"]),
   condition: z.enum(["gt", "lt", "eq"]),
   threshold: z.number(),
   window: z.number().int().min(1).default(10),

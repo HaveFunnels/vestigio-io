@@ -57,12 +57,6 @@ const PAGES: PageEntry[] = [
     icon: "M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z M6 6h.008v.008H6V6z",
   },
   {
-    title: "System Health",
-    href: "/app/admin/system-health",
-    description: "Infrastructure status",
-    icon: "M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z",
-  },
-  {
     title: "Error Tracking",
     href: "/app/admin/errors",
     description: "Platform errors",

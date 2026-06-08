@@ -8,13 +8,12 @@ import { getOrgUsageStats, estimateDailyCost, computePlanUnitEconomics } from ".
 import { getUsageLog } from "../../../../../apps/platform/billing-safety";
 import { getMcpObservabilityDashboard } from "../../../../../apps/platform/mcp-observability";
 import { getAllPlanConfigs, getAllConfigBasedEconomics, getConfigChangeLog } from "../../../../../apps/platform/plan-config-admin";
-import { getProductionHealthCheck } from "../../../../../apps/platform/production-state-lock";
 import { getTokenLedgerStore } from "../../../../../apps/platform/token-ledger";
 import { getPricingForModel, getModelDisplayName, type LlmModel } from "../../../../../apps/platform/token-cost";
 
 /**
  * GET /api/admin/usage — usage per org, cost estimates, unit economics, MCP observability
- * Query params: date (YYYY-MM-DD), view (summary | unit_economics | log | mcp_observability | plan_config | health)
+ * Query params: date (YYYY-MM-DD), view (summary | unit_economics | log | mcp_observability | plan_config)
  */
 export const GET = withErrorTracking(async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -54,24 +53,6 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
     const economics = getAllConfigBasedEconomics();
     const changeLog = getConfigChangeLog();
     return NextResponse.json({ configs, economics, change_log: changeLog });
-  }
-
-  // Production health check — Phase 20 (now with real pings)
-  if (view === "health") {
-    const { runHealthChecks } = await import("@/libs/health-checker");
-    const legacyHealth = getProductionHealthCheck();
-    const liveChecks = await runHealthChecks();
-
-    // Merge: legacy config check + real service pings
-    return NextResponse.json({
-      health: legacyHealth,
-      checks: liveChecks,
-      overall: liveChecks.every((c) => c.status === "ok")
-        ? "healthy"
-        : liveChecks.some((c) => c.status === "down")
-          ? "unhealthy"
-          : "degraded",
-    });
   }
 
   // Chat feedback view — admin quality monitoring

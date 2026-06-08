@@ -11,7 +11,6 @@ import { useTranslations } from "next-intl";
 //   /api/admin/usage          (summary view)
 //   /api/admin/organizations  (org list + counts)
 //   /api/admin/errors         (unresolved errors)
-//   /api/admin/usage?view=health  (production health)
 //
 // Features:
 //   - Real-time polling every 30 seconds
@@ -63,13 +62,6 @@ interface OrgUsageRow {
 interface ErrorSummary {
   total: number;
   groupedByType: { errorType: string; count: number; lastOccurrence: string }[];
-}
-
-interface HealthData {
-  health: {
-    status: string;
-    checks: Record<string, { ok: boolean; message?: string }>;
-  };
 }
 
 /* ---------- Helpers ---------- */
@@ -449,7 +441,6 @@ export default function AdminOverviewPage() {
   const [usageTotals, setUsageTotals] = useState<UsageTotals | null>(null);
   const [usageOrgs, setUsageOrgs] = useState<OrgUsageRow[]>([]);
   const [errorSummary, setErrorSummary] = useState<ErrorSummary | null>(null);
-  const [healthData, setHealthData] = useState<HealthData | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -460,10 +451,9 @@ export default function AdminOverviewPage() {
       fetch("/api/admin/organizations").then((r) => r.ok ? r.json() : null),
       fetch("/api/admin/usage").then((r) => r.ok ? r.json() : null),
       fetch("/api/admin/errors?limit=1&resolved=false").then((r) => r.ok ? r.json() : null),
-      fetch("/api/admin/usage?view=health").then((r) => r.ok ? r.json() : null),
     ]);
 
-    const [orgResult, usageResult, errorResult, healthResult] = results;
+    const [orgResult, usageResult, errorResult] = results;
 
     if (orgResult.status === "fulfilled" && orgResult.value) {
       setOrgs(orgResult.value.organizations || []);
@@ -477,9 +467,6 @@ export default function AdminOverviewPage() {
         total: errorResult.value.total || 0,
         groupedByType: errorResult.value.groupedByType || [],
       });
-    }
-    if (healthResult.status === "fulfilled" && healthResult.value) {
-      setHealthData(healthResult.value);
     }
 
     setLastUpdated(new Date());
@@ -518,13 +505,6 @@ export default function AdminOverviewPage() {
   const overLimit = usageTotals?.orgs_over_mcp_limit ?? 0;
 
   const unresolvedErrors = errorSummary?.total ?? 0;
-
-  // Health status
-  const healthOk = healthData?.health?.status === "ok";
-  const healthChecks = healthData?.health?.checks || {};
-  const failedChecks = Object.entries(healthChecks).filter(
-    ([, v]) => !v.ok
-  ).length;
 
   // Top usage orgs (by cost, descending)
   const topUsageOrgs = [...usageOrgs]
@@ -631,25 +611,6 @@ export default function AdminOverviewPage() {
           }
           icon={icons.exclamation}
           warn={unresolvedErrors > 0}
-          loading={loading}
-        />
-        <StatCard
-          label={t("stat_system_health")}
-          value={
-            healthData
-              ? healthOk
-                ? t("status_healthy")
-                : t("status_issues", { count: failedChecks })
-              : t("status_unknown")
-          }
-          sub={
-            healthData
-              ? t("checks_run", { count: Object.keys(healthChecks).length })
-              : t("health_endpoint_unavailable")
-          }
-          icon={icons.heart}
-          accent={healthOk}
-          warn={healthData != null && !healthOk}
           loading={loading}
         />
       </div>
@@ -940,11 +901,6 @@ export default function AdminOverviewPage() {
             href="/app/admin/usage-billing"
             label={t("ql_usage_label")}
             desc={t("ql_usage_desc")}
-          />
-          <QuickLink
-            href="/app/admin/system-health"
-            label={t("ql_health_label")}
-            desc={t("ql_health_desc")}
           />
           <QuickLink
             href="/app/admin/errors"

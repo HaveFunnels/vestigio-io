@@ -69,7 +69,6 @@ runSuite('Route Structure', () => {
       'admin/environments/page.tsx',
       'admin/usage-billing/page.tsx',
       'admin/pricing/page.tsx',
-      'admin/system-health/page.tsx',
       'admin/platform-config/page.tsx',
     ];
 

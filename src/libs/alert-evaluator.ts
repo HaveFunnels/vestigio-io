@@ -9,7 +9,6 @@ import { renderBrandedEmail } from "@/libs/notifications";
  * actually changes:
  *   - error_rate      -> called after trackError()
  *   - new_signup      -> called after user registration
- *   - health_check    -> called after an UptimeCheck is recorded
  *   - mcp_usage       -> called after MCP usage is recorded
  *   - org_over_limit  -> called after usage is recorded
  *
@@ -43,16 +42,6 @@ export async function evaluateAlerts(metric: string): Promise<void> {
           case "new_signup": {
             value = await prisma.user.count({
               where: { createdAt: { gte: windowStart } },
-            });
-            break;
-          }
-
-          case "health_check": {
-            value = await prisma.uptimeCheck.count({
-              where: {
-                createdAt: { gte: windowStart },
-                status: { in: ["down", "degraded"] },
-              },
             });
             break;
           }

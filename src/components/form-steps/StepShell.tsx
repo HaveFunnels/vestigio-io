@@ -44,57 +44,57 @@ export default function StepShell({
 
 	return (
 		<div
-			className={`relative flex min-h-[100dvh] flex-col bg-surface-shell px-5 pb-8 pt-6 sm:px-6 sm:py-10 ${className}`}
+			className={`flex h-[100dvh] flex-col overflow-y-auto bg-surface-shell ${className}`}
 		>
-			{/* Back arrow — absolute top-left so it doesn't take layout
-			    space when hidden. */}
-			<button
-				type="button"
-				onClick={onBack}
-				disabled={!showBackArrow}
-				className={`absolute left-4 top-4 flex h-8 w-8 items-center justify-center rounded-full transition-colors sm:left-6 sm:top-6 ${
-					showBackArrow
-						? "text-content-muted hover:bg-surface-card-hover hover:text-content"
-						: "pointer-events-none opacity-0"
-				}`}
-				aria-label="Voltar"
-			>
-				<svg
-					viewBox="0 0 16 16"
-					fill="none"
-					stroke="currentColor"
-					strokeWidth="1.6"
-					strokeLinecap="round"
-					strokeLinejoin="round"
-					className="h-4 w-4"
-				>
-					<path d="M10 3L5 8l5 5" />
-				</svg>
-			</button>
+			{/* Sticky header — stays visible when mobile keyboard opens */}
+			<div className="sticky top-0 z-10 shrink-0 bg-surface-shell px-5 pt-6 sm:px-6 sm:pt-10">
+				<div className="relative mx-auto max-w-[560px]">
+					<button
+						type="button"
+						onClick={onBack}
+						disabled={!showBackArrow}
+						className={`absolute -left-2 top-0 flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
+							showBackArrow
+								? "text-content-muted hover:bg-surface-card-hover hover:text-content"
+								: "pointer-events-none opacity-0"
+						}`}
+						aria-label="Voltar"
+					>
+						<svg
+							viewBox="0 0 16 16"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.6"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							className="h-4 w-4"
+						>
+							<path d="M10 3L5 8l5 5" />
+						</svg>
+					</button>
+				</div>
 
-			{/* Header — Vestigio wordmark centered */}
-			<div className="mx-auto mb-7 mt-1 flex w-full max-w-[560px] flex-col items-center gap-6 sm:mb-9">
-				<Image
-					src={logoDark}
-					alt="Vestigio"
-					className="h-6 w-auto dark:hidden"
-					priority
-				/>
-				<Image
-					src={logoLight}
-					alt="Vestigio"
-					className="hidden h-6 w-auto dark:block"
-					priority
-				/>
-				{steps && steps.length > 1 && (
-					<StepProgressChips steps={steps} activeIndex={stepIndex} />
-				)}
+				<div className="mx-auto mb-7 mt-1 flex w-full max-w-[560px] flex-col items-center gap-6 sm:mb-9">
+					<Image
+						src={logoDark}
+						alt="Vestigio"
+						className="h-6 w-auto dark:hidden"
+						priority
+					/>
+					<Image
+						src={logoLight}
+						alt="Vestigio"
+						className="hidden h-6 w-auto dark:block"
+						priority
+					/>
+					{steps && steps.length > 1 && (
+						<StepProgressChips steps={steps} activeIndex={stepIndex} />
+					)}
+				</div>
 			</div>
 
-			{/* Step content. mx-auto keeps a 560px reading column on big
-			    screens; on mobile we use the available width minus
-			    horizontal padding from the parent. */}
-			<div className="mx-auto flex w-full max-w-[560px] flex-1 flex-col">
+			{/* Step content */}
+			<div className="mx-auto flex w-full max-w-[560px] flex-1 flex-col px-5 pb-8 sm:px-6 sm:pb-10">
 				<AnimatePresence mode="wait">
 					<motion.div
 						key={stepIndex}

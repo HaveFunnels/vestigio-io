@@ -32,7 +32,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // a leaked token indefinitely.
 // ──────────────────────────────────────────────
 
-const TOKEN_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const TOKEN_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours — v3 form has 7 steps, mobile users get distracted
 
 function getSecret(): string {
 	const secret = process.env.LEAD_FORM_SECRET || process.env.SECRET || "";

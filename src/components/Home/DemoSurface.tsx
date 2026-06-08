@@ -56,7 +56,7 @@ export default function DemoSurface() {
 
 	useEffect(() => {
 		if (phase !== "video") return;
-		const id = setTimeout(() => setShowSkip(true), 5000);
+		const id = setTimeout(() => setShowSkip(true), 3000);
 		return () => clearTimeout(id);
 	}, [phase]);
 
@@ -69,8 +69,6 @@ export default function DemoSurface() {
 		const obs = new IntersectionObserver(([e]) => {
 			if (e.isIntersecting) {
 				if (v && v.paused && v.muted) v.play().catch(() => {});
-			} else if (e.boundingClientRect.top < 0) {
-				transitionToTour();
 			}
 		}, { threshold: 0 });
 		obs.observe(el);
@@ -172,7 +170,7 @@ export default function DemoSurface() {
 							{showSkip && (
 								<button
 									onClick={transitionToTour}
-									className="mx-auto mt-3 block text-[11px] text-zinc-600 transition-colors hover:text-zinc-400"
+									className="mx-auto mt-4 block rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-xs text-zinc-400 transition-colors hover:border-white/20 hover:bg-white/[0.08] hover:text-zinc-300"
 									style={{ animation: "ds-fade-in 0.4s ease-out" }}
 								>
 									{t("skip")}

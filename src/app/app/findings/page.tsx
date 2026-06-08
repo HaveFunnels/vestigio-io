@@ -1079,9 +1079,64 @@ export default function FindingsPage() {
 
 			{viewMode === "cards" ? (
 				stepFilteredSorted.length === 0 ? (
-					<div className="rounded-2xl border border-edge bg-surface-card p-6 text-center text-[13px] text-content-muted">
-						{t("no_match")}
-					</div>
+					(() => {
+						// Three distinct empty-state shapes so the buyer
+						// understands WHY the list is empty:
+						//   (a) step drill-down + findingIds set but nothing
+						//       matches in the current cycle → "cycle drift".
+						//   (b) filters / search / view active → "no match".
+						//   (c) genuine zero findings → "you're clean".
+						const stepDrift =
+							stepContext && stepContext.findingIds.length > 0;
+						const hasActiveFilter =
+							!!activeViewId || !!searchQuery || surfaceFilter !== "all";
+						const headline = stepDrift
+							? "Os findings deste passo não aparecem no ciclo atual"
+							: hasActiveFilter
+								? "Nenhum vazamento com esses filtros"
+								: "Sem vazamentos detectados";
+						const body = stepDrift
+							? "Provavelmente foram resolvidos ou regrediram entre o plano e o ciclo mais recente. Volte ao plano pra ver o status."
+							: hasActiveFilter
+								? "Tente afrouxar os filtros — ou limpe tudo pra ver o quadro completo."
+								: "Quando o próximo ciclo rodar, qualquer vazamento que aparecer cai aqui.";
+						return (
+							<div className="rounded-2xl border border-edge bg-surface-card p-8 text-center">
+								<h3 className="font-serif text-[18px] font-medium text-content">{headline}</h3>
+								<p className="mt-2 text-[13px] leading-relaxed text-content-muted">{body}</p>
+								{stepDrift && monthParam && (
+									<Link
+										href={planHref}
+										className="mt-4 inline-block rounded-md border border-edge bg-surface-card px-4 py-1.5 text-[13px] text-content-secondary transition-colors hover:border-edge-focus hover:text-content"
+									>
+										← Voltar ao Plano
+									</Link>
+								)}
+								{!stepDrift && hasActiveFilter && (
+									<button
+										type="button"
+										onClick={() => {
+											setSearchQuery("");
+											setSurfaceFilter("all");
+											// Clear active view by resetting state directly; the
+											// handler signature requires a SavedViewData so we
+											// can't pass null. URL also stripped so reload stays
+											// on the cleared state.
+											if (activeViewId) {
+												setActiveViewId(null);
+												const url = new URL(window.location.href);
+												url.searchParams.delete("view");
+												router.replace(`${url.pathname}${url.search}`, { scroll: false });
+											}
+										}}
+										className="mt-4 rounded-md border border-edge bg-surface-card px-4 py-1.5 text-[13px] text-content-secondary transition-colors hover:border-edge-focus hover:text-content"
+									>
+										Limpar filtros
+									</button>
+								)}
+							</div>
+						);
+					})()
 				) : (
 					<div className="flex flex-col gap-2">
 						{stepFilteredSorted.map((f, i) => (

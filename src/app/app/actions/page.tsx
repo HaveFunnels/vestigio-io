@@ -1122,9 +1122,39 @@ function ActionsContent({
 				/>
 			) : listMode === "cards" ? (
 				filtered.length === 0 ? (
-					<div className="rounded-2xl border border-edge bg-surface-card p-6 text-center text-[13px] text-content-muted">
-						Nenhuma ação encontrada para esses filtros.
-					</div>
+					(() => {
+						const hasActiveFilter =
+							typeFilter !== "all" ||
+							severityFilter !== "all" ||
+							effortFilter !== "all" ||
+							surfaceKindFilter !== "all";
+						const headline = hasActiveFilter
+							? "Nenhuma ação com esses filtros"
+							: "Sua fila está vazia";
+						const body = hasActiveFilter
+							? "Tente afrouxar os filtros — ou limpe tudo pra ver o quadro completo."
+							: "Quando o próximo ciclo identificar algo pra agir, aparece aqui.";
+						return (
+							<div className="rounded-2xl border border-edge bg-surface-card p-8 text-center">
+								<h3 className="font-serif text-[18px] font-medium text-content">{headline}</h3>
+								<p className="mt-2 text-[13px] leading-relaxed text-content-muted">{body}</p>
+								{hasActiveFilter && (
+									<button
+										type="button"
+										onClick={() => {
+											setTypeFilter("all");
+											setSeverityFilter("all");
+											setEffortFilter("all");
+											setSurfaceKindFilter("all");
+										}}
+										className="mt-4 rounded-md border border-edge bg-surface-card px-4 py-1.5 text-[13px] text-content-secondary transition-colors hover:border-edge-focus hover:text-content"
+									>
+										Limpar filtros
+									</button>
+								)}
+							</div>
+						);
+					})()
 				) : (
 					<div className="flex flex-col gap-2">
 						{filtered.map((row, i) => (

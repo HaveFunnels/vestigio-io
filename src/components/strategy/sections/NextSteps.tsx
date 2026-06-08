@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import type {
@@ -10,7 +9,8 @@ import type {
 	PlanComment,
 	PendingPlanEdit,
 } from "../types";
-import ActionDrawer from "../ActionDrawer";
+import PlanSideDrawer from "../PlanSideDrawer";
+import { ActionListBody, FindingListBody } from "../drawer-bodies";
 import PlanCommentThread from "../PlanCommentThread";
 import PlanEditBanner from "../PlanEditBanner";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
@@ -117,7 +117,8 @@ function StepCard({
 	const [title, setTitle] = useState<string>(step.title);
 	const [dueAt, setDueAt] = useState<Date | null>(step.dueAt);
 	const [editingTitle, setEditingTitle] = useState(false);
-	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
+	const [findingsDrawerOpen, setFindingsDrawerOpen] = useState(false);
 	const { currency } = useMcpData();
 	const isDone = status === "done";
 	// formatDate(dueAt) was used for the previous read-only chip; the
@@ -458,27 +459,23 @@ function StepCard({
 						)}
 						<button
 							type="button"
-							onClick={() => setDrawerOpen(true)}
+							onClick={() => setActionsDrawerOpen(true)}
 							className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
 						>
 							Ver ações relacionadas ({step.linkedActionRefs.length}) →
 						</button>
-						{/* Phase 2 drill-down — route into Findings filtered by
-						    the exact linkedFindingRefs persisted on this
-						    PlanNextStep. The destination decodes ?step=<id>
-						    + ?plan=<YYYY-MM>, fetches the step from the API,
-						    pulls the findingIds out of step.linkedFindingRefs,
-						    and filters the visible list to just those. When
-						    findingIds is empty (pre-Phase-2 plans), the
-						    destination falls back to the full sorted list
-						    with an inline note in the breadcrumb. */}
+						{/* Step 5+ — findings drill-down now opens a drawer
+						    instead of navigating to /app/findings. Keeps the
+						    user inside the plan and matches the ações-related
+						    drawer pattern. */}
 						{step.linkedFindingRefs.length > 0 && (
-							<Link
-								href={`/app/findings?step=${step.id}&plan=${month}`}
+							<button
+								type="button"
+								onClick={() => setFindingsDrawerOpen(true)}
 								className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
 							>
 								Ver findings do passo ({step.linkedFindingRefs.length}) →
-							</Link>
+							</button>
 						)}
 					</div>
 				</div>
@@ -499,15 +496,32 @@ function StepCard({
 				</div>
 			</div>
 
-			{/* Side drawer with the actions linked to this step. Mounted
-			    per-card so Radix manages focus + Esc handling
-			    independently — multiple cards never collide. */}
-			<ActionDrawer
-				open={drawerOpen}
-				onOpenChange={setDrawerOpen}
-				stepTitle={step.title}
-				actionIds={step.linkedActionRefs}
-			/>
+			{/* Per-card drawers — Radix manages focus + Esc independently
+			    so two open cards never collide. Both drawers share the
+			    PlanSideDrawer chrome (50vw desktop / bottom sheet mobile)
+			    so the buyer feels they're inside one consistent surface,
+			    not three different tools. */}
+			<PlanSideDrawer
+				open={actionsDrawerOpen}
+				onOpenChange={setActionsDrawerOpen}
+				eyebrow="Ações deste passo"
+				title={step.title}
+				description={`${step.linkedActionRefs.length} ${step.linkedActionRefs.length === 1 ? "ação ligada" : "ações ligadas"} ao passo no engine`}
+				footer="Ações sincronizam com /app/actions — mudanças aqui aparecem na fila operacional."
+			>
+				<ActionListBody actionIds={step.linkedActionRefs} />
+			</PlanSideDrawer>
+
+			<PlanSideDrawer
+				open={findingsDrawerOpen}
+				onOpenChange={setFindingsDrawerOpen}
+				eyebrow="Findings que justificam o passo"
+				title={step.title}
+				description={`${step.linkedFindingRefs.length} ${step.linkedFindingRefs.length === 1 ? "finding linkado" : "findings linkados"}`}
+				footer="Esses findings foram capturados pelo engine no ciclo de geração do plano."
+			>
+				<FindingListBody findingIds={step.linkedFindingRefs} />
+			</PlanSideDrawer>
 		</motion.div>
 	);
 }

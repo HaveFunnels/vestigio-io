@@ -1,9 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useState } from "react";
 import type { BuyerSegment } from "../types";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import PlanSideDrawer from "../PlanSideDrawer";
+import { FindingListBody } from "../drawer-bodies";
 
 /*
  * Buyer Segments — "O que sua audit revelou este mês"
@@ -39,6 +42,9 @@ const BUYER_ACCENT: Record<string, { dot: string; bg: string; chip: string }> = 
 
 export default function BuyerSegments({ segments }: Props) {
 	const { currency } = useMcpData();
+	// Drawer state — open with the single finding ID the buyer clicked.
+	// One drawer instance is enough; we just swap the targeted ID.
+	const [drawerFindingId, setDrawerFindingId] = useState<string | null>(null);
 	return (
 		<motion.section
 			initial={{ opacity: 0, y: 16 }}
@@ -98,19 +104,50 @@ export default function BuyerSegments({ segments }: Props) {
 								<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
 									Exemplos
 								</div>
-								{s.sampleFindingTitles.slice(0, 2).map((title, i) => (
-									<div
-										key={i}
-										className="text-[13px] leading-snug text-content-secondary"
-									>
-										· {title}
-									</div>
-								))}
+								{s.sampleFindingTitles.slice(0, 2).map((title, i) => {
+									const findingId = s.sampleFindingIds[i];
+									// Without an ID we can't open the drawer, so
+									// render as plain text (legacy plans + edge
+									// cases where the engine didn't bind an ID).
+									if (!findingId) {
+										return (
+											<div
+												key={i}
+												className="text-[13px] leading-snug text-content-secondary"
+											>
+												· {title}
+											</div>
+										);
+									}
+									return (
+										<button
+											key={i}
+											type="button"
+											onClick={() => setDrawerFindingId(findingId)}
+											className="-mx-1.5 block w-full rounded-md px-1.5 py-1 text-left text-[13px] leading-snug text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
+											title="Ver detalhes do finding"
+										>
+											· {title}
+										</button>
+									);
+								})}
 							</div>
 						</motion.div>
 					);
 				})}
 			</div>
+
+			{/* Shared drawer — opens with whichever sample finding the
+			    buyer clicked. One mount, swap ID = swap content. */}
+			<PlanSideDrawer
+				open={drawerFindingId !== null}
+				onOpenChange={(open) => { if (!open) setDrawerFindingId(null); }}
+				eyebrow="Finding em destaque"
+				title="Detalhe do finding"
+				description="Capturado pelo engine no ciclo atual"
+			>
+				{drawerFindingId && <FindingListBody findingIds={[drawerFindingId]} />}
+			</PlanSideDrawer>
 		</motion.section>
 	);
 }

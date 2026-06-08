@@ -1025,6 +1025,356 @@ export default function AdminOrganizationDetailPage() {
 
       {/* ── Audit History ── */}
       {!loading && org && <AuditHistoryCard rows={org.auditHistory} />}
+
+      {/* ── Suppression Rules (admin-only operational tool) ── */}
+      {!loading && org && (
+        <SuppressionRulesCard
+          organizationId={org.id}
+          environments={org.environments}
+        />
+      )}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────
+// Suppression Rules Card — admin-only operational tool
+//
+// Each rule reduces confidence of matching decisions during recompute
+// (Phase 26). Rules NEVER hide findings — they record that we know a
+// specific decision_key is a false positive for this env and bump
+// confidence down with rationale. Creating a rule is ALSO a signal
+// that the underlying detector needs tuning; tune at source then
+// remove the rule.
+//
+// Not exposed to customers — customers shouldn't filter Vestigio's
+// own output.
+// ──────────────────────────────────────────────
+
+interface SuppressionRule {
+  id: string;
+  scopeRef: string;
+  scopeKind: "workspace" | "environment";
+  matchKey: string;
+  reason: string;
+  createdBy: string;
+  expiresAt: string | null;
+  reviewPolicy: "manual" | "auto_expire" | "permanent";
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function SuppressionRulesCard({
+  organizationId,
+  environments,
+}: {
+  organizationId: string;
+  environments: OrgEnvironment[];
+}) {
+  const [rules, setRules] = useState<SuppressionRule[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [formEnvId, setFormEnvId] = useState<string>(environments[0]?.id ?? "");
+  const [formMatchKey, setFormMatchKey] = useState("");
+  const [formReason, setFormReason] = useState("");
+  const [formPolicy, setFormPolicy] = useState<
+    "manual" | "auto_expire" | "permanent"
+  >("auto_expire");
+  const [submitting, setSubmitting] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await fetch(
+        `/api/admin/suppressions?organizationId=${organizationId}`,
+      );
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      setRules(data.rules);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load rules");
+    } finally {
+      setLoading(false);
+    }
+  }, [organizationId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const envLabel = useCallback(
+    (scopeRef: string) => {
+      if (scopeRef.startsWith("workspace:")) return "All envs (workspace)";
+      const envId = scopeRef.slice("environment:".length);
+      const env = environments.find((e) => e.id === envId);
+      return env ? env.domain : envId.slice(0, 8);
+    },
+    [environments],
+  );
+
+  const submit = async () => {
+    if (!formEnvId || !formMatchKey.trim() || formReason.trim().length < 5) {
+      setError("env, matchKey, and reason (5+ chars) are required");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const r = await fetch("/api/admin/suppressions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          environmentId: formEnvId,
+          matchKey: formMatchKey.trim(),
+          reason: formReason.trim(),
+          reviewPolicy: formPolicy,
+        }),
+      });
+      if (!r.ok) {
+        const body = await r.json().catch(() => null);
+        throw new Error(body?.message ?? `HTTP ${r.status}`);
+      }
+      setFormMatchKey("");
+      setFormReason("");
+      setShowForm(false);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Create failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleActive = async (rule: SuppressionRule) => {
+    try {
+      const r = await fetch(`/api/admin/suppressions/${rule.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: !rule.isActive }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Toggle failed");
+    }
+  };
+
+  const deleteRule = async (rule: SuppressionRule) => {
+    if (
+      !window.confirm(
+        `Delete suppression rule for "${rule.matchKey}"? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      const r = await fetch(`/api/admin/suppressions/${rule.id}`, {
+        method: "DELETE",
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Delete failed");
+    }
+  };
+
+  const ruleCount = rules?.length ?? 0;
+  const activeCount = rules?.filter((r) => r.isActive).length ?? 0;
+
+  return (
+    <div className="rounded-lg border border-edge bg-surface-card">
+      <div className="flex items-start justify-between border-b border-edge px-5 py-4">
+        <div>
+          <h2 className="text-sm font-semibold text-content">
+            Suppression Rules
+            {ruleCount > 0 && (
+              <span className="ml-2 text-xs font-normal text-content-faint">
+                {activeCount} active / {ruleCount} total
+              </span>
+            )}
+          </h2>
+          <p className="mt-0.5 text-xs text-content-faint">
+            Reduce confidence of matching decisions (never hide). Each rule
+            is a signal the underlying detector needs tuning.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowForm((s) => !s)}
+          className="rounded border border-edge bg-surface-inset px-3 py-1.5 text-xs font-medium text-content hover:bg-surface-card-hover"
+        >
+          {showForm ? "Cancel" : "New rule"}
+        </button>
+      </div>
+
+      {error && (
+        <div className="border-b border-red-500/30 bg-red-500/5 px-5 py-2 text-xs text-red-400">
+          {error}
+        </div>
+      )}
+
+      {showForm && (
+        <div className="space-y-3 border-b border-edge bg-surface-inset/40 px-5 py-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="text-content-muted">Environment</span>
+              <select
+                value={formEnvId}
+                onChange={(e) => setFormEnvId(e.target.value)}
+                className="rounded border border-edge bg-surface-card px-2 py-1.5 text-content"
+              >
+                {environments.map((e) => (
+                  <option key={e.id} value={e.id}>
+                    {e.domain}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="text-content-muted">
+                Match key (decision_key)
+              </span>
+              <input
+                value={formMatchKey}
+                onChange={(e) => setFormMatchKey(e.target.value)}
+                placeholder="e.g. checkout_pricing_consistency"
+                className="rounded border border-edge bg-surface-card px-2 py-1.5 font-mono text-xs text-content"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-xs">
+              <span className="text-content-muted">Review policy</span>
+              <select
+                value={formPolicy}
+                onChange={(e) =>
+                  setFormPolicy(
+                    e.target.value as "manual" | "auto_expire" | "permanent",
+                  )
+                }
+                className="rounded border border-edge bg-surface-card px-2 py-1.5 text-content"
+              >
+                <option value="auto_expire">auto_expire (90d default)</option>
+                <option value="manual">manual</option>
+                <option value="permanent">permanent</option>
+              </select>
+            </label>
+          </div>
+          <label className="flex flex-col gap-1 text-xs">
+            <span className="text-content-muted">
+              Reason (why this is a false positive + linked ticket if any)
+            </span>
+            <textarea
+              value={formReason}
+              onChange={(e) => setFormReason(e.target.value)}
+              rows={3}
+              placeholder="e.g. Customer uses a custom CMS that exposes /admin but it's behind an SSO gate not visible to our crawler. Tracking detector fix in #1234."
+              className="rounded border border-edge bg-surface-card px-2 py-1.5 text-content"
+            />
+          </label>
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={submit}
+              disabled={submitting}
+              className="rounded bg-emerald-500/20 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/30 disabled:opacity-50"
+            >
+              {submitting ? "Creating…" : "Create rule"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="px-5 py-8 text-center text-sm text-content-faint">
+          Loading…
+        </div>
+      ) : !rules || rules.length === 0 ? (
+        <div className="px-5 py-8 text-center text-sm text-content-faint">
+          No suppression rules. Use this only for clear false positives — tune
+          the detector at source as the durable fix.
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-edge">
+                <th className="px-5 py-3 font-medium uppercase tracking-wider text-content-muted">
+                  Env
+                </th>
+                <th className="px-5 py-3 font-medium uppercase tracking-wider text-content-muted">
+                  Match key
+                </th>
+                <th className="px-5 py-3 font-medium uppercase tracking-wider text-content-muted">
+                  Reason
+                </th>
+                <th className="px-5 py-3 font-medium uppercase tracking-wider text-content-muted">
+                  Policy
+                </th>
+                <th className="px-5 py-3 font-medium uppercase tracking-wider text-content-muted">
+                  Expires
+                </th>
+                <th className="px-5 py-3 font-medium uppercase tracking-wider text-content-muted">
+                  Active
+                </th>
+                <th className="px-5 py-3 text-right font-medium uppercase tracking-wider text-content-muted">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-edge">
+              {rules.map((r) => {
+                const expired =
+                  r.expiresAt !== null && new Date(r.expiresAt).getTime() <= Date.now();
+                return (
+                  <tr key={r.id} className="hover:bg-surface-card-hover">
+                    <td className="px-5 py-3 text-content-secondary">
+                      {envLabel(r.scopeRef)}
+                    </td>
+                    <td className="px-5 py-3 font-mono text-content">
+                      {r.matchKey}
+                    </td>
+                    <td className="px-5 py-3 text-content-secondary">
+                      <span className="line-clamp-2 max-w-md">{r.reason}</span>
+                    </td>
+                    <td className="px-5 py-3 text-content-muted">
+                      {r.reviewPolicy}
+                    </td>
+                    <td className="px-5 py-3 text-content-muted">
+                      {r.expiresAt
+                        ? `${formatDate(r.expiresAt)}${expired ? " (expired)" : ""}`
+                        : "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleActive(r)}
+                        className={`rounded px-2 py-0.5 text-[10px] font-medium ${
+                          r.isActive
+                            ? "bg-emerald-500/15 text-emerald-400"
+                            : "bg-surface-inset text-content-muted"
+                        }`}
+                      >
+                        {r.isActive ? "active" : "inactive"}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => deleteRule(r)}
+                        className="text-[10px] text-red-400 underline hover:text-red-300"
+                      >
+                        delete
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

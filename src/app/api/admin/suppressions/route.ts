@@ -3,29 +3,33 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
-import { blockIfImpersonating } from "@/libs/impersonation-guard";
 
 // ──────────────────────────────────────────────
-// Suppression Rules — Wire 0
+// Suppression Rules — Vestigio-internal admin tool (NOT customer-facing)
 //
-// CRUD for SuppressionRule rows. The audit-runner loads active rules
-// scoped to the env (or its parent workspace) at recompute time and
-// the engine reduces matching decisions' confidence (Phase 26 of
-// packages/workspace/recompute.ts) — rules never hide findings, they
-// reduce trust in them with rationale.
+// The Phase 26 suppression pipeline (packages/workspace/recompute.ts:1013-1044)
+// reduces confidence of matching decisions when an active rule's matchKey
+// hits — never hides findings. The audit-runner loads rules at recompute
+// time (apps/audit-runner/run-cycle.ts).
+//
+// Why admin-only:
+// - Customers shouldn't be deciding what is a "false positive" — that
+//   undermines the value prop (Vestigio finds revenue protection issues
+//   FOR the customer). Pushing the decision onto them induces vanity
+//   filtering (suppressing real issues to clean dashboards).
+// - Each suppression is a SIGNAL that a detector needs tuning. The
+//   right loop is: Vestigio team creates rule per-customer for a clear
+//   false positive → opens ticket to fix detector at source → removes
+//   rule once detector improves. Customer never sees the mechanism.
 //
 // Routes:
-//   GET  /api/suppressions?environmentId=...  — list active rules
-//   POST /api/suppressions                    — create rule
+//   GET  /api/admin/suppressions?organizationId=...      list rules across all envs of org
+//   GET  /api/admin/suppressions?environmentId=...       list rules for one env (+ its workspace)
+//   POST /api/admin/suppressions                         create rule
 //
 // matchKey matches against decision_key (e.g.
 // "checkout_pricing_consistency") or inference refs (e.g.
-// "inference:inf_xxx"). decision_key is the stable customer-facing
-// choice; inference refs are transient and not recommended.
-//
-// Default reviewPolicy is "auto_expire" with 90-day expiry when no
-// expiresAt is provided — forces customer to re-evaluate suppressions
-// instead of letting them rot.
+// "inference:inf_xxx"). decision_key is the stable choice.
 // ──────────────────────────────────────────────
 
 const VALID_REVIEW_POLICIES = new Set(["manual", "auto_expire", "permanent"]);
@@ -39,79 +43,98 @@ interface CreateBody {
 	reviewPolicy?: string;
 }
 
+function serializeRule(r: {
+	id: string;
+	scopeRef: string;
+	matchKey: string;
+	reason: string;
+	createdBy: string;
+	expiresAt: Date | null;
+	reviewPolicy: string;
+	isActive: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+}) {
+	return {
+		id: r.id,
+		scopeRef: r.scopeRef,
+		scopeKind: r.scopeRef.startsWith("workspace:") ? "workspace" : "environment",
+		matchKey: r.matchKey,
+		reason: r.reason,
+		createdBy: r.createdBy,
+		expiresAt: r.expiresAt ? r.expiresAt.toISOString() : null,
+		reviewPolicy: r.reviewPolicy,
+		isActive: r.isActive,
+		createdAt: r.createdAt.toISOString(),
+		updatedAt: r.updatedAt.toISOString(),
+	};
+}
+
 export const GET = withErrorTracking(
 	async function GET(req: NextRequest) {
 		const session = await getServerSession(authOptions);
-		const userId = (session?.user as any)?.id;
-		if (!session?.user || !userId) {
-			return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+		if (!session?.user || (session.user as any).role !== "ADMIN") {
+			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 		}
 
+		const organizationId = req.nextUrl.searchParams.get("organizationId");
 		const environmentId = req.nextUrl.searchParams.get("environmentId");
-		if (!environmentId) {
+
+		if (!organizationId && !environmentId) {
 			return NextResponse.json(
-				{ message: "environmentId query param is required" },
+				{ message: "organizationId or environmentId query param is required" },
 				{ status: 400 },
 			);
 		}
 
-		const env = await prisma.environment.findUnique({
-			where: { id: environmentId },
-			select: { organizationId: true },
-		});
-		if (!env) {
-			return NextResponse.json(
-				{ message: "Environment not found" },
-				{ status: 404 },
-			);
+		const scopeRefs: string[] = [];
+
+		if (organizationId) {
+			scopeRefs.push(`workspace:${organizationId}`);
+			const envs = await prisma.environment.findMany({
+				where: { organizationId },
+				select: { id: true },
+			});
+			for (const e of envs) scopeRefs.push(`environment:${e.id}`);
 		}
 
-		const membership = await prisma.membership.findFirst({
-			where: { userId, organizationId: env.organizationId },
-			select: { id: true },
-		});
-		if (!membership) {
-			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+		if (environmentId) {
+			const env = await prisma.environment.findUnique({
+				where: { id: environmentId },
+				select: { organizationId: true },
+			});
+			if (!env) {
+				return NextResponse.json(
+					{ message: "Environment not found" },
+					{ status: 404 },
+				);
+			}
+			const wsRef = `workspace:${env.organizationId}`;
+			const envRef = `environment:${environmentId}`;
+			if (!scopeRefs.includes(wsRef)) scopeRefs.push(wsRef);
+			if (!scopeRefs.includes(envRef)) scopeRefs.push(envRef);
 		}
 
-		const environmentRef = `environment:${environmentId}`;
-		const workspaceRef = `workspace:${env.organizationId}`;
+		if (scopeRefs.length === 0) {
+			return NextResponse.json({ rules: [] });
+		}
 
 		const rules = await prisma.suppressionRule.findMany({
-			where: {
-				scopeRef: { in: [environmentRef, workspaceRef] },
-			},
+			where: { scopeRef: { in: scopeRefs } },
 			orderBy: { createdAt: "desc" },
 		});
 
-		return NextResponse.json({
-			rules: rules.map((r) => ({
-				id: r.id,
-				scopeRef: r.scopeRef,
-				scopeKind: r.scopeRef.startsWith("workspace:") ? "workspace" : "environment",
-				matchKey: r.matchKey,
-				reason: r.reason,
-				createdBy: r.createdBy,
-				expiresAt: r.expiresAt ? r.expiresAt.toISOString() : null,
-				reviewPolicy: r.reviewPolicy,
-				isActive: r.isActive,
-				createdAt: r.createdAt.toISOString(),
-				updatedAt: r.updatedAt.toISOString(),
-			})),
-		});
+		return NextResponse.json({ rules: rules.map(serializeRule) });
 	},
-	{ endpoint: "/api/suppressions", method: "GET" },
+	{ endpoint: "/api/admin/suppressions", method: "GET" },
 );
 
 export const POST = withErrorTracking(
 	async function POST(request: Request) {
-		const impersonationBlock = await blockIfImpersonating();
-		if (impersonationBlock) return impersonationBlock;
-
 		const session = await getServerSession(authOptions);
 		const userId = (session?.user as any)?.id;
-		if (!session?.user || !userId) {
-			return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+		if (!session?.user || (session.user as any).role !== "ADMIN" || !userId) {
+			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 		}
 
 		let body: CreateBody;
@@ -149,21 +172,13 @@ export const POST = withErrorTracking(
 
 		const env = await prisma.environment.findUnique({
 			where: { id: environmentId },
-			select: { organizationId: true },
+			select: { id: true },
 		});
 		if (!env) {
 			return NextResponse.json(
 				{ message: "Environment not found" },
 				{ status: 404 },
 			);
-		}
-
-		const membership = await prisma.membership.findFirst({
-			where: { userId, organizationId: env.organizationId },
-			select: { id: true },
-		});
-		if (!membership) {
-			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 		}
 
 		// Resolve expiresAt:
@@ -212,21 +227,7 @@ export const POST = withErrorTracking(
 			},
 		});
 
-		return NextResponse.json(
-			{
-				id: rule.id,
-				scopeRef: rule.scopeRef,
-				matchKey: rule.matchKey,
-				reason: rule.reason,
-				createdBy: rule.createdBy,
-				expiresAt: rule.expiresAt ? rule.expiresAt.toISOString() : null,
-				reviewPolicy: rule.reviewPolicy,
-				isActive: rule.isActive,
-				createdAt: rule.createdAt.toISOString(),
-				updatedAt: rule.updatedAt.toISOString(),
-			},
-			{ status: 201 },
-		);
+		return NextResponse.json(serializeRule(rule), { status: 201 });
 	},
-	{ endpoint: "/api/suppressions", method: "POST" },
+	{ endpoint: "/api/admin/suppressions", method: "POST" },
 );

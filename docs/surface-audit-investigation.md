@@ -632,3 +632,62 @@ do surface refactor. Não bloqueia Wire 0 (SuppressionRule) nem outros.
 - ✅ Nuclei + Katana (commit `dc6dbbc9`)
 - ✅ BRAVE_SEARCH_API_KEY → Tavily migrado + documentado
 - ⚠️ Sobra como **disciplina aberta**: Definition of Delivered para futuras features que dependam de env var ou binário externo — incluir "env var documentada em `.env.example` + binário verificado em prod" na lista de checks antes de fechar uma wave.
+
+## Wire 0 entregue — repositioned como ferramenta operacional Vestigio-internal (2026-06-07)
+
+Originalmente o plano para Wire 0 (`SuppressionRule`) era "escape valve do
+cliente": dar ao cliente UI pra silenciar findings ruidosos quando Wires
+1-8 expandissem volume. **Rejeitado pelo fundador antes do UI ship**, com
+razão sólida:
+
+- Vestigio existe pra dizer ao cliente "isto está te custando dinheiro".
+  Pedir pro cliente também filtrar nossa saída é admitir que o engine
+  não consegue priorizar sozinho.
+- Push da decisão de "false positive" pro cliente induz vanity filtering
+  (silenciar findings reais pra dashboard ficar bonito).
+- O engine já tem as ferramentas certas pra resolver volume sem
+  suppression: `confidence_score`, `change_class` (new/regressed/stable),
+  severity, impact. Se Wires 1-8 explodirem volume *real*, a resposta é
+  triagem na UI, não suppression.
+
+**Reposicionamento**: Wire 0 vira **ferramenta operacional Vestigio-side**
+para quando o time identifica um falso positivo claro pra cliente
+específico. Cada regra criada é também **sinal de detector que precisa
+calibração**. O cliente nem sabe que existe.
+
+### O que ficou entregue
+
+**Backend wire** (`apps/audit-runner/run-cycle.ts`) — `prisma.suppressionRule.findMany`
+filtrado por `scopeRef IN [environmentRef, workspaceRef]`, `isActive=true`,
+expiry > now. Passa via `input.suppression_rules` pro `runEngine`.
+Non-fatal: erro de load loga e segue.
+
+**API admin-only** (`/api/admin/suppressions/` + `[id]/`) com guard
+`session.user.role === "ADMIN"`:
+- `GET ?organizationId=...` lista cross-env do org
+- `GET ?environmentId=...` lista do env + parent workspace
+- `POST` cria (default `auto_expire` 90d)
+- `PATCH /[id]` atualiza
+- `DELETE /[id]` hard delete
+
+**UI** no admin platform: `SuppressionRulesCard` inline em
+`src/app/app/admin/organizations/[id]/page.tsx`, abaixo do `AuditHistoryCard`.
+List view com Env / Match key / Reason / Policy / Expires / Active /
+Delete. Inline create form com env dropdown + matchKey + reason + policy.
+
+### Sinal de detector quebrado
+
+A premissa "cada suppression é sinal de detector ruim" precisa virar
+prática operacional. Quando criar regra, abrir issue ou ticket pra
+**ajustar o detector na origem** — `packages/signals/engine.ts`,
+heurísticas de inference, ou template Nuclei se aplicável. Suppression
+é alívio temporário, não solução. Métrica futura: rate de criação de
+regras por mês deve cair conforme detectors maturam. Subida persistente
+= detector regrediu.
+
+### O que continua aberto
+
+- O loop "criou regra → abriu ticket → fixou detector → removeu regra"
+  é disciplina, não código. Vale considerar tooling (link de ticket na
+  regra, alerta semanal de regras expirando) **depois** que a prática se
+  estabilizar — não antes.

@@ -438,25 +438,30 @@ function StepCard({
 						    envId/month/planId were missing) was deleted: every
 						    caller — StrategyPlanPanel is the only one — now
 						    always passes a real backend-sourced plan. */}
-						<span className="inline-flex items-center gap-1.5 text-[12px] text-content-muted">
-							<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-								<path
-									d="M1.5 2.5h10v6.5h-5L4 11V9h-2.5z"
-									stroke="currentColor"
-									strokeWidth="1.1"
-									strokeLinejoin="round"
-								/>
-							</svg>
-							{stepComments.length === 0
-								? "Comentar abaixo"
-								: `${stepComments.length} ${stepComments.length === 1 ? "comentário" : "comentários"}`}
-						</span>
+						{/* Comment count chip — only renders when there are
+						    comments. The empty-state "Comentar abaixo" hint
+						    used to live here too but duplicated the
+						    composer affordance inside the inline thread
+						    below; user feedback flagged the redundancy. */}
+						{stepComments.length > 0 && (
+							<span className="inline-flex items-center gap-1.5 text-[12px] text-content-muted">
+								<svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+									<path
+										d="M1.5 2.5h10v6.5h-5L4 11V9h-2.5z"
+										stroke="currentColor"
+										strokeWidth="1.1"
+										strokeLinejoin="round"
+									/>
+								</svg>
+								{`${stepComments.length} ${stepComments.length === 1 ? "comentário" : "comentários"}`}
+							</span>
+						)}
 						<button
 							type="button"
 							onClick={() => setDrawerOpen(true)}
 							className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
 						>
-							Ver actions linkadas ({step.linkedActionRefs.length}) →
+							Ver ações relacionadas ({step.linkedActionRefs.length}) →
 						</button>
 						{/* Phase 2 drill-down — route into Findings filtered by
 						    the exact linkedFindingRefs persisted on this

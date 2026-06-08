@@ -253,13 +253,21 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					)}
 					methodologyDrillHref="/app/actions?status=done"
 				/>
+				{/* Was "Críticos abertos" — in practice the engine rarely
+				    emits severity=critical for envs without serious
+				    chargeback / security findings, so the tile read
+				    permanently zero. Replaced with "Findings em
+				    monitoramento" sourced from retainedFindingCount,
+				    which counts every open finding the engine is keeping
+				    eye on. Buyer-meaningful + uses data we already
+				    persist. */}
 				<Tile
-					label="Críticos abertos"
-					rawNumber={hero.criticalCount}
+					label="Findings em monitoramento"
+					rawNumber={hero.retainedFindingCount ?? hero.criticalCount}
 					delta={hero.criticalDeltaMoM}
 					invertDelta
-					methodologyDescription="Quantidade de findings com severity=critical em estado aberto (não resolvidos). Severidade é determinada pelo severity_hint da regra de inferência."
-					methodologyDrillHref="/app/findings?severity=critical"
+					methodologyDescription="Total de findings em estado aberto neste ciclo — incluindo low/medium/high. Vestigio mantém esse número em monitoramento contínuo entre ciclos. Apenas findings com confiança >= medium aparecem aqui."
+					methodologyDrillHref="/app/findings"
 				/>
 				<Tile
 					label="Em progresso"

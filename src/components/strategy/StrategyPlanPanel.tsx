@@ -323,19 +323,6 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				    slug; this surface is exec-shareable and shouldn't
 				    leak internal metrics. Generation date in the user's
 				    locale replaces both. */}
-				<footer className="mt-16 border-t border-edge pt-6 text-[11px] text-content-faint">
-					<div className="flex flex-wrap items-center justify-between gap-2">
-						<div>
-							Gerado por <span className="font-medium">Vestigio Pulse</span>
-						</div>
-						<div>
-							{new Date(plan.lastRegenerated).toLocaleDateString(
-								plan.locale === "pt-BR" ? "pt-BR" : "en-US",
-								{ day: "2-digit", month: "short", year: "numeric" },
-							)}
-						</div>
-					</div>
-				</footer>
 			</div>
 			</div>
 		</div>

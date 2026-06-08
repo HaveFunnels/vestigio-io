@@ -66,7 +66,11 @@ function Marker({
 						whileInView={{ opacity: 1, scale: 1 }}
 						viewport={{ once: true }}
 						transition={{ delay, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-						className="group/marker absolute -translate-x-1/2 -translate-y-1/2"
+						// User-agent button padding + border was offsetting
+						// the dot off the horizontal line. Reset to a bare
+						// flex container the size of the dot so -translate-y-1/2
+						// centers exactly on the line.
+						className="group/marker absolute flex h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 items-center justify-center border-0 bg-transparent p-0"
 						style={{ left: `${position}%`, top: "50%" }}
 					>
 						<div

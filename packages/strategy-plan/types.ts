@@ -22,6 +22,12 @@ export interface GenerateContext {
 	monthStart: Date;
 	/** First-of-next-month UTC. */
 	monthEnd: Date;
+	/** Engine translation maps for the owner's locale. Sub-generators
+	    that synthesise human-facing strings (Next Step titles, etc.)
+	    consult these instead of mechanical snake_case humanizing. When
+	    absent — English-locale orgs or when the dictionary lookup
+	    fails — sub-generators fall back to humanizing the key. */
+	translations?: import("../projections/types").EngineTranslations;
 }
 
 export interface HeroMetricsOutput {

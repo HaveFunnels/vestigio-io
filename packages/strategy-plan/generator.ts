@@ -108,6 +108,22 @@ async function buildContext(
 	const locale: GenerateContext["locale"] =
 		args.locale ?? (env.organization?.locale as any) ?? "pt-BR";
 
+	// Load engine translations once so sub-generators (titles, etc)
+	// can produce localised human strings instead of leaking snake_case
+	// identifiers like "Pricing Without Context". Lazy dynamic import
+	// keeps strategy-plan free of Next.js / Prisma path coupling.
+	let translations: GenerateContext["translations"];
+	if (locale !== "en") {
+		try {
+			const mod = await import("../../src/lib/engine-translations");
+			translations = mod.loadEngineTranslationsForLocale(locale) ?? undefined;
+		} catch {
+			// Worker context without the helper available; fall back to
+			// humanizing identifiers. Better to ship a slightly less polished
+			// title than to crash plan-gen on the lookup.
+		}
+	}
+
 	return {
 		ctx: {
 			environmentId: env.id,
@@ -116,6 +132,7 @@ async function buildContext(
 			locale,
 			monthStart,
 			monthEnd,
+			translations,
 		},
 		organizationId: env.organization?.id ?? null,
 	};

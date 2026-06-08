@@ -34,7 +34,10 @@ function makeCurrencyFormatter(target: number, currency: string): (n: number) =>
 function formatDelta(delta: number): string {
 	const pct = Math.abs(Math.round(delta * 100));
 	const arrow = delta > 0 ? "↗" : delta < 0 ? "↘" : "→";
-	return `${arrow} ${delta > 0 ? "+" : delta < 0 ? "−" : ""}${pct}% MoM`;
+	// "vs mês anterior" instead of "MoM" — same meaning, in the
+	// reader's language. The MoM abbreviation read as a translation
+	// leak on the pt-BR surface.
+	return `${arrow} ${delta > 0 ? "+" : delta < 0 ? "−" : ""}${pct}% vs mês anterior`;
 }
 
 function deltaTone(delta: number, invert = false): string {

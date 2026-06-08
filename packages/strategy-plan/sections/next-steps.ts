@@ -56,7 +56,10 @@ function ownerFromCategory(category: string): string {
 	return "time eng";
 }
 
-function titleFromAction(action: ActionRow): string {
+function titleFromAction(
+	action: ActionRow,
+	translations: import("../types").GenerateContext["translations"],
+): string {
 	// Compound chains often share the FIRST triggering inference (e.g.
 	// both `compound_copy_pricing_confusion__` and
 	// `compound_copy_conversion_paralysis__` begin with
@@ -65,14 +68,25 @@ function titleFromAction(action: ActionRow): string {
 	// different chains into the same human label in the plan UI
 	// (havefunnels: order 1 and 2 both rendered as "Cta Clarity Weak
 	// On Commercial em /"). For compound decisionKeys, use the chain
-	// identifier itself — it's distinct by design and reads better
-	// than picking some inference inside the chain. For non-compound
-	// keys, inferenceKeys[0] still reads as the most specific cause.
+	// identifier itself — it's distinct by design.
 	const isCompound = action.decisionKey.startsWith("compound_");
 	const ref = isCompound
 		? action.decisionKey.replace(/^compound_/, "").replace(/_+$/, "")
 		: (action.inferenceKeys[0] ?? action.decisionKey);
-	const friendly = ref.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+	// Sprint 3 — consult engine translations so the title surfaces in
+	// the owner's locale (e.g. "Trust Boundary Crossed" →
+	// "Compradores são jogados pra outro domínio no checkout" on pt-BR).
+	// Fallback chain: explicit dict lookup → root_cause_titles dict
+	// (covers compound chain decisionKeys when the inference catalog
+	// doesn't carry the compound id) → mechanical humanize.
+	const translated =
+		translations?.inference_titles?.[ref]
+		?? translations?.root_cause_titles?.[ref]
+		?? null;
+	const friendly = translated
+		?? ref.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
 	if (action.surface) return `${friendly} em ${action.surface}`;
 	return friendly;
 }
@@ -288,7 +302,7 @@ export async function generateNextSteps(
 
 			return {
 				order,
-				title: titleFromAction(action),
+				title: titleFromAction(action, ctx.translations),
 				reasoning: reasoning.text,
 				procedureSteps: catalog?.remediation_steps ?? [
 					"Reproduzir o problema localmente",

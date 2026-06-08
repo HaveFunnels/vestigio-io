@@ -108,15 +108,22 @@ function titleFromAction(
 		: (action.inferenceKeys[0] ?? action.decisionKey);
 
 	// Sprint 3 — consult engine translations so the title surfaces in
-	// the owner's locale (e.g. "Trust Boundary Crossed" →
-	// "Compradores são jogados pra outro domínio no checkout" on pt-BR).
-	// Fallback chain: explicit dict lookup → root_cause_titles dict
-	// (covers compound chain decisionKeys when the inference catalog
-	// doesn't carry the compound id) → mechanical humanize.
-	const translated =
-		translations?.inference_titles?.[ref]
-		?? translations?.root_cause_titles?.[ref]
-		?? null;
+	// the owner's locale. Fallback chain ordered by likelihood for each
+	// ref shape:
+	//   - compound chain (ref like "copy_pricing_confusion"): the
+	//     dictionary keeps these in `compound_type_titles` so check
+	//     there first. Then root_cause_titles as a safety net for
+	//     pre-Sprint-3.1 dicts that mixed them in.
+	//   - inference key (ref like "trust_boundary_crossed"): lives in
+	//     `inference_titles`. Root cause titles only used if the
+	//     inference dict is missing the entry.
+	const translated = isCompound
+		? (translations?.compound_type_titles?.[ref]
+			?? translations?.root_cause_titles?.[ref]
+			?? null)
+		: (translations?.inference_titles?.[ref]
+			?? translations?.root_cause_titles?.[ref]
+			?? null);
 	const friendly = translated
 		?? ref.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 

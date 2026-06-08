@@ -125,7 +125,7 @@ export default function DemoSurface() {
 								<video
 									ref={videoRef}
 									className="absolute inset-0 h-full w-full object-cover"
-									preload="metadata"
+									preload="auto"
 									playsInline
 									autoPlay
 									muted

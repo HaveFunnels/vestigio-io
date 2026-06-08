@@ -10,16 +10,21 @@ export default function ScrollReveal({
 	className?: string;
 }) {
 	const ref = useRef<HTMLDivElement>(null);
+	const [mounted, setMounted] = useState(false);
 	const [visible, setVisible] = useState(false);
 
 	useEffect(() => {
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
 			setVisible(true);
+			setMounted(true);
 			return;
 		}
 
 		const el = ref.current;
-		if (!el) return;
+		if (!el) {
+			setMounted(true);
+			return;
+		}
 
 		const obs = new IntersectionObserver(
 			([entry]) => {
@@ -32,14 +37,17 @@ export default function ScrollReveal({
 		);
 
 		obs.observe(el);
+		setMounted(true);
 		return () => obs.disconnect();
 	}, []);
+
+	const isHidden = mounted && !visible;
 
 	return (
 		<div
 			ref={ref}
 			className={`transition-[opacity,transform] duration-700 ease-out ${
-				visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+				isHidden ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
 			} ${className}`}
 		>
 			{children}

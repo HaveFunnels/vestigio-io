@@ -207,7 +207,15 @@ export class PrismaFindingStore {
 					// Wave 20.4 — lifecycle. Defaults match applyLifecycle
 					// output for first-time findings (no prior).
 					f.status ?? 'created',                                  // $baseIdx+17
-					f.status_changed_at ?? new Date().toISOString(),        // $baseIdx+18
+					// Pass a Date object, not an ISO string. Postgres 18+
+					// stopped doing implicit text->timestamp cast on raw
+					// param substitution, so $executeRawUnsafe threw 42804
+					// "column statusChangedAt is timestamp but expression
+					// is text". Prisma's typed query path auto-casts; the
+					// raw path does not. Diagnosed 2026-06-08 — every
+					// audit since the Postgres bump was failing the
+					// findings batch with 0/N written.
+					f.status_changed_at ? new Date(f.status_changed_at) : new Date(), // $baseIdx+18
 					f.cycles_seen ?? 1,                                     // $baseIdx+19
 					// Wave 22.5 — surface_kind nullable string.
 					f.surface_kind ?? null,                                 // $baseIdx+20

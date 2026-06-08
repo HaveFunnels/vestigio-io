@@ -1,9 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import StrategyPlanPanel from "@/components/strategy/StrategyPlanPanel";
+import { useTrack } from "@/hooks/useProductTrack";
 import type { StrategyPlan } from "@/components/strategy/types";
 import { MOCK_PLAN_HAVEFUNNELS_2026_06 } from "@/components/strategy/mock-data";
 
@@ -58,8 +59,28 @@ export default function StrategyPlanPage() {
 	const params = useParams<{ month: string }>();
 	const month = params?.month;
 	const envId = getEnvironmentId();
+	const { track } = useTrack();
 
 	const [state, setState] = useState<FetchState>({ status: "loading" });
+
+	// Phase 3.5 — telemetry for the Pulse-vs-Plan home decision.
+	// Fires once per mount; consumes the first-surface sentinel so the
+	// admin dashboard can split sessions that landed in the Plan first
+	// from those that bounced over from /app/pulse.
+	const visitFired = useRef(false);
+	useEffect(() => {
+		if (visitFired.current || !month) return;
+		visitFired.current = true;
+		let isFirst = false;
+		try {
+			const KEY = "vestigio.first_surface_this_session";
+			if (!window.sessionStorage.getItem(KEY)) {
+				window.sessionStorage.setItem(KEY, "plan");
+				isFirst = true;
+			}
+		} catch { /* private mode — accept undefined attribution */ }
+		track("plan.visit", { month, is_first_surface_this_session: isFirst });
+	}, [month, track]);
 
 	useEffect(() => {
 		if (!month) return;

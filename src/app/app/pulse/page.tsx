@@ -18,9 +18,9 @@
 //     for every widget id and the grid renders empty placeholders.
 // ──────────────────────────────────────────────
 
-import Link from "next/link";
 import { resolveOrgContext } from "@/libs/resolve-org";
 import { DashboardShell } from "@/components/console/dashboard/DashboardShell";
+import { PulseVisitMarker, PlanStripLink } from "@/components/app/PulseTelemetry";
 import {
 	DEFAULT_LAYOUT,
 	type WidgetInstance,
@@ -96,7 +96,8 @@ export default async function DashboardPage() {
 
 	return (
 		<main className='mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-8'>
-			<Link
+			<PulseVisitMarker />
+			<PlanStripLink
 				href={planHref}
 				className='group mb-4 flex w-full items-center justify-between gap-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 text-left transition-all hover:border-edge-focus hover:from-surface-card-hover'
 			>
@@ -121,7 +122,7 @@ export default async function DashboardPage() {
 				<span className='shrink-0 rounded-md border border-edge bg-surface px-3 py-1.5 text-[12px] font-medium text-content transition-colors group-hover:border-edge-focus'>
 					Abrir Plano →
 				</span>
-			</Link>
+			</PlanStripLink>
 
 			<DashboardShell initialInstances={finalLayout} data={data} />
 		</main>

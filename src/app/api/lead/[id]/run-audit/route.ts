@@ -30,7 +30,9 @@ export async function POST(
 ) {
 	// SEC-04: Verify form session token to prevent unauthenticated SSRF
 	const formToken = request.headers.get("x-vestigio-form-session");
-	const clientIp = request.headers.get("x-real-ip") || request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+	const realIp = request.headers.get("x-real-ip");
+	const forwarded = request.headers.get("x-forwarded-for");
+	const clientIp = realIp?.trim() || (forwarded ? forwarded.split(",").pop()!.trim() : "0.0.0.0");
 	const verification = verifyFormToken(formToken, clientIp);
 	if (!verification.valid) {
 		return NextResponse.json({ message: "Forbidden" }, { status: 403 });

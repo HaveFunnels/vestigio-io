@@ -35,9 +35,14 @@ import { parseRevenue } from "@/components/form-fields/types";
 export const dynamic = "force-dynamic";
 
 function getClientIp(request: Request): string {
+	const realIp = request.headers.get("x-real-ip");
+	if (realIp) return realIp.trim();
 	const forwarded = request.headers.get("x-forwarded-for");
-	if (forwarded) return forwarded.split(",")[0].trim();
-	return request.headers.get("x-real-ip") || "0.0.0.0";
+	if (forwarded) {
+		const parts = forwarded.split(",");
+		return parts[parts.length - 1].trim();
+	}
+	return "0.0.0.0";
 }
 
 interface StepBody {

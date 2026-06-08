@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import type {
 	NextStep,
@@ -99,6 +99,99 @@ interface StepCardProps {
 	envId: string;
 	month: string;
 	planId: string;
+}
+
+// ──────────────────────────────────────────────
+// StatusDropdown — bespoke popover replacing the native <select> so
+// the trigger + menu match the rest of the plan visual language
+// (rounded-xl surface card, severity-tone hover, no user-agent
+// chrome). Closes on outside click + Escape + selection.
+// ──────────────────────────────────────────────
+function StatusDropdown({
+	status,
+	onChange,
+}: {
+	status: NextStepStatus;
+	onChange: (next: NextStepStatus) => void;
+}) {
+	const [open, setOpen] = useState(false);
+	const ref = useRef<HTMLDivElement | null>(null);
+
+	useEffect(() => {
+		if (!open) return;
+		function handleClick(e: MouseEvent) {
+			if (!ref.current?.contains(e.target as Node)) setOpen(false);
+		}
+		function handleKey(e: KeyboardEvent) {
+			if (e.key === "Escape") setOpen(false);
+		}
+		document.addEventListener("mousedown", handleClick);
+		document.addEventListener("keydown", handleKey);
+		return () => {
+			document.removeEventListener("mousedown", handleClick);
+			document.removeEventListener("keydown", handleKey);
+		};
+	}, [open]);
+
+	return (
+		<div ref={ref} className="relative inline-block">
+			<button
+				type="button"
+				onClick={() => setOpen((v) => !v)}
+				className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 transition-colors ${STATUS_TONE[status]}`}
+				aria-haspopup="listbox"
+				aria-expanded={open}
+			>
+				<span>{STATUS_LABEL[status]}</span>
+				<svg
+					className={`h-3 w-3 opacity-70 transition-transform ${open ? "rotate-180" : ""}`}
+					viewBox="0 0 12 12"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth="1.6"
+				>
+					<path d="M3 4.5L6 7.5L9 4.5" strokeLinecap="round" strokeLinejoin="round" />
+				</svg>
+			</button>
+			{open && (
+				<div
+					role="listbox"
+					className="absolute left-0 top-full z-30 mt-1.5 min-w-[160px] overflow-hidden rounded-xl border border-edge bg-surface-card shadow-lg ring-1 ring-edge/40"
+				>
+					{(Object.keys(STATUS_LABEL) as NextStepStatus[]).map((s) => (
+						<button
+							key={s}
+							type="button"
+							role="option"
+							aria-selected={s === status}
+							onClick={() => {
+								onChange(s);
+								setOpen(false);
+							}}
+							className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] transition-colors hover:bg-surface-card-hover ${
+								s === status ? "bg-surface-card-hover text-content" : "text-content-secondary"
+							}`}
+						>
+							<span
+								className={`inline-block h-1.5 w-1.5 rounded-full ${
+									s === "done"
+										? "bg-emerald-400"
+										: s === "in_progress"
+											? "bg-amber-400"
+											: s === "in_review"
+												? "bg-sky-400"
+												: s === "blocked"
+													? "bg-rose-400"
+													: "bg-content-faint"
+								}`}
+							/>
+							{STATUS_LABEL[s]}
+						</button>
+					))}
+				</div>
+			)}
+		</div>
+	);
 }
 
 function StepCard({
@@ -419,32 +512,13 @@ function StepCard({
 						<span>{isDone ? "Marcado feito" : "Marcar feito"}</span>
 					</button>
 
-					{/* Status as a select. Replaces the read-only chip — the
-					    full lifecycle (todo / in_progress / in_review / done /
-					    blocked) is now editable inline without opening a
-					    drawer. */}
-					<label className="relative inline-flex">
-						<select
-							value={status}
-							onChange={(e) => handleStatusChange(e.currentTarget.value as NextStepStatus)}
-							className={`appearance-none rounded-full pl-2.5 pr-7 py-0.5 text-[11px] font-medium ring-1 cursor-pointer outline-none transition-colors ${STATUS_TONE[status]}`}
-						>
-							{(Object.keys(STATUS_LABEL) as NextStepStatus[]).map((s) => (
-								<option key={s} value={s}>
-									{STATUS_LABEL[s]}
-								</option>
-							))}
-						</select>
-						<svg
-							className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 opacity-60"
-							viewBox="0 0 12 12"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="1.6"
-						>
-							<path d="M3 4.5L6 7.5L9 4.5" strokeLinecap="round" strokeLinejoin="round" />
-						</svg>
-					</label>
+					{/* Status dropdown — full lifecycle inline editable. Custom
+					    popover instead of <select> so the option list
+					    matches the rest of the plan's visual language
+					    (rounded-xl panel, hover tones). The native select
+					    used user-agent menu chrome that broke the surface
+					    aesthetic. */}
+					<StatusDropdown status={status} onChange={handleStatusChange} />
 
 					{/* Due date — bare input, no label. Empty = no due date.
 					    Click opens the native picker, blur persists. */}

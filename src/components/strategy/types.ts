@@ -93,6 +93,12 @@ export interface MemoryWindow {
 	label: string;
 	actionsResolved: number;
 	capturedTotal: number;
+	/** Sprint 3.4 — number of findings the engine DETECTED in this
+	 *  window (irrespective of resolution). Surfaces Vestigio's work
+	 *  even when the customer hasn't acted on anything yet, so the
+	 *  Memory card never reads as a flat zero. Optional for backward
+	 *  compatibility with plans generated before the column landed. */
+	findingsDetected?: number;
 	topCategories: string[];
 	biggestWin?: {
 		title: string;

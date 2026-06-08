@@ -152,22 +152,37 @@ function RollupCard({
 				</div>
 			</div>
 
-			<div className="mb-4 grid grid-cols-2 gap-3">
-				<div>
-					<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-						Resolvidas
-					</div>
-					<div className="mt-1 font-mono text-[22px] font-semibold tabular-nums text-content">
-						{window.actionsResolved}
-					</div>
+			{/* Sprint 3.4 — primary metric flipped to "Vestigio detectou".
+			    The card always shows continuous work this way, even when
+			    nothing's been resolved yet. Secondary line surfaces
+			    what the customer has done so the protective/active
+			    pairing reads as a partnership, not a blame chart. */}
+			<div className="mb-4">
+				<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+					Vestigio detectou
 				</div>
-				<div>
-					<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-						Capturado
-					</div>
-					<div className="mt-1 font-mono text-[22px] font-semibold tabular-nums text-content">
-						{fmtCurrencyUnits(window.capturedTotal, currency)}
-					</div>
+				<div className="mt-1 font-mono text-[28px] font-semibold tabular-nums leading-none text-content">
+					{window.findingsDetected ?? 0}
+					<span className="ml-1 text-[12px] font-normal text-content-faint">
+						{(window.findingsDetected ?? 0) === 1 ? "vazamento" : "vazamentos"}
+					</span>
+				</div>
+				<div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-edge/40 pt-2 text-[11px] text-content-muted">
+					<span>
+						<span className="font-mono tabular-nums text-content">{window.actionsResolved}</span>
+						{" "}já resolvidos
+					</span>
+					{window.capturedTotal > 0 && (
+						<>
+							<span className="text-content-faint">·</span>
+							<span>
+								<span className="font-mono tabular-nums text-content">
+									{fmtCurrencyUnits(window.capturedTotal, currency)}
+								</span>
+								{" "}recuperados
+							</span>
+						</>
+					)}
 				</div>
 			</div>
 

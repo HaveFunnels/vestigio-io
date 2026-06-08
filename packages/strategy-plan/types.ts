@@ -69,6 +69,11 @@ export interface MemoryWindowOutput {
 	label: string;
 	actionsResolved: number;
 	capturedTotal: number;
+	/** Sprint 3.4 — total findings detected by the engine in window
+	 *  (irrespective of resolution). Drives the "Vestigio detectou"
+	 *  primary metric so the card shows continuous work even when
+	 *  customer hasn't acted yet. */
+	findingsDetected?: number;
 	topCategories: string[];
 	biggestWin?: {
 		title: string;

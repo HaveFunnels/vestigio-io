@@ -62,6 +62,19 @@ async function buildWindow(
 		orderBy: { impactMidpoint: "desc" },
 	});
 
+	// Sprint 3.4 — also count every finding the engine *detected* in
+	// the window, irrespective of resolution. Surfaces Vestigio's
+	// continuous work in the Memory card even when the customer
+	// hasn't acted on anything yet (which is the common case for
+	// new envs). Without this the card reads as a flat "0 resolvidas
+	// · R$ 0 capturado" and the product looks idle.
+	const findingsDetected = await prisma.finding.count({
+		where: {
+			environmentId,
+			createdAt: { gte: start, lt: end },
+		},
+	});
+
 	const capturedTotal = Math.round(
 		resolved.reduce((a, r) => a + r.impactMidpoint, 0),
 	);
@@ -102,6 +115,7 @@ async function buildWindow(
 		label: windowLabel(monthsBack),
 		actionsResolved: resolved.length,
 		capturedTotal,
+		findingsDetected,
 		topCategories,
 		monthlyValues,
 		...(biggestWin ? { biggestWin } : {}),

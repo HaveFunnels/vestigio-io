@@ -150,10 +150,10 @@ export default function ValuePreview({ preview, narrative }: Props) {
 		>
 			<div className="mb-6 flex items-baseline justify-between">
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
-					O que você ganha continuando
+					O que o próximo mês destrava
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					timeline cumulativo
+					timeline cumulativo · M1 → M12
 				</div>
 			</div>
 

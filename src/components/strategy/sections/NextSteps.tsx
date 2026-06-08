@@ -15,6 +15,7 @@ import PlanCommentThread from "../PlanCommentThread";
 import PlanEditBanner from "../PlanEditBanner";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import { useCopilot } from "@/components/app/CopilotProvider";
 
 /*
  * Next Steps — "Próximo passo, atacar nesta ordem"
@@ -119,6 +120,19 @@ function StepCard({
 	const [editingTitle, setEditingTitle] = useState(false);
 	const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
 	const [findingsDrawerOpen, setFindingsDrawerOpen] = useState(false);
+	const copilot = useCopilot();
+
+	function discussStep() {
+		copilot.open({
+			prompt: `Quero discutir o passo "${title}" do plano de estratégia mensal. Reasoning: ${step.reasoning.slice(0, 300)}. Me ajuda a entender melhor e decidir como atacar?`,
+		});
+	}
+
+	function askHowToDo(procedureText: string, idx: number) {
+		copilot.open({
+			prompt: `Sobre o passo "${title}", como faço a seguinte parte do procedimento (item ${idx + 1})? "${procedureText}"`,
+		});
+	}
 	const { currency } = useMcpData();
 	const isDone = status === "done";
 	// formatDate(dueAt) was used for the previous read-only chip; the
@@ -299,12 +313,28 @@ function StepCard({
 							{step.procedureSteps.map((proc, i) => (
 								<li
 									key={i}
-									className="flex gap-3 text-[14px] leading-[1.55] text-content-secondary"
+									className="group/proc flex gap-3 text-[14px] leading-[1.55] text-content-secondary"
 								>
 									<span className="shrink-0 font-mono text-[12px] tabular-nums text-content-faint">
 										{i + 1}.
 									</span>
-									<span>{proc}</span>
+									<span className="flex-1">{proc}</span>
+									{/* Hover affordance — "Como faço isso?" opens the
+									    Copilot panel with the procedure text as
+									    seed. Stays hidden until hover so the
+									    procedure list doesn't look like a
+									    button row. */}
+									<button
+										type="button"
+										onClick={() => askHowToDo(proc, i)}
+										className="hidden shrink-0 items-center gap-1 self-start rounded-md border border-edge bg-surface-card px-2 py-0.5 text-[10px] font-medium text-content-muted opacity-0 transition-all group-hover/proc:flex group-hover/proc:opacity-100 hover:border-edge-focus hover:text-content"
+										title="Pedir ajuda da Vestigio AI"
+									>
+										<svg className="h-2.5 w-2.5" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
+											<path strokeLinecap="round" d="M5 7v.5M3.5 4a1.5 1.5 0 113 0c0 .5-.3.9-.7 1.2-.4.3-.8.5-.8 1.3" />
+										</svg>
+										Como faço?
+									</button>
 								</li>
 							))}
 						</ol>
@@ -457,6 +487,17 @@ function StepCard({
 								{`${stepComments.length} ${stepComments.length === 1 ? "comentário" : "comentários"}`}
 							</span>
 						)}
+						<button
+							type="button"
+							onClick={discussStep}
+							className="inline-flex items-center gap-1 text-[12px] text-content-muted transition-colors hover:text-content"
+							title="Abrir o copilot pra discutir esse passo"
+						>
+							<svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M2 3.5h8v5H6.5L4 10v-1.5H2z" />
+							</svg>
+							Discutir com Vestigio
+						</button>
 						<button
 							type="button"
 							onClick={() => setActionsDrawerOpen(true)}

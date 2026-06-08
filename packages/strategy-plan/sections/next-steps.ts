@@ -56,9 +56,42 @@ function ownerFromCategory(category: string): string {
 	return "time eng";
 }
 
+const SURFACE_HUMAN_PT_BR: Record<string, string> = {
+	"/": "na página inicial",
+	"/pricing": "na página de preços",
+	"/checkout": "no checkout",
+	"/signup": "no cadastro",
+	"/login": "no login",
+	"/dashboard": "no dashboard",
+	"/app": "no app",
+	"/about": "na página sobre",
+	"/contact": "na página de contato",
+	"/blog": "no blog",
+	"/faq": "no FAQ",
+};
+
+function humanizeSurface(surface: string | null, locale: string): string {
+	if (!surface) return "";
+	// pt-BR — replace the bare path with a friendly locative phrase so
+	// "Em /" doesn't read as a leak. Fall back to "em <path>" for paths
+	// not in the dictionary; users with custom routes still see the
+	// exact URL and the prefix word doesn't read as broken English.
+	if (locale === "pt-BR") {
+		const human = SURFACE_HUMAN_PT_BR[surface];
+		if (human) return ` ${human}`;
+		// Generic fallback: a clean URL path stays useful
+		// ("em /checkout-v2") and reads correctly in pt.
+		return ` em ${surface}`;
+	}
+	// Other locales: keep "em <surface>" English fallback for now;
+	// add localised maps when those plans regenerate at scale.
+	return ` em ${surface}`;
+}
+
 function titleFromAction(
 	action: ActionRow,
 	translations: import("../types").GenerateContext["translations"],
+	locale: string,
 ): string {
 	// Compound chains often share the FIRST triggering inference (e.g.
 	// both `compound_copy_pricing_confusion__` and
@@ -87,8 +120,8 @@ function titleFromAction(
 	const friendly = translated
 		?? ref.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
-	if (action.surface) return `${friendly} em ${action.surface}`;
-	return friendly;
+	const locative = humanizeSurface(action.surface, locale);
+	return `${friendly}${locative}`;
 }
 
 function fallbackReasoning(action: ActionRow): string {
@@ -302,7 +335,7 @@ export async function generateNextSteps(
 
 			return {
 				order,
-				title: titleFromAction(action, ctx.translations),
+				title: titleFromAction(action, ctx.translations, ctx.locale),
 				reasoning: reasoning.text,
 				procedureSteps: catalog?.remediation_steps ?? [
 					"Reproduzir o problema localmente",

@@ -77,6 +77,17 @@ async function pickTopActions(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
 ): Promise<ActionRow[]> {
+	// Dedupe at the SQL layer with `distinct: ["decisionKey"]`. Prisma
+	// returns the first row per distinct combination respecting orderBy,
+	// so the highest-priorityScore row per decisionKey wins. Then take 5.
+	//
+	// The previous implementation did `take: 12` followed by in-app
+	// dedupe. For envs where many actions share a decisionKey AND tie on
+	// priorityScore (e.g. 51 compound_copy_pricing_confusion__ rows all
+	// at 10688), the LIMIT 12 captured 12 copies of the same key and
+	// dedupe collapsed to a single next step. The plan then shipped with
+	// 1 step instead of up to 5. Confirmed against havefunnels — fix
+	// shifts dedupe into the query so the LIMIT counts unique keys.
 	const rows = await prisma.action.findMany({
 		where: {
 			environmentId: ctx.environmentId,
@@ -95,17 +106,21 @@ async function pickTopActions(
 			surface: true,
 			projection: true, // contains linked inferences
 		},
-		orderBy: { priorityScore: "desc" },
-		take: 12, // pick top 12, then dedupe by decisionKey + take 5
+		distinct: ["decisionKey"],
+		orderBy: [
+			{ priorityScore: "desc" },
+			// Tie-break for stable ordering when priorityScore matches —
+			// without this, ties yield undefined row order and the
+			// "first per decisionKey" semantic becomes non-deterministic
+			// across runs.
+			{ impactMidpoint: "desc" },
+			{ id: "asc" },
+		],
+		take: 5,
 	});
 
-	// Dedupe by decisionKey — multiple sub-actions can roll up to one
-	// "step" in the plan.
-	const seen = new Set<string>();
 	const out: ActionRow[] = [];
 	for (const r of rows) {
-		if (seen.has(r.decisionKey)) continue;
-		seen.add(r.decisionKey);
 		let inferenceKeys: string[] = [];
 		try {
 			const parsed = JSON.parse(r.projection);
@@ -119,7 +134,6 @@ async function pickTopActions(
 			// still ships with decisionKey-derived metadata.
 		}
 		out.push({ ...r, inferenceKeys });
-		if (out.length >= 5) break;
 	}
 	return out;
 }

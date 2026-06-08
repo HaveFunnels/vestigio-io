@@ -125,8 +125,10 @@ export default function DemoSurface() {
 								<video
 									ref={videoRef}
 									className="absolute inset-0 h-full w-full object-cover"
-									preload="none"
+									poster="/images/hero/vsl-poster.jpg"
+									preload="metadata"
 									playsInline
+									autoPlay
 									muted
 									onTimeUpdate={handleTimeUpdate}
 									onEnded={handleEnded}

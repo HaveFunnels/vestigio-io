@@ -171,6 +171,16 @@ export default function AppSidebar({
 		if (item.id === "plan") {
 			return pathname.startsWith("/app/library/strategy/");
 		}
+		// Library / Histórico special case — its href (/app/library) is a
+		// prefix of /app/library/strategy/<month>, which is the Plano
+		// route. Without this exclusion, opening the Plan lights up BOTH
+		// "Plano" and "Histórico" in the sidenav. Histórico is only
+		// active on its own listing route, not under the strategy
+		// subtree.
+		if (item.id === "library") {
+			return pathname === "/app/library"
+				|| (pathname.startsWith("/app/library/") && !pathname.startsWith("/app/library/strategy/"));
+		}
 		if (item.href) {
 			return pathname === item.href || pathname.startsWith(item.href + "/");
 		}

@@ -43,8 +43,15 @@ async function buildWindow(
 	monthStart: Date,
 	monthsBack: number,
 ): Promise<MemoryWindowOutput> {
-	const start = addMonths(monthStart, -monthsBack);
-	const end = monthStart;
+	// Window semantics: "trailing N months INCLUDING the plan's own
+	// month". Previous implementation used `end = monthStart` which
+	// meant "prior calendar months only" — for a brand-new env whose
+	// findings all carry createdAt inside the plan's month, every
+	// window returned 0 and the Memory section read as if nothing was
+	// happening. Including the current month captures the engine's
+	// work in 1m the first time a customer reads the plan.
+	const start = addMonths(monthStart, -monthsBack + 1);
+	const end = addMonths(monthStart, 1);
 
 	const resolved = await prisma.finding.findMany({
 		where: {

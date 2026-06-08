@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import StrategyPlanDialog from "@/components/strategy/StrategyPlanDialog";
+import ActionCard from "@/components/actions/ActionCard";
 import { MOCK_PLAN_HAVEFUNNELS_2026_06 } from "@/components/strategy/mock-data";
 import { useTranslations, useLocale } from "next-intl";
 import { formatDate } from "@/lib/format-date";
@@ -292,6 +293,21 @@ function ActionsContent({
 	const { data: session } = useSession();
 	const currentUserId = (session?.user as { id?: string } | undefined)?.id ?? null;
 	const [viewMode, setViewMode] = useState<"list" | "scatter">("list");
+	// Phase 2 — within "list" mode, choose between cards-default
+	// (owner-decisor) and the dense table (analyst). localStorage
+	// persists the choice per browser; mirrors the same toggle on
+	// /app/findings.
+	const [listMode, setListMode] = useState<"cards" | "table">("cards");
+	useEffect(() => {
+		try {
+			const saved = window.localStorage.getItem("vestigio.actions.view");
+			if (saved === "cards" || saved === "table") setListMode(saved);
+		} catch { /* ignore */ }
+	}, []);
+	const updateListMode = useCallback((next: "cards" | "table") => {
+		setListMode(next);
+		try { window.localStorage.setItem("vestigio.actions.view", next); } catch { /* ignore */ }
+	}, []);
 	const [typeFilter, setTypeFilter] = useState<string>("all");
 	const [severityFilter, setSeverityFilter] = useState<string>("all");
 	const [effortFilter, setEffortFilter] = useState<string>("all");
@@ -1028,22 +1044,50 @@ function ActionsContent({
 						{ value: "high", label: t("filters.effort_high") },
 					]} />
 
-					{/* View toggle: list / scatter */}
-					<div className="ml-auto flex rounded-lg border border-edge overflow-hidden">
-						<button
-							type="button"
-							onClick={() => setViewMode("list")}
-							className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-surface-card-hover text-content" : "text-content-faint hover:text-content-secondary"}`}
-						>
-							{t("scatter.toggle_list")}
-						</button>
-						<button
-							type="button"
-							onClick={() => setViewMode("scatter")}
-							className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "scatter" ? "bg-surface-card-hover text-content" : "text-content-faint hover:text-content-secondary"}`}
-						>
-							{t("scatter.toggle_scatter")}
-						</button>
+					{/* View toggle: list / scatter (+ cards/table within list) */}
+					<div className="ml-auto flex flex-wrap items-center gap-2">
+						{viewMode === "list" && (
+							<div className="inline-flex overflow-hidden rounded-md border border-edge">
+								<button
+									type="button"
+									onClick={() => updateListMode("cards")}
+									className={`px-3 py-1 text-[12px] font-medium transition-colors ${
+										listMode === "cards"
+											? "bg-content text-surface-card"
+											: "bg-surface-card text-content-muted hover:text-content"
+									}`}
+								>
+									Cards
+								</button>
+								<button
+									type="button"
+									onClick={() => updateListMode("table")}
+									className={`border-l border-edge px-3 py-1 text-[12px] font-medium transition-colors ${
+										listMode === "table"
+											? "bg-content text-surface-card"
+											: "bg-surface-card text-content-muted hover:text-content"
+									}`}
+								>
+									Tabela
+								</button>
+							</div>
+						)}
+						<div className="flex rounded-lg border border-edge overflow-hidden">
+							<button
+								type="button"
+								onClick={() => setViewMode("list")}
+								className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "list" ? "bg-surface-card-hover text-content" : "text-content-faint hover:text-content-secondary"}`}
+							>
+								{t("scatter.toggle_list")}
+							</button>
+							<button
+								type="button"
+								onClick={() => setViewMode("scatter")}
+								className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "scatter" ? "bg-surface-card-hover text-content" : "text-content-faint hover:text-content-secondary"}`}
+							>
+								{t("scatter.toggle_scatter")}
+							</button>
+						</div>
 					</div>
 				</div>
 			)}
@@ -1076,6 +1120,29 @@ function ActionsContent({
 					actions={filtered}
 					onSelect={(row) => { setSelected(row); track("drawer_open", { entity_type: "action", entity_id: row.id }); }}
 				/>
+			) : listMode === "cards" ? (
+				filtered.length === 0 ? (
+					<div className="rounded-2xl border border-edge bg-surface-card p-6 text-center text-[13px] text-content-muted">
+						Nenhuma ação encontrada para esses filtros.
+					</div>
+				) : (
+					<div className="flex flex-col gap-2">
+						{filtered.map((row, i) => (
+							<ActionCard
+								key={row.id}
+								action={row}
+								defaultExpanded={i === 0}
+								onOpen={(action) => {
+									setSelected(action);
+									track("drawer_open", { entity_type: "action", entity_id: action.id });
+								}}
+								onDiscuss={(action) =>
+									copilot.open({ prompt: t("drawer.prompt_discuss", { title: action.title }) })
+								}
+							/>
+						))}
+					</div>
+				)
 			) : (
 				<DataTable
 					columns={columns}

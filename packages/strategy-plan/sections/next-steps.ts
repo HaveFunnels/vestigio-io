@@ -235,16 +235,30 @@ function buildPrompt(
 	order: number,
 	envDomain: string,
 	monthLabel: string,
+	translations: import("../types").GenerateContext["translations"],
 ): { system: string; user: string } {
 	const system = `Você escreve a seção "POR QUE PRIMEIRO" do passo ${order} do Plano de Estratégia mensal para ${envDomain}.
 
 Regras:
 1. Escreva 2 parágrafos curtos em português brasileiro, ~80-100 palavras no total.
-2. Use **negrito** para destacar números, severidades e nomes de componentes. Use \`código inline\` para nomes técnicos (caminhos de arquivo, props, classes CSS).
-3. NÃO use listas, NÃO use cabeçalhos.
-4. Primeiro parágrafo: por que esse passo é prioritário (severidade + impacto + contexto da causa).
-5. Segundo parágrafo: urgência calibrada (custo de NÃO fazer + dependências com outros passos se aplicável).
-6. Tom factual, sem hype. Se faltar dado pra justificar urgência alta, dê uma justificativa mais modesta.`;
+2. Use **negrito** para destacar números, severidades e nomes de componentes. Use \`código inline\` APENAS para nomes técnicos reais (caminhos de arquivo, props, classes CSS).
+3. NUNCA reproduza identificadores em snake_case, slugs internos, ou termos como "weak_cta", "trust_boundary_crossed", "compound_*" — esses são códigos do engine, não devem aparecer no texto. Use sempre os nomes humanos fornecidos.
+4. NÃO use listas, NÃO use cabeçalhos.
+5. Primeiro parágrafo: por que esse passo é prioritário (severidade + impacto + contexto da causa).
+6. Segundo parágrafo: urgência calibrada (custo de NÃO fazer + dependências com outros passos se aplicável).
+7. Tom factual, sem hype. Se faltar dado pra justificar urgência alta, dê uma justificativa mais modesta.`;
+
+	// Resolve inference keys to friendly names so the LLM has no
+	// raw snake_case to echo. Falls back to mechanical humanize when
+	// the dict misses the key; never sends "weak_cta" through verbatim.
+	const friendlyFindings = action.inferenceKeys
+		.slice(0, 3)
+		.map((k) => {
+			const t = translations?.inference_titles?.[k]
+				?? translations?.root_cause_titles?.[k]
+				?? null;
+			return t ?? k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+		});
 
 	const lines: string[] = [];
 	lines.push(`Ação ${order} no Plano de ${monthLabel} para ${envDomain}:`);
@@ -255,13 +269,12 @@ Regras:
 		);
 	}
 	if (action.surface) lines.push(`- Surface afetada: ${action.surface}`);
-	if (action.inferenceKeys.length > 0) {
-		lines.push(`- Findings que disparam essa ação: ${action.inferenceKeys.slice(0, 3).join(", ")}`);
+	if (friendlyFindings.length > 0) {
+		lines.push(`- Findings que disparam essa ação: ${friendlyFindings.join("; ")}`);
 	}
 	lines.push(`- Categoria: ${action.category}`);
-	lines.push(`- priorityScore: ${action.priorityScore}`);
 	lines.push("");
-	lines.push("Escreva o POR QUE PRIMEIRO agora.");
+	lines.push("Escreva o POR QUE PRIMEIRO agora — sem repetir os códigos do engine, apenas os nomes humanos.");
 	return { system, user: lines.join("\n") };
 }
 
@@ -320,7 +333,7 @@ export async function generateNextSteps(
 			const catalog =
 				REMEDIATION_CATALOG[primaryKey] ?? getDynamicRemediation(primaryKey);
 
-			const { system, user } = buildPrompt(action, order, ctx.envDomain, month);
+			const { system, user } = buildPrompt(action, order, ctx.envDomain, month, ctx.translations);
 			const reasoning = await callForText({
 				model: "haiku_4_5",
 				systemPrompt: system,

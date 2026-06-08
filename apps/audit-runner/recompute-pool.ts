@@ -178,7 +178,25 @@ class RecomputePool {
 	): void {
 		const id = ++this.nextJobId;
 		this.pendingByWorker.set(w, { id, resolve, reject });
-		w.postMessage({ id, input });
+		// Worker.postMessage uses structured clone, which CANNOT clone
+		// functions. MultiPackInput.surface_resolver is an interface
+		// with method properties (the closure captured by
+		// buildSurfaceResolver); leaving it on the payload throws
+		// "<fn-source>... could not be cloned" and the cycle fails at
+		// pipeline_headless with no recoverable error. Diagnosed
+		// 2026-06-08 from the havefunnels failure pattern.
+		//
+		// Strip the resolver before postMessage. The worker falls back
+		// to the URL-substring heuristic (classifySurfaceByUrl), which
+		// is the legacy behavior — slightly less accurate for envs
+		// with declared Surface rows but not broken. Future revision
+		// can pass surface_declarations as data and rebuild the
+		// resolver inside the worker; that's a follow-up, not the
+		// minimum fix.
+		const safeInput: MultiPackInput = input.surface_resolver
+			? { ...input, surface_resolver: undefined }
+			: input;
+		w.postMessage({ id, input: safeInput });
 	}
 
 	run(input: MultiPackInput): Promise<MultiPackResult> {

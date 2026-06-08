@@ -1045,8 +1045,8 @@ export interface CompetitorPageSnapshotPayload {
 // SerpResultsPayload — Wave 25
 //
 // One row per (env, cycle, query) capturing organic search results
-// from the env's locale-appropriate SERP provider (Brave Search in
-// Wave 25). Drives competitive_lens "offensive radar" rules:
+// from the env's locale-appropriate SERP provider (Tavily Search).
+// Drives competitive_lens "offensive radar" rules:
 //
 //   - brand_serp_encroachment — competitor ranks top-5 organic when
 //     someone searches for YOUR brand name
@@ -1059,11 +1059,11 @@ export interface CompetitorPageSnapshotPayload {
 // ──────────────────────────────────────────────
 export interface SerpResultsPayload {
   type: 'serp_results';
-  /** Provider name — 'brave_search' in Wave 25. */
+  /** Provider name — 'tavily' as of Wave 25. */
   provider: string;
   /** Query as sent to the provider. */
   query: string;
-  /** Locale string (BCP-47-ish). Drives Brave's country + search_lang. */
+  /** Locale string (BCP-47-ish). Drives Tavily's country mapping. */
   locale: string;
   /** Query intent classification — 'brand' when this is a search for
    *  the env's own brand name, 'category' for industry/keyword

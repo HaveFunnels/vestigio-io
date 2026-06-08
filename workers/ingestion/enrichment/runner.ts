@@ -47,7 +47,7 @@ const PASS_REGISTRY: EnrichmentPass[] = [
   nucleiScanPass,
   brandIntelScanPass,
   competitorFetchPass, // Wave 24 — polite homepage fetch of curated competitors, full-mode only
-  serpObservationPass, // Wave 25 — brand + category SERP capture (cached), gated by BRAVE_SEARCH_API_KEY
+  serpObservationPass, // Wave 25 — brand + category SERP capture (cached), gated by TAVILY_API_KEY
   surfaceInventoryPass, // Wave 26 — LLM extracts buyer-decision surface elements (yours + each competitor), gated by ANTHROPIC_API_KEY
   customerVoicePass,   // Wave 27 — Reclame Aqui snapshot for self + curated competitors, full-mode only
   externalReconPass,

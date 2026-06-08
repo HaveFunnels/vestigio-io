@@ -1,10 +1,10 @@
 // ──────────────────────────────────────────────
 // SERP types — Wave 25
 //
-// Provider-agnostic shape. The Brave Search adapter is the first
-// implementation; future SerpAPI / Tavily adapters land here too.
-// Single shape so the enrichment pass and signal extractors don't
-// branch on provider.
+// Provider-agnostic shape. Tavily is the active adapter; future
+// SearXNG / SerpAPI / LangSearch adapters land here too. Single
+// shape so the enrichment pass and signal extractors don't branch
+// on provider.
 // ──────────────────────────────────────────────
 
 export interface SerpResultItem {
@@ -18,8 +18,7 @@ export interface SerpResultItem {
 	host: string;
 	title: string;
 	snippet: string;
-	/** True when the result is a paid placement / sponsored. Brave
-	 *  Search returns mostly organic but some plans expose ads. */
+	/** True when the result is a paid placement / sponsored. */
 	is_paid?: boolean;
 }
 
@@ -30,10 +29,10 @@ export interface SerpQueryResult {
 	/** ISO-8601 timestamp of the fetch (or cache hit). */
 	fetched_at: string;
 	/** True when the query is a navigational intent (the user typed a
-	 *  brand to find it, not to explore). Brave returns this flag. */
+	 *  brand to find it, not to explore). */
 	is_navigational: boolean;
 	results: SerpResultItem[];
-	/** Related queries Brave returns — useful for keyword expansion. */
+	/** Related queries the provider returns — useful for keyword expansion. */
 	related: string[];
 	/** Total organic results reported. */
 	total_results: number;

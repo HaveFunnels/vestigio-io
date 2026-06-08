@@ -230,8 +230,8 @@ export function CompetitorRadar() {
 					</div>
 					<div className="mt-1 text-[11px] text-zinc-500">
 						Adicione 3-5 competidores diretos pra ativar copy mirror e trust
-						posture comparativo. Se a chave Brave Search estiver configurada,
-						sugerimos candidatos automaticamente a cada audit cycle full.
+						posture comparativo. Com SERP provider configurado, sugerimos
+						candidatos automaticamente a cada audit cycle full.
 					</div>
 				</div>
 			) : (
@@ -290,9 +290,9 @@ export function CompetitorRadar() {
 			<div className="mt-4 border-t border-edge pt-3 text-[11px] text-zinc-500">
 				A cada audit cycle full, capturamos a homepage dos {Math.min(10, activeCap)} competidores
 				ativos mais recentes — fetch educado equivalente a abrir o site num navegador. Sem
-				autenticação, sem crawl, sem scanners pesados. Quando o Brave Search está
-				configurado, também observamos SERPs da sua marca e da categoria pra
-				detectar concorrência orgânica e sugerir candidatos.
+				autenticação, sem crawl, sem scanners pesados. Com SERP provider configurado,
+				também observamos SERPs da sua marca e da categoria pra detectar concorrência
+				orgânica e sugerir candidatos.
 			</div>
 		</section>
 	);

@@ -344,7 +344,7 @@ brutally cheap by design:
 - 1 `runStagedPipeline` call in `mode: 'shallow'` (Stage A only).
 - Optional `/checkout` + `/cart` probe when conversionModel ===
   'checkout'.
-- **Zero LLM tokens.** Zero Tavily/Brave. Zero chromium.
+- **Zero LLM tokens.** Zero Tavily. Zero chromium.
 - Cache 14 days per `domainHash`. **A second visitor on the same
   domain pays zero net cost.**
 

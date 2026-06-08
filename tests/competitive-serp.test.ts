@@ -48,7 +48,7 @@ function makeSerpEvidence(
 ): Evidence {
 	const payload: SerpResultsPayload = {
 		type: "serp_results",
-		provider: "brave_search",
+		provider: "tavily",
 		query,
 		locale: "pt-BR",
 		query_intent: intent,

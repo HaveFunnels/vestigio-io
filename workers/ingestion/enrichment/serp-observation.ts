@@ -25,13 +25,12 @@ import { prisma } from "../../../src/libs/prismaDb";
 //   1. <brand_name>                — 1 query, intent=brand
 //   2. <category_keyword> × top 3  — 3 queries, intent=category
 //
-// Total: ≤4 queries per env per cycle. Free tier (Brave Search,
-// 2000 req/mo) handles ~16 envs in daily cycles before scaling
-// concern. Cache TTL of 24h means a re-run inside the same day is
-// free.
+// Total: ≤4 queries per env per cycle. Tavily basic tier handles
+// thousands of req/mo at $0.04/1k. Cache TTL of 24h means a re-run
+// inside the same day is free.
 //
 // Skips entirely when:
-//   - No SERP provider configured (BRAVE_SEARCH_API_KEY missing)
+//   - No SERP provider configured (TAVILY_API_KEY missing)
 //   - Not full-mode (hot/warm cycles skip — same as competitor-fetch)
 //   - Cannot derive an env id from scoping
 //
@@ -179,7 +178,7 @@ export const serpObservationPass: EnrichmentPass = {
 			return {
 				run: false,
 				reason:
-					"Skipped: no SERP provider configured (set BRAVE_SEARCH_API_KEY)",
+					"Skipped: no SERP provider configured (set TAVILY_API_KEY)",
 			};
 		}
 		const envId = envIdFromRef(ctx.scoping.environment_ref);
@@ -302,13 +301,11 @@ export const serpObservationPass: EnrichmentPass = {
 					hostQueryCount.set(host, (hostQueryCount.get(host) || 0) + 1);
 				}
 
-				// Pace between live calls. Brave enforces 1 qps server-side
-				// (429 above that). Tavily is more permissive (>3 qps on
+				// Pace between live calls. Tavily is permissive (>3 qps on
 				// basic tier) but a small pause keeps us friendly. Cache
 				// hits don't need pacing — skipped automatically.
 				if (!sr.from_cache) {
-					const paceMs = provider.name === "brave_search" ? 1100 : 350;
-					await new Promise((r) => setTimeout(r, paceMs));
+					await new Promise((r) => setTimeout(r, 350));
 				}
 			}
 

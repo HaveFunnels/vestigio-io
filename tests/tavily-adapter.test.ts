@@ -6,7 +6,6 @@
 //   - locale → Tavily country mapping
 //   - URL → host extraction
 //   - factory gating on TAVILY_API_KEY presence
-//   - provider preference order (Tavily > Brave when both keys set)
 // ──────────────────────────────────────────────
 
 import {
@@ -14,7 +13,6 @@ import {
 	tryCreateTavilyProvider,
 	TavilySearchProvider,
 } from "../workers/serp/tavily-search";
-import { tryCreateBraveSearchProvider, BraveSearchProvider } from "../workers/serp/brave-search";
 import {
 	getSerpProvider,
 	resetSerpProviderForTest,
@@ -136,66 +134,29 @@ runSuite("Tavily — factory gating", () => {
 });
 
 // ══════════════════════════════════════════════════
-// Suite 4 — Provider preference order
+// Suite 4 — Provider factory gating
 // ══════════════════════════════════════════════════
-runSuite("Provider preference: Tavily > Brave", () => {
-	test("returns Tavily when only Tavily key set", () => {
+runSuite("getSerpProvider gating", () => {
+	test("returns Tavily when TAVILY_API_KEY set", () => {
 		const t = process.env.TAVILY_API_KEY;
-		const b = process.env.BRAVE_SEARCH_API_KEY;
 		process.env.TAVILY_API_KEY = "tvly-test";
-		delete process.env.BRAVE_SEARCH_API_KEY;
 		resetSerpProviderForTest();
 		try {
 			assertEqual(getSerpProvider()?.name, "tavily");
 		} finally {
 			if (t) process.env.TAVILY_API_KEY = t;
 			else delete process.env.TAVILY_API_KEY;
-			if (b) process.env.BRAVE_SEARCH_API_KEY = b;
 			resetSerpProviderForTest();
 		}
 	});
-	test("returns Brave when only Brave key set", () => {
+	test("returns null when TAVILY_API_KEY missing", () => {
 		const t = process.env.TAVILY_API_KEY;
-		const b = process.env.BRAVE_SEARCH_API_KEY;
 		delete process.env.TAVILY_API_KEY;
-		process.env.BRAVE_SEARCH_API_KEY = "BSA-test";
-		resetSerpProviderForTest();
-		try {
-			assertEqual(getSerpProvider()?.name, "brave_search");
-		} finally {
-			if (t) process.env.TAVILY_API_KEY = t;
-			if (b) process.env.BRAVE_SEARCH_API_KEY = b;
-			else delete process.env.BRAVE_SEARCH_API_KEY;
-			resetSerpProviderForTest();
-		}
-	});
-	test("prefers Tavily when BOTH keys set", () => {
-		const t = process.env.TAVILY_API_KEY;
-		const b = process.env.BRAVE_SEARCH_API_KEY;
-		process.env.TAVILY_API_KEY = "tvly-test";
-		process.env.BRAVE_SEARCH_API_KEY = "BSA-test";
-		resetSerpProviderForTest();
-		try {
-			assertEqual(getSerpProvider()?.name, "tavily");
-		} finally {
-			if (t) process.env.TAVILY_API_KEY = t;
-			else delete process.env.TAVILY_API_KEY;
-			if (b) process.env.BRAVE_SEARCH_API_KEY = b;
-			else delete process.env.BRAVE_SEARCH_API_KEY;
-			resetSerpProviderForTest();
-		}
-	});
-	test("returns null when no keys set", () => {
-		const t = process.env.TAVILY_API_KEY;
-		const b = process.env.BRAVE_SEARCH_API_KEY;
-		delete process.env.TAVILY_API_KEY;
-		delete process.env.BRAVE_SEARCH_API_KEY;
 		resetSerpProviderForTest();
 		try {
 			assertEqual(getSerpProvider(), null);
 		} finally {
 			if (t) process.env.TAVILY_API_KEY = t;
-			if (b) process.env.BRAVE_SEARCH_API_KEY = b;
 			resetSerpProviderForTest();
 		}
 	});

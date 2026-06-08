@@ -356,21 +356,23 @@ function StepCard({
 						>
 							Ver actions linkadas ({step.linkedActionRefs.length}) →
 						</button>
-						{/* Phase 1 UX overhaul — drill-down from Plano into
-						    Findings. Testers wanted "vê o que tá por trás
-						    desse passo" without context-switching to a
-						    table. We route to /app/findings sorted by
-						    impact desc with ?from=plan so the destination
-						    can show a breadcrumb back. Future iteration
-						    will tie this to the specific finding IDs the
-						    step references; Phase 1 just establishes the
-						    journey. */}
-						<Link
-							href={`/app/findings?sort=impact_desc&from=plan&month=${month}`}
-							className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
-						>
-							Ver findings ranqueados →
-						</Link>
+						{/* Phase 2 drill-down — route into Findings filtered by
+						    the exact linkedFindingRefs persisted on this
+						    PlanNextStep. The destination decodes ?step=<id>
+						    + ?plan=<YYYY-MM>, fetches the step from the API,
+						    pulls the findingIds out of step.linkedFindingRefs,
+						    and filters the visible list to just those. When
+						    findingIds is empty (pre-Phase-2 plans), the
+						    destination falls back to the full sorted list
+						    with an inline note in the breadcrumb. */}
+						{step.linkedFindingRefs.length > 0 && (
+							<Link
+								href={`/app/findings?step=${step.id}&plan=${month}`}
+								className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
+							>
+								Ver findings do passo ({step.linkedFindingRefs.length}) →
+							</Link>
+						)}
 					</div>
 				</div>
 

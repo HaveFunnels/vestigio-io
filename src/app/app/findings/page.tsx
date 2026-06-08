@@ -435,6 +435,60 @@ export default function FindingsPage() {
 		return arr;
 	}, [filtered, activeView?.sortBy]);
 
+	// Phase 2 stage 5 — step-scoped drill-down. When the URL carries
+	// ?step=<id>&plan=<YYYY-MM>, fetch the plan and locate the
+	// matching PlanNextStep so we can (a) name it in the breadcrumb
+	// and (b) filter the visible list to step.linkedFindingRefs.
+	// Empty findingIds (pre-Phase-2 plans) is non-fatal: render the
+	// full sorted list with an inline note in the breadcrumb.
+	const stepParamEarly = searchParams.get("step");
+	const monthParamEarly = searchParams.get("month") || searchParams.get("plan");
+	interface StepContext {
+		stepId: string;
+		title: string;
+		findingIds: string[];
+	}
+	const [stepContext, setStepContext] = useState<StepContext | null>(null);
+	useEffect(() => {
+		if (!stepParamEarly || !monthParamEarly) {
+			if (stepContext) setStepContext(null);
+			return;
+		}
+		let cancelled = false;
+		(async () => {
+			try {
+				const envMatch = document.cookie
+					.match(/(?:^|;\s*)active_env=([^;]*)/)?.[1];
+				const qs = new URLSearchParams();
+				if (envMatch) qs.set("envId", envMatch);
+				const res = await fetch(
+					`/api/library/strategy/${encodeURIComponent(monthParamEarly)}?${qs.toString()}`,
+				);
+				if (!res.ok || cancelled) return;
+				const plan = await res.json();
+				const step = plan?.nextSteps?.find((s: any) => s.id === stepParamEarly);
+				if (!step || cancelled) return;
+				setStepContext({
+					stepId: step.id,
+					title: step.title,
+					findingIds: Array.isArray(step.linkedFindingRefs) ? step.linkedFindingRefs : [],
+				});
+			} catch {
+				// Best-effort: breadcrumb stays generic, list stays unfiltered.
+			}
+		})();
+		return () => { cancelled = true; };
+		// stepContext intentionally excluded — including it would re-fire
+		// the effect on every setStepContext.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [stepParamEarly, monthParamEarly]);
+
+	const stepFilteredSorted = useMemo(() => {
+		if (!stepContext || stepContext.findingIds.length === 0) return sorted;
+		const set = new Set(stepContext.findingIds);
+		return sorted.filter((f) => set.has(f.id));
+	}, [sorted, stepContext]);
+
 	// ── GroupBy logic ──
 	const groups = useMemo(() => {
 		if (!activeView?.groupBy) return null;
@@ -844,8 +898,9 @@ export default function FindingsPage() {
 	//    than forces a URL change. Solves the literal tester feedback
 	//    "muita informação, não sei por onde começar".
 	const fromParam = searchParams.get("from");
-	const monthParam = searchParams.get("month");
-	const isFromPlan = fromParam === "plan";
+	const monthParam = monthParamEarly;
+	const stepParam = stepParamEarly;
+	const isFromPlan = fromParam === "plan" || !!stepParam;
 	const planHref = monthParam
 		? `/app/library/strategy/${monthParam}`
 		: "/app/library";
@@ -864,7 +919,7 @@ export default function FindingsPage() {
 			/>
 
 			{isFromPlan && (
-				<div className="mb-4 flex items-center gap-2 text-[12px] text-content-muted">
+				<div className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-content-muted">
 					<Link
 						href={planHref}
 						className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-surface-card px-2.5 py-1 transition-colors hover:bg-surface-card-hover hover:text-content"
@@ -875,7 +930,16 @@ export default function FindingsPage() {
 						Voltar ao Plano
 					</Link>
 					<span className="text-content-faint">·</span>
-					<span>Findings ranqueados por impacto</span>
+					{stepContext ? (
+						<>
+							<span className="truncate font-medium text-content">{stepContext.title}</span>
+							{stepContext.findingIds.length === 0 && (
+								<span className="text-content-faint">(passo sem findings linkados — mostrando todos)</span>
+							)}
+						</>
+					) : (
+						<span>Findings ranqueados por impacto</span>
+					)}
 				</div>
 			)}
 
@@ -975,7 +1039,7 @@ export default function FindingsPage() {
 			<div className="mb-4 flex items-center justify-between gap-3">
 				<span className="text-xs text-content-muted">
 					{tc("n_of_total", {
-						filtered: sorted.length,
+						filtered: stepFilteredSorted.length,
 						total: findings.length,
 					})}
 				</span>
@@ -1014,13 +1078,13 @@ export default function FindingsPage() {
 			</div>
 
 			{viewMode === "cards" ? (
-				sorted.length === 0 ? (
+				stepFilteredSorted.length === 0 ? (
 					<div className="rounded-2xl border border-edge bg-surface-card p-6 text-center text-[13px] text-content-muted">
 						{t("no_match")}
 					</div>
 				) : (
 					<div className="flex flex-col gap-2">
-						{sorted.map((f, i) => (
+						{stepFilteredSorted.map((f, i) => (
 							<FindingCard
 								key={f.id}
 								finding={f}
@@ -1032,7 +1096,7 @@ export default function FindingsPage() {
 						))}
 					</div>
 				)
-			) : groups ? (
+			) : groups && !stepContext ? (
 				<GroupedFindings
 					groups={groups}
 					columns={columns}
@@ -1043,7 +1107,7 @@ export default function FindingsPage() {
 			) : (
 				<DataTable
 					columns={columns}
-					data={sorted}
+					data={stepFilteredSorted}
 					onRowClick={(row) => {
 						openFindingDrawer(row);
 					}}

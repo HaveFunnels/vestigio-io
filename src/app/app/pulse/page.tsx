@@ -18,6 +18,8 @@
 //     for every widget id and the grid renders empty placeholders.
 // ──────────────────────────────────────────────
 
+import Link from "next/link";
+import { resolveOrgContext } from "@/libs/resolve-org";
 import { DashboardShell } from "@/components/console/dashboard/DashboardShell";
 import {
 	DEFAULT_LAYOUT,
@@ -70,8 +72,57 @@ export default async function DashboardPage() {
 	const { data, layout, isDefaultLayout } = await loadDashboard();
 	const finalLayout = adaptLayoutToContent(layout, data, isDefaultLayout);
 
+	// Phase 1 UX overhaul — Plan strip at the top of Pulse. The Plan is
+	// now the home (see /app/page.tsx redirect), and when the user
+	// closes the plan they land here. The strip gives them a single-
+	// click path back. Mirrors the strip pattern that already lives on
+	// /app/actions, but as a Link (not a Dialog) since Plan is its own
+	// route in the Phase 1 IA, not a modal overlay.
+	const now = new Date();
+	const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+	const monthLabel = (() => {
+		const months = [
+			"Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+			"Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+		];
+		return `${months[now.getMonth()]} ${now.getFullYear()}`;
+	})();
+	const orgCtx = await resolveOrgContext().catch(() => null);
+	const hasResolvedEnv =
+		orgCtx?.envId && orgCtx.envId !== "default" && orgCtx.envId !== "default_env";
+	const planHref = hasResolvedEnv
+		? `/app/library/strategy/${month}?env=${encodeURIComponent(orgCtx!.envId)}`
+		: `/app/library/strategy/${month}`;
+
 	return (
 		<main className='mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-8'>
+			<Link
+				href={planHref}
+				className='group mb-4 flex w-full items-center justify-between gap-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 text-left transition-all hover:border-edge-focus hover:from-surface-card-hover'
+			>
+				<div className='flex items-center gap-4'>
+					<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset font-serif text-[16px] font-semibold text-content'>
+						{/* Document glyph matches the "Plano" pictogram in the
+						    sidebar, so the strip reads as a portal to the
+						    same surface. */}
+						<svg className='h-4 w-4' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth={1.6}>
+							<path strokeLinecap='round' strokeLinejoin='round' d='M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm-1.5 6h6m-6 3h6m-6 3h3.75' />
+						</svg>
+					</div>
+					<div>
+						<div className='mb-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint'>
+							Plano de Estratégia
+						</div>
+						<div className='text-[14px] font-medium text-content'>
+							{monthLabel}
+						</div>
+					</div>
+				</div>
+				<span className='shrink-0 rounded-md border border-edge bg-surface px-3 py-1.5 text-[12px] font-medium text-content transition-colors group-hover:border-edge-focus'>
+					Abrir Plano →
+				</span>
+			</Link>
+
 			<DashboardShell initialInstances={finalLayout} data={data} />
 		</main>
 	);

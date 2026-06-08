@@ -161,10 +161,10 @@ export default function StrategyPlanPage() {
 				</h1>
 				<p className="mb-6 max-w-md text-[13px] text-content-muted">{state.error}</p>
 				<Link
-					href="/app/library"
+					href="/app/pulse"
 					className="rounded-md border border-edge bg-surface-card px-4 py-2 text-[13px] text-content transition-colors hover:bg-surface-card-hover"
 				>
-					← Voltar à Biblioteca
+					← Voltar ao Pulse
 				</Link>
 			</div>
 		);
@@ -184,10 +184,10 @@ export default function StrategyPlanPage() {
 					completa. Volte na Biblioteca para ver os planos disponíveis.
 				</p>
 				<Link
-					href="/app/library"
+					href="/app/pulse"
 					className="rounded-md border border-edge bg-surface-card px-4 py-2 text-[13px] text-content transition-colors hover:bg-surface-card-hover"
 				>
-					← Voltar à Biblioteca
+					← Voltar ao Pulse
 				</Link>
 			</div>
 		);

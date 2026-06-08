@@ -27,12 +27,21 @@ interface AppSidebarProps {
 	isAdmin?: boolean;
 	mobileOpen: boolean;
 	setMobileOpen: (open: boolean) => void;
+	/**
+	 * Server-resolved env id from resolveOrgContext (passed through
+	 * AppSidebarLayout). Phase 1 — appended to the "Plano" link as
+	 * ?env=<id> so the click bypasses the active_env cookie. Stale
+	 * cookies pointing at envs the user is no longer a member of
+	 * caused 403s on the strategy API.
+	 */
+	envId?: string;
 }
 
 export default function AppSidebar({
 	isAdmin = false,
 	mobileOpen,
 	setMobileOpen,
+	envId,
 }: AppSidebarProps) {
 	const pathname = usePathname();
 	const branding = useBranding();
@@ -55,7 +64,16 @@ export default function AppSidebar({
 	const resolveItemHref = (href: string | undefined): string | undefined => {
 		if (!href) return href;
 		if (href === "/app/library/strategy/current") {
-			return `/app/library/strategy/${currentPlanMonth}`;
+			const base = `/app/library/strategy/${currentPlanMonth}`;
+			// Append the server-resolved envId so the plan page doesn't
+			// have to rely on the active_env cookie (which can be stale
+			// across org switches and trigger 403 from the strategy API).
+			// Skipped when envId is missing or the "default" placeholder
+			// so we don't ship a bad query string.
+			if (envId && envId !== "default" && envId !== "default_env") {
+				return `${base}?env=${encodeURIComponent(envId)}`;
+			}
+			return base;
 		}
 		return href;
 	};

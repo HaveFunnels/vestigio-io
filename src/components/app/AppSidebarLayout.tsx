@@ -546,6 +546,7 @@ export default function AppSidebarLayout({
 				isAdmin={isAdmin}
 				mobileOpen={mobileOpen}
 				setMobileOpen={setMobileOpen}
+				envId={orgCtx.envId}
 			/>
 
 			<div className="flex min-w-0 flex-1 flex-col overflow-hidden">

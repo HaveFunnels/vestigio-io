@@ -166,8 +166,11 @@ function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => v
 					    not another action. Two variants:
 					    - If onClose is provided (Dialog overlay from
 					      /app/actions): close calls the parent's dismiss.
-					    - Otherwise (standalone route): close navigates to
-					      /app/library where the user opened the plan. */}
+					    - Otherwise (standalone route): Phase 1 IA — the
+					      close button routes back to /app/pulse (the
+					      check-in dashboard) instead of /app/library.
+					      Pulse will carry a Plan strip at the top so the
+					      buyer can return to the plan in one click. */}
 					<span className="mx-1 h-5 w-px bg-edge" aria-hidden />
 					{onClose ? (
 						<button
@@ -183,7 +186,7 @@ function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => v
 						</button>
 					) : (
 						<Link
-							href="/app/library"
+							href="/app/pulse"
 							aria-label="Fechar plano"
 							title="Fechar"
 							className="group/close inline-flex h-8 w-8 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"

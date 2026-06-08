@@ -548,3 +548,87 @@ Backlog:       Suspeitas 1, 2, 3 (cada uma com decisão de produto)        separ
 Total caminho crítico até "70% de Nuclei/Katana + surface-centric viva":
 **~45-55 dias úteis** (1 dev focado), assumindo nenhuma surpresa nova
 descoberta durante implementação.
+
+## Decisões e Cleanups Executados (2026-06-07)
+
+Sessão de pós-triagem. Três decisões do fundador → quatro mudanças
+materiais no codebase.
+
+### Decisão 1: Brave Search removido — Tavily é provider único
+
+Confirmado pelo operator que `TAVILY_API_KEY` está setada no Railway env
+do worker (refuta a "Suspeita 4" — Wave 25 SERP **não** está silent-skipping;
+estava só usando o provider esquerdo da factory). Decisão: remover
+infraestrutura dual-provider, ficar puro-Tavily.
+
+**Mudanças**:
+- `workers/serp/brave-search.ts` deletado
+- `workers/serp/provider.ts` simplificado (factory single-provider, comentário atualizado)
+- `workers/serp/types.ts` comentários generalizados (não mais "Brave returns this flag")
+- `workers/ingestion/enrichment/serp-observation.ts` skip message + rate-limit pacing atualizados
+- `workers/ingestion/enrichment/runner.ts` comentário Wave 25 → `TAVILY_API_KEY`
+- `packages/domain/evidence.ts` `SerpResultsPayload` docstrings atualizados
+- `tests/tavily-adapter.test.ts` testes de "preference order" substituídos por "factory gating"
+- `tests/competitive-serp.test.ts` fixture `provider: "brave_search"` → `"tavily"`
+- `src/components/console/workspace/CompetitorRadar.tsx` copy customer-facing genérico ("SERP provider")
+- `.env.example` ganhou seção `# SERP / Search Intelligence — Tavily [OPTIONAL]` com hint operacional
+- `docs/MINI_AUDIT_STATE.md` "Zero Tavily/Brave" → "Zero Tavily"
+
+**Padrão fechado**: o gap "infra sem instalação" da Suspeita 4 é resolvido
+pela combinação (a) Tavily presente no Railway env, (b) `.env.example`
+documentando a env var pra que próximo operator não cair na mesma armadilha.
+
+### Decisão 2: UptimeCheck deletado — Railway healthcheck é canônico
+
+`startHealthCheckTimer()` rodava no `src/app/app/layout.tsx` (service errado,
+sem leader election, multi-replica race). Railway já fornece `/healthz`
+healthcheck declarado em `railway.worker.json:31`. Decisão: deletar a
+duplicação interna.
+
+**Mudanças**:
+- `prisma/schema.prisma` modelo `UptimeCheck` removido (próximo build do worker
+  vai dropar a tabela via `prisma db push --accept-data-loss`)
+- `src/libs/health-checker.ts` arquivo deletado
+- `src/app/api/admin/health-check/route.ts` rota deletada
+- `src/app/api/admin/uptime/route.ts` rota deletada
+- `src/app/app/admin/system-health/` página deletada
+- `src/app/app/layout.tsx` import + call de `startHealthCheckTimer` removidos
+- `src/app/api/admin/usage/route.ts` `view === "health"` block removido
+- `src/app/api/admin/alerts/route.ts` zod enum perdeu `"health_check"`
+- `src/libs/alert-evaluator.ts` `case "health_check"` + comment removidos
+- `src/app/app/admin/alerts/page.tsx` `METRIC_LABELS.health_check` removido
+- `src/app/app/admin/overview/page.tsx` `HealthData` interface + state + fetch + StatCard de health removidos
+- `src/staticData/sidebarData.tsx` nav link removido
+- `src/components/app/sidebar-nav-data.ts` nav link removido
+- `src/components/app/CommandPalette.tsx` entry removida
+- `src/libs/notification-triggers.ts` comentário do `triggerPageDownNotification` atualizado (page-down agora reservado para Wire 6 / SurfaceVitality)
+- `tests/unification.test.ts` rota deletada da lista de required routes
+
+### Decisão 3: OpportunityTracking — completar inline, sem tela nova
+
+Triage da Suspeita 1: o tracking **é essencial** (renewal narrative cego
+sem ele), mas não merece tela nova. Localização correta: **botões inline
+na actions page** (drawer existente, em `src/app/app/actions/page.tsx`
+ao redor da `OperationalTimeline` em ~1402), com efeitos colaterais em
+**(a)** plano de estratégia mensal e **(b)** contexto MCP.
+
+**Estado atual** (não mudou neste commit, fica como item de ROADMAP):
+- API `POST /api/actions/[id]/status` pronta (`src/app/api/actions/[id]/status/route.ts`)
+- Schema `OpportunityTracking` pronto + recompute lógica
+- UI lê e exibe status (`OperationalTimeline`) — botões de transição não wireados
+- Zero fetches client-side da API
+
+**Trabalho pendente** (estimativa M, ~3-5 dias):
+1. Adicionar botões de transição (`identified`→`sized`→`accepted`→`implemented`/`archived`) na drawer/timeline da actions page
+2. Onde o status muda, disparar refetch do plano de estratégia mensal (endpoint a identificar — provavelmente algum `/api/strategy/monthly` ou recompute via hook existente)
+3. Invalidar/atualizar contexto MCP — provavelmente via `mcpStore.saveSession()` ou hook em `apps/mcp/`
+4. Tests E2E: customer clica "accepted" → status persistido → plano mensal recomputa → próxima interação MCP reflete
+
+**Posicionamento no ROADMAP**: vira ticket próprio, paralelo aos Wires
+do surface refactor. Não bloqueia Wire 0 (SuppressionRule) nem outros.
+
+### Padrão fechado: 2/3 instâncias da síndrome "infra sem instalação" resolvidas
+
+- ✅ Nuclei + Katana (commit `dc6dbbc9`)
+- ✅ BRAVE_SEARCH_API_KEY → Tavily migrado + documentado
+- ⚠️ Sobra como **disciplina aberta**: Definition of Delivered para futuras features que dependam de env var ou binário externo — incluir "env var documentada em `.env.example` + binário verificado em prod" na lista de checks antes de fechar uma wave.

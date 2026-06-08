@@ -310,6 +310,7 @@ export async function generateAndPersistPlan(
 							estimatedEffort: s.estimatedEffort,
 							suggestedOwner: s.suggestedOwner,
 							linkedActionRefsJson: s.linkedActionRefs as any,
+							linkedFindingRefsJson: s.linkedFindingRefs as any,
 						})),
 					});
 				}

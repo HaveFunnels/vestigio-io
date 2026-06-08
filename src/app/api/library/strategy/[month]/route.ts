@@ -329,6 +329,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 				estimatedEffort: s.estimatedEffort,
 				suggestedOwner: s.suggestedOwner,
 				linkedActionRefs: refs,
+				linkedFindingRefs: ((s as any).linkedFindingRefsJson as string[]) ?? [],
 				combinedImpact: {
 					min: Math.round(impactMin),
 					max: Math.round(impactMax),

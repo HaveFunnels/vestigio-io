@@ -606,6 +606,13 @@ model PlanNextStep {
   suggestedOwner       String
   /// string[] — Action.id values this step bundles together.
   linkedActionRefsJson Json
+  /// Phase 2 — string[] of Finding.id values that drove this step's
+  /// ranking. Persisted at plan-gen time so the Plano → Findings
+  /// drill-down filters by exact lineage instead of inferring from
+  /// the action chain at request time. Empty `[]` on pre-Phase-2
+  /// plans; the read API falls back to action-derived lineage in
+  /// that case so legacy plans still work.
+  linkedFindingRefsJson Json @default("[]")
 
   // ── Member-editable state ──
   /// 'todo' | 'in_progress' | 'in_review' | 'done' | 'blocked'.

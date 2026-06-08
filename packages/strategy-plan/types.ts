@@ -103,6 +103,14 @@ export interface NextStepOutput {
 	estimatedEffort: string;
 	suggestedOwner: string;
 	linkedActionRefs: string[];
+	/**
+	 * Phase 2 — Finding.id values that drove this step's ranking.
+	 * Persisted to PlanNextStep.linkedFindingRefsJson so the
+	 * Plano → Findings drill-down can filter exactly to these
+	 * findings instead of inferring through the action chain at
+	 * read time.
+	 */
+	linkedFindingRefs: string[];
 	combinedImpact: { min: number; max: number; midpoint: number };
 }
 

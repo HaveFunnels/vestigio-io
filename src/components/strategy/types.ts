@@ -76,6 +76,11 @@ export interface NextStep {
 	estimatedEffort: string;
 	suggestedOwner: string;
 	linkedActionRefs: string[];
+	/** Phase 2 — Finding.id values that drove this step's ranking.
+	 *  Empty `[]` on pre-Phase-2 plans (the API echoes whatever the
+	 *  DB has, no backfill). The drill-down UI hides the "Ver findings
+	 *  do passo" affordance when this is empty. */
+	linkedFindingRefs: string[];
 	combinedImpact: { min: number; max: number; midpoint: number };
 	status: NextStepStatus;
 	assigneeUserId: string | null;

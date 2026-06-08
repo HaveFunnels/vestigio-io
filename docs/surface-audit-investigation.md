@@ -462,3 +462,89 @@ Três padrões claros recorrentes:
 3. **"Phase abandonada"**: Phases 2B, 2D, 4B (e o `SurfaceVitality` da behavioral) compartilham o anti-padrão: tipo de evidência declarado em enum, payload definido em domain, signal extractor escrito, **mas o pass de coleta nunca foi implementado**. Sugere que o time documenta "vamos coletar X" antes de instrumentar, e quando a instrumentação não cabe no sprint, o resto fica órfão. Os enums viram lápides.
 
 Implicação para o surface-audit refactor: **antes de adicionar Wires 1-8, fazer uma varredura "todos os produtores instalados, todos os consumidores acessíveis"**. Caso contrário cada Wire novo arrisca virar Surpresa N+1 desta lista em 6 meses.
+
+## Triagem, Decisões e Verificação das Suspeitas (2026-06-07)
+
+Sessão de revisão das 8 surpresas restantes + 4 suspeitas, com decisões
+arquiteturais tomadas pelo fundador e validação operacional via grep.
+
+### Decisões tomadas
+
+1. **`NetworkSurface` / `DiscoveredSurface` paralelo ao `Surface` existente.**
+   Não estender semanticamente o modelo do operador (`packages/surfaces/index.ts:27-94`,
+   modelo Prisma em `prisma/schema.prisma:426-459`). Razão: overload de
+   "Surface" tornaria a tabela operator-declared (escopo, glob URL pattern,
+   classification) incompatível com a tabela de surfaces descobertas em
+   runtime (URL exata, fingerprint hash, first/last seen cycle, body shape).
+   Schema mais limpo separar — vale o custo de migração.
+
+2. **Surpresa 2 (Mobile pass) separada do Wire 1.** Apesar de Wire 1 já
+   tocar em `playwright-runtime.ts`, adicionar uma segunda passada mobile +
+   emitir `MobileVerificationResultPayload` é escopo real, não one-liner.
+   Combinar arriscaria estourar o Wire 1. Mobile vira ticket próprio, com
+   sua própria validação contra havefunnels.
+
+3. **Verificação operacional das suspeitas.** Rodada via grep (resultados
+   na seção abaixo). Resultado material: confirmada 2ª instância do padrão
+   "infra sem instalação" (BRAVE_SEARCH_API_KEY) — Wave 25 (SERP) está
+   silent-skipping em produção. Vira ação aberta para o operator.
+
+### Triagem das 8 surpresas
+
+Categorias: **(a)** blocker ou embed obrigatório em Wire; **(b)** atalho
+quase-grátis durante o refactor — embed no mesmo PR; **(c)** ticket próprio
+sem urgência para o surface refactor.
+
+| # | Surpresa | Categoria | Posicionamento no ROADMAP |
+| --- | --- | --- | --- |
+| 3 | `SuppressionRule` sem produtor/consumer | **(a)** | **Wire 0** — antes de qualquer expansão de finding volume. Schema + recompute prontos; falta API CRUD + UI + load em `run-cycle.ts`. ~5 dias |
+| 9 | Phase 2D — 160+ linhas de detectores mortos | **(a)** | **Embed em Wire 5**: feature flag + havefunnels-only rollout + 1-2 semanas observação antes de expandir. Não vira item separado |
+| 4 | `PlaywrightRender` evidence dead read | **(b)** | **Embed em Wire 1** (mesmo PR): adicionar 2 signal extractors (`spa_runtime_error_on_boot`, `static_html_empty_needs_render`). +1 dia |
+| 5 | `SurfaceVitality` infra órfã | **(b)** | **Embed em Wire 6**: reusar `extractVitalityFromEvents` em vez de reinventar surface drift. Decisão de `NetworkSurface` paralelo facilita |
+| 2 | Phase 2B — Mobile pass nunca roda | **(c)** | **Separado** (decisão acima). Ticket próprio depois do Wire 1 estabilizar |
+| 6 | Authenticated session evidence sem detectores | **(c)** | Backlog SaaS vertical — depois de PMF, quando focarmos no vertical autenticado |
+| 7 | MCP analytics sem call sites | **(c)** | Backlog produto. Decisões sobre sugestões MCP estão sendo tomadas no escuro; vale ticket prio média |
+| 8 | `BehavioralEvent` + `IntegrationSnapshot` enums mortos | **(c)** | Quick win **S** (~1 dia). Reescrever consumers em `maturity.ts:65` + `recompute.ts:1349` para checar presença de payload no input em vez de evidence type morto. Fazer entre wires |
+
+### Resolução das 4 suspeitas
+
+| Suspeita | Estado verificado | Próxima ação |
+| --- | --- | --- |
+| **1.** `OpportunityTracking` ativada só por status manual | **CONFIRMADA MORTA**. Grep client-side: zero fetches a `/api/actions/[id]/status` em `src/app/`, `src/components/`. API + schema + recompute existem; UI não chama | Backlog **S** — adicionar botões em `src/app/app/actions/page.tsx` que POST status changes. Decisão de produto: quais transições expor? |
+| **2.** `UptimeCheck` sem cron, só botão admin | **VIVA mas arquiteturalmente quebrada**. `startHealthCheckTimer()` (`src/libs/health-checker.ts:190`) é chamado em `src/app/app/layout.tsx:23` — Next.js layout do web service, **não no worker**, **sem leader election**. O comentário em `src/libs/leader-election.ts:10` literalmente avisa do problema. Multi-replica → N intervals concorrentes; web reinicia → cron some até alguém acessar `/app` | Backlog **M** — mover para audit-runner worker com leader-election guard. Tirar do layout |
+| **3.** `MarketingEvent` + `ABTest` admin-only | **CONFIRMADA admin-only**. Única rota customer-facing é `src/app/api/analytics/event/route.ts:39` (escrita do pixel). Zero rota de leitura customer-facing — todas em `src/app/api/admin/marketing/` | Decisão de produto. Clientes deveriam ver seus próprios resultados de A/B? Se sim, ticket **M**. Se não, doc isso como decisão e remover o ABTest table da maturity scoring |
+| **4.** `BRAVE_SEARCH_API_KEY` provavelmente não configurado | **MUITO PROVAVELMENTE UNSET EM PROD.** Não está em `.env.example`, nenhum doc, nenhum runbook, nenhum railway config. Gate em código (`workers/ingestion/enrichment/serp-observation.ts:182` retorna `"Skipped: no SERP provider configured"` silenciosamente). **Mesmo padrão da Surpresa 1 (Nuclei/Katana antes do install)** | **Ação operacional imediata**: o operator (você) precisa verificar no painel Railway se a env var está configurada. Se não, decidir: configurar (pega Brave Search API key, ~$3-5/mês) ou marcar Wave 25 como descontinuada e remover o pass |
+
+### Padrão consolidado
+
+Duas instâncias confirmadas do anti-padrão "infra sem instalação" agora:
+
+1. **Nuclei + Katana** (resolvido em 2026-06-07 via commit `dc6dbbc9`)
+2. **BRAVE_SEARCH_API_KEY** (pendente verificação operacional no Railway)
+
+Reforça a recomendação do doc original: **toda feature que depende de
+binário externo ou API key precisa de "Definition of Delivered" que inclua
+instalação/configuração em produção verificada**. Não basta passar local.
+
+### Sequência final para o ROADMAP
+
+```
+Pré-flight:    Verificar Nuclei firing em próximo audit do havefunnels    passivo
+Pré-flight:    Operator confere BRAVE_SEARCH_API_KEY no Railway           manual
+Wire 0:        Surpresa 3 — SuppressionRule (API + UI + load)             ~5 dias
+Wire 1 + 4:    Network-as-surface + PlaywrightRender extractors           ~5-7 dias
+               (cria modelo NetworkSurface paralelo ao Surface existente)
+Wire 5 + 9:    NetworkAnalysisPayload emitter + feature flag + rollout    ~7-10 dias
+Wire 3:        Platform endpoint catalog (OCC, SFCC, BigCommerce…)        ~5 dias
+Wire 4:        Custom Nuclei templates (vi_abuse_*_body_shape)            ~5 dias
+Wire 2:        Katana → Nuclei chain                                      ~2 dias
+Wire 7:        Katana -jc + tuning                                        ~5 dias
+Wire 6 + 5:    Surface drift via NetworkSurface diff + SurfaceVitality    ~10-15 dias
+Quick wins:    Surpresa 8 (enums mortos) entre wires                      ~1 dia
+Backlog:       Surpresas 2 (Mobile), 6 (Auth), 7 (MCP analytics)          separadas
+Backlog:       Suspeitas 1, 2, 3 (cada uma com decisão de produto)        separadas
+```
+
+Total caminho crítico até "70% de Nuclei/Katana + surface-centric viva":
+**~45-55 dias úteis** (1 dev focado), assumindo nenhuma surpresa nova
+descoberta durante implementação.

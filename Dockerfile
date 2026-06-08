@@ -41,6 +41,52 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
+# ── ProjectDiscovery tools (Nuclei + Katana) ─
+# Standalone Go binaries downloaded from official GitHub releases. Pinned
+# for reproducibility — bump versions explicitly, not via :latest.
+#
+# Why a dedicated stage:
+# - Decouples cache invalidation (app code changes don't re-download binaries)
+# - Parallelizable with deps/builder stages
+# - Templates pre-baked at build time so first scan in prod has zero network
+#   dependency and runs at full speed
+#
+# Why amd64 only: Railway runtimes are amd64. If we ever build for arm64
+# (e.g. local M-series dev via Docker), add the corresponding asset URLs
+# and an ARG TARGETARCH switch. For now the worker invocation path
+# (`workers/nuclei/runner.ts`, `workers/katana/runner.ts`) gracefully skips
+# if the binary isn't in PATH, so local dev keeps working without these.
+FROM debian:bookworm-slim AS tools
+
+ARG NUCLEI_VERSION=3.8.0
+ARG KATANA_VERSION=1.6.1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    unzip \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL -o /tmp/nuclei.zip \
+    "https://github.com/projectdiscovery/nuclei/releases/download/v${NUCLEI_VERSION}/nuclei_${NUCLEI_VERSION}_linux_amd64.zip" \
+    && unzip /tmp/nuclei.zip -d /usr/local/bin/ \
+    && rm /tmp/nuclei.zip \
+    && chmod +x /usr/local/bin/nuclei \
+    && /usr/local/bin/nuclei -version
+
+RUN curl -fsSL -o /tmp/katana.zip \
+    "https://github.com/projectdiscovery/katana/releases/download/v${KATANA_VERSION}/katana_${KATANA_VERSION}_linux_amd64.zip" \
+    && unzip /tmp/katana.zip -d /usr/local/bin/ \
+    && rm /tmp/katana.zip \
+    && chmod +x /usr/local/bin/katana \
+    && /usr/local/bin/katana -version
+
+# Pre-bake Nuclei templates so the first scan in production has zero network
+# dependency. Default location is $HOME/.config/nuclei-templates (root in
+# this image). The curated checks in packages/nuclei-adapter/curated-checks.ts
+# reference template paths under this tree.
+RUN /usr/local/bin/nuclei -update-templates -silent
+
 # ── Dependencies ─────────────────────────────
 FROM base AS deps
 COPY package.json package-lock.json* ./
@@ -138,6 +184,14 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 # DATABASE_URL build arg is set). The Prisma client (@prisma/client + .prisma)
 # still ships at runtime — only the standalone CLI package is gone.
 COPY --from=builder /root/.cache/ms-playwright /root/.cache/ms-playwright
+
+# Nuclei + Katana binaries and pre-baked templates from the `tools` stage.
+# Both are invoked via execFile by workers/nuclei/runner.ts and
+# workers/katana/runner.ts respectively; isNucleiAvailable/isKatanaAvailable
+# check PATH at runtime, so missing binaries skip the pass gracefully.
+COPY --from=tools /usr/local/bin/nuclei /usr/local/bin/nuclei
+COPY --from=tools /usr/local/bin/katana /usr/local/bin/katana
+COPY --from=tools /root/.config/nuclei-templates /root/.config/nuclei-templates
 
 # Worker source files — imported at runtime by tsx.
 # `src/` is needed because worker-loop.ts has imports like

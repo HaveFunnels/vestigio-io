@@ -125,16 +125,11 @@ export default function DemoSurface() {
 								<video
 									ref={videoRef}
 									className="absolute inset-0 h-full w-full object-cover"
-									preload="auto"
+									preload="none"
 									playsInline
-									autoPlay
 									muted
 									onTimeUpdate={handleTimeUpdate}
 									onEnded={handleEnded}
-									onCanPlay={(e) => {
-										const v = e.currentTarget;
-										if (v.paused && v.muted) v.play().catch(() => {});
-									}}
 									{...({ "webkit-playsinline": "true" } as Record<string, string>)}
 								>
 									<source src={VIDEO_WEBM} type="video/webm" />

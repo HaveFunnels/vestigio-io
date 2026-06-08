@@ -212,6 +212,20 @@ export interface MultiPackInput {
    *  engine falls back to the URL-substring heuristic in
    *  classifySurfaceByUrl (which treats unknown URLs as Public). */
   surface_resolver?: import("../domain").InferenceSurfaceResolver;
+  /** Phase 4 follow-up — raw Surface declarations carried alongside
+   *  surface_resolver so the worker_threads path can rebuild the
+   *  resolver after structured-clone strips the function-bearing
+   *  resolver. recompute-pool drops surface_resolver, the worker
+   *  reads surface_declarations and calls buildSurfaceResolver. The
+   *  in-process path ignores this field (resolver already present). */
+  surface_declarations?: ReadonlyArray<{
+    id: string;
+    kind: string;
+    urlPattern: string;
+    label: string;
+    authRequired: boolean;
+    displayOrder: number;
+  }>;
 }
 
 export interface MultiPackResult {

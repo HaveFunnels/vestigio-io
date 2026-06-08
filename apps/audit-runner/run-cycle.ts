@@ -1751,6 +1751,16 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			// migration seeds the catch-all surface for every existing
 			// env).
 			let surfaceResolver: import("../../packages/domain").InferenceSurfaceResolver | undefined;
+			let surfaceDeclarations:
+				| ReadonlyArray<{
+					id: string;
+					kind: string;
+					urlPattern: string;
+					label: string;
+					authRequired: boolean;
+					displayOrder: number;
+				}>
+				| undefined;
 			try {
 				const declared = await prisma.surface.findMany({
 					where: { environmentId: env.id },
@@ -1766,6 +1776,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				if (declared.length > 0) {
 					const { buildSurfaceResolver } = await import("../../packages/surfaces");
 					surfaceResolver = buildSurfaceResolver(declared);
+					// Phase 4 follow-up — carry the raw declarations so the
+					// recompute worker-thread path can rebuild the resolver
+					// after structured-clone strips the function-bearing
+					// surface_resolver. In-process path ignores this field.
+					surfaceDeclarations = declared;
 				}
 			} catch (err) {
 				console.warn(
@@ -1834,6 +1849,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// of the substring heuristic. Undefined for envs without
 				// surface rows (the heuristic is the fallback).
 				surface_resolver: surfaceResolver,
+				surface_declarations: surfaceDeclarations,
 				scoping: {
 					workspace_ref: workspaceRef,
 					environment_ref: environmentRef,

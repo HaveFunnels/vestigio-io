@@ -35,7 +35,25 @@ type JobResponse =
 
 parentPort.on("message", async (msg: JobRequest) => {
 	try {
-		const result = await recomputeAllAsync(msg.input);
+		// Phase 4 follow-up — rebuild the surface_resolver from raw
+		// declarations carried on the input. The pool strips the
+		// function-bearing resolver before postMessage (structured
+		// clone refuses functions); declarations are plain data and
+		// survive the boundary. Without this rebuild, the worker
+		// would fall back to the URL-substring heuristic — correct
+		// behavior, but a quiet accuracy regression for envs with
+		// custom Surface rows.
+		let input = msg.input;
+		if (input.surface_declarations && input.surface_declarations.length > 0 && !input.surface_resolver) {
+			const { buildSurfaceResolver } = await import("../../packages/surfaces");
+			input = {
+				...input,
+				surface_resolver: buildSurfaceResolver(
+					input.surface_declarations as any,
+				) as any,
+			};
+		}
+		const result = await recomputeAllAsync(input);
 		const response: JobResponse = { id: msg.id, ok: true, result };
 		parentPort!.postMessage(response);
 	} catch (err) {

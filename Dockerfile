@@ -87,11 +87,16 @@ RUN curl -fsSL -o /tmp/katana.zip \
     && chmod +x /usr/local/bin/katana \
     && /usr/local/bin/katana -version
 
-# Pre-bake Nuclei templates so the first scan in production has zero network
-# dependency. Default location is $HOME/.config/nuclei-templates (root in
-# this image). The curated checks in packages/nuclei-adapter/curated-checks.ts
-# reference template paths under this tree.
-RUN /usr/local/bin/nuclei -update-templates -silent
+# Pre-bake Nuclei templates so the first scan in production has zero
+# network dependency. Force the destination explicitly: Nuclei v3
+# defaults to $HOME/nuclei-templates (NOT $HOME/.config/...), so without
+# -update-template-dir the final-stage COPY from /root/.config/...
+# resolves to "not found" and the build daemon fails on cache-key
+# computation. Dropped -silent so failures surface in the build log,
+# and asserted the dir is non-empty before moving on.
+RUN /usr/local/bin/nuclei -update-templates -update-template-dir /root/.config/nuclei-templates \
+    && test -d /root/.config/nuclei-templates \
+    && test -n "$(ls -A /root/.config/nuclei-templates)"
 
 # ── Dependencies ─────────────────────────────
 FROM base AS deps

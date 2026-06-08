@@ -42,9 +42,16 @@ const BUYER_ACCENT: Record<string, { dot: string; bg: string; chip: string }> = 
 
 export default function BuyerSegments({ segments }: Props) {
 	const { currency } = useMcpData();
-	// Drawer state — open with the single finding ID the buyer clicked.
-	// One drawer instance is enough; we just swap the targeted ID.
-	const [drawerFindingId, setDrawerFindingId] = useState<string | null>(null);
+	// One drawer instance covers two trigger paths:
+	//   - sample finding title click → single id
+	//   - "X findings" count badge click → segment's full id list
+	// Both write into the same state holder so the drawer always
+	// reflects the latest interaction.
+	const [drawerState, setDrawerState] = useState<
+		| { kind: "single"; findingId: string }
+		| { kind: "segment"; segment: BuyerSegment }
+		| null
+	>(null);
 	return (
 		<motion.section
 			initial={{ opacity: 0, y: 16 }}
@@ -86,9 +93,26 @@ export default function BuyerSegments({ segments }: Props) {
 							<div className="text-[15px] font-semibold text-content">
 								{s.buyerLabel}
 							</div>
-							<div className="mt-0.5 text-[12px] text-content-muted">
-								{s.count} {s.count === 1 ? "finding" : "findings"}
-							</div>
+							{/* The count is clickable when the segment carries
+							    its full id list — opens the drawer with every
+							    finding in that segment so the buyer can review
+							    "everything for the copy team", etc. Pre-Phase-2
+							    plans without allFindingIds fall back to plain
+							    text so legacy plans still render. */}
+							{s.allFindingIds && s.allFindingIds.length > 0 ? (
+								<button
+									type="button"
+									onClick={() => setDrawerState({ kind: "segment", segment: s })}
+									className="mt-0.5 inline-flex items-center gap-1 text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
+									title="Ver todos os findings desse segmento"
+								>
+									{s.count} {s.count === 1 ? "finding" : "findings"} →
+								</button>
+							) : (
+								<div className="mt-0.5 text-[12px] text-content-muted">
+									{s.count} {s.count === 1 ? "finding" : "findings"}
+								</div>
+							)}
 
 							<div className="mt-4 font-mono text-[22px] font-semibold tabular-nums text-content">
 								{fmtCurrencyUnits(s.impactMidpoint, currency)}
@@ -123,7 +147,7 @@ export default function BuyerSegments({ segments }: Props) {
 										<button
 											key={i}
 											type="button"
-											onClick={() => setDrawerFindingId(findingId)}
+											onClick={() => setDrawerState({ kind: "single", findingId })}
 											className="-mx-1.5 block w-full rounded-md px-1.5 py-1 text-left text-[13px] leading-snug text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
 											title="Ver detalhes do finding"
 										>
@@ -137,16 +161,35 @@ export default function BuyerSegments({ segments }: Props) {
 				})}
 			</div>
 
-			{/* Shared drawer — opens with whichever sample finding the
-			    buyer clicked. One mount, swap ID = swap content. */}
+			{/* Shared drawer — handles both single-sample and full-
+			    segment drill-downs. The header copy changes per mode so
+			    the buyer knows whether they're reading 1 finding or
+			    every finding in the team's queue. */}
 			<PlanSideDrawer
-				open={drawerFindingId !== null}
-				onOpenChange={(open) => { if (!open) setDrawerFindingId(null); }}
-				eyebrow="Finding em destaque"
-				title="Detalhe do finding"
-				description="Capturado pelo engine no ciclo atual"
+				open={drawerState !== null}
+				onOpenChange={(open) => { if (!open) setDrawerState(null); }}
+				eyebrow={
+					drawerState?.kind === "segment"
+						? `Findings ${drawerState.segment.buyerLabel}`
+						: "Finding em destaque"
+				}
+				title={
+					drawerState?.kind === "segment"
+						? `${drawerState.segment.count} ${drawerState.segment.count === 1 ? "finding" : "findings"} para o time`
+						: "Detalhe do finding"
+				}
+				description={
+					drawerState?.kind === "segment"
+						? "Capturados pelo engine, agrupados pelo time que tipicamente resolve."
+						: "Capturado pelo engine no ciclo atual"
+				}
 			>
-				{drawerFindingId && <FindingListBody findingIds={[drawerFindingId]} />}
+				{drawerState?.kind === "single" && (
+					<FindingListBody findingIds={[drawerState.findingId]} />
+				)}
+				{drawerState?.kind === "segment" && (
+					<FindingListBody findingIds={drawerState.segment.allFindingIds ?? []} />
+				)}
 			</PlanSideDrawer>
 		</motion.section>
 	);

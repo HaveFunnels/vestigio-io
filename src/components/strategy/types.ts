@@ -59,6 +59,10 @@ export interface BuyerSegment {
 	impactMidpoint: number;
 	sampleFindingIds: string[];
 	sampleFindingTitles: string[];
+	/** Full id list backing the "X findings" badge → drawer drill.
+	 *  Optional for backward compatibility with plans generated
+	 *  before the field landed. */
+	allFindingIds?: string[];
 }
 
 export interface ResearchRef {

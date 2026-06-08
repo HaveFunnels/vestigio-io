@@ -66,7 +66,7 @@ export async function generateBuyerSegments(
 	for (const row of rows) buckets[packToBuyer(row.pack)].push(row);
 
 	const segments: BuyerSegmentOutput[] = (Object.keys(buckets) as BuyerKind[])
-		.map((buyer) => {
+		.map((buyer): BuyerSegmentOutput | null => {
 			const items = buckets[buyer];
 			if (items.length === 0) return null;
 			const impactMin = items.reduce((a, r) => a + r.impactMin, 0);
@@ -82,6 +82,7 @@ export async function generateBuyerSegments(
 				impactMidpoint: Math.round(impactMidpoint),
 				sampleFindingIds: sample.map((s) => s.id),
 				sampleFindingTitles: sample.map(titleForFinding),
+				allFindingIds: items.map((r) => r.id),
 			};
 		})
 		.filter((s): s is BuyerSegmentOutput => s !== null);

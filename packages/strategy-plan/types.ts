@@ -63,6 +63,11 @@ export interface BuyerSegmentOutput {
 	impactMidpoint: number;
 	sampleFindingIds: string[];
 	sampleFindingTitles: string[];
+	/** Full list of finding ids classified into this segment. Drives
+	 *  the "X findings" badge → drawer drill-down on the plan UI.
+	 *  Optional for backward compatibility with plans generated
+	 *  before the field landed. */
+	allFindingIds?: string[];
 }
 
 export interface MemoryWindowOutput {

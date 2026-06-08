@@ -135,6 +135,32 @@ async function pickTopActions(
 		}
 		out.push({ ...r, inferenceKeys });
 	}
+
+	// Tripwire — assert the rows we're about to return have distinct
+	// decisionKeys. distinct in the Prisma query is the load-bearing
+	// dedupe; if a future refactor drops it (e.g. someone "optimizes"
+	// the query and forgets the distinct), this surfaces immediately.
+	// Also catches the case where the engine emits actions with
+	// confusingly-empty decisionKey strings.
+	const seen = new Set<string>();
+	const dupes: string[] = [];
+	for (const r of out) {
+		if (seen.has(r.decisionKey)) dupes.push(r.decisionKey);
+		seen.add(r.decisionKey);
+	}
+	if (dupes.length > 0) {
+		console.warn(
+			`[strategy-plan] pickTopActions returned ${dupes.length} duplicate decisionKey(s) — the dedupe in the query likely regressed:`,
+			{ envId: ctx.environmentId, dupes, returnedCount: out.length },
+		);
+	}
+
+	// Surface "we have only N steps because there were only N candidates"
+	// vs "we have only N steps because the engine produced one
+	// decisionKey overall" so future regressions are easy to debug.
+	console.log(
+		`[strategy-plan] pickTopActions env=${ctx.environmentId} returned=${out.length} keys=[${[...seen].slice(0, 5).join(",")}]`,
+	);
 	return out;
 }
 

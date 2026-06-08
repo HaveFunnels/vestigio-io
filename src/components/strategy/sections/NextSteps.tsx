@@ -43,12 +43,6 @@ interface Props {
 	planId: string;
 }
 
-function formatDate(date: Date | null): string | null {
-	if (!date) return null;
-	const months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-	return `${date.getDate()} ${months[date.getMonth()]}`;
-}
-
 const STATUS_LABEL: Record<NextStepStatus, string> = {
 	todo: "A fazer",
 	in_progress: "Em progresso",
@@ -115,16 +109,75 @@ function StepCard({
 	month,
 	planId,
 }: StepCardProps) {
+	// Phase 3.1 — inline edit. status / title / dueAt are now
+	// server-persisted via PATCH on every change. Local state mirrors
+	// the server so the UI stays optimistic; failures revert to the
+	// pre-change value and toast the reason.
 	const [status, setStatus] = useState<NextStepStatus>(step.status);
+	const [title, setTitle] = useState<string>(step.title);
+	const [dueAt, setDueAt] = useState<Date | null>(step.dueAt);
+	const [editingTitle, setEditingTitle] = useState(false);
 	const [drawerOpen, setDrawerOpen] = useState(false);
 	const { currency } = useMcpData();
 	const isDone = status === "done";
-	const due = formatDate(step.dueAt);
+	// formatDate(dueAt) was used for the previous read-only chip; the
+	// inline date input now renders the value directly via the native
+	// picker, so the formatted string isn't needed here anymore.
 
 	const stepComments = comments;
 	const sectionId = `next-step:${step.id}`;
 
 	const paragraphs = step.reasoning.split(/\n{2,}/).filter((p) => p.trim().length > 0);
+
+	async function persistPatch(patch: Record<string, any>): Promise<boolean> {
+		try {
+			const res = await fetch(
+				`/api/library/strategy/${encodeURIComponent(month)}/steps/${encodeURIComponent(step.id)}`,
+				{
+					method: "PATCH",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ envId, ...patch }),
+				},
+			);
+			if (!res.ok) {
+				const data = await res.json().catch(() => ({}));
+				console.warn("[NextSteps] PATCH failed:", res.status, data);
+				return false;
+			}
+			return true;
+		} catch (err) {
+			console.warn("[NextSteps] PATCH threw:", err);
+			return false;
+		}
+	}
+
+	async function handleStatusChange(next: NextStepStatus) {
+		const prev = status;
+		setStatus(next);
+		const ok = await persistPatch({ status: next });
+		if (!ok) setStatus(prev);
+	}
+
+	async function handleTitleCommit(next: string) {
+		const trimmed = next.trim();
+		setEditingTitle(false);
+		if (trimmed.length === 0 || trimmed === step.title) {
+			setTitle(step.title);
+			return;
+		}
+		const prev = title;
+		setTitle(trimmed);
+		const ok = await persistPatch({ title: trimmed });
+		if (!ok) setTitle(prev);
+	}
+
+	async function handleDueChange(iso: string | null) {
+		const prev = dueAt;
+		const next = iso ? new Date(iso) : null;
+		setDueAt(next);
+		const ok = await persistPatch({ dueAt: iso });
+		if (!ok) setDueAt(prev);
+	}
 
 	return (
 		<motion.div
@@ -181,13 +234,32 @@ function StepCard({
 								Passo {step.order}
 							</span>
 						</div>
-						<h3
-							className={`text-[18px] font-semibold leading-tight ${
-								isDone ? "text-content-muted line-through" : "text-content"
-							}`}
-						>
-							{step.title}
-						</h3>
+						{editingTitle ? (
+							<input
+								type="text"
+								autoFocus
+								defaultValue={title}
+								onBlur={(e) => handleTitleCommit(e.currentTarget.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") e.currentTarget.blur();
+									if (e.key === "Escape") {
+										setEditingTitle(false);
+									}
+								}}
+								className="w-full rounded-md border border-edge bg-surface-card px-2 py-1 text-[18px] font-semibold leading-tight text-content outline-none focus:border-edge-focus"
+								maxLength={240}
+							/>
+						) : (
+							<h3
+								onClick={() => setEditingTitle(true)}
+								className={`-mx-2 cursor-text rounded-md px-2 py-1 text-[18px] font-semibold leading-tight transition-colors hover:bg-surface-card-hover ${
+									isDone ? "text-content-muted line-through" : "text-content"
+								}`}
+								title="Clique pra editar"
+							>
+								{title}
+							</h3>
+						)}
 					</div>
 					{step.combinedImpact.midpoint > 0 && (
 						<div className="shrink-0 rounded-lg border border-edge bg-surface-inset px-3 py-1.5 text-right">
@@ -291,7 +363,7 @@ function StepCard({
 				<div className="flex flex-wrap items-center gap-3 border-t border-edge/60 pt-4">
 					<button
 						type="button"
-						onClick={() => setStatus(isDone ? "todo" : "done")}
+						onClick={() => handleStatusChange(isDone ? "todo" : "done")}
 						className="group/cb flex items-center gap-2 text-[13px] text-content-secondary transition-colors hover:text-content"
 					>
 						<span
@@ -316,17 +388,47 @@ function StepCard({
 						<span>{isDone ? "Marcado feito" : "Marcar feito"}</span>
 					</button>
 
-					<span
-						className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium ring-1 ${STATUS_TONE[status]}`}
-					>
-						{STATUS_LABEL[status]}
-					</span>
+					{/* Status as a select. Replaces the read-only chip — the
+					    full lifecycle (todo / in_progress / in_review / done /
+					    blocked) is now editable inline without opening a
+					    drawer. */}
+					<label className="relative inline-flex">
+						<select
+							value={status}
+							onChange={(e) => handleStatusChange(e.currentTarget.value as NextStepStatus)}
+							className={`appearance-none rounded-full pl-2.5 pr-7 py-0.5 text-[11px] font-medium ring-1 cursor-pointer outline-none transition-colors ${STATUS_TONE[status]}`}
+						>
+							{(Object.keys(STATUS_LABEL) as NextStepStatus[]).map((s) => (
+								<option key={s} value={s}>
+									{STATUS_LABEL[s]}
+								</option>
+							))}
+						</select>
+						<svg
+							className="pointer-events-none absolute right-1.5 top-1/2 h-3 w-3 -translate-y-1/2 opacity-60"
+							viewBox="0 0 12 12"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="1.6"
+						>
+							<path d="M3 4.5L6 7.5L9 4.5" strokeLinecap="round" strokeLinejoin="round" />
+						</svg>
+					</label>
 
-					{due && (
-						<span className="font-mono text-[11px] tabular-nums text-content-muted">
-							due {due}
-						</span>
-					)}
+					{/* Due date — bare input, no label. Empty = no due date.
+					    Click opens the native picker, blur persists. */}
+					<label className="inline-flex items-center gap-1.5">
+						<svg className="h-3.5 w-3.5 text-content-faint" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4">
+							<rect x="1.5" y="2.5" width="11" height="10" rx="1" />
+							<path d="M1.5 5h11M4 1.5v2M10 1.5v2" strokeLinecap="round" />
+						</svg>
+						<input
+							type="date"
+							value={dueAt ? dueAt.toISOString().slice(0, 10) : ""}
+							onChange={(e) => handleDueChange(e.currentTarget.value || null)}
+							className="bg-transparent font-mono text-[11px] tabular-nums text-content-muted outline-none [color-scheme:dark] hover:text-content"
+						/>
+					</label>
 
 					<div className="ml-auto flex items-center gap-3">
 						{/* Wave 22.6 Step 9 — comments render as the inline

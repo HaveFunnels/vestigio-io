@@ -119,6 +119,32 @@ export default function FindingCard({
 								<span className="truncate font-mono text-[11px]">{finding.surface}</span>
 							</>
 						)}
+						{/* Phase 3.3 — Maps reused contextually. When a finding
+						    is part of a CompoundFinding chain, render a small
+						    badge in the metadata row indicating the chain
+						    name. Surfaces the cross-signal map data inline
+						    instead of requiring a trip to the standalone
+						    /app/maps view. The chain_type is the engine's
+						    snake_case identifier; humanize it for display. */}
+						{finding.compound_chain_type && (
+							<>
+								<span className="text-content-faint">·</span>
+								<span
+									className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-700 ring-1 ring-violet-500/30 dark:text-violet-300"
+									title={`Parte da cadeia composta: ${finding.compound_chain_type}`}
+								>
+									<svg className="h-2.5 w-2.5" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.4">
+										<circle cx="2.5" cy="5" r="1.2" />
+										<circle cx="7.5" cy="5" r="1.2" />
+										<path d="M3.7 5h2.6" strokeLinecap="round" />
+									</svg>
+									{finding.compound_chain_type
+										.split("_")
+										.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+										.join(" → ")}
+								</span>
+							</>
+						)}
 					</div>
 					{impactLabel && (
 						<div className={`mt-2 font-mono text-[13px] font-semibold tabular-nums ${impactTone}`}>

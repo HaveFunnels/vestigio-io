@@ -176,6 +176,113 @@ Silently broken, real money or trust on the line. Most are same-class bugs
 
 ---
 
+## Surface Audit Refactor — 2026-06-07 wave
+
+Full investigation, decisions, file:line index: `docs/surface-audit-investigation.md`.
+
+Goal: shift the audit's unit of work from "page" to "surface" (anything
+fetchable from the public network). Catches the Melissa-class problem
+(public platform endpoints leaking commercial data — e.g.
+`/ccstore/v1/sites/B2CMN` returning all coupons). Same primitives unlock
+attribution / pricing / vendor cost / churn detectors that already exist
+in `packages/signals/engine.ts` but never had data.
+
+Pattern fechado neste wave: 2 instances of "infra sem instalação"
+(Nuclei + Katana absent from Dockerfile; BRAVE_SEARCH_API_KEY undocumented
+after Tavily migration). See Definition of Delivered below.
+
+### Pre-flight
+
+- [x] **Install Nuclei v3.8.0 + Katana v1.6.1 in production image** — commit `dc6dbbc9`. Standalone amd64 binaries pulled in dedicated `tools` Dockerfile stage; templates pre-baked via `nuclei -update-templates`.
+- [x] **SERP collapses to Tavily-only** — commit `97260de6`. Brave adapter removed, `TAVILY_API_KEY` documented in `.env.example`. Confirmed by operator that key is set in Railway worker env.
+- [x] **Internal UptimeCheck deleted** — commit `540ea895`. Railway `/healthz` is canonical. Model + library + admin routes + nav links + alert rule metric all removed.
+- [ ] **Verify next havefunnels audit cycle** — passive check on logs/evidences: (a) `nucleiScanPass` ran against `landing_url` with the 19 curated checks; (b) `getSerpProvider()` returned Tavily (not null); (c) `prisma.suppressionRule.findMany` ran (will return 0 rows until any rule created).
+
+### Wire 0 — SuppressionRule operational tool (DONE)
+
+- [x] **Backend wire** — commit `3e99f7a4`. `run-cycle.ts` loads active rules scoped to env + workspace, filters expired at query level, passes to `runEngine` via `input.suppression_rules`. Phase 26 in `packages/workspace/recompute.ts:1013-1044` applies confidence reduction (never hides findings).
+- [x] **Admin-only CRUD** — commit `db08d5d9`. `/api/admin/suppressions/` with `session.user.role === "ADMIN"` guard. UI panel in `src/app/app/admin/organizations/[id]/page.tsx` (list + create form). **Not customer-facing** — pushing "what is false positive?" onto customers undermines value prop.
+- **Operational discipline (open)**: every rule created must open a ticket to tune the underlying detector at source (`packages/signals/engine.ts`, inference heuristics, or Nuclei template). Suppression is alívio temporário, never durable. Future metric: monthly rule-creation rate should fall as detectors mature.
+
+### Wire 1 + Surpresa 4 — Network-as-surface + PlaywrightRender extractors
+
+- [ ] **Promote captured XHR/fetch URLs to first-class surfaces.** Today `playwright-runtime.ts:84-171` captures into `CapturedNetworkRequest[]` and the array dies in `BrowserNavigationTrace` evidence (`browser-worker.ts:282-313` doesn't read `result.network_analysis`). Wire: same-registrable-domain filter + URL template dedup + per-audit cap.
+- [ ] **Create `NetworkSurface` / `DiscoveredSurface` Prisma model** — parallel to existing `Surface` (which is operator-declared scope). Decision recorded: parallel, not overload.
+- [ ] **Embed Surpresa 4 in same PR**: 2 signal extractors for `EvidenceType.PlaywrightRender` (emitted at `staged-pipeline.ts:415,884`, currently zero consumers). Likely `spa_runtime_error_on_boot` + `static_html_empty_needs_render`. Trivial work; saves a follow-up PR touching the same files.
+- Effort: M-L, ~5-7 days
+
+### Wire 5 + Surpresa 9 — NetworkAnalysisPayload emitter + feature flag rollout
+
+- [ ] **Emit the payload that's already computed.** `buildNetworkAnalysisSummary` (`playwright-runtime.ts:243-245`) is populated but `resultToEvidence` (`browser-worker.ts:282-313`) never reads it. ~10 lines.
+- [ ] **Feature flag the dormant detectors.** Surpresa 9: 7+ detectors in `signals/engine.ts:2837-3000+` (`checkout_api_latency_degrading`, `mobile_payment_slow`, `payment_critical_failed`, etc.) have never run against real data — thresholds at lines 2878/2885 are guesses. When the payload starts emitting, these fire all at once.
+- [ ] **havefunnels-only rollout 1-2 weeks** before broader release. Calibrate thresholds via observed FP rate.
+- Effort: M-L, ~7-10 days
+
+### Wire 3 — Platform endpoint catalog
+
+- [ ] **Add OCC, SFCC, BigCommerce to `packages/technology-registry/registry.ts`** (currently has Shopify, WooCommerce, Magento, WordPress, Wix, Squarespace, VTEX, Nuvemshop — missing the platforms most exposed to the Melissa class).
+- [ ] **Add `endpoint_catalog: string[]` field** to each registry entry. Known commercial endpoint families per platform.
+- [ ] **New enrichment pass `platform-catalog-probe.ts`** in `workers/ingestion/enrichment/` that fires when fingerprint detects a catalogued platform, probes the N URLs against the host, and pushes resolvable ones to the candidate queue + Nuclei target list.
+- Effort: M, ~5 days
+
+### Wire 4 — Custom Nuclei templates for body shapes
+
+- [ ] **Create `packages/nuclei-templates/`** directory (does not exist today — `CURATED_CHECKS` references only upstream template IDs).
+- [ ] **Author first batch of YAML templates** using matcher DSL (`type: regex`/`dsl`/`word` with `part: body`) for shapes: array of objects with `code`/`coupon`/`promo` keys, pricing tables, customer email arrays, etc.
+- [ ] **Extend `CuratedNucleiCheck`** (`packages/nuclei-adapter/types.ts:28-45`) with optional `template_path` field for filesystem templates alongside the existing `nuclei_template` (upstream ID).
+- [ ] **Update `runNucleiScan`** (`workers/nuclei/runner.ts:76-84`) to accept `-t <path>` for filesystem templates.
+- Effort: M, ~5 days
+
+### Wire 2 — Katana → Nuclei chain
+
+- [ ] **Pipe Katana-discovered URLs to Nuclei targets.** Today `nuclei-scan.ts:64` passes only `ctx.landing_url`. After `katanaDiscoveryPass`, derive commercial-surface URLs from `KatanaClassifiedRoute[]` and inject into `runNucleiScan({ targets: [...] })` with a per-audit cap (e.g. 20 net-new).
+- Effort: S, ~2 days
+
+### Wire 7 — Katana with -jc + tuning
+
+- [ ] **Enable JS bundle parsing.** Add `-jc` (`-js-crawl`) flag in `workers/katana/runner.ts:67-84`. This is Katana's main differentiator — extracting URLs embedded in JS chunks. The Melissa OCC endpoint is almost certainly referenced in their bundle.
+- [ ] **Add `-aff` (auto-form-fill)** for parameter discovery.
+- [ ] **Tune the `shouldRun` gate** in `katana-discovery.ts:26-70`. Today requires `spa_detected === true` AND discovery gaps — too restrictive. SSR sites with XHR-heavy shells (like Melissa) never trigger.
+- Effort: M, ~5 days (heavy tuning because `-jc` is 3-10× slower).
+
+### Wire 6 + Surpresa 5 — Surface drift + SurfaceVitality
+
+- [ ] **Implement `NetworkSurface` diff between cycles.** "Apareceu uma URL JSON nova que ontem não existia" — the always-on revenue protection thesis depends on this.
+- [ ] **Resurrect `extractVitalityFromEvents`** (`packages/behavioral/session-aggregator.ts:392-428` — defined, never called). Plug into `apps/audit-runner/process-behavioral.ts`. Pre-existing heartbeat infra ready.
+- [ ] **2-3 signal extractors** for `EvidenceType.SurfaceVitality` once production data flows.
+- Effort: L, ~10-15 days
+
+### OpportunityTracking UI (separate ticket, parallel to wires)
+
+- [ ] **Status buttons inline** in actions drawer at `src/app/app/actions/page.tsx:1402` (around `OperationalTimeline`). API + schema + recompute already exist (`/api/actions/[id]/status/route.ts`). Today UI reads status but doesn't expose transitions.
+- [ ] **Trigger monthly strategy plan refresh** on status change.
+- [ ] **Invalidate MCP context** so next interaction reflects the new status.
+- [ ] **No new screen** — embed in existing drawer (founder decision).
+- Effort: M, ~3-5 days
+
+### Backlog (separate tickets, no urgency for the wave)
+
+- [ ] **Surpresa 2 — Mobile pass.** Phase 2B detectors at `signals/engine.ts:1867-1988` waiting on producer. `playwright-runtime.ts` needs a mobile viewport second pass + emit `MobileVerificationResult` / `ClassifiedRuntimeErrors` payloads.
+- [ ] **Surpresa 6 — Authenticated session evidence detectors.** `authenticated-runtime.ts:476-562` emits 3 evidence types, zero detectors read them. SaaS vertical track — defer until post-PMF.
+- [ ] **Surpresa 7 — MCP analytics call sites.** `PrismaMcpStore` (`apps/platform/mcp-persistence.ts:202-308`) has write methods, never called from chat/MCP/playbook code. Tables `McpPromptEvent` / `McpSession` / `McpSuggestionClick` / `PlaybookRun` ALL empty in prod. Product decisions about MCP suggestions made blind.
+- [ ] **Surpresa 8 quick win (~1 day, between wires).** `EvidenceType.BehavioralEvent` + `IntegrationSnapshot` are dead enums — maturity scoring at `packages/classification/maturity.ts:65` + recompute at `recompute.ts:1349` filter by them, always return zero. Rewrite consumers to check input payload presence instead.
+- [ ] **Suspeita 3 — MarketingEvent customer-facing reads.** Today admin-only by design. Product question: should customers see their own A/B test results? If yes, ticket M to build read route. If no, document as intentional and remove from maturity scoring.
+
+### Discipline: Definition of Delivered (open)
+
+For any future wave that depends on an env var or external binary:
+
+1. Env var documented in `.env.example`
+2. Binary install verified in prod (Docker build succeeds + container check)
+3. Producer instrumented + emitting evidence in prod (havefunnels first)
+4. Consumer present + actively reading
+5. Single integration test exercises the full producer→consumer path
+
+Two instances of this pattern caught in this wave (Nuclei/Katana, BRAVE/Tavily).
+Codify as a checklist before closing any wave.
+
+---
+
 ## Audit context — 2026-05-14
 
 Four parallel audits ran across (a) settings/billing/account, (b)

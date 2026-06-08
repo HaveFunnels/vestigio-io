@@ -1774,6 +1774,46 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				);
 			}
 
+			// Wire 0 — load active suppression rules scoped to this env or
+			// its parent workspace. The recompute applies them in Phase 26
+			// (packages/workspace/recompute.ts:1013-1044) reducing confidence
+			// of matching decisions, never hiding them. Rules with passed
+			// expiresAt or isActive=false are excluded at the query level so
+			// the engine sees only what's currently in effect.
+			let suppressionRules: import("../../packages/domain").SuppressionRule[] = [];
+			try {
+				const now = new Date();
+				const rows = await prisma.suppressionRule.findMany({
+					where: {
+						scopeRef: { in: [workspaceRef, environmentRef] },
+						isActive: true,
+						OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+					},
+				});
+				suppressionRules = rows.map((r) => ({
+					id: r.id,
+					scope_ref: r.scopeRef,
+					match_key: r.matchKey,
+					reason: r.reason,
+					created_by: r.createdBy,
+					expires_at: r.expiresAt,
+					review_policy: r.reviewPolicy as "manual" | "auto_expire" | "permanent",
+					is_active: r.isActive,
+					created_at: r.createdAt,
+					updated_at: r.updatedAt,
+				}));
+				if (suppressionRules.length > 0) {
+					console.log(
+						`[audit-runner ${cycleId}] loaded ${suppressionRules.length} active suppression rule(s)`,
+					);
+				}
+			} catch (err) {
+				console.warn(
+					`[audit-runner ${cycleId}] failed to load suppression rules — proceeding without:`,
+					err instanceof Error ? err.message : err,
+				);
+			}
+
 			const recomputeStartMs = Date.now();
 			// Wave 20.7 — single entry point. runEngine wraps recompute +
 			// projectAll; the audit-runner only knows about the engine
@@ -1808,6 +1848,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				onboarding_business_model: businessProfile?.businessModel ?? null,
 				onboarding_conversion_model: businessProfile?.conversionModel ?? null,
 				previous_snapshot: previousSnapshot,
+				suppression_rules: suppressionRules.length > 0 ? suppressionRules : undefined,
 				translations,
 				integration_snapshots: integrationSnapshots.length > 0 ? integrationSnapshots : undefined,
 				currency: resolvedCurrency,

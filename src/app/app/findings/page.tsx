@@ -26,6 +26,7 @@ import ColumnSelector, {
 } from "@/components/console/ColumnSelector";
 import FindingDetailPanel from "@/components/console/FindingDetailPanel";
 import DiscutirPopover from "@/components/console/findings/DiscutirPopover";
+import FindingCard from "@/components/findings/FindingCard";
 import { loadFindings, loadChangeReport } from "@/lib/console-data";
 import ChangeSummaryBanner from "@/components/console/ChangeSummaryBanner";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -121,6 +122,24 @@ export default function FindingsPage() {
 		const id = setTimeout(() => setDebouncedQuery(searchQuery.trim().toLowerCase()), 200);
 		return () => clearTimeout(id);
 	}, [searchQuery]);
+
+	// Phase 2 — Findings view mode. Cards-default for the owner-decisor
+	// persona, table opt-in for analyst / consultant / internal-team
+	// use. localStorage persists the choice per browser; subsequent
+	// visits remember the last toggle without round-tripping to a
+	// UserPreference row (Phase 3 migration if we ever need it
+	// cross-device).
+	const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+	useEffect(() => {
+		try {
+			const saved = window.localStorage.getItem("vestigio.findings.view");
+			if (saved === "cards" || saved === "table") setViewMode(saved);
+		} catch { /* private browsing / no localStorage — keep cards default */ }
+	}, []);
+	const updateViewMode = useCallback((next: "cards" | "table") => {
+		setViewMode(next);
+		try { window.localStorage.setItem("vestigio.findings.view", next); } catch { /* ignore */ }
+	}, []);
 
 	// "Criar ação" is per-row async; track which row is mid-flight so the
 	// popover can show "Criando…" instead of letting the user spam clicks.
@@ -950,24 +969,70 @@ export default function FindingsPage() {
 				</div>
 			)}
 
-			{/* Active view info + Column selector */}
-			{activeView && (
-				<div className="mb-4 flex items-center justify-between">
-					<span className="text-xs text-content-muted">
-						{tc("n_of_total", {
-							filtered: sorted.length,
-							total: findings.length,
-						})}
-					</span>
-					<ColumnSelector
-						activeColumns={activeColumns}
-						onColumnsChange={handleColumnsChange}
-					/>
+			{/* Phase 2 — view toggle. Cards-default for the owner-decisor
+			    persona; table opt-in for analyst / consultant use. Column
+			    selector only renders in table mode. */}
+			<div className="mb-4 flex items-center justify-between gap-3">
+				<span className="text-xs text-content-muted">
+					{tc("n_of_total", {
+						filtered: sorted.length,
+						total: findings.length,
+					})}
+				</span>
+				<div className="flex items-center gap-2">
+					<div className="inline-flex overflow-hidden rounded-md border border-edge">
+						<button
+							type="button"
+							onClick={() => updateViewMode("cards")}
+							className={`px-3 py-1 text-[12px] font-medium transition-colors ${
+								viewMode === "cards"
+									? "bg-content text-surface-card"
+									: "bg-surface-card text-content-muted hover:text-content"
+							}`}
+						>
+							Cards
+						</button>
+						<button
+							type="button"
+							onClick={() => updateViewMode("table")}
+							className={`border-l border-edge px-3 py-1 text-[12px] font-medium transition-colors ${
+								viewMode === "table"
+									? "bg-content text-surface-card"
+									: "bg-surface-card text-content-muted hover:text-content"
+							}`}
+						>
+							Tabela
+						</button>
+					</div>
+					{viewMode === "table" && activeView && (
+						<ColumnSelector
+							activeColumns={activeColumns}
+							onColumnsChange={handleColumnsChange}
+						/>
+					)}
 				</div>
-			)}
+			</div>
 
-			{/* Grouped rendering */}
-			{groups ? (
+			{viewMode === "cards" ? (
+				sorted.length === 0 ? (
+					<div className="rounded-2xl border border-edge bg-surface-card p-6 text-center text-[13px] text-content-muted">
+						{t("no_match")}
+					</div>
+				) : (
+					<div className="flex flex-col gap-2">
+						{sorted.map((f, i) => (
+							<FindingCard
+								key={f.id}
+								finding={f}
+								onCreateAction={handleCreateActionFromFinding}
+								onDiscuss={handleUnderstandFinding}
+								creatingAction={creatingActionFor === f.id}
+								defaultExpanded={i === 0 && !isFromPlan}
+							/>
+						))}
+					</div>
+				)
+			) : groups ? (
 				<GroupedFindings
 					groups={groups}
 					columns={columns}

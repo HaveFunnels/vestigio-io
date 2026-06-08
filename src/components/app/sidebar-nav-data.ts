@@ -68,6 +68,18 @@ export const productNav: NavItem[] = [
 		dividerAfter: true,
 	},
 	// ── Secondary tier — under "Mais" overflow ──
+	// Phase 3.4 cleanup:
+	//   - workspaces dropped (folded into Findings as Lente — 3.2)
+	//   - inventory dropped (per-page workflow reachable via Findings
+	//     surface filter; standalone /app/inventory stays as URL but
+	//     not in nav so it doesn't compete for attention)
+	//   - library renamed to "Histórico" (clearer — it's the archive
+	//     of past plans, not a parallel data surface)
+	//   - pulse stays in overflow during the telemetry study (3.5)
+	//
+	// Net result: 1 primary divider + 2 items in overflow. Closest
+	// we've come to the "3 primary, no overflow" thesis without
+	// pre-deciding Pulse.
 	{
 		id: "pulse",
 		href: "/app/pulse",
@@ -76,24 +88,10 @@ export const productNav: NavItem[] = [
 		secondary: true,
 	},
 	{
-		id: "workspaces",
-		href: "/app/workspaces",
-		labelKey: "workspaces",
-		icon: "M2.25 7.125C2.25 6.504 2.754 6 3.375 6h6c.621 0 1.125.504 1.125 1.125v3.75c0 .621-.504 1.125-1.125 1.125h-6a1.125 1.125 0 01-1.125-1.125v-3.75zM14.25 8.625c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v8.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-8.25zM3.75 16.125c0-.621.504-1.125 1.125-1.125h5.25c.621 0 1.125.504 1.125 1.125v2.25c0 .621-.504 1.125-1.125 1.125h-5.25a1.125 1.125 0 01-1.125-1.125v-2.25z",
-		secondary: true,
-	},
-	{
 		id: "library",
 		href: "/app/library",
-		labelKey: "library",
+		labelKey: "history",
 		icon: "M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z",
-		secondary: true,
-	},
-	{
-		id: "inventory",
-		href: "/app/inventory",
-		labelKey: "inventory",
-		icon: "M6.429 9.75L2.25 12l4.179 2.25m0-4.5l5.571 3 5.571-3m-11.142 0L2.25 7.5 12 2.25l9.75 5.25-4.179 2.25m0 0L12 12.75l-5.571-3m11.142 0l4.179 2.25L12 17.25 2.25 12l4.179-2.25m11.142 0l4.179 2.25-4.179 2.25M6.429 14.25L2.25 16.5 12 21.75l9.75-5.25-4.179-2.25",
 		secondary: true,
 	},
 ];

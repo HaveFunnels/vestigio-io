@@ -46,8 +46,18 @@ const PASS_REGISTRY: EnrichmentPass[] = [
   katanaDiscoveryPass,
   nucleiScanPass,
   brandIntelScanPass,
-  competitorFetchPass, // Wave 24 — polite homepage fetch of curated competitors, full-mode only
+  // serp_observation MUST run before competitor_fetch.
+  // serp's upsertAutoDiscoveries bootstrap-activates the first 5
+  // discovered candidates when the env has zero curated competitors.
+  // If competitor_fetch ran first it would read the empty
+  // CompetitorDomain table, emit zero CompetitorPageSnapshot, and the
+  // whole peer-comparison chain (surface_inventory peer mode, plan
+  // narrative regen) would stay dark for one extra cycle. Confirmed
+  // 2026-06-09 against havefunnels: bootstrap activated 5 competitors
+  // but competitor_fetch had already finished, leaving surface_inventory
+  // in self-only mode for that cycle.
   serpObservationPass, // Wave 25 — brand + category SERP capture (cached), gated by TAVILY_API_KEY
+  competitorFetchPass, // Wave 24 — polite homepage fetch of user-curated + auto-activated competitors, full-mode only
   surfaceInventoryPass, // Wave 26 — LLM extracts buyer-decision surface elements (yours + each competitor), gated by ANTHROPIC_API_KEY
   customerVoicePass,   // Wave 27 — Reclame Aqui snapshot for self + curated competitors, full-mode only
   externalReconPass,

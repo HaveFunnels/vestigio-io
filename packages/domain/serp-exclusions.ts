@@ -19,7 +19,8 @@
 // ──────────────────────────────────────────────
 
 export const SERP_EXCLUDED_HOSTS: ReadonlySet<string> = new Set([
-	// User-controlled / social
+	// User-controlled / social / content-hosting platforms (anyone can
+	// publish; subdomains are user-owned not competitor-owned)
 	"linkedin.com",
 	"x.com",
 	"twitter.com",
@@ -29,6 +30,12 @@ export const SERP_EXCLUDED_HOSTS: ReadonlySet<string> = new Set([
 	"tiktok.com",
 	"medium.com",
 	"github.com",
+	"substack.com",
+	"notion.site",
+	"notion.so",
+	"dev.to",
+	"hashnode.com",
+	"hashnode.dev",
 	// News + reference
 	"wikipedia.org",
 	"crunchbase.com",

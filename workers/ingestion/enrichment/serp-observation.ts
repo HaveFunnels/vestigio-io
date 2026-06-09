@@ -69,18 +69,31 @@ function extractBrandTokens(rootDomain: string, businessModel: string | null, in
 	// the keyword list short (≤3) to stay under the free-tier budget.
 	// Industry is what DomainFingerprint stores per env (Wave 19c) —
 	// e.g. "saas funnel builder", "e-commerce fashion".
+	//
+	// Anchor strategy: industry-derived query when available, otherwise
+	// fall back to a generic model anchor ("melhor saas"). The anchor
+	// fires ONLY as fallback because in industry-set envs it adds noise
+	// — "melhor saas" returns every SaaS in PT-BR content rather than
+	// the actual category peers. Once domain-fingerprint classifies
+	// industry (cycle 1 for any new env post-G1 fix), every subsequent
+	// cycle queries the precise vertical instead.
 	const cats: string[] = [];
 	const ind = (industry || "").trim().toLowerCase();
-	if (ind.length > 3) cats.push(ind);
-	// Always add a model-flavored anchor query so even fingerprint-less
-	// envs get one category sample.
-	if (businessModel === "saas") cats.push("melhor saas");
-	else if (businessModel === "ecommerce") cats.push("loja online");
-	else if (businessModel === "lead_gen") cats.push("plataforma de gestão");
-	else if (businessModel === "services") cats.push("serviços profissionais");
-	else if (businessModel === "app_conversion") cats.push("aplicativo mobile");
-	else if (businessModel === "enterprise") cats.push("software empresarial");
-	else if (businessModel === "hybrid") cats.push("plataforma digital");
+	if (ind.length > 3) {
+		cats.push(ind);
+	} else {
+		// Industry classification missing — use a model-flavored anchor
+		// so cycle 1 still discovers something. After G1's parse fix
+		// (apps/audit-runner/populate-domain-fingerprint.ts) this branch
+		// should be rare in production.
+		if (businessModel === "saas") cats.push("melhor saas");
+		else if (businessModel === "ecommerce") cats.push("loja online");
+		else if (businessModel === "lead_gen") cats.push("plataforma de gestão");
+		else if (businessModel === "services") cats.push("serviços profissionais");
+		else if (businessModel === "app_conversion") cats.push("aplicativo mobile");
+		else if (businessModel === "enterprise") cats.push("software empresarial");
+		else if (businessModel === "hybrid") cats.push("plataforma digital");
+	}
 	return { primary, categoryKeywords: cats.slice(0, 3), locale: "pt-BR" };
 }
 

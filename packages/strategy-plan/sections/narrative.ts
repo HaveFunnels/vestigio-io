@@ -22,6 +22,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { GenerateContext } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
 import { monthLabel } from "../i18n";
+import { resolveInferenceTitle } from "../title-resolver";
 
 interface NarrativeInputs {
 	resolvedCount: number;
@@ -130,8 +131,8 @@ async function gatherInputs(
 			: 0;
 	const topOpenFindings = openLoss.slice(0, 4).map((f) => ({
 		title:
-			(ctx.translations?.inference_titles?.[f.inferenceKey]
-				?? f.inferenceKey.replace(/_/g, " ")),
+			resolveInferenceTitle(f.inferenceKey, ctx.translations)
+			?? f.inferenceKey.replace(/_/g, " "),
 		impactMid: Math.round(f.impactMidpoint),
 		surface: f.surface,
 	}));
@@ -142,13 +143,13 @@ async function gatherInputs(
 		resolvedSampleTitles: resolved
 			.slice(0, 3)
 			.map((r) =>
-				`${ctx.translations?.inference_titles?.[r.inferenceKey] ?? r.inferenceKey.replace(/_/g, " ")} em ${r.surface}`,
+				`${resolveInferenceTitle(r.inferenceKey, ctx.translations) ?? r.inferenceKey.replace(/_/g, " ")} em ${r.surface}`,
 			),
 		newCriticalCount: newCritical.length,
 		newCriticalSamples: newCritical
 			.slice(0, 3)
 			.map((r) =>
-				`${ctx.translations?.inference_titles?.[r.inferenceKey] ?? r.inferenceKey.replace(/_/g, " ")} em ${r.surface}`,
+				`${resolveInferenceTitle(r.inferenceKey, ctx.translations) ?? r.inferenceKey.replace(/_/g, " ")} em ${r.surface}`,
 			),
 		chronicCount: chronic,
 		regressionCount: regression,

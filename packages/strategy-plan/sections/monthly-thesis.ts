@@ -18,6 +18,7 @@ import type { PrismaClient } from "@prisma/client";
 import type { GenerateContext } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
 import { monthLabel } from "../i18n";
+import { resolveInferenceTitle } from "../title-resolver";
 
 interface ThesisInputs {
 	monthLabelPt: string;
@@ -110,7 +111,7 @@ async function gatherInputs(
 	const dominantSurface = sortedSurfaces[0]?.[0] ?? null;
 	const top = openLoss[0];
 	const topFindingTitle = top
-		? (ctx.translations?.inference_titles?.[top.inferenceKey]
+		? (resolveInferenceTitle(top.inferenceKey, ctx.translations)
 			?? top.inferenceKey.replace(/_/g, " "))
 		: null;
 

@@ -25,6 +25,7 @@ import {
 	REMEDIATION_CATALOG,
 	getDynamicRemediation,
 } from "../../projections/remediation-catalog";
+import { resolveInferenceTitle } from "../title-resolver";
 
 interface ActionRow {
 	id: string;
@@ -141,22 +142,15 @@ function titleFromAction(
 		: (action.inferenceKeys[0] ?? action.decisionKey);
 
 	// Sprint 3 — consult engine translations so the title surfaces in
-	// the owner's locale. Fallback chain ordered by likelihood for each
-	// ref shape:
-	//   - compound chain (ref like "copy_pricing_confusion"): the
-	//     dictionary keeps these in `compound_type_titles` so check
-	//     there first. Then root_cause_titles as a safety net for
-	//     pre-Sprint-3.1 dicts that mixed them in.
-	//   - inference key (ref like "trust_boundary_crossed"): lives in
-	//     `inference_titles`. Root cause titles only used if the
-	//     inference dict is missing the entry.
+	// the owner's locale. Compound chains live in compound_type_titles;
+	// regular inference keys flow through resolveInferenceTitle which
+	// covers inference_titles + dynamic_titles (incl. parameterised
+	// funnel keys like funnel_dead_end_page) + root_cause_titles.
 	const translated = isCompound
 		? (translations?.compound_type_titles?.[ref]
 			?? translations?.root_cause_titles?.[ref]
 			?? null)
-		: (translations?.inference_titles?.[ref]
-			?? translations?.root_cause_titles?.[ref]
-			?? null);
+		: resolveInferenceTitle(ref, translations);
 	const friendly = translated
 		?? ref.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -368,9 +362,7 @@ Regras:
 	const friendlyFindings = action.inferenceKeys
 		.slice(0, 3)
 		.map((k) => {
-			const t = translations?.inference_titles?.[k]
-				?? translations?.root_cause_titles?.[k]
-				?? null;
+			const t = resolveInferenceTitle(k, translations);
 			return t ?? k.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 		});
 

@@ -15,6 +15,7 @@ import MemoryRollups from "./sections/MemoryRollups";
 import MonthlyThesis from "./sections/MonthlyThesis";
 import Continuity from "./sections/Continuity";
 import CrossCustomerPattern from "./sections/CrossCustomerPattern";
+import PlanTOCRail, { type TocItem } from "./PlanTOCRail";
 
 /*
  * StrategyPlanPanel — top-level composition of the 6 plan sections
@@ -300,45 +301,92 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				</div>
 				<PlanHeader plan={plan} />
 
+				{/* Right-rail TOC. Items computed from current plan state
+				    so hidden sections (continuity on first plan, etc.)
+				    don't surface as orphan dots. Render outside the section
+				    grid so position:fixed lifts cleanly. */}
+				<PlanTOCRail
+					items={(() => {
+						const items: TocItem[] = [
+							{ id: "thesis", label: isPt ? "Tese" : "Thesis", visible: !!plan.thesisOfMonth },
+							{ id: "hero", label: isPt ? "Onde está" : "Where you are", visible: true },
+							{
+								id: "continuity",
+								label: isPt ? "Continuidade" : "Continuity",
+								visible: !!plan.continuity?.previousMonth,
+							},
+							{
+								id: "cross-customer",
+								label: isPt ? "Padrão carteira" : "Peer pattern",
+								visible: !!plan.crossCustomerPattern,
+							},
+							{ id: "segments", label: isPt ? "Times" : "By team", visible: true },
+							{ id: "narrative", label: isPt ? "O que aconteceu" : "What happened", visible: !!plan.narrativeWhatHappened },
+							{ id: "next-steps", label: isPt ? "Próximos passos" : "Next steps", visible: true },
+							{ id: "value-preview", label: isPt ? "O que ganha" : "Value preview", visible: true },
+							{ id: "memory", label: isPt ? "Memória" : "Memory", visible: true },
+						];
+						return items;
+					})()}
+				/>
+
 				{/* E1 — single-sentence thesis above the hero. Frames the
 				    reading angle for the rest of the plan and signs as
 				    Vestigio so the doc reads as authored analysis, not
 				    auto-generated. Hidden on legacy plans without the
 				    field. */}
-				<MonthlyThesis thesis={plan.thesisOfMonth} monthLabel={monthLabel} />
+				<div data-toc-id="thesis">
+					<MonthlyThesis thesis={plan.thesisOfMonth} monthLabel={monthLabel} />
+				</div>
 
-				<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} />
+				<div data-toc-id="hero">
+					<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} />
+				</div>
 				{/* E3 — continuity from the prior month's plan. Sits between
 				    hero and buyer segments so the customer first sees where
 				    they are NOW (hero), then where they came from (continuity),
 				    then who owns the work (segments). Self-hides for month-1
 				    envs where no prior plan exists. */}
-				<Continuity continuity={plan.continuity} />
+				<div data-toc-id="continuity">
+					<Continuity continuity={plan.continuity} />
+				</div>
 				{/* E4 — peer pattern callout. Sits before buyer segments
 				    so the "your segment shows X" frame anchors the by-team
 				    decomposition that follows. Self-hides on null when the
 				    peer sample is too small for statistically honest
 				    framing. */}
-				<CrossCustomerPattern pattern={plan.crossCustomerPattern} />
-				<BuyerSegments segments={plan.buyerSegments} />
-				<WhatHappenedNarrative
-					narrative={plan.narrativeWhatHappened}
-					monthLabel={monthLabel}
-				/>
-				<NextSteps
-					steps={plan.nextSteps}
-					comments={plan.comments ?? []}
-					pendingEdits={plan.pendingEdits ?? []}
-					canApprove={plan.viewerCanApprove ?? false}
-					envId={plan.environmentId}
-					month={plan.month}
-					planId={plan.id}
-				/>
-				<ValuePreview
-					preview={plan.valuePreview}
-					narrative={plan.valuePreviewNarrative}
-				/>
-				<MemoryRollups rollups={plan.memoryRollups} />
+				<div data-toc-id="cross-customer">
+					<CrossCustomerPattern pattern={plan.crossCustomerPattern} />
+				</div>
+				<div data-toc-id="segments">
+					<BuyerSegments segments={plan.buyerSegments} />
+				</div>
+				<div data-toc-id="narrative">
+					<WhatHappenedNarrative
+						narrative={plan.narrativeWhatHappened}
+						monthLabel={monthLabel}
+					/>
+				</div>
+				<div data-toc-id="next-steps">
+					<NextSteps
+						steps={plan.nextSteps}
+						comments={plan.comments ?? []}
+						pendingEdits={plan.pendingEdits ?? []}
+						canApprove={plan.viewerCanApprove ?? false}
+						envId={plan.environmentId}
+						month={plan.month}
+						planId={plan.id}
+					/>
+				</div>
+				<div data-toc-id="value-preview">
+					<ValuePreview
+						preview={plan.valuePreview}
+						narrative={plan.valuePreviewNarrative}
+					/>
+				</div>
+				<div data-toc-id="memory">
+					<MemoryRollups rollups={plan.memoryRollups} />
+				</div>
 
 				{/* Footer — Wave-22.6-review fix: removed internal LLM
 				    cost telemetry ("$0.08") and engineer-style version

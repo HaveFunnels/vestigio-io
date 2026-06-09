@@ -12,6 +12,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { GenerateContext, BuyerSegmentOutput } from "../types";
 import { packToBuyer, BUYER_LABEL_PT_BR, type BuyerKind } from "../pack-to-buyer";
+import { resolveInferenceTitle } from "../title-resolver";
 
 interface FindingRow {
 	id: string;
@@ -28,15 +29,12 @@ function titleForFinding(
 	row: FindingRow,
 	translations: GenerateContext["translations"],
 ): string {
-	// Consult the engine dictionary in the owner's locale before falling
-	// back to mechanical Capitalize_Snake_Case. Without this, samples
-	// rendered as "Pricing Without Context · /pricing" — English noise
-	// inside a pt-BR plan. inference_titles is the primary source;
-	// root_cause_titles is a safety net for keys the dict missed.
-	const translated =
-		translations?.inference_titles?.[row.inferenceKey]
-		?? translations?.root_cause_titles?.[row.inferenceKey]
-		?? null;
+	// Centralised resolver consults inference_titles + dynamic_titles +
+	// root_cause_titles, including slot extraction for funnel_broken_path,
+	// funnel_missing_stage, and funnel_weak_connection. Without this we'd
+	// leak "Funnel Dead End Page" on havefunnels because the translation
+	// lives in dynamic_titles, not inference_titles.
+	const translated = resolveInferenceTitle(row.inferenceKey, translations);
 	const friendlyKey =
 		translated
 		?? row.inferenceKey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -50,6 +48,10 @@ export async function generateBuyerSegments(
 	const rows: FindingRow[] = await prisma.finding.findMany({
 		where: {
 			environmentId: ctx.environmentId,
+			// Buyer segments are about "what each team OWNS to fix" — strictly
+			// loss findings. Positive (state-of-health) findings would render
+			// as problems otherwise, and they have no owner-action attached.
+			polarity: { in: ["negative", "neutral"] },
 			status: { in: ["created", "confirmed"] },
 			statusChangedAt: { lt: ctx.monthEnd },
 		},

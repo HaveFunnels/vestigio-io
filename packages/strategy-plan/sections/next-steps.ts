@@ -164,31 +164,64 @@ function titleFromAction(
 	return `${friendly}${locative}`;
 }
 
-function fallbackReasoning(action: ActionRow): string {
-	// T6 — varied fallback by severity tier so 5 fallbacks in a row don't
-	// read as the same sentence. We never want this fallback to ship in
-	// prod (LLM is the path), but when it does fire (cost-cap, API down)
-	// the reader still gets calibrated context instead of boilerplate.
+function fallbackReasoning(action: ActionRow, order: number): string {
+	// T6 — varied fallback by severity tier AND step order so 5 fallbacks
+	// in a row don't read as the same sentence. We never want this
+	// fallback to ship in prod (LLM is the path), but when it does fire
+	// (cost-cap, API down) the reader still gets calibrated context
+	// instead of boilerplate. Order matters because with severity
+	// calibrated from impact, top-5 plans often hit the same severity
+	// tier on every step.
 	const impact = action.impactMidpoint
 		? `R$ ${Math.round(action.impactMidpoint).toLocaleString("pt-BR")}/mês`
 		: null;
+	const isMain = order === 1;
+
+	if (isMain) {
+		// Step 1 — main move. Confident framing.
+		switch (action.severity) {
+			case "critical":
+				return impact
+					? `Esta é a aposta principal do mês. Vestigio estima **${impact}** saindo nesse ponto — o maior buraco aberto neste ciclo. Deixar pra próxima janela amplia o vazamento e bloqueia o ganho dos outros passos.`
+					: `Esta é a aposta principal do mês — o ponto mais crítico que detectamos. Atacar agora antes que o padrão se enraíze.`;
+			case "high":
+				return impact
+					? `Esta é a aposta principal do mês. **${impact}** de exposição estimada, com barreira de entrada baixa pra resolver. Atacar primeiro destrava espaço pra os movimentos de apoio.`
+					: `Esta é a aposta principal do mês. Exposição alta nesse ponto — Vestigio recomenda fechar antes do próximo ciclo de medição.`;
+			default:
+				return impact
+					? `Esta é a aposta principal do mês — não pelo tamanho do impacto isolado (**${impact}**), mas pelo desbloqueio que abre pros próximos passos.`
+					: `Esta é a aposta principal do mês — começo do plano e ponto de alavanca pra os movimentos seguintes.`;
+		}
+	}
+
+	// Steps 2+ — supporting moves. Use position-aware framing so the
+	// reader doesn't read "É o maior buraco aberto" five times in a row.
+	const positionPhrases = [
+		"Logo atrás do movimento principal,",
+		"Em paralelo,",
+		"Seguindo na fila,",
+		"Como suporte adicional,",
+	];
+	const phrase = positionPhrases[(order - 2) % positionPhrases.length];
+
 	switch (action.severity) {
 		case "critical":
 			return impact
-				? `Vestigio estima **${impact}** saindo nesse ponto. É o maior buraco aberto da carteira atual — deixar pra próxima janela amplia o vazamento.`
-				: `Vestigio classificou esse ponto como crítico. Atacar agora antes que o padrão se enraíze.`;
+				? `${phrase} Vestigio estima **${impact}** saindo nesse ponto. Severidade ainda alta — entra como movimento de apoio porque a remediação se compõe com o passo 1 (mesmo time, padrão correlacionado).`
+				: `${phrase} ponto crítico secundário — endereçar uma vez que o movimento principal estiver em andamento.`;
 		case "high":
 			return impact
-				? `**${impact}** de exposição estimada. Não é o sangramento principal, mas é o que vem logo atrás — e a barreira de entrada pra resolver é baixa.`
-				: `Exposição alta nesse ponto. Vestigio recomenda fechar antes do próximo ciclo de medição.`;
+				? `${phrase} **${impact}** de exposição estimada. Não é o sangramento principal, mas a barreira de entrada pra resolver é baixa.`
+				: `${phrase} exposição alta nesse ponto — fechar antes do próximo ciclo de medição.`;
 		case "medium":
 			return impact
-				? `Exposição estimada em **${impact}**. Vale resolver pra reduzir ruído cumulativo no funil — sem urgência de semana, mas dentro do mês.`
-				: `Ponto secundário no funil. Endereçar pra liberar foco dos passos críticos.`;
+				? `${phrase} exposição em **${impact}**. Vale resolver pra reduzir ruído cumulativo no funil — sem urgência de semana, mas dentro do mês.`
+				: `${phrase} ponto secundário no funil. Endereçar pra liberar foco dos passos críticos.`;
 		default:
 			return impact
-				? `Impacto modesto (**${impact}**) — entra no plano como item de manutenção/polimento.`
-				: `Item de baixa urgência mantido visível para evitar acúmulo silencioso.`;
+				? `${phrase} impacto modesto (**${impact}**) — entra no plano como item de manutenção/polimento.`
+				: `${phrase} item de baixa urgência mantido visível para evitar acúmulo silencioso.`;
 	}
 }
 
@@ -419,7 +452,7 @@ export async function generateNextSteps(
 				purpose: "strategy_plan.next_step_reasoning",
 				organizationId,
 				environmentId: ctx.environmentId,
-				fallbackText: fallbackReasoning(action),
+				fallbackText: fallbackReasoning(action, order),
 			});
 
 			return { action, order, primaryKey, catalog, reasoning };

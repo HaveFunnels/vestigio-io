@@ -11,6 +11,11 @@ import type {
 } from "../types";
 import PlanSideDrawer from "../PlanSideDrawer";
 import { ActionListBody, FindingListBody } from "../drawer-bodies";
+import {
+	buildPlanHash,
+	parsePlanHash,
+	type DrawerCtx,
+} from "../plan-url";
 import PlanCommentThread from "../PlanCommentThread";
 import PlanEditBanner from "../PlanEditBanner";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
@@ -213,6 +218,49 @@ function StepCard({
 	const [editingTitle, setEditingTitle] = useState(false);
 	const [actionsDrawerOpen, setActionsDrawerOpen] = useState(false);
 	const [findingsDrawerOpen, setFindingsDrawerOpen] = useState(false);
+	// Hash-driven default expansion when arriving from a finding-detail
+	// breadcrumb. Mirrors the BuyerSegments pattern.
+	const [defaultExpandedKey, setDefaultExpandedKey] = useState<string | null>(null);
+
+	useEffect(() => {
+		function syncFromHash() {
+			if (typeof window === "undefined") return;
+			const parsed = parsePlanHash(window.location.hash);
+			if (!parsed.ctx || parsed.ctx.kind !== "step") {
+				if (findingsDrawerOpen || actionsDrawerOpen) {
+					// Hash cleared while this step's drawer was open — close it.
+				}
+				return;
+			}
+			if (parsed.ctx.stepId !== step.id) return;
+			if (parsed.ctx.mode === "findings") {
+				setFindingsDrawerOpen(true);
+				setDefaultExpandedKey(parsed.expand);
+			} else {
+				setActionsDrawerOpen(true);
+			}
+		}
+		syncFromHash();
+		window.addEventListener("popstate", syncFromHash);
+		window.addEventListener("hashchange", syncFromHash);
+		return () => {
+			window.removeEventListener("popstate", syncFromHash);
+			window.removeEventListener("hashchange", syncFromHash);
+		};
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [step.id]);
+
+	function writeStepHash(ctx: DrawerCtx | null, expand: string | null) {
+		if (typeof window === "undefined") return;
+		const newHash = buildPlanHash(ctx, expand);
+		const url = `${window.location.pathname}${window.location.search}${newHash}`;
+		window.history.replaceState(null, "", url);
+	}
+
+	const findingsCtx: DrawerCtx = { kind: "step", stepId: step.id, mode: "findings" };
+	const actionsCtx: DrawerCtx = { kind: "step", stepId: step.id, mode: "actions" };
+	const returnLabel = `Plano · Passo ${step.order}`;
+
 	const copilot = useCopilot();
 
 	function discussStep() {
@@ -574,7 +622,10 @@ function StepCard({
 						</button>
 						<button
 							type="button"
-							onClick={() => setActionsDrawerOpen(true)}
+							onClick={() => {
+								setActionsDrawerOpen(true);
+								writeStepHash(actionsCtx, null);
+							}}
 							className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
 						>
 							Ver ações relacionadas ({step.linkedActionRefs.length}) →
@@ -586,7 +637,10 @@ function StepCard({
 						{step.linkedFindingRefs.length > 0 && (
 							<button
 								type="button"
-								onClick={() => setFindingsDrawerOpen(true)}
+								onClick={() => {
+									setFindingsDrawerOpen(true);
+									writeStepHash(findingsCtx, defaultExpandedKey);
+								}}
 								className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
 							>
 								Ver problemas do passo ({step.linkedFindingRefs.length}) →
@@ -618,24 +672,43 @@ function StepCard({
 			    not three different tools. */}
 			<PlanSideDrawer
 				open={actionsDrawerOpen}
-				onOpenChange={setActionsDrawerOpen}
+				onOpenChange={(next) => {
+					setActionsDrawerOpen(next);
+					if (!next) writeStepHash(null, null);
+				}}
 				eyebrow="Ações deste passo"
 				title={step.title}
 				description={`${step.linkedActionRefs.length} ${step.linkedActionRefs.length === 1 ? "ação ligada" : "ações ligadas"} ao passo`}
-				footer="Ações sincronizam com /app/actions — mudanças aqui aparecem na fila operacional."
+				footer="Ações sincronizam com /app/actions, mudanças aqui aparecem na fila operacional."
 			>
 				<ActionListBody actionIds={step.linkedActionRefs} />
 			</PlanSideDrawer>
 
 			<PlanSideDrawer
 				open={findingsDrawerOpen}
-				onOpenChange={setFindingsDrawerOpen}
+				onOpenChange={(next) => {
+					setFindingsDrawerOpen(next);
+					if (!next) {
+						setDefaultExpandedKey(null);
+						writeStepHash(null, null);
+					}
+				}}
 				eyebrow="Problemas que justificam o passo"
 				title={step.title}
 				description={`${step.linkedFindingRefs.length} ${step.linkedFindingRefs.length === 1 ? "problema linkado" : "problemas linkados"}`}
 				footer="Encontrados no ciclo em que o plano foi gerado."
 			>
-				<FindingListBody findingIds={step.linkedFindingRefs} />
+				<FindingListBody
+					findingIds={step.linkedFindingRefs}
+					month={month}
+					parentCtx={findingsCtx}
+					returnLabel={returnLabel}
+					defaultExpandedKey={defaultExpandedKey}
+					onExpandedChange={(key) => {
+						setDefaultExpandedKey(key);
+						writeStepHash(findingsCtx, key);
+					}}
+				/>
 			</PlanSideDrawer>
 		</motion.div>
 	);

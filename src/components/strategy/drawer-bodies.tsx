@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { ChevronDown, ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
@@ -12,6 +12,7 @@ import type {
 	FindingProjection,
 	ActionProjection,
 } from "../../../packages/projections";
+import { buildFindingBackUrl, type DrawerCtx } from "./plan-url";
 
 // ──────────────────────────────────────────────
 // Drawer content bodies — composable inside PlanSideDrawer.
@@ -137,6 +138,19 @@ export function ActionListBody({ actionIds }: ActionListProps) {
 
 interface FindingListProps {
 	findingIds: string[];
+	/** Optional — when present, each card's "Abrir ficha completa" link
+	 *  embeds a back URL that re-opens the same drawer + expands the same
+	 *  card on return. Parent (BuyerSegments / NextSteps) owns the
+	 *  drawer state and supplies the context. */
+	month?: string;
+	parentCtx?: DrawerCtx | null;
+	returnLabel?: string;
+	/** inferenceKey of the card that should mount expanded. The parent
+	 *  reads this from the URL hash on mount and passes it in. */
+	defaultExpandedKey?: string | null;
+	/** Notify parent when expansion changes so the URL hash stays in
+	 *  sync with the user's current view. */
+	onExpandedChange?: (key: string | null) => void;
 }
 
 // Re-translate an engine string at render time using the dict in the
@@ -170,7 +184,14 @@ function useEngineTranslator() {
 	};
 }
 
-export function FindingListBody({ findingIds }: FindingListProps) {
+export function FindingListBody({
+	findingIds,
+	month,
+	parentCtx,
+	returnLabel,
+	defaultExpandedKey,
+	onExpandedChange,
+}: FindingListProps) {
 	const mcp = useMcpData();
 	const { currency } = mcp;
 	const all = mcp.findings.status === "ready" ? mcp.findings.data : [];
@@ -211,6 +232,17 @@ export function FindingListBody({ findingIds }: FindingListProps) {
 					finding={finding}
 					currency={currency}
 					idx={idx}
+					month={month}
+					parentCtx={parentCtx}
+					returnLabel={returnLabel}
+					defaultOpen={
+						defaultExpandedKey === finding.inference_key ||
+						defaultExpandedKey === finding.id
+					}
+					onOpenChange={(open) => {
+						if (!onExpandedChange) return;
+						onExpandedChange(open ? finding.inference_key : null);
+					}}
 				/>
 			))}
 		</ul>
@@ -228,10 +260,30 @@ interface FindingCardProps {
 	finding: FindingProjection;
 	currency: string;
 	idx: number;
+	month?: string;
+	parentCtx?: DrawerCtx | null;
+	returnLabel?: string;
+	defaultOpen?: boolean;
+	onOpenChange?: (open: boolean) => void;
 }
 
-function FindingCard({ finding, currency, idx }: FindingCardProps) {
-	const [open, setOpen] = useState(false);
+function FindingCard({
+	finding,
+	currency,
+	idx,
+	month,
+	parentCtx,
+	returnLabel,
+	defaultOpen = false,
+	onOpenChange,
+}: FindingCardProps) {
+	const [open, setOpen] = useState(defaultOpen);
+	// Sync internal open with prop changes (when user navigates back from
+	// the finding-detail page, defaultOpen flips from false to true and
+	// we need to mirror that — useState only reads the initial value).
+	useEffect(() => {
+		setOpen(defaultOpen);
+	}, [defaultOpen]);
 	const t = useEngineTranslator();
 
 	const title = t.title(finding.inference_key, finding.title);
@@ -261,7 +313,13 @@ function FindingCard({ finding, currency, idx }: FindingCardProps) {
 				SEVERITY_BORDER[finding.severity] ?? SEVERITY_BORDER.low
 			}`}
 		>
-			<Collapsible.Root open={open} onOpenChange={setOpen}>
+			<Collapsible.Root
+				open={open}
+				onOpenChange={(next) => {
+					setOpen(next);
+					onOpenChange?.(next);
+				}}
+			>
 				{/* Header — always shown, uniform height across cards. */}
 				<Collapsible.Trigger asChild>
 					<button
@@ -418,7 +476,23 @@ function FindingCard({ finding, currency, idx }: FindingCardProps) {
 													: ""}
 										</div>
 										<Link
-											href={`/app/findings/${finding.id}`}
+											href={(() => {
+												// Build the deep link with a back URL embedded so
+												// the finding-detail page can render a breadcrumb
+												// returning to the exact prior plan state (drawer
+												// reopened + this card pre-expanded).
+												const base = `/app/findings/${finding.id}`;
+												if (!month || !parentCtx) return base;
+												const back = buildFindingBackUrl({
+													month,
+													ctx: parentCtx,
+													expand: finding.inference_key,
+												});
+												const params = new URLSearchParams();
+												params.set("back", back);
+												if (returnLabel) params.set("backLabel", returnLabel);
+												return `${base}?${params.toString()}`;
+											})()}
 											className="inline-flex items-center gap-1 text-[12px] font-medium text-content-secondary underline-offset-4 transition-colors hover:text-content hover:underline"
 										>
 											Abrir ficha completa

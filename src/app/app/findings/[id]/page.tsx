@@ -2,10 +2,12 @@
 
 import { use } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { loadFindings } from "@/lib/console-data";
 import FindingDetailPanel from "@/components/console/FindingDetailPanel";
+import { ArrowLeft } from "lucide-react";
 
 // ──────────────────────────────────────────────
 // /app/findings/[id] — Canonical Finding Detail Page (3.20)
@@ -24,6 +26,13 @@ export default function FindingPage({
 	const decodedId = decodeURIComponent(id);
 	const t = useTranslations("console.finding_drawer");
 	const tc = useTranslations("console.common");
+	// Back URL passed in by callers that have a return state worth
+	// preserving (currently: the Plan drawer's "Abrir ficha completa"
+	// link). Only same-origin paths are accepted to prevent open-redirect.
+	const search = useSearchParams();
+	const rawBack = search?.get("back") ?? null;
+	const backLabel = search?.get("backLabel") ?? null;
+	const back = rawBack && rawBack.startsWith("/") && !rawBack.startsWith("//") ? rawBack : null;
 
 	// Load findings from MCP singleton (same as Analysis page)
 	const mcpData = useMcpData();
@@ -71,6 +80,21 @@ export default function FindingPage({
 
 	return (
 		<div className="mx-auto max-w-3xl p-6">
+			{/* Back-to-context affordance. When the user landed here from
+			    a Plan drawer, the `back` param carries the URL that
+			    reopens the drawer in the right state (specific buyer/step
+			    + the same card pre-expanded). Renders prominently above
+			    the title so the return path is obvious. */}
+			{back && (
+				<Link
+					href={back}
+					className="mb-4 inline-flex items-center gap-1.5 text-[12px] font-medium text-content-muted underline-offset-4 transition-colors hover:text-content hover:underline"
+				>
+					<ArrowLeft className="h-3.5 w-3.5" />
+					{backLabel ?? "Voltar"}
+				</Link>
+			)}
+
 			{/* Breadcrumb */}
 			<nav className="mb-6 flex items-center gap-2 text-xs text-content-muted">
 				<Link

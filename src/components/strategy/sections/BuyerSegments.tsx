@@ -1,12 +1,17 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { BuyerSegment } from "../types";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import PlanSideDrawer from "../PlanSideDrawer";
 import { FindingListBody } from "../drawer-bodies";
+import {
+	buildPlanHash,
+	parsePlanHash,
+	type DrawerCtx,
+} from "../plan-url";
 
 /*
  * Buyer Segments — "O que sua audit revelou este mês"
@@ -20,7 +25,17 @@ import { FindingListBody } from "../drawer-bodies";
 
 interface Props {
 	segments: BuyerSegment[];
+	/** YYYY-MM. Used to build the back URL the finding-detail breadcrumb
+	 *  navigates to (so the customer returns to the same plan with the
+	 *  drawer reopened in the right state). */
+	month: string;
 }
+
+const BUYER_LABEL_FALLBACK: Record<string, string> = {
+	copy: "Copy",
+	eng: "Engenharia",
+	leadership: "Liderança",
+};
 
 const BUYER_ACCENT: Record<string, { dot: string; bg: string; chip: string }> = {
 	copy: {
@@ -40,18 +55,105 @@ const BUYER_ACCENT: Record<string, { dot: string; bg: string; chip: string }> = 
 	},
 };
 
-export default function BuyerSegments({ segments }: Props) {
+export default function BuyerSegments({ segments, month }: Props) {
 	const { currency } = useMcpData();
 	// One drawer instance covers two trigger paths:
-	//   - sample finding title click → single id
+	//   - sample finding title click → single inferenceKey
 	//   - "X findings" count badge click → segment's full id list
 	// Both write into the same state holder so the drawer always
 	// reflects the latest interaction.
 	const [drawerState, setDrawerState] = useState<
-		| { kind: "single"; findingId: string }
+		| { kind: "single"; findingKey: string }
 		| { kind: "segment"; segment: BuyerSegment }
 		| null
 	>(null);
+	// Hash-driven default expansion for the segment drawer. When the
+	// customer lands here from a finding-detail breadcrumb, the URL
+	// carries `#drawer=segment.<buyer>&expand=<inferenceKey>` and we
+	// open the matching drawer + pre-expand the right card.
+	const [defaultExpandedKey, setDefaultExpandedKey] = useState<string | null>(null);
+
+	// On mount + on popstate, reconcile hash → drawer state. Only handle
+	// segment/single ctxs here; step.* ctxs belong to NextSteps.
+	useEffect(() => {
+		function syncFromHash() {
+			if (typeof window === "undefined") return;
+			const parsed = parsePlanHash(window.location.hash);
+			if (!parsed.ctx) {
+				setDrawerState(null);
+				setDefaultExpandedKey(null);
+				return;
+			}
+			if (parsed.ctx.kind === "segment") {
+				const buyerKind = parsed.ctx.buyer;
+				const match = segments.find((s) => s.buyer === buyerKind);
+				if (match) {
+					setDrawerState({ kind: "segment", segment: match });
+					setDefaultExpandedKey(parsed.expand);
+				}
+			} else if (parsed.ctx.kind === "single") {
+				setDrawerState({ kind: "single", findingKey: parsed.ctx.inferenceKey });
+				setDefaultExpandedKey(parsed.ctx.inferenceKey);
+			}
+		}
+		syncFromHash();
+		window.addEventListener("popstate", syncFromHash);
+		window.addEventListener("hashchange", syncFromHash);
+		return () => {
+			window.removeEventListener("popstate", syncFromHash);
+			window.removeEventListener("hashchange", syncFromHash);
+		};
+	}, [segments]);
+
+	// Write hash when drawer opens or expansion changes. We use
+	// replaceState (not pushState) so back-button still navigates
+	// away from the plan instead of cycling through drawer states.
+	function writeHash(ctx: DrawerCtx | null, expand: string | null) {
+		if (typeof window === "undefined") return;
+		const newHash = buildPlanHash(ctx, expand);
+		const url = `${window.location.pathname}${window.location.search}${newHash}`;
+		window.history.replaceState(null, "", url);
+	}
+
+	function openSegment(segment: BuyerSegment) {
+		setDrawerState({ kind: "segment", segment });
+		setDefaultExpandedKey(null);
+		writeHash({ kind: "segment", buyer: segment.buyer }, null);
+	}
+
+	function openSingle(findingKey: string) {
+		setDrawerState({ kind: "single", findingKey });
+		setDefaultExpandedKey(findingKey);
+		writeHash({ kind: "single", inferenceKey: findingKey }, null);
+	}
+
+	function closeDrawer() {
+		setDrawerState(null);
+		setDefaultExpandedKey(null);
+		writeHash(null, null);
+	}
+
+	// Build the back URL the FindingListBody hands to its cards. The
+	// expand slot is the card's own inferenceKey (closure inside the
+	// card), so we hand the parent context here and the card fills in.
+	function returnCtx(): DrawerCtx | null {
+		if (drawerState?.kind === "segment") {
+			return { kind: "segment", buyer: drawerState.segment.buyer };
+		}
+		if (drawerState?.kind === "single") {
+			return { kind: "single", inferenceKey: drawerState.findingKey };
+		}
+		return null;
+	}
+
+	const ctx = returnCtx();
+	const returnLabel =
+		drawerState?.kind === "segment"
+			? `Plano · ${BUYER_LABEL_FALLBACK[drawerState.segment.buyer] ?? drawerState.segment.buyer}`
+			: drawerState?.kind === "single"
+				? "Plano · problema em destaque"
+				: "Plano";
+
 	return (
 		<motion.section
 			initial={{ opacity: 0, y: 16 }}
@@ -102,7 +204,7 @@ export default function BuyerSegments({ segments }: Props) {
 							{s.allFindingIds && s.allFindingIds.length > 0 ? (
 								<button
 									type="button"
-									onClick={() => setDrawerState({ kind: "segment", segment: s })}
+									onClick={() => openSegment(s)}
 									className="mt-0.5 inline-flex items-center gap-1 text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
 									title="Ver todos os problemas desse segmento"
 								>
@@ -129,11 +231,11 @@ export default function BuyerSegments({ segments }: Props) {
 									Onde aparece
 								</div>
 								{s.sampleFindingTitles.slice(0, 2).map((title, i) => {
-									const findingId = s.sampleFindingIds[i];
-									// Without an ID we can't open the drawer, so
+									const findingKey = s.sampleFindingIds[i];
+									// Without a key we can't open the drawer, so
 									// render as plain text (legacy plans + edge
-									// cases where the engine didn't bind an ID).
-									if (!findingId) {
+									// cases where the engine didn't bind a key).
+									if (!findingKey) {
 										return (
 											<div
 												key={i}
@@ -147,7 +249,7 @@ export default function BuyerSegments({ segments }: Props) {
 										<button
 											key={i}
 											type="button"
-											onClick={() => setDrawerState({ kind: "single", findingId })}
+											onClick={() => openSingle(findingKey)}
 											className="-mx-1.5 block w-full rounded-md px-1.5 py-1 text-left text-[13px] leading-snug text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
 											title="Ver detalhes do problema"
 										>
@@ -167,7 +269,7 @@ export default function BuyerSegments({ segments }: Props) {
 			    every finding in the team's queue. */}
 			<PlanSideDrawer
 				open={drawerState !== null}
-				onOpenChange={(open) => { if (!open) setDrawerState(null); }}
+				onOpenChange={(open) => { if (!open) closeDrawer(); }}
 				eyebrow={
 					drawerState?.kind === "segment"
 						? `Problemas ${drawerState.segment.buyerLabel}`
@@ -185,10 +287,30 @@ export default function BuyerSegments({ segments }: Props) {
 				}
 			>
 				{drawerState?.kind === "single" && (
-					<FindingListBody findingIds={[drawerState.findingId]} />
+					<FindingListBody
+						findingIds={[drawerState.findingKey]}
+						month={month}
+						parentCtx={ctx}
+						returnLabel={returnLabel}
+						defaultExpandedKey={defaultExpandedKey}
+						onExpandedChange={(key) => {
+							setDefaultExpandedKey(key);
+							writeHash(ctx, key);
+						}}
+					/>
 				)}
 				{drawerState?.kind === "segment" && (
-					<FindingListBody findingIds={drawerState.segment.allFindingIds ?? []} />
+					<FindingListBody
+						findingIds={drawerState.segment.allFindingIds ?? []}
+						month={month}
+						parentCtx={ctx}
+						returnLabel={returnLabel}
+						defaultExpandedKey={defaultExpandedKey}
+						onExpandedChange={(key) => {
+							setDefaultExpandedKey(key);
+							writeHash(ctx, key);
+						}}
+					/>
 				)}
 			</PlanSideDrawer>
 		</motion.section>

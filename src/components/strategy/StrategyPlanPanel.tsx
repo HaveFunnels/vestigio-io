@@ -359,7 +359,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 					<CrossCustomerPattern pattern={plan.crossCustomerPattern} />
 				</div>
 				<div data-toc-id="segments">
-					<BuyerSegments segments={plan.buyerSegments} />
+					<BuyerSegments segments={plan.buyerSegments} month={plan.month} />
 				</div>
 				<div data-toc-id="narrative">
 					<WhatHappenedNarrative

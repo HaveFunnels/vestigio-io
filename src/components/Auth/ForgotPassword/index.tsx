@@ -76,6 +76,7 @@ export default function ForgotPassword() {
 							placeholder='Enter your email'
 							type='email'
 							name='email'
+							autoComplete='email'
 							height='50px'
 							handleChange={handleChange}
 							value={email}

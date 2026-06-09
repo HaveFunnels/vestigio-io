@@ -190,11 +190,14 @@ export default function Signin() {
 									<p className="text-xs text-zinc-500">{t("form.checkInbox")}</p>
 								</div>
 							) : (
-								<form onSubmit={handleMagicLink} className="space-y-4">
+								<form onSubmit={handleMagicLink} className="space-y-4" autoComplete="on">
 									<div>
-										<label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("form.email")}</label>
+										<label htmlFor="signin-magic-email" className="mb-1.5 block text-xs font-medium text-zinc-500">{t("form.email")}</label>
 										<input
+											id="signin-magic-email"
+											name="email"
 											type="email"
+											autoComplete="email"
 											required
 											placeholder={t("form.emailPlaceholder")}
 											value={magicEmail}
@@ -216,11 +219,14 @@ export default function Signin() {
 
 					{/* Password form */}
 					{tab === "password" && (
-						<form onSubmit={handlePassword} className="auth-fade-in space-y-4">
+						<form onSubmit={handlePassword} className="auth-fade-in space-y-4" autoComplete="on">
 							<div>
-								<label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("form.email")}</label>
+								<label htmlFor="signin-email" className="mb-1.5 block text-xs font-medium text-zinc-500">{t("form.email")}</label>
 								<input
+									id="signin-email"
+									name="email"
 									type="email"
+									autoComplete="username"
 									required
 									placeholder={t("form.emailPlaceholder")}
 									value={email}
@@ -229,10 +235,13 @@ export default function Signin() {
 								/>
 							</div>
 							<div>
-								<label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("form.password")}</label>
+								<label htmlFor="signin-password" className="mb-1.5 block text-xs font-medium text-zinc-500">{t("form.password")}</label>
 								<div className="relative">
 									<input
+										id="signin-password"
+										name="password"
 										type={showPassword ? "text" : "password"}
+										autoComplete="current-password"
 										required
 										placeholder={t("form.passwordPlaceholder")}
 										value={password}

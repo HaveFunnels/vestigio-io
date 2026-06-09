@@ -275,6 +275,65 @@ try {
 	});
 	console.log(`Failed/stuck: ${failed30} of ${total30} cycles in last 30d`);
 
+	header("ENRICHMENT PASS LOG — LATEST 5 CYCLES (AuditCyclePass)");
+	// Populated by audit-runner from EnrichmentResult[] (M2). Empty until
+	// the next cycle runs against a worker built after the schema landed.
+	try {
+		const recentCycleIds = cycles.slice(0, 5).map((c) => c.id);
+		const passLog = await p.auditCyclePass.findMany({
+			where: { cycleId: { in: recentCycleIds } },
+			orderBy: [{ cycleId: "asc" }, { passName: "asc" }],
+			select: {
+				cycleId: true,
+				passName: true,
+				status: true,
+				reason: true,
+				durationMs: true,
+				evidenceCount: true,
+			},
+		});
+		if (passLog.length === 0) {
+			console.log("(no AuditCyclePass rows yet — table just created; waiting for next cycle)");
+		} else {
+			console.table(
+				passLog.map((r) => ({
+					cycle: r.cycleId.slice(0, 12),
+					pass: r.passName,
+					status: r.status,
+					evidence: r.evidenceCount,
+					ms: r.durationMs,
+					reason: r.reason ? r.reason.slice(0, 70) : "",
+				})),
+			);
+		}
+
+		header("PASS-LEVEL SILENCE RATES — LAST 30 DAYS");
+		const silenceByPass = await p.auditCyclePass.groupBy({
+			by: ["passName", "status"],
+			where: {
+				cycleId: { in: cycles.map((c) => c.id) },
+				createdAt: { gte: thirtyDaysAgo },
+			},
+			_count: { _all: true },
+		});
+		const byName = new Map();
+		for (const row of silenceByPass) {
+			const cur = byName.get(row.passName) ?? { completed: 0, skipped: 0, failed: 0 };
+			cur[row.status] = row._count._all;
+			byName.set(row.passName, cur);
+		}
+		console.table(
+			[...byName.entries()].map(([name, counts]) => ({
+				pass: name,
+				completed: counts.completed ?? 0,
+				skipped: counts.skipped ?? 0,
+				failed: counts.failed ?? 0,
+			})),
+		);
+	} catch (err) {
+		console.log("(AuditCyclePass table not yet migrated:", err.message?.slice(0, 80), ")");
+	}
+
 	header("DONE");
 } catch (e) {
 	console.error("❌ Script error:", e.message ?? e);

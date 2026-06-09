@@ -387,19 +387,21 @@ export const surfaceInventoryPass: EnrichmentPass = {
 				reason: "Skipped: LLM disabled (ANTHROPIC_API_KEY missing)",
 			};
 		}
-		const competitorSnapshots = ctx.evidence.filter(
-			(e) => e.evidence_type === EvidenceType.CompetitorPageSnapshot,
-		);
-		if (competitorSnapshots.length === 0) {
-			return {
-				run: false,
-				reason: "Skipped: no competitor snapshots in this cycle",
-			};
-		}
 		if (!envIdFromRef(ctx.scoping.environment_ref)) {
 			return { run: false, reason: "Skipped: cannot derive environmentId" };
 		}
-		return { run: true, reason: "Extracting surface inventory for self + peers" };
+		// Self-page surface inventory is valuable in isolation — peer
+		// comparison is a bonus when CompetitorDomain rows exist. The
+		// run() function already handles both cases: it always tries
+		// the env's own landing first, then iterates competitor snapshots
+		// (zero is fine). Gating on competitor snapshots silently kept
+		// the entire pass dark for any env without curated competitors —
+		// confirmed against havefunnels which had zero competitors and
+		// thus zero surface_inventory evidence in 30 days of cycles.
+		return {
+			run: true,
+			reason: "Extracting surface inventory (self always, peers if curated)",
+		};
 	},
 
 	async run(ctx: EnrichmentContext): Promise<EnrichmentResult> {

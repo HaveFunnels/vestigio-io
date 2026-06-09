@@ -783,6 +783,59 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			`playwright=${pwRenders}(skip=${pwSkipped},avg=${pwAvgMs}ms)`,
 		);
 
+		// Persist per-pass observability (M2). One row per (cycleId, passName)
+		// captures status + reason + duration + evidence count returned by
+		// each enrichment pass. The enrichment runner never throws — it
+		// always returns one EnrichmentResult per registered pass, including
+		// "skipped" entries with the reason. Persisting here gives queryable
+		// answer to "did Nuclei fire for env X in the last N days, and if
+		// not, what reason did it return". Non-fatal: a write failure logs
+		// but doesn't abort the cycle.
+		const enrichmentResults = (result as any).enrichment_results as
+			| import("../../workers/ingestion/enrichment/types").EnrichmentResult[]
+			| undefined;
+		if (enrichmentResults && enrichmentResults.length > 0) {
+			try {
+				await prisma.$transaction(
+					enrichmentResults.map((r) =>
+						prisma.auditCyclePass.upsert({
+							where: {
+								cycleId_passName: { cycleId, passName: r.pass_name },
+							},
+							create: {
+								cycleId,
+								passName: r.pass_name,
+								status: r.status,
+								reason: r.reason ? r.reason.slice(0, 1000) : null,
+								durationMs: r.duration_ms,
+								evidenceCount: r.evidence_added.length,
+								attempts: r.attempts,
+							},
+							update: {
+								status: r.status,
+								reason: r.reason ? r.reason.slice(0, 1000) : null,
+								durationMs: r.duration_ms,
+								evidenceCount: r.evidence_added.length,
+								attempts: r.attempts,
+							},
+						}),
+					),
+				);
+				const ok = enrichmentResults.filter((r) => r.status === "completed").length;
+				const skipped = enrichmentResults.filter((r) => r.status === "skipped").length;
+				const failed = enrichmentResults.filter((r) => r.status === "failed").length;
+				console.log(
+					`[audit-runner ${cycleId}] persisted ${enrichmentResults.length} pass rows ` +
+					`(${ok} ok, ${skipped} skipped, ${failed} failed)`,
+				);
+			} catch (err) {
+				console.warn(
+					`[audit-runner ${cycleId}] failed to persist AuditCyclePass rows:`,
+					err instanceof Error ? err.message : err,
+				);
+			}
+		}
+
 		// 6a-maintenance: three post-upsert steps (aging, stale transition,
 		// statusCode=0 cleanup, orphan-marking) run atomically so the
 		// inventory view never reflects a partially-aged state.

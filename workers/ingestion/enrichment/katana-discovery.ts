@@ -13,11 +13,9 @@ import {
   FreshnessState,
   KatanaDiscoveryPayload,
   IdGenerator,
-  PageContentPayload,
-  ScriptPayload,
 } from "../../../packages/domain";
 import { isKatanaAvailable, runKatanaScan } from "../../katana/runner";
-import { normalizeKatanaResults, evaluateKatanaConditions } from "../../../packages/katana-adapter/normalizer";
+import { normalizeKatanaResults } from "../../../packages/katana-adapter/normalizer";
 
 export const katanaDiscoveryPass: EnrichmentPass = {
   name: "katana_discovery",
@@ -27,46 +25,18 @@ export const katanaDiscoveryPass: EnrichmentPass = {
     if (ctx.mode !== "full") {
       return { run: false, reason: "Katana only runs in full mode." };
     }
-    if (!ctx.spa_detected) {
-      return { run: false, reason: "No SPA detected — static crawl is sufficient." };
-    }
-
-    const pageContents = (ctx.evidence as Evidence[]).filter(
-      (e) => e.evidence_type === EvidenceType.PageContent,
-    );
-    const scripts = (ctx.evidence as Evidence[]).filter(
-      (e) => e.evidence_type === EvidenceType.Script,
-    );
-
-    const scriptCount = scripts.length;
-    const totalBodyWords = pageContents.reduce((sum, e) => {
-      const p = e.payload as PageContentPayload;
-      return sum + (p.body_word_count || 0);
-    }, 0);
-    // CoverageEntry no longer tracks pageType — we infer commercial intent
-    // from the URL itself. This matches how Stage C's criticality flag is
-    // derived upstream, so the heuristic stays aligned across stages.
-    const commercialPages = [...ctx.coverage.values()].filter(
-      (c) => c.critical || /checkout|cart|pricing|product/i.test(c.url),
-    ).length;
-    const hasRouterPatterns = scripts.some((e) => {
-      const p = e.payload as ScriptPayload;
-      return p.src && /react-router|next|nuxt|vue-router|angular/i.test(p.src);
-    });
-
-    const conditions = evaluateKatanaConditions(
-      scriptCount,
-      totalBodyWords,
-      commercialPages,
-      hasRouterPatterns,
-      false,
-    );
-
-    if (!conditions.should_run) {
-      return { run: false, reason: "Katana conditions not met — sufficient static discovery." };
-    }
-
-    return { run: true, reason: "SPA detected with low commercial discovery — deep crawl warranted." };
+    // Previously gated on `spa_detected` + `evaluateKatanaConditions`
+    // heuristic. Both were too restrictive: SSR-heavy sites (e.g.
+    // havefunnels) embed JS bundles with routes/endpoints worth
+    // extracting via -jc, and the conditions heuristic relied on
+    // surface signals that don't reflect the value of bundle parsing.
+    // Confirmed against 30 days of havefunnels cycles where Katana
+    // never fired despite 30 full cycles. Cost cap stays in run():
+    // max_pages=100, timeout=120s.
+    return {
+      run: true,
+      reason: "Full-mode audit — will check katana binary at runtime.",
+    };
   },
 
   async run(ctx: EnrichmentContext): Promise<EnrichmentResult> {

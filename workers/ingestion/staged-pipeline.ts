@@ -18,6 +18,7 @@ import {
   type CrawlConstraints,
 } from './crawl-constraints';
 import { runEnrichmentPasses } from './enrichment/runner';
+import type { EnrichmentResult } from './enrichment/types';
 import { canonicalUrl as canonicalUrlShared, urlMatchesExclusion } from '../../packages/url-normalize';
 import {
   getCriticalPaths as getPagePriorityCriticalPaths,
@@ -233,6 +234,13 @@ export interface StagedPipelineResult {
   playwright_renders?: number;
   playwright_skipped_budget?: number;
   playwright_avg_ms?: number;
+  // Per-pass metadata from the enrichment runner. Each entry is the
+  // status + reason + duration returned by an enrichment pass. The
+  // pipeline appends `result.evidence_added` to the cycle's evidence
+  // pool but otherwise discards the metadata — exposing it here lets
+  // the audit-runner persist AuditCyclePass rows for observability
+  // (which pass fired vs skipped vs failed, per cycle).
+  enrichment_results?: EnrichmentResult[];
 }
 
 // Challenge detection patterns
@@ -1114,6 +1122,7 @@ export async function runStagedPipeline(
   result.playwright_avg_ms = playwrightDurations.length > 0
     ? Math.round(playwrightDurations.reduce((a, b) => a + b, 0) / playwrightDurations.length)
     : 0;
+  result.enrichment_results = enrichmentResults;
   return result;
 }
 

@@ -850,6 +850,41 @@ model AuditCycle {
 }
 
 // ──────────────────────────────────────────────
+// AuditCyclePass — per-pass observability log
+//
+// One row per (cycle, enrichment pass). Persists the EnrichmentResult
+// returned by each pass so we can answer "did this pass run for env
+// X in the last N days, and if not, why" without grepping logs.
+//
+// Created 2026-06-09 after discovering 7 enrichment passes had emitted
+// ZERO evidence for havefunnels in 30 days of cycles, but the silent
+// skip reasons were never persisted. Source of truth for cycle-level
+// pass observability.
+//
+// The enrichment runner returns EnrichmentResult[] which gets appended
+// to the cycle's evidence pool and then discarded — this table captures
+// the metadata BEFORE the discard so the skip/fail reasons survive.
+// ──────────────────────────────────────────────
+model AuditCyclePass {
+  id            String   @id @default(cuid())
+  cycleId       String
+  passName      String
+  // skipped | completed | failed
+  status        String
+  // Free-text reason from EnrichmentResult.reason. Truncated to 1000
+  // chars before persist if longer — full reason stays in logs.
+  reason        String?  @db.Text
+  durationMs    Int      @default(0)
+  evidenceCount Int      @default(0)
+  attempts      Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  @@unique([cycleId, passName])
+  @@index([passName, status, createdAt])
+  @@index([cycleId])
+}
+
+// ──────────────────────────────────────────────
 // CycleSnapshot — change detection input
 //
 // One row per call to recomputeAll(). Stores the JSON-serialized

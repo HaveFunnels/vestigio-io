@@ -589,7 +589,7 @@ function StepCard({
 								onClick={() => setFindingsDrawerOpen(true)}
 								className="text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
 							>
-								Ver findings do passo ({step.linkedFindingRefs.length}) →
+								Ver problemas do passo ({step.linkedFindingRefs.length}) →
 							</button>
 						)}
 					</div>
@@ -621,7 +621,7 @@ function StepCard({
 				onOpenChange={setActionsDrawerOpen}
 				eyebrow="Ações deste passo"
 				title={step.title}
-				description={`${step.linkedActionRefs.length} ${step.linkedActionRefs.length === 1 ? "ação ligada" : "ações ligadas"} ao passo no engine`}
+				description={`${step.linkedActionRefs.length} ${step.linkedActionRefs.length === 1 ? "ação ligada" : "ações ligadas"} ao passo`}
 				footer="Ações sincronizam com /app/actions — mudanças aqui aparecem na fila operacional."
 			>
 				<ActionListBody actionIds={step.linkedActionRefs} />
@@ -630,10 +630,10 @@ function StepCard({
 			<PlanSideDrawer
 				open={findingsDrawerOpen}
 				onOpenChange={setFindingsDrawerOpen}
-				eyebrow="Findings que justificam o passo"
+				eyebrow="Problemas que justificam o passo"
 				title={step.title}
-				description={`${step.linkedFindingRefs.length} ${step.linkedFindingRefs.length === 1 ? "finding linkado" : "findings linkados"}`}
-				footer="Esses findings foram capturados pelo engine no ciclo de geração do plano."
+				description={`${step.linkedFindingRefs.length} ${step.linkedFindingRefs.length === 1 ? "problema linkado" : "problemas linkados"}`}
+				footer="Encontrados no ciclo em que o plano foi gerado."
 			>
 				<FindingListBody findingIds={step.linkedFindingRefs} />
 			</PlanSideDrawer>

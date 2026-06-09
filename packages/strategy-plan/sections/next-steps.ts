@@ -293,35 +293,13 @@ export async function generateNextSteps(
 		};
 	}
 
-	// Phase 2 — resolve inferenceKeys → Finding.id for every step in a
-	// single batch query. The drill-down (`/app/findings?step=<id>`)
-	// reads the persisted Finding.id list directly, so generation pays
-	// the lookup once instead of paying it per page-load. We scope to
-	// the env's findings (any cycle, NOT just the latest) so steps
-	// that bundle older issues still resolve correctly.
-	const allInferenceKeys = Array.from(
-		new Set(actions.flatMap((a) => a.inferenceKeys)),
-	);
-	const findingRows = allInferenceKeys.length === 0
-		? []
-		: await prisma.finding.findMany({
-				where: {
-					environmentId: ctx.environmentId,
-					inferenceKey: { in: allInferenceKeys },
-					status: { in: ["created", "confirmed", "regressed"] },
-				},
-				select: { id: true, inferenceKey: true, createdAt: true },
-				orderBy: { createdAt: "desc" },
-			});
-	// Map inferenceKey → most recent Finding.id. Multiple cycles can
-	// produce duplicate inferenceKeys; the latest is the canonical one
-	// the UI should show.
-	const findingIdByKey = new Map<string, string>();
-	for (const r of findingRows) {
-		if (!findingIdByKey.has(r.inferenceKey)) {
-			findingIdByKey.set(r.inferenceKey, r.id);
-		}
-	}
+	// Phase 2 — store inferenceKey strings directly in linkedFindingRefs.
+	// Previously we resolved inferenceKey → Finding.id (a DB UUID) here
+	// at generation time, but the UI drawer matches against
+	// FindingProjection.id (deterministic `finding_<inferenceKey>_<suffix>`
+	// strings) and inference_key, never DB UUIDs. The lookup was paying
+	// to produce data that never matched anything in the consumer.
+	// Drawer now matches by inference_key, so we just pass through.
 
 	let totalCallsCount = 0;
 	let totalCostCents = 0;
@@ -349,9 +327,9 @@ export async function generateNextSteps(
 			totalCallsCount += reasoning.callsCount;
 			totalCostCents += reasoning.costCents;
 
-			const linkedFindingRefs = action.inferenceKeys
-				.map((k) => findingIdByKey.get(k))
-				.filter((id): id is string => typeof id === "string");
+			const linkedFindingRefs = action.inferenceKeys.filter(
+				(k): k is string => typeof k === "string" && k.length > 0,
+			);
 
 			return {
 				order,

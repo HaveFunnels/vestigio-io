@@ -139,8 +139,15 @@ export function FindingListBody({ findingIds }: FindingListProps) {
 	const { currency } = mcp;
 	const all =
 		mcp.findings.status === "ready" ? mcp.findings.data : [];
+	// Match by id OR inference_key. The plan generator now stores
+	// inferenceKey strings (stable across cycles) instead of DB UUIDs,
+	// but legacy plans still carry projection ids like
+	// `finding_<inferenceKey>_<suffix>` — accepting both keeps both
+	// shapes resolving without an extra migration step.
 	const wanted = new Set(findingIds);
-	const matched: FindingProjection[] = all.filter((f) => wanted.has(f.id));
+	const matched: FindingProjection[] = all.filter(
+		(f) => wanted.has(f.id) || wanted.has(f.inference_key),
+	);
 
 	if (matched.length === 0) {
 		return (

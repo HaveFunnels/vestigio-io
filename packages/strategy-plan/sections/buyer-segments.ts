@@ -102,9 +102,14 @@ export async function generateBuyerSegments(
 				impactMin: Math.round(impactMin),
 				impactMax: Math.round(impactMax),
 				impactMidpoint: Math.round(impactMidpoint),
-				sampleFindingIds: sample.map((s) => s.id),
+				// Store inferenceKey strings, not DB UUIDs. The UI drawer
+				// matches against FindingProjection.inference_key (a stable
+				// key) rather than the projection's deterministic id or the
+				// DB row UUID. Storing UUIDs here meant the drawer never
+				// matched and always rendered the empty state.
+				sampleFindingIds: sample.map((s) => s.inferenceKey),
 				sampleFindingTitles: sample.map((s) => titleForFinding(s, ctx.translations)),
-				allFindingIds: items.map((r) => r.id),
+				allFindingIds: Array.from(new Set(items.map((r) => r.inferenceKey))),
 			};
 		})
 		.filter((s): s is BuyerSegmentOutput => s !== null);

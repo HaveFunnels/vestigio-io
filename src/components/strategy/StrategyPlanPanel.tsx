@@ -23,6 +23,7 @@ import CrossCustomerPattern from "./sections/CrossCustomerPattern";
 // instead of two sections that are mostly empty.
 import Carteira from "./sections/Carteira";
 import PlanTOCRail, { type TocItem } from "./PlanTOCRail";
+import MonthPicker from "./MonthPicker";
 
 /*
  * StrategyPlanPanel — top-level composition of the 6 plan sections
@@ -172,40 +173,25 @@ function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => v
 					>
 						{exporting ? "Exportando…" : "Exportar PDF"}
 					</button>
-					{/* Separator + close. Visually distinct from the action
-					    buttons so it reads as a navigation/dismiss control,
-					    not another action. Two variants:
-					    - If onClose is provided (Dialog overlay from
-					      /app/actions): close calls the parent's dismiss.
-					    - Otherwise (standalone route): Phase 1 IA — the
-					      close button routes back to /app/pulse (the
-					      check-in dashboard) instead of /app/library.
-					      Pulse will carry a Plan strip at the top so the
-					      buyer can return to the plan in one click. */}
-					<span className="mx-1 h-5 w-px bg-edge" aria-hidden />
-					{onClose ? (
-						<button
-							type="button"
-							onClick={onClose}
-							aria-label="Fechar plano"
-							title="Fechar"
-							className="group/close inline-flex h-8 w-8 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
-						>
-							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="transition-transform group-hover/close:scale-110">
-								<path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-							</svg>
-						</button>
-					) : (
-						<Link
-							href="/app/pulse"
-							aria-label="Fechar plano"
-							title="Fechar"
-							className="group/close inline-flex h-8 w-8 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
-						>
-							<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="transition-transform group-hover/close:scale-110">
-								<path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-							</svg>
-						</Link>
+					{/* Wave 22.8 IA reform — close button só renderiza quando
+					    onClose vem do parent (Dialog overlay de /app/actions).
+					    No modo standalone, Plan é a home — não tem "fechar",
+					    o cliente sai pela sidenav. */}
+					{onClose && (
+						<>
+							<span className="mx-1 h-5 w-px bg-edge" aria-hidden />
+							<button
+								type="button"
+								onClick={onClose}
+								aria-label="Fechar plano"
+								title="Fechar"
+								className="group/close inline-flex h-8 w-8 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
+							>
+								<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="transition-transform group-hover/close:scale-110">
+									<path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+								</svg>
+							</button>
+						</>
 					)}
 				</div>
 			</div>
@@ -224,7 +210,7 @@ function PlanHeader({ plan }: { plan: StrategyPlan }) {
 			className="mb-14 border-b border-edge pb-10"
 		>
 			<div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-faint">
-				<span>Vestigio Pulse</span>
+				<span>Vestigio</span>
 				<span className="text-edge">/</span>
 				<span>Plano de Estratégia</span>
 				<span className="text-edge">/</span>
@@ -238,6 +224,11 @@ function PlanHeader({ plan }: { plan: StrategyPlan }) {
 			</h1>
 
 			<div className="flex flex-wrap items-center gap-3 text-[12px] text-content-muted">
+				{/* Wave 22.8 IA reform — Month picker substitutes the
+				    standalone /app/library Plans gallery tab. Customer
+				    navega entre meses sem sair do plano. */}
+				<MonthPicker envId={plan.environmentId} currentMonth={plan.month} />
+				<span className="text-edge">·</span>
 				<span className="font-mono">{plan.envDomain}</span>
 				<span className="text-edge">·</span>
 				<span>Gerado {formatTimestamp(plan.generatedAt)}</span>

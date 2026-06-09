@@ -182,10 +182,10 @@ export default function StrategyPlanPage() {
 				</h1>
 				<p className="mb-6 max-w-md text-[13px] text-content-muted">{state.error}</p>
 				<Link
-					href="/app/pulse"
+					href="/app"
 					className="rounded-md border border-edge bg-surface-card px-4 py-2 text-[13px] text-content transition-colors hover:bg-surface-card-hover"
 				>
-					← Voltar ao Pulse
+					← Plano corrente
 				</Link>
 			</div>
 		);
@@ -202,13 +202,14 @@ export default function StrategyPlanPage() {
 				</h1>
 				<p className="mb-6 max-w-md text-[14px] text-content-muted">
 					Cada plano é gerado no dia 1º do mês ou após a primeira audit
-					completa. Volte na Biblioteca para ver os planos disponíveis.
+					completa. Use o seletor de mês no plano corrente para ver outros
+					meses disponíveis.
 				</p>
 				<Link
-					href="/app/pulse"
+					href="/app"
 					className="rounded-md border border-edge bg-surface-card px-4 py-2 text-[13px] text-content transition-colors hover:bg-surface-card-hover"
 				>
-					← Voltar ao Pulse
+					← Plano corrente
 				</Link>
 			</div>
 		);

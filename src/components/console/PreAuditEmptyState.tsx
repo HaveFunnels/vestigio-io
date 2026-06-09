@@ -100,11 +100,15 @@ export default function PreAuditEmptyState({ surface }: Props) {
 				</div>
 			)}
 
+			{/* Wave 22.8 IA reform — CTA aponta pro Plano (home), nao mais
+			    pro Pulse (deletado). O i18n key cta_back_to_pulse continua
+			    a string visivel; renomeio no dicionario quando refator de
+			    copy. */}
 			<Link
-				href="/app/pulse"
+				href="/app"
 				className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-4 py-2.5 text-[13px] font-semibold text-white shadow-lg shadow-emerald-500/20 transition-colors hover:bg-emerald-600"
 			>
-				{t("cta_back_to_pulse")}
+				{isPt ? "Ir para o Plano" : "Go to the Plan"}
 				<ArrowRightIcon size={12} weight="bold" />
 			</Link>
 		</div>

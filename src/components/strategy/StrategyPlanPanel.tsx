@@ -15,10 +15,13 @@ import MemoryRollups from "./sections/MemoryRollups";
 import MonthlyThesis from "./sections/MonthlyThesis";
 import Continuity from "./sections/Continuity";
 import CrossCustomerPattern from "./sections/CrossCustomerPattern";
-import CopyLens from "./sections/CopyLens";
-import Competitor from "./sections/Competitor";
-import Impersonators from "./sections/Impersonators";
-import Maps from "./sections/Maps";
+// Wave 22.8 review — Copy Lens and Maps were moved out of the main
+// plan to standalone pages (/library/strategy/[month]/copy-lens and
+// /library/strategy/[month]/maps). Deep links live in the
+// BuyerSegments Copy and Liderança cards. Competitor + Impersonators
+// were clustered into Carteira so the customer triages one card
+// instead of two sections that are mostly empty.
+import Carteira from "./sections/Carteira";
 import PlanTOCRail, { type TocItem } from "./PlanTOCRail";
 
 /*
@@ -326,27 +329,12 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 							},
 							{ id: "segments", label: isPt ? "Times" : "By team", visible: true },
 							{
-								id: "competitor",
-								label: isPt ? "Concorrência" : "Competitors",
-								visible: !!plan.competitor && (plan.competitor.entries?.length ?? 0) > 0,
-							},
-							{
-								id: "impersonators",
-								label: isPt ? "Impersonação" : "Impersonators",
-								visible: !!plan.impersonators && (plan.impersonators.topEntries?.length ?? 0) > 0,
+								id: "carteira",
+								label: isPt ? "Carteira" : "Market signals",
+								visible: !!plan.competitor || !!plan.impersonators,
 							},
 							{ id: "narrative", label: isPt ? "O que aconteceu" : "What happened", visible: !!plan.narrativeWhatHappened },
 							{ id: "next-steps", label: isPt ? "Próximos passos" : "Next steps", visible: true },
-							{
-								id: "copy-lens",
-								label: isPt ? "Lente de copy" : "Copy lens",
-								visible: !!plan.copyLens && (plan.copyLens.frameworks?.length ?? 0) > 0,
-							},
-							{
-								id: "maps",
-								label: isPt ? "Mapas" : "Maps",
-								visible: !!plan.maps,
-							},
 							{ id: "value-preview", label: isPt ? "O que ganha" : "Value preview", visible: true },
 							{ id: "memory", label: isPt ? "Memória" : "Memory", visible: true },
 						];
@@ -383,18 +371,24 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 					<CrossCustomerPattern pattern={plan.crossCustomerPattern} />
 				</div>
 				<div data-toc-id="segments">
-					<BuyerSegments segments={plan.buyerSegments} month={plan.month} />
+					<BuyerSegments
+						segments={plan.buyerSegments}
+						month={plan.month}
+						hasCopyLensData={
+							!!plan.copyLens && (plan.copyLens.frameworks?.length ?? 0) > 0
+						}
+						hasMapsData={!!plan.maps}
+					/>
 				</div>
-				{/* Wave 22.8 — Competitor radar. Self-hides for envs with
-				    zero monitored competitors or no detected changes
-				    this cycle. */}
-				<div data-toc-id="competitor">
-					<Competitor competitor={plan.competitor} />
-				</div>
-				{/* Wave 22.8 — Brand impersonators. Self-hides when no
-				    lookalike domains were detected this cycle. */}
-				<div data-toc-id="impersonators">
-					<Impersonators impersonators={plan.impersonators} />
+				{/* Wave 22.8 review — Competitor + Impersonators clustered
+				    into a single Carteira card. Self-hides when both are
+				    null. Collapsed when zero signals to minimise quiet-
+				    month noise. */}
+				<div data-toc-id="carteira">
+					<Carteira
+						competitor={plan.competitor}
+						impersonators={plan.impersonators}
+					/>
 				</div>
 				<div data-toc-id="narrative">
 					<WhatHappenedNarrative
@@ -413,16 +407,9 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 						planId={plan.id}
 					/>
 				</div>
-				{/* Wave 22.8 — Copy Lens Framework. Self-hides when no
-				    CopyFrameworkAudit rows exist for the cycle. */}
-				<div data-toc-id="copy-lens">
-					<CopyLens copyLens={plan.copyLens} />
-				</div>
-				{/* Wave 22.8 — Maps. Self-hides when no auto-map data
-				    exists for the cycle. */}
-				<div data-toc-id="maps">
-					<Maps maps={plan.maps} />
-				</div>
+				{/* Wave 22.8 review — Copy Lens and Maps moved to standalone
+				    pages reachable from the BuyerSegments Copy and Liderança
+				    cards. They no longer render inline in the plan. */}
 				<div data-toc-id="value-preview">
 					<ValuePreview
 						preview={plan.valuePreview}

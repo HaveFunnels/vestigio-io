@@ -2,6 +2,8 @@
 
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import type { BuyerSegment } from "../types";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -27,8 +29,15 @@ interface Props {
 	segments: BuyerSegment[];
 	/** YYYY-MM. Used to build the back URL the finding-detail breadcrumb
 	 *  navigates to (so the customer returns to the same plan with the
-	 *  drawer reopened in the right state). */
+	 *  drawer reopened in the right state) AND the deep links from the
+	 *  Copy / Liderança cards into their standalone pages. */
 	month: string;
+	/** Wave 22.8 review move 2 — Copy card footer links into the
+	 *  standalone Copy Lens page when the cycle has framework audits. */
+	hasCopyLensData?: boolean;
+	/** Wave 22.8 review move 3 — Liderança card footer links into the
+	 *  standalone Maps page when the cycle has graph data. */
+	hasMapsData?: boolean;
 }
 
 const BUYER_LABEL_FALLBACK: Record<string, string> = {
@@ -55,7 +64,12 @@ const BUYER_ACCENT: Record<string, { dot: string; bg: string; chip: string }> = 
 	},
 };
 
-export default function BuyerSegments({ segments, month }: Props) {
+export default function BuyerSegments({
+	segments,
+	month,
+	hasCopyLensData = false,
+	hasMapsData = false,
+}: Props) {
 	const { currency } = useMcpData();
 	// One drawer instance covers two trigger paths:
 	//   - sample finding title click → single inferenceKey
@@ -258,6 +272,33 @@ export default function BuyerSegments({ segments, month }: Props) {
 									);
 								})}
 							</div>
+
+							{/* Wave 22.8 review — per-segment footer deep
+							    link into the cross-feature standalone page
+							    that matches who owns it. Copy team gets
+							    Copy Lens framework analysis. Liderança
+							    team gets the surface graph view. Only
+							    renders when the underlying data exists
+							    this cycle so we never deep-link into an
+							    empty page. */}
+							{s.buyer === "copy" && hasCopyLensData && (
+								<Link
+									href={`/app/library/strategy/${encodeURIComponent(month)}/copy-lens`}
+									className="mt-3 inline-flex items-center gap-1 self-start border-t border-edge/40 pt-3 text-[11.5px] font-medium text-content-secondary underline-offset-2 transition-colors hover:text-content hover:underline"
+								>
+									Ver lente de framework de copy
+									<ArrowRight className="h-3 w-3" />
+								</Link>
+							)}
+							{s.buyer === "leadership" && hasMapsData && (
+								<Link
+									href={`/app/library/strategy/${encodeURIComponent(month)}/maps`}
+									className="mt-3 inline-flex items-center gap-1 self-start border-t border-edge/40 pt-3 text-[11.5px] font-medium text-content-secondary underline-offset-2 transition-colors hover:text-content hover:underline"
+								>
+									Ver mapa do mês
+									<ArrowRight className="h-3 w-3" />
+								</Link>
+							)}
 						</motion.div>
 					);
 				})}

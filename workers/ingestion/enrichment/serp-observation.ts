@@ -124,17 +124,44 @@ async function loadKnownContext(envId: string): Promise<{
 	}
 }
 
+// Cap on auto-activation when bootstrapping an env that has zero
+// curated competitors. Picks N candidates to come up `active=true`
+// so downstream peer-mode passes (competitor-fetch, surface-inventory
+// peer comparison, customer-voice delta) fire immediately instead of
+// waiting for a customer that may never visit the CompetitorRadar UI.
+// The customer can deactivate any later via the same UI.
+const AUTO_ACTIVATE_TOP_N_WHEN_EMPTY = 5;
+
 async function upsertAutoDiscoveries(
 	envId: string,
 	candidates: Set<string>,
 ): Promise<number> {
 	if (candidates.size === 0) return 0;
+
+	// Bootstrap path: when the env has zero active curated competitors,
+	// auto-activate the first N discovered candidates so peer-mode
+	// passes have something to chew on. Without this, an env that never
+	// curates manually stays competitor-blind forever (the prior
+	// design assumed manual curation as a non-optional step).
+	const activeCount = await prisma.competitorDomain.count({
+		where: { environmentId: envId, active: true },
+	}).catch(() => 0);
+	const shouldBootstrapActivate = activeCount === 0;
+	let activatedRemaining = shouldBootstrapActivate
+		? AUTO_ACTIVATE_TOP_N_WHEN_EMPTY
+		: 0;
+
 	let created = 0;
 	for (const domain of candidates) {
 		try {
 			// upsert: existing rows keep their state (owner may have
-			// manually pinned earlier). New rows land inactive — owner
-			// must explicitly activate via CompetitorRadar UI.
+			// manually pinned earlier). When bootstrapping (zero curated),
+			// the first AUTO_ACTIVATE_TOP_N_WHEN_EMPTY new rows come up
+			// active so the rest of the pipeline can use them. After
+			// that, new candidates land inactive (owner sees them and
+			// activates via the CompetitorRadar UI, or via the manual
+			// curation flow we'll add when workspaces page is deprecated).
+			const shouldActivate = activatedRemaining > 0;
 			await prisma.competitorDomain.upsert({
 				where: {
 					environmentId_domain: { environmentId: envId, domain },
@@ -143,15 +170,24 @@ async function upsertAutoDiscoveries(
 					environmentId: envId,
 					domain,
 					discoveryMethod: "auto",
-					active: false,
+					active: shouldActivate,
 				},
 				update: {}, // never overwrite owner curation
 			});
+			if (shouldActivate) activatedRemaining--;
 			created++;
 		} catch (err) {
 			console.warn(
 				`[serp-observation] failed to upsert auto-discovery ${domain}:`,
 				err instanceof Error ? err.message : err,
+			);
+		}
+	}
+	if (shouldBootstrapActivate) {
+		const activated = AUTO_ACTIVATE_TOP_N_WHEN_EMPTY - activatedRemaining;
+		if (activated > 0) {
+			console.log(
+				`[serp-observation] env=${envId} had 0 curated competitors — bootstrap-activated ${activated} discovered candidate(s)`,
 			);
 		}
 	}
@@ -309,11 +345,28 @@ export const serpObservationPass: EnrichmentPass = {
 				}
 			}
 
-			// Auto-discovery: hosts seen in ≥2 query top-5s and not
-			// already curated become candidates.
+			// Auto-discovery threshold is adaptive to query budget.
+			// Original "host in ≥2 query top-5s" was reasonable when the
+			// pass was designed for 4 queries (brand + 3 categories) —
+			// but envs without industry fingerprint only generate 2
+			// queries (brand + 1 model anchor), making ≥2 impossible
+			// for orthogonal queries (a host rarely co-occurs in a brand
+			// search AND a generic category search).
+			//
+			// Confirmed against havefunnels: 30+ days of full cycles
+			// produced zero auto-discovered candidates because industry
+			// was null → only 2 queries fired → threshold ≥2 unreachable.
+			//
+			// Threshold = max(1, ceil(queryCount / 3)):
+			//   2 queries → 1 (any top-5 hit counts; exclusion list does the lifting)
+			//   3 queries → 1
+			//   4 queries → 2 (original behavior)
+			//   6+ queries → 2-3 (stricter as signal density grows)
+			const queryCount = queries.length;
+			const autoDiscoveryThreshold = Math.max(1, Math.ceil(queryCount / 3));
 			const candidates = new Set<string>();
 			for (const [host, count] of hostQueryCount.entries()) {
-				if (count < 2) continue;
+				if (count < autoDiscoveryThreshold) continue;
 				if (knownCtx.curatedDomains.has(host)) continue;
 				candidates.add(host);
 			}

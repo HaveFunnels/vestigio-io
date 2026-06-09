@@ -31,6 +31,15 @@ import { callModel, isLlmEnabled } from "../mcp/llm/client";
 
 const REFRESH_AFTER_DAYS = 90;
 
+function safeJsonParse(s: string): Record<string, unknown> | undefined {
+  try {
+    const v = JSON.parse(s);
+    return typeof v === "object" && v !== null ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 interface PopulateInput {
   prisma: PrismaClient;
   organizationId: string;
@@ -162,9 +171,33 @@ export async function populateDomainFingerprint(input: PopulateInput): Promise<{
     orderBy: { createdAt: "asc" },
   }).catch(() => null);
 
-  const homepagePayload = homepageEvidence?.payload as
-    | { url: string; h1?: string; meta_description?: string; above_fold_text?: string; lang?: string }
-    | undefined;
+  // Evidence.payload is stored as `String @db.Text` (see Evidence model
+  // in prisma/schema.prisma) and written via JSON.stringify in
+  // packages/evidence/prisma-store.ts. Direct prisma reads — like this
+  // one — get the raw JSON string, NOT the parsed object. Several call
+  // sites get this wrong (treating the cast as a real parse) — we
+  // defensively handle both shapes so this code keeps working if/when
+  // the storage type ever migrates to native Json.
+  //
+  // Field name fix: the payload exposes `body_text_snippet` (per
+  // PageContentPayload at packages/domain/evidence.ts:116, snippet of
+  // visible body text up to ~2000 chars). The previous code reached
+  // for `above_fold_text`, which doesn't exist on this payload — so
+  // even when JSON.parse succeeded by accident, the field was always
+  // undefined, h1+aboveFold length was always 0, and the industry
+  // classifier silently skipped. Confirmed against havefunnels which
+  // has had `industry: null` across 30+ days of cycles.
+  const rawPayload = homepageEvidence?.payload;
+  const homepagePayload: {
+    url?: string;
+    h1?: string;
+    meta_description?: string;
+    body_text_snippet?: string;
+    lang?: string;
+  } | undefined =
+    typeof rawPayload === "string"
+      ? safeJsonParse(rawPayload)
+      : (rawPayload as any) || undefined;
   const primaryLocale = homepagePayload?.lang ?? null;
 
   // Industry classification — one Haiku call. Skipped if LLM is
@@ -176,7 +209,7 @@ export async function populateDomainFingerprint(input: PopulateInput): Promise<{
   if (isLlmEnabled() && homepagePayload) {
     const h1 = (homepagePayload.h1 || "").slice(0, 200);
     const meta = (homepagePayload.meta_description || "").slice(0, 300);
-    const aboveFold = (homepagePayload.above_fold_text || "").slice(0, 1000);
+    const aboveFold = (homepagePayload.body_text_snippet || "").slice(0, 1000);
 
     if (h1.length + aboveFold.length >= 30) {
       try {

@@ -78,19 +78,13 @@ export default function AppSidebar({
 		return href;
 	};
 
-	// "Mais" overflow group state — collapsed by default per the Phase 1
-	// IA decision (testers said "too complicated", we don't want the
-	// dense surfaces visible at first glance). Auto-opens when the
-	// current pathname lives inside one of the secondary surfaces so
-	// the active item stays discoverable.
-	const secondaryRoutes = ["/app/pulse", "/app/workspaces", "/app/library", "/app/inventory"];
-	const onSecondaryRoute = secondaryRoutes.some(
-		(r) => pathname === r || pathname.startsWith(r + "/"),
-	);
-	const [overflowOpen, setOverflowOpen] = useState(onSecondaryRoute);
-	useEffect(() => {
-		if (onSecondaryRoute) setOverflowOpen(true);
-	}, [onSecondaryRoute]);
+	// Wave 22.8 IA reform — primary nav reduced to 3 items (Plano,
+	// Workspaces, Actions) with zero overflow. The "Mais" toggle and
+	// auto-open behaviour for secondary routes is preserved as dead
+	// code only because the NavItem.secondary flag could be reintroduced
+	// in the future; today no nav item carries it, so `secondary` below
+	// always resolves to an empty array and the toggle never renders.
+	const [overflowOpen, setOverflowOpen] = useState(false);
 
 	// Expandable submenus — auto-open groups containing the active route
 	const [expandedMenus, setExpandedMenus] = useState<Set<string>>(() => {

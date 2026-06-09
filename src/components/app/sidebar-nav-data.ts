@@ -33,10 +33,16 @@ export interface NavItem {
 	secondary?: boolean;
 }
 
-// Phase 1 UX overhaul (June 2026) — testers told us the dashboard is
-// "too complicated" and they don't know where to start. New IA:
-//   PRIMARY (always visible): Plano · Findings · Actions
-//   SECONDARY (under "Mais"): Pulse · Workspaces · Library · Inventory
+// Wave 22.8 IA reform (June 2026, multi-skill audit) — sidenav reduces
+// to 3 primary items: Plano, Workspaces, Actions. Findings exits the
+// nav and stays accessible via drawer drill-downs in the Plan. Pulse
+// is killed (its check-in role moves into a Plan-header badge). Library
+// is folded into a "mês anterior" dropdown inside the Plan header.
+//
+// Result: 3 primary, no overflow. Cleanest mental model possible:
+//   - Plano       = decision (the home; default landing)
+//   - Workspaces  = configuration (what Vestigio looks at)
+//   - Actions     = execution (operational queue)
 //
 // The plan item's href uses a "current" sentinel that AppSidebar
 // rewrites to the actual YYYY-MM at render time — keeps this file
@@ -49,50 +55,22 @@ export const productNav: NavItem[] = [
 		// Heroicons "document-text" — the plan reads as a written
 		// document, distinct from the dashboard grid metaphor.
 		icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm-1.5 6h6m-6 3h6m-6 3h3.75",
-		// Plan sits alone in its own group; the operational surfaces
-		// (Findings, Actions) start fresh underneath.
 		dividerAfter: true,
+	},
+	{
+		id: "workspaces",
+		href: "/app/workspaces",
+		labelKey: "workspaces",
+		// Heroicons "adjustments-horizontal" — configuration metaphor,
+		// distinct from the document (Plan) and lightning bolt (Actions)
+		// icons used by the other primaries.
+		icon: "M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75",
 	},
 	{
 		id: "actions",
 		href: "/app/actions",
 		labelKey: "actions",
 		icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z",
-	},
-	{
-		id: "findings",
-		href: "/app/findings",
-		labelKey: "findings",
-		// Heroicons "document-magnifying-glass"
-		icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.481L15 17.25m-4.5-15H5.625c-.621 0-1.125.504-1.125 1.125v16.5c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm3.75 11.625a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z",
-		dividerAfter: true,
-	},
-	// ── Secondary tier — under "Mais" overflow ──
-	// Phase 3.4 cleanup:
-	//   - workspaces dropped (folded into Findings as Lente — 3.2)
-	//   - inventory dropped (per-page workflow reachable via Findings
-	//     surface filter; standalone /app/inventory stays as URL but
-	//     not in nav so it doesn't compete for attention)
-	//   - library renamed to "Histórico" (clearer — it's the archive
-	//     of past plans, not a parallel data surface)
-	//   - pulse stays in overflow during the telemetry study (3.5)
-	//
-	// Net result: 1 primary divider + 2 items in overflow. Closest
-	// we've come to the "3 primary, no overflow" thesis without
-	// pre-deciding Pulse.
-	{
-		id: "pulse",
-		href: "/app/pulse",
-		labelKey: "pulse",
-		icon: "M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 8.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6A2.25 2.25 0 0115.75 3.75H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z",
-		secondary: true,
-	},
-	{
-		id: "library",
-		href: "/app/library",
-		labelKey: "history",
-		icon: "M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z",
-		secondary: true,
 	},
 ];
 

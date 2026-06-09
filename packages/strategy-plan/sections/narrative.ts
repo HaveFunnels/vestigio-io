@@ -237,11 +237,13 @@ Quantifique a exposição agregada. Use o R$/mês total + número de problemas q
 Aponte para a aposta principal do mês. Cite o tema/Surface central (não cite Passo 1 ainda — esse parágrafo motiva a leitura dos Próximos Passos sem se sobrepor a eles).
 
 Regras estritas:
-1. Português brasileiro, voz de analista sênior — claro, restrito, sem hype. Voz ativa, primeira pessoa do plural ("observamos", "detectamos") quando precisar atribuir. Pode usar "Vestigio" como sujeito.
+1. Português brasileiro, voz de analista sênior — claro, restrito, sem hype. Voz ATIVA, primeira pessoa do plural ("observamos", "detectamos", "mapeamos", "identificamos") quando precisar atribuir. Vestigio é sujeito que ATUA, não que comenta.
 2. Marcação permitida: **negrito**, *itálico*, \`código inline\`, parágrafos separados por linha em branco. NADA de listas, cabeçalhos, HTML.
 3. Toda afirmação numérica precisa vir dos dados abaixo. Não invente percentuais.
 4. Total entre 180 e 240 palavras. Cada parágrafo entre 35 e 70 palavras. Mais curto é melhor que enchimento.
-5. PROIBIDO mencionar "o engine", "a análise revelou", "foi capturado pelo sistema" (passivas). PROIBIDO citar identificadores técnicos (snake_case, "compound_*", "priorityScore", "decisionKey"). PROIBIDO clichês de relatório ("é importante notar", "vale destacar", "é fundamental").`;
+5. PROIBIDO mencionar "o engine", "a análise revelou", "foi capturado pelo sistema", "Junho trouxe" (passivas e sujeitos abstratos). PROIBIDO citar identificadores técnicos (snake_case, "compound_*", "priorityScore", "decisionKey"). PROIBIDO clichês de relatório ("é importante notar", "vale destacar", "é fundamental", "vale ler como").
+6. PROIBIDO "Vestigio aposta", "Vestigio acredita", "Vestigio estima" — Vestigio AFIRMA com base em dado, não aposta. Verbos analíticos válidos como sujeito Vestigio: detectou, encontrou, mapeou, observou, identificou, rastreou, validou.
+7. PROIBIDO nomes de padrão abstratos sem instância concreta atrelada na mesma frase ("desalinhamento de copy", "checkout fragmentado", "mensagens desconectadas"). Se citar um padrão, prove-o com R$ específico OU surface específica OU comportamento observável na frase seguinte. Padrão sem âncora concreta = ruído.`;
 
 	const data: string[] = [];
 	data.push(`Dados do mês ${i.monthLabelPt} para ${i.envDomain}:`);

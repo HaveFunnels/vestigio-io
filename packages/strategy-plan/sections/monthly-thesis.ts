@@ -134,49 +134,81 @@ async function gatherInputs(
 
 // Deterministic fallback — used when LLM call fails AND as the source
 // of truth for first-month envs where Haiku has nothing nuanced to add.
+// All branches follow the same template:
+//   "Vestigio [verbo de ação] [R$ específico] [comportamento/surface]. [Decisão]."
+// Pattern-name abstractions are not allowed here — every branch must
+// name a concrete number and a concrete surface.
 function fallbackThesis(i: ThesisInputs): string {
 	if (i.exposureFindingCount === 0 && i.resolvedCount === 0) {
-		return `Em ${i.monthLabelPt}, ${i.envDomain} ainda está em descoberta — sem padrão dominante o suficiente pra fechar uma tese deste mês.`;
+		return `Vestigio terminou o primeiro ciclo em ${i.envDomain} sem padrão concreto suficiente pra fechar uma tese — o próximo plano monta a tese.`;
 	}
 
-	// Pattern A: dominant pack is concentrated enough to name as the thesis.
-	if (i.dominantPack && i.dominantPackShare >= 0.4) {
-		const packReadable = i.dominantPack
-			.replace(/_pack$/, "")
-			.replace(/_/g, " ");
-		return `Este mês, o gargalo de ${i.envDomain} é **${packReadable}** — concentra ${Math.round(i.dominantPackShare * 100)}% dos R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês em risco aberto.`;
+	// Pattern A — biggest single hole leads. This is the version most likely
+	// to fire on first-month envs (havefunnels et al). Always names a R$
+	// + a surface + a decision.
+	if (i.topFindingTitle && i.topFindingImpact >= 1000) {
+		const where = (() => {
+			// Try to use top finding's surface if it carries one (most do).
+			// The current ThesisInputs shape doesn't include topFinding.surface
+			// directly — derive it from the title format if needed. Fallback
+			// keeps just the title.
+			return `\`${i.dominantSurface ?? "/"}\``;
+		})();
+		return `Vestigio detectou **R$ ${i.topFindingImpact.toLocaleString("pt-BR")}/mês** saindo em ${where} — ${i.topFindingTitle.toLowerCase()}. Esse é o passo 1.`;
 	}
 
-	// Pattern B: regressions dominate the news.
+	// Pattern B — regressions are concrete and need investigation.
 	if (i.regressionCount >= 2) {
-		return `Este mês, ${i.envDomain} regrediu em **${i.regressionCount} pontos** — investigar deploy recente antes que receita medida caia.`;
+		return `Vestigio identificou **${i.regressionCount} regressões** desde o último ciclo — investigar deploy recente antes que receita medida caia. Esse é o passo 1.`;
 	}
 
-	// Pattern C: large single hole.
-	if (i.topFindingImpact >= 5000 && i.topFindingTitle) {
-		return `Este mês, o maior buraco aberto em ${i.envDomain} é **${i.topFindingTitle}** — sozinho carrega R$ ${i.topFindingImpact.toLocaleString("pt-BR")}/mês de exposição estimada.`;
+	// Pattern C — chronic pattern, framed as decision deferred (not as
+	// "estrutural" abstract). Anchors on the dominant surface to stay concrete.
+	if (i.chronicCount >= 5 && i.dominantSurface) {
+		return `Vestigio mapeou **${i.chronicCount} pontos** voltando há 3+ ciclos em \`${i.dominantSurface}\` — não é volume novo, é decisão adiada. Resolva agora.`;
 	}
 
-	// Pattern D: chronic pattern dominates.
-	if (i.chronicCount >= 5) {
-		return `Este mês, ${i.envDomain} mostra padrão estrutural: **${i.chronicCount} pontos recorrem** há 3+ ciclos — sintoma de causa raiz, não de erro isolado.`;
-	}
-
-	// Generic fallback when no shape dominates.
-	return `Em ${i.monthLabelPt}, ${i.envDomain} acumulou **R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês** em exposição aberta distribuída entre ${i.exposureFindingCount} pontos — sem concentração suficiente pra apostar em um único movimento.`;
+	// Pattern D — exposure exists but no shape dominates. Stay concrete
+	// using total R$ + surface count.
+	return `Vestigio mapeou **R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês** em exposição aberta em ${i.envDomain} — distribuída em ${i.exposureFindingCount} pontos sem concentração única. Comece pelo Passo 1.`;
 }
 
 function buildPrompt(i: ThesisInputs): { system: string; user: string } {
-	const system = `Você é Vestigio. Escreva a TESE deste mês para o operador de ${i.envDomain} — uma única frase que dita o ângulo de leitura do Plano de Estratégia inteiro.
+	const system = `Você é Vestigio. Escreva a TESE deste mês para o operador de ${i.envDomain} — uma frase (ou no máximo duas) que assina um achado e aponta uma decisão.
 
 Regras estritas:
-1. UMA frase. Português brasileiro. 18-32 palavras. Mais curta é melhor.
-2. Estrutura: comece com "Este mês," ou "Em ${i.monthLabelPt}," e termine com uma vírgula seguida de uma quebra de raciocínio ("— sintoma de…", "— sinal de…", "— porque…").
-3. Use **negrito** UMA vez na frase, no termo central da tese.
-4. Voz ativa, primeira pessoa do plural quando necessário ("observamos"). Pode usar "Vestigio" como sujeito.
-5. PROIBIDO: "o engine", "a análise revelou", "foi capturado", "compound_*", snake_case, "priorityScore", "decisionKey".
-6. PROIBIDO clichês de relatório ("vale destacar", "é importante notar").
-7. A tese precisa ser uma APOSTA, não uma observação. "O gargalo é X" > "encontramos N problemas".`;
+
+**Estrutura obrigatória — 1 ou 2 frases:**
+
+Frase 1 (8-16 palavras): começa com **"Vestigio [verbo de ação analítica] [observação concreta com R$ e surface]"**.
+  Verbos permitidos como início: **detectou, encontrou, mapeou, observou, identificou, rastreou**.
+  Forma alternativa: começar com "Encontramos / Detectamos / Identificamos" (primeira pessoa do plural = Vestigio).
+
+Frase 2, opcional (6-12 palavras): aponta UMA decisão imperativa concreta. Ex.: "Resolva isso primeiro." / "Esse é o passo 1."
+
+Total: 14-28 palavras. **Mais curto sempre vence.**
+
+**O conteúdo precisa ter os 3 ingredientes:**
+1. UM valor financeiro específico (R$ X.XXX/mês). Não "44% dos problemas", não "exposição agregada" — um número de dinheiro.
+2. UM comportamento concreto observável (ex.: "saindo no clique de 'pagar'", "no formulário de checkout", "no botão 'continuar' do /pricing"). Não "desalinhamento de copy", não "fragmentação de checkout".
+3. UMA surface específica do site (/, /pricing, /checkout, /signup, etc.). Sempre nomeie em \`código inline\`.
+
+**PROIBIDO:**
+- "aposta que", "acredita", "estima que" como sujeito de Vestigio — são hedges. Vestigio AFIRMA, não aposta.
+- "é sintoma de", "é sinal de", "é manifestação de", "indica que" — claims causais frágeis que ninguém pode falsificar.
+- "padrão dominante", "padrão estrutural", "sintoma estrutural", "desalinhamento de copy", "checkout fragmentado", "mensagens desconectadas" — nomes de padrão abstratos sem instância concreta atrelada.
+- "concentra X%" sem âncora num R$. Porcentagem só é evidência se aponta pra dinheiro.
+- "o engine", "a análise revelou", "foi capturado" (passivas).
+- "vale destacar", "é importante notar", "vale ler como" (clichês de relatório).
+- "compound_*", snake_case, "priorityScore", "decisionKey".
+
+**Use negrito** UMA vez, no valor em R$ ou no surface central.
+
+**Exemplo BOM** (do tom que você deve produzir):
+> Vestigio detectou **R$ 8.750/mês** saindo no clique de pagar em \`/checkout\` — clicar joga o comprador pra outro domínio. Resolva isso primeiro.
+
+**Exemplo RUIM** (não imite):
+> Este mês, o padrão dominante é o desalinhamento de copy — sintoma de um checkout fragmentado que dispersa compradores antes da conversão.`;
 
 	const lines: string[] = [];
 	lines.push(`Dados disponíveis (use só os que sustentam a tese — não cite todos):`);

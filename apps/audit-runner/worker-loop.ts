@@ -49,7 +49,11 @@ import {
 } from "../platform/audit-cycle-queue";
 import { getPoolStats } from "../../workers/verification/chromium-pool";
 import { createLogger, generateWorkerId } from "../../src/libs/structured-log";
-import { runAuditCycle } from "./run-cycle";
+import {
+	runAuditCycle,
+	healStuckCycles,
+	redispatchOrphanedPending,
+} from "./run-cycle";
 
 // Idle poll delay when all tiers are empty. Short enough that a freshly
 // enqueued hot cycle starts within a second; long enough that a
@@ -79,6 +83,14 @@ const MAX_CONCURRENT_PER_WORKER = Number(
 // locks and exit (heal cron picks up the orphan).
 const DRAIN_TIMEOUT_MS = Number(
 	process.env.WORKER_SHUTDOWN_GRACE_MS || 15 * 60 * 1000,
+);
+// Heal-cron interval. healStuckCycles + redispatchOrphanedPending run
+// every minute to recover cycles where the original dispatch flow
+// silently failed (Redis enqueue returning false, worker crash mid-
+// cycle, etc.). Both functions are idempotent — multi-worker fleets
+// can race them without corrupting state. Set to 0 to disable.
+const HEAL_INTERVAL_MS = Number(
+	process.env.HEAL_INTERVAL_MS || 60 * 1000,
 );
 
 const workerId = generateWorkerId();
@@ -274,7 +286,40 @@ async function mainLoop(): Promise<void> {
 		maxConcurrent: MAX_CONCURRENT_PER_WORKER,
 		hasRedis: !!getRedis(),
 		shutdownGraceMs: DRAIN_TIMEOUT_MS,
+		healIntervalMs: HEAL_INTERVAL_MS,
 	});
+
+	// Heal-cron: periodically auto-fail stuck-running cycles and re-
+	// enqueue orphaned-pending cycles. Recovers from silent enqueue
+	// failures (Redis enqueue returning false at trigger time) and
+	// worker crashes mid-cycle. Multi-worker safe: both heal functions
+	// are idempotent against concurrent execution.
+	//
+	// Previously the heal functions were exported but never called from
+	// anywhere — discovered 2026-06-09 when havefunnels' triggered full
+	// cycle sat in pending forever because the trigger endpoint enqueued
+	// to a Redis instance the worker couldn't see.
+	let healTimer: ReturnType<typeof setInterval> | null = null;
+	if (HEAL_INTERVAL_MS > 0) {
+		const runHealPass = async () => {
+			try {
+				const [failed, redispatched] = await Promise.all([
+					healStuckCycles(),
+					redispatchOrphanedPending(),
+				]);
+				if (failed > 0 || redispatched > 0) {
+					rootLog.info("heal-cron pass", { failed, redispatched });
+				}
+			} catch (err: any) {
+				rootLog.warn("heal-cron pass failed", { err: err?.message ?? String(err) });
+			}
+		};
+		// Fire once at boot to catch anything orphaned during the worker
+		// restart window, then settle into the interval cadence.
+		runHealPass().catch(() => {});
+		healTimer = setInterval(runHealPass, HEAL_INTERVAL_MS);
+		healTimer.unref?.();
+	}
 
 	if (!getRedis()) {
 		rootLog.warn(
@@ -334,6 +379,13 @@ async function mainLoop(): Promise<void> {
 					err: (err as Error)?.message,
 				});
 			});
+	}
+
+	// Stop the heal-cron tick so its inflight DB writes don't race with
+	// the shutdown drain. Already-fired heal calls finish naturally.
+	if (healTimer) {
+		clearInterval(healTimer);
+		healTimer = null;
 	}
 
 	// Graceful drain: wait for in-flight cycles to complete before exit.

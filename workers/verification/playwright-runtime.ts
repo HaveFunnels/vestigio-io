@@ -44,6 +44,14 @@ export interface RuntimeResult {
   duration_ms: number;
   // Phase 2D: Network analysis
   network_analysis: NetworkAnalysisSummary | null;
+  // Wire 1 — raw captured network requests. The aggregated
+  // network_analysis above keeps counts/averages for UI; this raw
+  // array lets the enrichment pipeline filter to critical-first-party
+  // surfaces and persist them as NetworkSurface rows. Previously this
+  // array died as a local in runScenario(); exposing it on the result
+  // unblocks the persistence path without changing any of the
+  // capture/classification logic upstream.
+  captured_requests: CapturedNetworkRequest[];
 }
 
 const DEFAULT_OPTIONS: RuntimeOptions = {
@@ -256,6 +264,7 @@ export class PlaywrightRuntime {
       errors_detected: errorsDetected,
       duration_ms: Date.now() - startTime,
       network_analysis: networkAnalysis,
+      captured_requests: capturedRequests,
     };
   }
 

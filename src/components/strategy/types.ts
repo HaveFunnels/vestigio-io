@@ -82,6 +82,71 @@ export interface CrossCustomerPattern {
 	avgCapturedImpact: number | null;
 }
 
+// Wave 22.8 — Cross-feature sections
+
+export interface CopyLensFramework {
+	frameworkId: string;
+	frameworkLabel: string;
+	avgScorePct: number;
+	audits: Array<{
+		pageSlot: string;
+		pageUrl: string;
+		scorePct: number;
+		topGap: {
+			criterionId: string;
+			criterionLabel: string;
+			evidence: string | null;
+		} | null;
+	}>;
+}
+
+export interface CopyLensSection {
+	cycleId: string | null;
+	frameworks: CopyLensFramework[];
+	totalAudits: number;
+	weakestFramework: { id: string; label: string; avgScorePct: number } | null;
+	strongestFramework: { id: string; label: string; avgScorePct: number } | null;
+}
+
+export interface CompetitorEntry {
+	domain: string;
+	label: string | null;
+	changesDetectedThisCycle: number;
+	latestObservation: string | null;
+}
+
+export interface CompetitorSection {
+	cycleId: string | null;
+	totalCompetitors: number;
+	withChangesCount: number;
+	entries: CompetitorEntry[];
+}
+
+export interface ImpersonatorEntry {
+	domain: string;
+	threatLevel: "high" | "medium" | "low";
+	hasCommerceIntent: boolean;
+	hasPaymentCapture: boolean;
+	detectedAt: string;
+}
+
+export interface ImpersonatorsSection {
+	cycleId: string | null;
+	highConfidenceCount: number;
+	mediumConfidenceCount: number;
+	withCommerceCount: number;
+	withPaymentCount: number;
+	topEntries: ImpersonatorEntry[];
+}
+
+export interface MapsSection {
+	cycleId: string | null;
+	autoMapTypes: string[];
+	customMapsCount: number;
+	dominantSurfaceCount: number;
+	relationsCount: number;
+}
+
 export interface BuyerSegment {
 	buyer: BuyerKind;
 	buyerLabel: string;
@@ -222,6 +287,12 @@ export interface StrategyPlan {
 	/** E4 — peer pattern callout. Null = sample size below threshold;
 	 *  UI hides the section. */
 	crossCustomerPattern?: CrossCustomerPattern | null;
+	/** Wave 22.8 — cross-feature sections. Each null = the underlying
+	 *  data source had nothing to report this cycle; UI hides them. */
+	copyLens?: CopyLensSection | null;
+	competitor?: CompetitorSection | null;
+	impersonators?: ImpersonatorsSection | null;
+	maps?: MapsSection | null;
 	narrativeWhatHappened: string;
 	valuePreviewNarrative: string;
 	valuePreview: ValuePreview;

@@ -6,6 +6,7 @@ import {
 } from "../../verification/browser-types";
 import type {
   BrowserVerificationRequest,
+  CapturedNetworkRequest,
   VerificationScenario,
 } from "../../verification/browser-types";
 import { buildStageDScenarios } from "./scenarios";
@@ -16,6 +17,8 @@ import type {
   ShouldRunDecision,
 } from "./types";
 import { buildFailedResult } from "./types";
+import { prisma } from "../../../src/libs/prismaDb";
+import { urlTemplate } from "../../../packages/url-normalize";
 
 // ──────────────────────────────────────────────
 // Stage D — Selective Headless
@@ -219,11 +222,19 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
 
     // Success path — return immediately with the evidence
     if (output.status === "completed") {
+      // Wire 1 — persist critical first-party surfaces captured during
+      // the run. Filter is tight on purpose (see comments below) so a
+      // typical cycle adds 0-10 NetworkSurface rows, not 50+.
+      // Non-fatal: a persist failure logs but doesn't fail the cycle.
+      const surfacesPersisted = await persistNetworkSurfaces(
+        ctx,
+        output.captured_requests,
+      );
       ctx.emit({
         type: "step",
         stage: "headless",
         data: {
-          message: `Stage D: success on attempt ${attempt} — ${output.evidence.length} evidence rows`,
+          message: `Stage D: success on attempt ${attempt} — ${output.evidence.length} evidence rows, ${surfacesPersisted} network surface(s) tracked`,
           index: attempt,
         },
         timestamp: new Date(),
@@ -324,3 +335,127 @@ export {
 // Re-export the BROWSER_LIMITS constant so tests can sanity-check that
 // our scenarios stay within bounds without importing browser-types.
 export const STAGE_D_BROWSER_LIMITS = BROWSER_LIMITS;
+
+// ──────────────────────────────────────────────
+// Wire 1 — NetworkSurface persistence
+//
+// Filter is intentionally tight: only commercially-critical first-party
+// endpoints that returned 200 OK and are realistic body-inspection
+// targets (json/xml/html, not images/fonts/css/js assets). Empirical
+// volume on havefunnels is expected to be 0-10 surfaces per cycle,
+// which is the simplification mantra of this wave — we are NOT trying
+// to mirror everything Playwright captured, just the slice that maps
+// to an actual audit unit downstream (Nuclei custom templates, body
+// inspection in future wires).
+//
+// v1 just TRACKS. No audit fires here. The surfaces become inputs to
+// future wires that act on them.
+// ──────────────────────────────────────────────
+
+const CRITICAL_ROLES = new Set<string>([
+  "payment_critical",
+  "commerce_content",
+  "trust_reassurance", // support widgets, trust badges, reviews
+]);
+
+// Resource types worth tracking. Excludes images, fonts, stylesheets,
+// raw scripts (we only care about endpoints whose bodies are
+// commercially interpretable).
+const TRACKABLE_RESOURCE_TYPES = new Set<string>([
+  "xhr",
+  "fetch",
+  "document",
+]);
+
+// Body content types worth tracking. Loose substring match so e.g.
+// "application/json; charset=utf-8" matches "json".
+const TRACKABLE_CONTENT_TYPE_HINTS = ["json", "xml", "html"];
+
+// Hard cap on rows persisted per cycle as a safety net. The role +
+// resource-type filter typically keeps this well under 10, but a
+// pathological page (e.g. a SaaS dashboard with hundreds of XHRs)
+// could otherwise create runaway rows.
+const MAX_NEW_SURFACES_PER_CYCLE = 30;
+
+function envIdFromRef(environmentRef: string): string | null {
+  const idx = environmentRef.indexOf(":");
+  if (idx < 0) return null;
+  return environmentRef.slice(idx + 1) || null;
+}
+
+async function persistNetworkSurfaces(
+  ctx: EnrichmentContext,
+  captured: CapturedNetworkRequest[] | undefined,
+): Promise<number> {
+  if (!captured || captured.length === 0) return 0;
+  const envId = envIdFromRef(ctx.scoping.environment_ref);
+  if (!envId) return 0;
+
+  // Filter to the slice we care about.
+  const candidates = captured.filter((c) => {
+    if (!c.is_first_party) return false;
+    if (!CRITICAL_ROLES.has(c.role)) return false;
+    if (c.status !== 200) return false;
+    if (!TRACKABLE_RESOURCE_TYPES.has(c.resource_type)) return false;
+    return true;
+  });
+  if (candidates.length === 0) return 0;
+
+  // Dedup by (template, method) within the cycle so we don't run
+  // multiple upserts for the same surface caught across multiple
+  // scenarios / multiple navigations.
+  type Row = { template: string; method: string; role: string; exampleUrl: string };
+  const seen = new Map<string, Row>();
+  for (const c of candidates) {
+    const template = urlTemplate(c.url);
+    const key = `${template}::${c.method}`;
+    if (seen.has(key)) continue;
+    seen.set(key, {
+      template,
+      method: c.method,
+      role: c.role,
+      exampleUrl: c.url,
+    });
+    if (seen.size >= MAX_NEW_SURFACES_PER_CYCLE) break;
+  }
+
+  let persisted = 0;
+  for (const row of seen.values()) {
+    try {
+      await prisma.networkSurface.upsert({
+        where: {
+          environmentId_urlTemplate_method: {
+            environmentId: envId,
+            urlTemplate: row.template,
+            method: row.method,
+          },
+        },
+        create: {
+          environmentId: envId,
+          urlTemplate: row.template,
+          method: row.method,
+          role: row.role,
+          contentType: null,
+          exampleUrl: row.exampleUrl,
+          firstSeenCycleRef: ctx.cycle_ref,
+          lastSeenCycleRef: ctx.cycle_ref,
+          capturedCount: 1,
+        },
+        update: {
+          // Refresh tracking fields but keep firstSeen + the role
+          // assigned by the first observation.
+          lastSeenCycleRef: ctx.cycle_ref,
+          capturedCount: { increment: 1 },
+          exampleUrl: row.exampleUrl,
+        },
+      });
+      persisted++;
+    } catch (err) {
+      console.warn(
+        `[selective-headless] failed to upsert NetworkSurface ${row.template}:`,
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
+  return persisted;
+}

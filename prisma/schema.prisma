@@ -356,6 +356,7 @@ model Environment {
   surfaces               Surface[]
   strategyPlans          MonthlyStrategyPlan[]
   competitorDomains      CompetitorDomain[]
+  networkSurfaces        NetworkSurface[]
 
   // Wave 22 — one domain per org. The previous schema allowed
   // duplicate (orgId, domain) rows, which would let a user create
@@ -566,6 +567,22 @@ model MonthlyStrategyPlan {
   ///   peersWhoFixed, avgCapturedImpact }. Null when the segment hasn't
   /// accumulated enough peers (< 5) for statistically honest framing.
   crossCustomerPatternJson Json?
+  /// Wave 22.8 — cross-feature intelligence sections that surface
+  /// work Vestigio did this cycle outside the core findings loop.
+  /// Each column is null when the underlying data source has nothing
+  /// to report this cycle (UI hides those sections).
+  /// Copy Lens: { cycleId, frameworks: [...], totalAudits, weakest,
+  ///   strongest } — from CopyFrameworkAudit rows of the latest cycle.
+  copyLensJson           Json?
+  /// Competitor radar: { competitors: [...], summary } — from
+  /// CompetitorDomain + CompetitorPageSnapshot for the cycle window.
+  competitorJson         Json?
+  /// Brand impersonators: { lookalikes: [...], commerceCount } — from
+  /// Finding rows with lookalike_domain_* inferenceKeys.
+  impersonatorsJson      Json?
+  /// Maps: { autoMaps: [...], customMapsCount, dominantSurface } —
+  /// surface graph + user journey for the cycle.
+  mapsJson               Json?
 
   // ── Generation cost telemetry ──
   llmCostCents  Int @default(0)
@@ -2535,4 +2552,63 @@ model DomainFingerprint {
   refreshedAt          DateTime  @default(now())
 
   environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+}
+
+// ──────────────────────────────────────────────
+// NetworkSurface — Wire 1 (network-as-surface)
+//
+// Surfaces auto-discovered at runtime by Playwright's network capture
+// when an env's pages were navigated. Only critical first-party
+// endpoints land here — the role classifier in
+// workers/verification/browser-types.ts already marks each request
+// with role + is_first_party + status, so the filter at write time
+// is just:
+//   is_first_party === true
+//   AND role IN ('payment_critical', 'commerce_content', 'trust_reassurance')
+//   AND status === 200
+//   AND resource_type IN ('xhr', 'fetch', 'document')
+//
+// urlTemplate normalizes id-shaped path segments (uuid / cuid / pure
+// digits / Stripe-style `prefix_xxx`) to `{id}` so /cart/abc and
+// /cart/xyz collapse into one row. Dedup key is
+// (environmentId, urlTemplate, method).
+//
+// v1 just TRACKS — no audit fires against these yet. Future wires:
+//   - Wire 2 (Katana → Nuclei chain): pipe these URLs into Nuclei targets
+//   - Wire 4 (custom Nuclei templates) + Wire 8 (body inspection):
+//     inspect bodies for sensitive shapes (coupon arrays, etc.)
+// ──────────────────────────────────────────────
+model NetworkSurface {
+  id                String   @id @default(cuid())
+  environmentId    String
+  /// Normalized URL template — id-shaped segments collapsed to {id}.
+  urlTemplate      String
+  /// HTTP method. POST/GET distinguish read vs write endpoints —
+  /// kept as part of the dedup key because /cart GET vs /cart POST
+  /// have different security/abuse profiles.
+  method           String
+  /// Most recent role assigned by classifyNetworkRequest. Stable in
+  /// practice — when a host's role classification changes the URL
+  /// template would change too, creating a new row.
+  role             String
+  /// Content-type from the most recent observation. Used downstream
+  /// to pick the right body-inspector (JSON shape detector vs HTML
+  /// parser vs XML).
+  contentType      String?
+  /// Example URL — the actual URL the most recent capture saw,
+  /// before templating. Operators looking at the row can reproduce
+  /// the capture without re-deriving the template.
+  exampleUrl       String?
+  firstSeenCycleRef String
+  lastSeenCycleRef  String
+  /// Bumped on every cycle that captures this template again.
+  capturedCount    Int      @default(1)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([environmentId, urlTemplate, method])
+  @@index([environmentId, lastSeenCycleRef])
+  @@index([environmentId, role])
 }

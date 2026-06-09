@@ -15,6 +15,10 @@ import MemoryRollups from "./sections/MemoryRollups";
 import MonthlyThesis from "./sections/MonthlyThesis";
 import Continuity from "./sections/Continuity";
 import CrossCustomerPattern from "./sections/CrossCustomerPattern";
+import CopyLens from "./sections/CopyLens";
+import Competitor from "./sections/Competitor";
+import Impersonators from "./sections/Impersonators";
+import Maps from "./sections/Maps";
 import PlanTOCRail, { type TocItem } from "./PlanTOCRail";
 
 /*
@@ -321,8 +325,28 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 								visible: !!plan.crossCustomerPattern,
 							},
 							{ id: "segments", label: isPt ? "Times" : "By team", visible: true },
+							{
+								id: "competitor",
+								label: isPt ? "Concorrência" : "Competitors",
+								visible: !!plan.competitor && (plan.competitor.entries?.length ?? 0) > 0,
+							},
+							{
+								id: "impersonators",
+								label: isPt ? "Impersonação" : "Impersonators",
+								visible: !!plan.impersonators && (plan.impersonators.topEntries?.length ?? 0) > 0,
+							},
 							{ id: "narrative", label: isPt ? "O que aconteceu" : "What happened", visible: !!plan.narrativeWhatHappened },
 							{ id: "next-steps", label: isPt ? "Próximos passos" : "Next steps", visible: true },
+							{
+								id: "copy-lens",
+								label: isPt ? "Lente de copy" : "Copy lens",
+								visible: !!plan.copyLens && (plan.copyLens.frameworks?.length ?? 0) > 0,
+							},
+							{
+								id: "maps",
+								label: isPt ? "Mapas" : "Maps",
+								visible: !!plan.maps,
+							},
 							{ id: "value-preview", label: isPt ? "O que ganha" : "Value preview", visible: true },
 							{ id: "memory", label: isPt ? "Memória" : "Memory", visible: true },
 						];
@@ -361,6 +385,17 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				<div data-toc-id="segments">
 					<BuyerSegments segments={plan.buyerSegments} month={plan.month} />
 				</div>
+				{/* Wave 22.8 — Competitor radar. Self-hides for envs with
+				    zero monitored competitors or no detected changes
+				    this cycle. */}
+				<div data-toc-id="competitor">
+					<Competitor competitor={plan.competitor} />
+				</div>
+				{/* Wave 22.8 — Brand impersonators. Self-hides when no
+				    lookalike domains were detected this cycle. */}
+				<div data-toc-id="impersonators">
+					<Impersonators impersonators={plan.impersonators} />
+				</div>
 				<div data-toc-id="narrative">
 					<WhatHappenedNarrative
 						narrative={plan.narrativeWhatHappened}
@@ -377,6 +412,16 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 						month={plan.month}
 						planId={plan.id}
 					/>
+				</div>
+				{/* Wave 22.8 — Copy Lens Framework. Self-hides when no
+				    CopyFrameworkAudit rows exist for the cycle. */}
+				<div data-toc-id="copy-lens">
+					<CopyLens copyLens={plan.copyLens} />
+				</div>
+				{/* Wave 22.8 — Maps. Self-hides when no auto-map data
+				    exists for the cycle. */}
+				<div data-toc-id="maps">
+					<Maps maps={plan.maps} />
 				</div>
 				<div data-toc-id="value-preview">
 					<ValuePreview

@@ -95,6 +95,12 @@ export interface BrowserVerificationResult {
 
   steps: StepResult[];
 
+  // Wire 1 — raw captured network requests from Playwright. Lets the
+  // selective-headless enrichment pass filter to critical-first-party
+  // surfaces and persist them as NetworkSurface rows. Was previously
+  // dropped at the playwright-runtime boundary.
+  captured_requests?: CapturedNetworkRequest[];
+
   artifacts: {
     screenshots: string[];
     console_errors: string[];

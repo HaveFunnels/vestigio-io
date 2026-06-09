@@ -169,3 +169,6 @@ export function urlMatchesExclusion(url: string, patterns: string[]): boolean {
 	}
 	return matchesAnyPattern(path, patterns);
 }
+
+// Re-export Wire 1 URL templating for NetworkSurface dedup.
+export { urlTemplate } from "./template";

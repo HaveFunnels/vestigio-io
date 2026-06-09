@@ -67,4 +67,11 @@ export interface ExecutorOutput {
   evidence: Evidence[];
   logs: VerificationLog[];
   errors: string[];
+  // Wire 1 — raw captured network requests, propagated from
+  // PlaywrightRuntime through BrowserVerificationResult so callers
+  // like the selective-headless enrichment pass can filter critical
+  // first-party surfaces and persist them as NetworkSurface rows.
+  // Undefined when the executor doesn't have network capture (e.g.
+  // the simulated mode used in CI / tests).
+  captured_requests?: import('./browser-types').CapturedNetworkRequest[];
 }

@@ -105,6 +105,7 @@ export class BrowserWorker implements VerificationExecutor {
         evidence,
         logs,
         errors: result.steps.filter(s => !s.success).map(s => s.error || 'Step failed'),
+        captured_requests: result.captured_requests,
       };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -140,6 +141,7 @@ export class BrowserWorker implements VerificationExecutor {
         evidence,
         logs,
         errors: result.steps.filter(s => !s.success).map(s => s.error || 'Step failed'),
+        captured_requests: result.captured_requests,
       };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -159,6 +161,7 @@ export class BrowserWorker implements VerificationExecutor {
     const allScreenshots: string[] = [];
     const allConsoleErrors: string[] = [];
     const allNetworkErrors: string[] = [];
+    const allCapturedRequests: import('./browser-types').CapturedNetworkRequest[] = [];
     let redirectChain: string[] = [];
     let finalUrl = req.target.url;
     let title: string | null = null;
@@ -172,6 +175,7 @@ export class BrowserWorker implements VerificationExecutor {
       allScreenshots.push(...result.screenshots);
       allConsoleErrors.push(...result.console_errors);
       allNetworkErrors.push(...result.network_errors);
+      allCapturedRequests.push(...result.captured_requests);
       redirectChain = [...new Set([...redirectChain, ...result.redirect_chain])];
       finalUrl = result.final_url;
       if (result.title) title = result.title;
@@ -179,7 +183,9 @@ export class BrowserWorker implements VerificationExecutor {
       if (result.errors_detected) errorsDetected = true;
     }
 
-    return this.buildResult(req, allSteps, allScreenshots, allConsoleErrors, allNetworkErrors, redirectChain, finalUrl, title, checkoutDetected, errorsDetected, Date.now() - startTime);
+    const out = this.buildResult(req, allSteps, allScreenshots, allConsoleErrors, allNetworkErrors, redirectChain, finalUrl, title, checkoutDetected, errorsDetected, Date.now() - startTime);
+    out.captured_requests = allCapturedRequests;
+    return out;
   }
 
   // ── Simulated execution (tests/CI fallback) ───

@@ -169,6 +169,85 @@ export interface CrossCustomerPatternSectionOutput {
 	avgCapturedImpact: number | null;
 }
 
+// ──────────────────────────────────────────────
+// Wave 22.8 — Cross-feature sections
+// ──────────────────────────────────────────────
+
+export interface CopyLensFrameworkOutput {
+	frameworkId: string;
+	frameworkLabel: string;
+	avgScorePct: number;
+	audits: Array<{
+		pageSlot: string;
+		pageUrl: string;
+		scorePct: number;
+		/** Worst-rated criterion in this page+framework pair, for the
+		 *  "biggest gap" chip on the section card. */
+		topGap: {
+			criterionId: string;
+			criterionLabel: string;
+			evidence: string | null;
+		} | null;
+	}>;
+}
+
+export interface CopyLensSectionOutput {
+	cycleId: string | null;
+	frameworks: CopyLensFrameworkOutput[];
+	totalAudits: number;
+	weakestFramework: { id: string; label: string; avgScorePct: number } | null;
+	strongestFramework: { id: string; label: string; avgScorePct: number } | null;
+}
+
+// Brand Impersonators — sourced from Finding rows with inferenceKeys
+// like `lookalike_domain_competing_for_traffic`. Each row represents a
+// detected lookalike domain attached to the env.
+export interface ImpersonatorEntryOutput {
+	domain: string;
+	threatLevel: "high" | "medium" | "low";
+	hasCommerceIntent: boolean;
+	hasPaymentCapture: boolean;
+	detectedAt: string;
+}
+
+export interface ImpersonatorsSectionOutput {
+	cycleId: string | null;
+	highConfidenceCount: number;
+	mediumConfidenceCount: number;
+	withCommerceCount: number;
+	withPaymentCount: number;
+	topEntries: ImpersonatorEntryOutput[];
+}
+
+// Competitor Radar — sourced from CompetitorDomain (active list) +
+// CompetitorPageSnapshot (cycle-bound observation).
+export interface CompetitorEntryOutput {
+	domain: string;
+	label: string | null;
+	changesDetectedThisCycle: number;
+	/** Most-recent observed snapshot summary, if any. Free-text since
+	 *  the engine writes prose summaries during snapshot ingest. */
+	latestObservation: string | null;
+}
+
+export interface CompetitorSectionOutput {
+	cycleId: string | null;
+	totalCompetitors: number;
+	withChangesCount: number;
+	entries: CompetitorEntryOutput[];
+}
+
+// Maps — auto-generated maps (cycle-bound) + custom-map count for the
+// org. Section surfaces the dominant map type detected this cycle and
+// a quick visual cue without rendering the full map inline.
+export interface MapsSectionOutput {
+	cycleId: string | null;
+	autoMapTypes: string[];
+	customMapsCount: number;
+	dominantSurfaceCount: number;
+	relationsCount: number;
+}
+
 export interface PlanGeneratorOutput {
 	heroMetrics: HeroMetricsOutput;
 	buyerSegments: BuyerSegmentOutput[];
@@ -185,6 +264,13 @@ export interface PlanGeneratorOutput {
 	/** E4 — peer pattern callout. Null when peer sample size below
 	 *  threshold; UI hides the section. */
 	crossCustomerPattern: CrossCustomerPatternSectionOutput | null;
+	/** Wave 22.8 — cross-feature intelligence. Each is null when the
+	 *  underlying data source has nothing to report this cycle; UI
+	 *  hides those sections. */
+	copyLens: CopyLensSectionOutput | null;
+	competitor: CompetitorSectionOutput | null;
+	impersonators: ImpersonatorsSectionOutput | null;
+	maps: MapsSectionOutput | null;
 	cost: GenerationCost;
 	cycleNumber: number;
 }

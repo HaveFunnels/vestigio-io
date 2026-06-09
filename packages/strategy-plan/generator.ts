@@ -33,6 +33,10 @@ import { generateNextSteps } from "./sections/next-steps";
 import { generateMonthlyThesis } from "./sections/monthly-thesis";
 import { generateContinuity } from "./sections/continuity";
 import { generateCrossCustomerPattern } from "./sections/cross-customer-pattern";
+import { generateCopyLens } from "./sections/copy-lens";
+import { generateCompetitorRadar } from "./sections/competitor-radar";
+import { generateImpersonators } from "./sections/impersonators";
+import { generateMapsSection } from "./sections/maps";
 
 /**
  * Wave 22.6 Step 6 — partial regen scope. Each event trigger asks for
@@ -168,13 +172,28 @@ export async function generatePlan(
 	const wantValuePreviewNarrative = scope === "all";
 
 	// Deterministic sections run in parallel — no LLM, no ordering.
-	const [heroMetrics, buyerSegments, valuePreview, memoryRollups, continuity, crossCustomerPattern] = await Promise.all([
+	const [
+		heroMetrics,
+		buyerSegments,
+		valuePreview,
+		memoryRollups,
+		continuity,
+		crossCustomerPattern,
+		copyLens,
+		competitor,
+		impersonators,
+		maps,
+	] = await Promise.all([
 		generateHeroMetrics(prisma, ctx),
 		generateBuyerSegments(prisma, ctx),
 		generateValuePreview(prisma, ctx),
 		generateMemoryRollups(prisma, ctx),
 		generateContinuity(prisma, ctx),
 		generateCrossCustomerPattern(prisma, ctx),
+		generateCopyLens(prisma, ctx),
+		generateCompetitorRadar(prisma, ctx),
+		generateImpersonators(prisma, ctx),
+		generateMapsSection(prisma, ctx),
 	]);
 
 	// E1 — monthly thesis tied to narrative regen scope. The thesis is
@@ -234,6 +253,10 @@ export async function generatePlan(
 		nextSteps: nextStepsResult.steps,
 		continuity,
 		crossCustomerPattern,
+		copyLens,
+		competitor,
+		impersonators,
+		maps,
 		cost: { llmCallsCount, llmCostCents },
 		cycleNumber,
 		regenScope: scope,
@@ -306,6 +329,10 @@ export async function generateAndPersistPlan(
 				valuePreviewJson: output.valuePreview as any,
 				continuityJson: output.continuity as any,
 				crossCustomerPatternJson: output.crossCustomerPattern as any,
+				copyLensJson: output.copyLens as any,
+				competitorJson: output.competitor as any,
+				impersonatorsJson: output.impersonators as any,
+				mapsJson: output.maps as any,
 				llmCallsCount: { increment: output.cost.llmCallsCount },
 				llmCostCents: { increment: output.cost.llmCostCents },
 			};

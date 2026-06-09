@@ -24,13 +24,22 @@ interface FindingRow {
 	surface: string;
 }
 
-function titleForFinding(row: FindingRow): string {
-	// Until findings carry a localized human title (Wave 22.7 — pending),
-	// build a deterministic readable label from the inference key +
-	// surface. The Plan UI renders this as the "Exemplos" bullet list.
-	const friendlyKey = row.inferenceKey
-		.replace(/_/g, " ")
-		.replace(/\b\w/g, (c) => c.toUpperCase());
+function titleForFinding(
+	row: FindingRow,
+	translations: GenerateContext["translations"],
+): string {
+	// Consult the engine dictionary in the owner's locale before falling
+	// back to mechanical Capitalize_Snake_Case. Without this, samples
+	// rendered as "Pricing Without Context · /pricing" — English noise
+	// inside a pt-BR plan. inference_titles is the primary source;
+	// root_cause_titles is a safety net for keys the dict missed.
+	const translated =
+		translations?.inference_titles?.[row.inferenceKey]
+		?? translations?.root_cause_titles?.[row.inferenceKey]
+		?? null;
+	const friendlyKey =
+		translated
+		?? row.inferenceKey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 	return `${friendlyKey} · ${row.surface}`;
 }
 
@@ -72,7 +81,20 @@ export async function generateBuyerSegments(
 			const impactMin = items.reduce((a, r) => a + r.impactMin, 0);
 			const impactMax = items.reduce((a, r) => a + r.impactMax, 0);
 			const impactMidpoint = items.reduce((a, r) => a + r.impactMidpoint, 0);
-			const sample = items.slice(0, 2);
+			// Dedupe samples by their rendered title (inferenceKey+surface).
+			// Without this, two highest-impact rows sharing the same
+			// inferenceKey + surface produce identical bullets ("Pricing
+			// Without Context · /pricing" repeated twice). After dedupe
+			// we slice to 2 so the card still caps the list.
+			const seenTitles = new Set<string>();
+			const sample: FindingRow[] = [];
+			for (const item of items) {
+				const t = titleForFinding(item, ctx.translations);
+				if (seenTitles.has(t)) continue;
+				seenTitles.add(t);
+				sample.push(item);
+				if (sample.length === 2) break;
+			}
 			return {
 				buyer,
 				buyerLabel: BUYER_LABEL_PT_BR[buyer],
@@ -81,7 +103,7 @@ export async function generateBuyerSegments(
 				impactMax: Math.round(impactMax),
 				impactMidpoint: Math.round(impactMidpoint),
 				sampleFindingIds: sample.map((s) => s.id),
-				sampleFindingTitles: sample.map(titleForFinding),
+				sampleFindingTitles: sample.map((s) => titleForFinding(s, ctx.translations)),
 				allFindingIds: items.map((r) => r.id),
 			};
 		})

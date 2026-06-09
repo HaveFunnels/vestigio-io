@@ -145,11 +145,11 @@ export function FindingListBody({ findingIds }: FindingListProps) {
 	if (matched.length === 0) {
 		return (
 			<EmptyState
-				headline="Findings indisponíveis"
+				headline="Problemas indisponíveis"
 				body={
 					findingIds.length === 0
-						? "Esse passo não carrega findings linkados (plano gerado antes da Phase 2)."
-						: "Os findings deste passo não aparecem no ciclo atual — provavelmente foram resolvidos ou regrediram desde o plano."
+						? "Esse passo não carrega problemas linkados (plano gerado antes da Phase 2)."
+						: "Os problemas deste passo não aparecem no ciclo atual — provavelmente foram resolvidos ou regrediram desde então."
 				}
 			/>
 		);

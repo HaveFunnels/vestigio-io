@@ -104,13 +104,13 @@ export default function BuyerSegments({ segments }: Props) {
 									type="button"
 									onClick={() => setDrawerState({ kind: "segment", segment: s })}
 									className="mt-0.5 inline-flex items-center gap-1 text-[12px] text-content-muted underline-offset-2 transition-colors hover:text-content hover:underline"
-									title="Ver todos os findings desse segmento"
+									title="Ver todos os problemas desse segmento"
 								>
-									{s.count} {s.count === 1 ? "finding" : "findings"} →
+									{s.count} {s.count === 1 ? "problema" : "problemas"} →
 								</button>
 							) : (
 								<div className="mt-0.5 text-[12px] text-content-muted">
-									{s.count} {s.count === 1 ? "finding" : "findings"}
+									{s.count} {s.count === 1 ? "problema" : "problemas"}
 								</div>
 							)}
 
@@ -126,7 +126,7 @@ export default function BuyerSegments({ segments }: Props) {
 
 							<div className="mt-4 flex-1 space-y-1.5 border-t border-edge/40 pt-3">
 								<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-									Exemplos
+									Onde aparece
 								</div>
 								{s.sampleFindingTitles.slice(0, 2).map((title, i) => {
 									const findingId = s.sampleFindingIds[i];
@@ -149,7 +149,7 @@ export default function BuyerSegments({ segments }: Props) {
 											type="button"
 											onClick={() => setDrawerState({ kind: "single", findingId })}
 											className="-mx-1.5 block w-full rounded-md px-1.5 py-1 text-left text-[13px] leading-snug text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
-											title="Ver detalhes do finding"
+											title="Ver detalhes do problema"
 										>
 											· {title}
 										</button>
@@ -170,18 +170,18 @@ export default function BuyerSegments({ segments }: Props) {
 				onOpenChange={(open) => { if (!open) setDrawerState(null); }}
 				eyebrow={
 					drawerState?.kind === "segment"
-						? `Findings ${drawerState.segment.buyerLabel}`
-						: "Finding em destaque"
+						? `Problemas ${drawerState.segment.buyerLabel}`
+						: "Problema em destaque"
 				}
 				title={
 					drawerState?.kind === "segment"
-						? `${drawerState.segment.count} ${drawerState.segment.count === 1 ? "finding" : "findings"} para o time`
-						: "Detalhe do finding"
+						? `${drawerState.segment.count} ${drawerState.segment.count === 1 ? "problema" : "problemas"} para o time`
+						: "Detalhe do problema"
 				}
 				description={
 					drawerState?.kind === "segment"
-						? "Capturados pelo engine, agrupados pelo time que tipicamente resolve."
-						: "Capturado pelo engine no ciclo atual"
+						? "Encontrados no ciclo atual, agrupados pelo time que tipicamente resolve."
+						: "Encontrado no ciclo atual"
 				}
 			>
 				{drawerState?.kind === "single" && (

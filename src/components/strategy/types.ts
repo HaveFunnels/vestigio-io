@@ -176,12 +176,25 @@ export interface ImpersonatorsSection {
 	topEntries: ImpersonatorMatchEntry[];
 }
 
+export interface MapsTopHub {
+	url: string;
+	outboundCount: number;
+}
+
+export interface MapsRelationType {
+	relationType: string;
+	count: number;
+}
+
 export interface MapsSection {
 	cycleId: string | null;
-	autoMapTypes: string[];
+	relationsThisCycle: number;
+	distinctHostCount: number;
+	crossDomainCount: number;
+	topHubs: MapsTopHub[];
+	relationsByType: MapsRelationType[];
 	customMapsCount: number;
-	dominantSurfaceCount: number;
-	relationsCount: number;
+	autoMapTypes: string[];
 }
 
 export interface BuyerSegment {

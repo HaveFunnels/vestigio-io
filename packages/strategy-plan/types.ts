@@ -287,15 +287,39 @@ export interface CompetitorSectionOutput {
 	entries: CompetitorEntryOutput[];
 }
 
-// Maps — auto-generated maps (cycle-bound) + custom-map count for the
-// org. Section surfaces the dominant map type detected this cycle and
-// a quick visual cue without rendering the full map inline.
+// Maps — auto-generated maps are derived in runtime (no persisted
+// entity), so the Plan section instead surfaces the SurfaceRelation
+// graph captured this cycle plus a per-org CustomMap count. Read as:
+// "Vestigio mapped N connections across M surfaces this cycle — open
+// /app/maps to explore them."
+export interface MapsTopHubOutput {
+	url: string;
+	outboundCount: number;
+}
+
+export interface MapsRelationTypeOutput {
+	relationType: string;
+	count: number;
+}
+
 export interface MapsSectionOutput {
 	cycleId: string | null;
-	autoMapTypes: string[];
+	/** Number of SurfaceRelation rows in the latest cycle. Zero when
+	 *  no relations were captured (rare on a real env). */
+	relationsThisCycle: number;
+	/** Distinct hosts across source + target of the latest cycle. */
+	distinctHostCount: number;
+	/** Subset of relationsThisCycle whose isSameDomain is false. */
+	crossDomainCount: number;
+	/** Top URLs that produced the most outbound relations. Reads as
+	 *  "your homepage links to 18 different places". */
+	topHubs: MapsTopHubOutput[];
+	/** Breakdown of relation types this cycle, sorted by count desc. */
+	relationsByType: MapsRelationTypeOutput[];
+	/** CustomMap rows the org has saved. Zero is normal for new orgs. */
 	customMapsCount: number;
-	dominantSurfaceCount: number;
-	relationsCount: number;
+	/** Map types Vestigio always offers under /app/maps. Fixed list. */
+	autoMapTypes: string[];
 }
 
 export interface PlanGeneratorOutput {

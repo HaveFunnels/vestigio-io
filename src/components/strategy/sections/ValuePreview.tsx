@@ -94,19 +94,20 @@ function Marker({
 								</svg>
 							)}
 						</div>
-						{/* Labels overflow on narrow viewports because they're
-						    short ("M3"/"M6") so whitespace-nowrap is fine. ETA
-						    captions ("em 10 meses") can be wider — cap them
-						    with max-w and let them wrap on tight layouts. */}
+						{/* Labels sit below the dot. The button was shrunk to
+						    the dot's footprint so positioning context is tight —
+						    anchor with `top-full` (just below button bottom) plus
+						    a small margin instead of relying on the static-flow
+						    fallback, which collapses everything onto the dot. */}
 						<div
-							className={`absolute left-1/2 mt-3 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] ${
+							className={`absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.14em] ${
 								isCurrent ? "text-content" : "text-content-muted"
 							}`}
 						>
 							{marker.label}
 						</div>
 						{marker.eta && !isCurrent && (
-							<div className="absolute left-1/2 mt-7 max-w-[90px] -translate-x-1/2 text-center font-mono text-[10px] leading-tight tabular-nums text-content-faint">
+							<div className="absolute left-1/2 top-full mt-6 max-w-[90px] -translate-x-1/2 whitespace-nowrap text-center font-mono text-[10px] leading-tight tabular-nums text-content-faint">
 								{marker.eta}
 							</div>
 						)}

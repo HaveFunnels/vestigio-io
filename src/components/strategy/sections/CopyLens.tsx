@@ -1,8 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { ExternalLink } from "lucide-react";
 import type { CopyLensSection } from "../types";
 
 /*
@@ -182,15 +180,11 @@ export default function CopyLens({ copyLens }: Props) {
 					})}
 				</ul>
 
-				<div className="mt-5 border-t border-edge/40 pt-3 text-right">
-					<Link
-						href="/app/workspaces"
-						className="inline-flex items-center gap-1.5 text-[12px] font-medium text-content-secondary underline-offset-4 transition-colors hover:text-content hover:underline"
-					>
-						Ver auditoria completa em Workspaces
-						<ExternalLink className="h-3 w-3" />
-					</Link>
-				</div>
+				{/* Footer link removido: a página standalone já apresenta o
+				    audit completo. O link para Workspaces redirecionava
+				    para /app/findings?lens=revenue, sem relação com
+				    framework de copy. Quando workspaces voltar como hub
+				    de configuração real (IA reform), reintroduzimos. */}
 			</div>
 		</motion.section>
 	);

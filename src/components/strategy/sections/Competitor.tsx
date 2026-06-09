@@ -1,8 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { ExternalLink, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import type { CompetitorSection } from "../types";
 
 /*
@@ -198,20 +197,16 @@ export default function Competitor({ competitor }: Props) {
 					</>
 				) : (
 					<div className="rounded-xl border border-dashed border-edge bg-surface-inset/30 p-4 text-center text-[12.5px] text-content-muted">
-						Nenhum concorrente curado. Adicione domínios em /app/workspaces para
-						ativar comparações de copy, trust e SERP.
+						Nenhum concorrente curado. Em breve será possível adicionar domínios
+						pela tela de configuração para ativar comparações de copy, trust e SERP.
 					</div>
 				)}
 
-				<div className="mt-5 border-t border-edge/40 pt-3 text-right">
-					<Link
-						href="/app/workspaces"
-						className="inline-flex items-center gap-1.5 text-[12px] font-medium text-content-secondary underline-offset-4 transition-colors hover:text-content hover:underline"
-					>
-						Gerenciar concorrentes em Workspaces
-						<ExternalLink className="h-3 w-3" />
-					</Link>
-				</div>
+				{/* Footer link de gestão removido até existir a tela real
+				    de curadoria de concorrentes (depende do IA reform que
+				    promove Workspaces a hub de configuração). Linkar para
+				    /app/workspaces hoje redireciona para findings?lens=
+				    revenue, sem relação com o que o cliente espera. */}
 			</div>
 		</motion.section>
 	);

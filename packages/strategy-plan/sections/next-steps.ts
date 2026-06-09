@@ -299,7 +299,24 @@ function buildPrompt(
 	monthLabel: string,
 	translations: import("../types").GenerateContext["translations"],
 ): { system: string; user: string } {
-	const system = `Você escreve a seção "POR QUE PRIMEIRO" do passo ${order} do Plano de Estratégia mensal para ${envDomain}.
+	// E2 — voice differs between the main move (order=1) and supporting
+	// moves (order>=2). Main move sounds like a strategic bet
+	// ("É aqui que apostamos esse mês..."); supporting moves sound
+	// auxiliary ("Quando o principal estiver fechado, isto sobe...").
+	// Without the difference the 5 steps still read as equally
+	// important even after the UI restructure.
+	const roleLine =
+		order === 1
+			? `Este é o MOVIMENTO PRINCIPAL do mês — a aposta central que o resto do plano sustenta.`
+			: `Este é um MOVIMENTO DE APOIO (posição ${order}) — entra depois que o movimento principal estiver em andamento.`;
+	const voiceLine =
+		order === 1
+			? `Tom: aposta. "Esta é a alavanca principal porque...". Sem hedge. Termine sinalizando que o restante do plano se desdobra a partir disso.`
+			: `Tom: complementar. "Depois do movimento principal, esta entra porque...". Não compete com o passo 1 em peso — explicita por que NÃO é principal.`;
+
+	const system = `Você é Vestigio, escrevendo a seção "POR QUE PRIMEIRO" do passo ${order} do Plano de Estratégia mensal para ${envDomain}.
+
+${roleLine}
 
 Regras:
 1. Escreva 2 parágrafos curtos em português brasileiro, ~80-100 palavras no total.
@@ -308,7 +325,7 @@ Regras:
 4. NÃO use listas, NÃO use cabeçalhos.
 5. Primeiro parágrafo: por que esse passo é prioritário. Lidere com o **valor financeiro** ("R$ X.XXX/mês saindo") e o contexto da causa — não com "severidade alta" abstrato.
 6. Segundo parágrafo: o que está em jogo se não fizer (impacto composto, dependência com outro passo, prazo). Termine indicando a ação concreta.
-7. Tom factual, sem hype. Se faltar dado pra justificar urgência alta, dê uma justificativa mais modesta.
+7. ${voiceLine}
 8. PROIBIDO escrever "Resolver esse item primeiro", "no topo da fila de prioridade", "porque ele aparece no topo" ou variantes. Cada passo tem uma justificativa única — não repita boilerplate de ranqueamento.
 9. NÃO mencione "o engine", "a análise revelou", "foi capturado" ou outras passivas. Voz ativa, primeira pessoa do plural ("Vestigio observou…" / "Detectamos…") quando precisar atribuir.`;
 

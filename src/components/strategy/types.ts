@@ -56,6 +56,32 @@ export interface HeroMetric {
 	exposureFindingCount?: number;
 }
 
+export interface ContinuityStep {
+	title: string;
+	statusNow: "todo" | "in_progress" | "in_review" | "done" | "blocked";
+	resolvedLinkedCount: number;
+	totalLinkedCount: number;
+	capturedImpact: number;
+}
+
+export interface ContinuitySection {
+	previousMonthLabel: string | null;
+	previousMonth: string | null;
+	steps: ContinuityStep[];
+	exposureDeltaSinceLastPlan: number;
+	capturedSinceLastPlan: number;
+}
+
+export interface CrossCustomerPattern {
+	pack: string;
+	packLabel: string;
+	businessModel: string;
+	peerCount: number;
+	peersWithPattern: number;
+	peersWhoFixed: number;
+	avgCapturedImpact: number | null;
+}
+
 export interface BuyerSegment {
 	buyer: BuyerKind;
 	buyerLabel: string;
@@ -186,6 +212,16 @@ export interface StrategyPlan {
 
 	heroMetrics: HeroMetric;
 	buyerSegments: BuyerSegment[];
+	/** E1 — one-sentence monthly thesis. Optional for backward
+	 *  compatibility with plans generated before E1 landed; UI hides
+	 *  the thesis pull-quote when null/empty. */
+	thesisOfMonth?: string | null;
+	/** E3 — continuity payload from prior month. Null = first plan; UI
+	 *  hides the section. */
+	continuity?: ContinuitySection | null;
+	/** E4 — peer pattern callout. Null = sample size below threshold;
+	 *  UI hides the section. */
+	crossCustomerPattern?: CrossCustomerPattern | null;
 	narrativeWhatHappened: string;
 	valuePreviewNarrative: string;
 	valuePreview: ValuePreview;

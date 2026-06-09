@@ -661,8 +661,16 @@ export default function NextSteps({
 	planId,
 }: Props) {
 	const [expanded, setExpanded] = useState(false);
-	const top3 = steps.slice(0, 3);
-	const hidden = steps.slice(3);
+	// E2 — split the queue into ONE main move + supporting moves. The
+	// section used to render "top 3 expanded + collapsible rest" with no
+	// visual hierarchy difference between step 1 and step 2; that read
+	// as 5 equally-important findings rather than an opinionated bet.
+	// Main move gets its own framing block above; supporting moves get
+	// an eyebrow label ("Quando o movimento principal for concluído")
+	// before they list out.
+	const mainMove = steps[0];
+	const supportingVisible = steps.slice(1, 3);
+	const supportingHidden = steps.slice(3);
 
 	// Build per-step lookup tables so each StepCard receives only the
 	// comments + pending edit that belong to it. Comments are keyed
@@ -691,6 +699,8 @@ export default function NextSteps({
 		planId,
 	});
 
+	const supportingTotal = supportingVisible.length + supportingHidden.length;
+
 	return (
 		<motion.section
 			initial={{ opacity: 0, y: 16 }}
@@ -701,42 +711,68 @@ export default function NextSteps({
 		>
 			<div className="mb-4 flex items-baseline justify-between">
 				<h2 className="font-serif text-[22px] font-medium tracking-tight text-content">
-					Próximo passo — atacar nesta ordem
+					Onde apostar este mês
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					{steps.length} passos · top 3 destacados
+					1 movimento principal{supportingTotal > 0 ? ` · ${supportingTotal} de apoio` : ""}
 				</div>
 			</div>
 
 			<div className="flex flex-col">
-				{top3.map((step, i) => (
-					<div key={step.id}>
-						<StepCard {...cardProps(step)} />
-						{i < top3.length - 1 && <SequenceConnector />}
-					</div>
-				))}
+				{mainMove && (
+					<>
+						{/* E2 — eyebrow framing for the main move. Visually
+						    separates THE bet from the supporting list. */}
+						<div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
+							<span className="h-px w-6 bg-content-faint/40" />
+							<span>O movimento principal</span>
+						</div>
+						<StepCard {...cardProps(mainMove)} />
+					</>
+				)}
 
-				{hidden.length > 0 && (
-					<Collapsible.Root open={expanded} onOpenChange={setExpanded}>
-						<Collapsible.Content>
-							{hidden.map((step) => (
-								<div key={step.id}>
-									<SequenceConnector />
-									<StepCard {...cardProps(step)} />
-								</div>
-							))}
-						</Collapsible.Content>
-						<Collapsible.Trigger asChild>
-							<button
-								type="button"
-								className="mt-6 self-start text-[13px] text-content-muted underline-offset-4 transition-colors hover:text-content hover:underline"
-							>
-								{expanded
-									? "Esconder passos"
-									: `Ver mais ${hidden.length} passos →`}
-							</button>
-						</Collapsible.Trigger>
-					</Collapsible.Root>
+				{supportingTotal > 0 && (
+					<>
+						{/* E2 — supporting moves eyebrow. Explicit framing
+						    that these only unlock once the main move is done
+						    — kills the "5 equally important steps" feeling. */}
+						<div className="mb-3 mt-10 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
+							<span className="h-px w-6 bg-content-faint/40" />
+							<span>
+								Movimentos de apoio · quando o principal terminar
+							</span>
+						</div>
+
+						{supportingVisible.map((step, i) => (
+							<div key={step.id}>
+								{i > 0 && <SequenceConnector />}
+								<StepCard {...cardProps(step)} />
+							</div>
+						))}
+
+						{supportingHidden.length > 0 && (
+							<Collapsible.Root open={expanded} onOpenChange={setExpanded}>
+								<Collapsible.Content>
+									{supportingHidden.map((step) => (
+										<div key={step.id}>
+											<SequenceConnector />
+											<StepCard {...cardProps(step)} />
+										</div>
+									))}
+								</Collapsible.Content>
+								<Collapsible.Trigger asChild>
+									<button
+										type="button"
+										className="mt-6 self-start text-[13px] text-content-muted underline-offset-4 transition-colors hover:text-content hover:underline"
+									>
+										{expanded
+											? "Esconder passos"
+											: `Ver mais ${supportingHidden.length} passos →`}
+									</button>
+								</Collapsible.Trigger>
+							</Collapsible.Root>
+						)}
+					</>
 				)}
 			</div>
 		</motion.section>

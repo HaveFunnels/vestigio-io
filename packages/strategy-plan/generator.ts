@@ -30,6 +30,9 @@ import { generateValuePreview } from "./sections/value-preview";
 import { generateNarrativeWhatHappened } from "./sections/narrative";
 import { generateValuePreviewNarrative } from "./sections/value-preview-narrative";
 import { generateNextSteps } from "./sections/next-steps";
+import { generateMonthlyThesis } from "./sections/monthly-thesis";
+import { generateContinuity } from "./sections/continuity";
+import { generateCrossCustomerPattern } from "./sections/cross-customer-pattern";
 
 /**
  * Wave 22.6 Step 6 — partial regen scope. Each event trigger asks for
@@ -153,7 +156,7 @@ export async function generatePlan(
 	args: GeneratePlanArgs,
 ): Promise<PlanGeneratorOutput & {
 	regenScope: RegenScope;
-	skipped: { narrative: boolean; nextSteps: boolean; valuePreviewNarrative: boolean };
+	skipped: { thesis: boolean; narrative: boolean; nextSteps: boolean; valuePreviewNarrative: boolean };
 }> {
 	const { ctx, organizationId } = await buildContext(prisma, args);
 	const scope: RegenScope = args.regenScope ?? "all";
@@ -165,18 +168,29 @@ export async function generatePlan(
 	const wantValuePreviewNarrative = scope === "all";
 
 	// Deterministic sections run in parallel — no LLM, no ordering.
-	const [heroMetrics, buyerSegments, valuePreview, memoryRollups] = await Promise.all([
+	const [heroMetrics, buyerSegments, valuePreview, memoryRollups, continuity, crossCustomerPattern] = await Promise.all([
 		generateHeroMetrics(prisma, ctx),
 		generateBuyerSegments(prisma, ctx),
 		generateValuePreview(prisma, ctx),
 		generateMemoryRollups(prisma, ctx),
+		generateContinuity(prisma, ctx),
+		generateCrossCustomerPattern(prisma, ctx),
 	]);
+
+	// E1 — monthly thesis tied to narrative regen scope. The thesis is
+	// the one-line frame for the narrative body, so they share the same
+	// "should we regenerate?" decision. Regenerating just the body
+	// without the thesis would leave them arguing different stories.
+	const wantThesis = wantNarrative;
 
 	// LLM sections — only fire the ones the scope asks for. Skipped
 	// sections resolve to empty placeholder shapes; the persistence
 	// layer detects them via the `skipped` flag below and preserves
 	// the existing DB content for those columns.
-	const [narrative, valuePreviewNarrative, nextStepsResult] = await Promise.all([
+	const [thesis, narrative, valuePreviewNarrative, nextStepsResult] = await Promise.all([
+		wantThesis
+			? generateMonthlyThesis(prisma, ctx, organizationId)
+			: Promise.resolve({ text: "", callsCount: 0, costCents: 0, fallback: false }),
 		wantNarrative
 			? generateNarrativeWhatHappened(prisma, ctx, organizationId)
 			: Promise.resolve({ text: "", callsCount: 0, costCents: 0, fallback: false }),
@@ -189,10 +203,12 @@ export async function generatePlan(
 	]);
 
 	const llmCallsCount =
+		thesis.callsCount +
 		narrative.callsCount +
 		valuePreviewNarrative.callsCount +
 		nextStepsResult.cost.llmCallsCount;
 	const llmCostCents =
+		thesis.costCents +
 		narrative.costCents +
 		valuePreviewNarrative.costCents +
 		nextStepsResult.cost.llmCostCents;
@@ -210,15 +226,19 @@ export async function generatePlan(
 	return {
 		heroMetrics,
 		buyerSegments,
+		thesisOfMonth: thesis.text,
 		narrativeWhatHappened: narrative.text,
 		valuePreview,
 		valuePreviewNarrative: valuePreviewNarrative.text,
 		memoryRollups,
 		nextSteps: nextStepsResult.steps,
+		continuity,
+		crossCustomerPattern,
 		cost: { llmCallsCount, llmCostCents },
 		cycleNumber,
 		regenScope: scope,
 		skipped: {
+			thesis: !wantThesis,
 			narrative: !wantNarrative,
 			nextSteps: !wantNextSteps,
 			valuePreviewNarrative: !wantValuePreviewNarrative,
@@ -284,11 +304,16 @@ export async function generateAndPersistPlan(
 				buyerSegmentsJson: output.buyerSegments as any,
 				memoryRollupsJson: output.memoryRollups as any,
 				valuePreviewJson: output.valuePreview as any,
+				continuityJson: output.continuity as any,
+				crossCustomerPatternJson: output.crossCustomerPattern as any,
 				llmCallsCount: { increment: output.cost.llmCallsCount },
 				llmCostCents: { increment: output.cost.llmCostCents },
 			};
 			if (!output.skipped.narrative) {
 				updateData.narrativeWhatHappened = output.narrativeWhatHappened;
+			}
+			if (!output.skipped.thesis) {
+				updateData.thesisOfMonth = output.thesisOfMonth;
 			}
 			if (!output.skipped.valuePreviewNarrative) {
 				updateData.valuePreviewNarrative = output.valuePreviewNarrative;

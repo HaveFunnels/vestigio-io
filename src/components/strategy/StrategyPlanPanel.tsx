@@ -12,6 +12,9 @@ import WhatHappenedNarrative from "./sections/WhatHappenedNarrative";
 import NextSteps from "./sections/NextSteps";
 import ValuePreview from "./sections/ValuePreview";
 import MemoryRollups from "./sections/MemoryRollups";
+import MonthlyThesis from "./sections/MonthlyThesis";
+import Continuity from "./sections/Continuity";
+import CrossCustomerPattern from "./sections/CrossCustomerPattern";
 
 /*
  * StrategyPlanPanel — top-level composition of the 6 plan sections
@@ -297,7 +300,26 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				</div>
 				<PlanHeader plan={plan} />
 
+				{/* E1 — single-sentence thesis above the hero. Frames the
+				    reading angle for the rest of the plan and signs as
+				    Vestigio so the doc reads as authored analysis, not
+				    auto-generated. Hidden on legacy plans without the
+				    field. */}
+				<MonthlyThesis thesis={plan.thesisOfMonth} monthLabel={monthLabel} />
+
 				<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} />
+				{/* E3 — continuity from the prior month's plan. Sits between
+				    hero and buyer segments so the customer first sees where
+				    they are NOW (hero), then where they came from (continuity),
+				    then who owns the work (segments). Self-hides for month-1
+				    envs where no prior plan exists. */}
+				<Continuity continuity={plan.continuity} />
+				{/* E4 — peer pattern callout. Sits before buyer segments
+				    so the "your segment shows X" frame anchors the by-team
+				    decomposition that follows. Self-hides on null when the
+				    peer sample is too small for statistically honest
+				    framing. */}
+				<CrossCustomerPattern pattern={plan.crossCustomerPattern} />
 				<BuyerSegments segments={plan.buyerSegments} />
 				<WhatHappenedNarrative
 					narrative={plan.narrativeWhatHappened}

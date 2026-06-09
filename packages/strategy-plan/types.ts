@@ -143,14 +143,48 @@ export interface GenerationCost {
 	llmCostCents: number;
 }
 
+export interface ContinuityStepOutput {
+	title: string;
+	statusNow: "todo" | "in_progress" | "in_review" | "done" | "blocked";
+	resolvedLinkedCount: number;
+	totalLinkedCount: number;
+	capturedImpact: number;
+}
+
+export interface ContinuitySectionOutput {
+	previousMonthLabel: string | null;
+	previousMonth: string | null;
+	steps: ContinuityStepOutput[];
+	exposureDeltaSinceLastPlan: number;
+	capturedSinceLastPlan: number;
+}
+
+export interface CrossCustomerPatternSectionOutput {
+	pack: string;
+	packLabel: string;
+	businessModel: string;
+	peerCount: number;
+	peersWithPattern: number;
+	peersWhoFixed: number;
+	avgCapturedImpact: number | null;
+}
+
 export interface PlanGeneratorOutput {
 	heroMetrics: HeroMetricsOutput;
 	buyerSegments: BuyerSegmentOutput[];
+	/** E1 — one-sentence thesis at the top of the plan. */
+	thesisOfMonth: string;
 	narrativeWhatHappened: string;
 	valuePreview: ValuePreviewOutput;
 	valuePreviewNarrative: string;
 	memoryRollups: MemoryRollupsOutput;
 	nextSteps: NextStepOutput[];
+	/** E3 — continuity vs. prior month. Null previousMonth => first plan
+	 *  (no continuity to show); UI hides the section in that case. */
+	continuity: ContinuitySectionOutput;
+	/** E4 — peer pattern callout. Null when peer sample size below
+	 *  threshold; UI hides the section. */
+	crossCustomerPattern: CrossCustomerPatternSectionOutput | null;
 	cost: GenerationCost;
 	cycleNumber: number;
 }

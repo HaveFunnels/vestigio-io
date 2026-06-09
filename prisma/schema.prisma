@@ -548,6 +548,24 @@ model MonthlyStrategyPlan {
   // ── LLM-generated sections (markdown) ──
   narrativeWhatHappened String @db.Text
   valuePreviewNarrative String @db.Text
+  /// Wave 22.7 E1 — single-sentence monthly thesis. The "above the
+  /// hero" line that frames the entire plan's reading angle. Generated
+  /// alongside narrativeWhatHappened from the same input bundle so the
+  /// thesis and the body argue the same story.
+  /// Nullable so plans generated before E1 still render (UI hides the
+  /// thesis section when null/empty). Migration backfills with the
+  /// fallback thesis on next regen.
+  thesisOfMonth         String? @db.Text
+  /// Wave 22.7 E3 — continuity payload referencing the prior month's
+  /// plan + the current state of its steps. Shape:
+  /// { previousMonthLabel, previousMonth, steps: [...], exposureDelta,
+  ///   captured }. Null for month-1 envs (no prior plan to compare).
+  continuityJson        Json?
+  /// Wave 22.7 E4 — cross-customer peer pattern callout. Shape:
+  /// { pack, packLabel, businessModel, peerCount, peersWithPattern,
+  ///   peersWhoFixed, avgCapturedImpact }. Null when the segment hasn't
+  /// accumulated enough peers (< 5) for statistically honest framing.
+  crossCustomerPatternJson Json?
 
   // ── Generation cost telemetry ──
   llmCostCents  Int @default(0)

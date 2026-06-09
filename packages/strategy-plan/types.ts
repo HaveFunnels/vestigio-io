@@ -199,24 +199,53 @@ export interface CopyLensSectionOutput {
 	strongestFramework: { id: string; label: string; avgScorePct: number } | null;
 }
 
-// Brand Impersonators — sourced from Finding rows with inferenceKeys
-// like `lookalike_domain_competing_for_traffic`. Each row represents a
-// detected lookalike domain attached to the env.
-export interface ImpersonatorEntryOutput {
+// Brand Impersonators — sourced from Evidence rows of type
+// brand_impersonation_match (per-domain detail) and Finding rows from
+// the brand_integrity pack (peer-set-wide rollups).
+export type ImpersonatorThreatType =
+	| "typosquat"
+	| "commercial_keyword"
+	| "tld_variation"
+	| "brand_interception"
+	| "phishing_pattern";
+
+export interface ImpersonatorMatchEntryOutput {
 	domain: string;
-	threatLevel: "high" | "medium" | "low";
-	hasCommerceIntent: boolean;
+	threatType: ImpersonatorThreatType;
+	confidence: "low" | "medium" | "high";
+	confidenceScore: number;
+	isActive: boolean;
+	hasCommerceSignals: boolean;
 	hasPaymentCapture: boolean;
-	detectedAt: string;
+	hasCredentialCapture: boolean;
+	hasSensitivePath: boolean;
+	commercialInterpretation: string;
+}
+
+export interface ImpersonatorsPeerSignalOutput {
+	inferenceKey: string;
+	label: string;
+	severity: "low" | "medium" | "high";
+	summary: string;
 }
 
 export interface ImpersonatorsSectionOutput {
 	cycleId: string | null;
+	/** Total brand_impersonation_match Evidence rows the env has
+	 *  accumulated across history. Used as the eligibility check:
+	 *  zero means the brand scan has never run and the section hides. */
+	totalScannedEver: number;
+	totalMatchesThisCycle: number;
+	activeCount: number;
 	highConfidenceCount: number;
 	mediumConfidenceCount: number;
+	lowConfidenceCount: number;
 	withCommerceCount: number;
 	withPaymentCount: number;
-	topEntries: ImpersonatorEntryOutput[];
+	withCredentialCount: number;
+	findings: ImpersonatorsPeerSignalOutput[];
+	/** Top N entries (active first, then by confidenceScore desc). */
+	topEntries: ImpersonatorMatchEntryOutput[];
 }
 
 // Competitor Radar — sourced from CompetitorDomain (curated list) +

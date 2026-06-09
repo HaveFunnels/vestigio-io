@@ -134,21 +134,46 @@ export interface CompetitorSection {
 	entries: CompetitorEntry[];
 }
 
-export interface ImpersonatorEntry {
+export type ImpersonatorThreatType =
+	| "typosquat"
+	| "commercial_keyword"
+	| "tld_variation"
+	| "brand_interception"
+	| "phishing_pattern";
+
+export interface ImpersonatorMatchEntry {
 	domain: string;
-	threatLevel: "high" | "medium" | "low";
-	hasCommerceIntent: boolean;
+	threatType: ImpersonatorThreatType;
+	confidence: "low" | "medium" | "high";
+	confidenceScore: number;
+	isActive: boolean;
+	hasCommerceSignals: boolean;
 	hasPaymentCapture: boolean;
-	detectedAt: string;
+	hasCredentialCapture: boolean;
+	hasSensitivePath: boolean;
+	commercialInterpretation: string;
+}
+
+export interface ImpersonatorsPeerSignal {
+	inferenceKey: string;
+	label: string;
+	severity: "low" | "medium" | "high";
+	summary: string;
 }
 
 export interface ImpersonatorsSection {
 	cycleId: string | null;
+	totalScannedEver: number;
+	totalMatchesThisCycle: number;
+	activeCount: number;
 	highConfidenceCount: number;
 	mediumConfidenceCount: number;
+	lowConfidenceCount: number;
 	withCommerceCount: number;
 	withPaymentCount: number;
-	topEntries: ImpersonatorEntry[];
+	withCredentialCount: number;
+	findings: ImpersonatorsPeerSignal[];
+	topEntries: ImpersonatorMatchEntry[];
 }
 
 export interface MapsSection {

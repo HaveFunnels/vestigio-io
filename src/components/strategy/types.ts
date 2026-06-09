@@ -108,17 +108,29 @@ export interface CopyLensSection {
 	strongestFramework: { id: string; label: string; avgScorePct: number } | null;
 }
 
+export interface CompetitorPeerSignal {
+	severity: "low" | "medium" | "high";
+	summary: string;
+}
+
 export interface CompetitorEntry {
 	domain: string;
 	label: string | null;
-	changesDetectedThisCycle: number;
-	latestObservation: string | null;
+	discoveryMethod: string;
+	signals: Array<{
+		kind: "copy_mirror" | "serp_encroachment";
+		severity: "low" | "medium" | "high";
+		detail: string;
+	}>;
 }
 
 export interface CompetitorSection {
 	cycleId: string | null;
-	totalCompetitors: number;
-	withChangesCount: number;
+	totalMonitored: number;
+	totalActive: number;
+	withSignalsCount: number;
+	trustPostureLag: CompetitorPeerSignal | null;
+	serpOverlap: CompetitorPeerSignal | null;
 	entries: CompetitorEntry[];
 }
 

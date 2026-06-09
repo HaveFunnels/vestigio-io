@@ -219,21 +219,42 @@ export interface ImpersonatorsSectionOutput {
 	topEntries: ImpersonatorEntryOutput[];
 }
 
-// Competitor Radar — sourced from CompetitorDomain (active list) +
-// CompetitorPageSnapshot (cycle-bound observation).
+// Competitor Radar — sourced from CompetitorDomain (curated list) +
+// the engine's competitive-lens pack Findings (copy_mirror_detected,
+// trust_posture_lag, brand_serp_encroachment, serp_overlap_detected).
+export interface CompetitorPeerSignalOutput {
+	severity: "low" | "medium" | "high";
+	/** First ~280 chars of the Finding.rootCause/reasoning, used as the
+	 *  card summary. Engine writes well-formed PT-BR prose. */
+	summary: string;
+}
+
 export interface CompetitorEntryOutput {
 	domain: string;
 	label: string | null;
-	changesDetectedThisCycle: number;
-	/** Most-recent observed snapshot summary, if any. Free-text since
-	 *  the engine writes prose summaries during snapshot ingest. */
-	latestObservation: string | null;
+	/** 'manual' = pasted by owner; 'auto' = SERP-discovered (Wave 25). */
+	discoveryMethod: string;
+	signals: Array<{
+		kind: "copy_mirror" | "serp_encroachment";
+		severity: "low" | "medium" | "high";
+		detail: string;
+	}>;
 }
 
 export interface CompetitorSectionOutput {
+	/** The cycle the per-competitor signals were drawn from. Null when
+	 *  no signals exist this cycle (the section then renders the
+	 *  monitoring-only mode). */
 	cycleId: string | null;
-	totalCompetitors: number;
-	withChangesCount: number;
+	totalMonitored: number;
+	totalActive: number;
+	/** Number of entries with at least one signal this cycle. */
+	withSignalsCount: number;
+	/** Peer-set-wide signals not attached to one specific competitor. */
+	trustPostureLag: CompetitorPeerSignalOutput | null;
+	serpOverlap: CompetitorPeerSignalOutput | null;
+	/** Per-competitor entries — active competitors only, sorted by
+	 *  signal count desc then domain asc. */
 	entries: CompetitorEntryOutput[];
 }
 

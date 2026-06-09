@@ -176,7 +176,7 @@ function RollupCard({
 				<div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-edge/40 pt-2 text-[11px] text-content-muted">
 					{window.actionsResolved === 0 && window.capturedTotal === 0 ? (
 						<span className="italic">
-							Você ainda não marcou nada como resolvido — comece pelo Próximo Passo 1 deste plano.
+							Você ainda não marcou nada como resolvido. Comece pelo Próximo Passo 1 deste plano.
 						</span>
 					) : (
 						<>
@@ -229,7 +229,7 @@ function RollupCard({
 					{window.benchmarkAvailability === "available"
 						? "Benchmark vs categoria disponível"
 						: window.benchmarkAvailability === "available_in_4_months"
-							? "Benchmark vs categoria — disponível em 4 meses"
+							? "Benchmark vs categoria, disponível em 4 meses"
 							: "Benchmark indisponível"}
 				</div>
 			)}
@@ -248,7 +248,7 @@ export default function MemoryRollups({ rollups }: Props) {
 		>
 			<div className="mb-4 flex items-baseline justify-between">
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
-					Memória — meses anteriores
+					Memória dos meses anteriores
 				</h2>
 				<div className="text-[11px] text-content-faint">
 					rollups acumulados

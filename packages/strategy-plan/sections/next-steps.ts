@@ -176,16 +176,16 @@ function fallbackReasoning(action: ActionRow, order: number): string {
 		switch (action.severity) {
 			case "critical":
 				return impact
-					? `Esta é a aposta principal do mês. Vestigio estima **${impact}** saindo nesse ponto — o maior buraco aberto neste ciclo. Deixar pra próxima janela amplia o vazamento e bloqueia o ganho dos outros passos.`
-					: `Esta é a aposta principal do mês — o ponto mais crítico que detectamos. Atacar agora antes que o padrão se enraíze.`;
+					? `Esta é a aposta principal do mês. Vestigio estima **${impact}** saindo nesse ponto, o maior buraco aberto neste ciclo. Deixar pra próxima janela amplia o vazamento e bloqueia o ganho dos outros passos.`
+					: `Esta é a aposta principal do mês, o ponto mais crítico que detectamos. Atacar agora antes que o padrão se enraíze.`;
 			case "high":
 				return impact
 					? `Esta é a aposta principal do mês. **${impact}** de exposição estimada, com barreira de entrada baixa pra resolver. Atacar primeiro destrava espaço pra os movimentos de apoio.`
-					: `Esta é a aposta principal do mês. Exposição alta nesse ponto — Vestigio recomenda fechar antes do próximo ciclo de medição.`;
+					: `Esta é a aposta principal do mês. Exposição alta nesse ponto. Vestigio recomenda fechar antes do próximo ciclo de medição.`;
 			default:
 				return impact
-					? `Esta é a aposta principal do mês — não pelo tamanho do impacto isolado (**${impact}**), mas pelo desbloqueio que abre pros próximos passos.`
-					: `Esta é a aposta principal do mês — começo do plano e ponto de alavanca pra os movimentos seguintes.`;
+					? `Esta é a aposta principal do mês, não pelo tamanho do impacto isolado (**${impact}**), mas pelo desbloqueio que abre pros próximos passos.`
+					: `Esta é a aposta principal do mês, começo do plano e ponto de alavanca pra os movimentos seguintes.`;
 		}
 	}
 
@@ -202,19 +202,19 @@ function fallbackReasoning(action: ActionRow, order: number): string {
 	switch (action.severity) {
 		case "critical":
 			return impact
-				? `${phrase} Vestigio estima **${impact}** saindo nesse ponto. Severidade ainda alta — entra como movimento de apoio porque a remediação se compõe com o passo 1 (mesmo time, padrão correlacionado).`
-				: `${phrase} ponto crítico secundário — endereçar uma vez que o movimento principal estiver em andamento.`;
+				? `${phrase} Vestigio estima **${impact}** saindo nesse ponto. Severidade ainda alta, entra como movimento de apoio porque a remediação se compõe com o passo 1 (mesmo time, padrão correlacionado).`
+				: `${phrase} ponto crítico secundário, endereçar uma vez que o movimento principal estiver em andamento.`;
 		case "high":
 			return impact
 				? `${phrase} **${impact}** de exposição estimada. Não é o sangramento principal, mas a barreira de entrada pra resolver é baixa.`
-				: `${phrase} exposição alta nesse ponto — fechar antes do próximo ciclo de medição.`;
+				: `${phrase} exposição alta nesse ponto, fechar antes do próximo ciclo de medição.`;
 		case "medium":
 			return impact
-				? `${phrase} exposição em **${impact}**. Vale resolver pra reduzir ruído cumulativo no funil — sem urgência de semana, mas dentro do mês.`
+				? `${phrase} exposição em **${impact}**. Vale resolver pra reduzir ruído cumulativo no funil, sem urgência de semana, mas dentro do mês.`
 				: `${phrase} ponto secundário no funil. Endereçar pra liberar foco dos passos críticos.`;
 		default:
 			return impact
-				? `${phrase} impacto modesto (**${impact}**) — entra no plano como item de manutenção/polimento.`
+				? `${phrase} impacto modesto (**${impact}**), entra no plano como item de manutenção/polimento.`
 				: `${phrase} item de baixa urgência mantido visível para evitar acúmulo silencioso.`;
 	}
 }
@@ -353,8 +353,9 @@ Regras:
 5. Primeiro parágrafo: por que esse passo é prioritário. Lidere com o **valor financeiro** ("R$ X.XXX/mês saindo") e o contexto da causa — não com "severidade alta" abstrato.
 6. Segundo parágrafo: o que está em jogo se não fizer (impacto composto, dependência com outro passo, prazo). Termine indicando a ação concreta.
 7. ${voiceLine}
-8. PROIBIDO escrever "Resolver esse item primeiro", "no topo da fila de prioridade", "porque ele aparece no topo" ou variantes. Cada passo tem uma justificativa única — não repita boilerplate de ranqueamento.
-9. NÃO mencione "o engine", "a análise revelou", "foi capturado" ou outras passivas. Voz ativa, primeira pessoa do plural ("Vestigio observou…" / "Detectamos…") quando precisar atribuir.`;
+8. PROIBIDO escrever "Resolver esse item primeiro", "no topo da fila de prioridade", "porque ele aparece no topo" ou variantes. Cada passo tem uma justificativa única, não repita boilerplate de ranqueamento.
+9. NÃO mencione "o engine", "a análise revelou", "foi capturado" ou outras passivas. Voz ativa, primeira pessoa do plural ("Vestigio observou", "Detectamos") quando precisar atribuir.
+10. PROIBIDO travessão (—) em qualquer parte do texto. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.`;
 
 	// Resolve inference keys to friendly names so the LLM has no
 	// raw snake_case to echo. Falls back to mechanical humanize when
@@ -488,7 +489,7 @@ export async function generateNextSteps(
 		if (earlierOrder !== undefined && earlierOrder < order) {
 			const surfaceHint = action.surface ?? "esse componente";
 			finalProcedureSteps = [
-				`Mesmo procedimento do Passo ${earlierOrder} — aplicar a ${surfaceHint}.`,
+				`Mesmo procedimento do Passo ${earlierOrder}, aplicar a ${surfaceHint}.`,
 			];
 		} else {
 			procHashByCatalog.set(procHashKey, order);

@@ -197,7 +197,7 @@ export function FindingListBody({ findingIds }: FindingListProps) {
 				body={
 					findingIds.length === 0
 						? "Esse passo não carrega problemas linkados (plano gerado antes da Phase 2)."
-						: "Os problemas deste passo não aparecem no ciclo atual — provavelmente foram resolvidos ou regrediram desde então."
+						: "Os problemas deste passo não aparecem no ciclo atual, provavelmente foram resolvidos ou regrediram desde então."
 				}
 			/>
 		);
@@ -414,7 +414,7 @@ function FindingCard({ finding, currency, idx }: FindingCardProps) {
 											{finding.data_freshness === "fresh"
 												? "Evidência recente"
 												: finding.data_freshness === "stale"
-													? "Evidência mais antiga — vale re-verificar"
+													? "Evidência mais antiga, vale re-verificar"
 													: ""}
 										</div>
 										<Link

@@ -187,18 +187,18 @@ function fallbackNarrative(i: NarrativeInputs): string {
 	if (i.dominantPack && i.dominantPackShare >= 0.3) {
 		const pct = Math.round(i.dominantPackShare * 100);
 		paras.push(
-			`O padrão dominante este mês é **${i.dominantPack.replace(/_pack$/, "").replace(/_/g, " ")}** — concentra ${pct}% dos problemas abertos. Não é um conjunto aleatório de pontas; é um sintoma estrutural que reaparece em diferentes lugares do funil.`,
+			`O padrão dominante este mês é **${i.dominantPack.replace(/_pack$/, "").replace(/_/g, " ")}**, concentrando ${pct}% dos problemas abertos. Não é um conjunto aleatório de pontas; é um sintoma estrutural que reaparece em diferentes lugares do funil.`,
 		);
 	} else if (i.chronicCount > 0) {
 		paras.push(
-			`${i.chronicCount} ${i.chronicCount === 1 ? "problema reaparece" : "problemas reaparecem"} de forma recorrente — sinal de padrão estrutural, não sintoma isolado.`,
+			`${i.chronicCount} ${i.chronicCount === 1 ? "problema reaparece" : "problemas reaparecem"} de forma recorrente, sinal de padrão estrutural, não sintoma isolado.`,
 		);
 	}
 
 	// Para 3 — o que está em jogo
 	if (i.exposureTotal > 0) {
 		paras.push(
-			`A exposição agregada está em **R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês** distribuída entre ${i.exposureFindingCount} ${i.exposureFindingCount === 1 ? "ponto" : "pontos"}. Vale ler esse número como "receita teoricamente em risco se nada mudar" — não é uma promessa de captura imediata, é o teto pra disputar.`,
+			`A exposição agregada está em **R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês** distribuída entre ${i.exposureFindingCount} ${i.exposureFindingCount === 1 ? "ponto" : "pontos"}. Vale ler esse número como "receita teoricamente em risco se nada mudar", não como promessa de captura imediata. É o teto pra disputar.`,
 		);
 	}
 
@@ -213,7 +213,7 @@ function fallbackNarrative(i: NarrativeInputs): string {
 		);
 	} else {
 		paras.push(
-			`Comece pelos **Próximos Passos** logo abaixo — eles estão ranqueados por impacto financeiro calibrado, e o Passo 1 é o maior alavancador do mês.`,
+			`Comece pelos **Próximos Passos** logo abaixo. Eles estão ranqueados por impacto financeiro calibrado, e o Passo 1 é o maior alavancador do mês.`,
 		);
 	}
 
@@ -244,7 +244,8 @@ Regras estritas:
 4. Total entre 180 e 240 palavras. Cada parágrafo entre 35 e 70 palavras. Mais curto é melhor que enchimento.
 5. PROIBIDO mencionar "o engine", "a análise revelou", "foi capturado pelo sistema", "Junho trouxe" (passivas e sujeitos abstratos). PROIBIDO citar identificadores técnicos (snake_case, "compound_*", "priorityScore", "decisionKey"). PROIBIDO clichês de relatório ("é importante notar", "vale destacar", "é fundamental", "vale ler como").
 6. PROIBIDO "Vestigio aposta", "Vestigio acredita", "Vestigio estima" — Vestigio AFIRMA com base em dado, não aposta. Verbos analíticos válidos como sujeito Vestigio: detectou, encontrou, mapeou, observou, identificou, rastreou, validou.
-7. PROIBIDO nomes de padrão abstratos sem instância concreta atrelada na mesma frase ("desalinhamento de copy", "checkout fragmentado", "mensagens desconectadas"). Se citar um padrão, prove-o com R$ específico OU surface específica OU comportamento observável na frase seguinte. Padrão sem âncora concreta = ruído.`;
+7. PROIBIDO nomes de padrão abstratos sem instância concreta atrelada na mesma frase ("desalinhamento de copy", "checkout fragmentado", "mensagens desconectadas"). Se citar um padrão, prove-o com R$ específico OU surface específica OU comportamento observável na frase seguinte. Padrão sem âncora concreta = ruído.
+8. PROIBIDO travessão (—) em qualquer parágrafo. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.`;
 
 	const data: string[] = [];
 	data.push(`Dados do mês ${i.monthLabelPt} para ${i.envDomain}:`);

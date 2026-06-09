@@ -94,10 +94,10 @@ function fallback(i: PreviewInputs): string {
 					: `em ${i.nextMilestoneMonths} meses`;
 		const unlock =
 			i.nextMilestoneLabel === "M3"
-				? "Vestigio começa a correlacionar findings com receita real (via Stripe + behavioral) — análise sai do plano e vira atribuição direta"
+				? "Vestigio começa a correlacionar findings com receita real (via Stripe e behavioral). Análise sai do plano e vira atribuição direta"
 				: i.nextMilestoneLabel === "M6"
 					? "comparativo vs. categoria liga: você vê onde está acima e abaixo dos seus pares"
-					: "histórico suficiente pro Vestigio prever regressões antes delas afetarem receita — manutenção vira preventiva, não reativa";
+					: "histórico suficiente pro Vestigio prever regressões antes delas afetarem receita. Manutenção vira preventiva, não reativa";
 		return `Você está há **${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}** com Vestigio. Próximo marco: **${i.nextMilestoneLabel}** ${monthsTxt} — a partir daí, ${unlock}.`;
 	}
 	return `Você completou **${i.cycleCount} ciclos** com Vestigio. Histórico suficiente pra prever regressões antes delas afetarem receita.`;
@@ -109,9 +109,10 @@ function buildPrompt(i: PreviewInputs): { system: string; user: string } {
 Regras:
 1. Apenas 1-2 frases, português brasileiro. Voz ativa. Pode usar "Vestigio" como sujeito.
 2. Use **negrito** para destacar o tempo, o número do marco, e o desbloqueio concreto.
-3. Não invente métricas — use apenas os dados fornecidos.
+3. Não invente métricas, use apenas os dados fornecidos.
 4. Tom natural, conversacional, sem hype.
-5. PROIBIDO usar "o engine", "a análise revelou", "destrava" (use "entrega", "abre", "começa a"). PROIBIDO promessa vaga ("análises mais específicas"); nomeie um desbloqueio concreto.`;
+5. PROIBIDO usar "o engine", "a análise revelou", "destrava" (use "entrega", "abre", "começa a"). PROIBIDO promessa vaga ("análises mais específicas"); nomeie um desbloqueio concreto.
+6. PROIBIDO travessão (—) em qualquer parte do texto. Use ponto, vírgula, dois pontos, ou parênteses.`;
 
 	const lines: string[] = [];
 	lines.push(`Dados do ambiente ${i.envDomain}:`);

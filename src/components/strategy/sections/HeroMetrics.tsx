@@ -257,7 +257,7 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 						delta={0}
 						formatFn={makeCurrencyFormatter(hero.exposureMid ?? 0, currency)}
 						methodologyDescription={withReceipt(
-							"Exposição estimada — soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número converge pra 'Capturado/mês' à medida que ações são marcadas como done + verificadas no ciclo seguinte.",
+							"Exposição estimada: soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número converge pra 'Capturado/mês' à medida que ações são marcadas como done e verificadas no ciclo seguinte.",
 							hero.exposureMin,
 							hero.exposureMax,
 							hero.exposureFindingCount,
@@ -273,7 +273,7 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 						spark={hero.capturedSpark}
 						formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
 						methodologyDescription={withReceipt(
-							"Soma dos midpoints de receita mensal recuperada por ações marcadas como done + verificadas no ciclo seguinte. Distintos de 'marcado como done' — só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais.",
+							"Soma dos midpoints de receita mensal recuperada por ações marcadas como done e verificadas no ciclo seguinte. Distintos de 'marcado como done': só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais.",
 							hero.capturedMin,
 							hero.capturedMax,
 							hero.capturedFindingCount,

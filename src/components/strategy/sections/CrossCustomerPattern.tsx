@@ -89,12 +89,12 @@ export default function CrossCustomerPattern({ pattern }: Props) {
 						</>
 					) : (
 						<>
-							{" "}Nenhuma resolveu nos últimos 90 dias — você tem janela pra ser o primeiro a fechar.
+							{" "}Nenhuma resolveu nos últimos 90 dias. Você tem janela pra ser o primeiro a fechar.
 						</>
 					)}
 				</p>
 				<div className="mt-4 text-[11px] text-content-faint">
-					Padrões cruzados saem dos seus dados + da carteira anonimizada — sinal que nenhuma ferramenta SEO genérica entrega.
+					Padrões cruzados saem dos seus dados e da carteira anonimizada. Sinal que nenhuma ferramenta SEO genérica entrega.
 				</div>
 			</div>
 		</motion.section>

@@ -48,6 +48,12 @@ export interface HeroMetric {
 	capturedMin?: number;
 	capturedMax?: number;
 	capturedFindingCount?: number;
+	// T1 — exposure receipts. UI flips the captured tile into exposure
+	// mode ("R$ X em risco") when capturedMid === 0 and exposureMid > 0.
+	exposureMid?: number;
+	exposureMin?: number;
+	exposureMax?: number;
+	exposureFindingCount?: number;
 }
 
 export interface BuyerSegment {

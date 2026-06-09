@@ -167,30 +167,48 @@ function RollupCard({
 						{(window.findingsDetected ?? 0) === 1 ? "vazamento" : "vazamentos"}
 					</span>
 				</div>
+				{/* T2 — secondary line. When the customer has resolved
+				    nothing yet (common on month 1), the "0 já resolvidos
+				    · 0 recuperados" pair reads as a flat zero card and
+				    quietly nudges churn. Swap to a CTA-style prompt so
+				    the empty state asks for an action instead of
+				    announcing emptiness. */}
 				<div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-t border-edge/40 pt-2 text-[11px] text-content-muted">
-					<span>
-						<span className="font-mono tabular-nums text-content">{window.actionsResolved}</span>
-						{" "}já resolvidos
-					</span>
-					{window.capturedTotal > 0 && (
+					{window.actionsResolved === 0 && window.capturedTotal === 0 ? (
+						<span className="italic">
+							Você ainda não marcou nada como resolvido — comece pelo Próximo Passo 1 deste plano.
+						</span>
+					) : (
 						<>
-							<span className="text-content-faint">·</span>
 							<span>
-								<span className="font-mono tabular-nums text-content">
-									{fmtCurrencyUnits(window.capturedTotal, currency)}
-								</span>
-								{" "}recuperados
+								<span className="font-mono tabular-nums text-content">{window.actionsResolved}</span>
+								{" "}já resolvidos
 							</span>
+							{window.capturedTotal > 0 && (
+								<>
+									<span className="text-content-faint">·</span>
+									<span>
+										<span className="font-mono tabular-nums text-content">
+											{fmtCurrencyUnits(window.capturedTotal, currency)}
+										</span>
+										{" "}recuperados
+									</span>
+								</>
+							)}
 						</>
 					)}
 				</div>
 			</div>
 
-			{window.monthlyValues.length > 1 && (
-				<div className="mt-auto pb-1">
-					<MiniBarChart values={window.monthlyValues} />
-				</div>
-			)}
+			{/* T2 — bar chart suppressed when every bucket is 0. 12 bars
+			    of zeros painted in a row gave the card a falsely-empty
+			    look; better to render nothing than a flat zero series. */}
+			{window.monthlyValues.length > 1 &&
+				window.monthlyValues.some((v) => v.value > 0) && (
+					<div className="mt-auto pb-1">
+						<MiniBarChart values={window.monthlyValues} />
+					</div>
+				)}
 
 			{window.biggestWin && (
 				<div className="mt-4 border-t border-edge/60 pt-3">

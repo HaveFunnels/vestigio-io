@@ -80,6 +80,11 @@ async function gatherInputs(
 }
 
 function fallback(i: PreviewInputs): string {
+	// T9 — fallback rewritten to name a CONCRETE unlock per milestone
+	// instead of the vague "destrava análises mais específicas" hedge.
+	// Vocabulary scrubbed: "o engine" (-> Vestigio), "destravar"
+	// (-> entregar/abrir), so the customer hears a product person
+	// talking, not a developer.
 	if (i.nextMilestoneLabel && i.nextMilestoneMonths !== null) {
 		const monthsTxt =
 			i.nextMilestoneMonths <= 0
@@ -87,32 +92,47 @@ function fallback(i: PreviewInputs): string {
 				: i.nextMilestoneMonths === 1
 					? "em 1 mês"
 					: `em ${i.nextMilestoneMonths} meses`;
-		return `Você tá há **${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}** no Vestigio. O próximo marco é **${i.nextMilestoneLabel}** ${monthsTxt} — a partir daí o engine começa a destravar análises mais específicas pro seu ambiente.`;
+		const unlock =
+			i.nextMilestoneLabel === "M3"
+				? "Vestigio começa a correlacionar findings com receita real (via Stripe + behavioral) — análise sai do plano e vira atribuição direta"
+				: i.nextMilestoneLabel === "M6"
+					? "comparativo vs. categoria liga: você vê onde está acima e abaixo dos seus pares"
+					: "histórico suficiente pro Vestigio prever regressões antes delas afetarem receita — manutenção vira preventiva, não reativa";
+		return `Você está há **${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}** com Vestigio. Próximo marco: **${i.nextMilestoneLabel}** ${monthsTxt} — a partir daí, ${unlock}.`;
 	}
-	return `Você completou **${i.cycleCount} ciclos** com o Vestigio e já tá rodando com histórico suficiente pro recommender prever regressões antes de elas surgirem.`;
+	return `Você completou **${i.cycleCount} ciclos** com Vestigio. Histórico suficiente pra prever regressões antes delas afetarem receita.`;
 }
 
 function buildPrompt(i: PreviewInputs): { system: string; user: string } {
 	const system = `Você escreve um parágrafo curto (máximo 2 frases, ~50 palavras) para a seção "O que você ganha continuando" de um Plano de Estratégia.
 
 Regras:
-1. Apenas 1-2 frases, português brasileiro.
-2. Use **negrito** para destacar o tempo restante ou o número do mês.
+1. Apenas 1-2 frases, português brasileiro. Voz ativa. Pode usar "Vestigio" como sujeito.
+2. Use **negrito** para destacar o tempo, o número do marco, e o desbloqueio concreto.
 3. Não invente métricas — use apenas os dados fornecidos.
-4. Tom natural, conversacional, sem hype.`;
+4. Tom natural, conversacional, sem hype.
+5. PROIBIDO usar "o engine", "a análise revelou", "destrava" (use "entrega", "abre", "começa a"). PROIBIDO promessa vaga ("análises mais específicas"); nomeie um desbloqueio concreto.`;
 
 	const lines: string[] = [];
 	lines.push(`Dados do ambiente ${i.envDomain}:`);
-	lines.push(`- Tempo no Vestigio: ${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}`);
+	lines.push(`- Tempo com Vestigio: ${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}`);
 	lines.push(`- Ciclos completos: ${i.cycleCount}`);
 	lines.push(`- Stripe/Meta/behavioral conectado: ${i.hasCrossSourceSignal ? "sim" : "não"}`);
 	if (i.nextMilestoneLabel) {
 		lines.push(
 			`- Próximo marco: ${i.nextMilestoneLabel} em ${i.nextMilestoneMonths ?? 0} meses`,
 		);
+		lines.push(`- Desbloqueio concreto a citar:`);
+		if (i.nextMilestoneLabel === "M3") {
+			lines.push(`  · Atribuição de receita real via Stripe + behavioral (sai de "estimativa de plano" pra "captura medida")`);
+		} else if (i.nextMilestoneLabel === "M6") {
+			lines.push(`  · Comparativo vs. categoria — buyer vê onde está acima/abaixo dos pares`);
+		} else {
+			lines.push(`  · Predição de regressões antes de afetarem receita — manutenção preventiva, não reativa`);
+		}
 	}
 	lines.push("");
-	lines.push("Escreva o parágrafo.");
+	lines.push("Escreva o parágrafo agora.");
 	return { system, user: lines.join("\n") };
 }
 

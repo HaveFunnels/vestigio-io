@@ -208,6 +208,15 @@ function withReceipt(
 
 export default function HeroMetrics({ hero, monthLabel }: Props) {
 	const { currency } = useMcpData();
+	// T1 — captured tile flips into EXPOSURE mode when nothing has been
+	// captured yet but loss findings exist. Without this, month-1 envs
+	// see "R$ 0 capturado" and nothing else — the customer can't tell
+	// what Vestigio is for. In exposure mode the label changes, the
+	// number becomes "money at stake right now", and the spark is hidden
+	// (zeros visualised aren't a useful series).
+	const exposureMode =
+		(hero.capturedMid ?? 0) === 0 &&
+		(hero.exposureMid ?? 0) > 0;
 	return (
 		<motion.section
 			initial={{ opacity: 0, y: 16 }}
@@ -241,21 +250,38 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					)}
 					methodologyDrillHref="/app/findings?polarity=positive"
 				/>
-				<Tile
-					label="Capturado / mês"
-					rawNumber={hero.capturedMid}
-					delta={hero.capturedDeltaMoM}
-					spark={hero.capturedSpark}
-					formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
-					methodologyDescription={withReceipt(
-						"Soma dos midpoints de receita mensal recuperada por ações marcadas como done + verificadas no ciclo seguinte. Distintos de 'marcado como done' — só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais.",
-						hero.capturedMin,
-						hero.capturedMax,
-						hero.capturedFindingCount,
-						currency,
-					)}
-					methodologyDrillHref="/app/actions?status=done"
-				/>
+				{exposureMode ? (
+					<Tile
+						label="Em risco / mês"
+						rawNumber={hero.exposureMid ?? 0}
+						delta={0}
+						formatFn={makeCurrencyFormatter(hero.exposureMid ?? 0, currency)}
+						methodologyDescription={withReceipt(
+							"Exposição estimada — soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número converge pra 'Capturado/mês' à medida que ações são marcadas como done + verificadas no ciclo seguinte.",
+							hero.exposureMin,
+							hero.exposureMax,
+							hero.exposureFindingCount,
+							currency,
+						)}
+						methodologyDrillHref="/app/findings?polarity=negative"
+					/>
+				) : (
+					<Tile
+						label="Capturado / mês"
+						rawNumber={hero.capturedMid}
+						delta={hero.capturedDeltaMoM}
+						spark={hero.capturedSpark}
+						formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
+						methodologyDescription={withReceipt(
+							"Soma dos midpoints de receita mensal recuperada por ações marcadas como done + verificadas no ciclo seguinte. Distintos de 'marcado como done' — só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais.",
+							hero.capturedMin,
+							hero.capturedMax,
+							hero.capturedFindingCount,
+							currency,
+						)}
+						methodologyDrillHref="/app/actions?status=done"
+					/>
+				)}
 				{/* Was "Críticos abertos" — in practice the engine rarely
 				    emits severity=critical for envs without serious
 				    chargeback / security findings, so the tile read

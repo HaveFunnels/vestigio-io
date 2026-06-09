@@ -36,6 +36,17 @@ interface MonthlyAgg {
 	capturedMin: number;
 	capturedMax: number;
 	capturedCount: number;
+	// T1 — exposure: monetary mass of OPEN loss findings. Surfaces
+	// "what's at stake right now" on month 1 envs where retained +
+	// captured are both 0 (engine has discovered loss findings but the
+	// customer hasn't acted on anything yet, so nothing is "kept" or
+	// "captured" — but plenty is bleeding). The hero card UI falls
+	// back to this number when captured == 0 so the customer never
+	// sees a row of zeros.
+	exposure: number;
+	exposureMin: number;
+	exposureMax: number;
+	exposureCount: number;
 }
 
 async function aggregateMonth(
@@ -50,7 +61,7 @@ async function aggregateMonth(
 	// Captured: sum of impactMidpoint of findings resolved in window.
 	// Critical count: active findings with severity=critical.
 	// In-progress: open Action rows in the window (NOT findings).
-	const [retained, captured, criticals, inProgress] = await Promise.all([
+	const [retained, captured, criticals, inProgress, exposure] = await Promise.all([
 		prisma.finding.aggregate({
 			where: {
 				environmentId,
@@ -70,10 +81,18 @@ async function aggregateMonth(
 			_sum: { impactMidpoint: true, impactMin: true, impactMax: true },
 			_count: { _all: true },
 		}),
+		// T3 — count "criticals" by calibrated impact threshold rather than
+		// by engine-assigned severity. The engine assigns severity from
+		// inference heuristics that often disagree with the financial
+		// impact model; on havefunnels every step rendered as HIGH or
+		// MEDIUM even though several had R$ 5k+/mês exposure. Using the
+		// impact threshold keeps this aligned with calibrateSeverity in
+		// next-steps.ts.
 		prisma.finding.count({
 			where: {
 				environmentId,
-				severity: "critical",
+				impactMidpoint: { gte: 5000 },
+				polarity: { in: ["negative", "neutral"] },
 				status: { in: ["created", "confirmed"] },
 				statusChangedAt: { lt: end },
 			},
@@ -89,6 +108,19 @@ async function aggregateMonth(
 				},
 			})
 			.catch(() => 0),
+		// T1 — exposure: open loss findings' total monetary mass. The hero
+		// shows this when captured == 0 so the customer always sees a
+		// concrete number on the dollars-tile, not "R$ 0".
+		prisma.finding.aggregate({
+			where: {
+				environmentId,
+				polarity: { in: ["negative", "neutral"] },
+				status: { in: ["created", "confirmed"] },
+				statusChangedAt: { lt: end },
+			},
+			_sum: { impactMidpoint: true, impactMin: true, impactMax: true },
+			_count: { _all: true },
+		}),
 	]);
 
 	return {
@@ -102,6 +134,10 @@ async function aggregateMonth(
 		capturedMin: captured._sum.impactMin ?? 0,
 		capturedMax: captured._sum.impactMax ?? 0,
 		capturedCount: captured._count?._all ?? 0,
+		exposure: exposure._sum.impactMidpoint ?? 0,
+		exposureMin: exposure._sum.impactMin ?? 0,
+		exposureMax: exposure._sum.impactMax ?? 0,
+		exposureCount: exposure._count?._all ?? 0,
 	};
 }
 
@@ -156,5 +192,9 @@ export async function generateHeroMetrics(
 		capturedMin: Math.round(current.capturedMin),
 		capturedMax: Math.round(current.capturedMax),
 		capturedFindingCount: current.capturedCount,
+		exposureMid: Math.round(current.exposure),
+		exposureMin: Math.round(current.exposureMin),
+		exposureMax: Math.round(current.exposureMax),
+		exposureFindingCount: current.exposureCount,
 	};
 }

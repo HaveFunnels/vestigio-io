@@ -40,6 +40,39 @@ interface ActionRow {
 	inferenceKeys: string[];
 }
 
+// T3 — Calibrate severity from financial impact so the UI never shows
+// "LOW · R$ 8.750/mês" or "CRITICAL · R$ 1.200/mês". Engine assigns
+// severity from inference heuristics that pre-date the impact model;
+// for the customer-facing plan we override based on the actual
+// monetary exposure. Buckets sized for SaaS B2B (havefunnels-class
+// orgs); revisit when ecom / mobile envs come online.
+function calibrateSeverity(impactMidpoint: number | null): string {
+	if (impactMidpoint === null) return "medium";
+	if (impactMidpoint >= 5000) return "critical";
+	if (impactMidpoint >= 2000) return "high";
+	if (impactMidpoint >= 500) return "medium";
+	return "low";
+}
+
+// T5 — Strip protocol + host from the surface string so we never
+// render "em https://havefunnels.com" inside a step title. Engine
+// occasionally emits surfaces as full URLs (older inference shapes);
+// the plan UI expects path-only ("/" or "/checkout") so the locative
+// dictionary in SURFACE_HUMAN_PT_BR can resolve it cleanly.
+function normalizeSurface(surface: string | null): string | null {
+	if (!surface) return surface;
+	try {
+		if (/^https?:\/\//i.test(surface)) {
+			const u = new URL(surface);
+			return u.pathname || "/";
+		}
+	} catch {
+		// Malformed URL — fall through and keep the original string;
+		// downstream humanize will at worst emit "em <surface>".
+	}
+	return surface;
+}
+
 function effortFromHours(h: number | null): string {
 	if (h === null) return "esforço não calibrado";
 	if (h <= 0.5) return "<30min";
@@ -132,11 +165,31 @@ function titleFromAction(
 }
 
 function fallbackReasoning(action: ActionRow): string {
-	const sev = action.severity.toUpperCase();
+	// T6 — varied fallback by severity tier so 5 fallbacks in a row don't
+	// read as the same sentence. We never want this fallback to ship in
+	// prod (LLM is the path), but when it does fire (cost-cap, API down)
+	// the reader still gets calibrated context instead of boilerplate.
 	const impact = action.impactMidpoint
-		? `R$ ${Math.round(action.impactMidpoint).toLocaleString("pt-BR")}/mo`
-		: "impact não calibrado";
-	return `Severidade **${sev}** com impacto estimado em **${impact}**. Resolver esse item primeiro porque ele aparece no topo da fila de prioridade do engine (\`priorityScore=${action.priorityScore}\`).`;
+		? `R$ ${Math.round(action.impactMidpoint).toLocaleString("pt-BR")}/mês`
+		: null;
+	switch (action.severity) {
+		case "critical":
+			return impact
+				? `Vestigio estima **${impact}** saindo nesse ponto. É o maior buraco aberto da carteira atual — deixar pra próxima janela amplia o vazamento.`
+				: `Vestigio classificou esse ponto como crítico. Atacar agora antes que o padrão se enraíze.`;
+		case "high":
+			return impact
+				? `**${impact}** de exposição estimada. Não é o sangramento principal, mas é o que vem logo atrás — e a barreira de entrada pra resolver é baixa.`
+				: `Exposição alta nesse ponto. Vestigio recomenda fechar antes do próximo ciclo de medição.`;
+		case "medium":
+			return impact
+				? `Exposição estimada em **${impact}**. Vale resolver pra reduzir ruído cumulativo no funil — sem urgência de semana, mas dentro do mês.`
+				: `Ponto secundário no funil. Endereçar pra liberar foco dos passos críticos.`;
+		default:
+			return impact
+				? `Impacto modesto (**${impact}**) — entra no plano como item de manutenção/polimento.`
+				: `Item de baixa urgência mantido visível para evitar acúmulo silencioso.`;
+	}
 }
 
 async function pickTopActions(
@@ -199,7 +252,16 @@ async function pickTopActions(
 			// Projection blob missing or malformed — that's OK, the step
 			// still ships with decisionKey-derived metadata.
 		}
-		out.push({ ...r, inferenceKeys });
+		// T3 + T5 — calibrate severity from impact; normalize surface to
+		// a path so titles never leak full URLs. Both happen at row hydration
+		// so every downstream (LLM prompt, fallback reasoning, title
+		// derivation, persisted plan) sees the corrected values.
+		out.push({
+			...r,
+			severity: calibrateSeverity(r.impactMidpoint),
+			surface: normalizeSurface(r.surface),
+			inferenceKeys,
+		});
 	}
 
 	// Tripwire — assert the rows we're about to return have distinct
@@ -242,11 +304,13 @@ function buildPrompt(
 Regras:
 1. Escreva 2 parágrafos curtos em português brasileiro, ~80-100 palavras no total.
 2. Use **negrito** para destacar números, severidades e nomes de componentes. Use \`código inline\` APENAS para nomes técnicos reais (caminhos de arquivo, props, classes CSS).
-3. NUNCA reproduza identificadores em snake_case, slugs internos, ou termos como "weak_cta", "trust_boundary_crossed", "compound_*" — esses são códigos do engine, não devem aparecer no texto. Use sempre os nomes humanos fornecidos.
+3. NUNCA reproduza identificadores em snake_case, slugs internos, termos como "weak_cta", "trust_boundary_crossed", "compound_*", "priorityScore", "decisionKey" ou qualquer outro código do engine. Use sempre os nomes humanos fornecidos.
 4. NÃO use listas, NÃO use cabeçalhos.
-5. Primeiro parágrafo: por que esse passo é prioritário (severidade + impacto + contexto da causa).
-6. Segundo parágrafo: urgência calibrada (custo de NÃO fazer + dependências com outros passos se aplicável).
-7. Tom factual, sem hype. Se faltar dado pra justificar urgência alta, dê uma justificativa mais modesta.`;
+5. Primeiro parágrafo: por que esse passo é prioritário. Lidere com o **valor financeiro** ("R$ X.XXX/mês saindo") e o contexto da causa — não com "severidade alta" abstrato.
+6. Segundo parágrafo: o que está em jogo se não fizer (impacto composto, dependência com outro passo, prazo). Termine indicando a ação concreta.
+7. Tom factual, sem hype. Se faltar dado pra justificar urgência alta, dê uma justificativa mais modesta.
+8. PROIBIDO escrever "Resolver esse item primeiro", "no topo da fila de prioridade", "porque ele aparece no topo" ou variantes. Cada passo tem uma justificativa única — não repita boilerplate de ranqueamento.
+9. NÃO mencione "o engine", "a análise revelou", "foi capturado" ou outras passivas. Voz ativa, primeira pessoa do plural ("Vestigio observou…" / "Detectamos…") quando precisar atribuir.`;
 
 	// Resolve inference keys to friendly names so the LLM has no
 	// raw snake_case to echo. Falls back to mechanical humanize when
@@ -304,8 +368,25 @@ export async function generateNextSteps(
 	let totalCallsCount = 0;
 	let totalCostCents = 0;
 
-	const steps = await Promise.all(
-		actions.map(async (action, idx): Promise<NextStepOutput> => {
+	// T4 — dedupe procedureSteps across consecutive steps when they share
+	// the same catalog entry. Without this, two compound chains starting
+	// with the same primaryKey emit identical 3-bullet procedures back-
+	// to-back, which reads as machine spam. We track the running hash of
+	// each step's procedure and replace duplicates with a single pointer
+	// line ("Mesmo procedimento do Passo N — aplicar ao componente em X").
+	//
+	// T5 — same idea for locative suffix ("na página inicial"): if step N
+	// would render the same locative as step N-1, the title-derived
+	// locative is dropped so the reader doesn't see the same trailing
+	// phrase three times in a row. We do this in a second pass after
+	// titles are computed.
+	const procHashByCatalog = new Map<string, number>(); // catalogKey -> first step.order using it
+	const stepLocatives: string[] = [];
+
+	// Fire LLM calls in parallel (they don't depend on each other), then
+	// stitch in the order-dependent dedupe pass.
+	const llmResults = await Promise.all(
+		actions.map(async (action, idx) => {
 			const order = idx + 1;
 			const primaryKey = action.inferenceKeys[0] ?? action.decisionKey;
 			const catalog =
@@ -324,35 +405,71 @@ export async function generateNextSteps(
 				fallbackText: fallbackReasoning(action),
 			});
 
-			totalCallsCount += reasoning.callsCount;
-			totalCostCents += reasoning.costCents;
-
-			const linkedFindingRefs = action.inferenceKeys.filter(
-				(k): k is string => typeof k === "string" && k.length > 0,
-			);
-
-			return {
-				order,
-				title: titleFromAction(action, ctx.translations, ctx.locale),
-				reasoning: reasoning.text,
-				procedureSteps: catalog?.remediation_steps ?? [
-					"Reproduzir o problema localmente",
-					"Identificar o componente/arquivo afetado",
-					"Implementar fix + adicionar teste de regressão",
-				],
-				researchRefs: [],
-				estimatedEffort: effortFromHours(catalog?.estimated_effort_hours ?? null),
-				suggestedOwner: ownerFromCategory(action.category),
-				linkedActionRefs: [action.id],
-				linkedFindingRefs,
-				combinedImpact: {
-					min: Math.round(action.impactMin ?? 0),
-					max: Math.round(action.impactMax ?? 0),
-					midpoint: Math.round(action.impactMidpoint ?? 0),
-				},
-			};
+			return { action, order, primaryKey, catalog, reasoning };
 		}),
 	);
+
+	const steps: NextStepOutput[] = llmResults.map((r): NextStepOutput => {
+		const { action, order, primaryKey, catalog, reasoning } = r;
+		totalCallsCount += reasoning.callsCount;
+		totalCostCents += reasoning.costCents;
+
+		const linkedFindingRefs = action.inferenceKeys.filter(
+			(k): k is string => typeof k === "string" && k.length > 0,
+		);
+
+		// T5 — capture and dedupe locative
+		const fullTitle = titleFromAction(action, ctx.translations, ctx.locale);
+		const locative = humanizeSurface(action.surface, ctx.locale).trim();
+		stepLocatives.push(locative);
+		// If the previous step had the same trailing locative, strip it
+		// from this step's title so the reader doesn't see the same
+		// "na página inicial" three lines in a row.
+		const title =
+			locative && stepLocatives[order - 2] === locative && fullTitle.endsWith(locative)
+				? fullTitle.slice(0, fullTitle.length - locative.length).trimEnd()
+				: fullTitle;
+
+		// T4 — dedupe procedureSteps when catalog key already used by a
+		// previous step. catalog?.remediation_steps is the only stable
+		// identifier for "same procedure" since the catalog is keyed by
+		// primaryKey but two different primaryKeys can resolve to the same
+		// remediation_steps array (same canonical fix template).
+		const procSteps = catalog?.remediation_steps ?? [
+			"Reproduzir o problema localmente",
+			"Identificar o componente/arquivo afetado",
+			"Implementar fix + adicionar teste de regressão",
+		];
+		const procHashKey = procSteps.join("\n");
+		const earlierOrder = procHashByCatalog.get(procHashKey);
+		let finalProcedureSteps: string[];
+		if (earlierOrder !== undefined && earlierOrder < order) {
+			const surfaceHint = action.surface ?? "esse componente";
+			finalProcedureSteps = [
+				`Mesmo procedimento do Passo ${earlierOrder} — aplicar a ${surfaceHint}.`,
+			];
+		} else {
+			procHashByCatalog.set(procHashKey, order);
+			finalProcedureSteps = procSteps;
+		}
+
+		return {
+			order,
+			title,
+			reasoning: reasoning.text,
+			procedureSteps: finalProcedureSteps,
+			researchRefs: [],
+			estimatedEffort: effortFromHours(catalog?.estimated_effort_hours ?? null),
+			suggestedOwner: ownerFromCategory(action.category),
+			linkedActionRefs: [action.id],
+			linkedFindingRefs,
+			combinedImpact: {
+				min: Math.round(action.impactMin ?? 0),
+				max: Math.round(action.impactMax ?? 0),
+				midpoint: Math.round(action.impactMidpoint ?? 0),
+			},
+		};
+	});
 
 	return {
 		steps,

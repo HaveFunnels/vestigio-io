@@ -52,6 +52,14 @@ export interface HeroMetricsOutput {
 	capturedMin: number;
 	capturedMax: number;
 	capturedFindingCount: number;
+	// T1 — exposure tile: monetary mass of currently OPEN loss findings.
+	// UI uses this as the captured-tile fallback on month-1 envs where
+	// captured == 0. Without it the hero opens with a row of zeros and
+	// the customer can't tell why they're paying.
+	exposureMid: number;
+	exposureMin: number;
+	exposureMax: number;
+	exposureFindingCount: number;
 }
 
 export interface BuyerSegmentOutput {

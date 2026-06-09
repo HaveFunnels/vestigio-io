@@ -55,6 +55,20 @@ interface BrandTokens {
 	locale: string;
 }
 
+// Strip business-model meta-prefixes from the classified industry
+// string before using it as a SERP query. The Wave 19c industry
+// classifier (apps/audit-runner/populate-domain-fingerprint.ts) often
+// returns labels like "B2B SaaS - customer engagement platform" — the
+// "B2B SaaS -" prefix is taxonomy metadata that doesn't help Tavily
+// (it returns generic B2B/SaaS content rather than the actual category
+// peers). Trimming to "customer engagement platform" yields much
+// tighter SERP results that match the real vertical leaders.
+function sanitizeIndustryForSerp(ind: string): string {
+	return ind
+		.replace(/^(b2b\s+saas|b2c\s+saas|saas|paas|iaas|b2b|b2c)\s*[-:]\s*/i, "")
+		.trim();
+}
+
 function extractBrandTokens(rootDomain: string, businessModel: string | null, industry?: string | null): BrandTokens {
 	// Brand name = first label of the domain, separator-split if
 	// hyphenated. Examples:
@@ -78,7 +92,7 @@ function extractBrandTokens(rootDomain: string, businessModel: string | null, in
 	// industry (cycle 1 for any new env post-G1 fix), every subsequent
 	// cycle queries the precise vertical instead.
 	const cats: string[] = [];
-	const ind = (industry || "").trim().toLowerCase();
+	const ind = sanitizeIndustryForSerp((industry || "").trim().toLowerCase());
 	if (ind.length > 3) {
 		cats.push(ind);
 	} else {
@@ -137,13 +151,25 @@ async function loadKnownContext(envId: string): Promise<{
 	}
 }
 
-// Cap on auto-activation when bootstrapping an env that has zero
-// curated competitors. Picks N candidates to come up `active=true`
-// so downstream peer-mode passes (competitor-fetch, surface-inventory
-// peer comparison, customer-voice delta) fire immediately instead of
-// waiting for a customer that may never visit the CompetitorRadar UI.
-// The customer can deactivate any later via the same UI.
-const AUTO_ACTIVATE_TOP_N_WHEN_EMPTY = 5;
+// Auto-activation budget for discovered candidates.
+//
+// Bootstrap (active count = 0): activate top N new so peer-mode passes
+// have something to work with on the very first cycle.
+//
+// Top-up (active count between 1 and target): each subsequent cycle
+// activates up to N more new discoveries until the env reaches target.
+// This way better candidates discovered in later cycles (e.g. once
+// industry classification improves the SERP query) get into the active
+// set without manual intervention — replacing the prior "only bootstrap
+// once when empty" rule that froze the active set to the first cycle's
+// often-mediocre picks.
+//
+// Cap (active count >= target): stop auto-activating to avoid runaway
+// competitor-fetch + customer-voice cost. Owner must deactivate stale
+// ones (via UI or auto-deactivation cron — future work) to make room.
+const BOOTSTRAP_TOP_N_WHEN_EMPTY = 5;
+const AUTO_ACTIVATE_PER_CYCLE_NEW = 2;
+const TARGET_ACTIVE_COUNT = 10;
 
 async function upsertAutoDiscoveries(
 	envId: string,
@@ -151,31 +177,36 @@ async function upsertAutoDiscoveries(
 ): Promise<number> {
 	if (candidates.size === 0) return 0;
 
-	// Bootstrap path: when the env has zero active curated competitors,
-	// auto-activate the first N discovered candidates so peer-mode
-	// passes have something to chew on. Without this, an env that never
-	// curates manually stays competitor-blind forever (the prior
-	// design assumed manual curation as a non-optional step).
 	const activeCount = await prisma.competitorDomain.count({
 		where: { environmentId: envId, active: true },
 	}).catch(() => 0);
-	const shouldBootstrapActivate = activeCount === 0;
-	let activatedRemaining = shouldBootstrapActivate
-		? AUTO_ACTIVATE_TOP_N_WHEN_EMPTY
-		: 0;
 
+	let activationBudget = 0;
+	let mode: "bootstrap" | "topup" | "at_cap" = "at_cap";
+	if (activeCount === 0) {
+		activationBudget = BOOTSTRAP_TOP_N_WHEN_EMPTY;
+		mode = "bootstrap";
+	} else if (activeCount < TARGET_ACTIVE_COUNT) {
+		activationBudget = Math.min(
+			AUTO_ACTIVATE_PER_CYCLE_NEW,
+			TARGET_ACTIVE_COUNT - activeCount,
+		);
+		mode = "topup";
+	}
+
+	let activatedRemaining = activationBudget;
 	let created = 0;
+	let newlyActivated = 0;
 	for (const domain of candidates) {
 		try {
 			// upsert: existing rows keep their state (owner may have
-			// manually pinned earlier). When bootstrapping (zero curated),
-			// the first AUTO_ACTIVATE_TOP_N_WHEN_EMPTY new rows come up
-			// active so the rest of the pipeline can use them. After
-			// that, new candidates land inactive (owner sees them and
-			// activates via the CompetitorRadar UI, or via the manual
-			// curation flow we'll add when workspaces page is deprecated).
+			// manually pinned earlier). Activation only applies to
+			// newly-created rows — existing rows hit the update branch
+			// (empty) and keep whatever active flag they currently have.
+			// The way we detect "newly created" is to check before/after
+			// counts; here we just attempt to activate up to budget.
 			const shouldActivate = activatedRemaining > 0;
-			await prisma.competitorDomain.upsert({
+			const result = await prisma.competitorDomain.upsert({
 				where: {
 					environmentId_domain: { environmentId: envId, domain },
 				},
@@ -186,8 +217,16 @@ async function upsertAutoDiscoveries(
 					active: shouldActivate,
 				},
 				update: {}, // never overwrite owner curation
+				select: { id: true, addedAt: true, active: true },
 			});
-			if (shouldActivate) activatedRemaining--;
+			// Detect "newly created in this call" by addedAt within last
+			// 2s — if older, it was a pre-existing row that update {} left
+			// untouched, so we don't count its activation budget.
+			const wasNew = Date.now() - result.addedAt.getTime() < 2000;
+			if (shouldActivate && wasNew) {
+				activatedRemaining--;
+				newlyActivated++;
+			}
 			created++;
 		} catch (err) {
 			console.warn(
@@ -196,13 +235,14 @@ async function upsertAutoDiscoveries(
 			);
 		}
 	}
-	if (shouldBootstrapActivate) {
-		const activated = AUTO_ACTIVATE_TOP_N_WHEN_EMPTY - activatedRemaining;
-		if (activated > 0) {
-			console.log(
-				`[serp-observation] env=${envId} had 0 curated competitors — bootstrap-activated ${activated} discovered candidate(s)`,
-			);
-		}
+	if (mode === "bootstrap" && newlyActivated > 0) {
+		console.log(
+			`[serp-observation] env=${envId} had 0 curated competitors — bootstrap-activated ${newlyActivated} discovered candidate(s)`,
+		);
+	} else if (mode === "topup" && newlyActivated > 0) {
+		console.log(
+			`[serp-observation] env=${envId} top-up activated ${newlyActivated} new candidate(s) (active was ${activeCount}/${TARGET_ACTIVE_COUNT})`,
+		);
 	}
 	return created;
 }

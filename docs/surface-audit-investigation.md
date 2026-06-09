@@ -691,3 +691,185 @@ regras por mês deve cair conforme detectors maturam. Subida persistente
   é disciplina, não código. Vale considerar tooling (link de ticket na
   regra, alerta semanal de regras expirando) **depois** que a prática se
   estabilizar — não antes.
+
+## Validação Cross-Lens com a Camada de Narrativa (2026-06-09)
+
+Esta seção cruza o roadmap de surface-audit com a camada de narrativa do
+Plan finalizada na Wave 22.7 (`src/components/strategy/*`,
+`packages/strategy-plan/sections/*`). **Premissa**: os dois moats são
+complementares e ambos necessários. A camada de detecção entrega o
+material bruto que nenhum competidor tem. A camada de narrativa entrega
+o argumento que o cliente lê. Cliente pagante percebe só a segunda; mas
+a segunda só fica verdadeiramente diferenciada quando a primeira entrega
+material que ninguém mais tem.
+
+Sem este doc, a Wave 22.7 atinge teto em 3-4 meses de uso, quando cliente
+sente que viu todos os findings possíveis de HTML. Com este doc, o teto
+sobe para 12-24 meses de findings inéditos.
+
+### Como cada seção do Plan ganha input qualitativamente diferente
+
+| Seção do Plan (Wave 22.7) | Antes de surface-audit | Depois de surface-audit |
+| --- | --- | --- |
+| Tese (E1) | "Vestigio detectou copy fragmentado em `/pricing`" | "Vestigio detectou `R$ X/mês` vazando em `/api/storefront/cart`" |
+| Continuidade (E3) | "Em Maio você tinha CTA fraco; em Junho ainda tem" | "Em Maio você não tinha `/api/coupon/v2` público; em Junho tem" |
+| Cross-customer (E4) | "Dos 5 ecom da carteira, 3 têm o mesmo padrão de checkout" | "Dos 12 OCC da carteira, 9 expõem `/api/checkout/v1/coupon`; dos 3 que fecharam, captura média R$ 18k/mês" |
+| Movimento principal (E2) | Ranqueado por impactMidpoint de copy/UX | Ranqueado por impactMidpoint de surface findings dollar-quantificáveis |
+| Voz autoral (E5) | "Vestigio detectou + observação de homepage" | "Vestigio detectou + URL específica + payload shape" |
+
+Cada bloco da Wave 22.7 fica 3-5x mais forte com o material bruto que
+Wires 1-8 entregam. Conexões inversas (riscos que o doc cria para o Plan)
+abaixo.
+
+### Riscos de churn novos que o doc cria
+
+1. **Volume sem triagem (Wire 1)**: SuppressionRule virou ops-side por
+   decisão (seção anterior, Wire 0 entregue). Se engine triar mal, cliente
+   ouve lobo gritar. **Mitigação proposta**: cap explícito de findings
+   net-new no Plan mensal (ex.: máximo 5 por ciclo no
+   `BuyerSegments`/nova seção; sobra fica em `/app/findings` sem subir ao
+   plano).
+
+2. **Detonação Wire 9**: thresholds em `packages/signals/engine.ts:2878-2885`
+   são chutes sem ground truth. Feature flag + havefunnels-first já
+   previsto. **Acrescentar**: badge "em calibração" no `FindingCard`
+   (`src/components/strategy/drawer-bodies.tsx:235`) durante o período
+   de observação. Transparência é mais defensável que polished-but-wrong.
+
+3. **Mobile ausente (Surpresa 2)**: hoje classificada como (c). Cliente
+   B2C que perguntar "vocês checaram mobile?" recebe "não". Gatilho de
+   churn imediato em retail/ecom. **Subir para (b)** = embed no PR de
+   Wire 1, já que Playwright está sendo tocado.
+
+4. **OpportunityTracking morto (Suspeita 1 confirmada)**: sem botões de
+   transição, `step.status` em `PlanNextStep` fica sempre `todo`. A
+   Continuidade (E3) que o Plan ganhou na Wave 22.7
+   (`src/components/strategy/sections/Continuity.tsx`) renderiza 100%
+   "Não iniciado". A seção que vendemos como "continuidade que ninguém
+   mais tem" fica visualmente vazia. **Subir para prioridade Wire-1-paralela**,
+   não ticket separado.
+
+### Cinco pontos novos a considerar (ponte detecção ↔ narrativa)
+
+Estes só fazem sentido olhando as duas camadas juntas. Cada um conecta
+uma Wire/Surpresa a uma seção do Plan já em produção.
+
+**N1. Sequenciar Wire 6 antes de Wire 7.**
+- Hoje: roadmap final coloca Wire 7 antes de Wire 6 (linhas 540-542
+  deste doc).
+- Wire 6 (surface drift) é o que torna "Always-on Revenue Protection"
+  (memória do projeto registrada como tese de posicionamento) uma promessa
+  cumprida. Wire 7 (Katana `-jc`) entrega profundidade de discovery, menos
+  diretamente ligado a renovação mensal.
+- **Inverter sequência**. Custo: zero.
+
+**N2. Nova seção "Surfaces invisíveis" no Plan.**
+- `BuyerSegments` decompõe por team owner (copy/eng/leadership) em
+  `packages/strategy-plan/sections/buyer-segments.ts:48-77`. Surface-audit
+  findings (URLs JSON, endpoints de platform, drift) não pertencem a essa
+  taxonomia; são meta.
+- Proposta: nova seção entre Hero e Continuity. Lista no máximo 3
+  surfaces detectadas com nível de exposição. Self-hide quando vazia (mesmo
+  padrão de Continuity e CrossCustomerPattern já implementados).
+- Custo: M (~3 dias). Gerador novo em
+  `packages/strategy-plan/sections/invisible-surfaces.ts`, componente
+  novo `src/components/strategy/sections/InvisibleSurfaces.tsx`, coluna
+  JSON nova em `MonthlyStrategyPlan` (mesmo padrão do `continuityJson`
+  da migration `20260608130000_plan_thesis_of_month`).
+
+**N3. OpportunityTracking sobe para sprint Wire-1-paralela.**
+- Justificado em "Riscos de churn" #4. Escopo já documentado na seção
+  Decisão 3 da sessão de 2026-06-07.
+- Move-se de "backlog paralelo aos Wires" para "sprint Wire 1". Sem isso,
+  a seção Continuity do Plan vira showroom vazio.
+
+**N4. Documentar dependência Wire 3 → utilidade real do E4.**
+- `packages/strategy-plan/sections/cross-customer-pattern.ts:59-66`
+  segmenta por `BusinessProfile.businessModel` (ecommerce/saas/lead_gen/
+  services/app_conversion/enterprise/hybrid). Hoje todos os ecom caem
+  em "ecom"; comparação rasa mesmo com 5+ peers.
+- Pós-Wire 3, o `technology-registry` passa a detectar OCC, SFCC,
+  BigCommerce, VTEX, Magento, Shopify Storefront como segmentos distintos.
+  E4 vira comparação apples-to-apples ("dos 12 OCC que monitoramos…").
+- **Não muda sequência, só explicita dependência**: Wire 3 é load-bearing
+  para E4 ficar estatisticamente útil. Antes de Wire 3, E4 fica gated em
+  sample size sem entregar comparação rica.
+
+**N5. CalibrationBadge no Plan para detectors recém-acordados.**
+- Já justificado em "Riscos" #2. Componente novo
+  `<CalibrationBadge>` no `FindingCard`, controlado por feature flag por
+  detector. Aparece como pequeno chip ao lado da severidade ("calibrando").
+- Custo: S (~1 dia).
+
+### Tradução cliente-facing por Wire (gap de Customer-Research)
+
+O doc fala em "Wires" e "Surpresas"; cliente nunca verá esses termos.
+Cada Wire precisa de uma frase pronta para uso direto no Plan ou em
+landing page e ICP outreach:
+
+| Wire (engenharia) | Frase customer-facing |
+| --- | --- |
+| Wire 1: promove `CapturedNetworkRequest[]` a surface | "Vestigio monitora cada chamada de rede que seu site faz durante uma compra real, não só o HTML inicial." |
+| Wire 3: platform endpoint catalog | "Identificamos sua stack (OCC, VTEX, SFCC, BigCommerce, Magento, Shopify Storefront) e checamos todos os endpoints conhecidos dessa plataforma." |
+| Wire 4: custom Nuclei body templates | "Detectamos shapes de dados sensíveis vazando em respostas JSON (cupons, preços, dados de cliente)." |
+| Wire 6: surface drift | "Sabemos quando algo novo aparece na sua superfície e quando algo desaparece. Você só fica sabendo via incidente; com Vestigio fica sabendo no ciclo." |
+| Wire 7: Katana `-jc` | "Lemos seus bundles JavaScript para detectar URLs internas, chaves de API, e endpoints embutidos que ninguém revisou." |
+
+Essa coluna alimenta o Plan (texto de seções) e também landing page e
+ICP outreach. **Decisão de produto pendente**: gravar essa tabela como
+fonte canônica de copy, ou regerar caso a caso por LLM? Sugestão: gravar
+como fonte canônica e reusar via dict (mesmo padrão de
+`dictionary/pt-BR.json:5780` em `engine.inference_titles`).
+
+### Promessa contratual implícita não verbalizada
+
+Wire 4 + Wire 6 tecnicamente suportam algo do tipo "Vestigio garante
+encontrar X vazamento por trimestre senão devolve mensalidade". A infra
+agora suporta o refund hook; o produto não verbalizou. **Decisão de
+produto pendente**, não bloqueia roadmap. Mas se for aceito, vira diferenciador
+de pricing impossível para SEO tool replicar.
+
+### Open questions (decisão fundador)
+
+1. **N1 aceita?** Inverter Wire 6 e Wire 7 no roadmap.
+2. **N2 aceita?** Nova seção "Surfaces invisíveis" no Plan, schema novo.
+3. **N3 aceita?** OpportunityTracking sai do backlog, entra na sprint
+   Wire 1.
+4. **N5 aceita?** CalibrationBadge ligado a feature flag por detector.
+5. **Refund hook**: vira proposta de produto/pricing ou fica como
+   capacidade que existe mas não vira promessa contratual?
+6. **Nome customer-facing para Wire 6 (surface drift)**: "Vigília de
+   superfície", "Detector de portas novas", "Monitor de drift", outra
+   nomenclatura?
+7. **Tabela de tradução por Wire vira fonte canônica em
+   `dictionary/pt-BR.json`** ou regenerada por LLM caso a caso?
+
+### Sequência final ajustada (proposta)
+
+```
+Pré-flight:    Verificar Nuclei firing em próximo audit do havefunnels    passivo
+Wire 1 + N3:   Network-as-surface + OpportunityTracking botões            ~7-10 dias
+               (em paralelo, mesmo sprint; desbloqueia Continuity real)
+Wire 1 embed:  Surpresa 2 (Mobile pass) e Surpresa 4 (PlaywrightRender    +2-3 dias
+               extractors), N5 (CalibrationBadge stub)
+Wire 5 + 9:    NetworkAnalysisPayload emitter + feature flag + rollout    ~7-10 dias
+Wire 3:        Platform endpoint catalog (OCC, SFCC, BigCommerce, ...)    ~5 dias
+Wire 4:        Custom Nuclei templates                                    ~5 dias
+Wire 2:        Katana → Nuclei chain                                      ~2 dias
+Wire 6:        Surface drift via NetworkSurface diff                      ~10-15 dias
+               (subiu para antes do Wire 7 conforme N1; entrega
+                "Always-on Revenue Protection" como fato)
+Wire 7:        Katana `-jc` + tuning                                      ~5 dias
+N2:            Nova seção "Surfaces invisíveis" no Plan                   ~3 dias
+               (após Wire 1 + Wire 6 entregarem material bruto)
+Quick wins:    Surpresa 8 (enums mortos) entre wires                      ~1 dia
+Backlog:       Surpresas 6 (Auth), 7 (MCP analytics)                      separadas
+Backlog:       Suspeitas 2, 3 (cada uma com decisão de produto)           separadas
+```
+
+Total caminho crítico ajustado: **~50-65 dias úteis** (1 dev focado).
+Incremento sobre a sequência anterior (~45-55 dias): ~5-10 dias para N3
+(OpportunityTracking), N2 (Surfaces invisíveis no Plan), e os embeds.
+Tradeoff aceito porque a Continuity e a nova seção destravam diferencial
+narrativo que cliente percebe; sem eles o trabalho de Wires fica invisível
+para o cliente até Wire 6 estabilizar.

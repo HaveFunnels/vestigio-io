@@ -115,6 +115,11 @@ model User {
   firstActionAt            DateTime?
   firstVerifyAt            DateTime?
   firstWorkspaceDrillAt    DateTime?
+  // Reta-final: stalling detection. Updated on every Plan page open.
+  // 14d gap = candidate for re-engagement email; >30d = at-risk signal
+  // for the admin dashboard. Cheap to maintain (best-effort write, no
+  // failure path bubbles), cheap to query (single timestamp column).
+  lastPlanVisitedAt        DateTime?
   createdAt                DateTime                @default(now())
   accounts                 Account[]
   sessions                 Session[]

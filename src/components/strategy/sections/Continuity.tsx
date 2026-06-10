@@ -77,7 +77,7 @@ export default function Continuity({ continuity, compact = false }: Props) {
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
 					O que ficou de {continuity.previousMonthLabel}
 				</h2>
-				<div className="text-[11px] text-content-faint">continuidade · status hoje</div>
+				<div className="text-[11px] text-content-faint">o que mudou · status hoje</div>
 			</div>
 
 			<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-6">

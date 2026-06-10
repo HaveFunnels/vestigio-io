@@ -35,7 +35,7 @@ function getEnvironmentId(): string {
 }
 
 interface FetchState {
-	status: "loading" | "ready" | "generating" | "missing" | "error";
+	status: "loading" | "ready" | "generating" | "missing" | "awaiting_first_cycle" | "error";
 	plan?: StrategyPlan;
 	error?: string;
 }
@@ -80,6 +80,10 @@ export default function StrategyPlanPage() {
 			}
 		} catch { /* private mode — accept undefined attribution */ }
 		track("plan.visit", { month, is_first_surface_this_session: isFirst });
+		// Stalling-signal write — best-effort; failures are silent.
+		// Re-engagement cron uses lastPlanVisitedAt to decide who's gone
+		// quiet (>14d gap → soft re-engagement, >30d → at-risk report).
+		fetch("/api/me/plan-visited", { method: "POST" }).catch(() => {});
 	}, [month, track]);
 
 	useEffect(() => {
@@ -108,7 +112,22 @@ export default function StrategyPlanPage() {
 					return;
 				}
 				if (res.status === 404) {
-					setState({ status: "missing" });
+					// New-customer onboarding path: API tells us the env has
+					// never had any plan generated yet. Show the friendlier
+					// "we're analyzing your site" empty state instead of the
+					// generic missing-month one.
+					let firstCycle = false;
+					try {
+						const body = await res.clone().json();
+						firstCycle = body?.status === "awaiting_first_cycle";
+					} catch { /* unparseable body — fall through to missing */ }
+					setState({ status: firstCycle ? "awaiting_first_cycle" : "missing" });
+					if (firstCycle) {
+						// While the first cycle runs we poll just like the
+						// generating state so the customer doesn't sit on a
+						// dead page if their cycle finishes within the visit.
+						pollTimer = setTimeout(load, 15000);
+					}
 					return;
 				}
 				if (!res.ok) {
@@ -187,6 +206,55 @@ export default function StrategyPlanPage() {
 				>
 					← Plano corrente
 				</Link>
+			</div>
+		);
+	}
+
+	if (state.status === "awaiting_first_cycle") {
+		// New-customer onboarding empty state. Shown when the env has
+		// zero plans ever generated — first audit cycle is queued or
+		// running. Polls every 15s; when the cycle completes, the API
+		// returns the plan and the state flips to ready automatically.
+		return (
+			<div className="flex h-full flex-col items-center justify-center px-6 py-20 text-center">
+				<div className="mb-5 flex items-center gap-3">
+					<div className="relative h-2.5 w-2.5">
+						<span className="absolute inset-0 animate-ping rounded-full bg-content-faint/40" />
+						<span className="relative block h-2.5 w-2.5 rounded-full bg-content" />
+					</div>
+					<div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-content-faint">
+						Análise em andamento
+					</div>
+				</div>
+				<h1 className="mb-3 max-w-xl font-serif text-[26px] font-medium leading-tight text-content sm:text-[30px]">
+					Estamos analisando o seu site agora.
+				</h1>
+				<p className="mb-6 max-w-md text-[14.5px] leading-relaxed text-content-secondary">
+					A primeira análise costuma demorar entre <strong className="text-content">30 e 90 minutos</strong>.
+					Você recebe um email assim que o seu plano de <strong className="text-content">{month}</strong> ficar pronto — pode fechar essa página sem perder nada.
+				</p>
+				<div className="mb-8 grid max-w-md grid-cols-1 gap-2 text-left text-[13px] text-content-muted">
+					<div className="flex items-start gap-2">
+						<span className="mt-0.5 text-content-faint">·</span>
+						<span>Estamos rastreando vazamentos de receita, confiança e atrito.</span>
+					</div>
+					<div className="flex items-start gap-2">
+						<span className="mt-0.5 text-content-faint">·</span>
+						<span>O plano vem com tese do mês, ações priorizadas e impacto em R$.</span>
+					</div>
+					<div className="flex items-start gap-2">
+						<span className="mt-0.5 text-content-faint">·</span>
+						<span>Enquanto isso, você pode ajustar o que monitoramos em Workspaces.</span>
+					</div>
+				</div>
+				<div className="flex flex-wrap items-center justify-center gap-2">
+					<Link
+						href="/app/workspaces"
+						className="rounded-md border border-edge bg-surface-card px-4 py-2 text-[13px] text-content transition-colors hover:bg-surface-card-hover"
+					>
+						Configurar workspace →
+					</Link>
+				</div>
 			</div>
 		);
 	}

@@ -567,7 +567,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				subject: "Você viu {visibleCount} vazamentos em {domain}. Faltam {hiddenCount}.",
 				headline: "Vimos R$ {impact} saindo do seu site",
 				intro: "Você analisou <strong>{domain}</strong> ontem e descobriu <strong>{visibleCount} vazamentos</strong> custando até <strong>{impact}/mês</strong>. Ainda há <strong>{hiddenCount} vazamentos extras</strong> que ficaram bloqueados — eles aparecem na sua conta Vestigio, junto com o plano mensal de correção priorizada por impacto financeiro. <p style=\"margin:16px 0 0 0;font-size:13px;color:#a1a1aa;\">O link abaixo abre o diagnóstico de novo com seu email já preenchido. Você só seta a senha.</p>",
-				ctaLabel: "Continuar de onde parei",
+				ctaLabel: "Ver os {hiddenCount} vazamentos escondidos",
 				ctaPath: "{resultUrl}",
 				footerNote: "Você recebeu este email porque solicitou um diagnóstico gratuito na Vestigio.",
 			},
@@ -580,7 +580,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				subject: "You saw {visibleCount} leaks in {domain}. {hiddenCount} more remain.",
 				headline: "We saw {impact} leaving your site",
 				intro: "You analyzed <strong>{domain}</strong> yesterday and found <strong>{visibleCount} leaks</strong> costing up to <strong>{impact}/mo</strong>. There are still <strong>{hiddenCount} additional leaks</strong> that stayed locked — they appear in your Vestigio account, alongside a monthly fix plan prioritized by financial impact. <p style=\"margin:16px 0 0 0;font-size:13px;color:#a1a1aa;\">The link below reopens the diagnosis with your email pre-filled. Just set a password.</p>",
-				ctaLabel: "Continue where I left off",
+				ctaLabel: "See the {hiddenCount} hidden leaks",
 				ctaPath: "{resultUrl}",
 				footerNote: "You received this email because you requested a free diagnosis from Vestigio.",
 			},
@@ -593,7 +593,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				subject: "Viste {visibleCount} fugas en {domain}. Faltan {hiddenCount}.",
 				headline: "Vimos {impact} saliendo de tu sitio",
 				intro: "Ayer analizaste <strong>{domain}</strong> y encontraste <strong>{visibleCount} fugas</strong> costando hasta <strong>{impact}/mes</strong>. Quedan <strong>{hiddenCount} fugas adicionales</strong> bloqueadas — aparecen en tu cuenta Vestigio junto al plan mensual de correccion priorizado por impacto financiero.",
-				ctaLabel: "Continuar donde lo deje",
+				ctaLabel: "Ver las {hiddenCount} fugas ocultas",
 				ctaPath: "{resultUrl}",
 				footerNote: "Recibiste este correo porque solicitaste un diagnostico gratuito en Vestigio.",
 			},
@@ -606,7 +606,7 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 				subject: "Sie sahen {visibleCount} Lecks in {domain}. Es bleiben noch {hiddenCount}.",
 				headline: "Wir sahen {impact}, die Ihr Website verlassen",
 				intro: "Sie haben gestern <strong>{domain}</strong> analysiert und <strong>{visibleCount} Lecks</strong> gefunden, die bis zu <strong>{impact}/Monat</strong> kosten. Es bleiben noch <strong>{hiddenCount} weitere Lecks</strong>, die in Ihrem Vestigio-Konto erscheinen.",
-				ctaLabel: "Dort weitermachen, wo ich aufgehoert habe",
+				ctaLabel: "Die {hiddenCount} versteckten Lecks ansehen",
 				ctaPath: "{resultUrl}",
 				footerNote: "Sie haben diese E-Mail erhalten, weil Sie eine kostenlose Diagnose bei Vestigio angefordert haben.",
 			},
@@ -1193,10 +1193,15 @@ export function renderEmailFromTemplate(
 	const headline = interpolate(t.email.headline, htmlVars);
 	const footerNote = interpolate(t.email.footerNote, htmlVars);
 
+	// ctaLabel is interpolated too so templates can use {count}/{hiddenCount}
+	// for action-rich buttons ("Ver os 10 vazamentos escondidos"). Plain text
+	// (unescaped) because the button copy is rendered as plain text inside
+	// the rendered HTML, not as nested HTML.
+	const ctaLabel = interpolate(t.email.ctaLabel, plainVars);
 	const html = renderBrandedEmail({
 		headline,
 		intro,
-		ctaLabel: t.email.ctaLabel,
+		ctaLabel,
 		ctaUrl,
 		footerNote,
 		locale,

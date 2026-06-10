@@ -127,7 +127,24 @@ export async function GET(request: Request, { params }: RouteParams) {
 		include: { nextSteps: { orderBy: { order: "asc" } } },
 	});
 	if (!plan) {
-		return NextResponse.json({ message: "Plan not generated for this month" }, { status: 404 });
+		// Reta-final fix: differentiate "no plan yet because first cycle
+		// hasn't finished" from "no plan for this past month". The first
+		// case is the brand-new-customer experience and deserves an
+		// onboarding-friendly copy ("we are analyzing your site now");
+		// the second is benign and shows the standard "not generated" UI.
+		//
+		// Cheap check: env has no MonthlyStrategyPlan rows at all = first
+		// cycle still pending or running. Once they get their first plan,
+		// subsequent missing-month requests fall through to the standard
+		// 404 since plansEverGenerated > 0.
+		const plansEverGenerated = await prisma.monthlyStrategyPlan.count({
+			where: { environmentId: envId },
+		});
+		const status = plansEverGenerated === 0 ? "awaiting_first_cycle" : "missing";
+		return NextResponse.json(
+			{ message: "Plan not generated for this month", status },
+			{ status: 404 },
+		);
 	}
 	// Token path needs the planId to verify — done now that we have it.
 	if (exportToken) {

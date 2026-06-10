@@ -184,13 +184,18 @@ function StickyHeader({
 								role="radio"
 								aria-checked={viewMode === m}
 								onClick={() => onViewModeChange(m)}
+								title={
+									m === "resumo"
+										? "Resumo executivo: Tese, Hero, Continuidade e top 3 ações."
+										: "Plano completo: todas as seções, decisões e justificativas."
+								}
 								className={`rounded-[5px] px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
 									viewMode === m
 										? "bg-surface-inset/80 text-content"
 										: "text-content-muted hover:text-content-secondary"
 								}`}
 							>
-								{m === "resumo" ? "Resumo" : "Completo"}
+								{m === "resumo" ? "Resumo (1 página)" : "Completo"}
 							</button>
 						))}
 					</div>
@@ -393,7 +398,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 							{ id: "hero", label: isPt ? "Onde está" : "Where you are", visible: true },
 							{
 								id: "continuity",
-								label: isPt ? "Continuidade" : "Continuity",
+								label: isPt ? "O que mudou esse mês" : "What changed this month",
 								visible: !!plan.continuity?.previousMonth,
 							},
 							{

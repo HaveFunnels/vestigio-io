@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import CompetitorsSection, {
 	getEnvId,
 } from "@/components/workspaces/CompetitorsSection";
@@ -77,8 +78,36 @@ export default function WorkspacesHubPage() {
 				<div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
 					Configuração
 				</div>
-				<h1 className="mt-2 font-serif text-[28px] font-medium tracking-tight text-content sm:text-[32px]">
-					Workspaces
+				<h1 className="mt-2 flex items-center gap-2 font-serif text-[28px] font-medium tracking-tight text-content sm:text-[32px]">
+					<span>Workspaces</span>
+					{/* Tooltip — "Workspaces" is borrowed from Notion/Slack vocab
+					    where it means "team space". Here it means "what Vestigio
+					    monitors for you". The microcopy gap costs first-impression
+					    clarity, so an inline tooltip closes it without renaming. */}
+					<Tooltip.Provider delayDuration={150}>
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<button
+									type="button"
+									aria-label="O que são Workspaces"
+									className="flex h-5 w-5 items-center justify-center rounded-full border border-edge text-[11px] font-semibold text-content-faint transition-colors hover:border-edge-focus hover:text-content"
+								>
+									?
+								</button>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									side="bottom"
+									align="start"
+									sideOffset={6}
+									className="max-w-[280px] rounded-md border border-edge bg-surface-card px-3 py-2 text-[12.5px] leading-snug text-content shadow-lg"
+								>
+									Cada workspace agrupa o que Vestigio observa por você: concorrentes monitorados, identidade da marca e fontes de dados conectadas.
+									<Tooltip.Arrow className="fill-surface-card" />
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
+					</Tooltip.Provider>
 				</h1>
 				<p className="mt-2 max-w-[640px] text-[14px] leading-snug text-content-secondary">
 					Aqui você ajusta o que Vestigio observa. Cada alteração passa a

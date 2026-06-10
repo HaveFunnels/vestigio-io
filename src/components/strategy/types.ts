@@ -233,6 +233,19 @@ export interface NextStep {
 	 *  do passo" affordance when this is empty. */
 	linkedFindingRefs: string[];
 	combinedImpact: { min: number; max: number; midpoint: number };
+	/** Reta-final: aggregated confidence tier across the linked findings.
+	 *  Resolved server-side from Finding.confidence. UI surfaces a badge
+	 *  only when "low" or "medium" — "high" is the default expectation
+	 *  and doesn't need annotation. Null when no findings could be matched. */
+	confidenceTier?: "low" | "medium" | "high" | null;
+	/** Reta-final: how Vestigio will re-verify this step is fixed. Pulled
+	 *  from REMEDIATION_CATALOG by the API based on the first matched
+	 *  linkedFinding inferenceKey. Null when no catalog entry matched. */
+	verification?: {
+		notes: string;
+		etaSeconds: number | null;
+		strategy: string;
+	} | null;
 	status: NextStepStatus;
 	assigneeUserId: string | null;
 	assigneeName: string | null;
@@ -343,6 +356,16 @@ export interface StrategyPlan {
 	competitor?: CompetitorSection | null;
 	impersonators?: ImpersonatorsSection | null;
 	maps?: MapsSection | null;
+	/** Reta-final: pack distribution for the open findings backing this
+	 *  plan. Used by the narrative to render a small horizontal stacked
+	 *  bar instead of burying "tema dominante: copy 44%" in prose. Empty
+	 *  array when no open findings exist (UI hides the visual). */
+	packDistribution?: Array<{
+		pack: string;
+		label: string;
+		count: number;
+		sharePct: number;
+	}>;
 	narrativeWhatHappened: string;
 	valuePreviewNarrative: string;
 	valuePreview: ValuePreview;

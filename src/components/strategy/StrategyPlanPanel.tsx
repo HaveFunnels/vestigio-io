@@ -488,6 +488,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 							<WhatHappenedNarrative
 								narrative={plan.narrativeWhatHappened}
 								monthLabel={monthLabel}
+								packDistribution={plan.packDistribution}
 							/>
 						</div>
 					</>

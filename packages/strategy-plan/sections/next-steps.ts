@@ -75,11 +75,22 @@ function normalizeSurface(surface: string | null): string | null {
 }
 
 function effortFromHours(h: number | null): string {
+	// Reta-final: previous buckets collapsed 2-8h into "1 dia dev" so
+	// every catalog entry between 3h (CTA tweak) and 8h (proof-of-work
+	// rewrite) rendered identical. Customer reading 5 next steps with
+	// the same effort lost trust in the calibration. New buckets:
+	//   <30min · ~1h · meia tarde · meia jornada · 1 dia · 1-2 dias · 3+ dias
+	// Each step now reads a distinct effort even when 3 of 5 fall in the
+	// 4-8h range — meia jornada (4h) vs 1 dia (8h) reads as a planning
+	// signal, not a duplicate label.
 	if (h === null) return "esforço não calibrado";
 	if (h <= 0.5) return "<30min";
-	if (h <= 2) return "~2h";
+	if (h <= 1.5) return "~1h";
+	if (h <= 3) return "meia tarde";
+	if (h <= 5) return "meia jornada";
 	if (h <= 8) return "1 dia dev";
 	if (h <= 16) return "1-2 dias dev";
+	if (h <= 24) return "2-3 dias dev";
 	return `${Math.round(h / 8)} dias dev`;
 }
 

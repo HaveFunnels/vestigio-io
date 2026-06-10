@@ -195,6 +195,131 @@ export async function GET(request: Request, { params }: RouteParams) {
 		actionImpacts.map((a) => [a.id, a]),
 	);
 
+	// Reta-final: per-step confidence aggregation. Resolved from the
+	// linked Finding rows' inferenceKey (each Finding carries the
+	// engine-side confidence 0-100). Bucketed as low/medium/high so
+	// the UI shows a "calibração X" badge only when not high — the
+	// goal is to flag low-trust steps, not annotate the obvious.
+	//
+	// Lookup is by inferenceKey because that's what PlanNextStep
+	// persists (Finding.id rotates per cycle but inferenceKey is stable
+	// across cycles). For each step, we pick the latest open Finding
+	// rows matching its keys + this environment, then average their
+	// confidence values.
+	const allFindingKeys = Array.from(
+		new Set(
+			plan.nextSteps.flatMap(
+				(s) => ((s as any).linkedFindingRefsJson as string[]) ?? [],
+			),
+		),
+	);
+	const findingConfidences = allFindingKeys.length
+		? await prisma.finding.findMany({
+			where: {
+				environmentId: plan.environmentId,
+				inferenceKey: { in: allFindingKeys },
+				status: { in: ["created", "confirmed"] },
+			},
+			select: { inferenceKey: true, confidence: true },
+			orderBy: { createdAt: "desc" },
+		})
+		: [];
+	const confidenceByKey = new Map<string, number[]>();
+	for (const f of findingConfidences) {
+		const arr = confidenceByKey.get(f.inferenceKey) ?? [];
+		arr.push(f.confidence);
+		confidenceByKey.set(f.inferenceKey, arr);
+	}
+	// Reta-final: verification criteria. REMEDIATION_CATALOG carries
+	// customer-facing `verification_notes` + ETA per inferenceKey, but
+	// they were only surfaced via the MCP. The Plan view now exposes
+	// them so the customer reads "Como saber que está fixed?" right
+	// where they decide to act. Lookup is per-step (use the first
+	// linkedFinding inferenceKey that catalog knows about).
+	const { REMEDIATION_CATALOG, getDynamicRemediation } = await import(
+		"../../../../../../packages/projections/remediation-catalog"
+	);
+	function verificationForStep(keys: string[]): {
+		notes: string;
+		etaSeconds: number | null;
+		strategy: string;
+	} | null {
+		for (const k of keys) {
+			const entry = REMEDIATION_CATALOG[k] ?? getDynamicRemediation(k);
+			if (entry?.verification_notes) {
+				return {
+					notes: entry.verification_notes,
+					etaSeconds: entry.verification_eta_seconds,
+					strategy: entry.verification_strategy,
+				};
+			}
+		}
+		return null;
+	}
+
+	function confidenceTierForStep(keys: string[]): "low" | "medium" | "high" | null {
+		const samples: number[] = [];
+		for (const k of keys) {
+			const arr = confidenceByKey.get(k) ?? [];
+			// Use the latest row's confidence per key — most-recent cycle
+			// is the customer-relevant signal.
+			if (arr.length > 0) samples.push(arr[0]);
+		}
+		if (samples.length === 0) return null;
+		const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+		if (avg >= 70) return "high";
+		if (avg >= 50) return "medium";
+		return "low";
+	}
+
+	// Reta-final: pack distribution visual. Narrative previously stated
+	// "tema dominante: consistência da mensagem, 44%" buried in prose.
+	// Customer reads slower than they scan a 6px bar. This block surfaces
+	// the same insight visually next to the narrative.
+	const monthStartForPlan = new Date(`${plan.month}-01T00:00:00Z`);
+	const monthEndForPlan = new Date(
+		Date.UTC(monthStartForPlan.getUTCFullYear(), monthStartForPlan.getUTCMonth() + 1, 1),
+	);
+	const packRowsRaw = await prisma.finding
+		.groupBy({
+			by: ["pack"],
+			where: {
+				environmentId: plan.environmentId,
+				polarity: { in: ["negative", "neutral"] },
+				status: { in: ["created", "confirmed"] },
+				statusChangedAt: { lt: monthEndForPlan },
+			},
+			_count: { id: true },
+			orderBy: { _count: { id: "desc" } },
+		})
+		.catch(() => null);
+	const packRows: Array<{ pack: string; count: number }> = Array.isArray(packRowsRaw)
+		? packRowsRaw.map((r) => ({ pack: r.pack, count: r._count.id }))
+		: [];
+	const packTotal = packRows.reduce((a, r) => a + r.count, 0);
+	const PACK_LABEL_PTBR: Record<string, string> = {
+		copy_alignment: "consistência da mensagem",
+		scale_readiness: "preparo para escala",
+		trust: "sinais de confiança",
+		revenue: "captura de receita",
+		chargeback: "risco de chargeback",
+		saas: "ciclo SaaS",
+		behavioral: "comportamento do visitante",
+	};
+	const packDistribution = packTotal > 0
+		? packRows
+			.slice(0, 6) // top 6 — beyond that the bar slices vanish
+			.map((r) => {
+				const k = r.pack.replace(/_pack$/, "");
+				return {
+					pack: r.pack,
+					label: PACK_LABEL_PTBR[k] ?? k.replace(/_/g, " "),
+					count: r.count,
+					sharePct: Math.round((r.count / packTotal) * 1000) / 10,
+				};
+			})
+		: [];
+
 	// Comment counts in one query (group by step section).
 	const commentRows = await prisma.planComment.groupBy({
 		by: ["sectionId"],
@@ -327,6 +452,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 		competitor: (plan as any).competitorJson ?? null,
 		impersonators: (plan as any).impersonatorsJson ?? null,
 		maps: (plan as any).mapsJson ?? null,
+		packDistribution,
 		narrativeWhatHappened: plan.narrativeWhatHappened,
 		valuePreviewNarrative: plan.valuePreviewNarrative,
 		valuePreview,
@@ -343,6 +469,8 @@ export async function GET(request: Request, { params }: RouteParams) {
 				impactMax += a.impactMax ?? 0;
 				impactMidpoint += a.impactMidpoint ?? 0;
 			}
+			const findingRefs =
+				((s as any).linkedFindingRefsJson as string[]) ?? [];
 			return {
 				id: s.id,
 				order: s.order,
@@ -353,12 +481,21 @@ export async function GET(request: Request, { params }: RouteParams) {
 				estimatedEffort: s.estimatedEffort,
 				suggestedOwner: s.suggestedOwner,
 				linkedActionRefs: refs,
-				linkedFindingRefs: ((s as any).linkedFindingRefsJson as string[]) ?? [],
+				linkedFindingRefs: findingRefs,
 				combinedImpact: {
 					min: Math.round(impactMin),
 					max: Math.round(impactMax),
 					midpoint: Math.round(impactMidpoint),
 				},
+				/** Reta-final: aggregated confidence tier across the linked
+				 *  findings. Null when no findings could be resolved.
+				 *  UI renders a badge only when "low" or "medium" — high
+				 *  is the default expectation and doesn't need annotation. */
+				confidenceTier: confidenceTierForStep(findingRefs),
+				/** Reta-final: verification criteria pulled from the
+				 *  catalog ("Como saber que está fixed?"). Null when no
+				 *  catalog entry matched (rare — most live keys do). */
+				verification: verificationForStep(findingRefs),
 				status: s.status,
 				assigneeUserId: s.assigneeUserId,
 				assigneeName: null,

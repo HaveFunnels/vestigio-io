@@ -487,6 +487,30 @@ function StepCard({
 					</div>
 				)}
 
+				{/* Reta-final: verification criteria. Answers the customer's
+				    silent question "Como sei que está fixed?" right where
+				    they decide to act. Pulled from REMEDIATION_CATALOG via
+				    the API — hidden when no catalog entry matched. */}
+				{step.verification && (
+					<div className="mb-5">
+						<div className="mb-2 flex items-baseline gap-2">
+							<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+								Como saber que está fixed
+							</div>
+							{step.verification.etaSeconds !== null && (
+								<span className="text-[10.5px] text-content-faint">
+									· verifica em ~{step.verification.etaSeconds < 60
+										? `${step.verification.etaSeconds}s`
+										: `${Math.round(step.verification.etaSeconds / 60)}min`}
+								</span>
+							)}
+						</div>
+						<div className="rounded-xl border border-edge bg-surface-inset/40 px-4 py-3 text-[13.5px] leading-[1.55] text-content-secondary">
+							{step.verification.notes}
+						</div>
+					</div>
+				)}
+
 				{/* Research refs */}
 				{step.researchRefs.length > 0 && (
 					<div className="mb-5">
@@ -566,11 +590,35 @@ function StepCard({
 					</span>
 				</button>
 
-				{/* Effort + owner row */}
+				{/* Effort + owner row + confidence badge (when not high) */}
 				<div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-content-muted">
 					<span>{step.estimatedEffort}</span>
 					<span className="text-content-faint">·</span>
 					<span>{step.suggestedOwner}</span>
+					{/* Reta-final: confidence badge. Renders only when the
+					    aggregated tier is "low" or "medium" — calibração
+					    "alta" is the default expectation so a badge for it
+					    would be visual noise. Surfaces calibration so the
+					    customer can read R$ numbers with the right weight. */}
+					{(step.confidenceTier === "low" || step.confidenceTier === "medium") && (
+						<>
+							<span className="text-content-faint">·</span>
+							<span
+								className="inline-flex items-center gap-1 rounded-md border border-edge bg-surface-inset/50 px-2 py-0.5 text-[10.5px] font-medium text-content-secondary"
+								title={
+									step.confidenceTier === "low"
+										? "Calibração inicial — Vestigio precisa de mais ciclos para refinar o impacto financeiro. Trate como ordem de grandeza."
+										: "Calibração média — o impacto financeiro está dentro de uma faixa razoável. Mais ciclos refinam o número."
+								}
+							>
+								<svg className="h-2.5 w-2.5" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
+									<circle cx="5" cy="5" r="3.5" />
+									<path strokeLinecap="round" d="M5 3.5v2M5 7v.2" />
+								</svg>
+								{step.confidenceTier === "low" ? "calibração inicial" : "calibração média"}
+							</span>
+						</>
+					)}
 				</div>
 
 				{/* Status / due / comments row */}

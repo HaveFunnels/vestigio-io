@@ -225,7 +225,7 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
 			className="mb-12"
 		>
-			<div className="mb-4 flex items-baseline justify-between">
+			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
 					Onde você está em {monthLabel}
 				</h2>

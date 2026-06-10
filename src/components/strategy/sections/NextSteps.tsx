@@ -346,9 +346,12 @@ function StepCard({
 			whileInView={{ opacity: 1, y: 0 }}
 			viewport={{ once: true, margin: "-10%" }}
 			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-			className="relative flex gap-6"
+			className="relative flex gap-4 sm:gap-6"
 		>
-			{/* Numbered rail */}
+			{/* Numbered rail — hidden on mobile (rendered inline in the
+			    card header instead, sm:hidden block below); desktop keeps
+			    the numbered pill in the left rail so the eye tracks the
+			    sequence at-a-glance. */}
 			<div className="hidden flex-col items-center pt-1 sm:flex">
 				<div
 					className={`flex h-11 w-11 items-center justify-center rounded-full border ${
@@ -378,7 +381,7 @@ function StepCard({
 				)}
 				<div
 					data-vsgp-card
-					className={`rounded-2xl border bg-surface-card p-7 transition-all ${
+					className={`rounded-2xl border bg-surface-card p-5 transition-all sm:p-7 ${
 						isDone
 							? "border-emerald-500/30 opacity-75"
 							: "border-edge hover:border-edge-focus"
@@ -841,9 +844,9 @@ export default function NextSteps({
 				transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
 				className="mb-12"
 			>
-				<div className="mb-4 flex items-baseline justify-between">
+				<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 					<h2 className="font-serif text-[22px] font-medium tracking-tight text-content">
-						Onde apostar este mês
+						Onde focar este mês
 					</h2>
 					<div className="text-[11px] text-content-faint">
 						top {topThree.length} de {steps.length}
@@ -932,9 +935,9 @@ export default function NextSteps({
 			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.24 }}
 			className="mb-12"
 		>
-			<div className="mb-4 flex items-baseline justify-between">
+			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-serif text-[22px] font-medium tracking-tight text-content">
-					Onde apostar este mês
+					Onde focar este mês
 				</h2>
 				<div className="text-[11px] text-content-faint">
 					1 movimento principal{supportingTotal > 0 ? ` · ${supportingTotal} de apoio` : ""}

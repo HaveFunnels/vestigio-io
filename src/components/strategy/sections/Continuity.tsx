@@ -73,14 +73,14 @@ export default function Continuity({ continuity, compact = false }: Props) {
 			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
 			className="mb-12"
 		>
-			<div className="mb-4 flex items-baseline justify-between">
+			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
 					O que ficou de {continuity.previousMonthLabel}
 				</h2>
 				<div className="text-[11px] text-content-faint">o que mudou · status hoje</div>
 			</div>
 
-			<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-6">
+			<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
 				{/* Net delta row — the headline number for this section. */}
 				<div className="mb-5 grid grid-cols-1 gap-3 border-b border-edge/40 pb-5 sm:grid-cols-2">
 					<div>

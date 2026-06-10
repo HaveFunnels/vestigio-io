@@ -176,7 +176,7 @@ export default function BuyerSegments({
 			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.08 }}
 			className="mb-12"
 		>
-			<div className="mb-4 flex items-baseline justify-between">
+			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
 					O que sua audit revelou este mês
 				</h2>
@@ -197,7 +197,7 @@ export default function BuyerSegments({
 							viewport={{ once: true }}
 							transition={{ duration: 0.45, delay: 0.1 + idx * 0.06, ease: [0.22, 1, 0.36, 1] }}
 							whileHover={{ y: -2 }}
-							className={`group relative flex min-h-[200px] flex-col overflow-hidden rounded-2xl border border-edge bg-gradient-to-b ${accent.bg} bg-surface-card p-6 transition-colors hover:border-edge-focus`}
+							className={`group relative flex min-h-[200px] flex-col overflow-hidden rounded-2xl border border-edge bg-gradient-to-b ${accent.bg} bg-surface-card p-5 transition-colors hover:border-edge-focus sm:p-6`}
 						>
 							<div className="mb-1 flex items-center gap-2">
 								<span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} />

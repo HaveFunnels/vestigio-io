@@ -84,7 +84,15 @@ function formatTimestamp(date: Date): string {
 	return `${dd} ${mmName} · ${hh}:${min} UTC`;
 }
 
-export type PlanViewMode = "completo" | "resumo";
+/** Plan view mode.
+ *  - "resumo": 1-page executive summary (Tese + Hero + top 3 Next Steps).
+ *  - "completo": full plan, narrative-grouped — the strategic default.
+ *  - "por_pagina": full plan, but Next Steps regrouped by surface for
+ *    dispatch. Preserves the strategic moat (tese + padrão still
+ *    visible above) while giving Type-B operators (head of growth,
+ *    dev manager) an organizational view they were previously rebuilding
+ *    in a spreadsheet. See council deliberation in user's earlier turn. */
+export type PlanViewMode = "completo" | "resumo" | "por_pagina";
 
 function StickyHeader({
 	plan,
@@ -181,7 +189,7 @@ function StickyHeader({
 						aria-label="Modo de leitura do plano"
 						className="inline-flex items-center rounded-md border border-edge bg-surface-card p-0.5"
 					>
-						{(["resumo", "completo"] as const).map((m) => (
+						{(["resumo", "completo", "por_pagina"] as const).map((m) => (
 							<button
 								key={m}
 								type="button"
@@ -191,7 +199,9 @@ function StickyHeader({
 								title={
 									m === "resumo"
 										? "Resumo executivo: Tese, Hero, Continuidade e top 3 ações."
-										: "Plano completo: todas as seções, decisões e justificativas."
+										: m === "completo"
+											? "Plano completo: todas as seções, decisões e justificativas."
+											: "Por página: passos reagrupados por superfície para dispatch. Mantém tese + padrão acima para preservar a leitura sistêmica."
 								}
 								className={`min-h-[34px] rounded-[5px] px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
 									viewMode === m
@@ -201,7 +211,9 @@ function StickyHeader({
 							>
 								{m === "resumo"
 									? <><span className="sm:hidden">Resumo</span><span className="hidden sm:inline">Resumo (1 página)</span></>
-									: "Completo"}
+									: m === "completo"
+										? "Completo"
+										: <><span className="sm:hidden">Página</span><span className="hidden sm:inline">Por página</span></>}
 							</button>
 						))}
 					</div>
@@ -314,11 +326,11 @@ function resolveInitialViewMode(searchParams: ReturnType<typeof useSearchParams>
 	// shared an exec-summary link (?view=resumo) regardless of their
 	// own saved preference.
 	const fromUrl = searchParams?.get("view");
-	if (fromUrl === "resumo" || fromUrl === "completo") return fromUrl;
+	if (fromUrl === "resumo" || fromUrl === "completo" || fromUrl === "por_pagina") return fromUrl;
 	if (typeof window !== "undefined") {
 		try {
 			const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
-			if (stored === "resumo" || stored === "completo") return stored;
+			if (stored === "resumo" || stored === "completo" || stored === "por_pagina") return stored;
 		} catch {
 			/* localStorage blocked (private mode) — fall through */
 		}
@@ -353,6 +365,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 		track("plan.view_mode.changed", { mode: next, month: plan.month });
 	}
 	const isResumo = viewMode === "resumo" && !isPrint;
+	const isPorPagina = viewMode === "por_pagina" && !isPrint;
 
 	return (
 		<div
@@ -503,6 +516,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 						month={plan.month}
 						planId={plan.id}
 						compact={isResumo}
+						groupBySurface={isPorPagina}
 					/>
 				</div>
 				{!isResumo && (

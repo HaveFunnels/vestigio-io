@@ -52,6 +52,12 @@ interface Props {
 	 *  + status badge, no reasoning, no procedureSteps, no drawers).
 	 *  Customer in a hurry reads the bet in seconds. */
 	compact?: boolean;
+	/** Reta-final "Por página" lens. When true, steps regroup by their
+	 *  primary affectedSurface — each surface becomes a header card with
+	 *  its steps under it. Cross-page steps surface "afeta também" badges
+	 *  so the customer reads the systemic story even in operational mode.
+	 *  Mutually exclusive with `compact` (Resumo never groups by page). */
+	groupBySurface?: boolean;
 }
 
 const STATUS_LABEL: Record<NextStepStatus, string> = {
@@ -843,6 +849,186 @@ function StepCard({
 	);
 }
 
+// ──────────────────────────────────────────────
+// "Por página" lens helpers
+// ──────────────────────────────────────────────
+
+const SURFACE_LABEL_PT_BR: Record<string, string> = {
+	"/": "Página inicial",
+	"/pricing": "Página de preços",
+	"/checkout": "Checkout",
+	"/signup": "Cadastro",
+	"/login": "Login",
+	"/dashboard": "Dashboard",
+	"/app": "App autenticado",
+	"/about": "Página sobre",
+	"/contact": "Página de contato",
+	"/blog": "Blog",
+	"/faq": "FAQ",
+};
+
+function humanizeSurfaceLabel(surface: string): string {
+	const trimmed = surface.trim();
+	if (SURFACE_LABEL_PT_BR[trimmed]) return SURFACE_LABEL_PT_BR[trimmed];
+	if (trimmed.includes(",")) {
+		return trimmed
+			.split(",")
+			.map((s) => humanizeSurfaceLabel(s.trim()))
+			.join(" + ");
+	}
+	// Unknown path — show the raw path but trimmed of leading slash
+	return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+interface SurfaceGroup {
+	surface: string; // raw surface key, used to derive "afeta também" diff
+	label: string;
+	steps: NextStep[];
+}
+
+const CROSS_SITE_LABEL_PT = "Sem página específica";
+
+function groupStepsBySurface(steps: NextStep[]): SurfaceGroup[] {
+	// Primary surface = first entry of affectedSurfaces (highest finding
+	// count). Steps with no affectedSurfaces go to a "Cross-site" bucket
+	// at the top so the customer sees systemic work isn't hidden.
+	const grouped = new Map<string, NextStep[]>();
+	const crossSite: NextStep[] = [];
+	for (const step of steps) {
+		const primary = step.affectedSurfaces?.[0]?.surface;
+		if (!primary) {
+			crossSite.push(step);
+			continue;
+		}
+		const arr = grouped.get(primary) ?? [];
+		arr.push(step);
+		grouped.set(primary, arr);
+	}
+
+	const out: SurfaceGroup[] = [];
+	if (crossSite.length > 0) {
+		out.push({ surface: "__cross__", label: CROSS_SITE_LABEL_PT, steps: crossSite });
+	}
+	// Sort groups by aggregate impact desc so the highest-leverage page
+	// surfaces first.
+	const groupArr = Array.from(grouped.entries()).map(([surface, list]) => {
+		const totalImpact = list.reduce((a, s) => a + (s.combinedImpact?.midpoint ?? 0), 0);
+		return {
+			surface,
+			label: humanizeSurfaceLabel(surface),
+			steps: list,
+			totalImpact,
+		};
+	});
+	groupArr.sort((a, b) => b.totalImpact - a.totalImpact);
+	for (const g of groupArr) {
+		out.push({ surface: g.surface, label: g.label, steps: g.steps });
+	}
+	return out;
+}
+
+// Compact step card used INSIDE "Por página" groups. Renders the same
+// title + impact + status as the full StepCard but with shrunk chrome
+// (no editable title, no inline drawers, no chat CTA — those live in
+// the strategic Completo view). Customer reads this as "the dispatch
+// list", clicks through to the full StepCard via the strategic view
+// when they want to act. "Afeta também" badges expose cross-page nature
+// so customer never forgets the systemic story.
+interface StepInGroupProps {
+	step: NextStep;
+	primarySurface: string;
+	comments: PlanComment[];
+	pendingEdit?: PendingPlanEdit;
+	canApprove: boolean;
+	envId: string;
+	month: string;
+	planId: string;
+	allSteps: NextStep[];
+}
+
+function StepInGroup({ step, primarySurface }: StepInGroupProps) {
+	const impact = step.combinedImpact?.midpoint ?? 0;
+	const isDone = step.status === "done";
+	const otherSurfaces = (step.affectedSurfaces ?? []).filter(
+		(s) => s.surface !== primarySurface,
+	);
+	return (
+		<li
+			className={`rounded-2xl border bg-surface-card p-4 transition-colors sm:p-5 ${
+				isDone
+					? "border-emerald-500/30 opacity-75"
+					: "border-edge hover:border-edge-focus"
+			}`}
+		>
+			<div className="flex flex-wrap items-start justify-between gap-3">
+				<div className="min-w-0 flex-1">
+					<div className="flex items-start gap-2">
+						<span className="font-mono text-[12px] tabular-nums text-content-faint">
+							{step.order}.
+						</span>
+						<h4
+							className={`text-[15px] font-semibold leading-snug ${
+								isDone ? "text-content-muted line-through" : "text-content"
+							}`}
+						>
+							{step.title}
+						</h4>
+					</div>
+					{otherSurfaces.length > 0 && (
+						<div className="mt-2 flex flex-wrap items-center gap-1.5">
+							<span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-amber-300">
+								afeta também
+							</span>
+							{otherSurfaces.map((s) => (
+								<span
+									key={s.surface}
+									className="font-mono text-[11px] text-content-muted"
+								>
+									{humanizeSurfaceLabel(s.surface)}
+								</span>
+							))}
+						</div>
+					)}
+					<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-content-muted">
+						<span>{step.estimatedEffort}</span>
+						<span className="text-content-faint">·</span>
+						<span>{step.suggestedOwner}</span>
+						{step.confidenceTier === "medium" || step.confidenceTier === "low" ? (
+							<>
+								<span className="text-content-faint">·</span>
+								<span className="text-content-secondary">
+									{step.confidenceTier === "low"
+										? "calibração inicial"
+										: "calibração média"}
+								</span>
+							</>
+						) : null}
+					</div>
+				</div>
+				{impact > 0 && (
+					<div
+						className={`shrink-0 rounded-lg border px-2.5 py-1.5 text-center ${
+							impact >= 5000
+								? "border-rose-500/40 bg-rose-500/10"
+								: impact >= 2000
+									? "border-amber-500/40 bg-amber-500/10"
+									: "border-edge bg-surface-inset"
+						}`}
+					>
+						<div className="text-[9px] font-semibold uppercase tracking-wider text-content-faint">
+							perda potencial
+						</div>
+						<div className="font-mono text-[12px] font-semibold tabular-nums text-content">
+							R$ {Math.round(impact).toLocaleString("pt-BR")}
+							<span className="text-[9px] font-normal opacity-70"> /mês</span>
+						</div>
+					</div>
+				)}
+			</div>
+		</li>
+	);
+}
+
 function SequenceConnector() {
 	return (
 		<div
@@ -862,6 +1048,7 @@ export default function NextSteps({
 	month,
 	planId,
 	compact = false,
+	groupBySurface = false,
 }: Props) {
 	const [expanded, setExpanded] = useState(false);
 	// E2 — split the queue into ONE main move + supporting moves. The
@@ -874,6 +1061,99 @@ export default function NextSteps({
 	const mainMove = steps[0];
 	const supportingVisible = steps.slice(1, 3);
 	const supportingHidden = steps.slice(3);
+
+	// Reta-final "Por página" lens — regroups the SAME steps by surface
+	// for dispatch. Strategic content (tese, padrão, hero) stays above
+	// untouched; only this section changes. Cross-page steps get an
+	// "afeta também" badge so the systemic story is still visible.
+	if (groupBySurface) {
+		const groups = groupStepsBySurface(steps);
+		return (
+			<motion.section
+				initial={{ opacity: 0, y: 16 }}
+				whileInView={{ opacity: 1, y: 0 }}
+				viewport={{ once: true, margin: "-10%" }}
+				transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
+				className="mb-12"
+			>
+				<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+					<h2 className="font-serif text-[22px] font-medium tracking-tight text-content">
+						Por página · {groups.length} {groups.length === 1 ? "grupo" : "grupos"}
+					</h2>
+					<div className="text-[11px] text-content-faint">
+						lente operacional · {steps.length} passos no total
+					</div>
+				</div>
+
+				{/* Anti-retrabalho banner — explicitly tells the customer the
+				    strategic moat lives elsewhere so this lens is read as
+				    "operational dispatch", not "the answer". Council
+				    deliberation: preserves the systemic differentiation while
+				    serving the Type-B operator. */}
+				<div className="mb-6 flex items-start gap-3 rounded-xl border border-edge bg-surface-inset/40 px-4 py-3 text-[12.5px] leading-snug text-content-secondary">
+					<svg className="mt-0.5 h-4 w-4 shrink-0 text-content-faint" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
+						<circle cx="8" cy="8" r="6" />
+						<path strokeLinecap="round" d="M8 5v3.5M8 11v.2" />
+					</svg>
+					<p>
+						Lente operacional — os mesmos passos do plano, reagrupados por
+						página pra você distribuir entre times. A análise estratégica
+						(tese, tema dominante, causa raiz) vive nas seções acima. Passos com badge{" "}
+						<span className="rounded bg-surface-card px-1 py-0.5 font-mono text-[10.5px] text-content">
+							afeta também
+						</span>{" "}
+						cruzam mais de uma página — atacar isolado normalmente vira retrabalho.
+					</p>
+				</div>
+
+				<div className="space-y-8">
+					{groups.map((g) => {
+						const totalImpact = g.steps.reduce(
+							(a, s) => a + (s.combinedImpact?.midpoint ?? 0),
+							0,
+						);
+						return (
+							<div key={g.label}>
+								<div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-edge/60 pb-2">
+									<div className="flex items-baseline gap-2">
+										<h3 className="font-serif text-[17px] font-medium text-content">
+											{g.label}
+										</h3>
+										<span className="text-[11px] text-content-faint">
+											{g.steps.length} {g.steps.length === 1 ? "passo" : "passos"}
+										</span>
+									</div>
+									{totalImpact > 0 && (
+										<span className="font-mono text-[12px] tabular-nums text-content-muted">
+											R$ {Math.round(totalImpact).toLocaleString("pt-BR")}/mês
+										</span>
+									)}
+								</div>
+								<ol className="space-y-3">
+									{g.steps.map((step) => (
+										<StepInGroup
+											key={step.id}
+											step={step}
+											primarySurface={g.surface}
+											comments={comments.filter((c) => c.sectionId === `next-step:${step.id}`)}
+											pendingEdit={pendingEdits.find(
+												(p) => p.sectionId === `next-step:${step.id}`,
+											)}
+											canApprove={canApprove}
+											envId={envId}
+											month={month}
+											planId={planId}
+											allSteps={steps}
+										/>
+									))}
+								</ol>
+							</div>
+						);
+					})}
+				</div>
+			</motion.section>
+		);
+	}
 
 	// Wave 22.8 — Resumo mode renderiza top 3 steps em cartoes compactos
 	// inline. Sem reasoning, sem procedure, sem drawers — title + impacto

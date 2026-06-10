@@ -260,6 +260,12 @@ export interface NextStep {
 		etaSeconds: number | null;
 		strategy: string;
 	} | null;
+	/** Reta-final "Por página" lens: surfaces touched by this step's
+	 *  linked findings, sorted by count desc. First entry is the primary
+	 *  surface (where the step is grouped in the per-page view); rest are
+	 *  rendered as "afeta também" badges. Empty when the step has no
+	 *  surface-bound findings (renders in the "Cross-site" group). */
+	affectedSurfaces?: Array<{ surface: string; findingCount: number }>;
 	status: NextStepStatus;
 	assigneeUserId: string | null;
 	assigneeName: string | null;

@@ -259,17 +259,44 @@ export async function GET(request: Request, { params }: RouteParams) {
 			),
 		),
 	);
-	const findingConfidences = allFindingKeys.length
+	const findingRows = allFindingKeys.length
 		? await prisma.finding.findMany({
 			where: {
 				environmentId: plan.environmentId,
 				inferenceKey: { in: allFindingKeys },
 				status: { in: ["created", "confirmed"] },
 			},
-			select: { inferenceKey: true, confidence: true },
+			select: { inferenceKey: true, confidence: true, surface: true },
 			orderBy: { createdAt: "desc" },
 		})
 		: [];
+	const findingConfidences = findingRows; // alias for back-compat below
+
+	// Reta-final "Por página" lens: each step's affectedSurfaces is the
+	// distinct list of surfaces across its linked findings, sorted by
+	// count desc so the primary surface (the one this step is "about")
+	// is first and secondaries become "afeta também: ..." badges.
+	const surfacesByKey = new Map<string, Map<string, number>>();
+	for (const f of findingRows) {
+		if (!f.surface) continue;
+		const inner = surfacesByKey.get(f.inferenceKey) ?? new Map<string, number>();
+		inner.set(f.surface, (inner.get(f.surface) ?? 0) + 1);
+		surfacesByKey.set(f.inferenceKey, inner);
+	}
+	function affectedSurfacesForStep(keys: string[]): Array<{ surface: string; findingCount: number }> {
+		const totals = new Map<string, number>();
+		for (const k of keys) {
+			const inner = surfacesByKey.get(k);
+			if (!inner) continue;
+			for (const [surface, count] of inner) {
+				totals.set(surface, (totals.get(surface) ?? 0) + count);
+			}
+		}
+		return Array.from(totals.entries())
+			.map(([surface, findingCount]) => ({ surface, findingCount }))
+			.sort((a, b) => b.findingCount - a.findingCount);
+	}
+
 	const confidenceByKey = new Map<string, number[]>();
 	for (const f of findingConfidences) {
 		const arr = confidenceByKey.get(f.inferenceKey) ?? [];
@@ -544,6 +571,12 @@ export async function GET(request: Request, { params }: RouteParams) {
 				 *  UI renders a badge only when "low" or "medium" — high
 				 *  is the default expectation and doesn't need annotation. */
 				confidenceTier: confidenceTierForStep(findingRefs),
+				/** Reta-final "Por página": surfaces touched by this step's
+				 *  linked findings, sorted by count desc. First entry is the
+				 *  primary surface; rest are "afeta também: ..." badges in
+				 *  the per-page lens. Empty array → step renders in the
+				 *  "Cross-site" group at the top of that lens. */
+				affectedSurfaces: affectedSurfacesForStep(findingRefs),
 				/** Reta-final: verification criteria pulled from the
 				 *  catalog ("Como saber que está fixed?"). Null when no
 				 *  catalog entry matched (rare — most live keys do). */

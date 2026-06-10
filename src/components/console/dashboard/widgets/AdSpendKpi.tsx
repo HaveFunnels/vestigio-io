@@ -126,12 +126,15 @@ function AdSpendKpiComponent({ data }: WidgetProps) {
 				</div>
 			)}
 
-			{/* Caption + link */}
+			{/* Caption + link — reta-final: legacy /workspaces/perspective/
+			    revenue page was removed (Opção C). Send the customer to
+			    the revenue-focused findings view, which is the equivalent
+			    drill-down post-IA-reform. */}
 			{caption && (
 				<div className="mt-2 border-t border-edge/40 pt-2">
 					<p className="text-[10px] leading-relaxed text-content-faint">{caption}</p>
 					<a
-						href="/app/workspaces/perspective/revenue"
+						href="/app/findings?polarity=negative&pack=revenue_integrity"
 						className="mt-1 inline-block text-[10px] text-indigo-400 hover:underline"
 					>
 						{t("view_revenue")}

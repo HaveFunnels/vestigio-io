@@ -282,6 +282,29 @@ async function mainLoop(): Promise<void> {
 		rootLog.info("OpenTelemetry disabled (no OTEL_EXPORTER_OTLP_ENDPOINT)");
 	}
 
+	// CRITICAL: initialize Prisma-backed stores in the worker process.
+	// The web process gets this via src/instrumentation.ts → vestigioStartup.
+	// The worker is a separate Railway service — it does NOT run instrumentation.ts,
+	// so without this call every LLM call from a cycle (framework_lens,
+	// domain_fingerprint, strategy_plan partial regens) writes to the
+	// default InMemoryTokenLedgerStore and evaporates on worker restart.
+	// Symptom: TokenCostLedger shows only ~9 entries while CopyFrameworkAudit
+	// shows 460+ rows (discovered 2026-06-10). Same applies to UsageStore,
+	// SaaS access store, MCP persistence store.
+	try {
+		const { vestigioStartup } = await import("../platform/startup");
+		const result = vestigioStartup(prisma);
+		if (!result.success) {
+			rootLog.error("vestigioStartup failed in worker", {
+				checks: result.checks.filter((c) => !c.passed),
+			});
+		}
+	} catch (err) {
+		rootLog.error("vestigioStartup threw in worker", {
+			err: err instanceof Error ? err.message : String(err),
+		});
+	}
+
 	rootLog.info("worker-loop starting", {
 		maxConcurrent: MAX_CONCURRENT_PER_WORKER,
 		hasRedis: !!getRedis(),

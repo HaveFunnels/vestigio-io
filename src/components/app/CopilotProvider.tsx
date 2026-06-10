@@ -48,8 +48,6 @@ export type PageContextType =
 	| { type: "actions" }
 	| { type: "pulse" }
 	| { type: "inventory" }
-	| { type: "workspace"; id: string }
-	| { type: "perspective"; slug: string }
 	| { type: "workspaces" }
 	| { type: "other" };
 
@@ -127,11 +125,11 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 	// Page context — auto-detect from pathname
 	const pageContext = useMemo<PageContextType>(() => {
 		if (!pathname) return { type: "other" };
-		if (pathname.startsWith("/app/workspaces/perspective/"))
-			return { type: "perspective", slug: pathname.split("/").pop() || "" };
-		if (pathname.match(/^\/app\/workspaces\/[^/]+$/))
-			return { type: "workspace", id: pathname.split("/").pop() || "" };
-		if (pathname === "/app/workspaces") return { type: "workspaces" };
+		// Reta-final: legacy /app/workspaces/[id] and /workspaces/perspective/[slug]
+		// pages were removed (Opção C). Any residual deep-link that lands
+		// inside /app/workspaces is now the new hub — same "workspaces"
+		// context for the copilot regardless of sub-path.
+		if (pathname.startsWith("/app/workspaces")) return { type: "workspaces" };
 		if (pathname.startsWith("/app/findings")) return { type: "analysis" };
 		if (pathname.startsWith("/app/actions")) return { type: "actions" };
 		if (pathname.startsWith("/app/pulse") || pathname.startsWith("/app/dashboard")) return { type: "pulse" };

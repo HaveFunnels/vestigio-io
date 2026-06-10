@@ -190,15 +190,22 @@ export default function FindingDetailPanel({
 				finding.opportunity_ref) && (
 				<DrawerSection title={td("context")}>
 					<div className="space-y-1.5">
+						{/* Reta-final: workspace_refs used to deep-link into legacy
+						    /app/workspaces/[id] (removed via Opção C). The new
+						    hub at /app/workspaces is the configuration surface,
+						    not a per-workspace dashboard, so we render the
+						    workspace names as static chips instead of links —
+						    keeps the cross-reference visible without sending the
+						    customer to a 404. */}
 						{finding.workspace_refs.map((ws) => (
-							<Link
+							<span
 								key={ws.id}
-								href={`/app/workspaces/${ws.id}`}
-								className="flex items-center gap-2 rounded-md border border-edge px-3 py-1.5 text-xs text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover"
+								className="flex items-center gap-2 rounded-md border border-edge bg-surface-card/40 px-3 py-1.5 text-xs text-content-muted"
+								title={ws.name}
 							>
 								<span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 								{ws.name}
-							</Link>
+							</span>
 						))}
 						{finding.action_refs.map((action) => (
 							<Link

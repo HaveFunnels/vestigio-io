@@ -38,6 +38,7 @@ export default function CancelFlowPage() {
 	const [freeText, setFreeText] = useState("");
 	const [surveyId, setSurveyId] = useState<string | null>(null);
 	const [offer, setOffer] = useState<SaveOffer | null>(null);
+	const [provider, setProvider] = useState<"paddle" | "mercadopago">("paddle");
 	const [pauseMonths, setPauseMonths] = useState(1);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -68,6 +69,9 @@ export default function CancelFlowPage() {
 			const data = await res.json();
 			setSurveyId(data.surveyId);
 			setOffer(data.offer);
+			if (data.provider === "mercadopago" || data.provider === "paddle") {
+				setProvider(data.provider);
+			}
 			setStep(2);
 		} catch (err: any) {
 			setError(err.message || t("error_generic"));
@@ -282,8 +286,11 @@ export default function CancelFlowPage() {
 							{t(`offers.${offer.primary}.description`)}
 						</p>
 
-						{/* Pause duration selector */}
-						{offer.primary === "pause" && (
+						{/* Pause duration selector — Paddle only. Mercado Pago's
+						    PreApproval pause has no native duration; "paused"
+						    is a status, not a timer. For MP, we explain the
+						    behavior instead of offering a fake duration. */}
+						{offer.primary === "pause" && provider === "paddle" && (
 							<div className="mb-4 flex gap-2">
 								{[1, 2, 3].map((m) => (
 									<button
@@ -299,6 +306,11 @@ export default function CancelFlowPage() {
 									</button>
 								))}
 							</div>
+						)}
+						{offer.primary === "pause" && provider === "mercadopago" && (
+							<p className="mb-4 rounded-md border border-edge bg-surface-inset/60 px-3 py-2 text-[12px] text-content-secondary">
+								No Mercado Pago, a assinatura fica pausada até você reativar manualmente — nenhuma cobrança roda enquanto pausada.
+							</p>
 						)}
 
 						<button

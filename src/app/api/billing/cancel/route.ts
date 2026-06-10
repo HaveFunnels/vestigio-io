@@ -33,8 +33,24 @@ const SAVE_OFFER_MAP: Record<string, { primary: string; fallback: string }> = {
 	other: { primary: "discount", fallback: "none" },
 };
 
-function getSaveOffer(reason: string) {
-	return SAVE_OFFER_MAP[reason] || { primary: "none", fallback: "none" };
+// Mercado Pago: discount + downgrade aren't supported via the
+// PreApproval API (no native subscription-level discount, downgrade
+// requires cancelling + minting a new preapproval). Until those land
+// as separate flows, MP customers see pause (where available) or
+// support fallback instead — never an offer we can't honor.
+const SAVE_OFFER_MAP_MP: Record<string, { primary: string; fallback: string }> = {
+	too_expensive: { primary: "pause", fallback: "support" },
+	not_using: { primary: "pause", fallback: "support" },
+	missing_feature: { primary: "roadmap", fallback: "none" },
+	switching: { primary: "support", fallback: "none" },
+	technical: { primary: "support", fallback: "none" },
+	temporary: { primary: "pause", fallback: "none" },
+	other: { primary: "support", fallback: "none" },
+};
+
+function getSaveOffer(reason: string, provider: "paddle" | "mercadopago") {
+	const map = provider === "mercadopago" ? SAVE_OFFER_MAP_MP : SAVE_OFFER_MAP;
+	return map[reason] || { primary: "none", fallback: "none" };
 }
 
 // ── Paddle API helpers (fetch-based, no SDK dependency) ──
@@ -187,6 +203,31 @@ export const POST = withErrorTracking(
 			);
 		}
 
+		// Resolve payment provider for the canceling user. paymentProvider
+		// is set ONLY by webhooks (Paddle or MP) on subscription create —
+		// it's authoritative server-side because the session may have been
+		// minted before provider was set, and the user has no way to
+		// change it via UI. Default to "paddle" for legacy users whose row
+		// predates the column (they're all Paddle in practice).
+		//
+		// Bug fix: before this, every cancel/pause/discount call hit
+		// Paddle's API regardless of provider. Mercado Pago customers
+		// hit 401 from Paddle and got "Failed to cancel" with no path
+		// forward. See /api/mercadopago/cancel for the standalone MP
+		// path that existed but wasn't wired into the cancel flow.
+		const userBilling = await prisma.user.findUnique({
+			where: { id: session.user.id },
+			select: {
+				paymentProvider: true,
+				mpPreapprovalId: true,
+				subscriptionId: true,
+			},
+		});
+		const provider: "paddle" | "mercadopago" =
+			userBilling?.paymentProvider === "mercadopago" ? "mercadopago" : "paddle";
+		const mpPreapprovalId = userBilling?.mpPreapprovalId ?? null;
+		const subscriptionId = userBilling?.subscriptionId ?? null;
+
 		// ── Action: survey ──────────────────────────
 		if (action === "survey") {
 			const { reason, freeText } = body;
@@ -198,7 +239,7 @@ export const POST = withErrorTracking(
 				);
 			}
 
-			const offer = getSaveOffer(reason);
+			const offer = getSaveOffer(reason, provider);
 
 			const survey = await prisma.cancelSurvey.create({
 				data: {
@@ -211,6 +252,7 @@ export const POST = withErrorTracking(
 
 			return NextResponse.json({
 				surveyId: survey.id,
+				provider,
 				offer: {
 					primary: offer.primary,
 					fallback: offer.fallback,
@@ -240,16 +282,14 @@ export const POST = withErrorTracking(
 				);
 			}
 
-			// Admin-provisioned orgs (no Paddle subscription) can't accept
-			// any provider-backed offer — pause/discount/downgrade all
-			// require a subscription to mutate. Reject explicitly so the
-			// UI surfaces it instead of writing acceptedSave=true and
-			// silently doing nothing.
+			// Admin-provisioned orgs (no subscription) can't accept any
+			// provider-backed offer. Same check works for both providers
+			// because MP also sets subscriptionId on activation.
 			if (
 				(offerType === "pause" ||
 					offerType === "discount" ||
 					offerType === "downgrade") &&
-				!session.user.subscriptionId
+				!subscriptionId
 			) {
 				return NextResponse.json(
 					{
@@ -260,25 +300,42 @@ export const POST = withErrorTracking(
 				);
 			}
 
+			// Mercado Pago doesn't support discount/downgrade on PreApproval.
+			// SAVE_OFFER_MAP_MP keeps these out of the survey response so
+			// this branch is defensive — handles a stale client that
+			// learned an offer from a previous session under a different
+			// provider context (rare).
+			if (provider === "mercadopago" && (offerType === "discount" || offerType === "downgrade")) {
+				return NextResponse.json(
+					{
+						message:
+							"Discount and downgrade aren't available on Mercado Pago subscriptions yet. Choose pause, or contact support to keep your seat.",
+					},
+					{ status: 400 },
+				);
+			}
+
 			try {
-				if (
-					offerType === "pause" &&
-					session.user.subscriptionId
-				) {
+				if (offerType === "pause" && subscriptionId) {
 					const months = Math.min(Math.max(pauseMonths || 1, 1), 3);
-					await paddlePauseSubscription(
-						session.user.subscriptionId,
-						months,
-					);
-				} else if (
-					offerType === "discount" &&
-					session.user.subscriptionId
-				) {
+					if (provider === "mercadopago" && mpPreapprovalId) {
+						// MP doesn't take a "duration" — paused stays paused
+						// until we (or the customer) call setPreapprovalStatus
+						// back to "authorized". Persist desired resume date
+						// on the survey so a future un-pause cron can act on
+						// it. For now, manual unpause via /api/mercadopago/
+						// resume (post-launch) — the pause itself works.
+						const { setPreapprovalStatus } = await import("@/libs/mp-api");
+						await setPreapprovalStatus(mpPreapprovalId, "paused");
+					} else {
+						await paddlePauseSubscription(subscriptionId, months);
+					}
+				} else if (offerType === "discount" && subscriptionId) {
 					// Use the PADDLE_SAVE_DISCOUNT_ID env var for the 25%-off-3-months coupon
 					const discountId = process.env.PADDLE_SAVE_DISCOUNT_ID;
 					if (discountId) {
 						await paddleApplyDiscount(
-							session.user.subscriptionId,
+							subscriptionId,
 							discountId,
 						);
 					}
@@ -302,9 +359,9 @@ export const POST = withErrorTracking(
 							{ status: 500 },
 						);
 					}
-					if (session.user.subscriptionId) {
+					if (subscriptionId) {
 						await paddleChangeSubscriptionPlan(
-							session.user.subscriptionId,
+							subscriptionId,
 							targetConfig.paddlePriceId,
 						);
 					}
@@ -316,7 +373,7 @@ export const POST = withErrorTracking(
 						data: { plan: targetPlan },
 					});
 					await prisma.user.updateMany({
-						where: { id: session.user.id, subscriptionId: session.user.subscriptionId ?? undefined },
+						where: { id: session.user.id, subscriptionId: subscriptionId ?? undefined },
 						data: { priceId: targetConfig.paddlePriceId },
 					});
 				}
@@ -324,12 +381,15 @@ export const POST = withErrorTracking(
 				// just mark the survey as accepted so the UI shows the
 				// right state.
 			} catch (err: any) {
-				console.error("[cancel/accept-offer] Paddle error:", err?.message);
+				console.error(
+					`[cancel/accept-offer] ${provider} error:`,
+					err?.message,
+				);
 				// For the discount + pause offers we still write the
 				// accepted state so the user isn't stuck in the cancel
-				// flow on a transient Paddle error. The downgrade path
-				// is different — if Paddle fails, plan + Paddle stay
-				// out of sync, so propagate the error.
+				// flow on a transient provider error. The downgrade path
+				// is different — if the provider fails, plan + provider
+				// stay out of sync, so propagate the error.
 				if (offerType === "downgrade") {
 					return NextResponse.json(
 						{ message: "Failed to downgrade subscription. Please try again or contact support." },
@@ -368,12 +428,23 @@ export const POST = withErrorTracking(
 				);
 			}
 
-			// Cancel via Paddle
-			if (session.user.subscriptionId) {
+			// Cancel via the right provider. session.user.subscriptionId is
+			// set for both Paddle and MP — disambiguation comes from the
+			// authoritative paymentProvider column read at the top of
+			// this handler.
+			if (subscriptionId) {
 				try {
-					await paddleCancelSubscription(session.user.subscriptionId);
+					if (provider === "mercadopago" && mpPreapprovalId) {
+						const { cancelPreapproval } = await import("@/libs/mp-api");
+						await cancelPreapproval(mpPreapprovalId);
+					} else {
+						await paddleCancelSubscription(subscriptionId);
+					}
 				} catch (err: any) {
-					console.error("[cancel/confirm] Paddle error:", err?.message);
+					console.error(
+						`[cancel/confirm] ${provider} error:`,
+						err?.message,
+					);
 					return NextResponse.json(
 						{ message: "Failed to cancel subscription. Please try again or contact support." },
 						{ status: 500 },

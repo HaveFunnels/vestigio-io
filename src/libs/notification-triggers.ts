@@ -521,6 +521,63 @@ export async function sendMiniAuditFollowupEmail(args: {
 	});
 }
 
+// ──────────────────────────────────────────────
+// Wave 22.8 reta-final — pre-expiry warning (D+10) trigger.
+//
+// Disparado pelo cron lead-pre-expiry-d10 em instrumentation-node.ts
+// quando um lead recebeu o followup 24h, nao converteu, e esta a
+// ~4 dias do TTL de 14 dias (= D+10 a D+11 de createdAt).
+//
+// Diferenca para sendMiniAuditFollowupEmail:
+//   - usa template mini_audit_pre_expiry (copy de scarcity real)
+//   - CTA url carrega ?day=d10 para attribution
+//   - tag = mini_audit_pre_expiry:{leadId} (unique-ish por lead)
+// ──────────────────────────────────────────────
+export async function sendMiniAuditPreExpiryEmail(args: {
+	email: string;
+	domain: string;
+	leadId: string;
+	visibleCount: number;
+	hiddenCount: number;
+	totalImpactMin: number;
+	totalImpactMax: number;
+	locale?: string;
+}): Promise<void> {
+	const baseUrl = getBaseUrl();
+	const resultUrl = `${baseUrl}/audit/result/${args.leadId}?from=followup&day=d10`;
+	const totalLeaks = args.visibleCount + args.hiddenCount;
+
+	const vars = {
+		domain: args.domain.replace(/[<>&"']/g, ""),
+		count: String(totalLeaks),
+		visibleCount: String(args.visibleCount),
+		hiddenCount: String(args.hiddenCount),
+		impact: `${formatBRLCents(args.totalImpactMin)}–${formatBRLCents(args.totalImpactMax)}`,
+		resultUrl,
+	};
+
+	const locale = args.locale && ["pt-BR", "en", "es", "de"].includes(args.locale)
+		? args.locale
+		: "pt-BR";
+	const rendered = renderEmailFromTemplate(
+		"mini_audit_pre_expiry",
+		vars,
+		baseUrl,
+		locale,
+	)!;
+	const smsText = renderSmsFromTemplate("mini_audit_pre_expiry", vars, locale)!;
+
+	const { notifyDirect } = await import("@/libs/notifications");
+	await notifyDirect({
+		event: "mini_audit_pre_expiry",
+		to: { email: args.email },
+		subject: rendered.subject,
+		bodyHtml: rendered.html,
+		bodyText: smsText,
+		tag: `mini_audit_pre_expiry:${args.leadId}`,
+	});
+}
+
 export async function sendPasswordResetEmail(userId: string, email: string, link: string): Promise<void> {
 	const userLocale = await getUserLocale(userId);
 	const vars = { link };

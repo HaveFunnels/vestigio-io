@@ -411,6 +411,132 @@ export async function registerNodeInstrumentation(): Promise<void> {
 
 	console.log("✓ Lead followup 24h cron registered (1h interval)");
 
+	// ── Mini-audit pre-expiry warning (Wave 22.8 reta-final) ──
+	// Segundo (e ultimo) email do funnel: vai a D+10 de createdAt, com
+	// copy "expira em 4 dias" — urgencia REAL porque LEAD_TTL_DAYS=14.
+	// Council-of-4-lenses rejeitou D+3 quando o usuario apontou que
+	// "regeramos quando voce quiser" eh giveaway que mata a scarcity.
+	// Filtros: status='audit_complete' + followupSentAt IS NOT NULL +
+	// preExpirySentAt IS NULL + createdAt entre D+10 e D+13 ago.
+	// O followupSentAt IS NOT NULL garante que so leads que receberam
+	// o primeiro touchpoint recebem o segundo (consistencia narrativa).
+	const PREEXPIRY_WINDOW_MIN_MS = 10 * 24 * 60 * 60 * 1000;
+	const PREEXPIRY_WINDOW_MAX_MS = 13 * 24 * 60 * 60 * 1000;
+	const PREEXPIRY_BATCH_SIZE = 20;
+
+	const runLeadPreExpiryD10 = async () => {
+		await withLeadership("lead-pre-expiry-d10", { ttlSec: 90 }, async () => {
+			try {
+				const now = Date.now();
+				const candidates = await prisma.anonymousLead.findMany({
+					where: {
+						status: "audit_complete",
+						followupSentAt: { not: null },
+						preExpirySentAt: null,
+						email: { not: null },
+						domain: { not: null },
+						miniAuditId: { not: null },
+						createdAt: {
+							lt: new Date(now - PREEXPIRY_WINDOW_MIN_MS),
+							gt: new Date(now - PREEXPIRY_WINDOW_MAX_MS),
+						},
+					},
+					select: {
+						id: true,
+						email: true,
+						domain: true,
+						locale: true,
+						miniAuditId: true,
+					},
+					take: PREEXPIRY_BATCH_SIZE,
+				});
+
+				if (candidates.length === 0) return;
+
+				const { sendMiniAuditPreExpiryEmail } = await import(
+					"@/libs/notification-triggers"
+				);
+
+				let sent = 0;
+				for (const lead of candidates) {
+					try {
+						const result = await prisma.miniAuditResult.findUnique({
+							where: { id: lead.miniAuditId! },
+							select: {
+								visibleFindings: true,
+								blurredFindings: true,
+							},
+						});
+						if (!result) {
+							await prisma.anonymousLead.update({
+								where: { id: lead.id },
+								data: { preExpirySentAt: new Date() },
+							});
+							continue;
+						}
+						let visibleFindings: any[] = [];
+						let blurredFindings: any[] = [];
+						try {
+							visibleFindings = JSON.parse(result.visibleFindings);
+							blurredFindings = JSON.parse(result.blurredFindings);
+						} catch {
+							await prisma.anonymousLead.update({
+								where: { id: lead.id },
+								data: { preExpirySentAt: new Date() },
+							});
+							continue;
+						}
+						const visibleCount = visibleFindings.length;
+						const hiddenCount = blurredFindings.length;
+						if (visibleCount === 0) continue;
+
+						let totalMin = 0;
+						let totalMax = 0;
+						for (const f of visibleFindings) {
+							if (!f?.impact) continue;
+							totalMin += Number(f.impact.min_brl_cents ?? 0);
+							totalMax += Number(f.impact.max_brl_cents ?? 0);
+						}
+
+						await sendMiniAuditPreExpiryEmail({
+							email: lead.email!,
+							domain: lead.domain!,
+							leadId: lead.id,
+							visibleCount,
+							hiddenCount,
+							totalImpactMin: totalMin,
+							totalImpactMax: totalMax,
+							locale: lead.locale ?? "pt-BR",
+						});
+						await prisma.anonymousLead.update({
+							where: { id: lead.id },
+							data: { preExpirySentAt: new Date() },
+						});
+						sent += 1;
+					} catch (err) {
+						console.error(
+							`[lead-pre-expiry-d10] failed for lead ${lead.id}:`,
+							err,
+						);
+					}
+				}
+
+				if (sent > 0) {
+					console.log(
+						`[lead-pre-expiry-d10] sent ${sent}/${candidates.length}`,
+					);
+				}
+			} catch (err) {
+				console.error("[lead-pre-expiry-d10] pass failed:", err);
+			}
+		});
+	};
+
+	runLeadPreExpiryD10();
+	setInterval(runLeadPreExpiryD10, LEAD_CLEANUP_INTERVAL_MS);
+
+	console.log("✓ Lead pre-expiry D+10 cron registered (1h interval)");
+
 	// ── Behavioral ingest rate-limit prune (Wave 0.2) ──
 	const { pruneRateBuckets } = await import("@/libs/behavioral-ingest");
 	setInterval(() => {

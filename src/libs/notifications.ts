@@ -46,6 +46,10 @@ export type NotificationEvent =
 	// leads que nao converteram. Disparado pelo cron lead-followup-24h
 	// em instrumentation-node.ts.
 	| "mini_audit_followup_24h"
+	// Wave 22.8 reta-final — pre-expiry warning (D+10). Segundo (e
+	// ultimo) touchpoint do funnel mini-audit. Council-of-4-lenses
+	// preferiu este sobre D+7 porque a urgencia eh real (TTL=14d).
+	| "mini_audit_pre_expiry"
 	// Product updates email channel — wired so the productUpdates toggle
 	// in settings actually gates anything. Fired when product release
 	// notes / changelog updates ship.
@@ -510,6 +514,13 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 			// Wave 22.8 #10 Move 2 — followup 24h. Sempre enviado porque
 			// o lead optou-in ao deixar email no mini-audit form. Cron
 			// garante unicidade via followupSentAt na tabela.
+			return true;
+		case "mini_audit_pre_expiry":
+			// Wave 22.8 reta-final — pre-expiry warning D+10. Mesmo
+			// opt-in path do followup 24h. Cron garante unicidade via
+			// preExpirySentAt e nao envia se followupSentAt = null
+			// (entao customer que nao recebeu o primeiro nao recebe o
+			// segundo isolado).
 			return true;
 		case "product_updates":
 			// Release notes / changelog announcements — opt-out via

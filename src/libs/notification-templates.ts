@@ -613,6 +613,67 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 	},
 
+	// Wave 22.8 reta-final — pre-expiry warning (D+10 de createdAt).
+	// Mini-audit lead expira em D+14 (LEAD_TTL_DAYS); este email vai a
+	// D+10, criando urgencia REAL ("expira em 4 dias"). Nao oferece
+	// regeneracao gratis — o customer paga ou perde. Spam-fatigue baixo
+	// porque eh apenas o segundo touch (24h + D+10), e o gatilho eh
+	// timing real, nao manufacturing.
+	mini_audit_pre_expiry: {
+		"pt-BR": {
+			sms: {
+				body: "Seu diagnostico de {domain} expira em 4 dias — {hiddenCount} vazamentos ainda escondidos: {resultUrl}",
+			},
+			email: {
+				subject: "Seu diagnostico de {domain} expira em 4 dias",
+				headline: "Seu diagnostico expira em 4 dias",
+				intro: "Você analisou <strong>{domain}</strong> dias atrás e descobriu <strong>{visibleCount} vazamentos</strong> custando até <strong>{impact}/mês</strong>. <p style=\"margin:14px 0 0 0;\">Em <strong>4 dias</strong> esse diagnóstico expira e sai do nosso sistema. <strong>{hiddenCount} vazamentos extras</strong> ficaram bloqueados ao público — eles estão prontos para você na sua conta Vestigio, junto com o plano mensal de correção.</p>",
+				ctaLabel: "Ver os {hiddenCount} vazamentos escondidos",
+				ctaPath: "{resultUrl}",
+				footerNote: "Apos a expiracao, voce precisa reiniciar a analise do zero. Sem regerar automatico.",
+			},
+		},
+		en: {
+			sms: {
+				body: "Your {domain} diagnosis expires in 4 days — {hiddenCount} leaks still hidden: {resultUrl}",
+			},
+			email: {
+				subject: "Your {domain} diagnosis expires in 4 days",
+				headline: "Your diagnosis expires in 4 days",
+				intro: "You analyzed <strong>{domain}</strong> days ago and found <strong>{visibleCount} leaks</strong> costing up to <strong>{impact}/mo</strong>. <p style=\"margin:14px 0 0 0;\">In <strong>4 days</strong> this diagnosis expires and leaves our system. <strong>{hiddenCount} additional leaks</strong> stayed locked from public view — they're ready for you inside your Vestigio account, along with the monthly fix plan.</p>",
+				ctaLabel: "See the {hiddenCount} hidden leaks",
+				ctaPath: "{resultUrl}",
+				footerNote: "After expiry, you'll need to restart the analysis from scratch. No automatic re-generation.",
+			},
+		},
+		es: {
+			sms: {
+				body: "Tu diagnostico de {domain} expira en 4 dias — {hiddenCount} fugas aun ocultas: {resultUrl}",
+			},
+			email: {
+				subject: "Tu diagnostico de {domain} expira en 4 dias",
+				headline: "Tu diagnostico expira en 4 dias",
+				intro: "Analizaste <strong>{domain}</strong> hace dias y encontraste <strong>{visibleCount} fugas</strong> costando hasta <strong>{impact}/mes</strong>. <p style=\"margin:14px 0 0 0;\">En <strong>4 dias</strong> este diagnostico expira y sale de nuestro sistema. <strong>{hiddenCount} fugas adicionales</strong> quedaron bloqueadas — estan listas para ti en tu cuenta Vestigio.</p>",
+				ctaLabel: "Ver las {hiddenCount} fugas ocultas",
+				ctaPath: "{resultUrl}",
+				footerNote: "Despues de la expiracion, debes reiniciar el analisis desde cero.",
+			},
+		},
+		de: {
+			sms: {
+				body: "Ihre {domain}-Diagnose lauft in 4 Tagen ab — {hiddenCount} versteckte Lecks: {resultUrl}",
+			},
+			email: {
+				subject: "Ihre {domain}-Diagnose laeuft in 4 Tagen ab",
+				headline: "Ihre Diagnose laeuft in 4 Tagen ab",
+				intro: "Sie haben <strong>{domain}</strong> vor Tagen analysiert und <strong>{visibleCount} Lecks</strong> gefunden, die bis zu <strong>{impact}/Monat</strong> kosten. <p style=\"margin:14px 0 0 0;\">In <strong>4 Tagen</strong> laeuft diese Diagnose ab. <strong>{hiddenCount} weitere Lecks</strong> bleiben in Ihrem Vestigio-Konto bereit.</p>",
+				ctaLabel: "Die {hiddenCount} versteckten Lecks ansehen",
+				ctaPath: "{resultUrl}",
+				footerNote: "Nach Ablauf muessen Sie die Analyse von vorne starten.",
+			},
+		},
+	},
+
 	inactivity_pause: {
 		"pt-BR": {
 			sms: {

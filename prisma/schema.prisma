@@ -2080,6 +2080,12 @@ model AnonymousLead {
   // leads existentes; cron filtra por IS NULL.
   followupSentAt DateTime?
 
+  // Wave 22.8 reta-final — pre-expiry warning (D+10 de createdAt).
+  // Unica outra touchpoint pos D+1; D+7 vira spam, council-of-4-lenses
+  // rejeitou. D+10 = "expira em 4 dias" eh urgencia REAL (TTL = 14d),
+  // nao manufaturada.
+  preExpirySentAt DateTime?
+
   miniAudit MiniAuditResult? @relation(fields: [miniAuditId], references: [id])
 
   @@index([email])
@@ -2090,6 +2096,8 @@ model AnonymousLead {
   // Wave 22.8 #10 Move 2 — index para o cron de followup 24h. Filtra
   // por status + followupSentAt IS NULL + createdAt > 24h ago.
   @@index([status, followupSentAt, createdAt])
+  // Wave 22.8 reta-final — index para o cron de pre-expiry D+10.
+  @@index([status, preExpirySentAt, createdAt])
 }
 
 // ──────────────────────────────────────────────

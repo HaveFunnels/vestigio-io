@@ -83,7 +83,19 @@ function formatTimestamp(date: Date): string {
 	return `${dd} ${mmName} · ${hh}:${min} UTC`;
 }
 
-function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => void }) {
+export type PlanViewMode = "completo" | "resumo";
+
+function StickyHeader({
+	plan,
+	onClose,
+	viewMode,
+	onViewModeChange,
+}: {
+	plan: StrategyPlan;
+	onClose?: () => void;
+	viewMode: PlanViewMode;
+	onViewModeChange: (mode: PlanViewMode) => void;
+}) {
 	const [exporting, setExporting] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
@@ -154,6 +166,34 @@ function StickyHeader({ plan, onClose }: { plan: StrategyPlan; onClose?: () => v
 					)}
 				</div>
 				<div className="flex items-center gap-2">
+					{/* Wave 22.8 IA reform — Executive Summary view toggle.
+					    Defaults to "Completo"; "Resumo" mostra apenas Tese,
+					    Hero, Continuidade condensada e top 3 Next Steps
+					    (sem reasoning expandida). Persistencia via
+					    localStorage + URL param ?view=resumo, geridos pelo
+					    parent StrategyPlanPanel. */}
+					<div
+						role="radiogroup"
+						aria-label="Modo de leitura do plano"
+						className="inline-flex items-center rounded-md border border-edge bg-surface-card p-0.5"
+					>
+						{(["resumo", "completo"] as const).map((m) => (
+							<button
+								key={m}
+								type="button"
+								role="radio"
+								aria-checked={viewMode === m}
+								onClick={() => onViewModeChange(m)}
+								className={`rounded-[5px] px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
+									viewMode === m
+										? "bg-surface-inset/80 text-content"
+										: "text-content-muted hover:text-content-secondary"
+								}`}
+							>
+								{m === "resumo" ? "Resumo" : "Completo"}
+							</button>
+						))}
+					</div>
 					<button
 						type="button"
 						onClick={handleShare}
@@ -243,11 +283,47 @@ function PlanHeader({ plan }: { plan: StrategyPlan }) {
 	);
 }
 
+const VIEW_MODE_STORAGE_KEY = "vestigio.plan_view_mode";
+
+function resolveInitialViewMode(searchParams: ReturnType<typeof useSearchParams>): PlanViewMode {
+	// URL > localStorage > default. URL wins so a colleague can be
+	// shared an exec-summary link (?view=resumo) regardless of their
+	// own saved preference.
+	const fromUrl = searchParams?.get("view");
+	if (fromUrl === "resumo" || fromUrl === "completo") return fromUrl;
+	if (typeof window !== "undefined") {
+		try {
+			const stored = window.localStorage.getItem(VIEW_MODE_STORAGE_KEY);
+			if (stored === "resumo" || stored === "completo") return stored;
+		} catch {
+			/* localStorage blocked (private mode) — fall through */
+		}
+	}
+	return "completo";
+}
+
 export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClose }: Props) {
 	const searchParams = useSearchParams();
 	const isPrint = searchParams?.get("print") === "true";
 	const monthLabel = formatMonthLabel(plan.month);
 	const isPt = plan.locale === "pt-BR";
+
+	// Wave 22.8 — Executive Summary view toggle. State persists in
+	// localStorage so the customer's preference sticks across plan
+	// visits; URL ?view= param overrides for share-link scenarios.
+	// Print export always uses "completo" so PDFs carry the full plan.
+	const [viewMode, setViewMode] = useState<PlanViewMode>(() =>
+		isPrint ? "completo" : resolveInitialViewMode(searchParams),
+	);
+	function handleViewModeChange(next: PlanViewMode) {
+		setViewMode(next);
+		try {
+			window.localStorage.setItem(VIEW_MODE_STORAGE_KEY, next);
+		} catch {
+			/* private mode — no-op */
+		}
+	}
+	const isResumo = viewMode === "resumo" && !isPrint;
 
 	return (
 		<div
@@ -285,7 +361,14 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 
 			{/* All real content sits above the grid layer */}
 			<div className="relative z-10">
-			{!isPrint && showStickyHeader && <StickyHeader plan={plan} onClose={onClose} />}
+			{!isPrint && showStickyHeader && (
+				<StickyHeader
+					plan={plan}
+					onClose={onClose}
+					viewMode={viewMode}
+					onViewModeChange={handleViewModeChange}
+				/>
+			)}
 
 			<div className="mx-auto max-w-[1100px] px-6 py-10 sm:py-14">
 				{/* Mobile-only hint — the plan is readable on phones but
@@ -316,18 +399,22 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 							{
 								id: "cross-customer",
 								label: isPt ? "Padrão carteira" : "Peer pattern",
-								visible: !!plan.crossCustomerPattern,
+								visible: !isResumo && !!plan.crossCustomerPattern,
 							},
-							{ id: "segments", label: isPt ? "Times" : "By team", visible: true },
+							{ id: "segments", label: isPt ? "Times" : "By team", visible: !isResumo },
 							{
 								id: "carteira",
 								label: isPt ? "Carteira" : "Market signals",
-								visible: !!plan.competitor || !!plan.impersonators,
+								visible: !isResumo && (!!plan.competitor || !!plan.impersonators),
 							},
-							{ id: "narrative", label: isPt ? "O que aconteceu" : "What happened", visible: !!plan.narrativeWhatHappened },
+							{
+								id: "narrative",
+								label: isPt ? "O que aconteceu" : "What happened",
+								visible: !isResumo && !!plan.narrativeWhatHappened,
+							},
 							{ id: "next-steps", label: isPt ? "Próximos passos" : "Next steps", visible: true },
-							{ id: "value-preview", label: isPt ? "O que ganha" : "Value preview", visible: true },
-							{ id: "memory", label: isPt ? "Memória" : "Memory", visible: true },
+							{ id: "value-preview", label: isPt ? "O que ganha" : "Value preview", visible: !isResumo },
+							{ id: "memory", label: isPt ? "Memória" : "Memory", visible: !isResumo },
 						];
 						return items;
 					})()}
@@ -345,48 +432,43 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				<div data-toc-id="hero">
 					<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} />
 				</div>
-				{/* E3 — continuity from the prior month's plan. Sits between
-				    hero and buyer segments so the customer first sees where
-				    they are NOW (hero), then where they came from (continuity),
-				    then who owns the work (segments). Self-hides for month-1
-				    envs where no prior plan exists. */}
+				{/* E3 — continuity. Em modo Resumo renderiza compact
+				    (so o headline delta). Self-hide em mes-1. */}
 				<div data-toc-id="continuity">
-					<Continuity continuity={plan.continuity} />
+					<Continuity continuity={plan.continuity} compact={isResumo} />
 				</div>
-				{/* E4 — peer pattern callout. Sits before buyer segments
-				    so the "your segment shows X" frame anchors the by-team
-				    decomposition that follows. Self-hides on null when the
-				    peer sample is too small for statistically honest
-				    framing. */}
-				<div data-toc-id="cross-customer">
-					<CrossCustomerPattern pattern={plan.crossCustomerPattern} />
-				</div>
-				<div data-toc-id="segments">
-					<BuyerSegments
-						segments={plan.buyerSegments}
-						month={plan.month}
-						hasCopyLensData={
-							!!plan.copyLens && (plan.copyLens.frameworks?.length ?? 0) > 0
-						}
-						hasMapsData={!!plan.maps}
-					/>
-				</div>
-				{/* Wave 22.8 review — Competitor + Impersonators clustered
-				    into a single Carteira card. Self-hides when both are
-				    null. Collapsed when zero signals to minimise quiet-
-				    month noise. */}
-				<div data-toc-id="carteira">
-					<Carteira
-						competitor={plan.competitor}
-						impersonators={plan.impersonators}
-					/>
-				</div>
-				<div data-toc-id="narrative">
-					<WhatHappenedNarrative
-						narrative={plan.narrativeWhatHappened}
-						monthLabel={monthLabel}
-					/>
-				</div>
+				{/* Wave 22.8 — Resumo mode esconde seções de contexto e
+				    decomposição. Mantém só Tese, Hero, Continuidade, Top
+				    3 Next Steps. */}
+				{!isResumo && (
+					<>
+						<div data-toc-id="cross-customer">
+							<CrossCustomerPattern pattern={plan.crossCustomerPattern} />
+						</div>
+						<div data-toc-id="segments">
+							<BuyerSegments
+								segments={plan.buyerSegments}
+								month={plan.month}
+								hasCopyLensData={
+									!!plan.copyLens && (plan.copyLens.frameworks?.length ?? 0) > 0
+								}
+								hasMapsData={!!plan.maps}
+							/>
+						</div>
+						<div data-toc-id="carteira">
+							<Carteira
+								competitor={plan.competitor}
+								impersonators={plan.impersonators}
+							/>
+						</div>
+						<div data-toc-id="narrative">
+							<WhatHappenedNarrative
+								narrative={plan.narrativeWhatHappened}
+								monthLabel={monthLabel}
+							/>
+						</div>
+					</>
+				)}
 				<div data-toc-id="next-steps">
 					<NextSteps
 						steps={plan.nextSteps}
@@ -396,20 +478,22 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 						envId={plan.environmentId}
 						month={plan.month}
 						planId={plan.id}
+						compact={isResumo}
 					/>
 				</div>
-				{/* Wave 22.8 review — Copy Lens and Maps moved to standalone
-				    pages reachable from the BuyerSegments Copy and Liderança
-				    cards. They no longer render inline in the plan. */}
-				<div data-toc-id="value-preview">
-					<ValuePreview
-						preview={plan.valuePreview}
-						narrative={plan.valuePreviewNarrative}
-					/>
-				</div>
-				<div data-toc-id="memory">
-					<MemoryRollups rollups={plan.memoryRollups} />
-				</div>
+				{!isResumo && (
+					<>
+						<div data-toc-id="value-preview">
+							<ValuePreview
+								preview={plan.valuePreview}
+								narrative={plan.valuePreviewNarrative}
+							/>
+						</div>
+						<div data-toc-id="memory">
+							<MemoryRollups rollups={plan.memoryRollups} />
+						</div>
+					</>
+				)}
 
 				{/* Footer — Wave-22.6-review fix: removed internal LLM
 				    cost telemetry ("$0.08") and engineer-style version

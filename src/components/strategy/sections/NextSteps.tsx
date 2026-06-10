@@ -47,6 +47,11 @@ interface Props {
 	envId: string;
 	month: string;
 	planId: string;
+	/** Wave 22.8 — Resumo (Executive Summary) mode. When true, renders
+	 *  only the top 3 steps with compact-card treatment (title + impact
+	 *  + status badge, no reasoning, no procedureSteps, no drawers).
+	 *  Customer in a hurry reads the bet in seconds. */
+	compact?: boolean;
 }
 
 const STATUS_LABEL: Record<NextStepStatus, string> = {
@@ -732,6 +737,7 @@ export default function NextSteps({
 	envId,
 	month,
 	planId,
+	compact = false,
 }: Props) {
 	const [expanded, setExpanded] = useState(false);
 	// E2 — split the queue into ONE main move + supporting moves. The
@@ -744,6 +750,73 @@ export default function NextSteps({
 	const mainMove = steps[0];
 	const supportingVisible = steps.slice(1, 3);
 	const supportingHidden = steps.slice(3);
+
+	// Wave 22.8 — Resumo mode renderiza top 3 steps em cartoes compactos
+	// inline. Sem reasoning, sem procedure, sem drawers — title + impacto
+	// + status. Customer le a aposta em segundos.
+	if (compact) {
+		const topThree = steps.slice(0, 3);
+		return (
+			<motion.section
+				initial={{ opacity: 0, y: 16 }}
+				whileInView={{ opacity: 1, y: 0 }}
+				viewport={{ once: true, margin: "-10%" }}
+				transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.18 }}
+				className="mb-12"
+			>
+				<div className="mb-4 flex items-baseline justify-between">
+					<h2 className="font-serif text-[22px] font-medium tracking-tight text-content">
+						Onde apostar este mês
+					</h2>
+					<div className="text-[11px] text-content-faint">
+						top {topThree.length} de {steps.length}
+					</div>
+				</div>
+				<ol className="space-y-2">
+					{topThree.map((step, idx) => {
+						const tone =
+							STATUS_TONE[step.status] ?? STATUS_TONE.todo;
+						const impact = step.combinedImpact?.midpoint ?? 0;
+						return (
+							<li
+								key={step.id}
+								className="grid grid-cols-[auto_1fr_auto] items-center gap-4 rounded-2xl border border-edge bg-surface-card p-4 sm:p-5"
+							>
+								<span className="font-serif text-[24px] font-medium text-content-faint tabular-nums sm:text-[28px]">
+									{idx + 1}
+								</span>
+								<div className="min-w-0">
+									<div className="truncate text-[14px] font-semibold text-content">
+										{step.title}
+									</div>
+									<div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[11px] text-content-muted">
+										<span>{step.estimatedEffort}</span>
+										<span className="text-content-faint">·</span>
+										<span>{step.suggestedOwner}</span>
+									</div>
+								</div>
+								<div className="flex flex-col items-end gap-1.5">
+									{impact > 0 && (
+										<span className="font-mono text-[14px] font-semibold tabular-nums text-content">
+											R$ {Math.round(impact).toLocaleString("pt-BR")}
+											<span className="ml-0.5 text-[10px] font-normal text-content-faint">
+												/mês
+											</span>
+										</span>
+									)}
+									<span
+										className={`rounded-md px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.08em] ring-1 ring-inset ${tone}`}
+									>
+										{STATUS_LABEL[step.status]}
+									</span>
+								</div>
+							</li>
+						);
+					})}
+				</ol>
+			</motion.section>
+		);
+	}
 
 	// Build per-step lookup tables so each StepCard receives only the
 	// comments + pending edit that belong to it. Comments are keyed

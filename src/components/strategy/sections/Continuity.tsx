@@ -46,9 +46,14 @@ const STATUS_BADGE: Record<string, { label: string; chip: string; dot: string }>
 
 interface Props {
 	continuity: ContinuitySection | null | undefined;
+	/** Wave 22.8 — Resumo (Executive Summary) mode. Hides the per-step
+	 *  status list; only the headline delta tiles (capturado +
+	 *  exposicao delta) render. The customer in a hurry still sees
+	 *  whether continuity is healthy. */
+	compact?: boolean;
 }
 
-export default function Continuity({ continuity }: Props) {
+export default function Continuity({ continuity, compact = false }: Props) {
 	const { currency } = useMcpData();
 	if (!continuity || !continuity.previousMonth || continuity.steps.length === 0) {
 		return null;
@@ -106,47 +111,50 @@ export default function Continuity({ continuity }: Props) {
 
 				{/* Per-step status list — verbatim titles from prior plan,
 				    current status badge, captured impact + resolved/total
-				    ratio so the customer sees how the bet played out. */}
-				<ul className="space-y-3">
-					{continuity.steps.map((s, i) => {
-						const badge = STATUS_BADGE[s.statusNow] ?? STATUS_BADGE.todo;
-						const ratio =
-							s.totalLinkedCount > 0
-								? `${s.resolvedLinkedCount}/${s.totalLinkedCount} problemas resolvidos`
-								: "sem problemas linkados";
-						return (
-							<li
-								key={i}
-								className="flex flex-col gap-2 rounded-xl border border-edge/40 bg-surface-inset/30 p-3 sm:flex-row sm:items-center sm:gap-4"
-							>
-								<div className="flex flex-1 items-start gap-3">
-									<span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${badge.dot}`} />
-									<div className="min-w-0 flex-1">
-										<div className="truncate text-[14px] font-medium text-content">
-											{s.title}
-										</div>
-										<div className="mt-0.5 text-[11px] text-content-muted">
-											{ratio}
-											{s.capturedImpact > 0 && (
-												<>
-													{" "}· recuperado{" "}
-													<span className="font-mono tabular-nums text-content">
-														{fmtCurrencyUnits(s.capturedImpact, currency)}
-													</span>
-												</>
-											)}
+				    ratio so the customer sees how the bet played out.
+				    Em modo Resumo, escondido. */}
+				{!compact && (
+					<ul className="space-y-3">
+						{continuity.steps.map((s, i) => {
+							const badge = STATUS_BADGE[s.statusNow] ?? STATUS_BADGE.todo;
+							const ratio =
+								s.totalLinkedCount > 0
+									? `${s.resolvedLinkedCount}/${s.totalLinkedCount} problemas resolvidos`
+									: "sem problemas linkados";
+							return (
+								<li
+									key={i}
+									className="flex flex-col gap-2 rounded-xl border border-edge/40 bg-surface-inset/30 p-3 sm:flex-row sm:items-center sm:gap-4"
+								>
+									<div className="flex flex-1 items-start gap-3">
+										<span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${badge.dot}`} />
+										<div className="min-w-0 flex-1">
+											<div className="truncate text-[14px] font-medium text-content">
+												{s.title}
+											</div>
+											<div className="mt-0.5 text-[11px] text-content-muted">
+												{ratio}
+												{s.capturedImpact > 0 && (
+													<>
+														{" "}· recuperado{" "}
+														<span className="font-mono tabular-nums text-content">
+															{fmtCurrencyUnits(s.capturedImpact, currency)}
+														</span>
+													</>
+												)}
+											</div>
 										</div>
 									</div>
-								</div>
-								<span
-									className={`shrink-0 self-start rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ring-1 ring-inset ${badge.chip} sm:self-center`}
-								>
-									{badge.label}
-								</span>
-							</li>
-						);
-					})}
-				</ul>
+									<span
+										className={`shrink-0 self-start rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ring-1 ring-inset ${badge.chip} sm:self-center`}
+									>
+										{badge.label}
+									</span>
+								</li>
+							);
+						})}
+					</ul>
+				)}
 			</div>
 		</motion.section>
 	);

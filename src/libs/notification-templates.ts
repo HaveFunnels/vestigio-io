@@ -555,6 +555,64 @@ const TEMPLATES: Record<string, LocalizedTemplates> = {
 		},
 	},
 
+	// Wave 22.8 #10 Move 2 — followup email 24h pos mini-audit. Disparado
+	// por cron quando lead status=audit_complete + createdAt > 24h ago +
+	// nao converteu + nao recebeu followup ainda.
+	mini_audit_followup_24h: {
+		"pt-BR": {
+			sms: {
+				body: "Faltam {count} vazamentos em {domain} para você ver — {impact}/mês. Continue: {resultUrl}",
+			},
+			email: {
+				subject: "Você viu {visibleCount} vazamentos em {domain}. Faltam {hiddenCount}.",
+				headline: "Vimos R$ {impact} saindo do seu site",
+				intro: "Você analisou <strong>{domain}</strong> ontem e descobriu <strong>{visibleCount} vazamentos</strong> custando até <strong>{impact}/mês</strong>. Ainda há <strong>{hiddenCount} vazamentos extras</strong> que ficaram bloqueados — eles aparecem na sua conta Vestigio, junto com o plano mensal de correção priorizada por impacto financeiro. <p style=\"margin:16px 0 0 0;font-size:13px;color:#a1a1aa;\">O link abaixo abre o diagnóstico de novo com seu email já preenchido. Você só seta a senha.</p>",
+				ctaLabel: "Continuar de onde parei",
+				ctaPath: "{resultUrl}",
+				footerNote: "Você recebeu este email porque solicitou um diagnóstico gratuito na Vestigio.",
+			},
+		},
+		en: {
+			sms: {
+				body: "{count} more leaks for {domain} to see — {impact}/mo. Continue: {resultUrl}",
+			},
+			email: {
+				subject: "You saw {visibleCount} leaks in {domain}. {hiddenCount} more remain.",
+				headline: "We saw {impact} leaving your site",
+				intro: "You analyzed <strong>{domain}</strong> yesterday and found <strong>{visibleCount} leaks</strong> costing up to <strong>{impact}/mo</strong>. There are still <strong>{hiddenCount} additional leaks</strong> that stayed locked — they appear in your Vestigio account, alongside a monthly fix plan prioritized by financial impact. <p style=\"margin:16px 0 0 0;font-size:13px;color:#a1a1aa;\">The link below reopens the diagnosis with your email pre-filled. Just set a password.</p>",
+				ctaLabel: "Continue where I left off",
+				ctaPath: "{resultUrl}",
+				footerNote: "You received this email because you requested a free diagnosis from Vestigio.",
+			},
+		},
+		es: {
+			sms: {
+				body: "{count} fugas mas en {domain} para ver — {impact}/mes. Continua: {resultUrl}",
+			},
+			email: {
+				subject: "Viste {visibleCount} fugas en {domain}. Faltan {hiddenCount}.",
+				headline: "Vimos {impact} saliendo de tu sitio",
+				intro: "Ayer analizaste <strong>{domain}</strong> y encontraste <strong>{visibleCount} fugas</strong> costando hasta <strong>{impact}/mes</strong>. Quedan <strong>{hiddenCount} fugas adicionales</strong> bloqueadas — aparecen en tu cuenta Vestigio junto al plan mensual de correccion priorizado por impacto financiero.",
+				ctaLabel: "Continuar donde lo deje",
+				ctaPath: "{resultUrl}",
+				footerNote: "Recibiste este correo porque solicitaste un diagnostico gratuito en Vestigio.",
+			},
+		},
+		de: {
+			sms: {
+				body: "{count} weitere Lecks fuer {domain} — {impact}/Monat. Weiter: {resultUrl}",
+			},
+			email: {
+				subject: "Sie sahen {visibleCount} Lecks in {domain}. Es bleiben noch {hiddenCount}.",
+				headline: "Wir sahen {impact}, die Ihr Website verlassen",
+				intro: "Sie haben gestern <strong>{domain}</strong> analysiert und <strong>{visibleCount} Lecks</strong> gefunden, die bis zu <strong>{impact}/Monat</strong> kosten. Es bleiben noch <strong>{hiddenCount} weitere Lecks</strong>, die in Ihrem Vestigio-Konto erscheinen.",
+				ctaLabel: "Dort weitermachen, wo ich aufgehoert habe",
+				ctaPath: "{resultUrl}",
+				footerNote: "Sie haben diese E-Mail erhalten, weil Sie eine kostenlose Diagnose bei Vestigio angefordert haben.",
+			},
+		},
+	},
+
 	inactivity_pause: {
 		"pt-BR": {
 			sms: {

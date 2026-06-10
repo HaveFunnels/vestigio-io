@@ -2068,6 +2068,13 @@ model AnonymousLead {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Wave 22.8 #10 Move 2 — timestamp do envio do email de followup 24h
+  // pos audit_complete. Cron `lead-followup-24h` (instrumentation-node.ts)
+  // varre leads que completaram a auditoria > 24h atras, nao converteram
+  // e nao receberam o followup ainda. Nullable para back-compat com
+  // leads existentes; cron filtra por IS NULL.
+  followupSentAt DateTime?
+
   miniAudit MiniAuditResult? @relation(fields: [miniAuditId], references: [id])
 
   @@index([email])
@@ -2075,6 +2082,9 @@ model AnonymousLead {
   @@index([status, createdAt])
   @@index([expiresAt]) // cleanup cron
   @@index([ipAddress, createdAt]) // rate limiting
+  // Wave 22.8 #10 Move 2 — index para o cron de followup 24h. Filtra
+  // por status + followupSentAt IS NULL + createdAt > 24h ago.
+  @@index([status, followupSentAt, createdAt])
 }
 
 // ──────────────────────────────────────────────

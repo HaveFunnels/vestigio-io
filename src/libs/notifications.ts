@@ -42,6 +42,10 @@ export type NotificationEvent =
 	| "verified_resolved"
 	| "digest"
 	| "mini_audit_complete"
+	// Wave 22.8 #10 Move 2 — followup email 24h pos mini-audit para
+	// leads que nao converteram. Disparado pelo cron lead-followup-24h
+	// em instrumentation-node.ts.
+	| "mini_audit_followup_24h"
 	// Product updates email channel — wired so the productUpdates toggle
 	// in settings actually gates anything. Fired when product release
 	// notes / changelog updates ship.
@@ -501,6 +505,11 @@ function isEventEnabled(event: NotificationEvent, prefs: {
 			return prefs.alertOnDigest ?? true;
 		case "mini_audit_complete":
 			// Anonymous lead email — always sent (they just requested it)
+			return true;
+		case "mini_audit_followup_24h":
+			// Wave 22.8 #10 Move 2 — followup 24h. Sempre enviado porque
+			// o lead optou-in ao deixar email no mini-audit form. Cron
+			// garante unicidade via followupSentAt na tabela.
 			return true;
 		case "product_updates":
 			// Release notes / changelog announcements — opt-out via

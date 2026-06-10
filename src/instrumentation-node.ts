@@ -279,6 +279,138 @@ export async function registerNodeInstrumentation(): Promise<void> {
 
 	console.log("✓ Lead cleanup cron registered (1h interval)");
 
+	// ── Mini-audit followup 24h cron (Wave 22.8 #10 Move 2) ──
+	// Para leads que rodaram o mini-audit, viram resultado, e
+	// nao converteram em 24h. Manda 1 email "Voce viu N vazamentos
+	// em [domain]. Faltam M." com link de volta ao /audit/result
+	// que carrega o leadId pro localStorage, e o signup CTA dentro
+	// pre-preenche email no /auth/signup (commit de3d757a).
+	//
+	// Filtros: status='audit_complete' + createdAt < now - 24h +
+	// createdAt > now - 7d + followupSentAt IS NULL + email IS NOT NULL.
+	// O 7d ceiling evita spammar leads frios; o NULL previne
+	// duplicidade.
+	const FOLLOWUP_WINDOW_MIN_MS = 24 * 60 * 60 * 1000;
+	const FOLLOWUP_WINDOW_MAX_MS = 7 * 24 * 60 * 60 * 1000;
+	const FOLLOWUP_BATCH_SIZE = 20;
+
+	const runLeadFollowup24h = async () => {
+		await withLeadership("lead-followup-24h", { ttlSec: 90 }, async () => {
+			try {
+				const now = Date.now();
+				const candidates = await prisma.anonymousLead.findMany({
+					where: {
+						status: "audit_complete",
+						followupSentAt: null,
+						email: { not: null },
+						domain: { not: null },
+						miniAuditId: { not: null },
+						createdAt: {
+							lt: new Date(now - FOLLOWUP_WINDOW_MIN_MS),
+							gt: new Date(now - FOLLOWUP_WINDOW_MAX_MS),
+						},
+					},
+					select: {
+						id: true,
+						email: true,
+						domain: true,
+						locale: true,
+						miniAuditId: true,
+					},
+					take: FOLLOWUP_BATCH_SIZE,
+				});
+
+				if (candidates.length === 0) return;
+
+				const { sendMiniAuditFollowupEmail } = await import(
+					"@/libs/notification-triggers"
+				);
+
+				let sent = 0;
+				for (const lead of candidates) {
+					try {
+						const result = await prisma.miniAuditResult.findUnique({
+							where: { id: lead.miniAuditId! },
+							select: {
+								visibleFindings: true,
+								blurredFindings: true,
+							},
+						});
+						if (!result) {
+							// Marca enviado para nao reentrar — o lead expira
+							// via lead-cleanup eventualmente.
+							await prisma.anonymousLead.update({
+								where: { id: lead.id },
+								data: { followupSentAt: new Date() },
+							});
+							continue;
+						}
+						let visibleFindings: any[] = [];
+						let blurredFindings: any[] = [];
+						try {
+							visibleFindings = JSON.parse(result.visibleFindings);
+							blurredFindings = JSON.parse(result.blurredFindings);
+						} catch {
+							// Mal-formed cache row — mark sent so we skip it.
+							await prisma.anonymousLead.update({
+								where: { id: lead.id },
+								data: { followupSentAt: new Date() },
+							});
+							continue;
+						}
+						const visibleCount = visibleFindings.length;
+						const hiddenCount = blurredFindings.length;
+						if (visibleCount === 0) continue;
+
+						// Sum monthly impact from each visible negative finding
+						// (positive findings carry impact=null).
+						let totalMin = 0;
+						let totalMax = 0;
+						for (const f of visibleFindings) {
+							if (!f?.impact) continue;
+							totalMin += Number(f.impact.min_brl_cents ?? 0);
+							totalMax += Number(f.impact.max_brl_cents ?? 0);
+						}
+
+						await sendMiniAuditFollowupEmail({
+							email: lead.email!,
+							domain: lead.domain!,
+							leadId: lead.id,
+							visibleCount,
+							hiddenCount,
+							totalImpactMin: totalMin,
+							totalImpactMax: totalMax,
+							locale: lead.locale ?? "pt-BR",
+						});
+						await prisma.anonymousLead.update({
+							where: { id: lead.id },
+							data: { followupSentAt: new Date() },
+						});
+						sent += 1;
+					} catch (err) {
+						console.error(
+							`[lead-followup-24h] failed for lead ${lead.id}:`,
+							err,
+						);
+					}
+				}
+
+				if (sent > 0) {
+					console.log(
+						`[lead-followup-24h] sent ${sent}/${candidates.length}`,
+					);
+				}
+			} catch (err) {
+				console.error("[lead-followup-24h] pass failed:", err);
+			}
+		});
+	};
+
+	runLeadFollowup24h();
+	setInterval(runLeadFollowup24h, LEAD_CLEANUP_INTERVAL_MS);
+
+	console.log("✓ Lead followup 24h cron registered (1h interval)");
+
 	// ── Behavioral ingest rate-limit prune (Wave 0.2) ──
 	const { pruneRateBuckets } = await import("@/libs/behavioral-ingest");
 	setInterval(() => {

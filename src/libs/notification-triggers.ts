@@ -458,6 +458,63 @@ export async function sendMiniAuditEmail(args: {
 	});
 }
 
+/**
+ * Wave 22.8 #10 Move 2 — followup email 24h post mini-audit.
+ *
+ * Disparado pelo cron `lead-followup-24h` em instrumentation-node.ts
+ * para leads que terminaram audit_complete > 24h atras, nao
+ * converteram, e nao receberam o followup ainda.
+ *
+ * O resultUrl tem leadId como query param para que /audit/result o
+ * abra normalmente (já é a rota standard). O signup CTA dentro da
+ * pagina ja carrega o leadId pro localStorage, que aciona o pre-fill
+ * de email no /auth/signup (shipped em commit de3d757a).
+ */
+export async function sendMiniAuditFollowupEmail(args: {
+	email: string;
+	domain: string;
+	leadId: string;
+	visibleCount: number;
+	hiddenCount: number;
+	totalImpactMin: number;
+	totalImpactMax: number;
+	locale?: string;
+}): Promise<void> {
+	const baseUrl = getBaseUrl();
+	const resultUrl = `${baseUrl}/audit/result/${args.leadId}`;
+	const totalLeaks = args.visibleCount + args.hiddenCount;
+
+	const vars = {
+		domain: args.domain.replace(/[<>&"']/g, ""),
+		count: String(totalLeaks),
+		visibleCount: String(args.visibleCount),
+		hiddenCount: String(args.hiddenCount),
+		impact: `${formatBRLCents(args.totalImpactMin)}–${formatBRLCents(args.totalImpactMax)}`,
+		resultUrl,
+	};
+
+	const locale = args.locale && ["pt-BR", "en", "es", "de"].includes(args.locale)
+		? args.locale
+		: "pt-BR";
+	const rendered = renderEmailFromTemplate(
+		"mini_audit_followup_24h",
+		vars,
+		baseUrl,
+		locale,
+	)!;
+	const smsText = renderSmsFromTemplate("mini_audit_followup_24h", vars, locale)!;
+
+	const { notifyDirect } = await import("@/libs/notifications");
+	await notifyDirect({
+		event: "mini_audit_followup_24h",
+		to: { email: args.email },
+		subject: rendered.subject,
+		bodyHtml: rendered.html,
+		bodyText: smsText,
+		tag: `mini_audit_followup:${args.leadId}`,
+	});
+}
+
 export async function sendPasswordResetEmail(userId: string, email: string, link: string): Promise<void> {
 	const userLocale = await getUserLocale(userId);
 	const vars = { link };

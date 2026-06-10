@@ -125,6 +125,18 @@ type TileProps = {
 	// link, optional aggregate range/count).
 	methodologyDescription?: string;
 	methodologyDrillHref?: string;
+	// Empty state — replaces the "R$ 0" number with a guidance line when
+	// the metric hasn't accumulated value yet. The delta/spark are also
+	// suppressed so the tile reads as a prompt, not as a flat-zero
+	// regression.
+	emptyState?: string | null;
+	// Static loss/win tone — forces the value + caption color regardless
+	// of delta. Used for snapshot metrics like "Capturado pelo vazamento"
+	// where there's no time series; the customer needs to read "this is a
+	// leak" visually even at delta=0. When set, replaces the delta line
+	// with `captionWhenStatic`.
+	staticTone?: "loss" | "win" | null;
+	captionWhenStatic?: string;
 };
 
 function Tile({
@@ -136,6 +148,9 @@ function Tile({
 	formatFn = (n) => Math.round(n).toLocaleString("pt-BR"),
 	methodologyDescription,
 	methodologyDrillHref,
+	emptyState,
+	staticTone,
+	captionWhenStatic,
 }: Omit<TileProps, "value" | "formatted">) {
 	const sparkTone: "up" | "down" | "flat" = invertDelta
 		? delta < 0
@@ -149,39 +164,74 @@ function Tile({
 				? "down"
 				: "flat";
 
+	// Empty state fires when the metric is exactly 0 AND a guidance copy
+	// was provided. Used by "Recuperado / mês" to nudge first-time
+	// customers toward the plan instead of staring at R$ 0.
+	const isEmpty = emptyState != null && rawNumber === 0;
+
 	return (
 		<div
 			data-vsgp-card
 			className="group relative flex min-h-[160px] flex-col justify-between rounded-2xl border border-edge bg-surface-card p-6 transition-all hover:border-edge-focus hover:bg-surface-card-hover"
 		>
-			<div className="flex items-start justify-between gap-3">
-				<div className="flex items-center text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-					<span>{label}</span>
-					{methodologyDescription && (
-						<AggregateMethodologyPopover
-							title={label}
-							description={methodologyDescription}
-							drillHref={methodologyDrillHref ?? null}
-							placement="below"
-						/>
-					)}
+			{/* Methodology trigger pinned to top-right of EVERY tile so the
+			    ⓘ sits in the same screen position across all 4 cards. Before
+			    it floated next to the label, drifting based on label width. */}
+			{methodologyDescription && (
+				<div className="absolute right-3 top-3 z-10 text-content-faint">
+					<AggregateMethodologyPopover
+						title={label}
+						description={methodologyDescription}
+						drillHref={methodologyDrillHref ?? null}
+						placement="below"
+					/>
 				</div>
-				{spark && spark.length > 1 && (
+			)}
+
+			<div className="flex items-start justify-between gap-3 pr-7">
+				<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+					{label}
+				</div>
+				{!isEmpty && spark && spark.length > 1 && (
 					<div className="text-content-tertiary">
 						<Sparkline values={spark} tone={sparkTone} />
 					</div>
 				)}
 			</div>
 
-			<div className="mt-3 flex items-baseline gap-2">
-				<div className="font-mono text-[30px] font-semibold tracking-tight text-content tabular-nums">
-					<CountUp to={rawNumber} format={formatFn} />
+			{isEmpty ? (
+				<div className="mt-3 text-[14px] leading-snug text-content-secondary">
+					{emptyState}
 				</div>
-			</div>
+			) : (
+				<div className="mt-3 flex items-baseline gap-2">
+					<div
+						className={`font-mono text-[30px] font-semibold tracking-tight tabular-nums ${
+							staticTone === "loss"
+								? "text-rose-400"
+								: staticTone === "win"
+									? "text-emerald-400"
+									: "text-content"
+						}`}
+					>
+						<CountUp to={rawNumber} format={formatFn} />
+					</div>
+				</div>
+			)}
 
-			<div className={`mt-2 font-mono text-[11px] tabular-nums ${deltaTone(delta, invertDelta)}`}>
-				{formatDelta(delta)}
-			</div>
+			{!isEmpty && staticTone ? (
+				<div
+					className={`mt-2 font-mono text-[11px] ${
+						staticTone === "loss" ? "text-rose-400" : "text-emerald-400"
+					}`}
+				>
+					{captionWhenStatic ?? (staticTone === "loss" ? "em exposição agora" : "preservado agora")}
+				</div>
+			) : !isEmpty ? (
+				<div className={`mt-2 font-mono text-[11px] tabular-nums ${deltaTone(delta, invertDelta)}`}>
+					{formatDelta(delta)}
+				</div>
+			) : null}
 		</div>
 	);
 }
@@ -208,15 +258,11 @@ function withReceipt(
 
 export default function HeroMetrics({ hero, monthLabel }: Props) {
 	const { currency } = useMcpData();
-	// T1 — captured tile flips into EXPOSURE mode when nothing has been
-	// captured yet but loss findings exist. Without this, month-1 envs
-	// see "R$ 0 capturado" and nothing else — the customer can't tell
-	// what Vestigio is for. In exposure mode the label changes, the
-	// number becomes "money at stake right now", and the spark is hidden
-	// (zeros visualised aren't a useful series).
-	const exposureMode =
-		(hero.capturedMid ?? 0) === 0 &&
-		(hero.exposureMid ?? 0) > 0;
+	// T1/RetaFinal — the old "exposureMode" toggle (single tile flipping
+	// between Capturado/Em risco) was replaced by two dedicated tiles:
+	// "Recuperado / mês" (capturedMid, with empty state) and "Capturado
+	// pelo vazamento / mês" (exposureMid, sempre red). The customer reads
+	// the win and the loss side-by-side now, no implicit branching.
 	return (
 		<motion.section
 			initial={{ opacity: 0, y: 16 }}
@@ -235,53 +281,50 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 			</div>
 
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				{/* "Recuperado / mês" — antes "Retido". Customer feedback:
+				    "Retido" lia como passiva e confundia com cobrança bancária.
+				    "Recuperado" deixa explícito que é o ganho ATIVO trazido
+				    pelas ações marcadas como done. Dado mudou de retainedMid
+				    para capturedMid pelo mesmo motivo — "Recuperado" só faz
+				    sentido com a métrica de recuperação ativa, não com a
+				    preservação passiva do estado saudável. */}
 				<Tile
-					label="Retido / mês"
-					rawNumber={hero.retainedMid}
-					delta={hero.retainedDeltaMoM}
-					spark={hero.retainedSpark}
-					formatFn={makeCurrencyFormatter(hero.retainedMid, currency)}
+					label="Recuperado / mês"
+					rawNumber={hero.capturedMid}
+					delta={hero.capturedDeltaMoM}
+					spark={hero.capturedSpark}
+					formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
+					emptyState="Siga o plano para ver o faturamento recuperado."
 					methodologyDescription={withReceipt(
-						"Soma dos midpoints de receita mensal que findings positivos (estado saudável detectado) preservam. Cada finding contribui com o midpoint do seu intervalo estimado calculado em packages/impact/baselines.ts. Atualize o perfil de negócio em Configurações para subir a confiança dos números.",
-						hero.retainedMin,
-						hero.retainedMax,
-						hero.retainedFindingCount,
+						"Soma dos midpoints de receita mensal recuperada por ações marcadas como done e verificadas no ciclo seguinte. Distintos de 'marcado como done': só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais.",
+						hero.capturedMin,
+						hero.capturedMax,
+						hero.capturedFindingCount,
 						currency,
 					)}
-					methodologyDrillHref="/app/findings?polarity=positive"
+					methodologyDrillHref="/app/actions?status=done"
 				/>
-				{exposureMode ? (
-					<Tile
-						label="Em risco / mês"
-						rawNumber={hero.exposureMid ?? 0}
-						delta={0}
-						formatFn={makeCurrencyFormatter(hero.exposureMid ?? 0, currency)}
-						methodologyDescription={withReceipt(
-							"Exposição estimada: soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número converge pra 'Capturado/mês' à medida que ações são marcadas como done e verificadas no ciclo seguinte.",
-							hero.exposureMin,
-							hero.exposureMax,
-							hero.exposureFindingCount,
-							currency,
-						)}
-						methodologyDrillHref="/app/findings?polarity=negative"
-					/>
-				) : (
-					<Tile
-						label="Capturado / mês"
-						rawNumber={hero.capturedMid}
-						delta={hero.capturedDeltaMoM}
-						spark={hero.capturedSpark}
-						formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
-						methodologyDescription={withReceipt(
-							"Soma dos midpoints de receita mensal recuperada por ações marcadas como done e verificadas no ciclo seguinte. Distintos de 'marcado como done': só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais.",
-							hero.capturedMin,
-							hero.capturedMax,
-							hero.capturedFindingCount,
-							currency,
-						)}
-						methodologyDrillHref="/app/actions?status=done"
-					/>
-				)}
+				{/* "Capturado pelo vazamento / mês" — antes "Capturado /
+				    mês" com valor de recuperação (cinzento). Customer feedback
+				    leu como "capturado pelo problema" = perda, e queria red
+				    graphics. Dado movido pra exposureMid (o vazamento atual);
+				    invertDelta deixa "mais vazamento = mais vermelho". */}
+				<Tile
+					label="Capturado pelo vazamento / mês"
+					rawNumber={hero.exposureMid ?? 0}
+					delta={0}
+					formatFn={makeCurrencyFormatter(hero.exposureMid ?? 0, currency)}
+					staticTone="loss"
+					captionWhenStatic="em vazamento agora"
+					methodologyDescription={withReceipt(
+						"Exposição estimada: soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número converge pra 'Recuperado/mês' à medida que ações são marcadas como done e verificadas no ciclo seguinte.",
+						hero.exposureMin,
+						hero.exposureMax,
+						hero.exposureFindingCount,
+						currency,
+					)}
+					methodologyDrillHref="/app/findings?polarity=negative"
+				/>
 				{/* Was "Críticos abertos" — in practice the engine rarely
 				    emits severity=critical for envs without serious
 				    chargeback / security findings, so the tile read

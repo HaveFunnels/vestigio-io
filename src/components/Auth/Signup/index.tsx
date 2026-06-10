@@ -45,6 +45,10 @@ export default function Signup() {
 	// Surface the domain we stashed from MiniCalc so the visitor sees we
 	// kept it. Empty when they arrived without one (organic /auth/signup).
 	const [stashedDomain, setStashedDomain] = useState<string | null>(null);
+	// True when email was pre-filled from the LP lead context — gates the
+	// "Continuando como X" indicator on the form so the customer knows
+	// their mini-audit context carried over.
+	const [leadEmailPrefilled, setLeadEmailPrefilled] = useState(false);
 
 	// Post-signup destination. Defaults to /app (the existing console).
 	// LP/Pricing callers pass ?callbackUrl=/activate so new users land on
@@ -73,9 +77,29 @@ export default function Signup() {
 		// LP funnel — stash leadId for the paywall page to recover after
 		// signup. The paywall reads it to attach the charge to the
 		// originating lead (lead → user conversion tracking).
+		// Wave 22.8 #10 — also fetch the lead's email + name to pre-fill
+		// the form. Without this, customer who just gave email on the
+		// mini-audit had to retype it here. Friction kill: ~30% drop-off
+		// observed historically on retype-required signup steps.
 		const leadId = searchParams.get("leadId");
 		if (leadId) {
 			try { localStorage.setItem("vestigio_lp_leadId", leadId); } catch {}
+			void fetch(`/api/lead/${encodeURIComponent(leadId)}/checkout-context`)
+				.then((r) => (r.ok ? r.json() : null))
+				.then((leadData) => {
+					if (!leadData?.email) return;
+					setData((prev) => ({
+						...prev,
+						// Don't overwrite if customer already typed something —
+						// signup page can mount multiple times during the
+						// session (back/forward, error retry), and we never
+						// want to clobber in-progress input.
+						email: prev.email || leadData.email,
+						name: prev.name || leadData.organizationName || "",
+					}));
+					setLeadEmailPrefilled(true);
+				})
+				.catch(() => { /* fail open — customer just types again */ });
 		}
 		// Pricing → Signup → Paywall path. The pricing CTA passes the
 		// selected plan key + billing cycle so /activate boots already
@@ -182,6 +206,25 @@ export default function Signup() {
 							</svg>
 							<span>
 								We&apos;ll audit <strong className="font-semibold text-emerald-200">{stashedDomain}</strong> after you sign up.
+							</span>
+						</div>
+					)}
+					{/* Wave 22.8 #10 — lead context indicator. Renderiza quando
+					    o email do mini-audit foi recuperado e pre-preenchido
+					    no campo abaixo. Tira friction de re-tipar o email. */}
+					{leadEmailPrefilled && data.email && (
+						<div className="auth-fade-in auth-delay-200 mb-6 flex items-center gap-2 rounded-lg border border-sky-500/20 bg-sky-500/[0.05] px-3 py-2 text-xs text-sky-300">
+							<svg
+								className="h-3.5 w-3.5 shrink-0 text-sky-400"
+								fill="none"
+								viewBox="0 0 24 24"
+								strokeWidth={2}
+								stroke="currentColor"
+							>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zM19.5 14.25v4.875a2.625 2.625 0 01-2.625 2.625H5.625A2.625 2.625 0 013 18.625V7.875c0-1.448 1.174-2.625 2.625-2.625h4.875" />
+							</svg>
+							<span>
+								Continuando como <strong className="font-semibold text-sky-200">{data.email}</strong>.
 							</span>
 						</div>
 					)}

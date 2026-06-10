@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import CopyLens from "@/components/strategy/sections/CopyLens";
+import CopyLensRich from "@/components/strategy/sections/CopyLensRich";
 import { usePlanFetch } from "@/hooks/usePlanFetch";
 
 /*
@@ -74,18 +74,8 @@ export default function CopyLensStandalonePage() {
 				</div>
 			)}
 
-			{state.status === "ready" && state.plan?.copyLens && (
-				<CopyLens copyLens={state.plan.copyLens} />
-			)}
-
-			{state.status === "ready" && !state.plan?.copyLens && (
-				<div className="rounded-2xl border border-dashed border-edge bg-surface-card/60 p-8 text-center">
-					<p className="text-[13px] text-content-muted">
-						Nenhuma análise de framework de copy disponível para este ciclo.
-						Auditorias de framework rodam para envs no plano Max com páginas
-						comerciais detectadas.
-					</p>
-				</div>
+			{state.status === "ready" && state.plan && (
+				<CopyLensRich month={month ?? ""} envId={state.plan.environmentId} />
 			)}
 		</div>
 	);

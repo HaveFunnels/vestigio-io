@@ -75,24 +75,48 @@ export default function Competitor({ competitor }: Props) {
 				</div>
 			</div>
 
-			<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-6">
-				{/* Top-line summary. Reads slightly different in monitoring-
-				    only mode so the customer never sees a contradiction
-				    between "we're watching" and "nothing happened". */}
+			<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
+				{/* Top-line summary. monitoring-only mode reframes the empty
+				    state explicitly so the customer reads it as good news
+				    ("nobody is copying you"), not as silence ("0 sinais"). */}
 				<div className="mb-5 border-b border-edge/40 pb-5">
-					<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-						Sinais este ciclo
-					</div>
-					<div className="mt-1 font-mono text-[22px] font-semibold tabular-nums text-content">
-						{competitor.withSignalsCount +
-							(competitor.trustPostureLag ? 1 : 0) +
-							(competitor.serpOverlap ? 1 : 0)}
-					</div>
-					<div className="mt-0.5 text-[11px] text-content-muted">
-						{monitoringOnly
-							? "Nenhum sinal competitivo material este ciclo. Continuamos monitorando."
-							: `${competitor.withSignalsCount} ${competitor.withSignalsCount === 1 ? "concorrente com sinal" : "concorrentes com sinais"} atribuídos.`}
-					</div>
+					{monitoringOnly ? (
+						<>
+							<div className="flex items-baseline justify-between gap-3">
+								<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+									Situação este ciclo
+								</div>
+								<span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
+									Sem cópia detectada
+								</span>
+							</div>
+							<div className="mt-2 font-serif text-[18px] leading-snug text-content">
+								Ninguém está copiando você este ciclo.
+							</div>
+							<p className="mt-1.5 text-[12.5px] leading-snug text-content-secondary">
+								Vestigio analisou copy, posicionamento em SERP e trust posture dos {competitor.totalMonitored}{" "}
+								{competitor.totalMonitored === 1 ? "concorrente monitorado" : "concorrentes monitorados"} e não detectou nenhum sinal material de cópia, avanço em SERP de marca ou colapso de diferenciação.
+							</p>
+						</>
+					) : (
+						<>
+							<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+								Sinais este ciclo
+							</div>
+							<div className="mt-1 font-mono text-[22px] font-semibold tabular-nums text-content">
+								{competitor.withSignalsCount +
+									(competitor.trustPostureLag ? 1 : 0) +
+									(competitor.serpOverlap ? 1 : 0)}
+							</div>
+							<div className="mt-0.5 text-[11px] text-content-muted">
+								{competitor.withSignalsCount}{" "}
+								{competitor.withSignalsCount === 1
+									? "concorrente com sinal"
+									: "concorrentes com sinais"}{" "}
+								atribuídos.
+							</div>
+						</>
+					)}
 				</div>
 
 				{/* Peer-set-wide signals. Trust posture lag = how your
@@ -139,9 +163,19 @@ export default function Competitor({ competitor }: Props) {
 				{/* Per-competitor rows. */}
 				{competitor.entries.length > 0 ? (
 					<>
-						<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+						<div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
 							Em monitoramento
 						</div>
+						{/* Reta-final: explicit "what we compare" line so the
+						    customer sees the surface area we cover even when no
+						    competitor produced a signal. Previously the rows
+						    just said "sem sinal este ciclo" and the customer
+						    had no idea what was being checked. */}
+						<p className="mb-3 text-[11.5px] text-content-muted">
+							Vestigio compara <span className="text-content-secondary">copy de páginas comerciais</span>,{" "}
+							<span className="text-content-secondary">posicionamento em SERP de marca</span> e{" "}
+							<span className="text-content-secondary">trust posture</span> de cada concorrente contra o seu site, a cada ciclo.
+						</p>
 						<ul className="space-y-2">
 							{competitor.entries.map((e) => {
 								const hasSignals = e.signals.length > 0;
@@ -152,7 +186,7 @@ export default function Competitor({ competitor }: Props) {
 									>
 										<div className="flex flex-1 items-baseline gap-2">
 											<Radio
-												className={`h-3 w-3 shrink-0 ${hasSignals ? "text-rose-300" : "text-content-faint"}`}
+												className={`h-3 w-3 shrink-0 ${hasSignals ? "text-rose-300" : "text-emerald-400/70"}`}
 												aria-hidden
 											/>
 											<div className="min-w-0">
@@ -187,8 +221,8 @@ export default function Competitor({ competitor }: Props) {
 												})}
 											</div>
 										) : (
-											<span className="self-start text-[10.5px] italic text-content-faint sm:self-center">
-												sem sinal este ciclo
+											<span className="inline-flex items-center gap-1 self-start rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20 sm:self-center">
+												Sem ameaça
 											</span>
 										)}
 									</li>
@@ -198,7 +232,7 @@ export default function Competitor({ competitor }: Props) {
 					</>
 				) : (
 					<div className="rounded-xl border border-dashed border-edge bg-surface-inset/30 p-4 text-center text-[12.5px] text-content-muted">
-						Nenhum concorrente curado. Adicione domínios em Workspaces para
+						Nenhum concorrente curado. Adicione domínios em Áreas monitoradas para
 						ativar comparações de copy, trust e SERP.
 					</div>
 				)}
@@ -208,7 +242,7 @@ export default function Competitor({ competitor }: Props) {
 						href="/app/workspaces#concorrentes"
 						className="inline-flex items-center gap-1 text-[12px] font-medium text-content-secondary underline-offset-4 transition-colors hover:text-content hover:underline"
 					>
-						Gerenciar concorrentes em Workspaces
+						Gerenciar concorrentes
 						<ArrowRight className="h-3 w-3" />
 					</Link>
 				</div>

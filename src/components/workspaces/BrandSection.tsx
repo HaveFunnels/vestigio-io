@@ -26,7 +26,7 @@ export default function BrandSection({ envDomain }: Props) {
 			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.06 }}
 			className="mb-12"
 		>
-			<div className="mb-4 flex items-baseline justify-between">
+			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
 					Proteção de marca
 				</h2>
@@ -80,11 +80,6 @@ export default function BrandSection({ envDomain }: Props) {
 					</div>
 				</div>
 
-				<div className="mt-5 rounded-xl border border-dashed border-edge bg-surface-inset/20 p-3 text-[12px] text-content-muted">
-					Configuração manual de brand tokens chega numa próxima versão. Por
-					enquanto, o scan usa heurísticas automáticas com base no domínio
-					raiz acima.
-				</div>
 			</div>
 		</motion.section>
 	);

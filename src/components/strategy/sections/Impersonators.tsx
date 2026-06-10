@@ -230,9 +230,13 @@ export default function Impersonators({ impersonators }: Props) {
 						</ul>
 					</>
 				) : (
-					<div className="rounded-xl border border-dashed border-edge bg-surface-inset/30 p-4 text-center text-[12.5px] text-content-muted">
-						Nenhuma correspondência ativa este ciclo. Vestigio continua
-						escaneando domínios candidatos a cada audit.
+					<div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
+						<div className="inline-flex items-center gap-2 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
+							Sem impersonadores este ciclo
+						</div>
+						<p className="mt-2 text-[12.5px] leading-snug text-content-secondary">
+							Nenhum domínio com sinal de impersonação detectado entre os <span className="text-content">{impersonators.totalScannedEver}</span> escaneados desde o primeiro ciclo. Vestigio continua varrendo typosquats, variações de TLD e padrões de phishing a cada audit.
+						</p>
 					</div>
 				)}
 			</div>

@@ -156,7 +156,7 @@
 				"analysis": "Análise",
 				"inventory": "Inventário",
 				"cross_signals": "Insights Cruzados",
-				"workspaces": "Workspaces",
+				"workspaces": "Áreas monitoradas",
 				"chat": "Vestigio AI",
 				"maps": "Mapas",
 				"library": "Biblioteca"
@@ -4630,7 +4630,7 @@
 			"pulse": "Pulse",
 			"onboard": "Configuração inicial",
 			"actions": "Ações",
-			"workspaces": "Workspaces",
+			"workspaces": "Áreas monitoradas",
 			"panorama": "Panorama",
 			"perspective_revenue": "Faturamento",
 			"perspective_trust": "Confiança",

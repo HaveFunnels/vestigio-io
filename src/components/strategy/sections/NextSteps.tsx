@@ -426,14 +426,38 @@ function StepCard({
 						)}
 					</div>
 					{step.combinedImpact.midpoint > 0 && (
-						<div className="shrink-0 rounded-lg border border-edge bg-surface-inset px-3 py-1.5 text-right">
-							<div className="text-[9px] font-semibold uppercase tracking-wider text-content-faint">
-								impact
+						<div
+							className={`shrink-0 rounded-lg border px-3 py-1.5 text-center ${
+								step.combinedImpact.midpoint >= 5000
+									? "border-rose-500/40 bg-rose-500/10"
+									: step.combinedImpact.midpoint >= 2000
+										? "border-amber-500/40 bg-amber-500/10"
+										: "border-edge bg-surface-inset"
+							}`}
+						>
+							<div
+								className={`text-[9px] font-semibold uppercase tracking-wider ${
+									step.combinedImpact.midpoint >= 5000
+										? "text-rose-300/90"
+										: step.combinedImpact.midpoint >= 2000
+											? "text-amber-300/90"
+											: "text-content-faint"
+								}`}
+							>
+								perda potencial
 							</div>
-							<div className="font-mono text-[13px] font-semibold tabular-nums text-content">
+							<div
+								className={`font-mono text-[13px] font-semibold tabular-nums ${
+									step.combinedImpact.midpoint >= 5000
+										? "text-rose-200"
+										: step.combinedImpact.midpoint >= 2000
+											? "text-amber-200"
+											: "text-content"
+								}`}
+							>
 								{fmtCurrencyUnits(step.combinedImpact.midpoint, currency, { zeroAsDash: true })}
-								<span className="text-[10px] font-normal text-content-faint">
-									{" "}/mo
+								<span className="text-[10px] font-normal opacity-70">
+									{" "}/mês
 								</span>
 							</div>
 						</div>

@@ -161,7 +161,7 @@ export default function ActionDrawer({
 															<div className="mt-0.5 font-mono tabular-nums text-content">
 																{fmtCurrencyUnits(action.impactMidpoint, currency, { zeroAsDash: true })}
 																{action.impactMidpoint > 0 && (
-																	<span className="text-content-faint">/mo</span>
+																	<span className="text-content-faint">/mês</span>
 																)}
 															</div>
 														</div>

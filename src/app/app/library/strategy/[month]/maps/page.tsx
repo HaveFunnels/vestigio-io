@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import Maps from "@/components/strategy/sections/Maps";
+import MapsRich from "@/components/strategy/sections/MapsRich";
 import { usePlanFetch } from "@/hooks/usePlanFetch";
 
 /*
@@ -71,16 +71,8 @@ export default function MapsStandalonePage() {
 				</div>
 			)}
 
-			{state.status === "ready" && state.plan?.maps && (
-				<Maps maps={state.plan.maps} />
-			)}
-
-			{state.status === "ready" && !state.plan?.maps && (
-				<div className="rounded-2xl border border-dashed border-edge bg-surface-card/60 p-8 text-center">
-					<p className="text-[13px] text-content-muted">
-						Nenhum mapa disponível para este ciclo.
-					</p>
-				</div>
+			{state.status === "ready" && (
+				<MapsRich maps={state.plan?.maps ?? null} month={month ?? ""} />
 			)}
 		</div>
 	);

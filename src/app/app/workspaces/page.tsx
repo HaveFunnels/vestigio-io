@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import * as Tooltip from "@radix-ui/react-tooltip";
 import CompetitorsSection, {
 	getEnvId,
 } from "@/components/workspaces/CompetitorsSection";
@@ -31,22 +30,35 @@ const SECTIONS = [
 ];
 
 export default function WorkspacesHubPage() {
-	const [envId, setEnvId] = useState<string>("default_env");
+	// Null until resolved on mount; child sections that need envId are
+	// gated below so they don't fire API calls with "default_env" (which
+	// the backend rejects with "Environment not found", surfacing as a
+	// flash of error before the real env loads).
+	const [envId, setEnvId] = useState<string | null>(null);
 	const [envDomain, setEnvDomain] = useState<string | null>(null);
 	const searchParams = useSearchParams();
 
 	useEffect(() => {
-		setEnvId(getEnvId());
-		// Best-effort env domain — used only by the Brand section to
-		// remind the customer which root domain Vestigio scans. Falls
-		// back to "—" gracefully when not resolvable.
+		const resolved = getEnvId();
+		// Treat "default_env" as unresolved — backend has no row for it.
+		if (resolved && resolved !== "default_env" && resolved !== "default") {
+			setEnvId(resolved);
+		}
+		// Best-effort env domain — used by Brand section to show which
+		// root domain Vestigio monitors. Also resolves envId when the
+		// cookie/URL fallback didn't pin one (uses the org's first env).
 		void fetch("/api/organization/environments")
 			.then((r) => (r.ok ? r.json() : null))
 			.then((data) => {
 				if (!data?.environments) return;
 				const list = data.environments as Array<{ id: string; domain: string }>;
-				const current = list.find((e) => e.id === getEnvId());
-				if (current?.domain) setEnvDomain(current.domain);
+				const fromUrlOrCookie = getEnvId();
+				const current = list.find((e) => e.id === fromUrlOrCookie);
+				const fallback = current ?? list[0];
+				if (fallback?.id) {
+					setEnvId(fallback.id);
+					if (fallback.domain) setEnvDomain(fallback.domain);
+				}
 			})
 			.catch(() => {});
 	}, []);
@@ -78,40 +90,11 @@ export default function WorkspacesHubPage() {
 				<div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
 					Configuração
 				</div>
-				<h1 className="mt-2 flex items-center gap-2 font-serif text-[24px] font-medium tracking-tight text-content sm:text-[32px]">
-					<span>Workspaces</span>
-					{/* Tooltip — "Workspaces" is borrowed from Notion/Slack vocab
-					    where it means "team space". Here it means "what Vestigio
-					    monitors for you". The microcopy gap costs first-impression
-					    clarity, so an inline tooltip closes it without renaming. */}
-					<Tooltip.Provider delayDuration={150}>
-						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
-								<button
-									type="button"
-									aria-label="O que são Workspaces"
-									className="flex h-5 w-5 items-center justify-center rounded-full border border-edge text-[11px] font-semibold text-content-faint transition-colors hover:border-edge-focus hover:text-content"
-								>
-									?
-								</button>
-							</Tooltip.Trigger>
-							<Tooltip.Portal>
-								<Tooltip.Content
-									side="bottom"
-									align="start"
-									sideOffset={6}
-									className="max-w-[280px] rounded-md border border-edge bg-surface-card px-3 py-2 text-[12.5px] leading-snug text-content shadow-lg"
-								>
-									Cada workspace agrupa o que Vestigio observa por você: concorrentes monitorados, identidade da marca e fontes de dados conectadas.
-									<Tooltip.Arrow className="fill-surface-card" />
-								</Tooltip.Content>
-							</Tooltip.Portal>
-						</Tooltip.Root>
-					</Tooltip.Provider>
+				<h1 className="mt-2 font-serif text-[24px] font-medium tracking-tight text-content sm:text-[32px]">
+					Áreas monitoradas
 				</h1>
 				<p className="mt-2 max-w-[640px] text-[14px] leading-snug text-content-secondary">
-					Aqui você ajusta o que Vestigio observa. Cada alteração passa a
-					valer no próximo ciclo de análise.
+					O que Vestigio observa por você: concorrentes, marca e fontes de dados conectadas. Cada alteração passa a valer no próximo ciclo de análise.
 				</p>
 
 				{/* Inline section nav — clicking scrolls. Touch-target sized
@@ -131,13 +114,27 @@ export default function WorkspacesHubPage() {
 			</motion.div>
 
 			<div id="concorrentes">
-				<CompetitorsSection envId={envId} />
+				{envId ? (
+					<CompetitorsSection envId={envId} />
+				) : (
+					<div className="mb-12 space-y-3">
+						<div className="h-7 w-48 animate-pulse rounded bg-surface-card" />
+						<div className="h-40 w-full animate-pulse rounded-2xl bg-surface-card" />
+					</div>
+				)}
 			</div>
 			<div id="marca">
 				<BrandSection envDomain={envDomain} />
 			</div>
 			<div id="fontes">
-				<DataSourcesSection />
+				{envId ? (
+					<DataSourcesSection envId={envId} />
+				) : (
+					<div className="mb-12 space-y-3">
+						<div className="h-7 w-48 animate-pulse rounded bg-surface-card" />
+						<div className="h-40 w-full animate-pulse rounded-2xl bg-surface-card" />
+					</div>
+				)}
 			</div>
 		</div>
 	);

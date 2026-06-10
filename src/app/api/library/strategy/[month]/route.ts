@@ -370,14 +370,41 @@ export async function GET(request: Request, { params }: RouteParams) {
 		? packRowsRaw.map((r) => ({ pack: r.pack, count: r._count.id }))
 		: [];
 	const packTotal = packRows.reduce((a, r) => a + r.count, 0);
+	// Customer-facing labels for every pack. Mirrors dictionary/pt-BR.json
+	// pack_labels.* but is duplicated here because this API route is hit by
+	// the locale-aware Plan renderer pre-hydration. Keep in sync with the
+	// dictionary — when a new pack ships, add it here too.
 	const PACK_LABEL_PTBR: Record<string, string> = {
-		copy_alignment: "consistência da mensagem",
-		scale_readiness: "preparo para escala",
-		trust: "sinais de confiança",
-		revenue: "captura de receita",
-		chargeback: "risco de chargeback",
-		saas: "ciclo SaaS",
-		behavioral: "comportamento do visitante",
+		copy_alignment: "Consistência da mensagem",
+		scale_readiness: "Preparo para escala",
+		trust: "Sinais de confiança",
+		revenue: "Captura de receita",
+		chargeback: "Risco de chargeback",
+		saas: "Ciclo SaaS",
+		behavioral: "Comportamento do visitante",
+		revenue_integrity: "Integridade da receita",
+		chargeback_resilience: "Resiliência a chargeback",
+		money_moment_exposure: "Exposição no momento da compra",
+		saas_growth_readiness: "Preparo para crescer SaaS",
+		channel_integrity: "Integridade do canal",
+		discoverability: "Descoberta",
+		brand_integrity: "Integridade da marca",
+		funnel_journey: "Jornada de compra",
+		funnel_integrity: "Integridade do funil",
+		first_impression_revenue: "Primeira impressão",
+		action_value_map: "Mapa de valor da ação",
+		acquisition_integrity: "Integridade da aquisição",
+		mobile_revenue_exposure: "Receita exposta no mobile",
+		friction_tax: "Imposto de fricção",
+		trust_revenue_gap: "Lacuna de confiança na receita",
+		path_efficiency: "Eficiência do caminho",
+		payment_health: "Saúde dos pagamentos",
+		content_freshness: "Frescor do conteúdo",
+		vertical_specific: "Especifico do setor",
+		cross_signal: "Sinal cruzado",
+		email_deliverability: "Entrega de email",
+		competitive_lens: "Lente competitiva",
+		behavioral_heuristics: "Comportamento do visitante",
 	};
 	const packDistribution = packTotal > 0
 		? packRows
@@ -386,7 +413,15 @@ export async function GET(request: Request, { params }: RouteParams) {
 				const k = r.pack.replace(/_pack$/, "");
 				return {
 					pack: r.pack,
-					label: PACK_LABEL_PTBR[k] ?? k.replace(/_/g, " "),
+					label:
+						PACK_LABEL_PTBR[k] ??
+						// Defensive fallback: humanize raw pack key in Title Case
+						// (capitalize first letter of each word). Prevents
+						// "money moment exposure" lowercase-leaks when a new
+						// pack ships before the map is updated.
+						k
+							.replace(/_/g, " ")
+							.replace(/\b\w/g, (c) => c.toUpperCase()),
 					count: r.count,
 					sharePct: Math.round((r.count / packTotal) * 1000) / 10,
 				};

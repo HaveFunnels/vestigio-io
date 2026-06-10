@@ -81,7 +81,7 @@ export default function Carteira({ competitor, impersonators }: Props) {
 					Sinais da carteira
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					concorrentes e impersonadores
+					Concorrentes e impersonadores
 				</div>
 			</div>
 

@@ -207,6 +207,15 @@ function useEngineTranslator() {
 			if (tEngine.has(`root_cause_titles.${inferenceKey}`)) {
 				return tEngine(`root_cause_titles.${inferenceKey}`);
 			}
+			// Defensive fallback: when fallback IS the raw inference_key
+			// (some legacy stored plans persisted the snake_case key as the
+			// finding title), at least humanize to Title Case so the
+			// customer doesn't see "trust boundary crossed".
+			if (/^[a-z][a-z0-9_]+$/.test(fallback)) {
+				return fallback
+					.replace(/_/g, " ")
+					.replace(/\b\w/g, (c) => c.toUpperCase());
+			}
 			return fallback;
 		},
 		rootCause: (inferenceKey: string, fallback: string | null) => {

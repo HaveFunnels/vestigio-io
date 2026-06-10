@@ -154,7 +154,7 @@ export default function ValuePreview({ preview, narrative }: Props) {
 					O que o próximo mês destrava
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					timeline cumulativo · M1 → M12
+					Projeção acumulada · 1º ao 12º mês
 				</div>
 			</div>
 

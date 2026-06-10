@@ -83,22 +83,27 @@ function effortFromHours(h: number | null): string {
 	// Each step now reads a distinct effort even when 3 of 5 fall in the
 	// 4-8h range — meia jornada (4h) vs 1 dia (8h) reads as a planning
 	// signal, not a duplicate label.
+	// Customer feedback: vague buckets like "meia jornada" / "meia tarde"
+	// don't communicate effort. Use absolute hours/minutes so the customer
+	// can plan against a calendar.
 	if (h === null) return "Não calibrado";
-	if (h <= 0.5) return "Menos de 30min";
-	if (h <= 1.5) return "Cerca de 1h";
-	if (h <= 3) return "Meia tarde";
-	if (h <= 5) return "Meia jornada";
-	if (h <= 8) return "1 dia útil";
-	if (h <= 16) return "1 a 2 dias";
-	if (h <= 24) return "2 a 3 dias";
-	return `${Math.round(h / 8)} dias`;
+	if (h <= 0.5) return "Até 30 min";
+	if (h <= 1.5) return "~1 hora";
+	if (h <= 3) return "2-3 horas";
+	if (h <= 5) return "4-5 horas";
+	if (h <= 8) return "6-8 horas";
+	if (h <= 16) return "1-2 dias úteis";
+	if (h <= 24) return "2-3 dias úteis";
+	return `${Math.round(h / 8)} dias úteis`;
 }
 
 function ownerFromCategory(category: string): string {
-	if (category === "incident") return "Engenharia";
-	if (category === "opportunity") return "Growth";
-	if (category === "verification") return "Engenharia";
-	return "Engenharia";
+	// Customer-facing role labels — what kind of profile picks up this
+	// move. "time eng" was opaque internal jargon.
+	if (category === "incident") return "Desenvolvedor";
+	if (category === "opportunity") return "Marketing";
+	if (category === "verification") return "Desenvolvedor";
+	return "Desenvolvedor";
 }
 
 const SURFACE_HUMAN_PT_BR: Record<string, string> = {

@@ -637,7 +637,7 @@ function StepCard({
 								Atacar com Vestigio
 							</div>
 							<div className="text-[11.5px] text-content-muted">
-								Vestigio já tem o plano e as findings em contexto — só pedir o próximo movimento.
+								Vestigio já tem o plano e os problemas em contexto — só pedir o próximo movimento.
 							</div>
 						</div>
 					</div>
@@ -663,30 +663,10 @@ function StepCard({
 						<span className="text-content-faint">Time:</span>{" "}
 						<span className="text-content-secondary">{step.suggestedOwner}</span>
 					</span>
-					{/* Reta-final: confidence badge. Renders only when the
-					    aggregated tier is "low" or "medium" — calibração
-					    "alta" is the default expectation so a badge for it
-					    would be visual noise. Surfaces calibration so the
-					    customer can read R$ numbers with the right weight. */}
-					{(step.confidenceTier === "low" || step.confidenceTier === "medium") && (
-						<>
-							<span className="text-content-faint">·</span>
-							<span
-								className="inline-flex items-center gap-1 rounded-md border border-edge bg-surface-inset/50 px-2 py-0.5 text-[10.5px] font-medium text-content-secondary"
-								title={
-									step.confidenceTier === "low"
-										? "Calibração inicial — Vestigio precisa de mais ciclos para refinar o impacto financeiro. Trate como ordem de grandeza."
-										: "Calibração média — o impacto financeiro está dentro de uma faixa razoável. Mais ciclos refinam o número."
-								}
-							>
-								<svg className="h-2.5 w-2.5" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
-									<circle cx="5" cy="5" r="3.5" />
-									<path strokeLinecap="round" d="M5 3.5v2M5 7v.2" />
-								</svg>
-								{step.confidenceTier === "low" ? "Calibração: inicial" : "Calibração: média"}
-							</span>
-						</>
-					)}
+					{/* Calibração badge removed — customer feedback: not
+					    actionable, reads as clutter. The R$ impact already
+					    appears in the impact line; calibration nuance lives in
+					    the methodology drawer for the curious. */}
 				</div>
 
 				{/* Status / due / comments row */}
@@ -1017,17 +997,6 @@ function StepInGroup({ step, primarySurface }: StepInGroupProps) {
 							<span className="text-content-faint">Time:</span>{" "}
 							<span className="text-content-secondary">{step.suggestedOwner}</span>
 						</span>
-						{step.confidenceTier === "medium" || step.confidenceTier === "low" ? (
-							<>
-								<span className="text-content-faint">·</span>
-								<span>
-									<span className="text-content-faint">Calibração:</span>{" "}
-									<span className="text-content-secondary">
-										{step.confidenceTier === "low" ? "inicial" : "média"}
-									</span>
-								</span>
-							</>
-						) : null}
 					</div>
 				</div>
 				{impact > 0 && (
@@ -1288,9 +1257,11 @@ export default function NextSteps({
 				<h2 className="font-serif text-[22px] font-medium tracking-tight text-content">
 					Onde focar este mês
 				</h2>
-				<div className="text-[11px] text-content-faint">
-					1 movimento principal{supportingTotal > 0 ? ` · ${supportingTotal} de apoio` : ""}
-				</div>
+				{/* Count summary removed — the in-section eyebrows below
+				    ("O movimento principal" + "Movimentos de apoio · quando
+				    o principal terminar") already communicate the structure;
+				    "1 movimento principal · 4 de apoio" lowercase was reading
+				    as fragment/clutter. */}
 			</div>
 
 			<div className="flex flex-col">

@@ -181,7 +181,7 @@ export default function BuyerSegments({
 					O que sua audit revelou este mês
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					decomposto por quem resolve
+					Agrupado por quem precisa atuar
 				</div>
 			</div>
 

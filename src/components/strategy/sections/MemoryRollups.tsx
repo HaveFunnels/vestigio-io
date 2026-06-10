@@ -213,7 +213,7 @@ function RollupCard({
 			{window.biggestWin && (
 				<div className="mt-4 border-t border-edge/60 pt-3">
 					<div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-						Maior win
+						Maior ganho do período
 					</div>
 					<div className="text-[13px] font-medium leading-snug text-content">
 						{window.biggestWin.title}
@@ -227,10 +227,10 @@ function RollupCard({
 			{emphasizeBenchmark && window.benchmarkAvailability && (
 				<div className="mt-3 rounded-md border border-dashed border-edge bg-surface-inset/40 p-2 text-[11px] text-content-muted">
 					{window.benchmarkAvailability === "available"
-						? "Benchmark vs categoria disponível"
+						? "Comparação com sua categoria já disponível"
 						: window.benchmarkAvailability === "available_in_4_months"
-							? "Benchmark vs categoria, disponível em 4 meses"
-							: "Benchmark indisponível"}
+							? "Comparação com sua categoria fica disponível em ~4 meses (precisa de mais ciclos para calibrar a média)"
+							: "Comparação com sua categoria ainda indisponível"}
 				</div>
 			)}
 		</motion.div>
@@ -251,7 +251,7 @@ export default function MemoryRollups({ rollups }: Props) {
 					Memória dos meses anteriores
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					rollups acumulados
+					Ganhos acumulados nas últimas janelas
 				</div>
 			</div>
 

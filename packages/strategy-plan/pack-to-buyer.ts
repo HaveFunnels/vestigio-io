@@ -63,8 +63,13 @@ export function packToBuyer(pack: string): BuyerKind {
 	return "eng";
 }
 
+// Customer-facing role labels — alinhados com ownerFromCategory em
+// sections/next-steps.ts (Marketing / Desenvolvedor / Diretoria).
+// Cards em BuyerSegments e a meta line dos passos passam a falar a
+// mesma língua: o cliente lê "Time: Marketing" no passo e "Para o
+// time de Marketing" no card, sem cognitive break.
 export const BUYER_LABEL_PT_BR: Record<BuyerKind, string> = {
-	copy: "Para o time de copy",
-	eng: "Para o time de engenharia",
-	leadership: "Para liderança",
+	copy: "Para o time de Marketing",
+	eng: "Para o time de Desenvolvedores",
+	leadership: "Para a Diretoria",
 };

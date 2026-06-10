@@ -43,7 +43,7 @@ export const MOCK_PLAN_HAVEFUNNELS_2026_06: StrategyPlan = {
 	buyerSegments: [
 		{
 			buyer: "copy",
-			buyerLabel: "Para o time de copy",
+			buyerLabel: "Para o time de Marketing",
 			count: 3,
 			impactMin: 1200,
 			impactMax: 2400,
@@ -59,7 +59,7 @@ export const MOCK_PLAN_HAVEFUNNELS_2026_06: StrategyPlan = {
 		},
 		{
 			buyer: "eng",
-			buyerLabel: "Para o time de engenharia",
+			buyerLabel: "Para o time de Desenvolvedores",
 			count: 2,
 			impactMin: 2800,
 			impactMax: 5600,
@@ -75,7 +75,7 @@ export const MOCK_PLAN_HAVEFUNNELS_2026_06: StrategyPlan = {
 		},
 		{
 			buyer: "leadership",
-			buyerLabel: "Para liderança",
+			buyerLabel: "Para a Diretoria",
 			count: 1,
 			impactMin: 8000,
 			impactMax: 16000,

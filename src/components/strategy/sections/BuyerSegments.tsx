@@ -40,10 +40,13 @@ interface Props {
 	hasMapsData?: boolean;
 }
 
+// Eyebrow / drawer-title labels for each buyer card. Alinhado com
+// ownerFromCategory (Marketing / Desenvolvedor / Diretoria) — mesmas
+// palavras que aparecem na meta line de cada passo.
 const BUYER_LABEL_FALLBACK: Record<string, string> = {
-	copy: "Copy",
-	eng: "Engenharia",
-	leadership: "Liderança",
+	copy: "Marketing",
+	eng: "Desenvolvedores",
+	leadership: "Diretoria",
 };
 
 const BUYER_ACCENT: Record<string, { dot: string; bg: string; chip: string }> = {
@@ -202,7 +205,7 @@ export default function BuyerSegments({
 							<div className="mb-1 flex items-center gap-2">
 								<span className={`h-1.5 w-1.5 rounded-full ${accent.dot}`} />
 								<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-									{s.buyer === "copy" ? "Copy" : s.buyer === "eng" ? "Engenharia" : "Liderança"}
+									{s.buyer === "copy" ? "Marketing" : s.buyer === "eng" ? "Desenvolvedores" : "Diretoria"}
 								</div>
 							</div>
 

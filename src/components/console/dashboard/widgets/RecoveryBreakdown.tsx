@@ -100,8 +100,13 @@ function RecoveryBreakdownComponent({ data: _data }: WidgetProps) {
 
 	if (loading) {
 		return (
-			<div className="flex h-full items-center justify-center">
-				<div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-600 border-t-emerald-400" />
+			<div className="h-full space-y-3">
+				<div className="h-3 w-28 animate-pulse rounded bg-surface-card" />
+				<div className="space-y-2">
+					<div className="h-4 w-full animate-pulse rounded bg-surface-card" />
+					<div className="h-4 w-[85%] animate-pulse rounded bg-surface-card" />
+					<div className="h-4 w-[60%] animate-pulse rounded bg-surface-card" />
+				</div>
 			</div>
 		);
 	}

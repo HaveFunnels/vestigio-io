@@ -47,8 +47,13 @@ export default function CopyLensStandalonePage() {
 			</h1>
 
 			{state.status === "loading" && (
-				<div className="flex items-center justify-center py-16">
-					<div className="h-6 w-6 animate-spin rounded-full border-2 border-edge-subtle border-t-content" />
+				<div className="space-y-3">
+					<div className="h-16 w-full animate-pulse rounded-2xl bg-surface-card" />
+					<div className="h-40 w-full animate-pulse rounded-2xl bg-surface-card" />
+					<div className="h-40 w-full animate-pulse rounded-2xl bg-surface-card" />
+					<p className="pt-4 text-center text-[13px] text-content-muted">
+						Carregando análise de framework…
+					</p>
 				</div>
 			)}
 

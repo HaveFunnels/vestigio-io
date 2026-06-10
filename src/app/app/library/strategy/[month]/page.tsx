@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import StrategyPlanPanel from "@/components/strategy/StrategyPlanPanel";
+import PlanPageSkeleton from "@/components/strategy/PlanPageSkeleton";
 import { useTrack } from "@/hooks/useProductTrack";
 import type { StrategyPlan } from "@/components/strategy/types";
 import { MOCK_PLAN_HAVEFUNNELS_2026_06 } from "@/components/strategy/mock-data";
@@ -170,25 +171,15 @@ export default function StrategyPlanPage() {
 		isDemoSession;
 
 	if (state.status === "loading") {
-		return (
-			<div className="flex h-full flex-col items-center justify-center px-6 py-16 text-center">
-				<div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-edge-subtle border-t-content" />
-				<p className="text-[13px] text-content-muted">Carregando plano…</p>
-			</div>
-		);
+		return <PlanPageSkeleton caption="Carregando plano…" />;
 	}
 
 	if (state.status === "generating") {
 		return (
-			<div className="flex h-full flex-col items-center justify-center px-6 py-16 text-center">
-				<div className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-edge-subtle border-t-content" />
-				<p className="text-[13px] text-content-muted">
-					Gerando o plano de {month}…
-				</p>
-				<p className="mt-1 text-[12px] text-content-faint">
-					Atualiza automaticamente quando estiver pronto.
-				</p>
-			</div>
+			<PlanPageSkeleton
+				caption={`Gerando o plano de ${month}…`}
+				subCaption="Atualiza automaticamente quando estiver pronto."
+			/>
 		);
 	}
 

@@ -42,10 +42,24 @@ export default function FindingPage({
 			: loadFindings();
 
 	if (dataState.status !== "ready") {
+		// Finding detail skeleton — mirrors the real page (header strip,
+		// severity bar, narrative card, evidence list).
 		return (
-			<div className="flex flex-col items-center justify-center py-24 text-center">
-				<div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-				<p className="mt-3 text-sm text-content-muted">
+			<div className="mx-auto max-w-[1100px] space-y-5 px-4 py-8 sm:px-6 sm:py-10">
+				<div className="h-3 w-24 animate-pulse rounded-md bg-surface-card" />
+				<div className="h-8 w-3/4 animate-pulse rounded-md bg-surface-card" />
+				<div className="h-3 w-1/2 animate-pulse rounded-md bg-surface-card" />
+				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+					{Array.from({ length: 3 }).map((_, i) => (
+						<div
+							key={i}
+							className="h-24 animate-pulse rounded-2xl bg-surface-card"
+						/>
+					))}
+				</div>
+				<div className="h-48 animate-pulse rounded-2xl bg-surface-card" />
+				<div className="h-32 animate-pulse rounded-2xl bg-surface-card" />
+				<p className="pt-2 text-center text-sm text-content-muted">
 					{tc("loading")}
 				</p>
 			</div>

@@ -44,8 +44,19 @@ export default function MapsStandalonePage() {
 			</h1>
 
 			{state.status === "loading" && (
-				<div className="flex items-center justify-center py-16">
-					<div className="h-6 w-6 animate-spin rounded-full border-2 border-edge-subtle border-t-content" />
+				<div className="space-y-4">
+					<div className="h-12 w-2/3 animate-pulse rounded-md bg-surface-card" />
+					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+						{Array.from({ length: 4 }).map((_, i) => (
+							<div
+								key={i}
+								className="aspect-[3/4] animate-pulse rounded-2xl bg-surface-card"
+							/>
+						))}
+					</div>
+					<p className="pt-4 text-center text-[13px] text-content-muted">
+						Carregando mapas…
+					</p>
 				</div>
 			)}
 

@@ -138,6 +138,17 @@ export const GET = withErrorTracking(
 			_avg: { engagementScore: true },
 		});
 
+		// ── Launch metrics (Wave 22.8 reta-final) ──
+		// Defined by the conselho-das-4-lentes deliberation. These two
+		// numbers are how we know if the launch worked:
+		//   Activation: % of new customers who opened Plan >=2x in
+		//               their first 7 days.
+		//   Retention:  % of customers activated 30-60d ago who opened
+		//               Plan >=1x in the past 30 days.
+		// Both are intentionally simple: open the Plan is the ONLY
+		// activation gesture we measure (the Plan IS the product).
+		const launchMetrics = await computeLaunchMetrics();
+
 		// ── Chat dynamics ─────────────────────────────────────
 		// Computes TTFT percentiles, tool-call distribution, error rate,
 		// and conversation depth for the MCP copilot. Anything in the
@@ -158,6 +169,7 @@ export const GET = withErrorTracking(
 			at_risk_environments: atRiskEnvs,
 			events_by_type: eventsByType,
 			chat_dynamics: chatDynamics,
+			launch_metrics: launchMetrics,
 		});
 	},
 	{ endpoint: "/api/admin/metrics/product-analytics", method: "GET" },
@@ -373,5 +385,120 @@ async function computeChatDynamics(cutoff: Date): Promise<ChatDynamicsView> {
 			.map(([tool, s]) => ({ tool, errors: s.errors }))
 			.sort((a, b) => b.errors - a.errors)
 			.slice(0, 5),
+	};
+}
+
+// ──────────────────────────────────────────────
+// Launch metrics — defined by the conselho-das-4-lentes deliberation.
+//
+// Two numbers that tell us if launch worked:
+//
+//   activation_rate_pct: of new customers who activated in the past
+//                       7-30 days, what % opened the Plan >=2x in
+//                       their first 7 days?
+//                       Numerator: distinct userIds with >=2 plan.visit
+//                                  events, all in their first 7d
+//                       Denominator: distinct activated users in window
+//
+//   retention_rate_pct:  of customers who activated 30-60 days ago,
+//                       what % opened the Plan >=1x in the past 30 days?
+//                       Numerator: distinct userIds with >=1 plan.visit
+//                                  in past 30d
+//                       Denominator: distinct activated users in 30-60d
+//                                    activation window
+//
+// Both intentionally avoid feature-adoption (chat, action, verify) —
+// the Plan IS the product, so 'open the Plan' is the activation gesture.
+// Returns null per-side when the denominator is too small to be meaningful.
+// ──────────────────────────────────────────────
+interface LaunchMetricsView {
+	activation_rate_pct: number | null;
+	activation_cohort_size: number;
+	activation_qualified_count: number;
+	retention_rate_pct: number | null;
+	retention_cohort_size: number;
+	retention_qualified_count: number;
+}
+
+async function computeLaunchMetrics(): Promise<LaunchMetricsView> {
+	const now = Date.now();
+	const day = 24 * 60 * 60 * 1000;
+
+	// Activation cohort: activated between 7 and 30 days ago. We need at
+	// least 7d after activation to evaluate ">=2 visits in first 7d".
+	// Upper bound at 30d so the cohort is recent.
+	const activationCohortStart = new Date(now - 30 * day);
+	const activationCohortEnd = new Date(now - 7 * day);
+	const activationCohort = await prisma.user.findMany({
+		where: {
+			activatedAt: { gte: activationCohortStart, lte: activationCohortEnd },
+		},
+		select: { id: true, activatedAt: true },
+	});
+
+	let activationQualified = 0;
+	for (const u of activationCohort) {
+		if (!u.activatedAt) continue;
+		const sevenDaysAfterActivation = new Date(
+			u.activatedAt.getTime() + 7 * day,
+		);
+		const visits = await prisma.productEvent.count({
+			where: {
+				userId: u.id,
+				event: "plan.visit",
+				createdAt: {
+					gte: u.activatedAt,
+					lt: sevenDaysAfterActivation,
+				},
+			},
+		});
+		if (visits >= 2) activationQualified += 1;
+	}
+
+	// Retention cohort: activated between 30 and 60 days ago. Anyone
+	// newer hasn't had "month 2" yet; anyone older drifts into a
+	// different cohort that needs its own retention curve.
+	const retentionCohortStart = new Date(now - 60 * day);
+	const retentionCohortEnd = new Date(now - 30 * day);
+	const retentionCohort = await prisma.user.findMany({
+		where: {
+			activatedAt: { gte: retentionCohortStart, lte: retentionCohortEnd },
+		},
+		select: { id: true },
+	});
+
+	const thirtyDaysAgo = new Date(now - 30 * day);
+	let retentionQualified = 0;
+	for (const u of retentionCohort) {
+		const visits = await prisma.productEvent.count({
+			where: {
+				userId: u.id,
+				event: "plan.visit",
+				createdAt: { gte: thirtyDaysAgo },
+			},
+		});
+		if (visits >= 1) retentionQualified += 1;
+	}
+
+	// Bail with null when cohort too small to be informative.
+	// Threshold 3 = at least 3 customers — anything less is anecdote.
+	const MIN_COHORT = 3;
+	return {
+		activation_rate_pct:
+			activationCohort.length >= MIN_COHORT
+				? Math.round(
+					(activationQualified / activationCohort.length) * 1000,
+				) / 10
+				: null,
+		activation_cohort_size: activationCohort.length,
+		activation_qualified_count: activationQualified,
+		retention_rate_pct:
+			retentionCohort.length >= MIN_COHORT
+				? Math.round(
+					(retentionQualified / retentionCohort.length) * 1000,
+				) / 10
+				: null,
+		retention_cohort_size: retentionCohort.length,
+		retention_qualified_count: retentionQualified,
 	};
 }

@@ -60,6 +60,14 @@ interface ProductAnalyticsData {
 		tool_error_rate_pct: number | null;
 		top_tool_errors: { tool: string; errors: number }[];
 	};
+	launch_metrics?: {
+		activation_rate_pct: number | null;
+		activation_cohort_size: number;
+		activation_qualified_count: number;
+		retention_rate_pct: number | null;
+		retention_cohort_size: number;
+		retention_qualified_count: number;
+	};
 }
 
 type Period = "7d" | "30d" | "90d";
@@ -220,6 +228,56 @@ export default function ProductAnalyticsPage() {
 								)}
 							</div>
 						</div>
+
+						{/* Launch metrics — defined by the conselho-das-4-lentes
+						    council. Two numbers tell us if the launch worked:
+						    Activation = % of new customers who opened Plan
+						    >=2x in their first 7 days. Retention = % who
+						    opened Plan >=1x in month 2. Both null when the
+						    cohort is too small to be informative. */}
+						{data.launch_metrics && (
+							<div className="rounded-lg border border-edge bg-surface-card p-4">
+								<h3 className="mb-1 text-sm font-medium text-content">
+									Launch metrics
+								</h3>
+								<p className="mb-4 text-[11px] text-content-faint">
+									O Plano é o produto. Abrir o plano é a métrica.
+								</p>
+								<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+									<div className="rounded-md border border-edge bg-surface-inset/40 p-3">
+										<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+											Activation
+										</div>
+										<div className="mt-1 font-mono text-[22px] font-semibold text-content tabular-nums">
+											{data.launch_metrics.activation_rate_pct !== null
+												? `${data.launch_metrics.activation_rate_pct}%`
+												: "—"}
+										</div>
+										<div className="mt-0.5 text-[11px] text-content-muted">
+											{data.launch_metrics.activation_qualified_count} de {data.launch_metrics.activation_cohort_size} novos abriram Plano ≥2× na semana 1
+										</div>
+									</div>
+									<div className="rounded-md border border-edge bg-surface-inset/40 p-3">
+										<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+											Retention
+										</div>
+										<div className="mt-1 font-mono text-[22px] font-semibold text-content tabular-nums">
+											{data.launch_metrics.retention_rate_pct !== null
+												? `${data.launch_metrics.retention_rate_pct}%`
+												: "—"}
+										</div>
+										<div className="mt-0.5 text-[11px] text-content-muted">
+											{data.launch_metrics.retention_qualified_count} de {data.launch_metrics.retention_cohort_size} customers (30-60d) voltaram no mês 2
+										</div>
+									</div>
+								</div>
+								{data.launch_metrics.activation_rate_pct === null && data.launch_metrics.retention_rate_pct === null && (
+									<p className="mt-3 text-[11px] text-content-faint">
+										Cohort &lt; 3 customers em ambas as janelas — números surgem após launch + algumas semanas.
+									</p>
+								)}
+							</div>
+						)}
 
 						{/* {t("feature_funnel")} */}
 						<div className="rounded-lg border border-edge bg-surface-card p-4">

@@ -548,13 +548,17 @@ function StepCard({
 					<div className="mb-5">
 						<div className="mb-2 flex items-baseline gap-2">
 							<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-								Como saber que está fixed
+								Como saber se foi corrigido
 							</div>
-							{step.verification.etaSeconds !== null && (
+							{/* etaSeconds is Vestigio's internal recheck window
+							    (typically ~6–30s). Customer-facing it reads as
+							    noise — "verifica em ~6s" doesn't tell them
+							    anything actionable. We only surface ETA when
+							    it's slow enough to matter (≥5min), and even
+							    then framed as the customer's wait window. */}
+							{step.verification.etaSeconds !== null && step.verification.etaSeconds >= 300 && (
 								<span className="text-[10.5px] text-content-faint">
-									· verifica em ~{step.verification.etaSeconds < 60
-										? `${step.verification.etaSeconds}s`
-										: `${Math.round(step.verification.etaSeconds / 60)}min`}
+									· Vestigio reconfere em ~{Math.round(step.verification.etaSeconds / 60)}min
 								</span>
 							)}
 						</div>
@@ -620,8 +624,12 @@ function StepCard({
 				>
 					<div className="flex items-center gap-3">
 						<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-content/10 text-content transition-colors group-hover/discuss:bg-content/15 dark:bg-white/10 dark:group-hover/discuss:bg-white/15">
-							<svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
-								<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75L9 1.5l5.25 5.25M9 1.5v10.5M3 14.25h12" />
+							{/* Lightning bolt (Heroicons) = action/strike. Was an
+							    upload arrow by mistake. Matches the Acoes sidenav
+							    icon — reforca que essa CTA estende a surface de
+							    acoes via chat. */}
+							<svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+								<path d="M14.615 1.595a.75.75 0 01.359.852L12.982 9.75h7.268a.75.75 0 01.548 1.262l-10.5 11.25a.75.75 0 01-1.272-.71l1.992-7.302H3.75a.75.75 0 01-.548-1.262l10.5-11.25a.75.75 0 01.913-.143z" />
 							</svg>
 						</span>
 						<div className="min-w-0">
@@ -640,11 +648,21 @@ function StepCard({
 					</span>
 				</button>
 
-				{/* Effort + owner row + confidence badge (when not high) */}
+				{/* Effort + owner row + confidence badge (when not high).
+				    Reta-final: customer feedback "meia jornada · time eng ·
+				    calibração inicial" — sem rótulos os valores ficavam
+				    incompreensíveis. Cada chip agora carrega o nome do campo
+				    (Esforço, Time, Calibração) com o valor capitalizado. */}
 				<div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-content-muted">
-					<span>{step.estimatedEffort}</span>
+					<span>
+						<span className="text-content-faint">Esforço:</span>{" "}
+						<span className="text-content-secondary">{step.estimatedEffort}</span>
+					</span>
 					<span className="text-content-faint">·</span>
-					<span>{step.suggestedOwner}</span>
+					<span>
+						<span className="text-content-faint">Time:</span>{" "}
+						<span className="text-content-secondary">{step.suggestedOwner}</span>
+					</span>
 					{/* Reta-final: confidence badge. Renders only when the
 					    aggregated tier is "low" or "medium" — calibração
 					    "alta" is the default expectation so a badge for it
@@ -665,7 +683,7 @@ function StepCard({
 									<circle cx="5" cy="5" r="3.5" />
 									<path strokeLinecap="round" d="M5 3.5v2M5 7v.2" />
 								</svg>
-								{step.confidenceTier === "low" ? "calibração inicial" : "calibração média"}
+								{step.confidenceTier === "low" ? "Calibração: inicial" : "Calibração: média"}
 							</span>
 						</>
 					)}
@@ -990,16 +1008,23 @@ function StepInGroup({ step, primarySurface }: StepInGroupProps) {
 						</div>
 					)}
 					<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-content-muted">
-						<span>{step.estimatedEffort}</span>
+						<span>
+							<span className="text-content-faint">Esforço:</span>{" "}
+							<span className="text-content-secondary">{step.estimatedEffort}</span>
+						</span>
 						<span className="text-content-faint">·</span>
-						<span>{step.suggestedOwner}</span>
+						<span>
+							<span className="text-content-faint">Time:</span>{" "}
+							<span className="text-content-secondary">{step.suggestedOwner}</span>
+						</span>
 						{step.confidenceTier === "medium" || step.confidenceTier === "low" ? (
 							<>
 								<span className="text-content-faint">·</span>
-								<span className="text-content-secondary">
-									{step.confidenceTier === "low"
-										? "calibração inicial"
-										: "calibração média"}
+								<span>
+									<span className="text-content-faint">Calibração:</span>{" "}
+									<span className="text-content-secondary">
+										{step.confidenceTier === "low" ? "inicial" : "média"}
+									</span>
 								</span>
 							</>
 						) : null}

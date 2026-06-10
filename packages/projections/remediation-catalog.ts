@@ -18,7 +18,7 @@ import type { VerificationStrategy } from '../domain/actions';
 //   - verification_notes: human-readable copy the MCP / UI shows
 //     when user asks "how does verify work for this finding?" For
 //     pixel_accumulation entries include "current/required sessions"
-//     placeholder — Phase 3.2 resolves at render time.
+//     placeholder — A próxima fase do Vestigio.2 resolves at render time.
 //   - verification_eta_seconds: approx wall-clock of the verify
 //     dispatch. Null for pixel_accumulation (there's no dispatch).
 //
@@ -47,7 +47,7 @@ export interface CatalogEntry {
 }
 
 /**
- * Language hint so Phase 3.2 localization can pick the right
+ * Language hint so A próxima fase do Vestigio.2 localization can pick the right
  * dictionary. Every entry in this file is pt-BR; if we ever ship
  * en variants the catalog becomes `Record<locale, Record<key, Entry>>`.
  */
@@ -68,7 +68,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos disparar o checkout em um navegador headless, seguir os redirects até a página de pagamento, e conferir se a URL fica no seu domínio ou se há logotipo + selo na página externa.',
+			'Vamos disparar o checkout em um navegador automatizado, seguir os redirects até a página de pagamento, e conferir se a URL fica no seu domínio ou se há logotipo + selo na página externa.',
 		verification_eta_seconds: 45,
 	},
 
@@ -82,7 +82,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar o footer, o checkout, e as URLs /privacidade /termos /reembolso (e variantes) pra confirmar a presença das três políticas + densidade mínima de conteúdo.',
+			'Vamos reabrir o footer, o checkout, e as URLs /privacidade /termos /reembolso (e variantes) pra confirmar a presença das três políticas + densidade mínima de conteúdo.',
 		verification_eta_seconds: 8,
 	},
 
@@ -97,7 +97,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 24,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos executar o checkout em headless browser, rastrear redirects, medir latência, e revalidar presença das políticas + selos de trust.',
+			'Vamos executar o checkout automaticamente, rastrear redirects, medir latência, e revalidar presença das políticas + selos de trust.',
 		verification_eta_seconds: 60,
 	},
 
@@ -111,7 +111,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar o caminho completo (home → produto → carrinho → checkout) em headless, medir tempos por request, identificar third-parties bloqueantes e retornar um relatório atualizado.',
+			'Vamos navegar o caminho completo (home → produto → carrinho → checkout) automaticamente, medir tempos por request, identificar third-parties bloqueantes e retornar um relatório atualizado.',
 		verification_eta_seconds: 50,
 	},
 
@@ -125,7 +125,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos abrir a loja em navegador headless, disparar eventos sintéticos, e conferir se GA4 / GTM / Pixel / CAPI recebem. Relatamos quais estão presentes e quais ainda faltam.',
+			'Vamos abrir a loja em navegador automatizado, disparar eventos simulados, e conferir se GA4 / GTM / Pixel / CAPI recebem. Relatamos quais estão presentes e quais ainda faltam.',
 		verification_eta_seconds: 40,
 	},
 
@@ -139,7 +139,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar as URLs críticas (/checkout, /cart, páginas de produto representativas) e confirmar se o status code voltou a ser 2xx.',
+			'Vamos reabrir as URLs críticas (/checkout, /cart, páginas de produto representativas) e confirmar se o status code voltou a ser 2xx.',
 		verification_eta_seconds: 10,
 	},
 
@@ -148,12 +148,12 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Audite o atributo `action` de todos os forms — liste quais apontam pra domínios externos.',
 			'Whitelist forms legítimos (OAuth, processador de pagamento hosted) com documentação de por quê saem do domínio.',
 			'Forms não-essenciais que saem do domínio: migre pra endpoints internos que proxyficam pro serviço externo.',
-			'Adicione aria-label em todos os forms descrevendo o propósito (signup, checkout, support, search) pra facilitar a auditoria.',
+			'Adicione aria-label em todos os forms descrevendo o propósito (signup, checkout, support, search) pra facilitar a análise.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear o HTML das páginas relevantes, listar todos os forms com action cross-domain, e conferir se os não-whitelisted foram migrados.',
+			'Vamos reanalisar o HTML das páginas relevantes, listar todos os forms com action cross-domain, e conferir se os não-whitelisted foram migrados.',
 		verification_eta_seconds: 8,
 	},
 
@@ -167,7 +167,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear HTML do caminho de compra pra listar todos os iframes/scripts externos e classificar essenciais vs não-essenciais.',
+			'Vamos reanalisar o HTML do caminho de compra pra listar todos os iframes/scripts externos e classificar essenciais vs não-essenciais.',
 		verification_eta_seconds: 10,
 	},
 
@@ -181,13 +181,13 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Vamos re-projetar o finding após sua próxima auditoria — sem dado novo, é um assessment estrutural do risco de dependência de plataforma.',
+			'Vamos reavaliar o finding após sua próxima análise — sem dado novo, é um assessment estrutural do risco de dependência de plataforma.',
 		verification_eta_seconds: 2,
 	},
 
 	revenue_path_regressed: {
 		remediation_steps: [
-			'Compare a auditoria atual com a anterior — identifique quais findings pioraram (severidade ou confidence subiu).',
+			'Compare a análise atual com a anterior — identifique quais findings pioraram (severidade ou confidence subiu).',
 			'Isole o deploy ou mudança de produto que coincide com a janela da regressão.',
 			'Se a regressão veio de deploy: considere rollback enquanto investiga. Se veio de mudança operacional: revise o processo que causou.',
 			'Adicione teste de smoke no caminho de receita pra prevenir esse tipo específico de regressão no próximo deploy.',
@@ -195,7 +195,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Vamos re-projetar sobre a evidência atual pra confirmar se a regressão ainda está presente ou foi resolvida depois do seu fix.',
+			'Vamos reavaliar sobre a evidência atual pra confirmar se a regressão ainda está presente ou foi resolvida depois do seu fix.',
 		verification_eta_seconds: 3,
 	},
 
@@ -209,7 +209,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar home + produto + checkout pra contar trust markers presentes e comparar com o baseline das lojas auditadas.',
+			'Vamos reabrir home + produto + checkout pra contar trust markers presentes e comparar com o baseline das lojas auditadas.',
 		verification_eta_seconds: 12,
 	},
 
@@ -223,7 +223,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos disparar um checkout sintético em headless browser e conferir quais tags disparam — retorna lista de tags presentes vs esperadas.',
+			'Vamos disparar um checkout simulado automaticamente e conferir quais tags disparam — retorna lista de tags presentes vs esperadas.',
 		verification_eta_seconds: 50,
 	},
 
@@ -237,7 +237,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar o checkout em um headless browser com viewport mobile (375x667) e relatar cada ponto onde o fluxo quebra.',
+			'Vamos navegar o checkout em um navegador automatizado com viewport mobile (375x667) e relatar cada ponto onde o fluxo quebra.',
 		verification_eta_seconds: 55,
 	},
 
@@ -251,7 +251,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar headless em viewport mobile e desktop e comparar quantos trust markers cada layout expõe.',
+			'Vamos navegar automatizado em viewport mobile e desktop e comparar quantos trust markers cada layout expõe.',
 		verification_eta_seconds: 60,
 	},
 
@@ -265,7 +265,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 14,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Phase 3 introduzirá probes nos fluxos secundários (WhatsApp, form) — hoje a verificação é re-projetar sobre evidência existente.',
+			'A próxima fase do Vestigio introduz probes nos fluxos secundários (WhatsApp, form) — hoje a verificação é reavaliar sobre evidência existente.',
 		verification_eta_seconds: 3,
 	},
 
@@ -279,7 +279,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar o checkout em headless browser coletando erros JS de console — retorna lista de erros encontrados vs baseline anterior.',
+			'Vamos navegar o checkout automaticamente coletando erros JS de console — retorna lista de erros encontrados vs baseline anterior.',
 		verification_eta_seconds: 45,
 	},
 
@@ -293,7 +293,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos disparar um checkout sintético em headless, capturar network requests, e confirmar quais tags enviam dados válidos.',
+			'Vamos disparar um checkout simulado automaticamente, capturar network requests, e confirmar quais tags enviam dados válidos.',
 		verification_eta_seconds: 50,
 	},
 
@@ -307,7 +307,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar em headless pelas páginas de alto intent e confirmar quais eventos disparam vs esperados.',
+			'Vamos navegar automaticamente pelas páginas de alto intent e confirmar quais eventos disparam vs esperados.',
 		verification_eta_seconds: 45,
 	},
 
@@ -339,7 +339,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 14,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos executar o caminho crítico em headless e contar fricções: campos, modais, redirects, logins forçados.',
+			'Vamos executar o caminho crítico automaticamente e contar fricções: campos, modais, redirects, logins forçados.',
 		verification_eta_seconds: 50,
 	},
 
@@ -353,7 +353,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Re-projetar sobre a evidência atual pra recalcular o leakage agregado — sem novo data, apenas a soma atual.',
+			'Reavaliar sobre a evidência atual pra recalcular o leakage agregado — sem novo data, apenas a soma atual.',
 		verification_eta_seconds: 3,
 	},
 
@@ -367,7 +367,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar até o checkout em headless e contar trust markers visíveis no viewport do pagamento.',
+			'Vamos navegar até o checkout automaticamente e contar trust markers visíveis no viewport do pagamento.',
 		verification_eta_seconds: 40,
 	},
 
@@ -381,7 +381,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos carregar as surfaces identificadas em headless e confirmar presença de tags + disparos de eventos.',
+			'Vamos carregar as surfaces identificadas automaticamente e confirmar presença de tags + disparos de eventos.',
 		verification_eta_seconds: 35,
 	},
 
@@ -395,7 +395,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear HTML das páginas comerciais e auditar text + styling dos CTAs contra lista de padrões vagos.',
+			'Vamos reanalisar o HTML das páginas comerciais e conferir o texto e o estilo dos CTAs contra lista de padrões vagos.',
 		verification_eta_seconds: 8,
 	},
 
@@ -409,7 +409,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar /checkout seguindo redirects e contar hops — relatório inclui cada URL intermediária.',
+			'Vamos reabrir /checkout seguindo redirects e contar hops — relatório inclui cada URL intermediária.',
 		verification_eta_seconds: 10,
 	},
 
@@ -423,7 +423,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear HTML das surfaces comerciais e extrair atributo lang + amostra de copy pra detectar mix de idiomas.',
+			'Vamos reanalisar o HTML das surfaces comerciais e extrair atributo lang + amostra de copy pra detectar mix de idiomas.',
 		verification_eta_seconds: 8,
 	},
 
@@ -451,7 +451,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos carregar a URL de confirmação em headless e verificar presença dos elementos essenciais (order ID, resumo, prazo).',
+			'Vamos carregar a URL de confirmação automaticamente e verificar presença dos elementos essenciais (order ID, resumo, prazo).',
 		verification_eta_seconds: 35,
 	},
 
@@ -465,7 +465,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar a página de política de reembolso e analisar estrutura + densidade de conteúdo.',
+			'Vamos reabrir a página de política de reembolso e analisar estrutura + densidade de conteúdo.',
 		verification_eta_seconds: 5,
 	},
 
@@ -479,7 +479,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'not_verifiable_explain',
 		verification_notes:
-			'Post-purchase proof acontece via email/SMS externo ao site — não dá pra verificar via crawl. Phase 3 explora integração com ESP pra validar templates de transacional.',
+			'Post-purchase proof acontece via email/SMS externo ao site — não dá pra verificar via crawl. A próxima fase do Vestigio explora integração com ESP pra validar templates de transacional.',
 		verification_eta_seconds: null,
 	},
 
@@ -493,7 +493,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear home + produto + checkout e detectar canais de suporte visíveis em cada surface.',
+			'Vamos reanalisar home + produto + checkout e detectar canais de suporte visíveis em cada surface.',
 		verification_eta_seconds: 8,
 	},
 
@@ -521,7 +521,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Fluxos alternativos acontecem fora do site — verificação é re-projetar depois que você marca os eventos.',
+			'Fluxos alternativos acontecem fora do site — verificação é reavaliar depois que você marca os eventos.',
 		verification_eta_seconds: 3,
 	},
 
@@ -535,7 +535,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos abrir o checkout em headless com console capture e conferir se componentes de trust renderizam sem erros.',
+			'Vamos abrir o checkout automaticamente com console capture e conferir se componentes de trust renderizam sem erros.',
 		verification_eta_seconds: 45,
 	},
 
@@ -549,7 +549,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Risco estrutural de provider único — verificação é re-projetar após você diversificar ou documentar contingência.',
+			'Risco estrutural de provider único — verificação é reavaliar após você diversificar ou documentar contingência.',
 		verification_eta_seconds: 3,
 	},
 
@@ -577,7 +577,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 14,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar em headless com consent rejeitado e consent aceito, conferindo quais tags disparam em cada cenário.',
+			'Vamos navegar automaticamente com consent rejeitado e consent aceito, conferindo quais tags disparam em cada cenário.',
 		verification_eta_seconds: 60,
 	},
 
@@ -591,7 +591,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar os checkouts dos fluxos conhecidos e identificar quantos gateways distintos aparecem.',
+			'Vamos reabrir os checkouts dos fluxos conhecidos e identificar quantos gateways distintos aparecem.',
 		verification_eta_seconds: 20,
 	},
 
@@ -608,7 +608,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar o footer + URLs /reembolso /reembolsos /politica-devolucao pra confirmar presença e densidade mínima.',
+			'Vamos reabrir o footer + URLs /reembolso /reembolsos /politica-devolucao pra confirmar presença e densidade mínima.',
 		verification_eta_seconds: 5,
 	},
 
@@ -622,7 +622,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear footer + páginas de contato pra detectar canais disponíveis (email, WhatsApp, telefone, chat).',
+			'Vamos reanalisar footer + páginas de contato pra detectar canais disponíveis (email, WhatsApp, telefone, chat).',
 		verification_eta_seconds: 8,
 	},
 
@@ -636,7 +636,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas de produto buscando claims de prazo/garantia vs comparar com dados reais de logística.',
+			'Vamos reabrir páginas de produto buscando claims de prazo/garantia vs comparar com dados reais de logística.',
 		verification_eta_seconds: 10,
 	},
 
@@ -650,7 +650,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Risco composto — a verificação é re-projetar sobre a evidência após você fechar as frentes individuais (refund, support, expectations).',
+			'Risco composto — a verificação é reavaliar sobre a evidência após você fechar as frentes individuais (refund, support, expectations).',
 		verification_eta_seconds: 3,
 	},
 
@@ -664,7 +664,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar a política de reembolso e medir densidade de conteúdo + presença de elementos estruturais chave.',
+			'Vamos reabrir a política de reembolso e medir densidade de conteúdo + presença de elementos estruturais chave.',
 		verification_eta_seconds: 5,
 	},
 
@@ -678,7 +678,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar até o checkout em headless e detectar presença de canal de suporte visível acima da dobra.',
+			'Vamos navegar até o checkout automaticamente e detectar presença de canal de suporte visível acima da dobra.',
 		verification_eta_seconds: 35,
 	},
 
@@ -696,7 +696,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 24,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos executar signup + primeiro login sintéticos em headless e medir tempo até primeiro valor percebido.',
+			'Vamos executar signup + primeiro login simulados automaticamente e medir tempo até primeiro valor percebido.',
 		verification_eta_seconds: 90,
 	},
 
@@ -710,7 +710,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos executar signup em headless e contar campos obrigatórios + steps até primeiro acesso ao produto.',
+			'Vamos executar signup automaticamente e contar campos obrigatórios + steps até primeiro acesso ao produto.',
 		verification_eta_seconds: 45,
 	},
 
@@ -724,7 +724,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos logar como novo usuário em headless e identificar se há CTA primário claro nos primeiros 3 segundos.',
+			'Vamos logar como novo usuário automaticamente e identificar se há CTA primário claro nos primeiros 3 segundos.',
 		verification_eta_seconds: 40,
 	},
 
@@ -733,7 +733,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Para cada lista/dashboard que pode ficar vazio, desenhe empty state com: ilustração, copy explicativo, CTA específico.',
 			'Empty states devem guiar para a ação certa ("Adicionar primeiro item", "Convidar time", "Conectar integração").',
 			'Se o empty state é comum (ex: novo usuário), considere pre-popular com sample data removível.',
-			'Teste em sessão sintética: o novo usuário consegue sair do empty state em <30s?',
+			'Teste em sessão simulada: o novo usuário consegue sair do empty state em <30s?',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
@@ -752,7 +752,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear a estrutura de navegação e contar profundidade + número de itens top-level.',
+			'Vamos reanalisar a estrutura de navegação e contar profundidade + número de itens top-level.',
 		verification_eta_seconds: 8,
 	},
 
@@ -766,7 +766,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos logar como usuário sintético e explorar cada menu pra ver se features premium aparecem em entry points descobríveis.',
+			'Vamos logar como usuário simulado e explorar cada menu pra ver se features premium aparecem em entry points descobríveis.',
 		verification_eta_seconds: 60,
 	},
 
@@ -780,7 +780,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 14,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar settings + pricing + features gated pra confirmar presença e clareza dos CTAs de upgrade.',
+			'Vamos reabrir settings + pricing + features gated pra confirmar presença e clareza dos CTAs de upgrade.',
 		verification_eta_seconds: 10,
 	},
 
@@ -794,7 +794,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Timing de upgrade é signal comportamental + produto — re-projetar sobre evidência após você ajustar triggers.',
+			'Timing de upgrade é signal comportamental + produto — reavaliar sobre evidência após você ajustar triggers.',
 		verification_eta_seconds: 3,
 	},
 
@@ -808,7 +808,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Expansion é uma estratégia de produto — verificação é re-projetar após você definir caminho claro e instrumentar.',
+			'Expansion é uma estratégia de produto — verificação é reavaliar após você definir caminho claro e instrumentar.',
 		verification_eta_seconds: 3,
 	},
 
@@ -822,7 +822,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar da landing até primeiro login em headless, comparando elementos visuais e copy principais.',
+			'Vamos navegar da landing até primeiro login automaticamente, comparando elementos visuais e copy principais.',
 		verification_eta_seconds: 55,
 	},
 
@@ -839,7 +839,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar o checkout e procurar por keywords de trust language próximo aos campos de pagamento.',
+			'Vamos reabrir o checkout e procurar por keywords de trust language próximo aos campos de pagamento.',
 		verification_eta_seconds: 5,
 	},
 
@@ -852,7 +852,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear HTML e auditar texto de cada CTA contra lista de padrões vagos.',
+			'Vamos reanalisar o HTML e conferir o texto de cada CTA contra lista de padrões vagos.',
 		verification_eta_seconds: 6,
 	},
 
@@ -866,7 +866,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas de produto e rodar análise de densidade semântica + comparação com templates genéricos conhecidos.',
+			'Vamos reabrir páginas de produto e rodar análise de densidade semântica + comparação com templates genéricos conhecidos.',
 		verification_eta_seconds: 10,
 	},
 
@@ -880,7 +880,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar a página de pricing e auditar estrutura: planos distinguíveis, plano recomendado marcado, FAQ presente.',
+			'Vamos reabrir a página de pricing e auditar estrutura: planos distinguíveis, plano recomendado marcado, FAQ presente.',
 		verification_eta_seconds: 8,
 	},
 
@@ -898,7 +898,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Phase 3 ativa LLM enrichment pra avaliar qualidade de social proof. Hoje a verificação é estrutural: conta quantos depoimentos têm atributos concretos.',
+			'A próxima fase ativa uma camada de IA pra avaliar qualidade de social proof. Hoje a verificação é estrutural: conta quantos depoimentos têm atributos concretos.',
 		verification_eta_seconds: 10,
 	},
 
@@ -912,7 +912,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Phase 3 ativa LLM enrichment. Hoje vamos navegar headless submetendo forms com dados inválidos e capturar as mensagens de erro.',
+			'A próxima fase do Vestigio ativa uma camada de IA pra avaliar isso. Hoje vamos navegar automatizado submetendo forms com dados inválidos e capturar as mensagens de erro.',
 		verification_eta_seconds: 45,
 	},
 
@@ -926,7 +926,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 24,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Phase 3 ativa LLM enrichment. Hoje vamos executar signup+primeiro uso em headless e cronometrar até primeiro valor.',
+			'A próxima fase do Vestigio ativa uma camada de IA pra avaliar isso. Hoje vamos executar signup+primeiro uso automaticamente e cronometrar até primeiro valor.',
 		verification_eta_seconds: 90,
 	},
 
@@ -944,7 +944,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a homepage e analisar o conteúdo above-the-fold: presença de proposta de valor, densidade de elementos, e especificidade do headline.',
+			'Vamos reabrir a homepage e analisar o conteúdo above-the-fold: presença de proposta de valor, densidade de elementos, e especificidade do headline.',
 		verification_eta_seconds: 8,
 	},
 
@@ -959,7 +959,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar checkout, pricing e product pages, procurando keywords de trust language, selos de segurança e ausência de dark patterns.',
+			'Vamos reabrir checkout, pricing e product pages, procurando keywords de trust language, selos de segurança e ausência de dark patterns.',
 		verification_eta_seconds: 8,
 	},
 
@@ -973,7 +973,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas comerciais e avaliar qualidade de social proof: especificidade de depoimentos, proximidade de CTAs, e presença de dados concretos.',
+			'Vamos reabrir páginas comerciais e avaliar qualidade de social proof: especificidade de depoimentos, proximidade de CTAs, e presença de dados concretos.',
 		verification_eta_seconds: 10,
 	},
 
@@ -987,7 +987,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear HTML de páginas comerciais e auditar hierarquia de CTAs, labels de botões e navegação contra padrões de clareza.',
+			'Vamos reanalisar o HTML de páginas comerciais e conferir a hierarquia de CTAs, labels de botões e navegação contra padrões de clareza.',
 		verification_eta_seconds: 8,
 	},
 
@@ -1001,7 +1001,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar pricing e product pages, verificando presença de FAQ, garantias, comparações e risk reversal elements.',
+			'Vamos reabrir pricing e product pages, verificando presença de FAQ, garantias, comparações e risk reversal elements.',
 		verification_eta_seconds: 8,
 	},
 
@@ -1015,7 +1015,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar múltiplas páginas e comparar tom, terminologia e promessas cross-page para detectar contradições.',
+			'Vamos reabrir múltiplas páginas e comparar tom, terminologia e promessas cross-page para detectar contradições.',
 		verification_eta_seconds: 15,
 	},
 
@@ -1030,7 +1030,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar product pages, onboarding e forms, avaliando especificidade de copy, presença de quick wins e qualidade de mensagens de erro.',
+			'Vamos reabrir product pages, onboarding e forms, avaliando especificidade de copy, presença de quick wins e qualidade de mensagens de erro.',
 		verification_eta_seconds: 12,
 	},
 
@@ -1048,7 +1048,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar ambas versões (primária e traduzida) e comparar estrutura persuasiva: presença de urgência, especificidade de prova social, poder do CTA.',
+			'Vamos reabrir ambas versões (primária e traduzida) e comparar estrutura persuasiva: presença de urgência, especificidade de prova social, poder do CTA.',
 		verification_eta_seconds: 15,
 	},
 
@@ -1063,7 +1063,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas com formulários e avaliar qualidade de labels, botões, placeholders e mensagens de erro.',
+			'Vamos reabrir páginas com formulários e avaliar qualidade de labels, botões, placeholders e mensagens de erro.',
 		verification_eta_seconds: 10,
 	},
 
@@ -1093,7 +1093,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas e verificar: copyright atualizado, ausência de datas passadas, promoções expiradas e métricas de prova social atualizadas.',
+			'Vamos reabrir as páginas e verificar: copyright atualizado, ausência de datas passadas, promoções expiradas e métricas de prova social atualizadas.',
 		verification_eta_seconds: 8,
 	},
 
@@ -1111,7 +1111,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
-		verification_notes: 'Vamos re-crawlar e checar se datas foram atualizadas, referências defasadas removidas, e indicadores de conteúdo fresco nas páginas comerciais.',
+		verification_notes: 'Vamos reabrir e checar se datas foram atualizadas, referências defasadas removidas, e indicadores de conteúdo fresco nas páginas comerciais.',
 		verification_eta_seconds: 10,
 	},
 	pricing_page_outdated: {
@@ -1124,7 +1124,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		],
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
-		verification_notes: 'Vamos re-crawlar a pricing page e confirmar que o conteúdo está atualizado — sem datas defasadas, ofertas expiradas ou claims competitivos antigos.',
+		verification_notes: 'Vamos reabrir a pricing page e confirmar que o conteúdo está atualizado — sem datas defasadas, ofertas expiradas ou claims competitivos antigos.',
 		verification_eta_seconds: 8,
 	},
 	social_proof_expired: {
@@ -1137,12 +1137,12 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		],
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
-		verification_notes: 'Vamos re-crawlar e checar social proof atualizado — sem datas defasadas em depoimentos, métricas correntes, referências de clientes recentes.',
+		verification_notes: 'Vamos reabrir e checar social proof atualizado — sem datas defasadas em depoimentos, métricas correntes, referências de clientes recentes.',
 		verification_eta_seconds: 8,
 	},
 	content_decay_progression: {
 		remediation_steps: [
-			'Faça uma auditoria completa de conteúdo em todas as páginas comerciais — sinalize tudo com data > 6 meses.',
+			'Faça uma análise completa de conteúdo em todas as páginas comerciais — sinalize tudo com data > 6 meses.',
 			'Priorize as atualizações por tráfego e impacto em conversão — comece pelas páginas de checkout e pricing.',
 			'Implemente monitoramento contínuo de freshness (este finding do Vestigio vai re-checar a cada ciclo).',
 			'Atribua dono por página comercial — cada uma precisa de um responsável nomeado pelo review trimestral.',
@@ -1150,7 +1150,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
-		verification_notes: 'Monitoramento multi-ciclo — este finding vai rastrear se os scores de staleness melhoram nos próximos ciclos de auditoria.',
+		verification_notes: 'Monitoramento multi-ciclo — este finding vai rastrear se os scores de staleness melhoram nos próximos ciclos de análise.',
 		verification_eta_seconds: 10,
 	},
 
@@ -1168,7 +1168,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar os headers das URLs críticas e comparar com baseline de segurança esperado.',
+			'Vamos reabrir os headers das URLs críticas e comparar com baseline de segurança esperado.',
 		verification_eta_seconds: 5,
 	},
 
@@ -1182,7 +1182,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos carregar URLs críticas em headless e capturar mixed content warnings do console.',
+			'Vamos carregar URLs críticas automaticamente e capturar mixed content warnings do console.',
 		verification_eta_seconds: 40,
 	},
 
@@ -1191,12 +1191,12 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Remova URLs administrativas de paths previsíveis (/admin, /wp-admin, /.env, /api/debug) — 404 ou redirect pra home.',
 			'Adicione autenticação em todos endpoints administrativos — não confie em obscuridade.',
 			'Configure robots.txt pra disallow rotas sensíveis (mas saiba que robots.txt não é mecanismo de segurança).',
-			'Rode scanner regular (Nuclei, Katana) pra detectar endpoints expostos em produção.',
+			'Rode scanner regular (varredura do Vestigio, varredura do Vestigio) pra detectar endpoints expostos em produção.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Vamos disparar o scanner Nuclei + Katana na infraestrutura pública pra confirmar se endpoints sensíveis seguem expostos.',
+			'Vamos disparar o scanner a varredura completa do Vestigio na infraestrutura pública pra confirmar se endpoints sensíveis seguem expostos.',
 		verification_eta_seconds: 180,
 	},
 
@@ -1210,7 +1210,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 14,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos carregar o checkout em headless, extrair lista de scripts, e comparar com whitelist conhecido.',
+			'Vamos carregar o checkout automaticamente, extrair lista de scripts, e comparar com whitelist conhecido.',
 		verification_eta_seconds: 50,
 	},
 
@@ -1224,7 +1224,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar em headless e inspecionar atributos de cookies de sessão + presença de CSRF tokens em forms.',
+			'Vamos navegar automaticamente e inspecionar atributos de cookies de sessão + presença de CSRF tokens em forms.',
 		verification_eta_seconds: 45,
 	},
 
@@ -1238,7 +1238,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar headers da URL do checkout e validar presença de X-Frame-Options ou CSP frame-ancestors.',
+			'Vamos reabrir headers da URL do checkout e validar presença de X-Frame-Options ou CSP frame-ancestors.',
 		verification_eta_seconds: 4,
 	},
 
@@ -1266,7 +1266,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos submeter dados teste em headless e inspecionar tráfego de rede pra confirmar criptografia + tokenização.',
+			'Vamos submeter dados teste automaticamente e inspecionar tráfego de rede pra confirmar criptografia + tokenização.',
 		verification_eta_seconds: 60,
 	},
 
@@ -1340,7 +1340,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 40,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Incidente crítico — dispara Nuclei + Katana full scan + análise de scripts + diff com baseline conhecido limpo.',
+			'Incidente crítico — dispara a varredura completa do Vestigio full scan + análise de scripts + diff com baseline conhecido limpo.',
 		verification_eta_seconds: 300,
 	},
 
@@ -1354,7 +1354,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar o site em headless coletando todos outbound links e comparar com allowlist esperado.',
+			'Vamos navegar o site automaticamente coletando todos outbound links e comparar com allowlist esperado.',
 		verification_eta_seconds: 60,
 	},
 
@@ -1368,7 +1368,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Vamos disparar Katana + Nuclei na infraestrutura pública pra detectar endpoints operacionais expostos.',
+			'Vamos disparar a varredura completa do Vestigio na infraestrutura pública pra detectar endpoints operacionais expostos.',
 		verification_eta_seconds: 180,
 	},
 
@@ -1382,7 +1382,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar landings conhecidas e medir presença de trust markers em cada.',
+			'Vamos reabrir landings conhecidas e medir presença de trust markers em cada.',
 		verification_eta_seconds: 20,
 	},
 
@@ -1396,7 +1396,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 40,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Crítico — dispara scan completo (Nuclei + Katana + brand-intel) pra mapear extensão do comprometimento.',
+			'Crítico — dispara scan completo (a varredura completa do Vestigio + brand-intel) pra mapear extensão do comprometimento.',
 		verification_eta_seconds: 300,
 	},
 
@@ -1410,7 +1410,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Vamos disparar Katana deep discovery pra mapear endpoints abusáveis + revalidar após seus fixes.',
+			'Vamos disparar varredura do Vestigio deep discovery pra mapear endpoints abusáveis + revalidar após seus fixes.',
 		verification_eta_seconds: 240,
 	},
 
@@ -1424,7 +1424,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 30,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Re-disparar Katana contra os endpoints comprometidos pra confirmar patch + monitorar padrões de abuso.',
+			'Revarredura do Vestigio contra os endpoints comprometidos pra confirmar patch + monitorar padrões de abuso.',
 		verification_eta_seconds: 240,
 	},
 
@@ -1443,7 +1443,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 
 	// ─────────────────────────────────────────────
-	// Deep Discovery (Phase 3B — Katana)
+	// Deep Discovery (Phase 3B — varredura do Vestigio)
 	// ─────────────────────────────────────────────
 
 	promotion_logic_exposed: {
@@ -1456,7 +1456,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Vamos dispatch Katana em endpoints de cart/coupon pra revalidar superfície abusável.',
+			'Vamos dispatch varredura do Vestigio em endpoints de cart/coupon pra revalidar superfície abusável.',
 		verification_eta_seconds: 180,
 	},
 
@@ -1484,7 +1484,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Dispatch Katana contra paths de discount/refund pra confirmar ocultação + autenticação.',
+			'Varredura do Vestigio contra paths de discount/refund pra confirmar ocultação + autenticação.',
 		verification_eta_seconds: 150,
 	},
 
@@ -1498,7 +1498,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 18,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Katana dispatch com foco em endpoints numericamente enumeráveis + tentativa de IDOR.',
+			'Varredura do Vestigio com foco em endpoints numericamente enumeráveis + tentativa de IDOR.',
 		verification_eta_seconds: 180,
 	},
 
@@ -1526,7 +1526,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Katana discovery em JS bundles pra mapear endpoints referenciados + comparar com surfaces autorizadas.',
+			'Varredura do Vestigio em JS bundles pra mapear endpoints referenciados + comparar com surfaces autorizadas.',
 		verification_eta_seconds: 150,
 	},
 
@@ -1540,7 +1540,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 14,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Katana exploration de rotas dinâmicas com tentativas de auth bypass.',
+			'Varredura do Vestigio de rotas dinâmicas com tentativas de auth bypass.',
 		verification_eta_seconds: 180,
 	},
 
@@ -1554,7 +1554,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Suporte é métrica operacional externa ao site — re-projetar após você documentar tickets + tempo de resolução.',
+			'Suporte é métrica operacional externa ao site — reavaliar após você documentar tickets + tempo de resolução.',
 		verification_eta_seconds: 3,
 	},
 
@@ -1568,21 +1568,21 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Katana + probe de variant manipulation (IDs inexistentes, mix de produto + variante órfã).',
+			'varredura do Vestigio + probe de variant manipulation (IDs inexistentes, mix de produto + variante órfã).',
 		verification_eta_seconds: 180,
 	},
 
 	deep_commerce_exploitation_risk: {
 		remediation_steps: [
 			'Incidente composto — múltiplos vetores de exploração ativos simultaneamente. Escale pra security team.',
-			'Rode full scan (Katana + Nuclei) pra mapear extensão do problema.',
+			'Rode full scan (a varredura completa do Vestigio) pra mapear extensão do problema.',
 			'Priorize patch pelos vetores de maior impacto financeiro (preço, cupom, checkout) primeiro.',
 			'Configure monitoramento contínuo pós-remediação — exploração composta geralmente tem tentativas de re-entrada.',
 		],
 		estimated_effort_hours: 40,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Full scan Katana + Nuclei + revalidação de cada vetor identificado.',
+			'Full scan a varredura completa do Vestigio + revalidação de cada vetor identificado.',
 		verification_eta_seconds: 300,
 	},
 
@@ -1600,13 +1600,13 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar checkout em headless capturando timing de cada request + retornar P50/P95.',
+			'Vamos navegar checkout automaticamente capturando timing de cada request + retornar P50/P95.',
 		verification_eta_seconds: 50,
 	},
 
 	commercial_pages_slow: {
 		remediation_steps: [
-			'Rode Lighthouse em páginas de produto e categoria — target LCP <2.5s, TTFB <600ms.',
+			'Rode análise de performance em páginas de produto e categoria — target LCP <2.5s, TTFB <600ms.',
 			'Otimize imagens: formato WebP/AVIF, lazy loading, responsive sizes.',
 			'Remova scripts third-party não-essenciais ou mova pra async/defer.',
 			'Configure cache agressivo de assets estáticos (1 ano via Cache-Control) + ETag pra HTML.',
@@ -1614,7 +1614,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 14,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos executar Lighthouse em headless contra páginas comerciais e comparar com baseline anterior.',
+			'Vamos executar análise de performance automaticamente contra páginas comerciais e comparar com baseline anterior.',
 		verification_eta_seconds: 60,
 	},
 
@@ -1628,7 +1628,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Lighthouse + análise de peso de recursos carregados nas landings de paid.',
+			'análise de performance + análise de peso de recursos carregados nas landings de paid.',
 		verification_eta_seconds: 50,
 	},
 
@@ -1656,7 +1656,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Navegar checkout headless + simular falha de third-party pra ver se graceful degradation funciona.',
+			'Navegar checkout automatizado + simular falha de third-party pra ver se graceful degradation funciona.',
 		verification_eta_seconds: 60,
 	},
 
@@ -1670,7 +1670,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 14,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Navegar checkout múltiplas vezes em headless + coletar requests failed + estatística de sucesso.',
+			'Navegar checkout múltiplas vezes automaticamente + coletar requests failed + estatística de sucesso.',
 		verification_eta_seconds: 60,
 	},
 
@@ -1684,7 +1684,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Carregar checkout headless com/sem adblocker + medir impacto no tempo de render.',
+			'Carregar checkout automatizado com/sem adblocker + medir impacto no tempo de render.',
 		verification_eta_seconds: 50,
 	},
 
@@ -1726,7 +1726,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 20,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Lighthouse mobile + análise de JS bundle size + long tasks no main thread.',
+			'análise de performance mobile + análise de JS bundle size + long tasks no main thread.',
 		verification_eta_seconds: 60,
 	},
 
@@ -1740,7 +1740,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Headless mobile viewport + capturar falhas de payment scripts + taxa de sucesso por browser.',
+			'Em navegador automatizado mobile viewport + capturar falhas de payment scripts + taxa de sucesso por browser.',
 		verification_eta_seconds: 60,
 	},
 
@@ -1772,7 +1772,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Re-parsear HTML + extrair title/meta/H1 das páginas comerciais e comparar com best-practice.',
+			'Reanalisar HTML + extrair title/meta/H1 das páginas comerciais e comparar com best-practice.',
 		verification_eta_seconds: 10,
 	},
 
@@ -1786,7 +1786,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Re-parsear HTML + extrair og/twitter meta tags + validar URLs de imagem retornam 200.',
+			'Reanalisar HTML + extrair og/twitter meta tags + validar URLs de imagem retornam 200.',
 		verification_eta_seconds: 10,
 	},
 
@@ -1800,7 +1800,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Re-crawlar surfaces principais + extrair logo + paleta + comparar com baseline brand assets.',
+			'Reabrir surfaces principais + extrair logo + paleta + comparar com baseline brand assets.',
 		verification_eta_seconds: 20,
 	},
 
@@ -1814,7 +1814,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Re-parsear HTML + robots.txt + sitemap.xml + validar presença/ausência de noindex.',
+			'Reanalisar HTML + robots.txt + sitemap.xml + validar presença/ausência de noindex.',
 		verification_eta_seconds: 12,
 	},
 
@@ -1828,7 +1828,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Re-parsear HTML + extrair JSON-LD + validar schema vs expectativa (Product em produto, etc.).',
+			'Reanalisar HTML + extrair JSON-LD + validar schema vs expectativa (Product em produto, etc.).',
 		verification_eta_seconds: 10,
 	},
 
@@ -1842,7 +1842,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Re-crawlar + analisar relevância de og:title + og:image vs copy comercial da página.',
+			'Reabrir + analisar relevância de og:title + og:image vs copy comercial da página.',
 		verification_eta_seconds: 10,
 	},
 
@@ -2117,7 +2117,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'reuse_only' as const,
 		verification_notes:
-			'Vamos re-fetchar a landing page e re-rodar a análise de message-match pra confirmar que o score de alinhamento subiu acima de 60.',
+			'Vamos reabrir a landing page e re-rodar a análise de message-match pra confirmar que o score de alinhamento subiu acima de 60.',
 		verification_eta_seconds: 15,
 	},
 
@@ -2273,7 +2273,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 1,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos rodar um navegador headless em cada página apontada como missing e verificar se o snippet do pixel está presente + dispara o evento de page_view.',
+			'Vamos rodar um navegador automatizado em cada página apontada como missing e verificar se o snippet do pixel está presente + dispara o evento de page_view.',
 		verification_eta_seconds: 45,
 	},
 
@@ -2846,7 +2846,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar páginas comerciais e verificar presença do atributo integrity em scripts externos.',
+			'Vamos reabrir páginas comerciais e verificar presença do atributo integrity em scripts externos.',
 		verification_eta_seconds: 12,
 	},
 
@@ -2860,7 +2860,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-fetchar páginas de login e verificar tipo do campo de senha + protocolo do form action.',
+			'Vamos reabrir páginas de login e verificar tipo do campo de senha + protocolo do form action.',
 		verification_eta_seconds: 8,
 	},
 
@@ -2925,7 +2925,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos executar o checkout completo em headless browser, seguir o handoff até o gateway, e validar se a sessão retorna ao domínio da loja com confirmação.',
+			'Vamos executar o checkout completo automaticamente, seguir o handoff até o gateway, e validar se a sessão retorna ao domínio da loja com confirmação.',
 		verification_eta_seconds: 60,
 	},
 
@@ -2940,7 +2940,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 24,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos simular signup + primeira ação no headless browser e medir se o fluxo completa sem erro ou abandono.',
+			'Vamos simular signup + primeira ação no navegador automatizado e medir se o fluxo completa sem erro ou abandono.',
 		verification_eta_seconds: 45,
 	},
 
@@ -2984,7 +2984,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos verificar mobile vs desktop em headless e confirmar que trust signals estão presentes e carregando dentro de 3s no mobile.',
+			'Vamos verificar mobile vs desktop automaticamente e confirmar que trust signals estão presentes e carregando dentro de 3s no mobile.',
 		verification_eta_seconds: 45,
 	},
 
@@ -3017,7 +3017,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas de produto e verificar a presença de guia de tamanhos linkado próximo ao seletor de tamanho.',
+			'Vamos reabrir as páginas de produto e verificar a presença de guia de tamanhos linkado próximo ao seletor de tamanho.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3030,7 +3030,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas de produto e contar o número de imagens por produto — mínimo 4 para passar.',
+			'Vamos reabrir as páginas de produto e contar o número de imagens por produto — mínimo 4 para passar.',
 		verification_eta_seconds: 25,
 	},
 
@@ -3043,7 +3043,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas de produto e verificar presença de indicadores de urgência ou escassez.',
+			'Vamos reabrir as páginas de produto e verificar presença de indicadores de urgência ou escassez.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3056,7 +3056,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas de produto e carrinho e verificar presença de seções de produtos relacionados ou complementares.',
+			'Vamos reabrir páginas de produto e carrinho e verificar presença de seções de produtos relacionados ou complementares.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3069,7 +3069,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas de produto e verificar presença de informação de devolução próxima ao CTA de compra.',
+			'Vamos reabrir as páginas de produto e verificar presença de informação de devolução próxima ao CTA de compra.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3087,7 +3087,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar homepage e pricing page e verificar presença de CTA de free trial ou freemium.',
+			'Vamos reabrir homepage e pricing page e verificar presença de CTA de free trial ou freemium.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3100,7 +3100,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar homepage e pricing e verificar presença de seção de integrações com pelo menos 3 logos.',
+			'Vamos reabrir homepage e pricing e verificar presença de seção de integrações com pelo menos 3 logos.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3126,7 +3126,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a página de preços e verificar se existe opção anual com desconto visível e calculado.',
+			'Vamos reabrir a página de preços e verificar se existe opção anual com desconto visível e calculado.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3139,7 +3139,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar homepage e landing pages e verificar presença de imagens do produto (screenshots ou vídeo).',
+			'Vamos reabrir homepage e landing pages e verificar presença de imagens do produto (screenshots ou vídeo).',
 		verification_eta_seconds: 20,
 	},
 
@@ -3169,7 +3169,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar o cardápio e verificar se pelo menos 50% dos itens têm imagem associada.',
+			'Vamos reabrir o cardápio e verificar se pelo menos 50% dos itens têm imagem associada.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3195,7 +3195,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar cardápio e carrinho e verificar presença de estimativa de tempo de entrega.',
+			'Vamos reabrir cardápio e carrinho e verificar presença de estimativa de tempo de entrega.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3208,7 +3208,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 5,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar o cardápio e verificar presença de informação de alérgenos ou restrições alimentares nos itens.',
+			'Vamos reabrir o cardápio e verificar presença de informação de alérgenos ou restrições alimentares nos itens.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3225,7 +3225,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas de produto e verificar presença de lista de ingredientes ou composição.',
+			'Vamos reabrir páginas de produto e verificar presença de lista de ingredientes ou composição.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3238,7 +3238,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas de produto e verificar presença de selos clínicos, menções a profissionais de saúde, ou resultados de testes.',
+			'Vamos reabrir páginas de produto e verificar presença de selos clínicos, menções a profissionais de saúde, ou resultados de testes.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3251,7 +3251,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas de produto e verificar presença de seção de modo de uso ou instruções.',
+			'Vamos reabrir páginas de produto e verificar presença de seção de modo de uso ou instruções.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3264,7 +3264,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas de produto e verificar presença de opção de assinatura ou compra recorrente.',
+			'Vamos reabrir páginas de produto e verificar presença de opção de assinatura ou compra recorrente.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3277,7 +3277,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 5,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas de produto e verificar presença de evidência visual de resultados ou dados de eficácia.',
+			'Vamos reabrir páginas de produto e verificar presença de evidência visual de resultados ou dados de eficácia.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3294,7 +3294,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a página do curso e verificar presença de ementa ou grade curricular detalhada.',
+			'Vamos reabrir a página do curso e verificar presença de ementa ou grade curricular detalhada.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3307,7 +3307,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 2,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a página do curso e verificar presença de seção de instrutor com credenciais.',
+			'Vamos reabrir a página do curso e verificar presença de seção de instrutor com credenciais.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3320,7 +3320,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a página do curso e verificar menção a certificado de conclusão.',
+			'Vamos reabrir a página do curso e verificar menção a certificado de conclusão.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3333,7 +3333,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 2,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a página do curso e verificar presença de informação de carga horária ou duração.',
+			'Vamos reabrir a página do curso e verificar presença de informação de carga horária ou duração.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3346,7 +3346,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a página do curso e verificar presença de conteúdo de amostra gratuito (vídeo ou aula aberta).',
+			'Vamos reabrir a página do curso e verificar presença de conteúdo de amostra gratuito (vídeo ou aula aberta).',
 		verification_eta_seconds: 20,
 	},
 
@@ -3364,7 +3364,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar o site e verificar presença de cases com métricas numéricas em páginas comerciais.',
+			'Vamos reabrir o site e verificar presença de cases com métricas numéricas em páginas comerciais.',
 		verification_eta_seconds: 25,
 	},
 
@@ -3377,7 +3377,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar páginas de serviço e homepage e verificar presença de seção de metodologia ou processo.',
+			'Vamos reabrir páginas de serviço e homepage e verificar presença de seção de metodologia ou processo.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3391,7 +3391,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 5,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar homepage e footer e verificar presença de logos de clientes, certificações, ou sinais enterprise.',
+			'Vamos reabrir homepage e footer e verificar presença de logos de clientes, certificações, ou sinais enterprise.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3404,7 +3404,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a página de contato e contar o número de campos obrigatórios — máximo 5 para passar.',
+			'Vamos reabrir a página de contato e contar o número de campos obrigatórios — máximo 5 para passar.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3417,7 +3417,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 2,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a página de contato e verificar presença de compromisso de tempo de resposta próximo ao formulário.',
+			'Vamos reabrir a página de contato e verificar presença de compromisso de tempo de resposta próximo ao formulário.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3435,7 +3435,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas afetadas, extrair meta description e H1/primeiro parágrafo, e comparar alinhamento semântico entre os dois.',
+			'Vamos reabrir as páginas afetadas, extrair meta description e H1/primeiro parágrafo, e comparar alinhamento semântico entre os dois.',
 		verification_eta_seconds: 15,
 	},
 
@@ -3449,7 +3449,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar todas as páginas com menção a preço e verificar consistência entre os valores encontrados.',
+			'Vamos reabrir todas as páginas com menção a preço e verificar consistência entre os valores encontrados.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3463,7 +3463,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas e verificar se a linguagem de urgência foi removida ou vinculada a mecanismo temporal real (countdown, data de expiração).',
+			'Vamos reabrir as páginas e verificar se a linguagem de urgência foi removida ou vinculada a mecanismo temporal real (countdown, data de expiração).',
 		verification_eta_seconds: 15,
 	},
 
@@ -3477,7 +3477,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a homepage e contar H2s/propostas de valor acima do link de pricing. Passa se ≤3 propostas com hierarquia clara.',
+			'Vamos reabrir a homepage e contar H2s/propostas de valor acima do link de pricing. Passa se ≤3 propostas com hierarquia clara.',
 		verification_eta_seconds: 15,
 	},
 
@@ -3491,7 +3491,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar o checkout e buscar padrões de linguagem ansiogênica. Passa quando nenhuma frase negativa sobre pagamento/entrega for encontrada.',
+			'Vamos reabrir o checkout e buscar padrões de linguagem ansiogênica. Passa quando nenhuma frase negativa sobre pagamento/entrega for encontrada.',
 		verification_eta_seconds: 15,
 	},
 
@@ -3505,7 +3505,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar o FAQ e verificar presença de perguntas sobre preço, reembolso, garantia e prazo. Passa quando pelo menos 3 dessas objeções estão cobertas.',
+			'Vamos reabrir o FAQ e verificar presença de perguntas sobre preço, reembolso, garantia e prazo. Passa quando pelo menos 3 dessas objeções estão cobertas.',
 		verification_eta_seconds: 15,
 	},
 
@@ -3520,7 +3520,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas com depoimentos e avaliar diversidade de comprimento, presença de resultados concretos e identificação verificável dos autores.',
+			'Vamos reabrir as páginas com depoimentos e avaliar diversidade de comprimento, presença de resultados concretos e identificação verificável dos autores.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3538,7 +3538,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos executar o fluxo de checkout em headless browser, seguir os redirects e verificar se a marca permanece visível na página de pagamento.',
+			'Vamos executar o fluxo de checkout automaticamente, seguir os redirects e verificar se a marca permanece visível na página de pagamento.',
 		verification_eta_seconds: 45,
 	},
 	ad_landing_experience_disconnect: {
@@ -3551,7 +3551,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas e comparar keywords da meta description/OG com o H1 e conteúdo above-fold para confirmar alinhamento.',
+			'Vamos reabrir as páginas e comparar keywords da meta description/OG com o H1 e conteúdo above-fold para confirmar alinhamento.',
 		verification_eta_seconds: 15,
 	},
 	checkout_form_mobile_hostile: {
@@ -3564,7 +3564,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos re-crawlar o formulário de checkout e verificar presença de autocomplete, input types especializados e contagem de campos.',
+			'Vamos reabrir o formulário de checkout e verificar presença de autocomplete, input types especializados e contagem de campos.',
 		verification_eta_seconds: 30,
 	},
 	pricing_page_complexity_paralysis: {
@@ -3577,7 +3577,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar a página de pricing e verificar se há indicação de plano recomendado e se a contagem de planos/funcionalidades está dentro do ideal.',
+			'Vamos reabrir a página de pricing e verificar se há indicação de plano recomendado e se a contagem de planos/funcionalidades está dentro do ideal.',
 		verification_eta_seconds: 15,
 	},
 	support_promise_impossible_to_fulfill: {
@@ -3603,7 +3603,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar homepage, checkout e páginas de produto para conferir presença consistente de elementos de confiança em cada tier.',
+			'Vamos reabrir homepage, checkout e páginas de produto para conferir presença consistente de elementos de confiança em cada tier.',
 		verification_eta_seconds: 15,
 	},
 	multilingual_conversion_leak: {
@@ -3616,7 +3616,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar pelo funil em headless browser e verificar se o lang attribute e o idioma do conteúdo se mantêm consistentes entre páginas.',
+			'Vamos navegar pelo funil automaticamente e verificar se o lang attribute e o idioma do conteúdo se mantêm consistentes entre páginas.',
 		verification_eta_seconds: 40,
 	},
 
@@ -3628,7 +3628,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Restrinja o acesso ao subdomínio staging/dev com autenticação básica (HTTP Basic Auth) ou VPN.',
 			'Configure regras de firewall ou Cloudflare Access para permitir apenas IPs internos.',
-			'Remova dados reais de clientes do ambiente de staging — use dados sintéticos.',
+			'Remova dados reais de clientes do ambiente de staging — use dados simulados.',
 			'Adicione o subdomínio ao robots.txt com Disallow: / para evitar indexação.',
 			'Configure monitoramento para alertar se o ambiente ficar público novamente.',
 		],
@@ -3664,7 +3664,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 24,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos visitar cada subdomínio ativo em headless browser e comparar presença de elementos de marca (logo, cores, header) entre as superfícies.',
+			'Vamos visitar cada subdomínio ativo automaticamente e comparar presença de elementos de marca (logo, cores, header) entre as superfícies.',
 		verification_eta_seconds: 60,
 	},
 
@@ -3678,7 +3678,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 2,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar o site principal e verificar presença de link para o subdomínio do app no header, footer ou navegação.',
+			'Vamos reabrir o site principal e verificar presença de link para o subdomínio do app no header, footer ou navegação.',
 		verification_eta_seconds: 15,
 	},
 
@@ -3692,7 +3692,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 2,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas comerciais e verificar presença de link para WhatsApp (wa.me, whatsapp.com ou subdomínio) no conteúdo visível.',
+			'Vamos reabrir as páginas comerciais e verificar presença de link para WhatsApp (wa.me, whatsapp.com ou subdomínio) no conteúdo visível.',
 		verification_eta_seconds: 15,
 	},
 
@@ -3707,7 +3707,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos simular o fluxo de checkout em headless browser, seguir redirects e verificar se pagamento fica no domínio principal ou se há sinais de confiança no domínio externo.',
+			'Vamos simular o fluxo de checkout automaticamente, seguir redirects e verificar se pagamento fica no domínio principal ou se há sinais de confiança no domínio externo.',
 		verification_eta_seconds: 45,
 	},
 
@@ -3753,7 +3753,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-crawlar as páginas de conteúdo e verificar se existem links para URLs comerciais (/pricing, /checkout, /product).',
+			'Vamos reabrir as páginas de conteúdo e verificar se existem links para URLs comerciais (/pricing, /checkout, /product).',
 		verification_eta_seconds: 25,
 	},
 
@@ -3781,7 +3781,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos carregar a página em headless browser e verificar se o CTA primário está clicável sem interagir com o banner de consentimento primeiro.',
+			'Vamos carregar a página automaticamente e verificar se o CTA primário está clicável sem interagir com o banner de consentimento primeiro.',
 		verification_eta_seconds: 30,
 	},
 
@@ -4332,7 +4332,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos re-parsear o JSON-LD da homepage + /pricing pra confirmar que Product/Offer schemas estão presentes.',
+			'Vamos reanalisar o JSON-LD da homepage + /pricing pra confirmar que Product/Offer schemas estão presentes.',
 		verification_eta_seconds: 15,
 	},
 	branded_serp_invisible: {
@@ -4360,7 +4360,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 6,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Vamos re-fetchar seu perfil Trustpilot e confirmar que reviews negativas têm resposta do owner.',
+			'Vamos reabrir seu perfil Trustpilot e confirmar que reviews negativas têm resposta do owner.',
 		verification_eta_seconds: 60,
 	},
 	reclame_aqui_reputation_critical: {

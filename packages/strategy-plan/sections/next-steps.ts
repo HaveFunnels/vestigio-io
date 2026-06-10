@@ -83,22 +83,22 @@ function effortFromHours(h: number | null): string {
 	// Each step now reads a distinct effort even when 3 of 5 fall in the
 	// 4-8h range — meia jornada (4h) vs 1 dia (8h) reads as a planning
 	// signal, not a duplicate label.
-	if (h === null) return "esforço não calibrado";
-	if (h <= 0.5) return "<30min";
-	if (h <= 1.5) return "~1h";
-	if (h <= 3) return "meia tarde";
-	if (h <= 5) return "meia jornada";
-	if (h <= 8) return "1 dia dev";
-	if (h <= 16) return "1-2 dias dev";
-	if (h <= 24) return "2-3 dias dev";
-	return `${Math.round(h / 8)} dias dev`;
+	if (h === null) return "Não calibrado";
+	if (h <= 0.5) return "Menos de 30min";
+	if (h <= 1.5) return "Cerca de 1h";
+	if (h <= 3) return "Meia tarde";
+	if (h <= 5) return "Meia jornada";
+	if (h <= 8) return "1 dia útil";
+	if (h <= 16) return "1 a 2 dias";
+	if (h <= 24) return "2 a 3 dias";
+	return `${Math.round(h / 8)} dias`;
 }
 
 function ownerFromCategory(category: string): string {
-	if (category === "incident") return "time eng";
-	if (category === "opportunity") return "time growth";
-	if (category === "verification") return "time eng";
-	return "time eng";
+	if (category === "incident") return "Engenharia";
+	if (category === "opportunity") return "Growth";
+	if (category === "verification") return "Engenharia";
+	return "Engenharia";
 }
 
 const SURFACE_HUMAN_PT_BR: Record<string, string> = {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import MapsRich from "@/components/strategy/sections/MapsRich";
+import PlanPageSkeleton from "@/components/strategy/PlanPageSkeleton";
 import { usePlanFetch } from "@/hooks/usePlanFetch";
 
 /*
@@ -44,20 +45,7 @@ export default function MapsStandalonePage() {
 			</h1>
 
 			{state.status === "loading" && (
-				<div className="space-y-4">
-					<div className="h-12 w-2/3 animate-pulse rounded-md bg-surface-card" />
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-						{Array.from({ length: 4 }).map((_, i) => (
-							<div
-								key={i}
-								className="aspect-[3/4] animate-pulse rounded-2xl bg-surface-card"
-							/>
-						))}
-					</div>
-					<p className="pt-4 text-center text-[13px] text-content-muted">
-						Carregando mapas…
-					</p>
-				</div>
+				<PlanPageSkeleton variant="maps" />
 			)}
 
 			{state.status === "generating" && (

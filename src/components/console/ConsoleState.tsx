@@ -19,6 +19,11 @@ interface ConsoleStateProps<T> {
    *  low-awareness users get surface-specific guidance instead of
    *  "no_data_yet". */
   emptyRender?: () => React.ReactNode;
+  /** Optional layout-true skeleton for the loading state. When provided,
+   *  it replaces the generic grid skeleton — each caller passes a
+   *  shape that matches its real render (rows for findings/inventory,
+   *  cards for maps, etc.) so the swap-to-real has no layout shift. */
+  loadingRender?: () => React.ReactNode;
 }
 
 export default function ConsoleState<T>({
@@ -27,12 +32,16 @@ export default function ConsoleState<T>({
   loadingLabel,
   emptyLabel,
   emptyRender,
+  loadingRender,
 }: ConsoleStateProps<T>) {
   const t = useTranslations("console.state");
   if (state.status === "loading") {
-    // Skeleton instead of spinner — matches the user's standing
-    // preference (never spinners on content load). Shape is generic
-    // enough for findings / actions / inventory / maps grid layouts.
+    if (loadingRender) {
+      return <>{loadingRender()}</>;
+    }
+    // Generic fallback skeleton — used when the caller doesn't supply
+    // a layout-true one. Covers findings/actions/inventory grids well
+    // enough but each surface should pass loadingRender for fidelity.
     return (
       <div className="space-y-4 py-6">
         <div className="h-8 w-2/5 animate-pulse rounded-md bg-surface-card" />

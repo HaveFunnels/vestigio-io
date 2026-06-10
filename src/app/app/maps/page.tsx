@@ -84,6 +84,33 @@ export default function MapsGalleryPage() {
 						loadingLabel={t("loading")}
 						emptyLabel={t("empty")}
 						emptyRender={() => <PreAuditEmptyState surface="maps" />}
+						loadingRender={() => (
+							<div className="px-6 py-6">
+								<div className="mb-3 h-3 w-32 animate-pulse rounded bg-surface-card" />
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+									{Array.from({ length: 4 }).map((_, i) => (
+										<div
+											key={i}
+											className="overflow-hidden rounded-xl border border-edge bg-surface-card"
+										>
+											<div className="aspect-[16/9] w-full animate-pulse bg-surface-inset" />
+											<div className="flex flex-col gap-2 p-4">
+												<div className="flex items-start justify-between gap-2">
+													<div className="h-4 w-32 animate-pulse rounded bg-surface-inset" />
+													<div className="h-4 w-16 animate-pulse rounded bg-surface-inset" />
+												</div>
+												<div className="h-3 w-full animate-pulse rounded bg-surface-inset" />
+												<div className="h-3 w-[70%] animate-pulse rounded bg-surface-inset" />
+												<div className="mt-auto flex gap-2 pt-2">
+													<div className="h-2.5 w-16 animate-pulse rounded bg-surface-inset" />
+													<div className="h-2.5 w-16 animate-pulse rounded bg-surface-inset" />
+												</div>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+						)}
 					>
 						{() => null}
 					</ConsoleState>

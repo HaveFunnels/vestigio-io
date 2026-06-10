@@ -873,7 +873,55 @@ export default function FindingsPage() {
 	if (!hasData || viewsLoading) {
 		return (
 			<div className="p-4 sm:p-6">
-				<ConsoleState state={viewsLoading ? { status: "loading" } : existingState} loadingLabel={t("loading")} emptyLabel={t("empty")} emptyRender={() => <PreAuditEmptyState surface="findings" />}>
+				<ConsoleState
+					state={viewsLoading ? { status: "loading" } : existingState}
+					loadingLabel={t("loading")}
+					emptyLabel={t("empty")}
+					emptyRender={() => <PreAuditEmptyState surface="findings" />}
+					loadingRender={() => (
+						<div className="space-y-5">
+							{/* Summary card strip — 3 stat cards across the top */}
+							<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+								{Array.from({ length: 3 }).map((_, i) => (
+									<div
+										key={i}
+										className="rounded-2xl border border-edge bg-surface-card p-5"
+									>
+										<div className="mb-2 h-2.5 w-24 animate-pulse rounded bg-surface-inset" />
+										<div className="h-7 w-20 animate-pulse rounded bg-surface-inset" />
+									</div>
+								))}
+							</div>
+							{/* Filter / view-mode bar */}
+							<div className="flex items-center gap-2">
+								<div className="h-8 w-48 animate-pulse rounded-md bg-surface-card" />
+								<div className="h-8 w-32 animate-pulse rounded-md bg-surface-card" />
+								<div className="ml-auto h-8 w-24 animate-pulse rounded-md bg-surface-card" />
+							</div>
+							{/* Finding cards stack */}
+							<div className="space-y-3">
+								{Array.from({ length: 5 }).map((_, i) => (
+									<div
+										key={i}
+										className="rounded-2xl border border-edge bg-surface-card p-5"
+									>
+										<div className="flex items-start justify-between gap-4">
+											<div className="flex-1 space-y-2">
+												<div className="flex items-center gap-2">
+													<div className="h-5 w-16 animate-pulse rounded bg-surface-inset" />
+													<div className="h-5 w-20 animate-pulse rounded bg-surface-inset" />
+												</div>
+												<div className="h-5 w-[80%] animate-pulse rounded bg-surface-inset" />
+												<div className="h-3.5 w-[55%] animate-pulse rounded bg-surface-inset" />
+											</div>
+											<div className="h-14 w-24 animate-pulse rounded-lg bg-surface-inset" />
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+				>
 					{() => null}
 				</ConsoleState>
 			</div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import CopyLensRich from "@/components/strategy/sections/CopyLensRich";
+import PlanPageSkeleton from "@/components/strategy/PlanPageSkeleton";
 import { usePlanFetch } from "@/hooks/usePlanFetch";
 
 /*
@@ -47,14 +48,7 @@ export default function CopyLensStandalonePage() {
 			</h1>
 
 			{state.status === "loading" && (
-				<div className="space-y-3">
-					<div className="h-16 w-full animate-pulse rounded-2xl bg-surface-card" />
-					<div className="h-40 w-full animate-pulse rounded-2xl bg-surface-card" />
-					<div className="h-40 w-full animate-pulse rounded-2xl bg-surface-card" />
-					<p className="pt-4 text-center text-[13px] text-content-muted">
-						Carregando análise de framework…
-					</p>
-				</div>
+				<PlanPageSkeleton variant="copy-lens" />
 			)}
 
 			{state.status === "generating" && (

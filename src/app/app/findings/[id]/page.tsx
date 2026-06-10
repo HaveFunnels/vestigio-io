@@ -42,24 +42,66 @@ export default function FindingPage({
 			: loadFindings();
 
 	if (dataState.status !== "ready") {
-		// Finding detail skeleton — mirrors the real page (header strip,
-		// severity bar, narrative card, evidence list).
+		// Layout-true skeleton: mirrors the real finding detail page
+		// (max-w-3xl + breadcrumb + title + badge row + DrawerSection
+		// stack with section headers and body bars). Customer eye lands
+		// where the real content will paint, no header-shift on swap.
 		return (
-			<div className="mx-auto max-w-[1100px] space-y-5 px-4 py-8 sm:px-6 sm:py-10">
-				<div className="h-3 w-24 animate-pulse rounded-md bg-surface-card" />
-				<div className="h-8 w-3/4 animate-pulse rounded-md bg-surface-card" />
-				<div className="h-3 w-1/2 animate-pulse rounded-md bg-surface-card" />
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-					{Array.from({ length: 3 }).map((_, i) => (
-						<div
-							key={i}
-							className="h-24 animate-pulse rounded-2xl bg-surface-card"
-						/>
-					))}
+			<div className="mx-auto max-w-3xl p-6">
+				{/* Breadcrumb */}
+				<div className="mb-6 flex items-center gap-2">
+					<div className="h-3 w-16 animate-pulse rounded-md bg-surface-card" />
+					<span className="text-content-faint">/</span>
+					<div className="h-3 w-48 animate-pulse rounded-md bg-surface-card" />
 				</div>
-				<div className="h-48 animate-pulse rounded-2xl bg-surface-card" />
-				<div className="h-32 animate-pulse rounded-2xl bg-surface-card" />
-				<p className="pt-2 text-center text-sm text-content-muted">
+				{/* Title */}
+				<div className="mb-2 h-8 w-[85%] animate-pulse rounded-md bg-surface-card" />
+				<div className="mb-6 h-8 w-[55%] animate-pulse rounded-md bg-surface-card" />
+				{/* Badge row */}
+				<div className="mb-8 flex flex-wrap items-center gap-2">
+					<div className="h-5 w-16 animate-pulse rounded-full bg-surface-card" />
+					<div className="h-5 w-20 animate-pulse rounded-full bg-surface-card" />
+					<div className="h-5 w-24 animate-pulse rounded-md bg-surface-card" />
+					<div className="h-5 w-28 animate-pulse rounded-md bg-surface-card" />
+				</div>
+				{/* DrawerSection: Summary */}
+				<div className="mb-5 rounded-xl border border-edge bg-surface-card/40 p-5">
+					<div className="mb-3 h-3 w-24 animate-pulse rounded-md bg-surface-card" />
+					<div className="space-y-2">
+						<div className="h-3.5 w-full animate-pulse rounded-md bg-surface-card" />
+						<div className="h-3.5 w-[92%] animate-pulse rounded-md bg-surface-card" />
+						<div className="h-3.5 w-[80%] animate-pulse rounded-md bg-surface-card" />
+					</div>
+				</div>
+				{/* DrawerSection: Context */}
+				<div className="mb-5 rounded-xl border border-edge bg-surface-card/40 p-5">
+					<div className="mb-3 h-3 w-32 animate-pulse rounded-md bg-surface-card" />
+					<div className="space-y-2">
+						{Array.from({ length: 3 }).map((_, i) => (
+							<div
+								key={i}
+								className="h-7 w-full animate-pulse rounded-md bg-surface-card"
+							/>
+						))}
+					</div>
+				</div>
+				{/* DrawerSection: Effect */}
+				<div className="mb-5 rounded-xl border border-edge bg-surface-card/40 p-5">
+					<div className="mb-3 h-3 w-20 animate-pulse rounded-md bg-surface-card" />
+					<div className="space-y-2">
+						<div className="h-3.5 w-full animate-pulse rounded-md bg-surface-card" />
+						<div className="h-3.5 w-[70%] animate-pulse rounded-md bg-surface-card" />
+					</div>
+				</div>
+				{/* DrawerSection: Root cause */}
+				<div className="mb-5 rounded-xl border border-edge bg-surface-card/40 p-5">
+					<div className="mb-3 h-3 w-28 animate-pulse rounded-md bg-surface-card" />
+					<div className="space-y-2">
+						<div className="h-3.5 w-full animate-pulse rounded-md bg-surface-card" />
+						<div className="h-3.5 w-[85%] animate-pulse rounded-md bg-surface-card" />
+					</div>
+				</div>
+				<p className="pt-4 text-center text-sm text-content-muted">
 					{tc("loading")}
 				</p>
 			</div>

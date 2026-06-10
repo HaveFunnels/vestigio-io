@@ -251,6 +251,41 @@ export default function ActionsPage() {
 				loadingLabel={t("loading")}
 				emptyLabel={t("empty")}
 				emptyRender={() => <PreAuditEmptyState surface="actions" />}
+				loadingRender={() => (
+					<div className="space-y-4 p-4 sm:p-6">
+						{/* Filter strip */}
+						<div className="flex flex-wrap items-center gap-2">
+							<div className="h-8 w-32 animate-pulse rounded-md bg-surface-card" />
+							<div className="h-8 w-28 animate-pulse rounded-md bg-surface-card" />
+							<div className="h-8 w-24 animate-pulse rounded-md bg-surface-card" />
+							<div className="ml-auto h-8 w-20 animate-pulse rounded-md bg-surface-card" />
+						</div>
+						{/* Action cards stack — severity rail + body */}
+						<div className="space-y-3">
+							{Array.from({ length: 6 }).map((_, i) => (
+								<div
+									key={i}
+									className="flex gap-3 rounded-2xl border border-edge bg-surface-card p-5"
+								>
+									<div className="h-full w-1 shrink-0 animate-pulse rounded-full bg-surface-inset" />
+									<div className="flex-1 space-y-2">
+										<div className="flex items-center gap-2">
+											<div className="h-5 w-16 animate-pulse rounded bg-surface-inset" />
+											<div className="h-5 w-24 animate-pulse rounded bg-surface-inset" />
+										</div>
+										<div className="h-5 w-[78%] animate-pulse rounded bg-surface-inset" />
+										<div className="h-3.5 w-[55%] animate-pulse rounded bg-surface-inset" />
+										<div className="mt-2 flex items-center gap-2">
+											<div className="h-4 w-24 animate-pulse rounded bg-surface-inset" />
+											<div className="h-4 w-16 animate-pulse rounded bg-surface-inset" />
+										</div>
+									</div>
+									<div className="h-14 w-24 shrink-0 animate-pulse rounded-lg bg-surface-inset" />
+								</div>
+							))}
+						</div>
+					</div>
+				)}
 			>
 				{(actions) => (
 					<ActionsContent actions={actions} changeReport={changeReport} />

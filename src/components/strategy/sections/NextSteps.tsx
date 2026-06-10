@@ -884,7 +884,12 @@ interface SurfaceGroup {
 	steps: NextStep[];
 }
 
-const CROSS_SITE_LABEL_PT = "Sem página específica";
+// Group label for steps with no specific surface. Customer feedback:
+// "Sem página específica" leu como ausência ("falta página"). O grupo
+// é justamente o trabalho sistêmico que atravessa o site inteiro —
+// nomear como tal afirma a categoria em vez de descrevê-la pela
+// negativa.
+const CROSS_SITE_LABEL_PT = "Atravessa todas as páginas";
 
 function groupStepsBySurface(steps: NextStep[]): SurfaceGroup[] {
 	// Primary surface = first entry of affectedSurfaces (highest finding

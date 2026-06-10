@@ -253,6 +253,28 @@ async function handlePreapprovalEvent(preapprovalId: string) {
 			data: { plan: "free", status: "active" },
 		});
 		log("preapproval.cancelled", `org=${org.id} downgraded to free`);
+
+		// Telemetry — record that THIS customer cancelled so cancel-flow
+		// design (post-PMF) can sample real reasons + replay. Best-effort.
+		try {
+			const ownerId = (await prisma.organization.findUnique({
+				where: { id: org.id },
+				select: { ownerId: true },
+			}))?.ownerId;
+			if (ownerId) {
+				const { recordProductEvent } = await import("@/libs/product-telemetry");
+				await recordProductEvent({
+					userId: ownerId,
+					orgId: org.id,
+					event: "subscription.cancel.initiated",
+					properties: { provider: "mercadopago", subscriptionId: sub.id },
+					pathname: "/webhook/mercadopago",
+					sessionId: "server-webhook",
+				});
+			}
+		} catch (err) {
+			console.warn("[mp webhook] cancel telemetry failed:", err);
+		}
 	} else {
 		log("preapproval.pending", `org=${org.id} sub=${sub.id} status=${sub.status}`);
 	}

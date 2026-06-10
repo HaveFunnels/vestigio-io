@@ -142,6 +142,19 @@ export default function Signup() {
 				setLoading(false);
 			} else if (res?.ok) {
 				toast.success(t("form.success"));
+				// Telemetry: did the customer arrive pre-filled via a lead?
+				// We stash a flag in sessionStorage so the post-redirect
+				// landing page can fire the event with proper auth context
+				// (POST /api/product-events requires session, and the
+				// cookie may not be live yet on this turn).
+				if (leadEmailPrefilled) {
+					try {
+						sessionStorage.setItem(
+							"vestigio.signup.from_lead_pending",
+							"1",
+						);
+					} catch { /* private mode */ }
+				}
 				window.location.href = callbackUrl;
 			}
 		} catch (error) {

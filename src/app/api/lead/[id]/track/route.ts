@@ -19,6 +19,8 @@ const VALID_EVENTS = new Set([
 	"lp_audit_result_viewed",
 	"lp_audit_cta_clicked",
 	"lp_audit_checkout_complete",
+	// Wave 22.8 reta-final — followup-email click attribution
+	"mini_audit.followup.clicked",
 ]);
 
 export async function POST(

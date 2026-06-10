@@ -65,6 +65,24 @@ function useProductTrackInternal() {
 	const pathname = usePathname();
 	const prevPathRef = useRef<string | null>(null);
 	const enteredAtRef = useRef<number>(Date.now());
+	const signupFromLeadFiredRef = useRef(false);
+
+	// One-shot: fire signup.from_leadId.completed on the first authenticated
+	// page load after signup. The signup form sets sessionStorage flag
+	// 'vestigio.signup.from_lead_pending'; we consume it here once the
+	// post-redirect page has a real session and the track endpoint accepts
+	// the event. Conversion-rate signal for the mini-audit funnel close.
+	useEffect(() => {
+		if (signupFromLeadFiredRef.current) return;
+		try {
+			const flag = sessionStorage.getItem("vestigio.signup.from_lead_pending");
+			if (flag === "1") {
+				signupFromLeadFiredRef.current = true;
+				sessionStorage.removeItem("vestigio.signup.from_lead_pending");
+				sendEvent("signup.from_leadId.completed", {}, pathname || undefined);
+			}
+		} catch { /* private mode */ }
+	}, [pathname]);
 
 	// Auto-track page_view on pathname change
 	useEffect(() => {

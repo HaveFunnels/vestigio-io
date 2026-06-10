@@ -287,6 +287,23 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 					});
 					logEvent(eventType, `Org ${org.id} downgraded to free (canceled)`);
 				}
+
+				// Telemetry — Strategist's "without sinal, agimos por anedota".
+				// Records that THIS customer cancelled, so future cancel-flow
+				// design can sample real reasons + replay. Best-effort write.
+				try {
+					const { recordProductEvent } = await import("@/libs/product-telemetry");
+					await recordProductEvent({
+						userId: user.id,
+						orgId: org?.id,
+						event: "subscription.cancel.initiated",
+						properties: { provider: "paddle", subscriptionId: data?.id ?? null },
+						pathname: "/webhook/paddle",
+						sessionId: "server-webhook",
+					});
+				} catch (err) {
+					console.warn("[paddle webhook] cancel telemetry failed:", err);
+				}
 			}
 		}
 

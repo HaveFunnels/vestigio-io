@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useTrack } from "@/hooks/useProductTrack";
 import "@/styles/strategy.css";
 import type { StrategyPlan } from "./types";
 import HeroMetrics from "./sections/HeroMetrics";
@@ -320,6 +321,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 	const [viewMode, setViewMode] = useState<PlanViewMode>(() =>
 		isPrint ? "completo" : resolveInitialViewMode(searchParams),
 	);
+	const { track } = useTrack();
 	function handleViewModeChange(next: PlanViewMode) {
 		setViewMode(next);
 		try {
@@ -327,6 +329,10 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 		} catch {
 			/* private mode — no-op */
 		}
+		// Telemetry: discover whether customers find Resumo and stick
+		// with it. Low signal-to-noise per event but the ratio over a
+		// few weeks tells us if "Resumo" is a feature or a vanity toggle.
+		track("plan.view_mode.changed", { mode: next, month: plan.month });
 	}
 	const isResumo = viewMode === "resumo" && !isPrint;
 

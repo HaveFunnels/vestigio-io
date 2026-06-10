@@ -44,6 +44,17 @@ export const PRODUCT_EVENT_TYPES = new Set<string>([
 	"lp_audit_result_viewed",
 	"lp_audit_cta_clicked",
 	"lp_audit_checkout_complete",
+	// Wave-22.8 reta-final — Plan-as-home retention + funnel close.
+	// Activation = customer opens Plan ≥2x week 1.
+	// Retention = customer opens Plan ≥1x month 2.
+	// Funnel: signup-from-leadId conversion + 24h followup click.
+	"plan.visit",
+	"plan.view_mode.changed",
+	"plan.section.expanded",
+	"plan.section.deeplink",
+	"signup.from_leadId.completed",
+	"mini_audit.followup.clicked",
+	"subscription.cancel.initiated",
 ]);
 
 /** Feature name → User model field mapping for adoption timestamps. */

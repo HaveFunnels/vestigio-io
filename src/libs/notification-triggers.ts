@@ -479,9 +479,15 @@ export async function sendMiniAuditFollowupEmail(args: {
 	totalImpactMin: number;
 	totalImpactMax: number;
 	locale?: string;
+	// Telemetry attribution. "d1" = 24h cron (default), "d3" = 3-day
+	// followup. Appended to resultUrl as ?from=followup&day=d1|d3 so
+	// the result page can fire mini_audit.followup.clicked with the
+	// right day attribution.
+	day?: "d1" | "d3";
 }): Promise<void> {
 	const baseUrl = getBaseUrl();
-	const resultUrl = `${baseUrl}/audit/result/${args.leadId}`;
+	const day = args.day ?? "d1";
+	const resultUrl = `${baseUrl}/audit/result/${args.leadId}?from=followup&day=${day}`;
 	const totalLeaks = args.visibleCount + args.hiddenCount;
 
 	const vars = {

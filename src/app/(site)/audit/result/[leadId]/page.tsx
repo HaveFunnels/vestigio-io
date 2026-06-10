@@ -87,6 +87,30 @@ export default function MiniAuditResultPage() {
 		process.env.NODE_ENV !== "production"
 			? searchParams?.get("preview")
 			: null;
+
+	// Telemetry: customer arrived from the 24h followup email (or D+3).
+	// Fires once per mount when ?from=followup is in the URL. Day param
+	// distinguishes d1 vs d3 so we can measure relative open-rates.
+	useEffect(() => {
+		if (!leadId) return;
+		const from = searchParams?.get("from");
+		if (from !== "followup") return;
+		const day = (searchParams?.get("day") as "d1" | "d3" | null) ?? "d1";
+		fetch(`/api/lead/${encodeURIComponent(leadId)}/track`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				event: "mini_audit.followup.clicked",
+				properties: { day },
+				pathname: `/audit/result/${leadId}`,
+				sessionId: typeof window !== "undefined"
+					? (sessionStorage.getItem("_vtg_product_sid") || "anon")
+					: "anon",
+			}),
+			keepalive: true,
+		}).catch(() => {});
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [leadId]);
 	const previewTheme = searchParams?.get("theme") as "light" | "dark" | null;
 	const previewScenario = previewScenarioId
 		? PREVIEW_SCENARIOS[previewScenarioId] ?? null

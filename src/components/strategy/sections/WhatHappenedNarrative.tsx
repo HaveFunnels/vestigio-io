@@ -32,7 +32,15 @@ interface Props {
 // hue across plans + months. Picked for accessible contrast on the dark
 // shell + visual gradient (warm -> cool) so the "biggest = warmest" reads
 // even without labels.
+//
+// Cobertura: todos os packs do registry — antes só 7 packs tinham cor;
+// os outros (revenue_integrity, funnel_journey, money_moment_exposure,
+// etc.) caíam no zinc-400 fallback e a barra ficava com várias fatias
+// cinza idênticas. Customer feedback: uma fatia amarela aparecia sem
+// legenda — era trust em posição 6+ (legenda truncada em slice(0, 5));
+// corrigido renderizando todas as fatias na legenda também.
 const PACK_COLORS: Record<string, string> = {
+	// Legacy short keys (mantidos por compatibilidade)
 	copy_alignment: "rgb(248 113 113)", // rose-400
 	scale_readiness: "rgb(251 146 60)", // orange-400
 	trust: "rgb(250 204 21)", // yellow-400
@@ -40,6 +48,30 @@ const PACK_COLORS: Record<string, string> = {
 	saas: "rgb(56 189 248)", // sky-400
 	behavioral: "rgb(167 139 250)", // violet-400
 	chargeback: "rgb(244 114 182)", // pink-400
+	// Packs canônicos do registry (rev/funnel/money/saas-growth/etc.)
+	revenue_integrity: "rgb(74 222 128)", // green-400
+	chargeback_resilience: "rgb(244 114 182)", // pink-400
+	money_moment_exposure: "rgb(250 204 21)", // yellow-400
+	saas_growth_readiness: "rgb(56 189 248)", // sky-400
+	channel_integrity: "rgb(45 212 191)", // teal-400
+	discoverability: "rgb(192 132 252)", // purple-400
+	brand_integrity: "rgb(232 121 249)", // fuchsia-400
+	funnel_journey: "rgb(251 146 60)", // orange-400
+	funnel_integrity: "rgb(248 113 113)", // rose-400
+	first_impression_revenue: "rgb(34 211 238)", // cyan-400
+	action_value_map: "rgb(163 230 53)", // lime-400
+	acquisition_integrity: "rgb(96 165 250)", // blue-400
+	mobile_revenue_exposure: "rgb(251 113 133)", // rose-300
+	friction_tax: "rgb(253 186 116)", // orange-300
+	trust_revenue_gap: "rgb(252 211 77)", // amber-300
+	path_efficiency: "rgb(125 211 252)", // sky-300
+	payment_health: "rgb(134 239 172)", // green-300
+	content_freshness: "rgb(196 181 253)", // violet-300
+	vertical_specific: "rgb(216 180 254)", // purple-300
+	cross_signal: "rgb(244 114 182)", // pink-400
+	email_deliverability: "rgb(94 234 212)", // teal-300
+	competitive_lens: "rgb(240 171 252)", // fuchsia-300
+	behavioral_heuristics: "rgb(167 139 250)", // violet-400
 };
 
 function colorForPack(pack: string): string {
@@ -134,8 +166,11 @@ export default function WhatHappenedNarrative({ narrative, monthLabel, packDistr
 								/>
 							))}
 						</div>
+						{/* Legend renders every slice that's in the bar — antes
+						    truncava em slice(0, 5) e a 6ª fatia aparecia
+						    colorida sem rótulo, gerando "que cor é essa?". */}
 						<div className="mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1.5 text-[11.5px] text-content-secondary">
-							{packDistribution!.slice(0, 5).map((slice) => (
+							{packDistribution!.map((slice) => (
 								<span key={slice.pack} className="inline-flex items-center gap-1.5">
 									<span
 										className="h-2 w-2 shrink-0 rounded-[2px]"

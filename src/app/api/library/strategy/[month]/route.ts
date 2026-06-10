@@ -180,20 +180,66 @@ export async function GET(request: Request, { params }: RouteParams) {
 		},
 	});
 
-	// Resolve linked Action impacts in a single round-trip rather
-	// than N queries inside the map below.
+	// Resolve linked Action FULL records server-side. Plan API now
+	// returns embedded action objects so the drawer doesn't need to
+	// cross-reference MCP's current-cycle snapshot (which excludes
+	// older-cycle IDs the plan still links to). Action rows persist
+	// across cycle rotations — querying directly by id always works.
+	//
+	// Previous bug: ActionListBody filtered useMcpData().actions by id,
+	// and MCP only carries the current cycle. Plan generated in cycle N
+	// referenced Action rows whose IDs were from that cycle; by cycle
+	// N+1, drawer showed "Nenhuma ação encontrada" even though the rows
+	// were still in the DB.
 	const allActionIds = plan.nextSteps.flatMap(
 		(s) => (s.linkedActionRefsJson as string[]) ?? [],
 	);
-	const actionImpacts = allActionIds.length
+	const linkedActionRows = allActionIds.length
 		? await prisma.action.findMany({
 			where: { id: { in: allActionIds } },
-			select: { id: true, impactMin: true, impactMax: true, impactMidpoint: true },
+			select: {
+				id: true,
+				severity: true,
+				category: true,
+				impactMin: true,
+				impactMax: true,
+				impactMidpoint: true,
+				decisionKey: true,
+				projection: true,
+			},
 		})
 		: [];
-	const impactById = new Map(
-		actionImpacts.map((a) => [a.id, a]),
-	);
+	type LinkedAction = {
+		id: string;
+		title: string;
+		description: string;
+		severity: string;
+		category: string;
+		impactMin: number;
+		impactMax: number;
+		impactMidpoint: number;
+	};
+	const linkedActionsById = new Map<string, LinkedAction>();
+	for (const row of linkedActionRows) {
+		let title = "(ação ligada ao passo)";
+		let description = "";
+		try {
+			const parsed = JSON.parse(row.projection);
+			if (typeof parsed?.title === "string") title = parsed.title;
+			if (typeof parsed?.description === "string") description = parsed.description;
+		} catch { /* keep defaults */ }
+		linkedActionsById.set(row.id, {
+			id: row.id,
+			title,
+			description,
+			severity: row.severity,
+			category: row.category,
+			impactMin: row.impactMin ?? 0,
+			impactMax: row.impactMax ?? 0,
+			impactMidpoint: row.impactMidpoint ?? 0,
+		});
+	}
+	const impactById = linkedActionsById; // alias used below
 
 	// Reta-final: per-step confidence aggregation. Resolved from the
 	// linked Finding rows' inferenceKey (each Finding carries the
@@ -459,15 +505,16 @@ export async function GET(request: Request, { params }: RouteParams) {
 		memoryRollups,
 		nextSteps: plan.nextSteps.map((s) => {
 			const refs = (s.linkedActionRefsJson as string[]) ?? [];
+			const linkedActions = refs
+				.map((id) => impactById.get(id))
+				.filter((a): a is LinkedAction => !!a);
 			let impactMin = 0;
 			let impactMax = 0;
 			let impactMidpoint = 0;
-			for (const id of refs) {
-				const a = impactById.get(id);
-				if (!a) continue;
-				impactMin += a.impactMin ?? 0;
-				impactMax += a.impactMax ?? 0;
-				impactMidpoint += a.impactMidpoint ?? 0;
+			for (const a of linkedActions) {
+				impactMin += a.impactMin;
+				impactMax += a.impactMax;
+				impactMidpoint += a.impactMidpoint;
 			}
 			const findingRefs =
 				((s as any).linkedFindingRefsJson as string[]) ?? [];
@@ -482,6 +529,11 @@ export async function GET(request: Request, { params }: RouteParams) {
 				suggestedOwner: s.suggestedOwner,
 				linkedActionRefs: refs,
 				linkedFindingRefs: findingRefs,
+				/** Reta-final: resolved Action objects so the drawer doesn't
+				 *  have to look them up via MCP (which only carries the
+				 *  current cycle and misses older Action IDs the plan
+				 *  references). Empty array when no rows resolved. */
+				linkedActions,
 				combinedImpact: {
 					min: Math.round(impactMin),
 					max: Math.round(impactMax),

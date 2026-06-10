@@ -269,8 +269,28 @@ function StepCard({
 	const copilot = useCopilot();
 
 	function discussStep() {
+		// Action-oriented prompt — customer is here to ATTACK the problem,
+		// not to "discuss" it. Carries the step title + reasoning excerpt +
+		// impact + linkedFinding references so the MCP knows exactly which
+		// records to pull (plan/findings catalog) without guessing.
+		const impactLine =
+			step.combinedImpact?.midpoint && step.combinedImpact.midpoint > 0
+				? `Impacto estimado: R$ ${Math.round(step.combinedImpact.midpoint).toLocaleString("pt-BR")}/mês.`
+				: "";
+		const findingLine =
+			step.linkedFindingRefs.length > 0
+				? `Findings que o sustentam: ${step.linkedFindingRefs.slice(0, 3).join(", ")}.`
+				: "";
 		copilot.open({
-			prompt: `Quero discutir o passo "${title}" do plano de estratégia mensal. Reasoning: ${step.reasoning.slice(0, 300)}. Me ajuda a entender melhor e decidir como atacar?`,
+			prompt: [
+				`Passo ${step.order} do meu plano: "${title}".`,
+				step.reasoning ? `Resumo: ${step.reasoning.slice(0, 280)}` : "",
+				impactLine,
+				findingLine,
+				`Carrega o plano deste mês com get_strategy_plan e me ajude a atacar isso: por onde começo, o que verifico, e o primeiro passo concreto que eu mesmo posso fazer hoje.`,
+			]
+				.filter(Boolean)
+				.join("\n"),
 		});
 	}
 
@@ -595,18 +615,15 @@ function StepCard({
 					<div className="flex items-center gap-3">
 						<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-content/10 text-content transition-colors group-hover/discuss:bg-content/15 dark:bg-white/10 dark:group-hover/discuss:bg-white/15">
 							<svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
-								<path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4h11v7.5h-7L3 14v-2.5h-.5z" />
-								<circle cx="6" cy="7.75" r="0.6" fill="currentColor" />
-								<circle cx="8" cy="7.75" r="0.6" fill="currentColor" />
-								<circle cx="10" cy="7.75" r="0.6" fill="currentColor" />
+								<path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75L9 1.5l5.25 5.25M9 1.5v10.5M3 14.25h12" />
 							</svg>
 						</span>
 						<div className="min-w-0">
 							<div className="text-[13.5px] font-medium text-content">
-								Tirar dúvida sobre esse passo
+								Atacar com Vestigio
 							</div>
 							<div className="text-[11.5px] text-content-muted">
-								Pergunte o porquê, peça referência ou refine o procedimento.
+								Vestigio já tem o plano e as findings em contexto — só pedir o próximo movimento.
 							</div>
 						</div>
 					</div>
@@ -790,7 +807,10 @@ function StepCard({
 				description={`${step.linkedActionRefs.length} ${step.linkedActionRefs.length === 1 ? "ação ligada" : "ações ligadas"} ao passo`}
 				footer="Ações sincronizam com /app/actions, mudanças aqui aparecem na fila operacional."
 			>
-				<ActionListBody actionIds={step.linkedActionRefs} />
+				<ActionListBody
+					linkedActions={step.linkedActions}
+					actionIds={step.linkedActionRefs}
+				/>
 			</PlanSideDrawer>
 
 			<PlanSideDrawer

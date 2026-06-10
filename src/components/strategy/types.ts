@@ -232,6 +232,20 @@ export interface NextStep {
 	 *  DB has, no backfill). The drill-down UI hides the "Ver findings
 	 *  do passo" affordance when this is empty. */
 	linkedFindingRefs: string[];
+	/** Reta-final: server-resolved Action objects matching linkedActionRefs.
+	 *  Lets the drawer render directly without cross-referencing MCP's
+	 *  current-cycle snapshot (which misses older Action IDs the plan
+	 *  references). Missing rows are silently dropped. */
+	linkedActions?: Array<{
+		id: string;
+		title: string;
+		description: string;
+		severity: string;
+		category: string;
+		impactMin: number;
+		impactMax: number;
+		impactMidpoint: number;
+	}>;
 	combinedImpact: { min: number; max: number; midpoint: number };
 	/** Reta-final: aggregated confidence tier across the linked findings.
 	 *  Resolved server-side from Finding.confidence. UI surfaces a badge

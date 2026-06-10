@@ -99,6 +99,25 @@ export async function POST(request: Request) {
   try {
     const { prisma } = await import("@/libs/prismaDb");
 
+    // Reta-final: resolve env id with priority:
+    //   1. body.environment_id (caller explicitly scoped — Plan view)
+    //   2. active_env cookie (sidenav switcher state — every page mounts it)
+    //   3. isProduction=true env (legacy fallback for callers without a
+    //      cookie, e.g. first server render after fresh login)
+    //
+    // The previous version went straight from (1) to (3), so chats from
+    // a Plan page on a non-production env (very common — havefunnels
+    // doesn't tag any env as isProduction) got scoped to whichever env
+    // happened to have isProduction=true (often none → 404, sometimes
+    // the wrong one → empty plan/findings in MCP context).
+    const cookieEnvIdRaw = request.headers
+      .get("cookie")
+      ?.match(/(?:^|;\s*)active_env=([^;]*)/)?.[1];
+    const cookieEnvId =
+      cookieEnvIdRaw && cookieEnvIdRaw !== "default" && cookieEnvIdRaw !== "default_env"
+        ? decodeURIComponent(cookieEnvIdRaw)
+        : null;
+
     // Validate user → org membership
     const membership = await prisma.membership.findFirst({
       where: { userId },
@@ -108,7 +127,9 @@ export async function POST(request: Request) {
             environments: {
               where: body.environment_id
                 ? { id: body.environment_id }
-                : { isProduction: true },
+                : cookieEnvId
+                  ? { id: cookieEnvId }
+                  : { isProduction: true },
               take: 1,
             },
           },
@@ -122,7 +143,24 @@ export async function POST(request: Request) {
     }
 
     const org = membership.organization;
-    const env = org.environments[0];
+    let env: typeof org.environments[number] | null = org.environments[0] ?? null;
+
+    // If cookie pointed at an env that doesn't belong to this org, fall
+    // back to isProduction=true so the chat still works. Bad cookies
+    // shouldn't 404 the chat.
+    if (!env && cookieEnvId && !body.environment_id) {
+      env = await prisma.environment.findFirst({
+        where: { organizationId: org.id, isProduction: true },
+      });
+    }
+    // Last-resort fallback when no isProduction-tagged env exists either:
+    // grab the org's most-recent env. Better than 404.
+    if (!env) {
+      env = await prisma.environment.findFirst({
+        where: { organizationId: org.id },
+        orderBy: { createdAt: "desc" },
+      });
+    }
 
     if (!env) {
       return NextResponse.json({ message: "No environment configured" }, { status: 404 });

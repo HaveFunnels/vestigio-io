@@ -54,24 +54,64 @@ const SEVERITY_LABEL: Record<string, string> = {
 // ActionListBody
 // ──────────────────────────────────────────────
 
-interface ActionListProps {
-	actionIds: string[];
+// Reta-final: previously this component read MCP's current-cycle actions
+// snapshot and filtered by id. That broke for plans generated from older
+// cycles because Action.id rotates per cycle. Now the plan API embeds
+// the resolved Action objects directly into each step (NextStep.linkedActions),
+// so the drawer just renders them — no MCP cross-reference needed.
+
+interface LinkedActionSummary {
+	id: string;
+	title: string;
+	description: string;
+	severity: string;
+	category: string;
+	impactMin: number;
+	impactMax: number;
+	impactMidpoint: number;
 }
 
-export function ActionListBody({ actionIds }: ActionListProps) {
+interface ActionListProps {
+	/** Server-resolved Action objects from NextStep.linkedActions. */
+	linkedActions?: LinkedActionSummary[];
+	/** Legacy: original ID refs from the plan. Used only when
+	 *  linkedActions is undefined (pre-fix plans) so we still degrade
+	 *  to the MCP path for backward compat. */
+	actionIds?: string[];
+}
+
+export function ActionListBody({ linkedActions, actionIds }: ActionListProps) {
 	const mcp = useMcpData();
 	const { currency } = mcp;
-	const all =
-		mcp.actions.status === "ready" ? mcp.actions.data : [];
-	const wanted = new Set(actionIds);
-	const matched: ActionProjection[] = all.filter((a) => wanted.has(a.id));
 
-	if (matched.length === 0) {
+	// Prefer server-resolved objects.
+	let rows: LinkedActionSummary[] = linkedActions ?? [];
+
+	// Backward-compat fallback: try to enrich via MCP for callers that
+	// still pass actionIds without linkedActions.
+	if (rows.length === 0 && actionIds && actionIds.length > 0) {
+		const all = mcp.actions.status === "ready" ? mcp.actions.data : [];
+		const wanted = new Set(actionIds);
+		const matched: ActionProjection[] = all.filter((a) => wanted.has(a.id));
+		rows = matched.map((a) => ({
+			id: a.id,
+			title: a.title,
+			description: a.description,
+			severity: a.severity,
+			category: a.category,
+			impactMin: a.impact?.monthly_range?.min ?? 0,
+			impactMax: a.impact?.monthly_range?.max ?? 0,
+			impactMidpoint: a.impact?.midpoint ?? 0,
+		}));
+	}
+
+	if (rows.length === 0) {
+		const requested = (linkedActions?.length ?? 0) + (actionIds?.length ?? 0);
 		return (
 			<EmptyState
 				headline="Nenhuma ação encontrada"
 				body={
-					actionIds.length === 0
+					requested === 0
 						? "Esse passo ainda não tem ações ligadas."
 						: "As ações deste passo podem ter sido arquivadas ou fundidas em outra fila."
 				}
@@ -81,7 +121,7 @@ export function ActionListBody({ actionIds }: ActionListProps) {
 
 	return (
 		<ul className="space-y-3">
-			{matched.map((action, idx) => (
+			{rows.map((action, idx) => (
 				<motion.li
 					key={action.id}
 					initial={{ opacity: 0, y: 8 }}
@@ -106,16 +146,10 @@ export function ActionListBody({ actionIds }: ActionListProps) {
 								<span className="capitalize">{SEVERITY_LABEL[action.severity] ?? action.severity}</span>
 								<span className="text-content-faint">·</span>
 								<span>{action.category}</span>
-								{action.effort_hint && (
-									<>
-										<span className="text-content-faint">·</span>
-										<span>esforço {action.effort_hint}</span>
-									</>
-								)}
 							</div>
-							{action.impact?.midpoint != null && action.impact.midpoint > 0 && (
+							{action.impactMidpoint > 0 && (
 								<div className="mt-2 font-mono text-[13px] font-semibold tabular-nums text-rose-600 dark:text-rose-300">
-									{fmtCurrencyUnits(action.impact.midpoint, currency, { zeroAsDash: true })}
+									{fmtCurrencyUnits(action.impactMidpoint, currency, { zeroAsDash: true })}
 									<span className="text-[10px] font-normal text-content-faint">{" "}/mês</span>
 								</div>
 							)}

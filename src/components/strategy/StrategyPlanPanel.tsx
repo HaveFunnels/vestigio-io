@@ -182,74 +182,109 @@ function StickyHeader({
 					)}
 				</div>
 				<div className="order-1 flex items-center gap-1.5 sm:order-2 sm:gap-2">
-					{/* Wave 22.8 IA reform — Executive Summary view toggle.
-					    Mobile: stays in row 1 (highest-frequency control). */}
+					{/* View mode toggle — single source of "qual visão eu
+					    estou lendo?". Active option carries a fuller
+					    treatment (filled chip, stronger contrast, indicator
+					    dot) so the customer reads the current state at a
+					    glance instead of scanning labels. */}
 					<div
 						role="radiogroup"
 						aria-label="Modo de leitura do plano"
 						className="inline-flex items-center rounded-md border border-edge bg-surface-card p-0.5"
 					>
-						{(["resumo", "completo", "por_pagina"] as const).map((m) => (
-							<button
-								key={m}
-								type="button"
-								role="radio"
-								aria-checked={viewMode === m}
-								onClick={() => onViewModeChange(m)}
-								title={
-									m === "resumo"
-										? "Resumo executivo: Tese, Hero, Continuidade e top 3 ações."
-										: m === "completo"
-											? "Plano completo: todas as seções, decisões e justificativas."
-											: "Por página: passos reagrupados por superfície para dispatch. Mantém tese + padrão acima para preservar a leitura sistêmica."
-								}
-								className={`min-h-[34px] rounded-[5px] px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
-									viewMode === m
-										? "bg-surface-inset/80 text-content"
-										: "text-content-muted hover:text-content-secondary"
-								}`}
-							>
-								{m === "resumo"
-									? <><span className="sm:hidden">Resumo</span><span className="hidden sm:inline">Resumo (1 página)</span></>
+						{(["resumo", "completo", "por_pagina"] as const).map((m) => {
+							const isActive = viewMode === m;
+							const label =
+								m === "resumo" ? "Resumo" : m === "completo" ? "Completo" : "Por página";
+							const tooltip =
+								m === "resumo"
+									? "Resumo executivo: tese, hero, continuidade e top 3 ações."
 									: m === "completo"
-										? "Completo"
-										: <><span className="sm:hidden">Página</span><span className="hidden sm:inline">Por página</span></>}
-							</button>
-						))}
+										? "Plano completo: todas as seções, decisões e justificativas."
+										: "Por página: passos reagrupados por superfície para dispatch.";
+							return (
+								<button
+									key={m}
+									type="button"
+									role="radio"
+									aria-checked={isActive}
+									onClick={() => onViewModeChange(m)}
+									title={tooltip}
+									className={`relative inline-flex min-h-[32px] items-center gap-1.5 rounded-[5px] px-3 py-1 text-[12px] font-medium transition-all ${
+										isActive
+											? "bg-content text-surface shadow-sm dark:bg-white dark:text-surface"
+											: "text-content-muted hover:text-content"
+									}`}
+								>
+									{isActive && (
+										<span
+											aria-hidden
+											className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60"
+										/>
+									)}
+									{label}
+								</button>
+							);
+						})}
 					</div>
-					{/* Share + Export collapse into icon-only on mobile so they
-					    fit in the row 1 cluster without crowding the toggle.
-					    Labels return at sm+. */}
+
+					{/* Share + Export — icon-only with tooltip on hover.
+					    Shape mirrors the close button (right) so the row reads
+					    as a uniform action cluster. State (copied/error/
+					    exporting) shows as a transient label swap on the
+					    aria-label + tooltip. */}
 					<button
 						type="button"
 						onClick={handleShare}
-						aria-label={shareState === "copied" ? "Link copiado" : "Compartilhar"}
-						className="inline-flex min-h-[34px] items-center gap-1.5 rounded-md border border-edge bg-surface-card px-2 py-1.5 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content sm:px-3"
-					>
-						<svg className="h-3.5 w-3.5 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-							<path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25v-1.5a3 3 0 016 0v1.5M5.25 8.25h13.5l-1.125 11.25a2.25 2.25 0 01-2.241 2.025H8.616a2.25 2.25 0 01-2.241-2.025L5.25 8.25z" />
-						</svg>
-						<span className="hidden sm:inline">
-							{shareState === "copied"
+						aria-label={
+							shareState === "copied"
 								? "Link copiado"
 								: shareState === "error"
 									? "Falha ao copiar"
-									: "Compartilhar"}
-						</span>
+									: "Compartilhar"
+						}
+						title={
+							shareState === "copied"
+								? "Link copiado!"
+								: shareState === "error"
+									? "Falha ao copiar"
+									: "Compartilhar link do plano"
+						}
+						className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content ${
+							shareState === "copied" ? "border-emerald-500/40 text-emerald-300" : "border-edge"
+						}`}
+					>
+						{shareState === "copied" ? (
+							<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2}>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M3 8.5L6.5 12 13 5" />
+							</svg>
+						) : (
+							<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4}>
+								<circle cx="4" cy="8" r="1.6" />
+								<circle cx="12" cy="3.5" r="1.6" />
+								<circle cx="12" cy="12.5" r="1.6" />
+								<path strokeLinecap="round" d="M5.4 7.3l5.2-3M5.4 8.7l5.2 3" />
+							</svg>
+						)}
 					</button>
 					<button
 						type="button"
 						onClick={handleExport}
 						disabled={exporting}
-						aria-label={exporting ? "Exportando PDF" : "Exportar PDF"}
-						className="inline-flex min-h-[34px] items-center gap-1.5 rounded-md border border-edge bg-surface-card px-2 py-1.5 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content disabled:opacity-50 sm:px-3"
+						aria-label={exporting ? "Exportando PDF…" : "Exportar PDF"}
+						title={exporting ? "Exportando PDF…" : "Exportar PDF"}
+						className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
 					>
-						<svg className="h-3.5 w-3.5 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-							<path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-						</svg>
-						<span className="hidden sm:inline">
-							{exporting ? "Exportando…" : "Exportar PDF"}
-						</span>
+						{exporting ? (
+							<svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 16 16" fill="none">
+								<circle cx="8" cy="8" r="6" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2" />
+								<path d="M14 8a6 6 0 00-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+							</svg>
+						) : (
+							<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4}>
+								<path strokeLinecap="round" strokeLinejoin="round" d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10" />
+							</svg>
+						)}
 					</button>
 					{/* Wave 22.8 IA reform — close button só renderiza quando
 					    onClose vem do parent (Dialog overlay de /app/actions). */}
@@ -261,9 +296,9 @@ function StickyHeader({
 								onClick={onClose}
 								aria-label="Fechar plano"
 								title="Fechar"
-								className="group/close inline-flex h-9 w-9 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content sm:h-8 sm:w-8"
+								className="group/close inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
 							>
-								<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="transition-transform group-hover/close:scale-110">
+								<svg className="h-3.5 w-3.5 transition-transform group-hover/close:scale-110" viewBox="0 0 14 14" fill="none">
 									<path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
 								</svg>
 							</button>

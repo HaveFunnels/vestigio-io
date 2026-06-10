@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
-import { ShieldCheck, Loader2, Check } from "lucide-react";
+import { ShieldCheck, Check } from "lucide-react";
 import logoLight from "@/../public/images/logo/logo-light.png";
 
 declare global {
@@ -586,7 +586,11 @@ function PixTab({
 	if (payment.kind === "creating") {
 		return (
 			<div className="flex flex-col items-center gap-3 py-8 text-content-muted">
-				<Loader2 className="h-5 w-5 animate-spin" />
+				<span className="inline-flex items-center gap-1.5">
+					<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+					<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+					<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+				</span>
 				<div className="text-[13px]">Gerando seu Pix…</div>
 			</div>
 		);
@@ -642,7 +646,11 @@ function PixTab({
 				{/* Waiting state */}
 				<div className="flex items-center justify-between rounded-lg border border-edge bg-surface-inset px-4 py-3 text-[13px]">
 					<div className="flex items-center gap-2 text-content">
-						<Loader2 className="h-3.5 w-3.5 animate-spin" />
+						<span className="inline-flex items-center gap-[3px]">
+					<span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+					<span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+					<span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+				</span>
 						Aguardando pagamento…
 					</div>
 					<div className="font-mono tabular-nums text-content-muted">
@@ -705,7 +713,11 @@ function CardTab({
 	if (payment.kind === "card_processing") {
 		return (
 			<div className="flex flex-col items-center gap-3 py-8 text-content-muted">
-				<Loader2 className="h-5 w-5 animate-spin" />
+				<span className="inline-flex items-center gap-1.5">
+					<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+					<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+					<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+				</span>
 				<div className="text-[13px]">Processando pagamento…</div>
 			</div>
 		);

@@ -228,7 +228,11 @@ export default function OnboardPage() {
 		return (
 			<div className="flex min-h-[100dvh] items-center justify-center bg-[#090911] px-4">
 				<div className="space-y-4 text-center">
-					<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-emerald-500" />
+					<div className="mx-auto inline-flex items-center gap-1.5 text-emerald-500">
+						<span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+						<span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+						<span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+					</div>
 					<h2 className="text-lg font-semibold text-white">
 						{f.t("activation.title")}
 					</h2>
@@ -248,11 +252,12 @@ export default function OnboardPage() {
 	// ── Wait for prefill before showing steps ──
 	if (!f.prefillLoaded) {
 		return (
-			<div className="flex min-h-[60vh] items-center justify-center">
-				<div className="flex flex-col items-center gap-4">
-					<div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-emerald-400" />
-					<p className="text-sm text-zinc-500">Carregando...</p>
-				</div>
+			<div className="mx-auto min-h-[60vh] max-w-md space-y-4 px-6 py-16">
+				<div className="h-6 w-32 animate-pulse rounded bg-zinc-800" />
+				<div className="h-12 w-full animate-pulse rounded-lg bg-zinc-800" />
+				<div className="h-12 w-full animate-pulse rounded-lg bg-zinc-800" />
+				<div className="h-12 w-full animate-pulse rounded-lg bg-zinc-800" />
+				<p className="pt-4 text-center text-sm text-zinc-500">Carregando…</p>
 			</div>
 		);
 	}

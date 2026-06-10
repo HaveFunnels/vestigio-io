@@ -87,7 +87,11 @@ function AcceptInviteContent() {
       <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
         {status === "loading" && (
           <div className="py-8">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+            <div className="mx-auto inline-flex items-center gap-1.5 text-emerald-500">
+              <span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+            </div>
             <p className="mt-4 text-sm text-zinc-400">Validating invitation...</p>
           </div>
         )}
@@ -168,7 +172,11 @@ export default function AcceptInvitePage() {
       fallback={
         <main className="flex min-h-[60vh] items-center justify-center pt-[120px] pb-20">
           <div className="w-full max-w-md rounded-lg border border-zinc-800 bg-zinc-900 p-8 text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+            <div className="mx-auto inline-flex items-center gap-1.5 text-emerald-500">
+              <span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+              <span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+            </div>
             <p className="mt-4 text-sm text-zinc-400">Loading...</p>
           </div>
         </main>

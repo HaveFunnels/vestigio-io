@@ -606,10 +606,11 @@ const MiniCalculator = ({
 															</svg>
 														</span>
 													) : isActive ? (
-														<svg className='h-4 w-4 animate-spin text-emerald-500' viewBox='0 0 24 24' fill='none'>
-															<circle cx='12' cy='12' r='10' stroke='currentColor' strokeWidth='3' opacity='0.25' />
-															<path d='M12 2a10 10 0 019.17 6' stroke='currentColor' strokeWidth='3' strokeLinecap='round' />
-														</svg>
+														<span className='inline-flex items-center gap-0.5 text-emerald-500'>
+														<span className='h-1 w-1 animate-bounce rounded-full bg-current' style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+														<span className='h-1 w-1 animate-bounce rounded-full bg-current' style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+														<span className='h-1 w-1 animate-bounce rounded-full bg-current' style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+													</span>
 													) : (
 														<span className='flex h-4 w-4 items-center justify-center rounded-full border border-zinc-700'>
 															<span className='h-1.5 w-1.5 rounded-full bg-zinc-700' />

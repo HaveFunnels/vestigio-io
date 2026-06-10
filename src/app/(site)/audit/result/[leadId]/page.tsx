@@ -2807,7 +2807,11 @@ function LoadingState({ message }: { message: string }) {
 		<div className="relative flex min-h-screen items-center justify-center bg-[#070710] px-4">
 			<DotGrid />
 			<div className="relative text-center">
-				<div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-emerald-400" />
+				<div className="mx-auto inline-flex items-center gap-1.5 text-emerald-400">
+					<span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+					<span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+					<span className="h-2 w-2 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+				</div>
 				<p className="mt-4 text-sm text-zinc-500">{message}</p>
 			</div>
 		</div>

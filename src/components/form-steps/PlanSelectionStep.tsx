@@ -138,9 +138,11 @@ export default function PlanSelectionStep({
 			>
 				{loading ? (
 					<span className="flex items-center justify-center gap-2">
-						<svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-							<circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round" />
-						</svg>
+						<span className="inline-flex items-center gap-1">
+							<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+							<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+							<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+						</span>
 						{activateLabel}
 					</span>
 				) : (

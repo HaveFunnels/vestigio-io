@@ -92,7 +92,11 @@ function SaveStatusPip({ status }: { status: SaveStatus }) {
 	if (status === "saving") {
 		return (
 			<span className='flex items-center gap-1.5 text-[10px] text-content-faint'>
-				<CircleNotch size={11} className='animate-spin' />
+				<span className='inline-flex items-center gap-[2px]'>
+					<span className='h-1 w-1 animate-bounce rounded-full bg-current' style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+					<span className='h-1 w-1 animate-bounce rounded-full bg-current' style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+					<span className='h-1 w-1 animate-bounce rounded-full bg-current' style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+				</span>
 				{t("saving")}
 			</span>
 		);

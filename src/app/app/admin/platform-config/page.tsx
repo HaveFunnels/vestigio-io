@@ -1072,7 +1072,7 @@ export default function PlatformConfigPage() {
             className="inline-flex items-center gap-1.5 rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-sm font-medium text-content-muted transition-colors hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
           >
             <svg
-              className={`h-4 w-4 ${cacheResetting ? "animate-spin" : ""}`}
+              className={`h-4 w-4 ${cacheResetting ? "animate-pulse" : ""}`}
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}

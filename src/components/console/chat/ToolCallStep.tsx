@@ -34,7 +34,11 @@ export function ToolCallStep({ block }: ToolCallStepProps) {
         {/* Status icon */}
         <div className="flex h-4 w-4 shrink-0 items-center justify-center">
           {isRunning && (
-            <div className="h-3 w-3 animate-spin rounded-full border-[1.5px] border-emerald-500/30 border-t-emerald-400" />
+            <span className="inline-flex items-center gap-[2px] text-emerald-400" aria-label="Running">
+              <span className="h-0.5 w-0.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+              <span className="h-0.5 w-0.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+              <span className="h-0.5 w-0.5 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+            </span>
           )}
           {isComplete && (
             <svg className="h-3.5 w-3.5 text-emerald-500" viewBox="0 0 16 16" fill="none">

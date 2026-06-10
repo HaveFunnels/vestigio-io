@@ -46,11 +46,14 @@ export function ThinkingIndicator({ stage }: ThinkingIndicatorProps) {
 	return (
 		<div className="flex justify-start">
 			<div className="flex items-center gap-3 rounded-xl bg-surface-card/60 px-4 py-3">
-				{/* Spinning orb (mini version) */}
+				{/* Breathing orb — replaces the previous spinning conic
+				    gradient. The center dot still animates per stage; the
+				    outer ring now gently pulses instead of spinning. */}
 				<div className="relative flex h-6 w-6 items-center justify-center">
-					<div className="absolute inset-0 rounded-full opacity-20" style={{ background: "conic-gradient(from 0deg, #34d399, #10b981, #059669, #34d399)" }}>
-						<div className="h-full w-full animate-spin rounded-full" style={{ animationDuration: "3s" }} />
-					</div>
+					<div
+						className="absolute inset-0 animate-pulse rounded-full opacity-20"
+						style={{ background: "radial-gradient(circle, #34d399 0%, #10b981 60%, transparent 100%)" }}
+					/>
 					<AnimatePresence mode="wait">
 						<motion.div
 							key={stage || stepIndex}

@@ -259,8 +259,13 @@ export default function AdminPricingPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/10 border-t-emerald-500" />
+      <div className="space-y-4 p-6">
+        <div className="h-8 w-1/3 animate-pulse rounded bg-surface-card" />
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl bg-surface-card" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -625,7 +630,11 @@ export default function AdminPricingPage() {
           >
             {paddleSyncing ? (
               <span className="flex items-center gap-2">
-                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/10 border-t-emerald-500" />
+                <span className="inline-flex items-center gap-[3px] text-emerald-500">
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+                </span>
                 {t("syncing")}
               </span>
             ) : (
@@ -681,7 +690,11 @@ export default function AdminPricingPage() {
           >
             {mpSyncing ? (
               <span className="flex items-center gap-2">
-                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/10 border-t-emerald-500" />
+                <span className="inline-flex items-center gap-[3px] text-emerald-500">
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+                  <span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+                </span>
                 Syncing…
               </span>
             ) : (

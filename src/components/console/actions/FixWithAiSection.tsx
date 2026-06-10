@@ -125,21 +125,11 @@ export default function FixWithAiSection({
 						>
 							{loading ? (
 								<>
-									<svg
-										className="h-3 w-3 animate-spin"
-										viewBox="0 0 16 16"
-										fill="none"
-									>
-										<circle
-											cx="8"
-											cy="8"
-											r="6"
-											stroke="currentColor"
-											strokeWidth="1.5"
-											strokeDasharray="28"
-											strokeDashoffset="8"
-										/>
-									</svg>
+									<span className="inline-flex items-center gap-[2px]">
+										<span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+										<span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+										<span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+									</span>
 									{t("generating")}
 								</>
 							) : (

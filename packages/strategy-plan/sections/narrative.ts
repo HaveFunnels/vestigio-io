@@ -179,7 +179,14 @@ async function gatherInputs(
 		? {
 			title:
 				resolveInferenceTitle(positiveTop.inferenceKey, ctx.translations)
-				?? positiveTop.inferenceKey.replace(/_/g, " "),
+				// Title-case fallback when no translation exists. Without
+				// this, snake_case keys leak as lower-case prose ("policy
+				// coverage complete") and read as code identifier even
+				// after humanizing. First-letter cap reads cleanly as
+				// a finding name even when the dictionary misses.
+				?? positiveTop.inferenceKey
+					.replace(/_/g, " ")
+					.replace(/^./, (c) => c.toUpperCase()),
 			surface: positiveTop.surface,
 		}
 		: null;

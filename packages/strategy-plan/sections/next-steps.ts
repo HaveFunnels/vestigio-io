@@ -535,9 +535,12 @@ export async function generateNextSteps(
 		const earlierOrder = procHashByCatalog.get(procHashKey);
 		let finalProcedureSteps: string[];
 		if (earlierOrder !== undefined && earlierOrder < order) {
+			// surfaceHint already carries the preposition ("à página
+			// inicial" / "ao checkout") so the template glues directly
+			// without an extra "a" (which would produce "aplicada a à").
 			const surfaceHint = humanizeSurfaceForProcedure(action.surface);
 			finalProcedureSteps = [
-				`Mesma técnica do Passo ${earlierOrder} (já detalhada acima), aplicada a ${surfaceHint}:`,
+				`Mesma técnica do Passo ${earlierOrder} (já detalhada acima), aplicada ${surfaceHint}:`,
 				...procSteps,
 			];
 		} else {

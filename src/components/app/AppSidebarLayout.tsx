@@ -577,7 +577,14 @@ export default function AppSidebarLayout({
 					</div>
 				)}
 				{/* ── Top bar (part of the shell) ── */}
-				<header className="flex h-12 shrink-0 items-center justify-between px-4">
+				{/* iOS safe-area: extend background into the notch / Dynamic
+				    Island area on mobile so the top bar looks intentional,
+				    not chopped. Uses min-h instead of h so the bar grows
+				    with the safe-area inset instead of clipping content. */}
+				<header
+					className="flex min-h-[3rem] shrink-0 items-center justify-between px-4"
+					style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+				>
 					<div className="flex items-center gap-3">
 						{/* Mobile hamburger */}
 						<button

@@ -66,7 +66,7 @@ export default function WorkspacesHubPage() {
 	}, [searchParams]);
 
 	return (
-		<div className="mx-auto max-w-[1100px] px-6 py-10 sm:py-14">
+		<div className="mx-auto max-w-[1100px] px-4 py-8 sm:px-6 sm:py-14">
 			{/* Header — matches Plan typography so the customer reads it as
 			    "another room in the same building". */}
 			<motion.div
@@ -78,7 +78,7 @@ export default function WorkspacesHubPage() {
 				<div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
 					Configuração
 				</div>
-				<h1 className="mt-2 flex items-center gap-2 font-serif text-[28px] font-medium tracking-tight text-content sm:text-[32px]">
+				<h1 className="mt-2 flex items-center gap-2 font-serif text-[24px] font-medium tracking-tight text-content sm:text-[32px]">
 					<span>Workspaces</span>
 					{/* Tooltip — "Workspaces" is borrowed from Notion/Slack vocab
 					    where it means "team space". Here it means "what Vestigio
@@ -114,14 +114,15 @@ export default function WorkspacesHubPage() {
 					valer no próximo ciclo de análise.
 				</p>
 
-				{/* Inline section nav — clicking scrolls. Lightweight; full
-				    TOC rail comes later if needed. */}
-				<nav className="mt-5 flex flex-wrap gap-1.5">
+				{/* Inline section nav — clicking scrolls. Touch-target sized
+				    on mobile (min-h-9) so anchors don't fall under the
+				    ~10mm minimum thumb hit zone. */}
+				<nav className="mt-5 -mx-1 flex flex-wrap gap-1.5 px-1">
 					{SECTIONS.map((s) => (
 						<a
 							key={s.id}
 							href={`#${s.id}`}
-							className="rounded-md border border-edge bg-surface-inset/40 px-2.5 py-1 text-[11.5px] font-medium text-content-secondary transition-colors hover:border-edge-focus hover:text-content"
+							className="inline-flex min-h-[36px] items-center rounded-md border border-edge bg-surface-inset/40 px-3 py-1.5 text-[12.5px] font-medium text-content-secondary transition-colors hover:border-edge-focus hover:text-content sm:min-h-0 sm:px-2.5 sm:py-1 sm:text-[11.5px]"
 						>
 							{s.label}
 						</a>

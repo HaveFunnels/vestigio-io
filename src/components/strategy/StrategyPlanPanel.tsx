@@ -158,21 +158,24 @@ function StickyHeader({
 			data-vsgp-sticky-header
 			className="sticky top-0 z-30 border-b border-edge bg-surface/85 backdrop-blur-md"
 		>
-			<div className="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-6 py-3">
-				<div className="flex items-center gap-3 text-[12px] text-content-muted">
+			{/* Desktop: 1-row layout. Mobile: 2 rows — Resumo/Completo
+			    gets first-row priority (most-used control on phone), and
+			    the publish-timestamp + secondary actions wrap below. */}
+			<div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-4 py-2.5 sm:px-6 sm:py-3">
+				<div className="order-2 flex items-center gap-2 text-[11.5px] text-content-muted sm:order-1 sm:gap-3 sm:text-[12px]">
 					<span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-					<span>Plano publicado · {formatTimestamp(plan.generatedAt)}</span>
+					<span className="truncate">
+						<span className="hidden sm:inline">Plano publicado · </span>
+						<span className="sm:hidden">Publicado </span>
+						{formatTimestamp(plan.generatedAt)}
+					</span>
 					{exportError && (
-						<span className="ml-2 text-rose-300/90">· {exportError}</span>
+						<span className="ml-1 text-rose-300/90">· {exportError}</span>
 					)}
 				</div>
-				<div className="flex items-center gap-2">
+				<div className="order-1 flex items-center gap-1.5 sm:order-2 sm:gap-2">
 					{/* Wave 22.8 IA reform — Executive Summary view toggle.
-					    Defaults to "Completo"; "Resumo" mostra apenas Tese,
-					    Hero, Continuidade condensada e top 3 Next Steps
-					    (sem reasoning expandida). Persistencia via
-					    localStorage + URL param ?view=resumo, geridos pelo
-					    parent StrategyPlanPanel. */}
+					    Mobile: stays in row 1 (highest-frequency control). */}
 					<div
 						role="radiogroup"
 						aria-label="Modo de leitura do plano"
@@ -190,48 +193,63 @@ function StickyHeader({
 										? "Resumo executivo: Tese, Hero, Continuidade e top 3 ações."
 										: "Plano completo: todas as seções, decisões e justificativas."
 								}
-								className={`rounded-[5px] px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
+								className={`min-h-[34px] rounded-[5px] px-2.5 py-1 text-[11.5px] font-medium transition-colors ${
 									viewMode === m
 										? "bg-surface-inset/80 text-content"
 										: "text-content-muted hover:text-content-secondary"
 								}`}
 							>
-								{m === "resumo" ? "Resumo (1 página)" : "Completo"}
+								{m === "resumo"
+									? <><span className="sm:hidden">Resumo</span><span className="hidden sm:inline">Resumo (1 página)</span></>
+									: "Completo"}
 							</button>
 						))}
 					</div>
+					{/* Share + Export collapse into icon-only on mobile so they
+					    fit in the row 1 cluster without crowding the toggle.
+					    Labels return at sm+. */}
 					<button
 						type="button"
 						onClick={handleShare}
-						className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
+						aria-label={shareState === "copied" ? "Link copiado" : "Compartilhar"}
+						className="inline-flex min-h-[34px] items-center gap-1.5 rounded-md border border-edge bg-surface-card px-2 py-1.5 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content sm:px-3"
 					>
-						{shareState === "copied"
-							? "Link copiado"
-							: shareState === "error"
-								? "Falha ao copiar"
-								: "Compartilhar"}
+						<svg className="h-3.5 w-3.5 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+							<path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25v-1.5a3 3 0 016 0v1.5M5.25 8.25h13.5l-1.125 11.25a2.25 2.25 0 01-2.241 2.025H8.616a2.25 2.25 0 01-2.241-2.025L5.25 8.25z" />
+						</svg>
+						<span className="hidden sm:inline">
+							{shareState === "copied"
+								? "Link copiado"
+								: shareState === "error"
+									? "Falha ao copiar"
+									: "Compartilhar"}
+						</span>
 					</button>
 					<button
 						type="button"
 						onClick={handleExport}
 						disabled={exporting}
-						className="rounded-md border border-edge bg-surface-card px-3 py-1.5 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
+						aria-label={exporting ? "Exportando PDF" : "Exportar PDF"}
+						className="inline-flex min-h-[34px] items-center gap-1.5 rounded-md border border-edge bg-surface-card px-2 py-1.5 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content disabled:opacity-50 sm:px-3"
 					>
-						{exporting ? "Exportando…" : "Exportar PDF"}
+						<svg className="h-3.5 w-3.5 sm:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
+							<path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+						</svg>
+						<span className="hidden sm:inline">
+							{exporting ? "Exportando…" : "Exportar PDF"}
+						</span>
 					</button>
 					{/* Wave 22.8 IA reform — close button só renderiza quando
-					    onClose vem do parent (Dialog overlay de /app/actions).
-					    No modo standalone, Plan é a home — não tem "fechar",
-					    o cliente sai pela sidenav. */}
+					    onClose vem do parent (Dialog overlay de /app/actions). */}
 					{onClose && (
 						<>
-							<span className="mx-1 h-5 w-px bg-edge" aria-hidden />
+							<span className="mx-1 hidden h-5 w-px bg-edge sm:block" aria-hidden />
 							<button
 								type="button"
 								onClick={onClose}
 								aria-label="Fechar plano"
 								title="Fechar"
-								className="group/close inline-flex h-8 w-8 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
+								className="group/close inline-flex h-9 w-9 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content sm:h-8 sm:w-8"
 							>
 								<svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="transition-transform group-hover/close:scale-110">
 									<path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
@@ -381,16 +399,10 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				/>
 			)}
 
-			<div className="mx-auto max-w-[1100px] px-6 py-10 sm:py-14">
-				{/* Mobile-only hint — the plan is readable on phones but
-				    the export/share/comment loop is built for a wider
-				    canvas. Telling the user explicitly avoids "this feels
-				    half-broken" anxiety on first read. */}
-				<div className="mb-4 rounded-xl border border-edge bg-surface-inset/50 px-3 py-2 text-[11px] text-content-faint sm:hidden">
-					{isPt
-						? "Esta visão funciona melhor em uma tela maior."
-						: "This view reads best on a larger screen."}
-				</div>
+			<div className="mx-auto max-w-[1100px] px-4 py-8 sm:px-6 sm:py-14">
+				{/* Mobile is first-class: the apologetic "reads best on
+				    a larger screen" banner was removed. If something
+				    breaks on phone, it gets fixed — not annotated. */}
 				<PlanHeader plan={plan} />
 
 				{/* Right-rail TOC. Items computed from current plan state

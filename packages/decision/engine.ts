@@ -15,6 +15,7 @@ import {
 } from '../domain';
 import { evaluateRisk, RiskInput } from '../risk';
 import type { EngineTranslations } from '../projections/types';
+import { getPackPrimary, type ActionTier, type PackKey } from './action-title-catalog';
 
 // ──────────────────────────────────────────────
 // Wave 15.5 — gating threshold for action secondaries.
@@ -568,7 +569,7 @@ function buildActions(
 
   const ta = translations?.actions;
   return {
-    primary: ta?.default_primary ?? 'Review findings and address highest severity issues first.',
+    primary: pickPrimary('default', risk.decision_impact, translations),
     secondary: [],
     verification: [ta?.default_verification ?? 'Re-run analysis after changes to confirm resolution.'],
   };
@@ -590,7 +591,7 @@ function buildScaleReadinessActions(
   const revenueFragility = inferences.find((i) => i.inference_key === 'revenue_path_fragile');
 
   if (risk.decision_impact === DecisionImpact.BlockLaunch || risk.decision_impact === DecisionImpact.Incident) {
-    let primary = ts?.block_primary ?? 'Do not scale traffic until critical issues are resolved.';
+    const primary = pickPrimary('scale_readiness', risk.decision_impact, translations);
 
     if (checkoutIntegrity?.conclusion_value === 'weak') {
       secondary.push(sec(ts?.block_fix_checkout ?? 'Fix checkout integrity: ensure checkout flow stays on-domain or uses a verified provider.', ['checkout_integrity']));
@@ -609,7 +610,7 @@ function buildScaleReadinessActions(
   }
 
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    let primary = ts?.fix_primary ?? 'Address high-priority issues before increasing traffic significantly.';
+    const primary = pickPrimary('scale_readiness', risk.decision_impact, translations);
 
     if (policyGap && policyGap.conclusion_value !== 'none') {
       secondary.push(sec(ts?.fix_improve_policy ?? 'Improve policy coverage to reduce compliance risk.', ['policy_gap']));
@@ -628,7 +629,7 @@ function buildScaleReadinessActions(
 
   // Optimize or Observe
   return {
-    primary: ts?.optimize_primary ?? 'Traffic can be scaled. Monitor for regressions.',
+    primary: pickPrimary('scale_readiness', risk.decision_impact, translations),
     secondary: measurementCoverage?.conclusion_value === 'false'
       ? [sec(ts?.optimize_measurement ?? 'Consider improving measurement coverage for better optimization.', ['measurement_coverage'])]
       : [],
@@ -848,24 +849,24 @@ function buildRevenueIntegrityActions(
   	if (fired.length > 0) secondary.push(sec(tr('price_visibility', 'Buyers see no price until they click. Surface the exact monthly/annual price on /pricing without requiring sign-up or contact form.'), fired));
   }
 
-  // Build primary by risk tier
+  // Build primary by risk tier — primary text comes from the catalog
+  // (Path 3); verifications + secondaries continue using `tr()` for
+  // their per-key copy.
+  const primary = pickPrimary('revenue_integrity', risk.decision_impact, translations);
   if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
-    const primary = tr('block_primary', 'Revenue is actively leaking on multiple fronts. Fix the highest-impact items before any traffic scale-up.');
     verification.push(tr('block_verify', 'Re-run revenue analysis after fixes to confirm leakage is resolved + monitor conversion rate week-over-week.'));
     return { primary, secondary: secondary.slice(0, 8), verification };
   }
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    const primary = tr('fix_primary', 'Revenue path has structural issues. Address before scaling ad spend.');
     verification.push(tr('fix_verify', 'Re-run analysis after implementing changes + track conversion delta in week 1-4.'));
     return { primary, secondary: secondary.slice(0, 6), verification };
   }
   if (risk.decision_impact === DecisionImpact.Optimize) {
-    const primary = tr('optimize_primary', 'Revenue path is functional but has optimization opportunities.');
     verification.push(tr('optimize_verify', 'Schedule periodic revenue analysis to track improvements.'));
     return { primary, secondary: secondary.slice(0, 4), verification };
   }
   return {
-    primary: tr('stable_primary', 'Revenue integrity is stable. No significant leakage detected.'),
+    primary,
     secondary: secondary.slice(0, 3),
     verification: [tr('stable_verify', 'Schedule periodic revenue analysis to detect regressions.')],
   };
@@ -885,9 +886,8 @@ function buildChargebackActions(
   const expectation = inferences.find(i => i.inference_key === 'expectation_misalignment');
   const disputeRisk = inferences.find(i => i.inference_key === 'dispute_risk_elevated');
 
+  const primary = pickPrimary('chargeback', risk.decision_impact, translations);
   if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
-    const primary = ts?.block_primary ?? 'High chargeback exposure. Add refund policy, support channels, and trust signals immediately.';
-
     if (refundGap && refundGap.conclusion_value !== 'low') {
       secondary.push(sec(ts?.block_refund_policy ?? 'Add a clear, accessible refund/return policy. This is the single most effective chargeback prevention measure.', ['refund_policy_gap']));
     }
@@ -904,8 +904,6 @@ function buildChargebackActions(
   }
 
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    const primary = ts?.fix_primary ?? 'Moderate chargeback risk. Strengthen policies and support before scaling.';
-
     if (refundGap && refundGap.conclusion_value !== 'low') {
       secondary.push(sec(ts?.fix_refund ?? 'Improve refund policy clarity and accessibility.', ['refund_policy_gap']));
     }
@@ -922,7 +920,7 @@ function buildChargebackActions(
 
   if (risk.decision_impact === DecisionImpact.Optimize) {
     return {
-      primary: ts?.optimize_primary ?? 'Low chargeback risk. Minor improvements available.',
+      primary,
       secondary: [
         ...(supportGap ? [sec(ts?.optimize_support ?? 'Consider adding more support channels for redundancy.', ['support_gap'])] : []),
         ...(expectation ? [sec(ts?.optimize_communication ?? 'Improve post-purchase communication for better customer experience.', ['expectation_misalignment'])] : []),
@@ -932,7 +930,7 @@ function buildChargebackActions(
   }
 
   return {
-    primary: ts?.strong_primary ?? 'Chargeback resilience is strong. Continue monitoring.',
+    primary,
     secondary: [],
     verification: [ts?.strong_verify ?? 'Schedule periodic chargeback risk assessment.'],
   };
@@ -958,9 +956,8 @@ function buildSecurityPostureActions(
   const openRedirect = inferences.find(i => i.inference_key === 'open_redirect_indicator');
   const sensitiveEndpoint = inferences.find(i => i.inference_key === 'sensitive_endpoint_exposed');
 
+  const primary = pickPrimary('security_posture', risk.decision_impact, translations);
   if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
-    const primary = tr('incident_primary', 'You have critical security holes that buyers can see. Fix these before taking another payment.');
-
     if (sensitiveEndpoint && sensitiveEndpoint.conclusion_value !== 'low') {
       secondary.push(sec(tr('incident_sensitive_endpoint', 'Lock down or remove the admin pages, config files, and backups that are currently public.'), ['sensitive_endpoint_exposed']));
     }
@@ -980,8 +977,6 @@ function buildSecurityPostureActions(
   }
 
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    const primary = tr('fix_primary', 'Your security has gaps that will hurt you at scale. Close them before pushing more traffic.');
-
     if (headerWeak && headerWeak.conclusion_value !== 'low') {
       secondary.push(sec(tr('fix_security_headers', 'Tighten your security headers so the site is less exposed to injection and clickjacking attacks.'), ['security_header_weakness']));
     }
@@ -995,7 +990,7 @@ function buildSecurityPostureActions(
 
   if (risk.decision_impact === DecisionImpact.Optimize) {
     return {
-      primary: tr('optimize_primary', 'Your security holds up. There are still some hardening wins available.'),
+      primary,
       secondary: [
         ...(headerWeak ? [sec(tr('optimize_csp', 'Consider stricter Content-Security-Policy and Permissions-Policy headers for extra defense.'), ['security_header_weakness'])] : []),
       ],
@@ -1004,7 +999,7 @@ function buildSecurityPostureActions(
   }
 
   return {
-    primary: tr('observe_primary', 'Your security is in good shape. No significant exposures right now.'),
+    primary,
     secondary: [],
     verification: [tr('observe_verify', 'Schedule a periodic security check to keep this clean.')],
   };
@@ -1029,9 +1024,8 @@ function buildCopyAlignmentActions(
   const funnelMismatch = inferences.find(i => i.inference_key === 'copy_funnel_misalignment');
   const crossPage = inferences.find(i => i.inference_key === 'copy_cross_page_inconsistent');
 
+  const primary = pickPrimary('copy_alignment', risk.decision_impact, translations);
   if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
-    const primary = tr('incident_primary', 'Your copy is actively losing revenue. The messaging fails to convert high-intent visitors.');
-
     if (vpBuried && vpBuried.conclusion_value !== 'low') {
       secondary.push(sec(tr('incident_vp_buried', 'Rewrite your hero section: the value proposition is buried below the fold or hidden behind generic language.'), ['value_proposition_buried']));
     }
@@ -1051,8 +1045,6 @@ function buildCopyAlignmentActions(
   }
 
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    const primary = tr('fix_primary', 'Your copy has structural gaps that will bleed revenue at scale. Fix before increasing ad spend.');
-
     if (funnelMismatch && funnelMismatch.conclusion_value !== 'low') {
       secondary.push(sec(tr('fix_funnel_mismatch', 'Align copy to funnel stage: awareness pages should educate, decision pages should reassure and convert.'), ['copy_funnel_misalignment']));
     }
@@ -1069,7 +1061,7 @@ function buildCopyAlignmentActions(
 
   if (risk.decision_impact === DecisionImpact.Optimize) {
     return {
-      primary: tr('optimize_primary', 'Copy is functional but has optimization opportunities. Refining messaging could lift conversion.'),
+      primary,
       secondary: [
         ...(socialProof ? [sec(tr('optimize_social_proof', 'Consider upgrading social proof from generic to specific and quantified.'), ['social_proof_ineffective'])] : []),
         ...(vpBuried ? [sec(tr('optimize_vp', 'Test alternative headline framings to make the value proposition more immediate.'), ['value_proposition_buried'])] : []),
@@ -1079,7 +1071,7 @@ function buildCopyAlignmentActions(
   }
 
   return {
-    primary: tr('aligned_primary', 'Copy is well-aligned with commercial intent. No significant gaps detected.'),
+    primary,
     secondary: [],
     verification: [tr('aligned_verify', 'Schedule periodic copy reviews to catch drift as products evolve.')],
   };
@@ -1100,9 +1092,8 @@ function buildPaymentHealthActions(
   const churnUnsustainable = inferences.find(i => i.inference_key === 'subscriber_churn_unsustainable');
   const diversityInsufficient = inferences.find(i => i.inference_key === 'payment_diversity_insufficient');
 
+  const primary = pickPrimary('payment_health', risk.decision_impact, translations);
   if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
-    const primary = tr('incident_primary', 'Your payment infrastructure is actively losing revenue. Failed payments and churn require immediate intervention.');
-
     if (failedPayment && failedPayment.conclusion_value !== 'low') {
       secondary.push(sec(tr('incident_failed_payments', 'Activate card updater and smart retry in Stripe. Send dunning emails on first failure with a direct link to update payment method.'), ['failed_payment_revenue_drain']));
     }
@@ -1118,8 +1109,6 @@ function buildPaymentHealthActions(
   }
 
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    const primary = tr('fix_primary', 'Payment health has issues that will compound as you grow. Fix before scaling subscriber acquisition.');
-
     if (failedPayment) {
       secondary.push(sec(tr('fix_failed_payments', 'Configure dunning automation with progressive retry and customer notification.'), ['failed_payment_revenue_drain']));
     }
@@ -1133,7 +1122,7 @@ function buildPaymentHealthActions(
 
   if (risk.decision_impact === DecisionImpact.Optimize) {
     return {
-      primary: tr('optimize_primary', 'Payment health is acceptable but has room for improvement.'),
+      primary,
       secondary: [
         ...(failedPayment ? [sec(tr('optimize_dunning', 'Consider adding grace periods before access suspension on failed payments.'), ['failed_payment_revenue_drain'])] : []),
         ...(diversityInsufficient ? [sec(tr('optimize_diversity', 'Consider adding a backup payment gateway for resilience.'), ['payment_diversity_insufficient'])] : []),
@@ -1143,7 +1132,7 @@ function buildPaymentHealthActions(
   }
 
   return {
-    primary: tr('stable_primary', 'Payment health is stable. Failed payment and churn rates are within acceptable ranges.'),
+    primary,
     secondary: [],
     verification: [tr('stable_verify', 'Continue monitoring payment health through Stripe integration.')],
   };
@@ -1276,25 +1265,30 @@ function buildDiscoverabilityActions(
   const aiVizScore = scoreInf ? parseInt(scoreInf.conclusion_value, 10) : null;
   const scoreSuffix = aiVizScore != null ? ` AI Visibility Score atual: ${aiVizScore}/100.` : '';
 
-  // Build primary by impact level
+  // Build primary by impact level — catalog supplies verb-led text;
+  // scoreSuffix appends the current AI Visibility Score for context
+  // when the score-tier branches need it.
+  const primary = pickPrimary('discoverability', risk.decision_impact, translations) +
+    (risk.decision_impact === DecisionImpact.Incident ||
+     risk.decision_impact === DecisionImpact.BlockLaunch ||
+     risk.decision_impact === DecisionImpact.FixBeforeScale
+       ? scoreSuffix
+       : '');
   if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
-    const primary = tr('incident_primary', 'AI assistants and search engines cannot find or recommend the brand. Buyers researching your category find competitors instead. Address visibility gaps before any paid acquisition push.') + scoreSuffix;
     verification.push(tr('incident_verify', 'Re-run the external recon audit in 30 days to confirm AI Visibility Score moved above 60.'));
     return { primary, secondary: secondary.slice(0, 8), verification };
   }
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    const primary = tr('fix_primary', 'Discoverability gaps are limiting growth. Each blocked AI crawler, missing listing, or unowned comparison query is buying-intent traffic going to competitors. Fix high-leverage items first (llms.txt + schema + Wikipedia).') + scoreSuffix;
     verification.push(tr('fix_verify', 'Re-run external recon in 30-60 days and confirm AI Visibility Score improved by ≥10 points.'));
     return { primary, secondary: secondary.slice(0, 6), verification };
   }
   if (risk.decision_impact === DecisionImpact.Optimize) {
-    const primary = tr('optimize_primary', 'Core discoverability is in place — refine for AI search to compound your visibility.');
     verification.push(tr('optimize_verify', 'Monitor AI Visibility Score quarterly; investigate any drops promptly.'));
     return { primary, secondary: secondary.slice(0, 4), verification };
   }
   // Observe — strengths visible, protect them
   return {
-    primary: tr('strong_primary', 'Discoverability is healthy. Continue feeding fresh content + structured data; monitor AI Visibility Score for regressions.'),
+    primary,
     secondary: secondary.slice(0, 3),
     verification: [tr('strong_verify', 'Schedule quarterly external recon to catch citation losses early.')],
   };
@@ -1414,24 +1408,22 @@ function buildBrandIntegrityActions(
     secondary.push(sec(tr('branded_ai_overview_recover', 'When AI summarizes searches for your brand, it cites competitors first. Publish a definitive brand page (homepage + /about + press kit) with consistent entity signals + Wikipedia + Organization schema. AI Overview rebalances within 60-90 days.'), ['branded_query_ai_overview_competitor']));
   }
 
-  // Build primary by impact level
+  // Build primary by impact level — catalog supplies the verb-led text.
+  const primary = pickPrimary('brand_integrity', risk.decision_impact, translations);
   if (risk.decision_impact === DecisionImpact.Incident || risk.decision_impact === DecisionImpact.BlockLaunch) {
-    const primary = tr('incident_primary', 'Brand integrity is critically compromised. Negative reputation, hijacked search, or phishing exposure are actively costing buyers and revenue. Address this before any acquisition spend.');
     verification.push(tr('incident_verify', 'Re-run external recon in 30 days; confirm reputation labels improved and unanswered complaints addressed.'));
     return { primary, secondary: secondary.slice(0, 8), verification };
   }
   if (risk.decision_impact === DecisionImpact.FixBeforeScale) {
-    const primary = tr('fix_primary', 'Brand integrity has real gaps. Unanswered reviews, weakened SERP control, and inconsistent brand surfaces compound — fix before scaling brand awareness spend.');
     verification.push(tr('fix_verify', 'Re-run external recon in 60 days and confirm reputation + SERP signals improved.'));
     return { primary, secondary: secondary.slice(0, 6), verification };
   }
   if (risk.decision_impact === DecisionImpact.Optimize) {
-    const primary = tr('optimize_primary', 'Brand integrity is largely intact — maintain response cadence on review platforms and watch for new lookalike threats.');
     verification.push(tr('optimize_verify', 'Monthly brand-monitoring sweep + quarterly external recon.'));
     return { primary, secondary: secondary.slice(0, 4), verification };
   }
   return {
-    primary: tr('strong_primary', 'Brand integrity is strong. Continue monitoring third-party review platforms + lookalike domains.'),
+    primary,
     secondary: secondary.slice(0, 3),
     verification: [tr('strong_verify', 'Schedule quarterly external recon and brand monitoring.')],
   };
@@ -1457,15 +1449,31 @@ function tierCaps(impact: DecisionImpact): number {
   }
 }
 
-function packPrimary(
+/**
+ * Maps the DecisionImpact enum to the catalog's ActionTier union so
+ * every primary-action lookup uses the same 4-tier vocabulary. The
+ * BlockLaunch case folds into "incident" — both demand immediate
+ * intervention from the buyer's perspective.
+ */
+export function tierForImpact(impact: DecisionImpact): ActionTier {
+  if (impact === DecisionImpact.Incident || impact === DecisionImpact.BlockLaunch) return 'incident';
+  if (impact === DecisionImpact.FixBeforeScale) return 'fix';
+  if (impact === DecisionImpact.Optimize) return 'optimize';
+  return 'strong';
+}
+
+/**
+ * Path 3 — every primary action title flows through the catalog. The
+ * catalog is type-checked + module-load asserted, so callers never
+ * provide an English fallback. Pack/tier together pick the verb-led
+ * sentence; locale picks the translation.
+ */
+function pickPrimary(
+  packKey: PackKey,
   impact: DecisionImpact,
-  tr: (key: string, fallback: string) => string,
-  fallbacks: { incident: string; fix: string; optimize: string; strong: string },
+  translations?: EngineTranslations,
 ): string {
-  if (impact === DecisionImpact.Incident || impact === DecisionImpact.BlockLaunch) return tr('incident_primary', fallbacks.incident);
-  if (impact === DecisionImpact.FixBeforeScale) return tr('fix_primary', fallbacks.fix);
-  if (impact === DecisionImpact.Optimize) return tr('optimize_primary', fallbacks.optimize);
-  return tr('strong_primary', fallbacks.strong);
+  return getPackPrimary(packKey, tierForImpact(impact), translations?.locale ?? null);
 }
 
 // ──────────────────────────────────────────────
@@ -1528,12 +1536,7 @@ function buildSaasGrowthReadinessActions(
     secondary.push(sec(tr('quick_win', 'Onboarding has no quick win. Engineer a 60-second activation: user signs up → sees one tangible result within a minute.'), ['onboarding_no_quick_win']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'Trial-to-paid conversion is leaking before users see value. Activation gaps must be fixed before any acquisition push.',
-    fix: 'SaaS activation has structural gaps. Address before scaling trial signups.',
-    optimize: 'Activation works but has optimization opportunities for first-value time + expansion.',
-    strong: 'SaaS growth readiness is healthy. Continue monitoring activation + expansion metrics.',
-  });
+  const primary = pickPrimary('saas_growth_readiness', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-run audit in 30 days; track trial-to-paid conversion + 7-day activation rate.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }
@@ -1602,12 +1605,7 @@ function buildChannelIntegrityActions(
     secondary.push(sec(tr('economic_exploit', 'Active economic exploitation detected (coupon abuse, price manipulation, refund fraud). Escalate to security team + freeze affected accounts within 24h.'), ['economic_exploitation_active']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'Channel integrity has critical exposures — attackers can manipulate prices, divert traffic, or compromise payment surfaces. Treat as security incident.',
-    fix: 'Channel integrity has elevated risk. Fix exposed business endpoints + script supply chain before scaling traffic.',
-    optimize: 'Channel integrity is functional. Hardening opportunities exist around third-party dependencies + endpoint guessability.',
-    strong: 'Channel integrity is solid. Continue monitoring third-party scripts and access patterns.',
-  });
+  const primary = pickPrimary('channel_integrity', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-run external scan + security scan in 30 days; verify exposed endpoints are now protected.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }
@@ -1643,12 +1641,7 @@ function buildFrictionTaxActions(
     secondary.push(sec(tr('checkout_entry', 'Checkout entry has visible friction (gate, login wall, account required). Allow guest checkout + remove pre-payment account creation.'), ['checkout_entry_friction']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'UX friction is measurably costing revenue across multiple funnel steps.',
-    fix: 'UX friction is elevated. Fix the highest-cost step before scaling acquisition.',
-    optimize: 'Friction is moderate. Iterating on entry points will compound CR improvements.',
-    strong: 'Friction tax is low. Continue monitoring funnel step velocity.',
-  });
+  const primary = pickPrimary('friction_tax', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-run behavioral analysis in 14-30 days; measure step-level conversion delta.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }
@@ -1687,12 +1680,7 @@ function buildContentFreshnessActions(
     secondary.push(sec(tr('content_decay', 'Content staleness is increasing audit-over-audit. Hire a part-time content owner OR add a "last reviewed" auto-prompt that nags after 90 days.'), ['content_decay_progression']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'Stale content is actively eroding trust + AI search visibility. Refresh commercial pages immediately.',
-    fix: 'Multiple commercial pages have stale content. Update before scaling acquisition.',
-    optimize: 'Content freshness is mostly good but has decay risk. Schedule quarterly refresh cadence.',
-    strong: 'Content is fresh. Maintain quarterly review cadence.',
-  });
+  const primary = pickPrimary('content_freshness', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-audit in 90 days; verify all commercial pages have been touched.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }
@@ -1733,12 +1721,7 @@ function buildMobileRevenueExposureActions(
     secondary.push(sec(tr('cta_timing', 'Mobile CTA renders late, delaying clicks. Inline-load button HTML so it is paint-ready in <1s on slow 3G; defer JS that powers it.'), ['mobile_cta_timing_degraded']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'Mobile experience is compounding revenue loss. Most paid traffic is mobile — this is a top fix.',
-    fix: 'Mobile has structural conversion gaps. Address before scaling mobile-heavy paid channels.',
-    optimize: 'Mobile works but has friction. Iterate on form inputs + CTA timing.',
-    strong: 'Mobile experience is solid. Continue monitoring mobile conversion delta.',
-  });
+  const primary = pickPrimary('mobile_revenue_exposure', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-audit on real mobile device in 30 days; track mobile-vs-desktop conversion ratio.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }
@@ -1779,12 +1762,7 @@ function buildTrustRevenueGapActions(
     secondary.push(sec(tr('sensitive_trust', 'Sensitive fields (CPF, card, address) lack trust framing. Add a brief "why we need this" note + visible HTTPS/security indicator next to each sensitive input.'), ['sensitive_input_trust_gap']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'Trust deficit is blocking conversion. Buyers want to pay but cannot get reassurance.',
-    fix: 'Trust gaps are dragging conversion. Add reassurance at decision moment before scaling.',
-    optimize: 'Trust signals are present but timing could improve. Place them adjacent to CTA, not in the footer.',
-    strong: 'Trust signals support conversion well. Continue monitoring sensitive-input completion.',
-  });
+  const primary = pickPrimary('trust_revenue_gap', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-run behavioral analysis in 30 days; track sensitive-field completion + abandonment delta.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }
@@ -1820,12 +1798,7 @@ function buildFirstImpressionRevenueActions(
     secondary.push(sec(tr('cta_timing', 'First-session visitors do not see the CTA in time. Primary CTA should be visible in the first paint, not behind a scroll or after JS hydration.'), ['first_session_cta_timing_gap']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'First impression is losing buyers before they engage. Address before any acquisition spend.',
-    fix: 'First-session experience has gaps. Refresh hero + above-fold trust + CTA timing.',
-    optimize: 'First impression is functional. Continue iterating on hero conversion.',
-    strong: 'First-session metrics are healthy. Continue monitoring.',
-  });
+  const primary = pickPrimary('first_impression_revenue', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-audit in 30 days; track first-session conversion + bounce rate.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }
@@ -1861,12 +1834,7 @@ function buildActionValueMapActions(
     secondary.push(sec(tr('dead_weight', 'Some pages get traffic but produce zero conversions. Either redirect them to higher-value pages, add conversion paths, or remove from primary navigation.'), ['dead_weight_surface_traffic']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'User action mix is dominated by low-value moves while high-value actions are invisible.',
-    fix: 'Action value distribution is suboptimal. Re-prioritize CTAs before scaling traffic.',
-    optimize: 'Some pages absorb traffic without producing value. Audit + redirect.',
-    strong: 'User action value distribution is healthy.',
-  });
+  const primary = pickPrimary('action_value_map', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-audit in 30 days; track high-value action conversion rate.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }
@@ -1910,12 +1878,7 @@ function buildAcquisitionIntegrityActions(
     secondary.push(sec(tr('paid_mobile', 'Paid mobile traffic compounds friction + trust issues = burnt spend. Build mobile-first paid landings (separate from desktop) — sub-2s load, single primary CTA, no nav.'), ['paid_mobile_compounding_waste']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'Paid acquisition is wasting spend at scale. Pause campaigns until landing quality matches ad promise.',
-    fix: 'Paid acquisition has measurable waste. Fix landing pages before increasing ad budget.',
-    optimize: 'Paid landings work but have room for CR uplift. Iterate on message match + mobile.',
-    strong: 'Paid acquisition is efficient. Continue monitoring per-channel CAC.',
-  });
+  const primary = pickPrimary('acquisition_integrity', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-run paid landing audit in 30 days; track per-campaign CAC delta.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }
@@ -1951,12 +1914,7 @@ function buildPathEfficiencyActions(
     secondary.push(sec(tr('intent_decay', 'Time from intent-expressed to conversion is too long. Trigger a follow-up: exit-intent modal + email reminder within 24h for cart abandoners.'), ['intent_decay_time_excessive']));
   }
 
-  const primary = packPrimary(risk.decision_impact, tr, {
-    incident: 'Path to purchase is too long — buyers lose intent before converting.',
-    fix: 'Conversion path is inefficient. Shorten before scaling acquisition.',
-    optimize: 'Path is acceptable but specific steps can be tightened.',
-    strong: 'Path efficiency is healthy.',
-  });
+  const primary = pickPrimary('path_efficiency', risk.decision_impact, translations);
   verification.push(tr('verify', 'Re-audit funnel in 30 days; track time-to-conversion + step drop-off.'));
   return { primary, secondary: secondary.slice(0, tierCaps(risk.decision_impact)), verification };
 }

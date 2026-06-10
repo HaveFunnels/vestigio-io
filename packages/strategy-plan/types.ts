@@ -28,6 +28,12 @@ export interface GenerateContext {
 	    absent — English-locale orgs or when the dictionary lookup
 	    fails — sub-generators fall back to humanizing the key. */
 	translations?: import("../projections/types").EngineTranslations;
+	/** True when no prior-month plan exists for this env. Narrative
+	    uses this to flip the opening paragraph from accusatory
+	    ("nada foi resolvido ainda") to onboarding ("esse é o seu
+	    primeiro plano"). False when at least one earlier plan was
+	    generated, regardless of its status. */
+	isFirstPlan?: boolean;
 }
 
 export interface HeroMetricsOutput {

@@ -139,51 +139,77 @@ async function gatherInputs(
 // R$, then a decision direction. No em-dashes anywhere (the user banned
 // them as an LLM tic). No single-finding restatements (that's a finding,
 // not a thesis).
+/** Customer-facing humanize for surfaces inside the thesis line.
+    Matches the narrative section's helper but uses a slot-friendly
+    form ("na página inicial", "no checkout") so it reads as natural
+    Portuguese instead of route literal "`/`". */
+function humanizeSurfaceThesis(surface: string): string {
+	const t = surface.trim();
+	if (t === "/") return "na página inicial";
+	if (t === "/checkout") return "no checkout";
+	if (t === "/pricing") return "na página de preços";
+	if (t.includes(",")) return t.split(",").map((s) => humanizeSurfaceThesis(s.trim())).join(" e ");
+	return `em ${t}`;
+}
+
 function fallbackThesis(i: ThesisInputs): string {
 	if (i.exposureFindingCount === 0 && i.resolvedCount === 0) {
 		return `Vestigio terminou o primeiro ciclo em ${i.envDomain} sem padrão concreto suficiente pra fechar uma tese. O próximo plano monta a tese.`;
 	}
 
+	// Reta-final vocab:
+	//   - "exposição aberta" → "perda potencial aberta" (psychology lens)
+	//   - "surface" → "página" / "esse ponto"
+	//   - "/" literal → "página inicial"
+	//   - "eixo" — kept; concrete enough in context, swaps to "tema" in
+	//     fallback variants for variety
+
 	// Pattern A — dominant surface IS the axis. Most informative shape on
 	// fresh envs because it names WHERE to look, not WHAT was found.
 	if (i.dominantSurface && i.exposureFindingCount >= 3) {
-		const surfaceFindingShare = Math.max(1, Math.round(i.exposureFindingCount * 0.4));
-		return `Vestigio mapeou **R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês** em exposição aberta, com peso concentrado em \`${i.dominantSurface}\`. O eixo deste mês é o que acontece nessa surface. Comece pelo Passo 1.`;
+		const where = humanizeSurfaceThesis(i.dominantSurface);
+		return `Vestigio mapeou **R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês** de perda potencial aberta, com peso concentrado ${where}. O foco do mês é o que acontece nessa página. Comece pelo Passo 1.`;
 	}
 
 	// Pattern B — regressions are concrete and need investigation. Frame
 	// as the axis "what changed since last cycle".
 	if (i.regressionCount >= 2) {
-		return `Identificamos **${i.regressionCount} regressões** desde o último ciclo. O eixo deste mês é descobrir o que mudou no deploy recente antes que receita medida caia. Comece pelo Passo 1.`;
+		return `Identificamos **${i.regressionCount} regressões** desde o último ciclo. O foco do mês é descobrir o que mudou no deploy recente antes que receita medida caia. Comece pelo Passo 1.`;
 	}
 
 	// Pattern C — chronic pattern is the axis. Framed as decisions
 	// deferred, not as abstract structural pattern.
 	if (i.chronicCount >= 5) {
-		return `Vestigio mapeou **${i.chronicCount} pontos** voltando há 3 ciclos ou mais. O eixo deste mês não é volume novo, é o que ficou para trás. Resolva pelos Próximos Passos primeiro.`;
+		return `Vestigio mapeou **${i.chronicCount} pontos** voltando há 3 ciclos ou mais. O foco do mês não é volume novo, é o que ficou para trás. Resolva pelos Próximos Passos primeiro.`;
 	}
 
 	// Pattern D — fallback when no shape dominates. Stay concrete using
 	// total R$ + finding count.
-	return `Vestigio mapeou **R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês** em exposição aberta em ${i.envDomain}, distribuída em ${i.exposureFindingCount} pontos. O eixo deste mês é começar a fechar os de maior impacto financeiro. Comece pelo Passo 1.`;
+	return `Vestigio mapeou **R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês** de perda potencial aberta em ${i.envDomain}, distribuída em ${i.exposureFindingCount} pontos. O foco do mês é começar a fechar os de maior impacto financeiro. Comece pelo Passo 1.`;
 }
 
 function buildPrompt(i: ThesisInputs): { system: string; user: string } {
 	const system = `Você é Vestigio. Escreva a TESE deste mês para o operador de ${i.envDomain}.
 
 Uma TESE é diferente de um finding:
-- TESE: nomeia um EIXO (uma área, surface, ou momento do funil) onde a maior parte do problema vive este mês. Quantifica esse eixo de forma AGREGADA (R$ somado sobre múltiplos pontos). Dá direção de leitura pro plano inteiro.
+- TESE: nomeia um FOCO (uma área, página, ou momento do funil) onde a maior parte do problema vive este mês. Quantifica esse foco de forma AGREGADA (R$ somado sobre múltiplos pontos). Dá direção de leitura pro plano inteiro.
 - FINDING: descreve UM ponto observado. Vai na lista de Próximos Passos, não na tese.
+
+Vocabulário CUSTOMER-FACING obrigatório:
+- "vazamento" / "perda potencial" / "receita em risco", NÃO "exposição"
+- "página inicial" / "checkout" / "página de preços", NÃO "\`/\`" literal nem "surface"
+- "foco do mês" / "tema do mês", NÃO "eixo" (engenharia mecânica)
+- "movimento principal" / "alavanca central", NÃO "aposta" (Vestigio AFIRMA com dado, não aposta)
 
 **Estrutura obrigatória — exatamente 2 ou 3 frases:**
 
-Frase 1 (10-18 palavras): nomeia o EIXO e quantifica.
-Padrão: "Vestigio [verbo analítico] [R$ agregado] concentrado em [eixo nomeado]"
+Frase 1 (10-18 palavras): nomeia o FOCO e quantifica.
+Padrão: "Vestigio [verbo analítico] [R$ agregado] concentrado em [foco nomeado]"
 Verbos válidos no início: **detectou, encontrou, mapeou, observou, identificou, rastreou**.
 Variante: "Encontramos / Detectamos / Identificamos" (primeira pessoa do plural = Vestigio).
-Eixo pode ser: surface específica (\`/checkout\`, \`/pricing\`), momento do funil ("entre ver preço e pagar", "no topo do funil"), categoria de problema com surfaces atreladas ("copy de \`/pricing\` e \`/checkout\`").
+Foco pode ser: página específica ("no checkout", "na página de preços"), momento do funil ("entre ver preço e pagar", "no topo do funil"), categoria de problema com páginas atreladas ("copy do checkout e da página de preços").
 
-Frase 2 (8-16 palavras): nomeia a APOSTA do mês. Padrão: "A aposta deste mês é [decisão estratégica]" ou "O eixo é [foco]".
+Frase 2 (8-16 palavras): nomeia o MOVIMENTO PRINCIPAL do mês. Padrão: "O movimento principal é [decisão estratégica]" ou "O foco é [escopo]".
 
 Frase 3 (opcional, 5-10 palavras): direciona a leitura. Ex.: "Comece pelos Próximos Passos 1 e 4." / "O Passo 1 abre essa frente."
 
@@ -191,16 +217,20 @@ Total: 25-44 palavras. Mais curto sempre vence.
 
 **Os 3 ingredientes obrigatórios (qualquer um pode aparecer em qualquer frase):**
 1. Um valor financeiro AGREGADO (R$ X.XXX/mês somado, não impacto de um único item).
-2. Pelo menos UMA surface específica em \`código inline\` (/, /pricing, /checkout, /signup).
+2. Pelo menos UMA página específica em texto natural (página inicial, checkout, página de preços, página de signup) — sem usar "/" literal ou "\`/\`" como nome.
 3. Uma direção/decisão imperativa pra leitura do resto do plano.
 
 **Use negrito** UMA vez, no valor em R$ agregado.
 
 **PROIBIDO:**
-- TRAVESSÃO (—) em qualquer lugar do texto. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM.
-- "aposta que", "acredita", "estima que" como sujeito de Vestigio (são hedges). Vestigio AFIRMA, não aposta.
+- A palavra "exposição" em qualquer lugar — substitua por "vazamento" ou "perda potencial".
+- A palavra "surface" em qualquer lugar — substitua por "página".
+- "\`/\`" literal como nome de página — escreva "página inicial".
+- "eixo" — substitua por "foco" ou "tema".
+- "aposta" / "Vestigio aposta" / "Vestigio acredita" / "Vestigio estima" — Vestigio AFIRMA com base em dado.
+- TRAVESSÃO (—) em qualquer lugar do texto. Use ponto, vírgula, dois pontos, ou parênteses.
 - "é sintoma de", "é sinal de", "é manifestação de", "indica que" (claims causais frágeis).
-- "padrão dominante", "padrão estrutural", "desalinhamento de copy", "checkout fragmentado", "mensagens desconectadas" (nomes de padrão abstratos sem âncora).
+- "padrão dominante", "padrão estrutural", "desalinhamento de copy", "checkout fragmentado", "mensagens desconectadas" (nomes abstratos sem âncora).
 - "concentra X%" sem âncora num R$.
 - "o engine", "a análise revelou", "foi capturado" (passivas).
 - "vale destacar", "é importante notar", "vale ler como" (clichês de relatório).
@@ -208,13 +238,13 @@ Total: 25-44 palavras. Mais curto sempre vence.
 - Frase única que descreve UM finding (isso é trabalho dos Próximos Passos).
 
 **Exemplo BOM** (tese estratégica):
-> Vestigio mapeou **R$ 17.500/mês** concentrados em \`/checkout\` (redirecionamento de domínio mais ausência de contexto de preço). A aposta deste mês é o que acontece entre ver preço e pagar. Comece pelos Próximos Passos 1 e 4.
+> Vestigio mapeou **R$ 17.500/mês** de perda potencial concentrada no checkout (redirecionamento de domínio mais ausência de contexto de preço). O movimento principal é o que acontece entre ver preço e pagar. Comece pelos Próximos Passos 1 e 4.
 
-**Exemplo BOM** (variante por eixo de funil):
-> Identificamos **R$ 76.000/mês** vazando no topo do funil, em \`/\` e \`/pricing\`. O eixo é refazer o que o comprador encontra antes de qualquer CTA. O Passo 1 abre essa frente.
+**Exemplo BOM** (variante por foco de funil):
+> Identificamos **R$ 76.000/mês** vazando no topo do funil — página inicial e página de preços. O foco do mês é refazer o que o comprador encontra antes de qualquer CTA. O Passo 1 abre essa frente.
 
 **Exemplo RUIM** (finding restated, não tese):
-> Vestigio detectou **R$ 8.750/mês** saindo no clique de pagar em \`/checkout\`. Comprador é jogado pra outro domínio.
+> Vestigio detectou **R$ 8.750/mês** saindo no clique de pagar no checkout. Comprador é jogado pra outro domínio.
 
 **Exemplo RUIM** (abstração + hedge):
 > Este mês, o padrão dominante é o desalinhamento de copy, sintoma de um checkout fragmentado que dispersa compradores antes da conversão.`;

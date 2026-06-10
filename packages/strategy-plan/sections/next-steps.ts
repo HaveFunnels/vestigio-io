@@ -158,6 +158,23 @@ function titleFromAction(
 	return `${friendly}${locative}`;
 }
 
+/** Customer-facing humanize for the surface used inside a procedure
+    redirect ("Mesma técnica do Passo N, aplicada a [surface]:"). The
+    main title-resolver also humanizes surfaces but does so for titles;
+    here we want a tiny preposition-friendly form ("à página inicial",
+    "ao checkout") rather than the title-style ("Página inicial"). */
+function humanizeSurfaceForProcedure(surface: string | null): string {
+	if (!surface) return "este componente";
+	const trimmed = surface.trim();
+	if (trimmed === "/") return "à página inicial";
+	if (trimmed === "/checkout") return "ao checkout";
+	if (trimmed === "/pricing") return "à página de preços";
+	if (trimmed.includes(",")) {
+		return trimmed.split(",").map((s) => humanizeSurfaceForProcedure(s.trim())).join(" e ");
+	}
+	return `a ${trimmed}`;
+}
+
 function fallbackReasoning(action: ActionRow, order: number): string {
 	// T6 — varied fallback by severity tier AND step order so 5 fallbacks
 	// in a row don't read as the same sentence. We never want this
@@ -173,24 +190,32 @@ function fallbackReasoning(action: ActionRow, order: number): string {
 
 	if (isMain) {
 		// Step 1 — main move. Confident framing.
+		// Reta-final: "aposta" was gambling metaphor inconsistent with
+		// "Vestigio claims with data" voice. Swapped to "movimento
+		// principal". "exposição" → "vazamento" / "perda potencial".
 		switch (action.severity) {
 			case "critical":
 				return impact
-					? `Esta é a aposta principal do mês. Vestigio estima **${impact}** saindo nesse ponto, o maior buraco aberto neste ciclo. Deixar pra próxima janela amplia o vazamento e bloqueia o ganho dos outros passos.`
-					: `Esta é a aposta principal do mês, o ponto mais crítico que detectamos. Atacar agora antes que o padrão se enraíze.`;
+					? `Esse é o movimento principal do mês. **${impact}** de perda potencial nesse ponto — o maior vazamento aberto neste ciclo. Deixar pra próxima janela amplia o impacto e atrasa o ganho dos outros passos.`
+					: `Esse é o movimento principal do mês, o ponto mais crítico que detectamos. Atacar agora antes que o padrão se enraíze.`;
 			case "high":
 				return impact
-					? `Esta é a aposta principal do mês. **${impact}** de exposição estimada, com barreira de entrada baixa pra resolver. Atacar primeiro destrava espaço pra os movimentos de apoio.`
-					: `Esta é a aposta principal do mês. Exposição alta nesse ponto. Vestigio recomenda fechar antes do próximo ciclo de medição.`;
+					? `Esse é o movimento principal do mês. **${impact}** de perda potencial estimada, com barreira de entrada baixa pra resolver. Atacar primeiro destrava espaço pra os movimentos de apoio.`
+					: `Esse é o movimento principal do mês. Perda potencial alta nesse ponto. Vestigio recomenda fechar antes do próximo ciclo de medição.`;
 			default:
 				return impact
-					? `Esta é a aposta principal do mês, não pelo tamanho do impacto isolado (**${impact}**), mas pelo desbloqueio que abre pros próximos passos.`
-					: `Esta é a aposta principal do mês, começo do plano e ponto de alavanca pra os movimentos seguintes.`;
+					? `Esse é o movimento principal do mês — não pelo tamanho do impacto isolado (**${impact}**), mas pelo desbloqueio que abre pros próximos passos.`
+					: `Esse é o movimento principal do mês, começo do plano e ponto de alavanca pra os movimentos seguintes.`;
 		}
 	}
 
-	// Steps 2+ — supporting moves. Use position-aware framing so the
-	// reader doesn't read "É o maior buraco aberto" five times in a row.
+	// Steps 2+ — supporting moves. Reta-final: the previous template
+	// closed EVERY supporting step with the same verbatim sentence
+	// ("Severidade ainda alta, entra como movimento de apoio porque a
+	// remediação se compõe com o passo 1 (mesmo time, padrão
+	// correlacionado)"). Customer reads 2 of those and the LLM illusion
+	// breaks. Now we vary the closer by severity tier AND order index
+	// so 4 supporting steps produce 4 distinguishable closing beats.
 	const positionPhrases = [
 		"Logo atrás do movimento principal,",
 		"Em paralelo,",
@@ -198,19 +223,26 @@ function fallbackReasoning(action: ActionRow, order: number): string {
 		"Como suporte adicional,",
 	];
 	const phrase = positionPhrases[(order - 2) % positionPhrases.length];
+	const supportingClosers = [
+		"compõe com o Passo 1 — mesmo time, fix correlacionado.",
+		"fica na mesma sprint do Passo 1 sem competir por foco.",
+		"endereçar antes que o tema dominante consolide.",
+		"fechar para reduzir ruído cumulativo no funil.",
+	];
+	const closer = supportingClosers[(order - 2) % supportingClosers.length];
 
 	switch (action.severity) {
 		case "critical":
 			return impact
-				? `${phrase} Vestigio estima **${impact}** saindo nesse ponto. Severidade ainda alta, entra como movimento de apoio porque a remediação se compõe com o passo 1 (mesmo time, padrão correlacionado).`
+				? `${phrase} **${impact}** de perda potencial nesse ponto. Severidade alta — ${closer}`
 				: `${phrase} ponto crítico secundário, endereçar uma vez que o movimento principal estiver em andamento.`;
 		case "high":
 			return impact
-				? `${phrase} **${impact}** de exposição estimada. Não é o sangramento principal, mas a barreira de entrada pra resolver é baixa.`
-				: `${phrase} exposição alta nesse ponto, fechar antes do próximo ciclo de medição.`;
+				? `${phrase} **${impact}** de perda potencial estimada. Não é o sangramento principal — ${closer}`
+				: `${phrase} perda potencial alta nesse ponto, fechar antes do próximo ciclo de medição.`;
 		case "medium":
 			return impact
-				? `${phrase} exposição em **${impact}**. Vale resolver pra reduzir ruído cumulativo no funil, sem urgência de semana, mas dentro do mês.`
+				? `${phrase} perda potencial em **${impact}**. Resolver reduz ruído cumulativo — sem urgência de semana, dentro do mês.`
 				: `${phrase} ponto secundário no funil. Endereçar pra liberar foco dos passos críticos.`;
 		default:
 			return impact
@@ -327,35 +359,45 @@ function buildPrompt(
 	translations: import("../types").GenerateContext["translations"],
 ): { system: string; user: string } {
 	// E2 — voice differs between the main move (order=1) and supporting
-	// moves (order>=2). Main move sounds like a strategic bet
-	// ("É aqui que apostamos esse mês..."); supporting moves sound
-	// auxiliary ("Quando o principal estiver fechado, isto sobe...").
-	// Without the difference the 5 steps still read as equally
-	// important even after the UI restructure.
+	// moves (order>=2). Main move sounds like the strategic lead;
+	// supporting moves sound auxiliary. Without the difference the 5
+	// steps still read as equally important even after the UI restructure.
+	//
+	// Reta-final: "aposta" gambling metaphor dropped — Vestigio claims
+	// with data, doesn't bet. Now "movimento principal / alavanca
+	// central". Voice rules also forbid "exposição" — use "perda
+	// potencial" or "vazamento" instead.
 	const roleLine =
 		order === 1
-			? `Este é o MOVIMENTO PRINCIPAL do mês — a aposta central que o resto do plano sustenta.`
+			? `Este é o MOVIMENTO PRINCIPAL do mês — a alavanca central que o resto do plano sustenta.`
 			: `Este é um MOVIMENTO DE APOIO (posição ${order}) — entra depois que o movimento principal estiver em andamento.`;
 	const voiceLine =
 		order === 1
-			? `Tom: aposta. "Esta é a alavanca principal porque...". Sem hedge. Termine sinalizando que o restante do plano se desdobra a partir disso.`
-			: `Tom: complementar. "Depois do movimento principal, esta entra porque...". Não compete com o passo 1 em peso — explicita por que NÃO é principal.`;
+			? `Tom: lead confiante. "Essa é a alavanca principal porque...". Sem hedge. Termine sinalizando que o restante do plano se desdobra a partir disso.`
+			: `Tom: complementar. "Depois do movimento principal, esse entra porque...". Não compete com o passo 1 em peso — explicita por que NÃO é principal.`;
 
 	const system = `Você é Vestigio, escrevendo a seção "POR QUE PRIMEIRO" do passo ${order} do Plano de Estratégia mensal para ${envDomain}.
 
 ${roleLine}
+
+Vocabulário CUSTOMER-FACING obrigatório:
+- "vazamento" / "perda potencial" / "receita em risco", NÃO "exposição"
+- "página" / "página inicial" / "checkout", NÃO "surface" nem "\`/\`" literal
+- "movimento principal" / "alavanca", NÃO "aposta" (Vestigio AFIRMA com base em dado)
 
 Regras:
 1. Escreva 2 parágrafos curtos em português brasileiro, ~80-100 palavras no total.
 2. Use **negrito** para destacar números, severidades e nomes de componentes. Use \`código inline\` APENAS para nomes técnicos reais (caminhos de arquivo, props, classes CSS).
 3. NUNCA reproduza identificadores em snake_case, slugs internos, termos como "weak_cta", "trust_boundary_crossed", "compound_*", "priorityScore", "decisionKey" ou qualquer outro código do engine. Use sempre os nomes humanos fornecidos.
 4. NÃO use listas, NÃO use cabeçalhos.
-5. Primeiro parágrafo: por que esse passo é prioritário. Lidere com o **valor financeiro** ("R$ X.XXX/mês saindo") e o contexto da causa — não com "severidade alta" abstrato.
+5. Primeiro parágrafo: por que esse passo é prioritário. Lidere com o **valor financeiro** ("R$ X.XXX/mês de vazamento") e o contexto da causa — não com "severidade alta" abstrato.
 6. Segundo parágrafo: o que está em jogo se não fizer (impacto composto, dependência com outro passo, prazo). Termine indicando a ação concreta.
 7. ${voiceLine}
 8. PROIBIDO escrever "Resolver esse item primeiro", "no topo da fila de prioridade", "porque ele aparece no topo" ou variantes. Cada passo tem uma justificativa única, não repita boilerplate de ranqueamento.
-9. NÃO mencione "o engine", "a análise revelou", "foi capturado" ou outras passivas. Voz ativa, primeira pessoa do plural ("Vestigio observou", "Detectamos") quando precisar atribuir.
-10. PROIBIDO travessão (—) em qualquer parte do texto. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.`;
+9. PROIBIDO repetir a MESMA frase de fechamento que outros passos: nunca escreva variantes literais de "compõe com o passo 1", "mesmo time, padrão correlacionado", "movimento de apoio porque a remediação se compõe". Cada passo tem um motivo PRÓPRIO para estar nessa posição — diga esse motivo, não um chavão.
+10. NÃO mencione "o engine", "a análise revelou", "foi capturado" ou outras passivas. Voz ativa, primeira pessoa do plural ("Vestigio observou", "Detectamos") quando precisar atribuir.
+11. PROIBIDO travessão (—) em qualquer parte do texto. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.
+12. PROIBIDO a palavra "exposição" — substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.`;
 
 	// Resolve inference keys to friendly names so the LLM has no
 	// raw snake_case to echo. Falls back to mechanical humanize when
@@ -473,11 +515,17 @@ export async function generateNextSteps(
 				? fullTitle.slice(0, fullTitle.length - locative.length).trimEnd()
 				: fullTitle;
 
-		// T4 — dedupe procedureSteps when catalog key already used by a
-		// previous step. catalog?.remediation_steps is the only stable
-		// identifier for "same procedure" since the catalog is keyed by
-		// primaryKey but two different primaryKeys can resolve to the same
-		// remediation_steps array (same canonical fix template).
+		// Reta-final: the previous T4 dedup collapsed identical procedures
+		// to a single line "Mesmo procedimento do Passo N, aplicar a X" —
+		// which left the second/third step procedurally empty. The
+		// customer reads it as a ghost step and questions whether the
+		// plan really has 5 useful next steps. Better signal: keep the
+		// full procedure on every step (the small repetition reads as
+		// "this fix applies here too" not "this step is a clone"), and
+		// prepend a one-line context note that points back to where the
+		// procedure first appeared. Customer sees: "Mesma técnica do
+		// Passo N (já detalhada acima), aplicada a [surface]:" + the
+		// FULL procedure repeated. No ghost, no surprise.
 		const procSteps = catalog?.remediation_steps ?? [
 			"Reproduzir o problema localmente",
 			"Identificar o componente/arquivo afetado",
@@ -487,9 +535,10 @@ export async function generateNextSteps(
 		const earlierOrder = procHashByCatalog.get(procHashKey);
 		let finalProcedureSteps: string[];
 		if (earlierOrder !== undefined && earlierOrder < order) {
-			const surfaceHint = action.surface ?? "esse componente";
+			const surfaceHint = humanizeSurfaceForProcedure(action.surface);
 			finalProcedureSteps = [
-				`Mesmo procedimento do Passo ${earlierOrder}, aplicar a ${surfaceHint}.`,
+				`Mesma técnica do Passo ${earlierOrder} (já detalhada acima), aplicada a ${surfaceHint}:`,
+				...procSteps,
 			];
 		} else {
 			procHashByCatalog.set(procHashKey, order);

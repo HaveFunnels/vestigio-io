@@ -131,6 +131,17 @@ async function buildContext(
 		}
 	}
 
+	// First-plan detection — used by narrative to flip the opening from
+	// accusatory ("nada foi resolvido ainda") to onboarding ("esse e seu
+	// primeiro plano"). Scope to month < args.month so the same query
+	// also works correctly under concurrent regenerations of THIS month.
+	const olderPlanCount = await prisma.monthlyStrategyPlan.count({
+		where: {
+			environmentId: env.id,
+			month: { lt: args.month },
+		},
+	});
+
 	return {
 		ctx: {
 			environmentId: env.id,
@@ -140,6 +151,7 @@ async function buildContext(
 			monthStart,
 			monthEnd,
 			translations,
+			isFirstPlan: olderPlanCount === 0,
 		},
 		organizationId: env.organization?.id ?? null,
 	};

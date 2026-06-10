@@ -529,6 +529,43 @@ function StepCard({
 					</div>
 				)}
 
+				{/* Chat CTA — elevated from the footer row where it was small
+				    + gray + buried (council critique: customer reads a vague
+				    Next Step like "Problema de segurança quebrando seu
+				    rastreamento de receita" and has nowhere to ask "qual
+				    problema? qual tracking?"). Now it lives between
+				    procedure and effort+owner row, with prompt-context
+				    visible so customer knows what the chat already has. */}
+				<button
+					type="button"
+					onClick={discussStep}
+					className="group/discuss mb-5 flex w-full items-center justify-between gap-3 rounded-xl border border-edge bg-surface-inset/50 px-4 py-3 text-left transition-all hover:border-edge-focus hover:bg-surface-card-hover"
+				>
+					<div className="flex items-center gap-3">
+						<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-content/10 text-content transition-colors group-hover/discuss:bg-content/15 dark:bg-white/10 dark:group-hover/discuss:bg-white/15">
+							<svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
+								<path strokeLinecap="round" strokeLinejoin="round" d="M2.5 4h11v7.5h-7L3 14v-2.5h-.5z" />
+								<circle cx="6" cy="7.75" r="0.6" fill="currentColor" />
+								<circle cx="8" cy="7.75" r="0.6" fill="currentColor" />
+								<circle cx="10" cy="7.75" r="0.6" fill="currentColor" />
+							</svg>
+						</span>
+						<div className="min-w-0">
+							<div className="text-[13.5px] font-medium text-content">
+								Tirar dúvida sobre esse passo
+							</div>
+							<div className="text-[11.5px] text-content-muted">
+								Pergunte o porquê, peça referência ou refine o procedimento.
+							</div>
+						</div>
+					</div>
+					<span className="shrink-0 text-content-faint transition-transform group-hover/discuss:translate-x-0.5">
+						<svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4">
+							<path strokeLinecap="round" strokeLinejoin="round" d="M6 4l4 4-4 4" />
+						</svg>
+					</span>
+				</button>
+
 				{/* Effort + owner row */}
 				<div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-content-muted">
 					<span>{step.estimatedEffort}</span>
@@ -614,17 +651,9 @@ function StepCard({
 								{`${stepComments.length} ${stepComments.length === 1 ? "comentário" : "comentários"}`}
 							</span>
 						)}
-						<button
-							type="button"
-							onClick={discussStep}
-							className="inline-flex items-center gap-1 text-[12px] text-content-muted transition-colors hover:text-content"
-							title="Abrir o copilot pra discutir esse passo"
-						>
-							<svg className="h-3 w-3" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.4">
-								<path strokeLinecap="round" strokeLinejoin="round" d="M2 3.5h8v5H6.5L4 10v-1.5H2z" />
-							</svg>
-							Discutir com Vestigio
-						</button>
+						{/* The "Discutir com Vestigio" CTA used to live here. It
+						    was moved up to a prominent banner (between procedure
+						    and effort+owner) where customers actually read it. */}
 						<button
 							type="button"
 							onClick={() => {

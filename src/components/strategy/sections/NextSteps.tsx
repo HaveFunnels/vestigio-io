@@ -1076,7 +1076,7 @@ export default function NextSteps({
 				className="mb-12"
 			>
 				<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-					<h2 className="font-serif text-[22px] font-medium tracking-tight text-content">
+					<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
 						Por página · {groups.length} {groups.length === 1 ? "grupo" : "grupos"}
 					</h2>
 					<div className="text-[11px] text-content-faint">
@@ -1168,7 +1168,7 @@ export default function NextSteps({
 				className="mb-12"
 			>
 				<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-					<h2 className="font-serif text-[22px] font-medium tracking-tight text-content">
+					<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
 						Onde focar este mês
 					</h2>
 					<div className="text-[11px] text-content-faint">
@@ -1259,7 +1259,7 @@ export default function NextSteps({
 			className="mb-12"
 		>
 			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-				<h2 className="font-serif text-[22px] font-medium tracking-tight text-content">
+				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
 					Onde focar este mês
 				</h2>
 				{/* Count summary removed — the in-section eyebrows below

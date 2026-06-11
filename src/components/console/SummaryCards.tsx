@@ -181,10 +181,11 @@ function CardContent({ card }: { card: SummaryCard }) {
 
 	return (
 		<div
-			// rounded-2xl + hover:border-edge-focus alinha com cards do
-			// /app/library/strategy (HeroMetrics, BuyerSegments). Antes
-			// rounded-xl quebrava o ritmo visual entre console e plano.
-			className={`relative h-full overflow-hidden rounded-2xl border border-edge bg-surface-card p-5 transition-all hover:border-edge-focus ${variantShadow[variant]}`}
+			// rounded-2xl + hover:border-edge-focus + p-5 sm:p-6 alinha
+			// com cards do /app/library/strategy (HeroMetrics: p-6,
+			// BuyerSegments: p-5 sm:p-6). Antes p-5 fixo deixava o card
+			// compacto demais em desktop comparado aos tiles do plano.
+			className={`relative h-full overflow-hidden rounded-2xl border border-edge bg-surface-card p-5 transition-all hover:border-edge-focus sm:p-6 ${variantShadow[variant]}`}
 		>
 			<div
 				className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${variantGradient[variant]} via-transparent to-transparent`}

@@ -187,12 +187,19 @@ function MapCard({ mapDef }: { mapDef: MapDefinition }) {
 	return (
 		<Link
 			href={`/app/maps/${encodeURIComponent(mapDef.id)}`}
-			className='group flex flex-col overflow-hidden rounded-2xl border border-edge bg-surface-card transition-all hover:-translate-y-0.5 hover:border-edge-focus hover:bg-surface-card-hover hover:shadow-lg hover:shadow-black/5'
+			// Hover state simplificado para alinhar com o plano (era 4
+			// effects — translate + border + bg + shadow — que destoava
+			// dos cards estáticos de HeroMetrics/BuyerSegments). Agora
+			// só border + bg, mesmo token usado em todos os cards
+			// operacionais.
+			className='group flex flex-col overflow-hidden rounded-2xl border border-edge bg-surface-card transition-all hover:border-edge-focus hover:bg-surface-card-hover'
 		>
 			<div className='aspect-[16/9] w-full overflow-hidden bg-surface-inset'>
 				<MapThumbnail mapDef={mapDef} />
 			</div>
-			<div className='flex flex-1 flex-col gap-2 p-4'>
+			{/* Padding p-5 sm:p-6 alinha com BuyerSegments/HeroMetrics —
+			    era p-4 (compacto demais vs o resto do app). */}
+			<div className='flex flex-1 flex-col gap-2 p-5 sm:p-6'>
 				<div className='flex items-start justify-between gap-2'>
 					<div className='min-w-0 text-sm font-semibold text-content'>
 						{mapDef.name}

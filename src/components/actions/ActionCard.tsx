@@ -99,12 +99,17 @@ export default function ActionCard({
 			<button
 				type="button"
 				onClick={() => hasExpandableBody && setOpen((v) => !v)}
-				className="flex w-full items-start gap-3 px-5 py-4 text-left transition-colors hover:bg-surface-card-hover sm:gap-4"
+				// Padding p-5 sm:p-6 alinha com cards do plano
+				// (BuyerSegments/HeroMetrics). Era px-5 py-4 (compacto
+				// demais), criava hierarquia visual falsa entre actions
+				// e o resto do app. Severity dot reduzido de 2.5x2.5 para
+				// 1.5x1.5 — mesmo token do BuyerSegments accent dot.
+				className="flex w-full items-start gap-3 p-5 text-left transition-colors hover:bg-surface-card-hover sm:gap-4 sm:p-6"
 				aria-expanded={open}
 				disabled={!hasExpandableBody}
 			>
 				<span
-					className={`mt-1.5 inline-block h-2.5 w-2.5 shrink-0 rounded-full ${dotClass}`}
+					className={`mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full ${dotClass}`}
 					aria-label={sev}
 				/>
 

@@ -77,11 +77,11 @@ Mantido no roadmap como track própria. Não compromete timeline ainda — gated
 
 Pré-trabalho do Surface Audit wave (2026-06-07): NetworkSurface model, Katana `-jc` parsing, Nuclei templates customizados, Platform endpoint catalog. Esforço: cada Wire ~5 dias.
 
-## Decisões pendentes (não always-on)
+## Deferido (mantém infra, ativa quando precisar)
 
-### MCP analytics layer (4 tabelas dormants)
+### MCP analytics layer
 
-`McpPromptEvent`, `McpSession`, `McpSuggestionClick`, `PlaybookRun` em `prisma/schema.prisma:1375-1424`. Write paths em `apps/platform/mcp-persistence.ts`, **zero reads** em prod. Decisão pendente: wire dashboard / deletar / manter.
+`McpPromptEvent`, `McpSession`, `McpSuggestionClick`, `PlaybookRun` em `prisma/schema.prisma:1375-1424`. Write paths em `apps/platform/mcp-persistence.ts` continuam ativos; zero reads em prod. Decisão do fundador: manter como está — vai ser necessário um dia, sem urgência. Quando ativar, wire um dashboard de uso em `/app/admin/` lendo as 4 tabelas (estimativa 2-3 dias).
 
 ## Won't (rejeitados estrategicamente)
 

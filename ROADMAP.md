@@ -53,40 +53,35 @@
 - [ ] **MCP write** (Step 9 do `docs/PLAN_MONTHLY_STRATEGY.md`): `propose_plan_edit`, `add_plan_comment` tools — Step 8 read shipped
 - [ ] **Export PDF endpoint** (Step 10) — `chromium` pool + single-page dynamic height
 
-## Later — decisões estratégicas pendentes
+## Track: Always-on revenue protection (pós-PMF havefunnels)
 
-Cada uma vale uma conversa curta. Quando decidir, move-se pra Now ou Won't.
+Mantido no roadmap como track própria. Não compromete timeline ainda — gated em (1) PMF validado na havefunnels, (2) 2-3 clientes pagantes adicionais validando a thesis. Quando ativar, executar em sequência abaixo.
 
-### Wave C.1 — MCP analytics layer (4 tabelas dormants)
+### A.1 — Wire 5: `NetworkAnalysisPayload` emitter (destrava 7 detectors)
 
-`McpPromptEvent`, `McpSession`, `McpSuggestionClick`, `PlaybookRun` em `prisma/schema.prisma:1375-1424`. Write paths em `apps/platform/mcp-persistence.ts` mas **zero reads** em prod. Decisões de produto sobre MCP tomadas no escuro.
+**Por que primeiro**: ~10 linhas em [browser-worker.ts:282-313](apps/browser-worker/browser-worker.ts#L282) — `buildNetworkAnalysisSummary` em [playwright-runtime.ts:243-245](apps/playwright-runtime/playwright-runtime.ts#L243) já popula o payload, `resultToEvidence` só não lê. Maior leverage por tempo investido. Esforço: S, ~1-2 dias.
 
-- Opção 1: wire um dashboard mínimo de uso + manter writes
-- Opção 2: deletar tabelas + write paths (drop a abstração inteira)
-- Bloqueador: depende se o roadmap de MCP vai ganhar prioridade pós-PMF
+### A.2 — Calibrar detectors dormants (rollout havefunnels-only)
 
-### Wave C.2 — Surface Audit Refactor (Wires 0-7 + Surpresas)
+7+ detectors em [packages/signals/engine.ts:2837-3000+](packages/signals/engine.ts#L2837) (`checkout_api_latency_degrading`, `mobile_payment_slow`, `payment_critical_failed`, etc) — thresholds chutados, nunca rodaram contra dado real. Feature-flag rollout só na havefunnels por 1-2 semanas pra calibrar FP rate antes de release broader. Esforço: M, ~7-10 dias.
 
-Concebido em 2026-06-07. Wire 0 (SuppressionRule) shipped. Os 7 wires restantes (NetworkSurface, Katana `-jc`, Nuclei templates, etc.) são infra-pesada (~5-10 dias cada). Pré-mudança de foco para always-on.
+### A.3 — `extractVitalityFromEvents` heartbeat
 
-- Opção 1: defer formalmente (move tudo pra "Won't")
-- Opção 2: executar seletivo (Wire 5 = `NetworkAnalysisPayload` emitter destrava 7 detectors dormants em `signals/engine.ts:2837+`)
-- Opção 3: full execute (volta a ser o foco principal)
+[packages/behavioral/session-aggregator.ts:392-428](packages/behavioral/session-aggregator.ts#L392) já definido. Wire em [apps/audit-runner/process-behavioral.ts](apps/audit-runner/process-behavioral.ts) + 2-3 signal extractors em `SurfaceVitality`. Heartbeat infra pre-existing. Esforço: M, ~3-5 dias.
 
-### Wave C.3 — Network detectors dormants
+### A.4 — Surface drift entre ciclos
 
-7+ detectors em `packages/signals/engine.ts:2837-3000+` (`checkout_api_latency_degrading`, `mobile_payment_slow`, etc) com thresholds chutados. Nunca rodaram contra dado real.
+"Apareceu uma URL JSON nova que ontem não existia." A thesis do always-on revenue protection depende disso. Diff de `NetworkSurface` entre ciclos. Esforço: L, ~10-15 dias.
 
-- Opção 1: feature-flag rollout só na havefunnels (1-2 sem calibração)
-- Opção 2: deletar (assumir que sub-ms latency tracking não é core)
-- Depende de C.2 Wire 5
+### A.5 — Wires 1-4, 6-7 (Surface Audit Refactor restante)
 
-### Wave C.4 — `extractVitalityFromEvents` dead code
+Pré-trabalho do Surface Audit wave (2026-06-07): NetworkSurface model, Katana `-jc` parsing, Nuclei templates customizados, Platform endpoint catalog. Esforço: cada Wire ~5 dias.
 
-`packages/behavioral/session-aggregator.ts:392-428` — definido, nunca chamado.
+## Decisões pendentes (não always-on)
 
-- Opção 1: wire em `apps/audit-runner/process-behavioral.ts` (heartbeat infra existe)
-- Opção 2: deletar
+### MCP analytics layer (4 tabelas dormants)
+
+`McpPromptEvent`, `McpSession`, `McpSuggestionClick`, `PlaybookRun` em `prisma/schema.prisma:1375-1424`. Write paths em `apps/platform/mcp-persistence.ts`, **zero reads** em prod. Decisão pendente: wire dashboard / deletar / manter.
 
 ## Won't (rejeitados estrategicamente)
 
@@ -95,6 +90,8 @@ Concebido em 2026-06-07. Wire 0 (SuppressionRule) shipped. Os 7 wires restantes 
 - **OWASP/security pack expansion** — security é tangencial, não primary
 - **Standalone pricing strategy surface** — encaixa em existing inventory
 - **Terminal aesthetic** — wrong positioning signal; Vestigio é monitoring infra, não visible AI labor
+
+A track "Always-on revenue protection" foi proposta como Won't em uma rodada, mas mantida no roadmap. Reavaliar se ficar 60 dias sem início de execução pós-PMF.
 
 ## Expansão futura (4 categorias validadas, post-PMF)
 

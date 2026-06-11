@@ -271,6 +271,7 @@ import {
 import { getSaasAccessStore } from '../../apps/platform/saas-access-store';
 import { createAuthLogger } from '../../apps/platform/auth-logging';
 import { canAffordVerification, consumeCredits } from '../../apps/platform/credits';
+import { getBusinessProfileByOrgId } from '../../apps/platform/business-profile-context';
 import type { PlanKey } from '../../packages/plans';
 
 let authPlaywrightMode: 'real' | 'simulated' | 'auto' = 'auto';
@@ -350,9 +351,14 @@ export class AuthenticatedJourneyExecutor implements VerificationExecutor {
     const mode = useReal ? 'playwright' : 'simulated';
     logs.push({ timestamp: new Date(), level: 'info', message: `Auth execution mode: ${mode}` });
 
+    // Load business profile to give the post-login crawler the right
+    // seed paths (saas vs ecommerce vs lead_gen). Tolerates null —
+    // crawler falls back to a default seed list.
+    const businessProfile = await getBusinessProfileByOrgId(orgId);
+
     const { result, evidence } = useReal
-      ? await executeAuthenticatedJourney(accessConfig, null, input.scoping, input.cycle_ref)
-      : await simulateAuthenticatedJourney(accessConfig, null, input.scoping, input.cycle_ref);
+      ? await executeAuthenticatedJourney(accessConfig, businessProfile, input.scoping, input.cycle_ref)
+      : await simulateAuthenticatedJourney(accessConfig, businessProfile, input.scoping, input.cycle_ref);
 
     const durationMs = Date.now() - startTime;
     logs.push({ timestamp: new Date(), level: 'info', message: `Outcome: ${result.outcome}. ${evidence.length} evidence items. ${result.steps_executed} steps.` });

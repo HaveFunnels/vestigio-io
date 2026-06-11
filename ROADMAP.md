@@ -17,9 +17,18 @@
 
 ### Cleanup operacional
 
-- [ ] **Wave A — Componentes órfãos**: deletar 8 componentes verificados 0 refs (`PulseTelemetry`, `Auth/SigninWithPassword`, `Common/{CopyToClipboard,SectionTitleH2,PreLoader}`, `strategy/PrintLayout`, `console/{McpUsageIndicator,CycleDelta}`)
-- [ ] **Wave B — Docs organização**: mover ~17 docs >60d sem update para `docs/archive/`, deletar `docs/desiredexample*.html` (2.5MB de comps de abril), consolidar `docs/ROADMAP.md` em `docs/archive/ROADMAP_pre_wave22.md`
-- [ ] **Wave C — Decisões estratégicas** (ver seção dedicada abaixo)
+- [x] **Wave A — Componentes órfãos** (`79a71c60`): 8 componentes verificados 0 refs deletados
+- [x] **Wave B — Docs organização** (`79a71c60`): 21 docs históricos → `docs/archive/`, 3 HTML comps de abril deletados (2.5MB), `docs/ROADMAP.md` arquivado em `docs/archive/ROADMAP_pre_wave22.md`. `docs/` foi de 54 → 28
+- [x] **Wave C — Decisões estratégicas** (`de2fed95`, `9ec67333`): track always-on mantida como A.1–A.5, MCP analytics deferido
+- [x] **Wave D — Disco** (`3112c80f`): `.playwright-mcp/` (21MB), `tsconfig.tsbuildinfo` (4.4MB), 23 PNGs raiz (~27MB total)
+- [x] **Wave E — Scripts one-time + orphan tests** (`3112c80f`): 7 scripts já executados deletados, `test-vertical-slice.ts` da era V2 removido
+- [x] **Wave F — Raiz arrumada** (`3112c80f`): `AUDIT_ARCHITECTURE.md` → `docs/`, `DEV_PROGRESS.md` (564KB) → `docs/archive/`
+
+Pendentes (mais agressivos, fazer caso a caso):
+- [ ] **Wave G — i18n keys mortas**: sweep nos 4 `dictionary/*.json` (483KB+) procurando keys sem consumo
+- [ ] **Wave H — API routes órfãs**: endpoints `/api/*` que ninguém chama
+- [ ] **Wave I — Tabelas Prisma órfãs** (além das MCP já decididas)
+- [ ] **Wave J — Componentes adicionais**: sweep nos >200 components/ (auditei 15)
 
 ### Plano + Console — refinamentos remanescentes do Wave 22
 

@@ -1,7 +1,7 @@
 # Architecture V2
 
 > Last updated: 2026-04-14
-> Companion to: [ROADMAP.md](ROADMAP.md), [DEV_PROGRESS.md](../DEV_PROGRESS.md), [DEPLOY.md](DEPLOY.md)
+> Companion to: [ROADMAP.md](ROADMAP.md), [DEV_PROGRESS.md](archive/DEV_PROGRESS.md), [DEPLOY.md](DEPLOY.md)
 
 ## Goal
 
@@ -283,7 +283,7 @@ Centralizado em `packages/impact/`: range-based estimation, confidence bands, bu
 
 ## Continuous incremental engine
 
-> Foundation shipada em 2026-04-14 (Wave 5 Fase 1 + Fase 2 + Fase 3). Detalhes por commit em [ROADMAP.md](ROADMAP.md) e [DEV_PROGRESS.md](../DEV_PROGRESS.md).
+> Foundation shipada em 2026-04-14 (Wave 5 Fase 1 + Fase 2 + Fase 3). Detalhes por commit em [ROADMAP.md](ROADMAP.md) e [DEV_PROGRESS.md](archive/DEV_PROGRESS.md).
 
 ### Cycle modes
 

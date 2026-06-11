@@ -565,13 +565,19 @@
 			"data_sources_label": "Datenquellen",
 			"section_headline": "In Ihrer Entscheidungsmaschine",
 			"guided": {
-				"step_labels": ["Entscheidungen", "Untersuchung", "Karte"],
+				"step_labels": [
+					"Entscheidungen",
+					"Untersuchung",
+					"Karte"
+				],
 				"hero_label": "Wiederherstellbar",
 				"hero_sub": "in 5 priorisierten Aktionen",
 				"step1_hint": "Klicken zum Untersuchen ↓",
 				"step2_context": "P1 · Langsamer Checkout — −$28k/Mo",
 				"step2_ai": "Ich habe gerade Ihren Checkout durchsucht. Die Zahlung stockt bei **4.2s** — drei Skripte laden, bevor das Formular erscheint, und **12% Ihrer Nutzer** verlassen die Seite an diesem Punkt. Das sind **−$600/Tag** Umsatz.\n\nMonatliche Kosten: **−$28k**.\n\nDie Korrektur wurde bereits als P1 in Ihrer Warteschlange priorisiert. Verschieben Sie die Skripte, komprimieren Sie die Checkout-Bilder und stellen Sie die Validierung auf async um. Sagen Sie mir Bescheid — ich prüfe erneut.\n\nIch habe eine Karte erstellt, um das Nutzerverhalten zu überwachen.",
-				"step2_chips": ["Karte ansehen"],
+				"step2_chips": [
+					"Karte ansehen"
+				],
 				"step3_leak": "Leck erkannt",
 				"step3_cta": "Sehen, wie viel ich verliere",
 				"step3_micro": "60-Sekunden-Diagnose. Keine Kreditkarte erforderlich.",
@@ -579,9 +585,7 @@
 			}
 		},
 		"client_gallery": {
-			"eyebrow": "Vertrauen digitaler Operatoren",
-			"title": "Teams, die sich weigern, im Dunkeln zu skalieren",
-			"subtitle": "Von Ecommerce über SaaS bis Lead-Gen — Vestigio ist die Entscheidungs-Engine, zu der Operatoren greifen, wenn etwas Geld kostet — und sie genau wissen wollen, was."
+			"headline": "Schließen Sie sich 20.000+ Unternehmen an, die nicht im Dunkeln skalieren"
 		},
 		"use_cases": {
 			"eyebrow": "Gebaut für",
@@ -640,9 +644,6 @@
 			"subtitle": "Jeder Tag ohne Sichtbarkeit ist Umsatz, den Sie nicht zurückgewinnen.",
 			"primary": "Kostenlose Diagnose starten",
 			"micro": "In 60 Sekunden sehen Sie Ihre erste Diagnose."
-		},
-		"client_gallery": {
-			"headline": "Schließen Sie sich 20.000+ Unternehmen an, die nicht im Dunkeln skalieren"
 		},
 		"video_testimonials": {
 			"title_before": "Sie entdeckten,",
@@ -734,13 +735,21 @@
 					"eyebrow": "Der Kreislauf",
 					"title": "Sie versuchen es zu reparieren, aber das Problem verschiebt sich nur.",
 					"body": "Sie ändern die Anzeige, der Abbruch **wechselt die Seite**. Ohne End-to-End-Sicht schafft jede Korrektur ein neues Problem.",
-					"stages": ["Anzeige", "Landing", "Checkout"]
+					"stages": [
+						"Anzeige",
+						"Landing",
+						"Checkout"
+					]
 				},
 				{
 					"eyebrow": "Die Stille",
 					"title": "Niemand beschwert sich. Das Geld hört einfach auf zu kommen.",
 					"body": "Kein Fehler, kein Ticket, keine Warnung. Der Käufer hat einfach **aufgegeben** — und Ihre Analyse sagt nur 'Sitzung beendet'.",
-					"alerts": ["0 Warnungen", "0 Fehler", "0 Tickets"],
+					"alerts": [
+						"0 Warnungen",
+						"0 Fehler",
+						"0 Tickets"
+					],
 					"terminal_title": "analytics",
 					"no_alerts": "Keine Warnungen"
 				}
@@ -1452,7 +1461,8 @@
 				"channel_integrity": "Kanalintegrität",
 				"discoverability": "Auffindbarkeit",
 				"brand_integrity": "Markenintegrität",
-				"saas_growth_readiness": "__TODO__"
+				"saas_growth_readiness": "__TODO__",
+				"friction_tax": "Reibungssteuer"
 			},
 			"pack_labels": {
 				"scale_readiness": "__TODO__",
@@ -1462,7 +1472,10 @@
 				"channel_integrity": "Kanal",
 				"discoverability": "Auffindbarkeit",
 				"brand_integrity": "Marke",
-				"saas_growth_readiness": "__TODO__"
+				"saas_growth_readiness": "__TODO__",
+				"friction_tax": "Reibung",
+				"first_impression_revenue": "Erster Eindruck",
+				"mobile_revenue_exposure": "Mobil"
 			},
 			"polarity": {
 				"all": "__TODO__",
@@ -2313,7 +2326,11 @@
 			"trend_stable": "Stabil",
 			"actions_in_progress": "{count} Aktionen in Bearbeitung",
 			"actions_in_progress_one": "1 Aktion in Bearbeitung",
-			"no_actions": "Noch keine Aktionen"
+			"no_actions": "Noch keine Aktionen",
+			"categories": {
+				"behavioral_locked_banner": "Konfigurieren Sie das Vestigio-Pixel auf Ihren Seiten, um Verhaltensanalysen freizuschalten und Ihre Nutzererfahrung zu verbessern.",
+				"behavioral_collecting_banner": "Das Vestigio-Pixel ist installiert und sammelt Daten. Die Verhaltensanalyse wird aktiviert, sobald genügend Sitzungen aufgezeichnet wurden."
+			}
 		},
 		"chat": {
 			"title": "Vestigio Pulse",
@@ -2901,8 +2918,8 @@
 					"body": "Sie wollen einen Schmerz lösen, heute helfen Sie sich auf eine Weise, und jetzt ist der Moment. Wir priorisieren Findings unter diesem Winkel, schreiben Ihren Monatsplan mit diesem Kontext und füttern Vestigio AI für direkte Antworten. Nur noch eine Kalibrierung der Geldbeträge."
 				},
 				"revenue": {
-					"headline": "Alles kalibriert — los geht's.",
-					"body": "Mit {answer}/Monat als Basis bringt jeder Finding eine echte Geldspanne. Audit startet jetzt; erster Bericht in ~60 Sekunden."
+					"headline": "Jetzt können wir den Einsatz in Geld ausdrücken.",
+					"body": "Mit Ihrem Umsatz als Basis liefert jedes Finding eine echte Spanne — kein generisches 'High Severity'. Sie sehen, was jedes Problem kostet."
 				},
 				"industry": {
 					"headline": "Wir vergleichen Sie mit Ihrem Branchen-Benchmark.",
@@ -2911,10 +2928,6 @@
 				"conversion_model": {
 					"headline": "Wir wissen jetzt, welche Journey wir überwachen.",
 					"body": "Vestigio beobachtet den Pfad bis zu diesem Konversionspunkt als kritischste Strecke. Lecks dort tauchen zuerst auf."
-				},
-				"revenue": {
-					"headline": "Jetzt können wir den Einsatz in Geld ausdrücken.",
-					"body": "Mit Ihrem Umsatz als Basis liefert jedes Finding eine echte Spanne — kein generisches 'High Severity'. Sie sehen, was jedes Problem kostet."
 				},
 				"ticket": {
 					"headline": "Schätzungen passen jetzt zu Ihrem Volumen.",
@@ -3134,7 +3147,7 @@
 			"business": "Geschäft",
 			"growth": "Wachstum",
 			"support": "Support",
-			"observability": "\u00dcberwachung",
+			"observability": "Überwachung",
 			"cross_signals": "Cross-Signals",
 			"product_analytics": "Product Analytics",
 			"add_new_domain": "Neue Domain hinzufügen",
@@ -4421,6 +4434,37 @@
 			},
 			"path_efficiency": {
 				"default_summary": "Path efficiency analysis completed."
+			},
+			"friction_tax": {
+				"step_friction": "Ein konkreter Funnel-Schritt verursacht die meisten Reibungsverluste. Identifizieren Sie den Schritt (über Funnel-Analytics) und führen Sie einen Usability-Test ausschließlich für diesen Schritt durch.",
+				"oscillation": "Käufer springen zwischen den gleichen zwei Seiten hin und her, bevor sie aufgeben. Klären Sie die Beziehung: Welche Information fehlt auf Seite A, die sie auf Seite B suchen? Konsolidieren oder verlinken Sie direkt.",
+				"checkout_entry": "Käufer brechen am Einstieg in den Checkout ab. Auditieren Sie den Übergang vom Warenkorb zum Checkout: Gibt es eine Pflicht-Registrierung? Versteckte Kosten? Vertrauenslücke?",
+				"incident_primary": "Reibungssteuer kritisch: Käufer verlassen den Funnel wegen vermeidbarer Reibung. Identifizieren Sie den teuersten Schritt und entfernen Sie die Reibung diese Woche.",
+				"fix_primary": "Reduzieren Sie die Reibungssteuer auf dem kritischen Pfad. Beginnen Sie mit dem Schritt mit der höchsten Abbruchrate und arbeiten Sie sich rückwärts vor.",
+				"optimize_primary": "Optimieren Sie reibungsanfällige Schritte für höhere Conversion. A/B-Tests an den Top-3-Abbruchpunkten.",
+				"strong_primary": "Reibungssteuer unter Kontrolle. Erhalten Sie das Niveau durch wöchentliches Funnel-Monitoring.",
+				"verify": "Verifizieren: Conversion-Rate am betroffenen Schritt sollte innerhalb von 2 Wochen um mindestens 5% steigen."
+			},
+			"mobile_revenue_exposure": {
+				"compound_mobile_broken": "PACK-ÜBERGREIFEND: Mobile-Commerce ist auf mehreren Ebenen kaputt (Conversion + Formular + CTA-Timing). Strukturelles Mobile-UX-Versagen, das den Großteil des bezahlten Traffics auslaufen lässt. Gehen Sie den mobilen Funnel von vorne bis hinten durch und dokumentieren Sie jeden Bruchpunkt.",
+				"conversion_gap": "Conversion auf Mobile ist deutlich niedriger als auf Desktop. Diagnostizieren Sie die Lücke: Tap-Targets, Formular-Felder, Ladegeschwindigkeit, oder fehlende mobile Zahlungsmethoden.",
+				"form_friction": "Formulare auf Mobile sind zu lang oder schlecht optimiert. Reduzieren Sie auf das Minimum und nutzen Sie passende Tastaturtypen + Autofill.",
+				"cta_timing": "Mobile-CTAs erscheinen zu spät im Scroll oder werden vom Browser-Chrome verdeckt. Positionieren Sie primäre CTAs über der Falz und nutzen Sie Sticky-Buttons im langen Content.",
+				"incident_primary": "Mobile-Revenue kritisch exponiert: signifikante Umsatzverluste auf mobilen Geräten. Walking-through dieser Woche, fix in 2 Wochen.",
+				"fix_primary": "Schließen Sie die Mobile-Revenue-Lücke. Beginnen Sie mit dem Checkout-Schritt mit der höchsten mobilen Abbruchrate.",
+				"optimize_primary": "Mobile-Conversion ist OK, könnte aber besser sein. Optimieren Sie die Top-2-mobilen Reibungspunkte.",
+				"strong_primary": "Mobile-Performance ist solide. Erhalten Sie das Niveau durch monatliches Mobile-Funnel-Review.",
+				"verify": "Verifizieren: Mobile-Conversion-Rate sollte sich innerhalb von 3 Wochen dem Desktop-Niveau annähern."
+			},
+			"first_impression_revenue": {
+				"milestone_stall": "Erstbesucher kommen nicht bis zum ersten Conversion-Meilenstein. Auditieren Sie die Homepage über der Falz: Ist das Wertversprechen in 5 Sekunden klar? Gibt es einen offensichtlichen nächsten Schritt?",
+				"trust_barrier": "Erstbesucher sehen Vertrauensbarrieren, bevor sie Wert wahrnehmen. Bewegen Sie Social-Proof, Garantien und Sicherheitssignale über die Falz.",
+				"cta_timing": "Erstbesucher sehen den CTA nicht innerhalb der ersten Aufmerksamkeitsspanne. Klären Sie die Hierarchie: ein primärer CTA, sichtbar ohne Scrollen.",
+				"incident_primary": "Erster Eindruck verbrennt Umsatz: Besucher gehen, bevor sie den Wert verstehen. Sofortige Optimierung der Above-the-fold-Botschaft.",
+				"fix_primary": "Stärken Sie den ersten Eindruck. Wertversprechen + primärer CTA müssen in 5 Sekunden klar sein.",
+				"optimize_primary": "Erster Eindruck ist OK. Testen Sie A/B-Variationen der Hero-Botschaft für höhere Engagement.",
+				"strong_primary": "Erster Eindruck stark. Erhalten Sie das Niveau durch quartalsweises Hero-Review.",
+				"verify": "Verifizieren: Bounce-Rate auf der Startseite sollte innerhalb von 2 Wochen um mindestens 10% sinken."
 			}
 		},
 		"summaries": {
@@ -8136,7 +8180,31 @@
 	},
 	"lp": {
 		"audit_result": {
-			"loading": "Laden Ihrer Diagnose…",
+			"loading": {
+				"headline": "{domain} wird analysiert",
+				"headline_complete": "Analyse von {domain} fertig",
+				"subtitle": "Erster Bericht in ~60 Sekunden. Wir bauen Ihren Pulse währenddessen auf.",
+				"subtitle_complete": "Alles kalibriert. Sie können hinein.",
+				"active_label": "Jetzt — Schnellanalyse",
+				"teaser_label": "Nächste Phasen — Vollständige Analyse",
+				"teaser_locked": "Gesperrt",
+				"unlock_hint": "Konto anlegen entsperrt die 6 nächsten Phasen →",
+				"active_phases": [
+					"Ihre Domain kennenlernen",
+					"Ihren Verkaufstrichter kartieren",
+					"Ihre Copy gegen 5 bewährte Frameworks bewerten",
+					"Ausrechnen, wie viel von Ihrem Konto wegfließt",
+					"Ihren Angriffsplan zusammenstellen"
+				],
+				"teaser_phases": [
+					"Ihre ganze Website wie ein neugieriger Kunde durchsuchen",
+					"Ihre Seiten als simulierter Nutzer besuchen",
+					"Machine-Learning-Schicht auf jedem Befund",
+					"Signale verbinden, die alleine nichts sagen",
+					"Das echte Verhalten Ihrer Besucher lesen",
+					"Was das alles für Sie bedeutet, in einer Erzählung"
+				]
+			},
 			"share_copied": "Link kopiert",
 			"share": "Teilen",
 			"success_banner": "Ihre Diagnose wurde erfolgreich durchgeführt. Prüfen Sie die Ergebnisse unten.",
@@ -8304,31 +8372,6 @@
 			"auditing_complete_desc": "Wir haben Befunde auf Ihrer Website gefunden. Klicken Sie unten, um die Ergebnisse zu sehen.",
 			"auditing_desc": "Dies dauert normalerweise 5–10 Sekunden. Schließen Sie diesen Tab nicht.",
 			"auditing_view": "Meine Analyse ansehen",
-			"loading": {
-				"headline": "{domain} wird analysiert",
-				"headline_complete": "Analyse von {domain} fertig",
-				"subtitle": "Erster Bericht in ~60 Sekunden. Wir bauen Ihren Pulse währenddessen auf.",
-				"subtitle_complete": "Alles kalibriert. Sie können hinein.",
-				"active_label": "Jetzt — Schnellanalyse",
-				"teaser_label": "Nächste Phasen — Vollständige Analyse",
-				"teaser_locked": "Gesperrt",
-				"unlock_hint": "Konto anlegen entsperrt die 6 nächsten Phasen →",
-				"active_phases": [
-					"Ihre Domain kennenlernen",
-					"Ihren Verkaufstrichter kartieren",
-					"Ihre Copy gegen 5 bewährte Frameworks bewerten",
-					"Ausrechnen, wie viel von Ihrem Konto wegfließt",
-					"Ihren Angriffsplan zusammenstellen"
-				],
-				"teaser_phases": [
-					"Ihre ganze Website wie ein neugieriger Kunde durchsuchen",
-					"Ihre Seiten als simulierter Nutzer besuchen",
-					"Machine-Learning-Schicht auf jedem Befund",
-					"Signale verbinden, die alleine nichts sagen",
-					"Das echte Verhalten Ihrer Besucher lesen",
-					"Was das alles für Sie bedeutet, in einer Erzählung"
-				]
-			},
 			"timeout_title": "Die Diagnose dauert länger als erwartet",
 			"timeout_desc": "Dies kann passieren, wenn die Website langsam oder vorübergehend nicht verfügbar ist. Überprüfen Sie die Domain und versuchen Sie es erneut.",
 			"timeout_retry": "Erneut versuchen",

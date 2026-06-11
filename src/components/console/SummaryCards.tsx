@@ -173,10 +173,13 @@ function CardContent({ card }: { card: SummaryCard }) {
 
 	return (
 		<div
-			className={`relative h-full overflow-hidden rounded-xl border border-edge bg-surface-card p-5 transition-colors ${variantShadow[variant]}`}
+			// rounded-2xl + hover:border-edge-focus alinha com cards do
+			// /app/library/strategy (HeroMetrics, BuyerSegments). Antes
+			// rounded-xl quebrava o ritmo visual entre console e plano.
+			className={`relative h-full overflow-hidden rounded-2xl border border-edge bg-surface-card p-5 transition-all hover:border-edge-focus ${variantShadow[variant]}`}
 		>
 			<div
-				className={`pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br ${variantGradient[variant]} via-transparent to-transparent`}
+				className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${variantGradient[variant]} via-transparent to-transparent`}
 				aria-hidden
 			/>
 

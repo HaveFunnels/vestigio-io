@@ -11,10 +11,15 @@ interface PageHeaderProps {
 export default function PageHeader({ title, subtitle, tooltip }: PageHeaderProps) {
   const [showTooltip, setShowTooltip] = useState(false);
 
+  // Typography aligned with /app/library/strategy plan: Fraunces serif
+  // (font-serif) + tracking-tight + medium weight para o título de
+  // página. Unifica o aspecto entre console e plan — quando o cliente
+  // navega de Plan → Actions → Maps, a hierarquia tipográfica fica
+  // estável.
   return (
     <div className="mb-6">
       <div className="flex items-center gap-2">
-        <h1 className="text-xl font-semibold text-content">{title}</h1>
+        <h1 className="font-serif text-[22px] font-medium tracking-tight text-content">{title}</h1>
         {tooltip && (
           <span className="relative inline-flex">
             <button

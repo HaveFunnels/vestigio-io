@@ -86,12 +86,18 @@ export default function MapsGalleryPage() {
 						emptyRender={() => <PreAuditEmptyState surface="maps" />}
 						loadingRender={() => (
 							<div className="px-6 py-6">
-								<div className="mb-3 h-3 w-32 animate-pulse rounded bg-surface-card" />
+								{/* Layout-true skeleton — matches the section
+								    header pattern (serif h2 + eyebrow) and card
+								    radius/spacing exactos do GalleryGrid. */}
+								<div className="mb-4 flex items-baseline justify-between">
+									<div className="h-5 w-40 animate-pulse rounded-md bg-surface-card" />
+									<div className="h-3 w-28 animate-pulse rounded-md bg-surface-card" />
+								</div>
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
 									{Array.from({ length: 4 }).map((_, i) => (
 										<div
 											key={i}
-											className="overflow-hidden rounded-xl border border-edge bg-surface-card"
+											className="overflow-hidden rounded-2xl border border-edge bg-surface-card"
 										>
 											<div className="aspect-[16/9] w-full animate-pulse bg-surface-inset" />
 											<div className="flex flex-col gap-2 p-4">
@@ -131,13 +137,21 @@ function GalleryGrid({
 
 	return (
 		<div className='px-6 py-6'>
-			{/* Custom maps first — "Created by you" */}
+			{/* Section header pattern aligned with /app/library/strategy
+			    sections (BuyerSegments, MemoryRollups, etc): serif h2 +
+			    eyebrow à direita. Antes era um único eyebrow uppercase
+			    sem ancorar visualmente a grid. */}
 			{customMaps.length > 0 && (
 				<>
-					<div className='mb-3 text-[11px] font-semibold uppercase tracking-wider text-content-muted'>
-						{t("gallery.created_by_you")}
+					<div className='mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3'>
+						<h2 className='font-serif text-[20px] font-medium tracking-tight text-content'>
+							{t("gallery.created_by_you")}
+						</h2>
+						<div className='text-[11px] text-content-faint'>
+							{customMaps.length === 1 ? "1 mapa seu" : `${customMaps.length} mapas seus`}
+						</div>
 					</div>
-					<div className='mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
+					<div className='mb-12 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
 						{customMaps.map((m) => (
 							<MapCard key={m.id} mapDef={m} />
 						))}
@@ -145,9 +159,13 @@ function GalleryGrid({
 				</>
 			)}
 
-			{/* Standard maps */}
-			<div className='mb-3 text-[11px] font-semibold uppercase tracking-wider text-content-muted'>
-				{t("gallery.standard")}
+			<div className='mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3'>
+				<h2 className='font-serif text-[20px] font-medium tracking-tight text-content'>
+					{t("gallery.standard")}
+				</h2>
+				<div className='text-[11px] text-content-faint'>
+					{maps.length === 1 ? "1 mapa disponível" : `${maps.length} mapas disponíveis`}
+				</div>
 			</div>
 			<div className='grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'>
 				{maps.map((m) => (
@@ -169,7 +187,7 @@ function MapCard({ mapDef }: { mapDef: MapDefinition }) {
 	return (
 		<Link
 			href={`/app/maps/${encodeURIComponent(mapDef.id)}`}
-			className='group flex flex-col overflow-hidden rounded-xl border border-edge bg-surface-card transition-all hover:-translate-y-0.5 hover:border-edge-strong hover:shadow-lg hover:shadow-black/5'
+			className='group flex flex-col overflow-hidden rounded-2xl border border-edge bg-surface-card transition-all hover:-translate-y-0.5 hover:border-edge-focus hover:bg-surface-card-hover hover:shadow-lg hover:shadow-black/5'
 		>
 			<div className='aspect-[16/9] w-full overflow-hidden bg-surface-inset'>
 				<MapThumbnail mapDef={mapDef} />

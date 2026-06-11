@@ -91,7 +91,10 @@ export default function ActionCard({
 
 	return (
 		<div
-			className={`overflow-hidden rounded-2xl border bg-surface-card transition-colors ${borderClass} ${open ? "shadow-sm" : ""}`}
+			// Card chrome aligned with /app/library/strategy tiles:
+			// rounded-2xl + hover:border-edge-focus + transition-all dão
+			// a mesma "presence" do plan's HeroMetrics/BuyerSegments.
+			className={`overflow-hidden rounded-2xl border bg-surface-card transition-all hover:border-edge-focus ${borderClass} ${open ? "shadow-sm" : ""}`}
 		>
 			<button
 				type="button"
@@ -119,7 +122,10 @@ export default function ActionCard({
 						)}
 					</div>
 					{impactLabel && (
-						<div className="mt-2 font-mono text-[13px] font-semibold tabular-nums text-rose-600 dark:text-rose-300">
+						// rose-400 alinha com a paleta do plano (HeroMetrics
+						// "Vazando" usa text-rose-400 também). Antes era
+						// rose-600/300 fora da escala.
+						<div className="mt-2 font-mono text-[13px] font-semibold tabular-nums text-rose-400">
 							{impactLabel}
 						</div>
 					)}

@@ -131,6 +131,23 @@ const config: Config = {
 					overlay: "rgb(var(--bg-overlay) / <alpha-value>)",
 					tooltip: "rgb(var(--bg-tooltip) / <alpha-value>)",
 				},
+				// Border / edge tokens — hierarquia para divisores e cards.
+				//
+				// Convenção do design system (Plan, Maps, Actions, console):
+				//   border-edge           → primary border (cards, top-level
+				//                            section dividers). Default 100%.
+				//   border-edge/60        → semi-prominent (status row
+				//                            dividers, separadores dentro de
+				//                            cards). Usado em NextSteps
+				//                            sections.tsx p/ pt-4 separator.
+				//   border-edge/40        → subtle inset (nested cards,
+				//                            inset content dividers). Usado
+				//                            em BuyerSegments + Carteira
+				//                            interior groups.
+				//   border-edge-subtle    → static token (usar em vez de
+				//                            /40 quando o subtle não muda).
+				//   border-edge-focus     → hover/focus rings. Sempre usar
+				//                            em hover:border-* pattern.
 				edge: {
 					DEFAULT: "rgb(var(--border-default) / <alpha-value>)",
 					subtle: "rgb(var(--border-subtle) / <alpha-value>)",

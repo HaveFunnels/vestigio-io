@@ -1299,8 +1299,13 @@ function CategoryBadge({ category }: { category: string }) {
 	if (!cfg)
 		return <span className='text-xs text-content-muted'>{category}</span>;
 	return (
+		// rounded-full alinha com o pattern de pill+dot do plano
+		// (ChangeSummaryBanner + NextSteps status pills). Antes era
+		// rounded (4px) — visualmente lia como tag retangular, não
+		// chip. Outras pills com dot no Actions já usam rounded-full
+		// (linhas 1982, 2103).
 		<span
-			className={`inline-flex items-center gap-1.5 rounded border px-2 py-0.5 text-xs font-medium ${cfg.badgeStyle}`}
+			className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${cfg.badgeStyle}`}
 		>
 			<span
 				className={`inline-block h-1.5 w-1.5 rounded-full ${cfg.dotColor}`}

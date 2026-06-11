@@ -127,11 +127,45 @@ export default function ActionCard({
 						)}
 					</div>
 					{impactLabel && (
-						// rose-400 alinha com a paleta do plano (HeroMetrics
-						// "Vazando" usa text-rose-400 também). Antes era
-						// rose-600/300 fora da escala.
-						<div className="mt-2 font-mono text-[13px] font-semibold tabular-nums text-rose-400">
-							{impactLabel}
+						// Impact pill alinha com o pattern do NextSteps no
+						// plan (rounded-lg border + severity-tiered bg). Antes
+						// era texto bare rose-400 sem container — o cliente
+						// não conseguia "ler" o impacto como uma unidade
+						// destacada. Tier:
+						//   max ≥ 5k → rose (crítico)
+						//   max ≥ 2k → amber (atenção)
+						//   default → neutro
+						<div
+							className={`mt-2 inline-flex items-baseline gap-2 rounded-lg border px-3 py-1.5 ${
+								max >= 5000
+									? "border-rose-500/40 bg-rose-500/10"
+									: max >= 2000
+										? "border-amber-500/40 bg-amber-500/10"
+										: "border-edge bg-surface-inset"
+							}`}
+						>
+							<span
+								className={`text-[9px] font-semibold uppercase tracking-wider ${
+									max >= 5000
+										? "text-rose-300/90"
+										: max >= 2000
+											? "text-amber-300/90"
+											: "text-content-faint"
+								}`}
+							>
+								exposição/mês
+							</span>
+							<span
+								className={`font-mono text-[13px] font-semibold tabular-nums ${
+									max >= 5000
+										? "text-rose-200"
+										: max >= 2000
+											? "text-amber-200"
+											: "text-content"
+								}`}
+							>
+								{impactLabel}
+							</span>
 						</div>
 					)}
 				</div>

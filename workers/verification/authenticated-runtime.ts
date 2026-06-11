@@ -18,6 +18,7 @@ import {
 import { decryptSecret } from '../../apps/platform/secret-service';
 import { BROWSER_LIMITS } from './browser-types';
 import { acquireBrowserSlot, releaseBrowserSlot } from './chromium-pool';
+import { crawlAuthenticated, CrawlResult } from './authenticated-crawler';
 
 // ──────────────────────────────────────────────
 // Authenticated Journey Runtime
@@ -141,9 +142,17 @@ export async function executeAuthenticatedJourney(
 
   // ── Attempt authenticated session ───────────
   try {
-    const loginResult = await attemptLogin(accessConfig, opts);
-    const evidence = buildSessionEvidence(ids, loginResult, accessConfig, scoping, cycleRef);
-    return { result: loginResult, evidence };
+    const { result: loginResult, crawlerEvidence } = await attemptLogin(
+      accessConfig,
+      opts,
+      // Crawler context — needed when login succeeds so we can keep the
+      // session open and visit dashboard/onboarding/settings before
+      // closing the browser. Without these the crawler would have to
+      // re-login on a separate page.
+      { scoping, cycleRef, businessProfile },
+    );
+    const sessionEvidence = buildSessionEvidence(ids, loginResult, accessConfig, scoping, cycleRef);
+    return { result: loginResult, evidence: [...sessionEvidence, ...crawlerEvidence] };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     const errorResult: AuthenticatedJourneyResult = {
@@ -156,6 +165,15 @@ export async function executeAuthenticatedJourney(
     const evidence = buildSessionEvidence(ids, errorResult, accessConfig, scoping, cycleRef);
     return { result: errorResult, evidence };
   }
+}
+
+// Crawler context — passed to attemptLogin so it can run the post-login
+// crawler before closing the browser. Optional; when undefined the
+// runtime falls back to login-only behavior (legacy path).
+interface CrawlerContext {
+  scoping: Scoping;
+  cycleRef: string;
+  businessProfile: import('../../packages/domain').BusinessProfile | null;
 }
 
 /**
@@ -236,8 +254,10 @@ export async function simulateAuthenticatedJourney(
 async function attemptLogin(
   config: SaasAccessConfig,
   opts: AuthRuntimeOptions,
-): Promise<AuthenticatedJourneyResult> {
+  crawlerCtx?: CrawlerContext,
+): Promise<{ result: AuthenticatedJourneyResult; crawlerEvidence: Evidence[] }> {
   const startTime = Date.now();
+  const crawlerEvidence: Evidence[] = [];
 
   // Dynamically require playwright (may not be available)
   let chromium: any;
@@ -247,11 +267,14 @@ async function attemptLogin(
   } catch {
     // Fall back to simulation if Playwright not available
     return {
-      outcome: 'runtime_error',
-      final_url: null, page_title: null, steps_executed: 0,
-      duration_ms: Date.now() - startTime, screenshots: [],
-      console_errors: [], error_message: 'Playwright not available.',
-      mfa_detected: false, login_form_found: false, post_login_url: null,
+      result: {
+        outcome: 'runtime_error',
+        final_url: null, page_title: null, steps_executed: 0,
+        duration_ms: Date.now() - startTime, screenshots: [],
+        console_errors: [], error_message: 'Playwright not available.',
+        mfa_detected: false, login_form_found: false, post_login_url: null,
+      },
+      crawlerEvidence,
     };
   }
 
@@ -286,12 +309,15 @@ async function attemptLogin(
     const loginFormFound = await findLoginForm(page);
     if (!loginFormFound) {
       return {
-        outcome: 'authentication_failed',
-        final_url: page.url(), page_title: await safeTitle(page),
-        steps_executed: stepsExecuted,
-        duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
-        error_message: 'Could not find login form on page.',
-        mfa_detected: false, login_form_found: false, post_login_url: null,
+        result: {
+          outcome: 'authentication_failed',
+          final_url: page.url(), page_title: await safeTitle(page),
+          steps_executed: stepsExecuted,
+          duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
+          error_message: 'Could not find login form on page.',
+          mfa_detected: false, login_form_found: false, post_login_url: null,
+        },
+        crawlerEvidence,
       };
     }
     stepsExecuted++;
@@ -304,12 +330,15 @@ async function attemptLogin(
         password = decryptSecret(config.password_encrypted);
       } catch {
         return {
-          outcome: 'runtime_error',
-          final_url: page.url(), page_title: await safeTitle(page),
-          steps_executed: stepsExecuted,
-          duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
-          error_message: 'Failed to decrypt credentials.',
-          mfa_detected: false, login_form_found: true, post_login_url: null,
+          result: {
+            outcome: 'runtime_error',
+            final_url: page.url(), page_title: await safeTitle(page),
+            steps_executed: stepsExecuted,
+            duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
+            error_message: 'Failed to decrypt credentials.',
+            mfa_detected: false, login_form_found: true, post_login_url: null,
+          },
+          crawlerEvidence,
         };
       }
     }
@@ -332,12 +361,15 @@ async function attemptLogin(
     const mfaDetected = await detectMfa(page);
     if (mfaDetected) {
       return {
-        outcome: 'awaiting_manual_mfa',
-        final_url: currentUrl, page_title: title,
-        steps_executed: stepsExecuted,
-        duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
-        error_message: 'MFA challenge detected — awaiting manual completion.',
-        mfa_detected: true, login_form_found: true, post_login_url: null,
+        result: {
+          outcome: 'awaiting_manual_mfa',
+          final_url: currentUrl, page_title: title,
+          steps_executed: stepsExecuted,
+          duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
+          error_message: 'MFA challenge detected — awaiting manual completion.',
+          mfa_detected: true, login_form_found: true, post_login_url: null,
+        },
+        crawlerEvidence,
       };
     }
 
@@ -345,23 +377,57 @@ async function attemptLogin(
     const stillOnLogin = await findLoginForm(page);
     if (stillOnLogin && currentUrl === config.login_url) {
       return {
-        outcome: 'authentication_failed',
-        final_url: currentUrl, page_title: title,
-        steps_executed: stepsExecuted,
-        duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
-        error_message: 'Login form still present after submission — credentials likely invalid.',
-        mfa_detected: false, login_form_found: true, post_login_url: null,
+        result: {
+          outcome: 'authentication_failed',
+          final_url: currentUrl, page_title: title,
+          steps_executed: stepsExecuted,
+          duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
+          error_message: 'Login form still present after submission — credentials likely invalid.',
+          mfa_detected: false, login_form_found: true, post_login_url: null,
+        },
+        crawlerEvidence,
       };
     }
 
-    // Success — we navigated away from login
+    // Success — run the post-login crawler before closing the browser.
+    // The crawler reuses the authenticated session: visits dashboard/
+    // onboarding/settings/billing, extracts AuthenticatedPageView +
+    // EmptyStateObserved + UpgradeSurfaceObserved + ActivationStepObserved
+    // + NavigationStructureObserved evidence. Without this the SaaS
+    // signal extractors stay dormant (zero evidence to consume).
+    if (crawlerCtx) {
+      try {
+        const crawl = await crawlAuthenticated(
+          page,
+          currentUrl,
+          crawlerCtx.scoping,
+          crawlerCtx.cycleRef,
+          {
+            business_model: crawlerCtx.businessProfile?.business_model ?? null,
+            // Cap crawl footprint inside the auth window — the browser
+            // slot is held for the whole crawl, so don't block other
+            // verifications too long.
+            max_pages: 8,
+            per_page_timeout_ms: 7000,
+          },
+        );
+        crawlerEvidence.push(...crawl.evidence);
+      } catch {
+        // Crawl is best-effort. Login still counts as successful even
+        // if the crawler crashes — we just have less evidence downstream.
+      }
+    }
+
     return {
-      outcome: 'authenticated_success',
-      final_url: currentUrl, page_title: title,
-      steps_executed: stepsExecuted,
-      duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
-      error_message: null,
-      mfa_detected: false, login_form_found: true, post_login_url: currentUrl,
+      result: {
+        outcome: 'authenticated_success',
+        final_url: currentUrl, page_title: title,
+        steps_executed: stepsExecuted,
+        duration_ms: Date.now() - startTime, screenshots, console_errors: consoleErrors,
+        error_message: null,
+        mfa_detected: false, login_form_found: true, post_login_url: currentUrl,
+      },
+      crawlerEvidence,
     };
 
   } finally {

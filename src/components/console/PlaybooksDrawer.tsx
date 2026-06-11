@@ -101,19 +101,26 @@ export default function PlaybooksDrawer({
       {/* Backdrop */}
       <div className="flex-1 bg-black/40" onClick={onClose} />
 
-      {/* Drawer */}
-      <div className="flex w-[420px] flex-col border-l border-edge bg-surface">
+      {/* Drawer — chrome alinhado com PlanSideDrawer/SideDrawer:
+          - largura sm:max-w-[720px] (era 420px fixo, estreito demais
+            vs o drawer do plano)
+          - header px-6 py-5 + h2 font-serif text-[18px] medium (era
+            px-4 py-3 + text-sm semibold)
+          - close button h-8 w-8 rounded-md border (era rounded p-1
+            sem border, inconsistente) */}
+      <div className="flex w-full flex-col border-l border-edge bg-surface sm:w-[50vw] sm:max-w-[720px]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-edge px-4 py-3">
-          <div>
-            <h2 className="text-sm font-semibold text-content">{t("label")}</h2>
-            <p className="text-[10px] text-content-muted">
+        <div className="flex items-center justify-between border-b border-edge px-6 py-5">
+          <div className="min-w-0 flex-1">
+            <h2 className="font-serif text-[18px] font-medium leading-tight text-content">{t("label")}</h2>
+            <p className="mt-0.5 text-[11px] text-content-faint">
               {t("subtitle", { count: playbooks.length })}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="rounded p-1 text-content-muted hover:bg-surface-card-hover hover:text-content-secondary"
+            className="ml-3 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
+            aria-label="Close drawer"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

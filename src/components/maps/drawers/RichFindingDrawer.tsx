@@ -9,6 +9,7 @@ import VerificationBadge from "@/components/console/VerificationBadge";
 import ChangeBadge from "@/components/console/ChangeBadge";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
+import { DrawerSection } from "@/components/console/DrawerSection";
 import { formatCurrency } from "../map-utils";
 import type { MapNode } from "../../../../packages/maps";
 import type { FindingProjection } from "../../../../packages/projections";
@@ -27,28 +28,25 @@ export default function RichFindingDrawer({
   const router = useRouter();
 
   if (!finding) {
-    // Fallback for nodes without matching finding projection
+    // Fallback for nodes without matching finding projection.
+    // Uses DrawerSection (alinhado com o resto do drawer) + chip
+    // rounded-full pra pack label (convenção de chip+dot).
     return (
       <div className="space-y-6">
-        <section>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            {node.severity && <SeverityBadge value={node.severity} />}
-            {node.pack && (
-              <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
-                {node.pack}
-              </span>
-            )}
-          </div>
-        </section>
+        <div className="flex flex-wrap items-center gap-2">
+          {node.severity && <SeverityBadge value={node.severity} />}
+          {node.pack && (
+            <span className="rounded-full border border-edge px-2 py-0.5 text-xs text-content-muted">
+              {node.pack}
+            </span>
+          )}
+        </div>
         {node.impact && (
-          <section>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-              {tm("drawer.impactBreakdown")}
-            </h3>
-            <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+          <DrawerSection title={tm("drawer.impactBreakdown")} accent="danger">
+            <div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card px-4 py-2">
               <ImpactBadge min={node.impact.min} max={node.impact.max} />
             </div>
-          </section>
+          </DrawerSection>
         )}
       </div>
     );
@@ -71,44 +69,37 @@ export default function RichFindingDrawer({
   };
 
   return (
+    // space-y-6 alinha com Plan's drawer-bodies + FindingDetailPanel.
+    // Sections agora usam DrawerSection (mesmo do console) em vez do
+    // <h3> ad-hoc — typography uniforme (10px uppercase + accent dot)
+    // e o customer reconhece o pattern entre Maps drawer e
+    // /app/findings/[id].
     <div className="space-y-6">
-      {/* Summary */}
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-          {td("summary")}
-        </h3>
+      <DrawerSection title={td("summary")}>
         <p className="text-sm text-content-secondary">{finding.cause}</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <SeverityBadge value={finding.severity} />
           <VerificationBadge value={finding.verification_maturity} />
           {finding.change_class && <ChangeBadge value={finding.change_class} />}
-          <span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
+          <span className="rounded-full border border-edge px-2 py-0.5 text-xs text-content-muted">
             {packLabel(finding.pack)}
           </span>
         </div>
-      </section>
+      </DrawerSection>
 
-      {/* Root Cause */}
       {finding.root_cause && (
-        <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-            {td("root_cause")}
-          </h3>
-          <div className="rounded-md border border-edge bg-surface-card px-4 py-3">
+        <DrawerSection title={td("root_cause")}>
+          <div className="rounded-xl border border-edge bg-surface-card px-4 py-3">
             <span className="text-sm font-medium text-content-secondary">
               {finding.root_cause}
             </span>
           </div>
-        </section>
+        </DrawerSection>
       )}
 
-      {/* Impact */}
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-          {td("impact_breakdown")}
-        </h3>
+      <DrawerSection title={td("impact_breakdown")} accent="danger">
         <div className="space-y-2">
-          <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+          <div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card px-4 py-2">
             <span className="text-xs text-content-muted">
               {td("monthly_range")}
             </span>
@@ -117,7 +108,7 @@ export default function RichFindingDrawer({
               max={finding.impact.monthly_range.max}
             />
           </div>
-          <div className="flex items-center justify-between rounded-md border border-edge bg-surface-card px-4 py-2">
+          <div className="flex items-center justify-between rounded-xl border border-edge bg-surface-card px-4 py-2">
             <span className="text-xs text-content-muted">
               {td("impact_type")}
             </span>
@@ -127,13 +118,9 @@ export default function RichFindingDrawer({
             </span>
           </div>
         </div>
-      </section>
+      </DrawerSection>
 
-      {/* Verification */}
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-          {td("verification")}
-        </h3>
+      <DrawerSection title={td("verification")}>
         <VerificationPanel
           maturity={finding.verification_maturity}
           method={finding.verification_method}
@@ -147,21 +134,17 @@ export default function RichFindingDrawer({
             )
           }
         />
-      </section>
+      </DrawerSection>
       <VerificationSufficiencyWarning
         severity={finding.severity}
         maturity={finding.verification_maturity}
       />
 
-      {/* Reasoning */}
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-content-muted">
-          {td("reasoning")}
-        </h3>
+      <DrawerSection title={td("reasoning")}>
         <p className="text-sm leading-relaxed text-content-muted">
           {finding.reasoning}
         </p>
-      </section>
+      </DrawerSection>
 
       {/* Cross-map: View in Journey */}
       {finding.surface && !finding.surface.includes("sitewide") && (

@@ -797,18 +797,25 @@ function ActionsContent({
 			variant: "danger",
 			negative: true,
 			subtext: t("cards.combinedExposure"),
+			tooltip:
+				"Soma dos midpoints mensais das ações ainda em aberto (status ≠ done). Mostra quanto está exposto neste momento se nada for atacado.",
+			tooltipDrillHref: "/app/findings?polarity=negative",
 		},
 		{
 			label: t("cards.quickWins"),
 			value: quickWinsCount,
 			variant: "success",
 			subtext: t("cards.lowEffortHighImpact"),
+			tooltip:
+				"Ações com esforço estimado ≤ 4h e impacto monetário acima do quartil superior. Atalhos com melhor retorno por hora investida.",
 		},
 		{
 			label: t("cards.inProgress"),
 			value: inProgressCount,
 			variant: "info",
 			subtext: t("cards.activelyWorking"),
+			tooltip:
+				"Ações com status = in_progress atribuídas ao seu env. Reflete o trabalho em curso pela equipe agora.",
 		},
 		{
 			label: t("cards.captured"),
@@ -818,6 +825,9 @@ function ActionsContent({
 					: `${currSym}${capturedValue}`,
 			variant: "success",
 			subtext: t("cards.resolvedOrVerified"),
+			tooltip:
+				"Soma do baseline de impacto das ações marcadas como done + verifiedResolvedAt confirmado pelo ciclo seguinte. Só conta recuperação atribuída a ação humana.",
+			tooltipDrillHref: "/app/actions?status=done",
 		},
 	];
 
@@ -1016,6 +1026,22 @@ function ActionsContent({
 					<ChangeSummaryBanner report={reconciledChangeReport} />
 				</div>
 			)}
+
+			{/* Section header pattern aligned with /app/library/strategy
+			    sections — h2 font-serif + eyebrow à direita. Antes a tab
+			    bar emergia direto sem ancorar a sub-seção visualmente. */}
+			<div className='mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3'>
+				<h2 className='font-serif text-[20px] font-medium tracking-tight text-content'>
+					Pipeline de ações
+				</h2>
+				<div className='text-[11px] text-content-faint'>
+					{actions.length === 0
+						? "Sem ações neste ciclo"
+						: actions.length === 1
+							? "1 ação no total"
+							: `${actions.length} ações no total`}
+				</div>
+			</div>
 
 			{/* Tab Bar */}
 			<div className='mb-4 flex items-center gap-1 overflow-x-auto rounded-lg border border-edge bg-surface-card p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>

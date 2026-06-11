@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect } from "react";
+import { AggregateMethodologyPopover } from "@/components/console/MethodologyPopover";
 
 // ──────────────────────────────────────────────
 // SummaryCards — KPI strip used across the console
@@ -50,6 +51,13 @@ export interface SummaryCard {
 	 *  faint. Useful for short context like "$" or unit labels when
 	 *  the value itself is just a number. */
 	prefix?: string;
+	/** Methodology description shown in the ⓘ popover (top-right of the
+	 *  card). Mirrors the AggregateMethodologyPopover pattern used by
+	 *  HeroMetrics tiles do plano — when set, customer can hover ⓘ to
+	 *  see how this number was calculated. */
+	tooltip?: string;
+	/** Optional drill-link surfaced inside the methodology popover. */
+	tooltipDrillHref?: string;
 }
 
 type Variant = NonNullable<SummaryCard["variant"]>;
@@ -182,6 +190,20 @@ function CardContent({ card }: { card: SummaryCard }) {
 				className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${variantGradient[variant]} via-transparent to-transparent`}
 				aria-hidden
 			/>
+
+			{/* Methodology popover pinned top-right — matching HeroMetrics
+			    do plano. Cliente acha o atalho sempre no mesmo lugar em
+			    todos os tiles. */}
+			{card.tooltip && (
+				<div className="absolute right-3 top-3 z-10 text-content-faint">
+					<AggregateMethodologyPopover
+						title={card.label}
+						description={card.tooltip}
+						drillHref={card.tooltipDrillHref ?? null}
+						placement="below"
+					/>
+				</div>
+			)}
 
 			<div className='relative flex h-full items-start justify-between gap-3'>
 				<div className='min-w-0 flex-1'>

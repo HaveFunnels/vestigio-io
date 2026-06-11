@@ -56,16 +56,24 @@ export default function Carteira({ competitor, impersonators }: Props) {
 	const impSignals = impersonatorsSignalCount(impersonators);
 	const totalSignals = compSignals + impSignals;
 
+	// Counts shown directly in the header (not "0 sinais este ciclo"
+	// which lia como ausência genérica). The customer wants concrete
+	// numbers: quantos concorrentes estão sob monitoramento + quantos
+	// impersonadores foram detectados ativos. Ambos podem ser 0 — esse
+	// é o estado saudável.
+	const competitorCount = hasCompetitor ? competitor!.totalMonitored : 0;
+	const impersonatorCount = hasImpersonators ? impersonators!.activeCount : 0;
+
 	// Default open when there is material activity. Otherwise collapse
-	// so the customer doesn't have to scroll past a "0 signals" block
-	// every month.
+	// so the customer doesn't have to scroll past a quiet card every
+	// month.
 	const [open, setOpen] = useState(totalSignals > 0);
 
 	const competitorLine = hasCompetitor
-		? `${competitor!.totalActive} de ${competitor!.totalMonitored} ativos, ${compSignals} ${compSignals === 1 ? "sinal" : "sinais"}`
+		? `${competitor!.totalActive} ativos · ${compSignals} ${compSignals === 1 ? "sinal" : "sinais"} este ciclo`
 		: null;
 	const impersonatorsLine = hasImpersonators
-		? `${impersonators!.totalScannedEver} domínios analisados, ${impersonators!.activeCount} ativos este ciclo`
+		? `${impersonators!.totalScannedEver} domínios analisados`
 		: null;
 
 	return (
@@ -78,10 +86,10 @@ export default function Carteira({ competitor, impersonators }: Props) {
 		>
 			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
-					Sinais da carteira
+					Sinais da marca
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					Concorrentes e impersonadores
+					Concorrência e impersonadores
 				</div>
 			</div>
 
@@ -92,12 +100,32 @@ export default function Carteira({ competitor, impersonators }: Props) {
 							type="button"
 							className="grid w-full grid-cols-[1fr_auto] items-center gap-3 p-5 text-left transition-colors hover:bg-surface-card-hover/40"
 						>
-							<div className="min-w-0 space-y-1">
-								<div className="font-mono text-[20px] font-semibold tabular-nums text-content">
-									{totalSignals}
-									<span className="ml-1 text-[12px] font-normal text-content-faint">
-										{totalSignals === 1 ? "sinal este ciclo" : "sinais este ciclo"}
-									</span>
+							<div className="min-w-0 space-y-2">
+								{/* Numbers customer wants to see at a glance:
+								    concorrentes sob monitoramento + impersonadores
+								    detectados. Antes era "X sinais" agregado que lia
+								    como métrica inventada. */}
+								<div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
+									{hasCompetitor && (
+										<div>
+											<span className="font-mono text-[20px] font-semibold tabular-nums text-content">
+												{competitorCount}
+											</span>
+											<span className="ml-1.5 text-[12px] font-normal text-content-faint">
+												{competitorCount === 1 ? "concorrente monitorado" : "concorrentes monitorados"}
+											</span>
+										</div>
+									)}
+									{hasImpersonators && (
+										<div>
+											<span className="font-mono text-[20px] font-semibold tabular-nums text-content">
+												{impersonatorCount}
+											</span>
+											<span className="ml-1.5 text-[12px] font-normal text-content-faint">
+												{impersonatorCount === 1 ? "impersonador ativo" : "impersonadores ativos"}
+											</span>
+										</div>
+									)}
 								</div>
 								<div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[11px] text-content-muted">
 									{competitorLine && (

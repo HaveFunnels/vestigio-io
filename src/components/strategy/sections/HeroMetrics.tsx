@@ -304,20 +304,19 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					)}
 					methodologyDrillHref="/app/actions?status=done"
 				/>
-				{/* "Capturado pelo vazamento / mês" — antes "Capturado /
-				    mês" com valor de recuperação (cinzento). Customer feedback
-				    leu como "capturado pelo problema" = perda, e queria red
-				    graphics. Dado movido pra exposureMid (o vazamento atual);
-				    invertDelta deixa "mais vazamento = mais vermelho". */}
+				{/* "Vazando / mês" — antes "Capturado pelo vazamento" que
+				    customer apontou como gramaticalmente quebrado (vazamento
+				    não captura, vaza). Verbo no gerúndio nomeia a ação em
+				    curso. Sempre vermelho via staticTone="loss". */}
 				<Tile
-					label="Capturado pelo vazamento / mês"
+					label="Vazando / mês"
 					rawNumber={hero.exposureMid ?? 0}
 					delta={0}
 					formatFn={makeCurrencyFormatter(hero.exposureMid ?? 0, currency)}
 					staticTone="loss"
 					captionWhenStatic="em vazamento agora"
 					methodologyDescription={withReceipt(
-						"Exposição estimada: soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número converge pra 'Recuperado/mês' à medida que ações são marcadas como done e verificadas no ciclo seguinte.",
+						"Vazamento estimado: soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número diminui à medida que ações são marcadas como done e o ciclo seguinte confirma que a finding linkada não aparece mais — quando isso acontece, o valor migra para 'Recuperado/mês'.",
 						hero.exposureMin,
 						hero.exposureMax,
 						hero.exposureFindingCount,

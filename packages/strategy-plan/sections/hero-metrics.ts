@@ -58,7 +58,24 @@ async function aggregateMonth(
 	// Retained: sum of impactMidpoint of positive-polarity active findings.
 	// This is the "value being kept safe today" — mirrors the retention
 	// snapshot from packages/value-caught.
-	// Captured: sum of impactMidpoint of findings resolved in window.
+	//
+	// Captured: sum of *attributed* recovery from UserActions verified-
+	// resolved in the window. Customer-facing label is "Recuperado/mês"
+	// — only counts money the customer ACTIVELY recovered:
+	//   (1) UserAction.status = "done"   (the customer marked it)
+	//   (2) verifiedResolvedAt IN window  (next cycle confirmed the
+	//       linked finding actually disappeared)
+	//
+	// Previously this aggregated Finding.status="resolved" directly, which
+	// included PHANTOM-RESOLVED findings (lifecycle.ts auto-marks a
+	// finding resolved when it doesn't appear in the next projection —
+	// site changed, transient detection, engine threshold shifted, etc).
+	// Customer feedback: havefunnels mostrou R$ 67k "Recuperado" sem ter
+	// fechado nenhuma ação. baselineImpactMidpoint é stampado no momento
+	// da criação da Action, então o número reflete o que a ação prometeu
+	// recuperar — não o impactMidpoint atual da finding (já zero, porque
+	// resolvida).
+	//
 	// Critical count: active findings with severity=critical.
 	// In-progress: open Action rows in the window (NOT findings).
 	const [retained, captured, criticals, inProgress, exposure] = await Promise.all([
@@ -72,13 +89,17 @@ async function aggregateMonth(
 			_sum: { impactMidpoint: true, impactMin: true, impactMax: true },
 			_count: { _all: true },
 		}),
-		prisma.finding.aggregate({
+		prisma.userAction.aggregate({
 			where: {
 				environmentId,
-				status: "resolved",
-				statusChangedAt: { gte: start, lt: end },
+				status: "done",
+				verifiedResolvedAt: { gte: start, lt: end, not: null },
 			},
-			_sum: { impactMidpoint: true, impactMin: true, impactMax: true },
+			_sum: {
+				baselineImpactMidpoint: true,
+				baselineImpactMin: true,
+				baselineImpactMax: true,
+			},
 			_count: { _all: true },
 		}),
 		// T3 — count "criticals" by calibrated impact threshold rather than
@@ -125,14 +146,14 @@ async function aggregateMonth(
 
 	return {
 		retained: retained._sum.impactMidpoint ?? 0,
-		captured: captured._sum.impactMidpoint ?? 0,
+		captured: captured._sum.baselineImpactMidpoint ?? 0,
 		criticals,
 		inProgress,
 		retainedMin: retained._sum.impactMin ?? 0,
 		retainedMax: retained._sum.impactMax ?? 0,
 		retainedCount: retained._count?._all ?? 0,
-		capturedMin: captured._sum.impactMin ?? 0,
-		capturedMax: captured._sum.impactMax ?? 0,
+		capturedMin: captured._sum.baselineImpactMin ?? 0,
+		capturedMax: captured._sum.baselineImpactMax ?? 0,
 		capturedCount: captured._count?._all ?? 0,
 		exposure: exposure._sum.impactMidpoint ?? 0,
 		exposureMin: exposure._sum.impactMin ?? 0,

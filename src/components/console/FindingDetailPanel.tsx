@@ -41,6 +41,7 @@ import ImpactBadge from "@/components/console/ImpactBadge";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import FixWithAiSection from "@/components/console/actions/FixWithAiSection";
+import CausalTimeline from "@/components/console/CausalTimeline";
 import { translateEngineCopy } from "@/lib/engine-i18n";
 
 export interface FindingDetailPanelProps {
@@ -238,6 +239,11 @@ export default function FindingDetailPanel({
 					</div>
 				</DrawerSection>
 			)}
+
+			{/* Bundle C — Causal Timeline. Self-hide quando não há
+			    envId resolvível OU quando a reconstrução não retorna
+			    cadeia (UI dá empty state explícito quando aplicável). */}
+			<CausalTimeline findingId={finding.id} />
 
 			{/* Suppression Callout */}
 			{finding.suppression_context?.is_suppressed && (

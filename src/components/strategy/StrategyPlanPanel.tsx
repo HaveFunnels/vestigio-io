@@ -15,6 +15,7 @@ import ValuePreview from "./sections/ValuePreview";
 import MemoryRollups from "./sections/MemoryRollups";
 import MonthlyThesis from "./sections/MonthlyThesis";
 import AttributionTimeline from "./sections/AttributionTimeline";
+import AnalysisStatsDrawer from "./sections/AnalysisStatsDrawer";
 import Continuity from "./sections/Continuity";
 import CrossCustomerPattern from "./sections/CrossCustomerPattern";
 // Wave 22.8 review — Copy Lens and Maps were moved out of the main
@@ -109,6 +110,8 @@ function StickyHeader({
 	const [exporting, setExporting] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
+	// UX-1: brag-mode drawer state.
+	const [bragOpen, setBragOpen] = useState(false);
 
 	// Wave-22.6-review fix: previously a dead button (no onClick). For a
 	// CFO-sharing use case this was the single most-clicked control in
@@ -229,6 +232,23 @@ function StickyHeader({
 						})}
 					</div>
 
+					{/* UX-1 — "O que foi analisado" trigger. Brag-mode drawer.
+					    Texto explícito (não icon-only) porque é a primeira
+					    impressão de "trabalho feito" — deve gritar. Stack ao
+					    lado dos ícones de share/export. */}
+					<button
+						type="button"
+						onClick={() => setBragOpen(true)}
+						aria-label="O que foi analisado este mês"
+						title="Veja a cobertura completa da análise"
+						className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-edge bg-surface-card px-3 text-[12px] font-medium text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
+					>
+						<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4}>
+							<circle cx="8" cy="8" r="6" />
+							<path strokeLinecap="round" d="M8 5.5v3M8 10.5v.2" />
+						</svg>
+						<span>O que foi analisado</span>
+					</button>
 					{/* Share + Export — icon-only with tooltip on hover.
 					    Shape mirrors the close button (right) so the row reads
 					    as a uniform action cluster. State (copied/error/
@@ -308,6 +328,15 @@ function StickyHeader({
 					)}
 				</div>
 			</div>
+			{/* UX-1 drawer mounted at the StickyHeader level so it's
+			    available regardless of which view mode the plan is in. */}
+			<AnalysisStatsDrawer
+				open={bragOpen}
+				onClose={() => setBragOpen(false)}
+				envId={plan.environmentId}
+				month={plan.month}
+				monthLabel={formatMonthLabel(plan.month)}
+			/>
 		</div>
 	);
 }

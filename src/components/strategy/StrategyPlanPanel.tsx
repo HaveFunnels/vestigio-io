@@ -14,6 +14,7 @@ import NextSteps from "./sections/NextSteps";
 import ValuePreview from "./sections/ValuePreview";
 import MemoryRollups from "./sections/MemoryRollups";
 import MonthlyThesis from "./sections/MonthlyThesis";
+import AttributionTimeline from "./sections/AttributionTimeline";
 import Continuity from "./sections/Continuity";
 import CrossCustomerPattern from "./sections/CrossCustomerPattern";
 // Wave 22.8 review — Copy Lens and Maps were moved out of the main
@@ -504,6 +505,20 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				<div data-toc-id="hero">
 					<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} />
 				</div>
+				{/* #7 — Placar do time. Renderiza logo após o Hero pra
+				    transformar o "Recuperado" agregado em atribuição
+				    nominal. Self-hide quando plano antigo sem o campo.
+				    Em modo Resumo também aparece — é a peça que mais
+				    converte "número" em "esforço humano". */}
+				{!isResumo && (
+					<div data-toc-id="attribution">
+						<AttributionTimeline
+							timeline={plan.attributionTimeline}
+							total={plan.attributionTotal}
+							monthLabel={monthLabel}
+						/>
+					</div>
+				)}
 				{/* E3 — continuity. Em modo Resumo renderiza compact
 				    (so o headline delta). Self-hide em mes-1. */}
 				<div data-toc-id="continuity">

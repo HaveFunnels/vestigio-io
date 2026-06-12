@@ -534,6 +534,53 @@ export async function GET(request: Request, { params }: RouteParams) {
 	const memoryRollups = plan.memoryRollupsJson as any;
 	const valuePreview = plan.valuePreviewJson as any;
 
+	// #7 Action Attribution Timeline — UserActions marcadas como done
+	// E verifiedResolvedAt confirmado pelo ciclo seguinte, dentro da
+	// janela do plano. Cada row carrega o nome do humano que fechou
+	// (assignedTo), o título da Action, o baselineImpact, e a data de
+	// verificação. UI renderiza "seu time recuperou R$ X porque
+	// Marcus fechou Y em 24/Nov". Usa baselineImpactMidpoint (snapshot
+	// no momento da criação da Action) — não o midpoint atual da
+	// finding já resolvida (que é zero).
+	const attributionRowsRaw = await prisma.userAction.findMany({
+		where: {
+			environmentId: envId,
+			status: "done",
+			verifiedResolvedAt: {
+				gte: monthStartForPlan,
+				lt: monthEndForPlan,
+				not: null,
+			},
+		},
+		select: {
+			id: true,
+			title: true,
+			verifiedResolvedAt: true,
+			baselineImpactMidpoint: true,
+			doneAt: true,
+			assignedTo: { select: { name: true, email: true } },
+		},
+		orderBy: { verifiedResolvedAt: "desc" },
+		take: 20,
+	});
+	const attributionTimeline = attributionRowsRaw.map((row) => ({
+		id: row.id,
+		title: row.title,
+		// Nome humano-amigável; cai pro email local-part quando name
+		// não está setado. Se nem isso, "alguém do time".
+		ownerLabel:
+			row.assignedTo?.name ??
+			row.assignedTo?.email?.split("@")[0] ??
+			"alguém do time",
+		verifiedResolvedAt: row.verifiedResolvedAt?.toISOString() ?? null,
+		doneAt: row.doneAt?.toISOString() ?? null,
+		baselineImpactMidpoint: row.baselineImpactMidpoint ?? 0,
+	}));
+	const attributionTotal = attributionTimeline.reduce(
+		(a, r) => a + (r.baselineImpactMidpoint ?? 0),
+		0,
+	);
+
 	return NextResponse.json({
 		id: plan.id,
 		environmentId: plan.environmentId,
@@ -561,6 +608,8 @@ export async function GET(request: Request, { params }: RouteParams) {
 		impersonators: (plan as any).impersonatorsJson ?? null,
 		maps: (plan as any).mapsJson ?? null,
 		packDistribution,
+		attributionTimeline,
+		attributionTotal,
 		narrativeWhatHappened: plan.narrativeWhatHappened,
 		valuePreviewNarrative: plan.valuePreviewNarrative,
 		valuePreview,

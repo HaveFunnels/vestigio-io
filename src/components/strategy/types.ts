@@ -386,6 +386,22 @@ export interface StrategyPlan {
 		count: number;
 		sharePct: number;
 	}>;
+	/** #7 — Action Attribution Timeline. UserActions com status=done +
+	 *  verifiedResolvedAt confirmado dentro da janela do plano. UI
+	 *  renderiza "seu time recuperou R$ X porque Y fechou Z em DD/Nov".
+	 *  Vazio quando nada foi recuperado no mês — UI hide a seção. */
+	attributionTimeline?: Array<{
+		id: string;
+		title: string;
+		ownerLabel: string;
+		verifiedResolvedAt: string | null;
+		doneAt: string | null;
+		baselineImpactMidpoint: number;
+	}>;
+	/** Soma dos baselineImpactMidpoint do attributionTimeline. Bate com
+	 *  o heroMetrics.capturedMid quando o plano persistido ainda não
+	 *  regenerou — UI usa esse total como número primário. */
+	attributionTotal?: number;
 	narrativeWhatHappened: string;
 	valuePreviewNarrative: string;
 	valuePreview: ValuePreview;

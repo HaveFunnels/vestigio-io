@@ -92,6 +92,19 @@ Pré-trabalho do Surface Audit wave (2026-06-07): NetworkSurface model, Katana `
 
 `McpPromptEvent`, `McpSession`, `McpSuggestionClick`, `PlaybookRun` em `prisma/schema.prisma:1375-1424`. Write paths em `apps/platform/mcp-persistence.ts` continuam ativos; zero reads em prod. Decisão do fundador: manter como está — vai ser necessário um dia, sem urgência. Quando ativar, wire um dashboard de uso em `/app/admin/` lendo as 4 tabelas (estimativa 2-3 dias).
 
+### Screenshot evidence como MCP chat tool
+
+Provas visuais (captures de página com bounding box) reframadas como **tool do copilot** em vez de auto-captura em background. Customer pergunta no chat ("tira screenshot de /checkout focando no CTA") → tool `capture_visual_evidence` roda Playwright → retorna imagem inline com bbox opcional.
+
+Por que deferido: arquitetura mais limpa (sem novas tabelas, sem cron, sem lifecycle complexo) mas precisa de R2 provisionado + decisão de quando integrar com Vestigio Copilot (Wave 3.14). Esforço estimado: ~3.5 dias.
+
+**Hook nas findings (lightweight)**: botão "Tirar screenshot →" no `FindingDetailPanel` que abre o chat com prompt pré-preenchido. Best of both: descobribilidade no drawer + execução natural no chat.
+
+Pré-requisitos pra ativar:
+- Provisionar R2 (mesmo bucket que homepage com prefix `screenshots/chat/` + lifecycle 3 dias)
+- Confirmar credenciais R2 nas env vars
+- Decidir se entra na próxima Wave do Copilot ou em release dedicado
+
 ## Won't (rejeitados estrategicamente)
 
 - **SAST/DAST product line** — fora do escopo de revenue protection

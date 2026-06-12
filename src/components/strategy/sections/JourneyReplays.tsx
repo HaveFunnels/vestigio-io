@@ -299,7 +299,7 @@ function PixelInstallHero({ envId, sessionCount }: { envId: string; sessionCount
 							Veja onde a receita escapa em tempo real
 						</h3>
 						<p className="mt-1.5 text-[13px] leading-relaxed text-content-secondary">
-							Sem o pixel Vestigio instalado, esta seção fica desbloqueada. Cole o snippet abaixo nas páginas comerciais e o próximo plano vai mostrar as 3 jornadas mais críticas do mês — sessões reais de buyers perdendo dinheiro, com timeline e diagnóstico.
+							Esta seção precisa do pixel Vestigio instalado. Cole o snippet abaixo nas páginas comerciais e o próximo plano vai mostrar as 3 jornadas mais críticas do mês — sessões reais de buyers perdendo dinheiro, com timeline e diagnóstico.
 						</p>
 						{sessionCount > 0 && (
 							<p className="mt-2 text-[11.5px] text-content-muted">

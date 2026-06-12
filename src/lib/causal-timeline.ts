@@ -25,7 +25,14 @@ import { prisma } from "@/libs/prismaDb";
 
 export interface CausalTimelineEvent {
 	at: string; // ISO date
-	kind: "finding_created" | "cycle_completed" | "neighbor_finding" | "status_transition" | "regression_detected";
+	kind:
+		| "finding_created"
+		| "cycle_completed"
+		| "neighbor_finding"
+		| "status_transition"
+		| "regression_detected"
+		| "tech_added"
+		| "tech_removed";
 	title: string;
 	detail: string | null;
 }
@@ -163,6 +170,20 @@ export async function reconstructCausalTimeline(
 			: `Há ${windowDays} ${windowDays === 1 ? "dia" : "dias"} · ainda em aberto`,
 	});
 
+	// 1.5 Eventos finos: mudanças no stack entre o ciclo saudável anterior
+	// e o ciclo onde a finding apareceu. Detecta novas tecnologias
+	// (Klaviyo apareceu, GTM removido, etc.) — o sinal forense mais útil
+	// pra "o que mudou".
+	if (priorCycle?.completedAt && finding.cycleId) {
+		const stackEvents = await detectStackChanges(
+			envId,
+			priorCycle.id,
+			finding.cycleId,
+			firstObservedAt,
+		);
+		events.push(...stackEvents);
+	}
+
 	// 2. Vizinhos: outros findings criados na mesma surface, ±NEIGHBOR_WINDOW_DAYS
 	const neighborStart = new Date(firstObservedAt.getTime() - NEIGHBOR_WINDOW_DAYS * SECONDS_PER_DAY * 1000);
 	const neighborEnd = new Date(firstObservedAt.getTime() + NEIGHBOR_WINDOW_DAYS * SECONDS_PER_DAY * 1000);
@@ -210,8 +231,12 @@ export async function reconstructCausalTimeline(
 	// Ordena por data ASC
 	events.sort((a, b) => (a.at < b.at ? -1 : 1));
 
+	const hasTechEvents = events.some(
+		(e) => e.kind === "tech_added" || e.kind === "tech_removed",
+	);
 	const hasCausalChain =
-		(priorState.label === "healthy") ||
+		priorState.label === "healthy" ||
+		hasTechEvents ||
 		neighbors.length > 0 ||
 		events.length > 1;
 
@@ -235,4 +260,119 @@ function humanizeInferenceKey(key: string): string {
 	return key
 		.replace(/_/g, " ")
 		.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// ──────────────────────────────────────────────
+// Stack change detection — eventos finos
+//
+// Compara TechnologyDetected evidence entre dois ciclos. Retorna
+// events de tech_added / tech_removed. Esse é o canal "Klaviyo
+// apareceu, GTM removido" — o sinal forense que conecta mudanças
+// concretas no site com o aparecimento da finding.
+//
+// Skipa silenciosamente quando não há dado (env novo, ciclos sem tech
+// detection). Sem evento gerado = sem ruído.
+// ──────────────────────────────────────────────
+
+interface TechSnapshot {
+	technology_key: string;
+	display_name: string;
+	category: string;
+}
+
+async function detectStackChanges(
+	envId: string,
+	priorCycleId: string,
+	currentCycleId: string,
+	stampAt: Date,
+): Promise<CausalTimelineEvent[]> {
+	const envRef = `environment:${envId}`;
+	const [priorTech, currentTech] = await Promise.all([
+		fetchTechFromCycle(envRef, priorCycleId),
+		fetchTechFromCycle(envRef, currentCycleId),
+	]);
+
+	const priorByKey = new Map(priorTech.map((t) => [t.technology_key, t]));
+	const currentByKey = new Map(currentTech.map((t) => [t.technology_key, t]));
+
+	const events: CausalTimelineEvent[] = [];
+
+	// Stampa tech events 1s ANTES da finding pra que apareçam acima na
+	// timeline (sort ASC). Date renderiza igual à finding (1s não afeta
+	// a precisão visual) — só garante a leitura cronológica correta:
+	// "Klaviyo adicionado → Vestigio identificou problema".
+	const techStamp = new Date(stampAt.getTime() - 1000).toISOString();
+
+	for (const [key, tech] of currentByKey) {
+		if (priorByKey.has(key)) continue;
+		events.push({
+			at: techStamp,
+			kind: "tech_added",
+			title: `${tech.display_name} adicionado ao site`,
+			detail: `Categoria: ${humanizeCategory(tech.category)}`,
+		});
+	}
+
+	for (const [key, tech] of priorByKey) {
+		if (currentByKey.has(key)) continue;
+		events.push({
+			at: techStamp,
+			kind: "tech_removed",
+			title: `${tech.display_name} removido do site`,
+			detail: `Categoria: ${humanizeCategory(tech.category)}`,
+		});
+	}
+
+	// Cap em 6 eventos pra não estourar a UI quando muitas mudanças
+	// acontecem no mesmo ciclo (ex: refator completo do front).
+	return events.slice(0, 6);
+}
+
+async function fetchTechFromCycle(
+	envRef: string,
+	cycleId: string,
+): Promise<TechSnapshot[]> {
+	const rows = await prisma.evidence.findMany({
+		where: {
+			environmentRef: envRef,
+			cycleRef: `audit_cycle:${cycleId}`,
+			evidenceType: "technology_detected",
+		},
+		select: { payload: true },
+		take: 200,
+	});
+
+	const byKey = new Map<string, TechSnapshot>();
+	for (const row of rows) {
+		try {
+			const p = JSON.parse(row.payload as unknown as string) as Record<string, unknown>;
+			const key = String(p.technology_key ?? "");
+			if (!key || byKey.has(key)) continue;
+			byKey.set(key, {
+				technology_key: key,
+				display_name: String(p.display_name ?? key),
+				category: String(p.category ?? "other"),
+			});
+		} catch {
+			// Skip malformed payload
+		}
+	}
+	return Array.from(byKey.values());
+}
+
+function humanizeCategory(cat: string): string {
+	const labels: Record<string, string> = {
+		platform: "Plataforma",
+		payment_provider: "Pagamento",
+		analytics: "Analytics",
+		tag_manager: "Tag manager",
+		support_widget: "Suporte / Chat",
+		consent_manager: "Cookie consent",
+		error_tracking: "Error tracking",
+		ab_testing: "A/B testing",
+		cdn: "CDN",
+		email_marketing: "Email marketing",
+		other: "Outros",
+	};
+	return labels[cat] ?? cat;
 }

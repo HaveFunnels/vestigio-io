@@ -24,7 +24,9 @@ interface TimelineEvent {
 		| "cycle_completed"
 		| "neighbor_finding"
 		| "status_transition"
-		| "regression_detected";
+		| "regression_detected"
+		| "tech_added"
+		| "tech_removed";
 	title: string;
 	detail: string | null;
 }
@@ -96,6 +98,10 @@ const KIND_STYLE: Record<TimelineEvent["kind"], { dot: string; ringColor: string
 	neighbor_finding: { dot: "bg-amber-400", ringColor: "ring-amber-500/30" },
 	status_transition: { dot: "bg-blue-400", ringColor: "ring-blue-500/30" },
 	regression_detected: { dot: "bg-rose-400", ringColor: "ring-rose-500/30" },
+	// Tech mudanças — violet pra ficar distinto dos outros eventos.
+	// Mesmo tom de add e remove (a diferenciação acontece no título).
+	tech_added: { dot: "bg-violet-400", ringColor: "ring-violet-500/30" },
+	tech_removed: { dot: "bg-violet-400", ringColor: "ring-violet-500/30" },
 };
 
 export default function CausalTimeline({ findingId, envId: explicitEnvId }: Props) {
@@ -216,7 +222,6 @@ export default function CausalTimeline({ findingId, envId: explicitEnvId }: Prop
 							);
 						})}
 					</div>
-
 				</>
 			)}
 		</DrawerSection>

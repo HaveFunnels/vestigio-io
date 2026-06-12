@@ -527,17 +527,24 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 								hasMapsData={!!plan.maps}
 							/>
 						</div>
-						<div data-toc-id="carteira">
-							<Carteira
-								competitor={plan.competitor}
-								impersonators={plan.impersonators}
-							/>
-						</div>
+						{/* Pulse promovido — antes vinha depois de Carteira/
+						    Sinais da marca. A narrativa autoral é a peça que
+						    diferencia: posicionada logo após Segments e antes
+						    de Carteira ela ancora a leitura editorialmente
+						    em vez de ficar parecendo só mais uma seção do
+						    fim. Customer eye lê tese → hero → segmentos →
+						    Pulse autoral → sinais de marca (data tangencial). */}
 						<div data-toc-id="narrative">
 							<WhatHappenedNarrative
 								narrative={plan.narrativeWhatHappened}
 								monthLabel={monthLabel}
 								packDistribution={plan.packDistribution}
+							/>
+						</div>
+						<div data-toc-id="carteira">
+							<Carteira
+								competitor={plan.competitor}
+								impersonators={plan.impersonators}
 							/>
 						</div>
 					</>

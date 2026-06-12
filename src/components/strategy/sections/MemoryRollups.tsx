@@ -7,6 +7,7 @@ import { ParentSize } from "@visx/responsive";
 import type { MemoryRollups as MemoryRollupsType, MemoryWindow } from "../types";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import { pickAnchors } from "@/lib/market-anchors";
 
 /*
  * Memory Rollups — "Memória de meses anteriores"
@@ -123,6 +124,37 @@ function MiniBarChart({
 	);
 }
 
+// ──────────────────────────────────────────────
+// MarketAnchors — substitui o slot "Comparação fica disponível em ~4
+// meses" por referências PÚBLICAS conhecidas (Baymard, HTTP Archive,
+// ProfitWell, Amazon). Comparação categórica, não estatística — não
+// depende de N de clientes Vestigio pra calibrar. Source citado inline
+// pra credibilidade.
+// ──────────────────────────────────────────────
+function MarketAnchors() {
+	const anchors = pickAnchors(3);
+	return (
+		<div className="mt-3 rounded-md border border-dashed border-edge bg-surface-inset/40 p-3">
+			<div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+				Referências de mercado
+			</div>
+			<div className="space-y-1.5">
+				{anchors.map((a) => (
+					<div key={a.metric} className="flex items-baseline justify-between gap-3 text-[11px]">
+						<span className="text-content-muted">{a.metric}</span>
+						<span className="shrink-0 font-mono font-semibold tabular-nums text-content">
+							{a.value}
+						</span>
+					</div>
+				))}
+				<div className="border-t border-edge/40 pt-1.5 text-[10px] text-content-faint">
+					Fontes: {Array.from(new Set(anchors.map((a) => a.source))).join(" · ")}
+				</div>
+			</div>
+		</div>
+	);
+}
+
 function RollupCard({
 	window,
 	idx,
@@ -225,13 +257,13 @@ function RollupCard({
 			)}
 
 			{emphasizeBenchmark && window.benchmarkAvailability && (
-				<div className="mt-3 rounded-md border border-dashed border-edge bg-surface-inset/40 p-2 text-[11px] text-content-muted">
-					{window.benchmarkAvailability === "available"
-						? "Comparação com sua categoria já disponível"
-						: window.benchmarkAvailability === "available_in_4_months"
-							? "Comparação com sua categoria fica disponível em ~4 meses (precisa de mais ciclos para calibrar a média)"
-							: "Comparação com sua categoria ainda indisponível"}
-				</div>
+				window.benchmarkAvailability === "available" ? (
+					<div className="mt-3 rounded-md border border-dashed border-edge bg-surface-inset/40 p-2 text-[11px] text-content-muted">
+						Comparação com sua categoria já disponível
+					</div>
+				) : (
+					<MarketAnchors />
+				)
 			)}
 		</motion.div>
 	);

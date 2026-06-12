@@ -118,6 +118,52 @@ interface StepCardProps {
 }
 
 // ──────────────────────────────────────────────
+// StakesPopover — hover state que converte o midpoint mensal
+// em narrativa de stakes acumulados. Renderiza absoluto à esquerda
+// do pill (right-full) para não invadir o conteúdo do step. Pure
+// CSS visibility via group-hover; sem state React, sem onMouseEnter/
+// Leave — evita janks de mount/unmount + dá fade-in suave.
+// ──────────────────────────────────────────────
+function StakesPopover({ monthly, currency }: { monthly: number; currency: string }) {
+	const weekly = monthly / 4.33;
+	const m3 = monthly * 3;
+	const m6 = monthly * 6;
+	const m12 = monthly * 12;
+	const fmt = (v: number) => fmtCurrencyUnits(v, currency, { zeroAsDash: true });
+	return (
+		<div
+			className="pointer-events-none absolute right-0 top-full z-30 mt-2 w-[280px] rounded-xl border border-edge bg-surface-card p-4 opacity-0 shadow-xl ring-1 ring-edge/40 transition-all duration-150 group-hover/stakes:pointer-events-auto group-hover/stakes:translate-y-0 group-hover/stakes:opacity-100"
+			role="tooltip"
+		>
+			<div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+				Custo de procrastinar
+			</div>
+			<div className="space-y-1.5 font-mono text-[12px] tabular-nums">
+				<div className="flex items-baseline justify-between gap-3">
+					<span className="text-content-muted">3 meses aberto</span>
+					<span className="font-semibold text-content">{fmt(m3)}</span>
+				</div>
+				<div className="flex items-baseline justify-between gap-3">
+					<span className="text-content-muted">6 meses aberto</span>
+					<span className="font-semibold text-content">{fmt(m6)}</span>
+				</div>
+				<div className="flex items-baseline justify-between gap-3 border-t border-edge/40 pt-1.5">
+					<span className="text-content-muted">12 meses aberto</span>
+					<span className="font-semibold text-rose-300">{fmt(m12)}</span>
+				</div>
+			</div>
+			<div className="mt-3 border-t border-edge/40 pt-2.5 text-[11px] leading-snug text-content-secondary">
+				Cada semana que passa adiciona{" "}
+				<span className="font-mono font-semibold tabular-nums text-content">
+					{fmt(weekly)}
+				</span>{" "}
+				não-recuperáveis.
+			</div>
+		</div>
+	);
+}
+
+// ──────────────────────────────────────────────
 // StatusDropdown — bespoke popover replacing the native <select> so
 // the trigger + menu match the rest of the plan visual language
 // (rounded-xl surface card, severity-tone hover, no user-agent
@@ -452,40 +498,50 @@ function StepCard({
 						)}
 					</div>
 					{step.combinedImpact.midpoint > 0 && (
-						<div
-							className={`shrink-0 rounded-lg border px-3 py-1.5 text-center ${
-								step.combinedImpact.midpoint >= 5000
-									? "border-rose-500/40 bg-rose-500/10"
-									: step.combinedImpact.midpoint >= 2000
-										? "border-amber-500/40 bg-amber-500/10"
-										: "border-edge bg-surface-inset"
-							}`}
-						>
+						// Stakes narrative tooltip — hover no pill mostra o
+						// custo composto se o passo ficar aberto. Customer
+						// que vê "R$ 6k/mês" entende o número, mas não
+						// necessariamente a urgência. O popover converte em
+						// stakes acumulados (3m / 6m / 12m + custo semanal)
+						// — desbloqueia a leitura de "isso é caro de
+						// procrastinar", não só "isso vale 6k".
+						<div className="group/stakes relative shrink-0">
 							<div
-								className={`text-[9px] font-semibold uppercase tracking-wider ${
+								className={`rounded-lg border px-3 py-1.5 text-center transition-colors ${
 									step.combinedImpact.midpoint >= 5000
-										? "text-rose-300/90"
+										? "border-rose-500/40 bg-rose-500/10 group-hover/stakes:border-rose-500/60"
 										: step.combinedImpact.midpoint >= 2000
-											? "text-amber-300/90"
-											: "text-content-faint"
+											? "border-amber-500/40 bg-amber-500/10 group-hover/stakes:border-amber-500/60"
+											: "border-edge bg-surface-inset group-hover/stakes:border-edge-focus"
 								}`}
 							>
-								perda potencial
+								<div
+									className={`text-[9px] font-semibold uppercase tracking-wider ${
+										step.combinedImpact.midpoint >= 5000
+											? "text-rose-300/90"
+											: step.combinedImpact.midpoint >= 2000
+												? "text-amber-300/90"
+												: "text-content-faint"
+									}`}
+								>
+									perda potencial
+								</div>
+								<div
+									className={`font-mono text-[13px] font-semibold tabular-nums ${
+										step.combinedImpact.midpoint >= 5000
+											? "text-rose-200"
+											: step.combinedImpact.midpoint >= 2000
+												? "text-amber-200"
+												: "text-content"
+									}`}
+								>
+									{fmtCurrencyUnits(step.combinedImpact.midpoint, currency, { zeroAsDash: true })}
+									<span className="text-[10px] font-normal opacity-70">
+										{" "}/mês
+									</span>
+								</div>
 							</div>
-							<div
-								className={`font-mono text-[13px] font-semibold tabular-nums ${
-									step.combinedImpact.midpoint >= 5000
-										? "text-rose-200"
-										: step.combinedImpact.midpoint >= 2000
-											? "text-amber-200"
-											: "text-content"
-								}`}
-							>
-								{fmtCurrencyUnits(step.combinedImpact.midpoint, currency, { zeroAsDash: true })}
-								<span className="text-[10px] font-normal opacity-70">
-									{" "}/mês
-								</span>
-							</div>
+							<StakesPopover monthly={step.combinedImpact.midpoint} currency={currency} />
 						</div>
 					)}
 				</div>

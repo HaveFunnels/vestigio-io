@@ -17,6 +17,7 @@ import MonthlyThesis from "./sections/MonthlyThesis";
 import AttributionTimeline from "./sections/AttributionTimeline";
 import AnalysisStatsDrawer from "./sections/AnalysisStatsDrawer";
 import EcosystemSection from "./sections/EcosystemSection";
+import JourneyReplays from "./sections/JourneyReplays";
 import Continuity from "./sections/Continuity";
 import CrossCustomerPattern from "./sections/CrossCustomerPattern";
 // Wave 22.8 review — Copy Lens and Maps were moved out of the main
@@ -614,6 +615,14 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 								competitor={plan.competitor}
 								impersonators={plan.impersonators}
 							/>
+						</div>
+						{/* Bundle D — Buyer Journey Replays. Sessões reais
+						    reconstituídas. Posicionado após Carteira por
+						    decisão do fundador. Self-hide nunca — quando
+						    pixel não está instalado, renderiza hero forte
+						    de instalação. */}
+						<div data-toc-id="journeys">
+							<JourneyReplays envId={plan.environmentId} month={plan.month} />
 						</div>
 					</>
 				)}

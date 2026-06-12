@@ -104,17 +104,21 @@ function StickyHeader({
 	onClose,
 	viewMode,
 	onViewModeChange,
+	onOpenBrag,
 }: {
 	plan: StrategyPlan;
 	onClose?: () => void;
 	viewMode: PlanViewMode;
 	onViewModeChange: (mode: PlanViewMode) => void;
+	/** UX-1 brag drawer trigger. State mora em StrategyPlanPanel pra que
+	 *  o drawer seja renderizado FORA do stacking context do StickyHeader
+	 *  (que tem backdrop-blur — vira containing block pra position:fixed,
+	 *  empurra o drawer pra trás do plano). */
+	onOpenBrag: () => void;
 }) {
 	const [exporting, setExporting] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
-	// UX-1: brag-mode drawer state.
-	const [bragOpen, setBragOpen] = useState(false);
 
 	// Wave-22.6-review fix: previously a dead button (no onClick). For a
 	// CFO-sharing use case this was the single most-clicked control in
@@ -241,7 +245,7 @@ function StickyHeader({
 					    lado dos ícones de share/export. */}
 					<button
 						type="button"
-						onClick={() => setBragOpen(true)}
+						onClick={onOpenBrag}
 						aria-label="O que foi analisado este mês"
 						title="Veja a cobertura completa da análise"
 						className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-edge bg-surface-card px-3 text-[12px] font-medium text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
@@ -331,15 +335,6 @@ function StickyHeader({
 					)}
 				</div>
 			</div>
-			{/* UX-1 drawer mounted at the StickyHeader level so it's
-			    available regardless of which view mode the plan is in. */}
-			<AnalysisStatsDrawer
-				open={bragOpen}
-				onClose={() => setBragOpen(false)}
-				envId={plan.environmentId}
-				month={plan.month}
-				monthLabel={formatMonthLabel(plan.month)}
-			/>
 		</div>
 	);
 }
@@ -420,6 +415,11 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 	const [viewMode, setViewMode] = useState<PlanViewMode>(() =>
 		isPrint ? "completo" : resolveInitialViewMode(searchParams),
 	);
+	// UX-1 brag drawer — state vive aqui (top-level do plan) e o
+	// drawer é renderizado fora do StickyHeader (que tem backdrop-blur,
+	// e isso cria stacking context que prenderia o drawer position:
+	// fixed atrás do plano).
+	const [bragOpen, setBragOpen] = useState(false);
 	const { track } = useTrack();
 	function handleViewModeChange(next: PlanViewMode) {
 		setViewMode(next);
@@ -478,6 +478,20 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 					onClose={onClose}
 					viewMode={viewMode}
 					onViewModeChange={handleViewModeChange}
+					onOpenBrag={() => setBragOpen(true)}
+				/>
+			)}
+			{/* Brag drawer renderizado FORA do StickyHeader pra escapar
+			    do stacking context criado por backdrop-blur-md. Drawer
+			    usa position:fixed + z-50, mas backdrop-filter no parent
+			    cria containing block que prende elementos fixos. */}
+			{!isPrint && showStickyHeader && (
+				<AnalysisStatsDrawer
+					open={bragOpen}
+					onClose={() => setBragOpen(false)}
+					envId={plan.environmentId}
+					month={plan.month}
+					monthLabel={formatMonthLabel(plan.month)}
 				/>
 			)}
 

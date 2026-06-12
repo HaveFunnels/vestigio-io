@@ -217,10 +217,6 @@ export default function CausalTimeline({ findingId, envId: explicitEnvId }: Prop
 						})}
 					</div>
 
-					{/* Metodologia caveat */}
-					<div className="mt-4 border-t border-edge/40 pt-3 text-[11px] leading-relaxed text-content-muted">
-						Reconstrução baseada em ciclos completos. Eventos finos (mudança de script, header HTTP) ainda não aparecem na timeline — em breve.
-					</div>
 				</>
 			)}
 		</DrawerSection>

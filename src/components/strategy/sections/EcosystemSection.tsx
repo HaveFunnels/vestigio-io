@@ -351,10 +351,6 @@ function EcosystemHealthCard({
 					))}
 				</div>
 
-				{/* Caveat de produto */}
-				<div className="mt-5 border-t border-edge/40 pt-3 text-[11px] leading-relaxed text-content-muted">
-					Vendors detectados pelo crawl da Vestigio no último ciclo. Status pages externas são links pra checagem manual — Vestigio não polla automaticamente (ainda).
-				</div>
 			</div>
 		</motion.section>
 	);

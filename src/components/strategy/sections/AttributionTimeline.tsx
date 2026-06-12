@@ -148,10 +148,6 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 						})}
 					</div>
 
-					<div className="mt-4 border-t border-edge/40 pt-3 text-[11px] leading-relaxed text-content-muted">
-						<span className="font-medium text-content-secondary">Metodologia:</span>{" "}
-						cada linha representa uma ação marcada como <span className="font-medium">done</span> cujo ciclo seguinte confirmou que a finding ligada não aparece mais. O valor atribuído é o <span className="font-medium">baseline</span> do impacto no momento da criação da ação — não o impacto atual da finding (já resolvida).
-					</div>
 				</div>
 			)}
 		</motion.section>

@@ -16,6 +16,7 @@ import MemoryRollups from "./sections/MemoryRollups";
 import MonthlyThesis from "./sections/MonthlyThesis";
 import AttributionTimeline from "./sections/AttributionTimeline";
 import AnalysisStatsDrawer from "./sections/AnalysisStatsDrawer";
+import EcosystemSection from "./sections/EcosystemSection";
 import Continuity from "./sections/Continuity";
 import CrossCustomerPattern from "./sections/CrossCustomerPattern";
 // Wave 22.8 review — Copy Lens and Maps were moved out of the main
@@ -522,6 +523,15 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 					})()}
 				/>
 
+				{/* Bundle B — Banner de superfícies críticas down. Self-hide
+				    quando não há nada caído. Renderiza acima da thesis pra
+				    ser a primeira coisa que o cliente vê quando algo está
+				    rotineiramente quebrado. */}
+				<EcosystemSection
+					envId={plan.environmentId}
+					month={plan.month}
+					mode="banner-only"
+				/>
 				{/* E1 — single-sentence thesis above the hero. Frames the
 				    reading angle for the rest of the plan and signs as
 				    Vestigio so the doc reads as authored analysis, not
@@ -545,6 +555,20 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 							timeline={plan.attributionTimeline}
 							total={plan.attributionTotal}
 							monthLabel={monthLabel}
+						/>
+					</div>
+				)}
+				{/* Bundle B — Saúde do ecossistema (stack + advisories).
+				    Renderiza só a section (banner já saiu no topo). Self-
+				    hide quando não há stack detectado nem advisories.
+				    Posicionado após attribution pra dar o "agora que você
+				    viu o placar, aqui está o que está rodando no fundo". */}
+				{!isResumo && (
+					<div data-toc-id="ecosystem">
+						<EcosystemSection
+							envId={plan.environmentId}
+							month={plan.month}
+							mode="section-only"
 						/>
 					</div>
 				)}

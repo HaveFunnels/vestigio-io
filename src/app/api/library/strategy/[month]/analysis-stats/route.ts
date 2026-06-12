@@ -36,18 +36,38 @@ export async function GET(request: Request, { params }: RouteParams) {
 		return NextResponse.json({ message: "envId is required" }, { status: 400 });
 	}
 
-	const authed = await isAuthorized();
-	if (!authed) {
+	const user = await isAuthorized();
+	if (!user) {
 		return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 	}
 
-	// Verify the user can access this env (org-membership)
+	// Load env with org membership info so we can authorize this
+	// caller. Mirrors the pattern in the parent route — prevents IDOR
+	// (any authenticated user enumerating envIds and reading stats
+	// for envs they don't belong to).
 	const env = await prisma.environment.findUnique({
 		where: { id: envId },
-		select: { id: true, organizationId: true, domain: true },
+		select: {
+			id: true,
+			organizationId: true,
+			domain: true,
+			organization: {
+				select: {
+					ownerId: true,
+					memberships: { select: { userId: true } },
+				},
+			},
+		},
 	});
 	if (!env) {
 		return NextResponse.json({ message: "Environment not found" }, { status: 404 });
+	}
+	const userId = (user as { id?: string }).id;
+	const isOwner = !!userId && env.organization?.ownerId === userId;
+	const isMember = !!userId && !!env.organization?.memberships?.some((m) => m.userId === userId);
+	const isSiteAdmin = (user as { role?: string }).role === "ADMIN";
+	if (!isOwner && !isMember && !isSiteAdmin) {
+		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 	}
 
 	// Mês target

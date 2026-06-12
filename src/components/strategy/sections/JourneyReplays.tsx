@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import SideDrawer from "@/components/console/SideDrawer";
 
 // ──────────────────────────────────────────────
 // Bundle D — Journey Replays section
@@ -254,6 +255,7 @@ function formatTimestamp(seconds: number): string {
 
 function PixelInstallHero({ envId, sessionCount }: { envId: string; sessionCount: number }) {
 	const [copied, setCopied] = useState(false);
+	const [drawerOpen, setDrawerOpen] = useState(false);
 	// Snippet sem SRI por design: vestigio.js é um pixel versionado em
 	// app.vestigio.io que evolui sem que o cliente possa rehashear o
 	// hash a cada deploy nosso. Mesmo formato usado em
@@ -327,14 +329,189 @@ function PixelInstallHero({ envId, sessionCount }: { envId: string; sessionCount
 					>
 						{copied ? "Snippet copiado ✓" : "Copiar snippet"}
 					</button>
-					<a
-						href="/app/settings/data-sources"
+					<button
+						type="button"
+						onClick={() => setDrawerOpen(true)}
 						className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-surface-card px-3 py-1.5 text-[12px] font-medium text-content-secondary transition-colors hover:border-edge-focus hover:text-content"
 					>
 						Instruções de instalação →
-					</a>
+					</button>
 				</div>
 			</div>
+			<PixelInstructionsDrawer
+				open={drawerOpen}
+				onClose={() => setDrawerOpen(false)}
+				envId={envId}
+			/>
 		</motion.section>
+	);
+}
+
+// ──────────────────────────────────────────────
+// Pixel install instructions drawer
+//
+// Conteúdo focado em "como instalar de verdade" — não só o snippet.
+// Cobre as 4 plataformas mais comuns + como verificar via DevTools.
+// Reusa o SideDrawer console já alinhado com o visual do plan.
+// ──────────────────────────────────────────────
+
+function PixelInstructionsDrawer({
+	open,
+	onClose,
+	envId,
+}: {
+	open: boolean;
+	onClose: () => void;
+	envId: string;
+}) {
+	const [copied, setCopied] = useState(false);
+	const snippet = `<script async src="https://app.vestigio.io/snippet/vestigio.js" data-env="${envId}"></script>`;
+
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(snippet);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch {
+			// silent
+		}
+	};
+
+	return (
+		<SideDrawer open={open} onClose={onClose} title="Instruções do pixel Vestigio">
+			<div className="space-y-6">
+				{/* Intro */}
+				<div className="text-[13px] leading-relaxed text-content-secondary">
+					O pixel é um snippet JavaScript de ~12KB que coleta eventos comportamentais nas suas páginas comerciais (page views, cliques em CTA, friction patterns) e envia anonimizado pra Vestigio. Sem cookies de tracking, sem PII.
+				</div>
+
+				{/* Snippet */}
+				<DrawerStep number={1} title="Copie o snippet">
+					<div className="rounded-xl border border-edge bg-surface-inset/40 p-3">
+						<code className="block overflow-x-auto whitespace-nowrap font-mono text-[11.5px] leading-relaxed text-content-secondary">
+							{snippet}
+						</code>
+					</div>
+					<button
+						type="button"
+						onClick={handleCopy}
+						className={`mt-2 inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12px] font-medium transition-colors ${
+							copied
+								? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+								: "border-edge bg-surface-card text-content-secondary hover:border-edge-focus hover:text-content"
+						}`}
+					>
+						{copied ? "Copiado ✓" : "Copiar snippet"}
+					</button>
+				</DrawerStep>
+
+				{/* Onde instalar */}
+				<DrawerStep number={2} title="Cole antes do </head>">
+					<div className="space-y-3 text-[12.5px] leading-relaxed text-content-secondary">
+						<p>
+							O pixel precisa carregar em <span className="font-medium text-content">todas as páginas comerciais</span> (homepage, produto, carrinho, checkout, thank-you). Quanto mais cobertura, mais jornadas a Vestigio reconstrói.
+						</p>
+						<div className="space-y-2">
+							<PlatformHint
+								name="Shopify"
+								steps={[
+									"Online Store → Themes → Edit code",
+									"Encontre theme.liquid",
+									"Cole o snippet logo antes de </head>",
+								]}
+							/>
+							<PlatformHint
+								name="WordPress"
+								steps={[
+									"Instale plugin Insert Headers and Footers (WPCode)",
+									"Cole o snippet no campo Header",
+									"Salve",
+								]}
+							/>
+							<PlatformHint
+								name="Webflow"
+								steps={[
+									"Project Settings → Custom Code",
+									"Cole o snippet em Head Code",
+									"Publique o site",
+								]}
+							/>
+							<PlatformHint
+								name="HTML custom / Next.js / outros"
+								steps={[
+									"Cole o snippet no <head> de cada template",
+									"Em Next.js: app/layout.tsx via <Script strategy=\"afterInteractive\">",
+								]}
+							/>
+						</div>
+					</div>
+				</DrawerStep>
+
+				{/* Verificar */}
+				<DrawerStep number={3} title="Verifique que está rodando">
+					<div className="space-y-3 text-[12.5px] leading-relaxed text-content-secondary">
+						<p>Abra qualquer página comercial sua e:</p>
+						<ol className="ml-4 list-decimal space-y-1.5">
+							<li>Abra DevTools (F12) → aba <span className="font-mono font-medium text-content">Network</span></li>
+							<li>Filtre por <span className="font-mono font-medium text-content">vestigio.js</span></li>
+							<li>Recarregue a página</li>
+							<li>Deve aparecer 1 request com status <span className="font-mono font-medium text-emerald-300">200</span></li>
+						</ol>
+						<p className="rounded-lg border border-edge/40 bg-surface-inset/30 p-3 text-[11.5px]">
+							<span className="font-medium text-content">Próximo passo:</span> depois de 5 sessões coletadas, a seção <span className="italic">Jornadas que custaram dinheiro</span> ativa automaticamente no próximo plano mensal.
+						</p>
+					</div>
+				</DrawerStep>
+
+				{/* Privacy */}
+				<div className="rounded-xl border border-edge/40 bg-surface-inset/30 p-4">
+					<div className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+						Privacidade
+					</div>
+					<p className="text-[11.5px] leading-relaxed text-content-muted">
+						Sem cookies de tracking persistentes. Session ID rotaciona a cada visita. IP é hasheado com salt diário no servidor (não reversível). Sem captura de campos sensíveis (CPF, cartão, senha) — só metadata estrutural. Compatível com LGPD e GDPR sob legítimo interesse.
+					</p>
+				</div>
+			</div>
+		</SideDrawer>
+	);
+}
+
+function DrawerStep({
+	number,
+	title,
+	children,
+}: {
+	number: number;
+	title: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div>
+			<div className="mb-3 flex items-baseline gap-2">
+				<span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset font-serif text-[11px] font-semibold text-content">
+					{number}
+				</span>
+				<h3 className="font-serif text-[15px] font-medium tracking-tight text-content">
+					{title}
+				</h3>
+			</div>
+			<div className="ml-7">{children}</div>
+		</div>
+	);
+}
+
+function PlatformHint({ name, steps }: { name: string; steps: string[] }) {
+	return (
+		<details className="rounded-lg border border-edge/40 bg-surface-inset/20">
+			<summary className="cursor-pointer px-3 py-2 text-[12px] font-medium text-content-secondary hover:text-content">
+				{name}
+			</summary>
+			<ol className="ml-7 list-decimal space-y-1 px-3 pb-3 pt-1 text-[11.5px] text-content-muted">
+				{steps.map((s, i) => (
+					<li key={i}>{s}</li>
+				))}
+			</ol>
+		</details>
 	);
 }

@@ -18,6 +18,7 @@ import AttributionTimeline from "./sections/AttributionTimeline";
 import AnalysisStatsDrawer from "./sections/AnalysisStatsDrawer";
 import EcosystemSection from "./sections/EcosystemSection";
 import JourneyReplays from "./sections/JourneyReplays";
+import PredictiveLayer from "./sections/PredictiveLayer";
 import Continuity from "./sections/Continuity";
 import CrossCustomerPattern from "./sections/CrossCustomerPattern";
 // Wave 22.8 review — Copy Lens and Maps were moved out of the main
@@ -625,6 +626,14 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 							<JourneyReplays envId={plan.environmentId} month={plan.month} />
 						</div>
 					</>
+				)}
+				{/* Bundle E — Predictive Layer. Antes de NextSteps porque
+				    breach alerts informam priorização do plano. Self-hide
+				    silencioso quando env tem < 4 semanas de histórico. */}
+				{!isResumo && (
+					<div data-toc-id="predictive">
+						<PredictiveLayer envId={plan.environmentId} month={plan.month} />
+					</div>
 				)}
 				<div data-toc-id="next-steps">
 					<NextSteps

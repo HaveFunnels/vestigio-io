@@ -22,6 +22,10 @@ import {
 	SliderInputStep,
 } from "@/components/form-steps";
 import type { CardOption } from "@/components/form-steps";
+import CrawlStatusWidget from "@/components/form-steps/CrawlStatusWidget";
+import BenchmarkFrame from "@/components/form-steps/interstitials/BenchmarkFrame";
+import AnticipationFrame from "@/components/form-steps/interstitials/AnticipationFrame";
+import FindingTeaserFrame from "@/components/form-steps/interstitials/FindingTeaserFrame";
 import {
 	ShoppingCartIcon,
 	UsersThreeIcon,
@@ -199,6 +203,22 @@ const WHY_NOW_OPTIONS: CardOption<WhyNow>[] = [
 	{ value: "exploring", label: "Curiosidade — explorando opções", icon: CompassIcon },
 ];
 
+// Pure helper — derive an email placeholder rooted in the visitor's
+// own domain so the field doesn't feel like a generic form. "voce@<domain>"
+// signals back "we kept track of what you typed". Falls back to a
+// sensible default if domain is empty or malformed.
+function inferEmailPlaceholder(domain: string | null | undefined): string {
+	if (!domain) return "voce@suaempresa.com";
+	const clean = domain
+		.trim()
+		.replace(/^https?:\/\//i, "")
+		.replace(/^www\./i, "")
+		.replace(/\/.*$/, "")
+		.toLowerCase();
+	if (!clean || !clean.includes(".")) return "voce@suaempresa.com";
+	return `voce@${clean}`;
+}
+
 export default function LpAuditPage() {
 	const f = useLpAuditForm();
 
@@ -214,6 +234,32 @@ export default function LpAuditPage() {
 				: f.form.businessModel === "enterprise"
 					? LP_STEPS_ENTERPRISE
 					: LP_STEPS_BASE;
+
+	// Active interstitial renderer — supersedes the current screen until
+	// the visitor dismisses. Keyed by variant so the registry can add
+	// new variants by extending the union without touching this switch.
+	const interstitial = f.activeInterstitial;
+	const interstitialNode = interstitial
+		? interstitial.variant === "benchmark" ? (
+				<BenchmarkFrame
+					{...interstitial}
+					continueLabel="Continuar"
+					onContinue={f.dismissInterstitial}
+				/>
+			) : interstitial.variant === "anticipation" ? (
+				<AnticipationFrame
+					{...interstitial}
+					continueLabel="Pedir meu relatório"
+					onContinue={f.dismissInterstitial}
+				/>
+			) : interstitial.variant === "finding_teaser" ? (
+				<FindingTeaserFrame
+					{...interstitial}
+					continueLabel="Continuar"
+					onContinue={f.dismissInterstitial}
+				/>
+			) : null
+		: null;
 
 	return (
 		<>
@@ -241,14 +287,26 @@ export default function LpAuditPage() {
 				/>
 			</div>
 
+			{/* Sticky crawl status — shows after step 1 dispatches early-crawl.
+			    Renders above the StepShell so the visitor sees the audit
+			    already working while they keep filling. */}
+			<div className="pointer-events-none fixed inset-x-0 top-0 z-20">
+				<div className="pointer-events-auto">
+					<CrawlStatusWidget progress={f.crawlProgress} />
+				</div>
+			</div>
+
 			<StepShell
 				stepIndex={f.stepIndex}
 				totalSteps={f.totalSteps}
 				onBack={f.prev}
 				steps={stepLabels}
 			>
+				{/* Interstitial supersedes the step content when active */}
+				{interstitialNode}
+
 				{/* ── Screen 1: Domain ── */}
-				{f.currentScreen === "domain" && (
+				{!interstitialNode && f.currentScreen === "domain" && (
 					<TextInputStep
 						title="Qual site devemos analisar?"
 						subtitle="Só analisamos páginas públicas. Nenhum acesso ao seu código ou dados."
@@ -268,7 +326,7 @@ export default function LpAuditPage() {
 								</>
 							) : undefined
 						}
-						buttonLabel="Continuar"
+						buttonLabel="Iniciar análise"
 						onSubmit={f.next}
 						disabled={f.form.domain.length === 0 || f.domainChecking}
 						loading={f.domainChecking || f.submitting}
@@ -276,7 +334,7 @@ export default function LpAuditPage() {
 				)}
 
 				{/* ── Screen 2: Business Type (cards, auto-advance) ── */}
-				{f.currentScreen === "business_type" && (
+				{!interstitialNode && f.currentScreen === "business_type" && (
 					<CardSelectionStep
 						title="Que tipo de negócio é o seu?"
 						subtitle="Isso muda como calculamos o impacto financeiro."
@@ -292,7 +350,7 @@ export default function LpAuditPage() {
 				    language labels (Saúde / Jurídico / Contábil /
 				    etc.) so the buyer recognizes themselves in
 				    half a glance. */}
-				{f.currentScreen === "service_category" && (
+				{!interstitialNode && f.currentScreen === "service_category" && (
 					<CardSelectionStep
 						title="O que vocês fazem?"
 						subtitle="Escolha o que mais se aproxima — usamos isso pra calibrar a análise."
@@ -306,7 +364,7 @@ export default function LpAuditPage() {
 				    iOS-only sites need Smart App Banner; Android-only
 				    need App Links setup; both-platform sites need
 				    smart-banner-with-fallback. */}
-				{f.currentScreen === "app_platform" && (
+				{!interstitialNode && f.currentScreen === "app_platform" && (
 					<CardSelectionStep
 						title="Em qual loja o seu app está?"
 						subtitle="Diferentes lojas pedem ajustes diferentes no site pra puxar mais install."
@@ -320,7 +378,7 @@ export default function LpAuditPage() {
 				    enterprise detectors. Audience is technical (CTO /
 				    CISO / Head of Growth) so the labels and
 				    descriptions can use industry jargon. */}
-				{f.currentScreen === "enterprise_segment" && (
+				{!interstitialNode && f.currentScreen === "enterprise_segment" && (
 					<CardSelectionStep
 						title="Qual o segmento da empresa?"
 						subtitle="Drives which compliance, regulatory and trust signals we evaluate."
@@ -330,10 +388,10 @@ export default function LpAuditPage() {
 				)}
 
 				{/* ── Screen 3: Monthly Revenue (slider) ── */}
-				{f.currentScreen === "revenue" && (
+				{!interstitialNode && f.currentScreen === "revenue" && (
 					<SliderInputStep
 						title="Quanto sua operação movimenta por mês?"
-						subtitle="Isso calibra os intervalos em reais. Aproximado é suficiente."
+						subtitle="Não compartilhamos. Usamos só pra calibrar os intervalos em reais — aproximado é suficiente."
 						min={5000}
 						max={2000000}
 						step={5000}
@@ -344,13 +402,13 @@ export default function LpAuditPage() {
 								: `R$ ${Math.round(v / 1000)}k`
 						}
 						onSubmit={(v) => f.updateAndAdvance("monthlyRevenue", v)}
-						buttonLabel="Continuar"
+						buttonLabel="Calibrar análise"
 						loading={f.submitting}
 					/>
 				)}
 
 				{/* ── Screen 4: Primary Concern (JTBD pain) ── */}
-				{f.currentScreen === "concern" && (
+				{!interstitialNode && f.currentScreen === "concern" && (
 					<CardSelectionStep
 						title="O que mais te preocupa hoje?"
 						subtitle="Vamos priorizar findings ligados a isso."
@@ -360,7 +418,7 @@ export default function LpAuditPage() {
 				)}
 
 				{/* ── Screen 5: Current Optimization Method (JTBD push) ── */}
-				{f.currentScreen === "current_method" && (
+				{!interstitialNode && f.currentScreen === "current_method" && (
 					<CardSelectionStep
 						title="Como você sabe o que otimizar hoje?"
 						subtitle="Sem julgamento — só queremos entender de onde a Vestigio está chegando."
@@ -370,7 +428,7 @@ export default function LpAuditPage() {
 				)}
 
 				{/* ── Screen 6: Why Now (JTBD pull / urgency) ── */}
-				{f.currentScreen === "why_now" && (
+				{!interstitialNode && f.currentScreen === "why_now" && (
 					<CardSelectionStep
 						title="Por que agora é a hora?"
 						subtitle="Algo aconteceu que te trouxe aqui hoje. O que foi?"
@@ -380,14 +438,14 @@ export default function LpAuditPage() {
 				)}
 
 				{/* ── Screen 7: Email ── */}
-				{f.currentScreen === "email" && (
+				{!interstitialNode && f.currentScreen === "email" && (
 					<TextInputStep
 						title="Para onde devemos enviar sua análise?"
 						subtitle="Resultado em 60 segundos. Sem spam."
 						inputType="email"
 						value={f.form.email}
 						onChange={(v) => f.update("email", v)}
-						placeholder="voce@suaempresa.com"
+						placeholder={inferEmailPlaceholder(f.form.domain)}
 						error={f.fieldError?.field === "email" ? f.fieldError.message : null}
 						buttonLabel="Ver quanto estou perdendo"
 						onSubmit={f.next}

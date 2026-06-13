@@ -2051,6 +2051,13 @@ model AnonymousLead {
   status           String  @default("draft") // draft | auditing | audit_complete | checkout_started | converted | expired | spam
   currentStep      Int     @default(1)
   miniAuditId      String? // FK to MiniAuditResult
+
+  // Wave-23 value-on-fill — JSONB snapshot of the early-crawl worker
+  // dispatched after step 1 (domain submitted). Drives the live crawl
+  // indicator on the form AND lets the terminal run-audit skip the
+  // homepage httpFetch by reading cachedHtmlB64.
+  // Shape: src/types/crawl-progress.ts CrawlProgress
+  crawlProgress    Json?
   stripeSessionId  String?
   stripeCustomerId String?
   promotedToUserId String? // User created on checkout

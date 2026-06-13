@@ -18,6 +18,9 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { trackLpEvent } from "@/lib/lp-audit-track";
+import { useCrawlPolling } from "@/hooks/useCrawlPolling";
+import type { InterstitialProps } from "@/types/interstitial";
+import { resolveInterstitialFor } from "./interstitial-registry";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -295,6 +298,20 @@ export default function useLpAuditForm() {
 	// ── Lead session ──
 	const [leadId, setLeadId] = useState<string | null>(null);
 	const [formToken, setFormToken] = useState<string | null>(null);
+
+	// ── Early-crawl progress ──
+	// Dispatched after step 1 (domain). Polled by useCrawlPolling. Feeds
+	// the CrawlStatusWidget (sticky banner) AND the interstitial registry
+	// (the finding-teaser frame in steps 5-6 only fires when crawlProgress
+	// already produced a teaserFinding). Disabled until step 1 succeeds.
+	const [earlyCrawlDispatched, setEarlyCrawlDispatched] = useState(false);
+	const crawlProgress = useCrawlPolling(leadId, earlyCrawlDispatched);
+
+	// ── Interstitial state ──
+	// Set after a successful step submission when the registry has a
+	// matching entry for the just-completed screen. Dismissed by user
+	// click on the frame's Continue button.
+	const [activeInterstitial, setActiveInterstitial] = useState<InterstitialProps | null>(null);
 
 	// ── Step state ──
 	const [stepIndex, setStepIndex] = useState(0);
@@ -596,6 +613,25 @@ export default function useLpAuditForm() {
 			screen: currentScreen,
 		});
 
+		// Value-on-fill: after step 1 (domain) succeeds, kick the early-
+		// crawl async. It runs in the background while the visitor fills
+		// out steps 2-6. By the time they reach the terminal email step,
+		// the audit is mostly pre-warmed — the run-audit reuses the
+		// cachedHtml and skips the 1-4s httpFetch. Fire-and-forget; if it
+		// fails the run-audit falls back to a fresh fetch cleanly.
+		if (currentScreen === "domain" && leadId && formToken && !earlyCrawlDispatched) {
+			setEarlyCrawlDispatched(true);
+			fetch(`/api/lead/${leadId}/early-crawl`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"X-Vestigio-Form-Session": formToken,
+				},
+			}).catch(() => {
+				// Silent failure — early-crawl is opportunistic
+			});
+		}
+
 		// Email is the terminal step — fire audit and persist the
 		// JTBD answers to localStorage so the paid onboarding form
 		// can prefill them and skip 5 of its 7 steps.
@@ -612,11 +648,39 @@ export default function useLpAuditForm() {
 			return;
 		}
 
+		// Value-on-fill: check the registry for an interstitial frame to
+		// show before advancing. The just-completed screen is `currentScreen`
+		// (stepIndex still references it until we increment below).
+		const interstitial = resolveInterstitialFor(
+			currentScreen,
+			overrides ? { ...form, ...overrides } : form,
+			crawlProgress,
+		);
+		if (interstitial) {
+			setActiveInterstitial(interstitial);
+		}
+
 		// Advance
 		setStepIndex((s) => Math.min(s + 1, totalScreens - 1));
 		setSubmitting(false);
 		inFlightRef.current = false;
-	}, [currentScreen, checkDomainReachability, submitToBackend, fireAudit, leadId, router, form, totalScreens]);
+	}, [
+		currentScreen,
+		checkDomainReachability,
+		submitToBackend,
+		fireAudit,
+		leadId,
+		formToken,
+		earlyCrawlDispatched,
+		router,
+		form,
+		totalScreens,
+		crawlProgress,
+	]);
+
+	const dismissInterstitial = useCallback(() => {
+		setActiveInterstitial(null);
+	}, []);
 
 	const prev = useCallback(() => {
 		setFieldError(null);
@@ -661,5 +725,9 @@ export default function useLpAuditForm() {
 		setHoneypot,
 		// Session
 		leadId,
+		// Value-on-fill
+		activeInterstitial,
+		dismissInterstitial,
+		crawlProgress,
 	};
 }

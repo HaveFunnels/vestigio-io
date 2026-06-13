@@ -1,11 +1,12 @@
 import { prisma } from "@/libs/prismaDb";
 import { runStagedPipeline, type PipelineEvent } from "../../workers/ingestion/staged-pipeline";
 import { parsePage } from "../../workers/ingestion/parser";
-import { httpFetch } from "../../workers/ingestion/http-client";
+import { httpFetch, type HttpResponse } from "../../workers/ingestion/http-client";
 import { extractLandingPreview } from "../../workers/ingestion/landing-preview";
 import { deriveMiniAuditFindings, inferBusinessType } from "../../workers/ingestion/mini-audit-findings";
 import { hashDomain, normalizeDomain } from "@/libs/lead-validation";
 import { summarizeMiniImpact, formatBRL } from "../../packages/impact/mini-impact";
+import type { CrawlProgress } from "@/types/crawl-progress";
 
 // ──────────────────────────────────────────────
 // Mini-Audit Worker (anonymous /lp/audit funnel)
@@ -69,6 +70,64 @@ export interface RunMiniAuditResult {
 	cached: boolean;
 	durationMs: number;
 	error?: string;
+}
+
+// Wave-23 — pull the cached homepage HTML from AnonymousLead.crawlProgress
+// if the early-crawl already produced it. Returns null when:
+//   - early-crawl never ran (visitor was super fast or hit a bug)
+//   - early-crawl errored
+//   - crawl is still in flight after 3×500ms wait
+//
+// Wait budget is tight on purpose — if the early-crawl is taking more
+// than 1.5s extra here, it's faster to just re-fetch ourselves than
+// keep blocking. The early-crawl's own timeout is the upper bound.
+async function waitForCachedHtml(leadId: string): Promise<HttpResponse | null> {
+	for (let attempt = 0; attempt < 3; attempt++) {
+		const lead = await prisma.anonymousLead.findUnique({
+			where: { id: leadId },
+			select: { crawlProgress: true },
+		});
+		const cp = (lead?.crawlProgress as unknown as CrawlProgress | null) ?? null;
+		if (cp?.status === "ready" && cp.cachedHtmlB64 && cp.cachedFinalUrl) {
+			const body = Buffer.from(cp.cachedHtmlB64, "base64").toString("utf-8");
+			// Synthesize a minimal HttpResponse — downstream code only
+			// uses .body and .final_url + .status_code/.redirect_chain.
+			// The redirect_chain is unknown from the cache (we'd have
+			// had to persist it too); empty array is fine for findings
+			// that check it via length.
+			const synthesized: HttpResponse = {
+				url: cp.cachedFinalUrl,
+				final_url: cp.cachedFinalUrl,
+				status_code: 200,
+				headers: {},
+				body,
+				response_time_ms: 0,
+				redirect_chain: [],
+				content_type: null,
+				content_length: body.length,
+			};
+			// Null the cached HTML — single-use; keeps the jsonb row lean.
+			await prisma.anonymousLead
+				.update({
+					where: { id: leadId },
+					data: {
+						crawlProgress: {
+							...cp,
+							cachedHtmlB64: null,
+							cachedFinalUrl: null,
+						} as unknown as object,
+					},
+				})
+				.catch(() => {});
+			return synthesized;
+		}
+		if (cp?.status === "error" || !cp || cp.status === "idle") {
+			return null; // not coming — re-fetch ourselves
+		}
+		// status === "fetching" — wait briefly and re-check
+		if (attempt < 2) await new Promise((r) => setTimeout(r, 500));
+	}
+	return null;
 }
 
 export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> {
@@ -145,8 +204,21 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 		//    extractor (which needs <link rel="icon"> regex matching).
 		//    runStagedPipeline doesn't expose the raw response body to
 		//    callers — easier to just fetch once outside it.
+		//
+		// Wave-23 value-on-fill: if the early-crawl already fetched the
+		// homepage and stashed the HTML, reuse it. Saves 1-4s. If the
+		// early-crawl is still in flight ("fetching"), wait up to 3×500ms
+		// before falling back to a fresh fetch — covers the rare case of
+		// a power-user filling the whole form in ~5s.
 		const rootUrl = normalized.startsWith("http") ? normalized : `https://${normalized}`;
-		const response = await httpFetch(rootUrl);
+		const cached = await waitForCachedHtml(leadId);
+		let response: HttpResponse;
+		if (cached) {
+			response = cached;
+			console.log(`[mini-audit ${leadId}] cache hit on cachedHtml — skipped httpFetch`);
+		} else {
+			response = await httpFetch(rootUrl);
+		}
 		const parsed = parsePage(response.body, response.final_url);
 
 		// 4. Run the shallow staged pipeline for evidence side-effects

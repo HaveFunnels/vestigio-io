@@ -121,6 +121,21 @@ export async function GET(
 	// because we want to react to admin toggles without a redeploy.
 	const paymentProvider = await getActiveProvider();
 
+	// Wave-23 — value-on-fill crawl progress. Cast-through pattern
+	// (same reason as serviceCategory above) — Prisma client types lag
+	// after a schema add until generate runs in deploy. The column is
+	// nullable, so `?? null` keeps it safe. The frontend strips the
+	// heavy cachedHtmlB64 field before consuming.
+	const crawlProgressRaw = (lead as { crawlProgress?: unknown }).crawlProgress ?? null;
+	const crawlProgressPublic =
+		crawlProgressRaw && typeof crawlProgressRaw === "object"
+			? (() => {
+					const { cachedHtmlB64: _cached, cachedFinalUrl: _final, ...publicFields } =
+						crawlProgressRaw as Record<string, unknown> & { cachedHtmlB64?: unknown; cachedFinalUrl?: unknown };
+					return publicFields;
+				})()
+			: null;
+
 	return NextResponse.json({
 		id: lead.id,
 		status: lead.status,
@@ -143,6 +158,8 @@ export async function GET(
 		serviceCategory: (lead as { serviceCategory?: string | null }).serviceCategory ?? null,
 		appPlatform: (lead as { appPlatform?: string | null }).appPlatform ?? null,
 		enterpriseSegment: (lead as { enterpriseSegment?: string | null }).enterpriseSegment ?? null,
+		// Wave-23 — early-crawl snapshot (cachedHtml/finalUrl stripped before sending)
+		crawlProgress: crawlProgressPublic,
 		// PII redacted from public response
 		emailMasked: lead.email ? maskEmail(lead.email) : null,
 		createdAt: lead.createdAt.toISOString(),

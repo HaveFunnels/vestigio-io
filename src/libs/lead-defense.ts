@@ -162,11 +162,19 @@ export function isHoneypotTripped(formBody: Record<string, unknown>): boolean {
 // Frontend marks `formStartedAt` on mount. The lead row carries it.
 // Submits faster than the human-impossible threshold are rejected.
 //
-// 8 seconds is the lower bound for completing a 4-step form even with
-// browser autofill — anything faster is almost certainly automation.
+// Histórico do threshold:
+//   - v1 (até 2026-06-13): 8000ms. Era pra ser "humano impossível" mas
+//     pegou power users legítimos. Caso confirmado em prod: lead
+//     cmqch6i0e0004j6nj1qq1ozv7 enviou step 1 em dwellMs=7086 com
+//     events=121, hasMouse/Kb/Header todos true — 100% humano, rejeitado
+//     por 914ms de diferença. Refresh + retry funcionou no 2º try.
+//   - v2 (2026-06-13): 3000ms. Bot puro (curl/wget/requests) leva
+//     <500ms. Bot com Puppeteer renderiza JS e burla qualquer dwell
+//     check — defesa real contra Puppeteer é behavioral score + JS
+//     header, não dwell. 3s é margem confortável pra power users.
 // ──────────────────────────────────────────────
 
-const MIN_FORM_DWELL_MS = 8_000;
+const MIN_FORM_DWELL_MS = 3_000;
 
 export function isFormDwellSuspicious(formStartedAt: Date | string | null | undefined): boolean {
 	if (!formStartedAt) return true; // missing = suspicious

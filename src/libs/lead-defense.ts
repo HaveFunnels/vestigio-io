@@ -27,9 +27,26 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // ──────────────────────────────────────────────
 // 1. Form session token (HMAC)
 //
-// Issued when the visitor lands on /audit. Encodes IP + ts. Verified
-// on every step submission. Expires after 30 min so the bot can't reuse
-// a leaked token indefinitely.
+// Issued when the visitor lands on /audit. Encodes ts (timestamp) só.
+// Verified on every step submission. Expires após TOKEN_TTL_MS — bot
+// não consegue reusar token leak por mais que esse intervalo.
+//
+// Histórico (importante): a versão anterior assinava `ts.ip`. Funcionou
+// como anti-bot mas gerou rejeições erradas em humanos com IP volátil
+// — mobile carrier NAT/CGNAT, Wi-Fi ↔ mobile data switch durante o
+// form (v3 tem 7 steps, fácil dar 5+ min), VPN com saída rotativa,
+// proxy corporate com múltiplos egress. Removida a IP binding em
+// 2026-06-13 após customer report "Form session expired" recorrente
+// em usuários legítimos.
+//
+// As defesas remanescentes cobrem bots:
+//   - TTL curto (2h) limita token-replay
+//   - JS header (X-Vestigio-Form-Session) → curl/wget/requests não setam
+//   - Honeypot field "website"
+//   - Dwell mínimo 8s
+//   - Behavioral score (mouse/keyboard/scroll events)
+// IP era a 6ª camada e a mais hostil ao usuário real. Sem ela o stack
+// mantém defense-in-depth sem mostrar erro pra humano.
 // ──────────────────────────────────────────────
 
 const TOKEN_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours — v3 form has 7 steps, mobile users get distracted
@@ -51,10 +68,14 @@ function getSecret(): string {
 	return secret;
 }
 
-export function issueFormToken(ip: string): string {
+/**
+ * Emite token bound apenas a `ts`. Mantém o param `ip` na assinatura
+ * pra back-compat (call sites já passam, sem precisar mudar), mas
+ * ignora ele intencionalmente. Veja comentário do bloco acima.
+ */
+export function issueFormToken(_ip: string): string {
 	const ts = Date.now();
-	const payload = `${ts}.${ip}`;
-	const sig = createHmac("sha256", getSecret()).update(payload).digest("base64url");
+	const sig = createHmac("sha256", getSecret()).update(String(ts)).digest("base64url");
 	return `${ts}.${sig}`;
 }
 
@@ -63,7 +84,11 @@ export interface FormTokenVerification {
 	reason?: string;
 }
 
-export function verifyFormToken(token: string | null | undefined, ip: string): FormTokenVerification {
+/**
+ * Verifica token. `ip` mantido na assinatura pra back-compat. Ignorado
+ * intencionalmente — veja comentário do bloco acima.
+ */
+export function verifyFormToken(token: string | null | undefined, _ip: string): FormTokenVerification {
 	if (!token) return { valid: false, reason: "missing_token" };
 
 	const parts = token.split(".");
@@ -78,7 +103,7 @@ export function verifyFormToken(token: string | null | undefined, ip: string): F
 	}
 
 	const expectedSig = createHmac("sha256", getSecret())
-		.update(`${ts}.${ip}`)
+		.update(String(ts))
 		.digest("base64url");
 
 	// Constant-time comparison to defeat timing oracles.

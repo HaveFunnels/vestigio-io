@@ -149,7 +149,7 @@ function StakesPopover({ monthly, currency }: { monthly: number; currency: strin
 				</div>
 				<div className="flex items-baseline justify-between gap-3 border-t border-edge/40 pt-1.5">
 					<span className="text-content-muted">12 meses aberto</span>
-					<span className="font-semibold text-rose-300">{fmt(m12)}</span>
+					<span className="font-semibold text-rose-400">{fmt(m12)}</span>
 				</div>
 			</div>
 			<div className="mt-3 border-t border-edge/40 pt-2.5 text-[11px] leading-snug text-content-secondary">
@@ -585,7 +585,7 @@ function StepCard({
 										className="hidden shrink-0 items-center gap-1 self-start rounded-md border border-edge bg-surface-card px-2 py-0.5 text-[10px] font-medium text-content-muted opacity-0 transition-all group-hover/proc:flex group-hover/proc:opacity-100 hover:border-edge-focus hover:text-content"
 										title="Pedir ajuda da Vestigio AI"
 									>
-										<svg className="h-2.5 w-2.5" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
+										<svg className="h-3 w-3" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.6">
 											<path strokeLinecap="round" d="M5 7v.5M3.5 4a1.5 1.5 0 113 0c0 .5-.3.9-.7 1.2-.4.3-.8.5-.8 1.3" />
 										</svg>
 										Como faço?
@@ -1006,6 +1006,7 @@ interface StepInGroupProps {
 }
 
 function StepInGroup({ step, primarySurface }: StepInGroupProps) {
+	const { currency } = useMcpData();
 	const impact = step.combinedImpact?.midpoint ?? 0;
 	const isDone = step.status === "done";
 	const otherSurfaces = (step.affectedSurfaces ?? []).filter(
@@ -1074,7 +1075,7 @@ function StepInGroup({ step, primarySurface }: StepInGroupProps) {
 							perda potencial
 						</div>
 						<div className="font-mono text-[12px] font-semibold tabular-nums text-content">
-							R$ {Math.round(impact).toLocaleString("pt-BR")}
+							{fmtCurrencyUnits(Math.round(impact), currency)}
 							<span className="text-[9px] font-normal opacity-70"> /mês</span>
 						</div>
 					</div>
@@ -1105,6 +1106,7 @@ export default function NextSteps({
 	compact = false,
 	groupBySurface = false,
 }: Props) {
+	const { currency } = useMcpData();
 	const [expanded, setExpanded] = useState(false);
 	// E2 — split the queue into ONE main move + supporting moves. The
 	// section used to render "top 3 expanded + collapsible rest" with no
@@ -1180,7 +1182,7 @@ export default function NextSteps({
 									</div>
 									{totalImpact > 0 && (
 										<span className="font-mono text-[12px] tabular-nums text-content-muted">
-											R$ {Math.round(totalImpact).toLocaleString("pt-BR")}/mês
+											{fmtCurrencyUnits(Math.round(totalImpact), currency)}/mês
 										</span>
 									)}
 								</div>
@@ -1257,7 +1259,7 @@ export default function NextSteps({
 								<div className="flex flex-col items-end gap-1.5">
 									{impact > 0 && (
 										<span className="font-mono text-[14px] font-semibold tabular-nums text-content">
-											R$ {Math.round(impact).toLocaleString("pt-BR")}
+											{fmtCurrencyUnits(Math.round(impact), currency)}
 											<span className="ml-0.5 text-[10px] font-normal text-content-faint">
 												/mês
 											</span>

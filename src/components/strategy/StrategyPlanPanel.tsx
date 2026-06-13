@@ -301,7 +301,7 @@ function StickyHeader({
 						disabled={exporting}
 						aria-label={exporting ? "Exportando PDF…" : "Exportar PDF"}
 						title={exporting ? "Exportando PDF…" : "Exportar PDF"}
-						className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content disabled:opacity-50"
+						className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{exporting ? (
 							<span className="inline-flex items-center gap-[2px]">

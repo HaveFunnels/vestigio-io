@@ -206,9 +206,9 @@ function TrendRow({ trend, currency }: { trend: PackTrend; currency: string }) {
 	const forecast6Brl = Math.round(trend.forecast_6_weeks.midpoint_brl_cents / 100);
 	const directionColor =
 		trend.trend_direction === "up"
-			? "text-rose-300"
+			? "text-rose-400"
 			: trend.trend_direction === "down"
-				? "text-emerald-300"
+				? "text-emerald-400"
 				: "text-content-muted";
 	const arrow =
 		trend.trend_direction === "up"
@@ -292,7 +292,7 @@ function ChronicRow({ chronic, currency }: { chronic: ChronicFinding; currency: 
 				</div>
 			</div>
 			<div className="shrink-0 text-right">
-				<div className="font-mono text-[12px] font-semibold tabular-nums text-rose-300">
+				<div className="font-mono text-[12px] font-semibold tabular-nums text-rose-400">
 					{fmtCurrencyUnits(brl, currency)}/mês
 				</div>
 			</div>

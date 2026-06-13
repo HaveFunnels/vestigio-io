@@ -108,7 +108,7 @@ export default function JourneyReplays({ envId, month }: Props) {
 		return (
 			<section className="mb-12">
 				<div className="mb-4 h-5 w-64 animate-pulse rounded bg-surface-card" />
-				<div className="rounded-2xl border border-edge bg-surface-card p-6 sm:p-8">
+				<div className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
 					<div className="h-3 w-32 animate-pulse rounded bg-surface-inset" />
 				</div>
 			</section>
@@ -288,7 +288,7 @@ function PixelInstallHero({ envId, sessionCount }: { envId: string; sessionCount
 			</div>
 			<div
 				data-vsgp-card
-				className="overflow-hidden rounded-2xl border border-edge bg-gradient-to-br from-rose-500/[0.06] via-surface-card to-surface-card p-6 sm:p-8"
+				className="overflow-hidden rounded-2xl border border-edge bg-gradient-to-br from-rose-500/[0.06] via-surface-card to-surface-card p-5 sm:p-6"
 			>
 				<div className="mb-4 flex items-start gap-3">
 					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400">

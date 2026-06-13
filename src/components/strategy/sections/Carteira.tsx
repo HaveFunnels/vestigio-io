@@ -98,7 +98,7 @@ export default function Carteira({ competitor, impersonators }: Props) {
 					<Collapsible.Trigger asChild>
 						<button
 							type="button"
-							className="grid w-full grid-cols-[1fr_auto] items-center gap-3 p-5 text-left transition-colors hover:bg-surface-card-hover/40"
+							className="grid w-full grid-cols-[1fr_auto] items-center gap-3 p-5 text-left transition-colors hover:bg-surface-card-hover"
 						>
 							<div className="min-w-0 space-y-2">
 								{/* Numbers customer wants to see at a glance:

@@ -83,7 +83,7 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 			{rows.length === 0 ? (
 				// Empty state — encoraja o cliente a fechar ações no
 				// próximo ciclo sem soar como punição.
-				<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-6 sm:p-8">
+				<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
 					<div className="mb-2 text-[14px] font-medium text-content-secondary">
 						Nenhuma recuperação atribuída este mês.
 					</div>

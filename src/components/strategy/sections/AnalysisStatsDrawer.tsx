@@ -170,7 +170,7 @@ function StatsBody({ stats }: { stats: AnalysisStatsResponse }) {
 				<Tile
 					label="Sessões autenticadas"
 					value={stats.coverage.authenticated_attempts}
-					sub={stats.coverage.authenticated_attempts === 0 ? "Configure SaaS access" : null}
+					sub={stats.coverage.authenticated_attempts === 0 ? "Configure acesso SaaS" : null}
 				/>
 				<Tile label="Concorrentes monitorados" value={stats.coverage.competitors_monitored} />
 			</Section>

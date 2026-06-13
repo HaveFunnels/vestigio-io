@@ -155,9 +155,18 @@ export const INTERSTITIAL_REGISTRY: InterstitialDef[] = [
 		description: "previews the report contents (5 findings, R$ impact, root cause, screenshots, plan) — reduces email-submission hesitation",
 		resolve: (form: LeadState) => {
 			if (!form.domain) return null;
+			// Strip protocol + www + trailing path so the display reads
+			// "Sua análise de casamontelle.com" instead of the raw URL
+			// the visitor typed.
+			const clean = form.domain
+				.trim()
+				.replace(/^https?:\/\//i, "")
+				.replace(/^www\./i, "")
+				.replace(/\/.*$/, "")
+				.toLowerCase();
 			return {
 				variant: "anticipation",
-				domain: form.domain,
+				domain: clean || form.domain,
 				items: [
 					{ icon: "stats", label: "5 vazamentos priorizados por R$ impactado" },
 					{ icon: "money", label: "Quanto cada um vale por mês (com faixa)" },

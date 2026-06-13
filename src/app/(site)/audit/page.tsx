@@ -287,20 +287,12 @@ export default function LpAuditPage() {
 				/>
 			</div>
 
-			{/* Sticky crawl status — shows after step 1 dispatches early-crawl.
-			    Renders above the StepShell so the visitor sees the audit
-			    already working while they keep filling. */}
-			<div className="pointer-events-none fixed inset-x-0 top-0 z-20">
-				<div className="pointer-events-auto">
-					<CrawlStatusWidget progress={f.crawlProgress} />
-				</div>
-			</div>
-
 			<StepShell
 				stepIndex={f.stepIndex}
 				totalSteps={f.totalSteps}
 				onBack={f.prev}
 				steps={stepLabels}
+				topSlot={<CrawlStatusWidget progress={f.crawlProgress} />}
 			>
 				{/* Interstitial supersedes the step content when active */}
 				{interstitialNode}

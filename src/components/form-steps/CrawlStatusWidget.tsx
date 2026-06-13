@@ -40,7 +40,6 @@ export default function CrawlStatusWidget({ progress }: Props) {
 				animate={{ opacity: 1, y: 0 }}
 				exit={{ opacity: 0, y: -8 }}
 				transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-				className="mx-auto w-full max-w-[560px] px-5 pt-3 sm:px-6"
 			>
 				<div className="flex items-center gap-3 rounded-xl border border-edge bg-surface-card px-3.5 py-2.5">
 					{isFetching ? (

@@ -29,6 +29,10 @@ interface StepShellProps {
 	 *  omitted, the chip row is hidden (back-compat for any caller
 	 *  that doesn't pass this yet). */
 	steps?: readonly StepKind[];
+	/** Optional slot rendered at the top of the sticky header — used by
+	 *  the /audit form to surface the CrawlStatusWidget without it
+	 *  overlapping the back arrow. Renders above the logo row. */
+	topSlot?: React.ReactNode;
 }
 
 export default function StepShell({
@@ -39,6 +43,7 @@ export default function StepShell({
 	className = "",
 	showBack,
 	steps,
+	topSlot,
 }: StepShellProps) {
 	const showBackArrow = showBack ?? stepIndex > 0;
 
@@ -48,6 +53,11 @@ export default function StepShell({
 		>
 			{/* Sticky header — stays visible when mobile keyboard opens */}
 			<div className="sticky top-0 z-10 shrink-0 bg-surface-shell px-5 pt-6 sm:px-6 sm:pt-10">
+				{topSlot && (
+					<div className="mx-auto mb-4 max-w-[560px] sm:mb-5">
+						{topSlot}
+					</div>
+				)}
 				<div className="relative mx-auto max-w-[560px]">
 					<button
 						type="button"

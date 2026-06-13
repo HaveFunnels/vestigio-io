@@ -198,16 +198,24 @@ export interface BehavioralSignals {
 export function computeBehavioralScore(signals: BehavioralSignals): number {
 	let score = 0;
 
-	// Event count is the strongest signal — humans rack up 50-500.
+	// Event count — humano hits 50-500. Mobile + paste-only path pode
+	// chegar a só 7-10, então tier mais baixo dá algum crédito.
 	if (signals.eventCount >= 50) score += 50;
 	else if (signals.eventCount >= 20) score += 35;
 	else if (signals.eventCount >= 10) score += 20;
 	else if (signals.eventCount >= 5) score += 10;
 	// 0-4 events: 0 points
 
+	// Pointer (mouse OR touch OR click). Mobile cobre via touchstart/click.
 	if (signals.hasMouseEvents) score += 20;
+	// Input (keyboard OR paste). Autofill + password managers cobrem via paste.
 	if (signals.hasKeyboardEvents) score += 20;
-	if (signals.hasFormSessionHeader) score += 10;
+	// JS-only header — bot sem JS execution não seta. Era +10, virou +25 pra
+	// ser o sinal âncora: real browser garante 25 só por executar JS.
+	// Com esse peso, um mobile user que abre o form e tap-pastes 2 vezes
+	// (5+ events, hasMouse via touch, hasInput via paste) pontua
+	// 10 + 20 + 20 + 25 = 75. Anterior pontuava 10 e era rejeitado.
+	if (signals.hasFormSessionHeader) score += 25;
 
 	return Math.min(100, score);
 }

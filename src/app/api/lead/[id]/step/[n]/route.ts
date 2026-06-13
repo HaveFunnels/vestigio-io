@@ -155,6 +155,26 @@ export async function PATCH(
 	}
 
 	if (!verdict.allowed) {
+		// Observability — sem isso, "Form session expired" vira diagnóstico
+		// cego. Loga reason + dwell + score + ua truncado pra correlacionar
+		// reclamações de cliente com o caminho específico do verdict que
+		// disparou. Sem PII além do UA truncado (200 char cap).
+		const dwellMs = lead.formStartedAt
+			? Date.now() -
+				(typeof lead.formStartedAt === "string"
+					? Date.parse(lead.formStartedAt)
+					: lead.formStartedAt.getTime())
+			: null;
+		console.warn(
+			`[lead-form-rejected] ` +
+				`leadId=${id} step=${stepNum} reason=${verdict.reason} ` +
+				`score=${verdict.score} dwellMs=${dwellMs} ` +
+				`events=${body.behavioral?.eventCount ?? "?"} ` +
+				`hasMouse=${body.behavioral?.hasMouseEvents ?? "?"} ` +
+				`hasKb=${body.behavioral?.hasKeyboardEvents ?? "?"} ` +
+				`hasHeader=${!!headers.get(FORM_SESSION_HEADER)} ` +
+				`ua=${headers.get("user-agent")?.slice(0, 80) ?? "?"}`,
+		);
 		return NextResponse.json(
 			{ message: "Form session expired or invalid. Please refresh." },
 			{ status: 403 },

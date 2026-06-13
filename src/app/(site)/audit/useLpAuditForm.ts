@@ -314,7 +314,20 @@ export default function useLpAuditForm() {
 	const [honeypot, setHoneypot] = useState("");
 
 	// ── Anti-bot: behavioral signals ──
-	const eventCountRef = useRef({ mousemove: 0, keydown: 0, focus: 0, scroll: 0 });
+	// Inclui touch/click/paste pra cobrir mobile (sem mousemove) e
+	// paste-flow (autofill, copy-paste de password manager). Antes a
+	// detecção rejeitava mobile users que colavam domínio + email sem
+	// digitar nem mover mouse — score caía pra 10 e disparava
+	// "Form session expired".
+	const eventCountRef = useRef({
+		mousemove: 0,
+		keydown: 0,
+		focus: 0,
+		scroll: 0,
+		touchstart: 0,
+		click: 0,
+		paste: 0,
+	});
 
 	// ── Form data ──
 	// Wave-22.6 — prefill from localStorage handoff if MiniCalculator
@@ -369,11 +382,17 @@ export default function useLpAuditForm() {
 		const onKey = inc("keydown");
 		const onFocus = inc("focus");
 		const onScroll = inc("scroll");
+		const onTouch = inc("touchstart");
+		const onClick = inc("click");
+		const onPaste = inc("paste");
 
 		window.addEventListener("mousemove", onMouse, { passive: true });
 		window.addEventListener("keydown", onKey, { passive: true });
 		window.addEventListener("focusin", onFocus, { passive: true });
 		window.addEventListener("scroll", onScroll, { passive: true });
+		window.addEventListener("touchstart", onTouch, { passive: true });
+		window.addEventListener("click", onClick, { passive: true });
+		window.addEventListener("paste", onPaste, { passive: true });
 
 		return () => {
 			cancelled = true;
@@ -381,6 +400,9 @@ export default function useLpAuditForm() {
 			window.removeEventListener("keydown", onKey);
 			window.removeEventListener("focusin", onFocus);
 			window.removeEventListener("scroll", onScroll);
+			window.removeEventListener("touchstart", onTouch);
+			window.removeEventListener("click", onClick);
+			window.removeEventListener("paste", onPaste);
 		};
 	}, []);
 
@@ -401,11 +423,22 @@ export default function useLpAuditForm() {
 
 	function buildBehavioralPayload() {
 		const c = eventCountRef.current;
+		// hasMouseEvents/hasKeyboardEvents agora cobrem fontes equivalentes:
+		// mouse OU touch conta como pointer. Keyboard OU paste conta como
+		// input. Padrão "qualquer interação humana plausível" em vez de
+		// "tipou no teclado físico e moveu o mouse".
 		return {
-			eventCount: c.mousemove + c.keydown + c.focus + c.scroll,
+			eventCount:
+				c.mousemove +
+				c.keydown +
+				c.focus +
+				c.scroll +
+				c.touchstart +
+				c.click +
+				c.paste,
 			hasFormSessionHeader: true,
-			hasMouseEvents: c.mousemove > 0,
-			hasKeyboardEvents: c.keydown > 0,
+			hasMouseEvents: c.mousemove > 0 || c.touchstart > 0 || c.click > 0,
+			hasKeyboardEvents: c.keydown > 0 || c.paste > 0,
 		};
 	}
 

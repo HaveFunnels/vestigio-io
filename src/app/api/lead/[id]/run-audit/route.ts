@@ -35,6 +35,13 @@ export async function POST(
 	const clientIp = realIp?.trim() || (forwarded ? forwarded.split(",").pop()!.trim() : "0.0.0.0");
 	const verification = verifyFormToken(formToken, clientIp);
 	if (!verification.valid) {
+		// Observability — mirror do log no /step route. Sem isso, run-audit
+		// 403 vira diagnóstico cego.
+		console.warn(
+			`[lead-run-audit-rejected] reason=${verification.reason} ` +
+				`hasToken=${!!formToken} ` +
+				`ua=${request.headers.get("user-agent")?.slice(0, 80) ?? "?"}`,
+		);
 		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 	}
 

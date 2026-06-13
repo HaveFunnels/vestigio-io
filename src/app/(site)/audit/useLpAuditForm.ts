@@ -460,7 +460,12 @@ export default function useLpAuditForm() {
 	}, [form.domain]);
 
 	// ── Submit step to backend ──
-	const submitToBackend = useCallback(async (backendStep: number): Promise<boolean> => {
+	// `overrides` permite callers passar valores que acabaram de ser
+	// setados via setForm mas ainda não comitados (React state é async).
+	// Sem isso, CardSelectionStep que chama update+next em sequência
+	// envia o valor STALE pro backend — causa soft-lock em screens onde
+	// o campo não tem default (concern, current_method, why_now).
+	const submitToBackend = useCallback(async (backendStep: number, overrides?: Partial<LeadState>): Promise<boolean> => {
 		if (!leadId || !formToken) {
 			// Dev mode without DB: skip backend validation, allow UI navigation
 			if (process.env.NODE_ENV === "development") return true;
@@ -468,29 +473,32 @@ export default function useLpAuditForm() {
 			return false;
 		}
 
+		// Merge overrides em cima do form pra cobrir state-update-pending.
+		const effective = overrides ? { ...form, ...overrides } : form;
+
 		const payload = {
 			version: 3,
 			formToken,
 			behavioral: buildBehavioralPayload(),
 			website: honeypot,
-			domain: form.domain,
-			ownershipConfirmed: form.ownershipConfirmed,
-			businessModel: form.businessModel,
-			conversionModel: form.conversionModel,
-			monthlyRevenue: String(form.monthlyRevenue),
-			averageTicket: String(form.averageTicket),
-			primaryConcern: form.primaryConcern || undefined,
-			currentOptimizationMethod: form.currentOptimizationMethod || undefined,
-			whyNow: form.whyNow || undefined,
-			email: form.email,
+			domain: effective.domain,
+			ownershipConfirmed: effective.ownershipConfirmed,
+			businessModel: effective.businessModel,
+			conversionModel: effective.conversionModel,
+			monthlyRevenue: String(effective.monthlyRevenue),
+			averageTicket: String(effective.averageTicket),
+			primaryConcern: effective.primaryConcern || undefined,
+			currentOptimizationMethod: effective.currentOptimizationMethod || undefined,
+			whyNow: effective.whyNow || undefined,
+			email: effective.email,
 			// Only emitted when the visitor is on the services track —
 			// the backend persists into AnonymousLead.serviceCategory if
 			// the schema column exists, else gracefully ignores.
-			serviceCategory: form.serviceCategory || undefined,
+			serviceCategory: effective.serviceCategory || undefined,
 			// Mobile-app vertical sub-segmentation. Same emit-when-set
 			// contract as serviceCategory.
-			appPlatform: form.appPlatform || undefined,
-			enterpriseSegment: form.enterpriseSegment || undefined,
+			appPlatform: effective.appPlatform || undefined,
+			enterpriseSegment: effective.enterpriseSegment || undefined,
 		};
 
 		try {
@@ -560,7 +568,7 @@ export default function useLpAuditForm() {
 	// ── Advance to next screen ──
 	const currentScreen = screens[stepIndex] ?? "domain";
 
-	const next = useCallback(async () => {
+	const next = useCallback(async (overrides?: Partial<LeadState>) => {
 		// BUG-03: Synchronous ref guard — prevents concurrent invocations
 		if (inFlightRef.current) return;
 		inFlightRef.current = true;
@@ -574,8 +582,10 @@ export default function useLpAuditForm() {
 		}
 
 		// Every screen in v3 corresponds 1:1 to a backend step.
+		// `overrides` permite click-then-advance handlers passarem o
+		// valor recém-selecionado sem aguardar React state commit.
 		const backendStep = backendStepForScreen(currentScreen);
-		const ok = await submitToBackend(backendStep);
+		const ok = await submitToBackend(backendStep, overrides);
 		if (!ok) {
 			setSubmitting(false);
 			inFlightRef.current = false;
@@ -614,10 +624,24 @@ export default function useLpAuditForm() {
 		setStepIndex((s) => Math.max(0, s - 1));
 	}, []);
 
+	// Helper pra click-then-advance dos CardSelectionStep. Sem isso,
+	// update+next em sequência mandam o form STALE pro backend (React
+	// state update é async). Bug clássico que causava soft-lock no
+	// step 4 (concern), 5 (current_method), 6 (why_now) — qualquer
+	// campo sem default era rejeitado pelo backend.
+	const updateAndAdvance = useCallback(
+		<K extends keyof LeadState>(key: K, value: LeadState[K]) => {
+			setForm((f) => ({ ...f, [key]: value }));
+			next({ [key]: value } as Partial<LeadState>);
+		},
+		[next],
+	);
+
 	return {
 		// Form
 		form,
 		update,
+		updateAndAdvance,
 		// Navigation
 		stepIndex,
 		totalSteps: totalScreens,

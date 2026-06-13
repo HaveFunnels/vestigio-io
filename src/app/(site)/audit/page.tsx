@@ -281,10 +281,7 @@ export default function LpAuditPage() {
 						title="Que tipo de negócio é o seu?"
 						subtitle="Isso muda como calculamos o impacto financeiro."
 						options={BUSINESS_TYPE_OPTIONS}
-						onSelect={(v) => {
-							f.update("businessModel", v);
-							f.next();
-						}}
+						onSelect={(v) => f.updateAndAdvance("businessModel", v)}
 					/>
 				)}
 
@@ -300,10 +297,7 @@ export default function LpAuditPage() {
 						title="O que vocês fazem?"
 						subtitle="Escolha o que mais se aproxima — usamos isso pra calibrar a análise."
 						options={SERVICE_CATEGORY_OPTIONS}
-						onSelect={(v) => {
-							f.update("serviceCategory", v);
-							f.next();
-						}}
+						onSelect={(v) => f.updateAndAdvance("serviceCategory", v)}
 					/>
 				)}
 
@@ -317,10 +311,7 @@ export default function LpAuditPage() {
 						title="Em qual loja o seu app está?"
 						subtitle="Diferentes lojas pedem ajustes diferentes no site pra puxar mais install."
 						options={APP_PLATFORM_OPTIONS}
-						onSelect={(v) => {
-							f.update("appPlatform", v);
-							f.next();
-						}}
+						onSelect={(v) => f.updateAndAdvance("appPlatform", v)}
 					/>
 				)}
 
@@ -334,10 +325,7 @@ export default function LpAuditPage() {
 						title="Qual o segmento da empresa?"
 						subtitle="Drives which compliance, regulatory and trust signals we evaluate."
 						options={ENTERPRISE_SEGMENT_OPTIONS}
-						onSelect={(v) => {
-							f.update("enterpriseSegment", v);
-							f.next();
-						}}
+						onSelect={(v) => f.updateAndAdvance("enterpriseSegment", v)}
 					/>
 				)}
 
@@ -355,10 +343,7 @@ export default function LpAuditPage() {
 								? `R$ ${(v / 1000000).toFixed(1).replace(".", ",")}M`
 								: `R$ ${Math.round(v / 1000)}k`
 						}
-						onSubmit={(v) => {
-							f.update("monthlyRevenue", v);
-							f.next();
-						}}
+						onSubmit={(v) => f.updateAndAdvance("monthlyRevenue", v)}
 						buttonLabel="Continuar"
 						loading={f.submitting}
 					/>
@@ -370,10 +355,7 @@ export default function LpAuditPage() {
 						title="O que mais te preocupa hoje?"
 						subtitle="Vamos priorizar findings ligados a isso."
 						options={CONCERN_OPTIONS}
-						onSelect={(v) => {
-							f.update("primaryConcern", v);
-							f.next();
-						}}
+						onSelect={(v) => f.updateAndAdvance("primaryConcern", v)}
 					/>
 				)}
 
@@ -383,10 +365,7 @@ export default function LpAuditPage() {
 						title="Como você sabe o que otimizar hoje?"
 						subtitle="Sem julgamento — só queremos entender de onde a Vestigio está chegando."
 						options={CURRENT_METHOD_OPTIONS}
-						onSelect={(v) => {
-							f.update("currentOptimizationMethod", v);
-							f.next();
-						}}
+						onSelect={(v) => f.updateAndAdvance("currentOptimizationMethod", v)}
 					/>
 				)}
 
@@ -396,10 +375,7 @@ export default function LpAuditPage() {
 						title="Por que agora é a hora?"
 						subtitle="Algo aconteceu que te trouxe aqui hoje. O que foi?"
 						options={WHY_NOW_OPTIONS}
-						onSelect={(v) => {
-							f.update("whyNow", v);
-							f.next();
-						}}
+						onSelect={(v) => f.updateAndAdvance("whyNow", v)}
 					/>
 				)}
 

@@ -11,6 +11,13 @@
 FROM node:20-slim AS base
 
 # Install system dependencies for Playwright Chromium
+#
+# 2026-06-14 fix: libxkbcommon0 was missing — chrome-headless-shell from
+# Playwright 1.58+ requires it at process start. Prod export of /api/library/
+# strategy/[month]/export failed with "error while loading shared libraries:
+# libxkbcommon.so.0: cannot open shared object file". Added the lib here.
+# Bundled with libpangocairo-1.0-0 (pango cairo bindings) which is a co-
+# requisite for headless rendering pipelines that draw text on canvas.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss3 \
     libnspr4 \
@@ -24,6 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrandr2 \
     libgbm1 \
     libpango-1.0-0 \
+    libpangocairo-1.0-0 \
     libcairo2 \
     libasound2 \
     libxshmfence1 \
@@ -32,6 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libx11-6 \
     libxfixes3 \
+    libxkbcommon0 \
     fonts-liberation \
     libgl1 \
     libmagic1 \

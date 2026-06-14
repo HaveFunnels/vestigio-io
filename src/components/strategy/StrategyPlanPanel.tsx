@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { useTrack } from "@/hooks/useProductTrack";
 import "@/styles/strategy.css";
 import type { StrategyPlan } from "./types";
+import { planToRichText } from "./plan-to-richtext";
 import HeroMetrics from "./sections/HeroMetrics";
 import BuyerSegments from "./sections/BuyerSegments";
 import WhatHappenedNarrative from "./sections/WhatHappenedNarrative";
@@ -120,18 +121,36 @@ function StickyHeader({
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
 
-	// Wave-22.6-review fix: previously a dead button (no onClick). For a
-	// CFO-sharing use case this was the single most-clicked control in
-	// the surface — and it did nothing. V1 ships "copy permalink to
-	// clipboard" (works today with the existing /app/library/strategy/
-	// [month] route + envId param). A full signed-link / external-share
-	// modal lands in a follow-up wave (Wave 28+).
+	// Share = copy structured plan (HTML + plain fallback) so a paste
+	// into email / Slack / Notion preserves bold + spacing + lists.
+	// Previously this just copied a permalink — useful, but the URL is
+	// only valuable to people inside the org. Customers wanted to forward
+	// the plan summary to non-Vestigio stakeholders (CFO, agency, board
+	// deck), and a raw URL behind SSO doesn't accomplish that.
+	//
+	// Strategy: write BOTH "text/html" and "text/plain" via ClipboardItem.
+	// Modern paste targets auto-pick HTML; legacy plain-text targets
+	// (chat shells, terminal, search bars) receive a clean text layout.
 	const handleShare = async () => {
 		try {
 			const url = `${window.location.origin}/app/library/strategy/${encodeURIComponent(
 				plan.month,
 			)}?envId=${encodeURIComponent(plan.environmentId)}`;
-			await navigator.clipboard.writeText(url);
+			const { html, text } = planToRichText(plan, url);
+
+			// Prefer the rich-clipboard path. Falls back to plain text on
+			// browsers/contexts that don't support ClipboardItem (e.g.
+			// older Safari, restricted iframe).
+			if (typeof window !== "undefined" && "ClipboardItem" in window) {
+				await navigator.clipboard.write([
+					new ClipboardItem({
+						"text/html": new Blob([html], { type: "text/html" }),
+						"text/plain": new Blob([text], { type: "text/plain" }),
+					}),
+				]);
+			} else {
+				await navigator.clipboard.writeText(text);
+			}
 			setShareState("copied");
 			setTimeout(() => setShareState("idle"), 2500);
 		} catch {
@@ -266,17 +285,17 @@ function StickyHeader({
 						onClick={handleShare}
 						aria-label={
 							shareState === "copied"
-								? "Link copiado"
+								? "Plano copiado"
 								: shareState === "error"
 									? "Falha ao copiar"
-									: "Compartilhar"
+									: "Copiar plano"
 						}
 						title={
 							shareState === "copied"
-								? "Link copiado!"
+								? "Plano copiado!"
 								: shareState === "error"
 									? "Falha ao copiar"
-									: "Compartilhar link do plano"
+									: "Copiar plano estruturado (cola formatado em email/Slack)"
 						}
 						className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content ${
 							shareState === "copied" ? "border-emerald-500/40 text-emerald-300" : "border-edge"
@@ -287,11 +306,13 @@ function StickyHeader({
 								<path strokeLinecap="round" strokeLinejoin="round" d="M3 8.5L6.5 12 13 5" />
 							</svg>
 						) : (
+							// Copy icon: two overlapping rounded rectangles, the
+							// universally-recognized "duplicate to clipboard" glyph.
+							// Replaces the previous share/network icon — the action
+							// is "copy this to my clipboard", not "broadcast outward".
 							<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4}>
-								<circle cx="4" cy="8" r="1.6" />
-								<circle cx="12" cy="3.5" r="1.6" />
-								<circle cx="12" cy="12.5" r="1.6" />
-								<path strokeLinecap="round" d="M5.4 7.3l5.2-3M5.4 8.7l5.2 3" />
+								<rect x="5" y="5" width="8" height="9" rx="1.5" />
+								<path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H10" strokeLinecap="round" />
 							</svg>
 						)}
 					</button>

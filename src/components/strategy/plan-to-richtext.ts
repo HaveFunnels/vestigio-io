@@ -141,8 +141,11 @@ export function planToEmailHtml(plan: StrategyPlan, planUrl: string): { html: st
 	parts.push(
 		`<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; color: #18181b; line-height: 1.5; max-width: 640px;">`,
 	);
+	// Domain em <code> monospace — mesma marca registrada visual nos 3
+	// formatos rich (Email/Notas/Markdown). Email clients renderizam
+	// <code> com fonte SF-Mono/Menlo se disponível, fallback monospace.
 	parts.push(
-		`<h2 style="font-size: 18px; font-weight: 700; margin: 0 0 4px 0; color: #18181b;">Plano de ${escapeHtml(s.domain)} · ${escapeHtml(s.monthDisplay)}</h2>`,
+		`<h2 style="font-size: 18px; font-weight: 700; margin: 0 0 4px 0; color: #18181b;">Plano de <code style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #f4f4f5; padding: 1px 6px; border-radius: 4px; font-size: 15px;">${escapeHtml(s.domain)}</code> · ${escapeHtml(s.monthDisplay)}</h2>`,
 	);
 	parts.push(
 		`<p style="font-size: 12px; color: #71717a; margin: 0 0 16px 0;">Ciclo ${s.cycleNumber} · Publicado em ${escapeHtml(s.generatedDate)}</p>`,
@@ -198,11 +201,14 @@ export function planToEmailHtml(plan: StrategyPlan, planUrl: string): { html: st
 export function planToNotesHtml(plan: StrategyPlan, planUrl: string): { html: string; text: string } {
 	const s = extractSummary(plan, planUrl);
 	const parts: string[] = [];
-	parts.push(`<h2>Plano de ${escapeHtml(s.domain)} · ${escapeHtml(s.monthDisplay)}</h2>`);
+	// Domain em <code> destaca a marca registrada no meio do <h2>. Apple
+	// Notes / Notion preservam o code styling com fonte monoespaçada.
+	parts.push(`<h2>Plano de <code>${escapeHtml(s.domain)}</code> · ${escapeHtml(s.monthDisplay)}</h2>`);
 	parts.push(`<p><em>Ciclo ${s.cycleNumber} · Publicado em ${escapeHtml(s.generatedDate)}</em></p>`);
 	if (s.thesis) {
 		parts.push(`<blockquote><strong>${escapeHtml(s.thesis)}</strong></blockquote>`);
 	}
+	parts.push(`<hr>`);
 	parts.push(`<h3>Números do mês</h3>`);
 	parts.push(`<ul>`);
 	for (const line of s.heroLines) {
@@ -210,46 +216,60 @@ export function planToNotesHtml(plan: StrategyPlan, planUrl: string): { html: st
 	}
 	parts.push(`</ul>`);
 	if (s.topSteps.length > 0) {
+		parts.push(`<hr>`);
 		parts.push(`<h3>Próximos passos</h3>`);
 		parts.push(`<ol>`);
 		for (const step of s.topSteps) {
 			parts.push(`<li>`);
 			parts.push(`<strong>${escapeHtml(step.title)}</strong> — ${escapeHtml(step.range)}`);
 			if (step.reasoning) {
-				parts.push(`<br><span>${escapeHtml(step.reasoning)}</span>`);
+				parts.push(`<br><em>${escapeHtml(step.reasoning)}</em>`);
 			}
 			parts.push(`</li>`);
 		}
 		parts.push(`</ol>`);
 	}
+	parts.push(`<hr>`);
 	parts.push(`<p>Plano completo: <a href="${escapeHtml(planUrl)}">${escapeHtml(planUrl)}</a></p>`);
 	return { html: parts.join(""), text: planToPlainText(plan, planUrl) };
 }
 
 // ──────────────────────────────────────────────
-// WhatsApp — text with WhatsApp markup
-// WhatsApp parser supports:
-//   *bold*  _italic_  ~strike~  ```mono```
-//   > single-line quote (line starts with "> ")
-// We use *bold* for emphasis + > on the thesis line.
+// WhatsApp — text com markup completo do WhatsApp
+// Reference: https://faq.whatsapp.com/539178204879377
+//
+// Tokens suportados pelo parser nativo:
+//   *bold*           — destaque
+//   _italic_         — auxiliar / metadata
+//   ~strikethrough~  — não usado (sem caso natural no plano)
+//   ```mono```       — bloco monospace (URL no rodapé)
+//   `inline code`    — destaque inline (domain)
+//   > text           — quote, 1 linha só, linha começa com "> "
+//   - text           — lista bulletada NATIVA (não usar "•")
+//   1. text          — lista numerada NATIVA
+//
+// O Unicode "•" anteriormente usado virava caractere literal — agora
+// "- " ativa o list renderer do WhatsApp com indentação correta.
 // ──────────────────────────────────────────────
 
 export function planToWhatsApp(plan: StrategyPlan, planUrl: string): string {
 	const s = extractSummary(plan, planUrl);
 	const lines: string[] = [];
-	lines.push(`*Plano de ${s.domain} · ${s.monthDisplay}*`);
+	// Title — domain em inline `code` pra destacar no meio do bold.
+	lines.push(`*Plano de \`${s.domain}\` · ${s.monthDisplay}*`);
 	lines.push(`_Ciclo ${s.cycleNumber} · Publicado em ${s.generatedDate}_`);
 	lines.push("");
 	if (s.thesis) {
-		// WhatsApp quote works only on single-line; if the thesis has line
-		// breaks we collapse them to a single quoted run.
+		// Quote funciona só single-line; collapse newlines internos.
 		const oneLine = s.thesis.replace(/\s*\n+\s*/g, " ");
 		lines.push(`> ${oneLine}`);
 		lines.push("");
 	}
 	lines.push(`*NÚMEROS DO MÊS*`);
 	for (const line of s.heroLines) {
-		lines.push(`• *${line.value}* ${line.label}`);
+		// Native bullet — "- " com espaço. WhatsApp renderiza como lista
+		// indentada, não como caractere literal.
+		lines.push(`- *${line.value}* ${line.label}`);
 	}
 	lines.push("");
 	if (s.topSteps.length > 0) {
@@ -257,12 +277,19 @@ export function planToWhatsApp(plan: StrategyPlan, planUrl: string): string {
 		s.topSteps.forEach((step, i) => {
 			lines.push(`${i + 1}. *${step.title}* — ${step.range}`);
 			if (step.reasoning) {
-				lines.push(`   ${step.reasoning}`);
+				// Reasoning em italic — distingue visualmente do title bold
+				// no app sem competir por peso visual.
+				lines.push(`   _${step.reasoning}_`);
 			}
 			lines.push("");
 		});
 	}
-	lines.push(`Plano completo: ${planUrl}`);
+	// URL em bloco monospace — WhatsApp ainda auto-linka mas o bloco
+	// dá peso visual ao "abre aqui pro plano completo" no fim.
+	lines.push(`Plano completo:`);
+	lines.push("```");
+	lines.push(planUrl);
+	lines.push("```");
 	return lines.join("\n");
 }
 
@@ -274,7 +301,8 @@ export function planToWhatsApp(plan: StrategyPlan, planUrl: string): string {
 export function planToMarkdown(plan: StrategyPlan, planUrl: string): string {
 	const s = extractSummary(plan, planUrl);
 	const lines: string[] = [];
-	lines.push(`## Plano de ${s.domain} · ${s.monthDisplay}`);
+	// Domain em inline code — idiomático em Markdown pra nomes técnicos.
+	lines.push(`## Plano de \`${s.domain}\` · ${s.monthDisplay}`);
 	lines.push(`*Ciclo ${s.cycleNumber} · Publicado em ${s.generatedDate}*`);
 	lines.push("");
 	if (s.thesis) {
@@ -283,21 +311,28 @@ export function planToMarkdown(plan: StrategyPlan, planUrl: string): string {
 		lines.push(quoted);
 		lines.push("");
 	}
+	lines.push(`---`);
+	lines.push("");
 	lines.push(`### Números do mês`);
 	for (const line of s.heroLines) {
 		lines.push(`- **${line.value}** ${line.label}`);
 	}
 	lines.push("");
 	if (s.topSteps.length > 0) {
+		lines.push(`---`);
+		lines.push("");
 		lines.push(`### Próximos passos`);
 		s.topSteps.forEach((step, i) => {
 			lines.push(`${i + 1}. **${step.title}** — ${step.range}`);
 			if (step.reasoning) {
-				lines.push(`   ${step.reasoning}`);
+				// Reasoning em italic — distingue do título bold.
+				lines.push(`   *${step.reasoning}*`);
 			}
 			lines.push("");
 		});
 	}
+	lines.push(`---`);
+	lines.push("");
 	lines.push(`[Plano completo](${planUrl})`);
 	return lines.join("\n");
 }

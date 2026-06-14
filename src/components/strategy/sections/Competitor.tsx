@@ -26,6 +26,10 @@ import type { CompetitorSection } from "../types";
 
 interface Props {
 	competitor: CompetitorSection | null | undefined;
+	/** Quando true, renderiza sem o h2/subtítulo + sem motion section +
+	 *  sem outer card chrome — pra rodar dentro de Carteira onde o tab
+	 *  strip já provê todo esse contexto. */
+	embedded?: boolean;
 }
 
 const SEVERITY_TONE: Record<string, { fg: string; bg: string; ring: string; label: string }> = {
@@ -50,7 +54,7 @@ function SeverityChip({ severity, children }: { severity: "low" | "medium" | "hi
 	);
 }
 
-export default function Competitor({ competitor }: Props) {
+export default function Competitor({ competitor, embedded = false }: Props) {
 	if (!competitor) return null;
 
 	const monitoringOnly =
@@ -58,44 +62,33 @@ export default function Competitor({ competitor }: Props) {
 		!competitor.trustPostureLag &&
 		!competitor.serpOverlap;
 
-	return (
-		<motion.section
-			initial={{ opacity: 0, y: 16 }}
-			whileInView={{ opacity: 1, y: 0 }}
-			viewport={{ once: true, margin: "-10%" }}
-			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
-			className="mb-12"
-		>
-			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
-					Concorrência neste ciclo
-				</h2>
-				<div className="text-[11px] text-content-faint">
-					{competitor.totalActive} de {competitor.totalMonitored} ativos
-				</div>
-			</div>
-
-			<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
-				{/* Top-line summary. monitoring-only mode reframes the empty
-				    state explicitly so the customer reads it as good news
-				    ("nobody is copying you"), not as silence ("0 sinais"). */}
+	const sectionContent = (
+		<>
+			<div data-vsgp-card className={embedded ? "" : "rounded-2xl border border-edge bg-surface-card p-5 sm:p-6"}>
+				{/* Top-line summary. monitoring-only mode reframes o empty
+				    state como sinal positivo + desarma "vocês estão checando
+				    mesmo?" listando concretamente o que foi comparado +
+				    promete vigilância contínua antes do problema. */}
 				<div className="mb-5 border-b border-edge/40 pb-5">
 					{monitoringOnly ? (
 						<>
 							<div className="flex items-baseline justify-between gap-3">
 								<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-									Situação este ciclo
+									Marca intacta
 								</div>
 								<span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
 									Sem cópia detectada
 								</span>
 							</div>
 							<div className="mt-2 font-serif text-[18px] leading-snug text-content">
-								Ninguém está copiando você este ciclo.
+								Nada mexeu na sua posição este ciclo.
 							</div>
 							<p className="mt-1.5 text-[12.5px] leading-snug text-content-secondary">
-								Vestigio analisou copy, posicionamento de pesquisas de marca e postura de confiança dos {competitor.totalMonitored}{" "}
-								{competitor.totalMonitored === 1 ? "concorrente monitorado" : "concorrentes monitorados"} e não detectou nenhum sinal material de cópia, avanço em pesquisas de marca ou colapso de diferenciação.
+								Nenhum dos {competitor.totalMonitored}{" "}
+								{competitor.totalMonitored === 1 ? "concorrente monitorado" : "concorrentes monitorados"} imitou sua copy comercial, subiu nas pesquisas pelo nome da sua marca, nem encurtou a distância entre o que você promete e o que eles prometem.
+							</p>
+							<p className="mt-2 text-[12.5px] leading-snug text-content-muted">
+								Continuamos checando. Se algum concorrente começar a mexer, mostramos aqui antes de virar problema.
 							</p>
 						</>
 					) : (
@@ -260,6 +253,31 @@ export default function Competitor({ competitor }: Props) {
 					</Link>
 				</div>
 			</div>
+		</>
+	);
+
+	// Embedded mode: render só o conteúdo, sem motion.section + sem
+	// header próprio. O Carteira parent já provê todo esse chrome via
+	// tab strip. Em standalone mode, mantém o layout completo.
+	if (embedded) return sectionContent;
+
+	return (
+		<motion.section
+			initial={{ opacity: 0, y: 16 }}
+			whileInView={{ opacity: 1, y: 0 }}
+			viewport={{ once: true, margin: "-10%" }}
+			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.12 }}
+			className="mb-12"
+		>
+			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
+					Concorrência neste ciclo
+				</h2>
+				<div className="text-[11px] text-content-faint">
+					{competitor.totalActive} de {competitor.totalMonitored} ativos
+				</div>
+			</div>
+			{sectionContent}
 		</motion.section>
 	);
 }

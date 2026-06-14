@@ -22,6 +22,10 @@ import type { ImpersonatorsSection, ImpersonatorThreatType } from "../types";
 
 interface Props {
 	impersonators: ImpersonatorsSection | null | undefined;
+	/** Quando true, renderiza sem h2/subtítulo + sem motion.section +
+	 *  sem outer card chrome — pra rodar dentro de Carteira onde o tab
+	 *  strip já provê todo esse contexto. */
+	embedded?: boolean;
 }
 
 const SEVERITY_TONE: Record<string, { fg: string; bg: string; ring: string; label: string }> = {
@@ -83,30 +87,14 @@ function StatTile({
 	);
 }
 
-export default function Impersonators({ impersonators }: Props) {
+export default function Impersonators({ impersonators, embedded = false }: Props) {
 	if (!impersonators) return null;
 
 	const hasMatches = impersonators.totalMatchesThisCycle > 0;
 	const hasFindings = impersonators.findings.length > 0;
 
-	return (
-		<motion.section
-			initial={{ opacity: 0, y: 16 }}
-			whileInView={{ opacity: 1, y: 0 }}
-			viewport={{ once: true, margin: "-10%" }}
-			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.14 }}
-			className="mb-12"
-		>
-			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
-				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
-					Impersonação de marca
-				</h2>
-				<div className="text-[11px] text-content-faint">
-					{impersonators.totalScannedEver} domínios analisados desde o primeiro ciclo
-				</div>
-			</div>
-
-			<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-6">
+	const sectionContent = (
+		<div data-vsgp-card className={embedded ? "" : "rounded-2xl border border-edge bg-surface-card p-6"}>
 				{/* Top stats grid. */}
 				<div className="mb-5 grid grid-cols-2 gap-3 border-b border-edge/40 pb-5 sm:grid-cols-4">
 					<StatTile
@@ -138,7 +126,7 @@ export default function Impersonators({ impersonators }: Props) {
 				{hasFindings && (
 					<div className="mb-5 space-y-3 border-b border-edge/40 pb-5">
 						<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-							Sinais da carteira deste mês
+							Sinais detectados este ciclo
 						</div>
 						{impersonators.findings.map((f) => (
 							<div
@@ -230,16 +218,43 @@ export default function Impersonators({ impersonators }: Props) {
 						</ul>
 					</>
 				) : (
-					<div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-center">
+					<div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
 						<div className="inline-flex items-center gap-2 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
-							Sem impersonadores este ciclo
+							Sem clonadores ativos
 						</div>
 						<p className="mt-2 text-[12.5px] leading-snug text-content-secondary">
-							Nenhum domínio com sinal de impersonação detectado entre os <span className="text-content">{impersonators.totalScannedEver}</span> escaneados desde o primeiro ciclo. Vestigio continua varrendo typosquats, variações de TLD e padrões de phishing a cada audit.
+							Nenhum domínio suspeito entre os{" "}
+							<span className="text-content">{impersonators.totalScannedEver}</span>{" "}
+							escaneados desde o primeiro ciclo.
+						</p>
+						<p className="mt-2 text-[12.5px] leading-snug text-content-muted">
+							Vestigio segue monitorando padrões como typosquat (variação de letras no domínio), variação de TLD (.net, .co, .com.br), palavra-chave comercial (sufixos tipo <span className="font-mono text-[11.5px] text-content-secondary">-oficial</span>, <span className="font-mono text-[11.5px] text-content-secondary">-distribuidora</span>) e padrões de phishing. Se algum aparecer, mostramos aqui com a capacidade detectada (captura de pagamento, credencial ou sinais de comércio).
 						</p>
 					</div>
 				)}
 			</div>
+	);
+
+	// Embedded mode: skip outer h2 + motion.section. Carteira já provê.
+	if (embedded) return sectionContent;
+
+	return (
+		<motion.section
+			initial={{ opacity: 0, y: 16 }}
+			whileInView={{ opacity: 1, y: 0 }}
+			viewport={{ once: true, margin: "-10%" }}
+			transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay: 0.14 }}
+			className="mb-12"
+		>
+			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
+					Clonadores
+				</h2>
+				<div className="text-[11px] text-content-faint">
+					{impersonators.totalScannedEver} domínios analisados desde o primeiro ciclo
+				</div>
+			</div>
+			{sectionContent}
 		</motion.section>
 	);
 }

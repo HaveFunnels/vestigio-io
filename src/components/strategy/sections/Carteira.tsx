@@ -2,27 +2,34 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import * as Collapsible from "@radix-ui/react-collapsible";
-import { ChevronDown } from "lucide-react";
 import Competitor from "./Competitor";
 import Impersonators from "./Impersonators";
 import type { CompetitorSection, ImpersonatorsSection } from "../types";
 
 /*
- * Wave 22.8 review move 1 — Carteira cluster
+ * Carteira — duas preocupações distintas num strip único
  *
- * Replaces two standalone sections (Competitor Radar + Brand
- * Impersonators) with a single expandable card. The customer sees one
- * compact summary line and decides whether to dive in. This addresses
- * the churn-prevention finding that "todo mês a mesma coisa" (no
- * signal) was making each section read as noise.
+ * Versão anterior (Wave 22.8) clusterizava Competitor + Impersonators
+ * num Collapsible compartilhado pra reduzir noise dos meses quietos.
+ * Customer feedback: as duas preocupações são totalmente diferentes
+ * (concorrentes = posicionamento estratégico; clonadores = segurança/
+ * legal) e o agrupamento diluía a urgência de cada uma + confundia
+ * leitura ("sem cópia detectada" lia também como "sem clones").
  *
- * Self-hide rule: when BOTH competitor and impersonators are null/empty,
- * the cluster returns null. Otherwise renders even if only one half has
- * data (the other half just doesn't render inside the collapsible).
+ * Nova forma: tab strip dividido em 2.
+ *   - Fechado: ambos os summaries lado a lado (strip compacto).
+ *   - Click numa aba: expande SÓ aquele lado.
+ *   - Click novamente: colapsa.
+ *   - Click no outro lado: switch entre eles (exclusivo).
  *
- * Collapsed by default. Opens in place; no drawer, no navigation —
- * stays inline so the customer's reading flow is preserved.
+ * Clonadores VEM PRIMEIRO porque é a preocupação mais urgente —
+ * golpistas com captura de pagamento/credencial são problema legal/
+ * financeiro imediato, não estratégico de longo prazo.
+ *
+ * Default-open: abre automaticamente na aba que tem sinal urgente.
+ *   - Se há impersonadores ativos → abre Clonadores
+ *   - Senão, se há sinais de concorrente → abre Concorrentes
+ *   - Senão, fechado.
  */
 
 interface Props {
@@ -39,42 +46,35 @@ function competitorSignalCount(c: CompetitorSection | null | undefined): number 
 	);
 }
 
-function impersonatorsSignalCount(
-	i: ImpersonatorsSection | null | undefined,
-): number {
-	if (!i) return 0;
-	// "Has signal" means active matches OR findings exist this cycle.
-	return i.activeCount + i.findings.length;
-}
+type TabId = "clonadores" | "concorrentes";
 
 export default function Carteira({ competitor, impersonators }: Props) {
 	const hasCompetitor = !!competitor;
 	const hasImpersonators = !!impersonators;
 	if (!hasCompetitor && !hasImpersonators) return null;
 
+	const impActive = hasImpersonators ? impersonators!.activeCount : 0;
+	const impHighConf = hasImpersonators ? impersonators!.highConfidenceCount : 0;
+	const impScanned = hasImpersonators ? impersonators!.totalScannedEver : 0;
 	const compSignals = competitorSignalCount(competitor);
-	const impSignals = impersonatorsSignalCount(impersonators);
-	const totalSignals = compSignals + impSignals;
+	const compMonitored = hasCompetitor ? competitor!.totalMonitored : 0;
 
-	// Counts shown directly in the header (not "0 sinais este ciclo"
-	// which lia como ausência genérica). The customer wants concrete
-	// numbers: quantos concorrentes estão sob monitoramento + quantos
-	// impersonadores foram detectados ativos. Ambos podem ser 0 — esse
-	// é o estado saudável.
-	const competitorCount = hasCompetitor ? competitor!.totalMonitored : 0;
-	const impersonatorCount = hasImpersonators ? impersonators!.activeCount : 0;
+	// Default tab: prioriza urgência. Clones ativos > sinais de
+	// concorrente > fechado.
+	const initialTab: TabId | null =
+		impActive > 0
+			? "clonadores"
+			: compSignals > 0
+				? "concorrentes"
+				: null;
 
-	// Default open when there is material activity. Otherwise collapse
-	// so the customer doesn't have to scroll past a quiet card every
-	// month.
-	const [open, setOpen] = useState(totalSignals > 0);
+	const [activeTab, setActiveTab] = useState<TabId | null>(initialTab);
 
-	const competitorLine = hasCompetitor
-		? `${competitor!.totalActive} ativos · ${compSignals} ${compSignals === 1 ? "sinal" : "sinais"} este ciclo`
-		: null;
-	const impersonatorsLine = hasImpersonators
-		? `${impersonators!.totalScannedEver} domínios analisados`
-		: null;
+	const toggle = (tab: TabId) => {
+		setActiveTab((current) => (current === tab ? null : tab));
+	};
+
+	const bothPresent = hasImpersonators && hasCompetitor;
 
 	return (
 		<motion.section
@@ -89,96 +89,131 @@ export default function Carteira({ competitor, impersonators }: Props) {
 					Sinais da marca
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					Concorrência e impersonadores
+					Clonadores e concorrentes
 				</div>
 			</div>
 
-			<div data-vsgp-card className="overflow-hidden rounded-2xl border border-edge bg-surface-card">
-				<Collapsible.Root open={open} onOpenChange={setOpen}>
-					<Collapsible.Trigger asChild>
-						<button
-							type="button"
-							className="grid w-full grid-cols-[1fr_auto] items-center gap-3 p-5 text-left transition-colors hover:bg-surface-card-hover"
-						>
-							<div className="min-w-0 space-y-2">
-								{/* Numbers customer wants to see at a glance:
-								    concorrentes sob monitoramento + impersonadores
-								    detectados. Antes era "X sinais" agregado que lia
-								    como métrica inventada. */}
-								<div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
-									{hasCompetitor && (
-										<div>
-											<span className="font-mono text-[20px] font-semibold tabular-nums text-content">
-												{competitorCount}
-											</span>
-											<span className="ml-1.5 text-[12px] font-normal text-content-faint">
-												{competitorCount === 1 ? "concorrente monitorado" : "concorrentes monitorados"}
-											</span>
-										</div>
-									)}
-									{hasImpersonators && (
-										<div>
-											<span className="font-mono text-[20px] font-semibold tabular-nums text-content">
-												{impersonatorCount}
-											</span>
-											<span className="ml-1.5 text-[12px] font-normal text-content-faint">
-												{impersonatorCount === 1 ? "impersonador ativo" : "impersonadores ativos"}
-											</span>
-										</div>
-									)}
-								</div>
-								<div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[11px] text-content-muted">
-									{competitorLine && (
-										<span>
-											<span className="font-semibold text-content-secondary">Concorrência</span>
-											{" · "}
-											{competitorLine}
-										</span>
-									)}
-									{competitorLine && impersonatorsLine && (
-										<span className="text-content-faint">·</span>
-									)}
-									{impersonatorsLine && (
-										<span>
-											<span className="font-semibold text-content-secondary">Impersonação</span>
-											{" · "}
-											{impersonatorsLine}
-										</span>
-									)}
-								</div>
-							</div>
-							<ChevronDown
-								className={`h-4 w-4 shrink-0 text-content-muted transition-transform ${open ? "rotate-180" : ""}`}
-							/>
-						</button>
-					</Collapsible.Trigger>
+			<div
+				data-vsgp-card
+				className="overflow-hidden rounded-2xl border border-edge bg-surface-card"
+			>
+				{/* Strip de 2 abas. Clonadores à esquerda (urgência > concorrência). */}
+				<div className={`grid ${bothPresent ? "grid-cols-2 divide-x divide-edge" : "grid-cols-1"}`}>
+					{hasImpersonators && (
+						<TabButton
+							active={activeTab === "clonadores"}
+							urgent={impHighConf > 0}
+							label="Clonadores"
+							primaryValue={impActive}
+							primaryLabel={impActive === 1 ? "ativo este ciclo" : "ativos este ciclo"}
+							secondary={`${impScanned} ${impScanned === 1 ? "domínio analisado" : "domínios analisados"}`}
+							onClick={() => toggle("clonadores")}
+						/>
+					)}
+					{hasCompetitor && (
+						<TabButton
+							active={activeTab === "concorrentes"}
+							urgent={false}
+							label="Concorrentes"
+							primaryValue={compMonitored}
+							primaryLabel={compMonitored === 1 ? "monitorado" : "monitorados"}
+							secondary={
+								compSignals === 0
+									? "sem sinais este ciclo"
+									: `${compSignals} ${compSignals === 1 ? "sinal" : "sinais"} este ciclo`
+							}
+							onClick={() => toggle("concorrentes")}
+						/>
+					)}
+				</div>
 
-					<AnimatePresence>
-						{open && (
-							<Collapsible.Content asChild forceMount>
-								<motion.div
-									initial={{ height: 0, opacity: 0 }}
-									animate={{ height: "auto", opacity: 1 }}
-									exit={{ height: 0, opacity: 0 }}
-									transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-									className="overflow-hidden border-t border-edge"
-								>
-									{/* Nested sub-sections. Each is self-hide-aware
-									    via the same null-check it already had, so
-									    if only one is populated the other won't
-									    add empty whitespace. */}
-									<div className="-mt-12 px-5 pt-5">
-										<Competitor competitor={competitor ?? null} />
-									</div>
-									<div className="-mt-12 px-5 pb-5">
-										<Impersonators impersonators={impersonators ?? null} />
-									</div>
-								</motion.div>
-							</Collapsible.Content>
-						)}
-					</AnimatePresence>
-				</Collapsible.Root>
+				<AnimatePresence initial={false}>
+					{activeTab === "clonadores" && hasImpersonators && (
+						<motion.div
+							key="clonadores-expanded"
+							initial={{ height: 0, opacity: 0 }}
+							animate={{ height: "auto", opacity: 1 }}
+							exit={{ height: 0, opacity: 0 }}
+							transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+							className="overflow-hidden border-t border-edge"
+						>
+							<div className="px-5 py-5">
+								<Impersonators impersonators={impersonators ?? null} embedded />
+							</div>
+						</motion.div>
+					)}
+					{activeTab === "concorrentes" && hasCompetitor && (
+						<motion.div
+							key="concorrentes-expanded"
+							initial={{ height: 0, opacity: 0 }}
+							animate={{ height: "auto", opacity: 1 }}
+							exit={{ height: 0, opacity: 0 }}
+							transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+							className="overflow-hidden border-t border-edge"
+						>
+							<div className="px-5 py-5">
+								<Competitor competitor={competitor ?? null} embedded />
+							</div>
+						</motion.div>
+					)}
+				</AnimatePresence>
 			</div>
 		</motion.section>
+	);
+}
+
+function TabButton({
+	active,
+	urgent,
+	label,
+	primaryValue,
+	primaryLabel,
+	secondary,
+	onClick,
+}: {
+	active: boolean;
+	urgent: boolean;
+	label: string;
+	primaryValue: number;
+	primaryLabel: string;
+	secondary: string;
+	onClick: () => void;
+}) {
+	return (
+		<button
+			type="button"
+			onClick={onClick}
+			aria-pressed={active}
+			className={`flex flex-col items-start gap-1.5 p-5 text-left transition-colors ${
+				active ? "bg-surface-card-hover" : "hover:bg-surface-card-hover/70"
+			}`}
+		>
+			<div className="flex items-center gap-2">
+				<span
+					className={`text-[12.5px] font-semibold uppercase tracking-[0.08em] ${
+						active ? "text-content" : "text-content-secondary"
+					}`}
+				>
+					{label}
+				</span>
+				{urgent && (
+					<span
+						className="inline-flex h-1.5 w-1.5 rounded-full bg-rose-400"
+						aria-label="Sinais urgentes"
+					/>
+				)}
+			</div>
+			<div className="flex items-baseline gap-1.5">
+				<span
+					className={`font-mono text-[22px] font-semibold tabular-nums ${
+						urgent && primaryValue > 0 ? "text-rose-300" : "text-content"
+					}`}
+				>
+					{primaryValue}
+				</span>
+				<span className="text-[12px] text-content-faint">{primaryLabel}</span>
+			</div>
+			<div className="text-[11px] text-content-muted">{secondary}</div>
+		</button>
 	);
 }

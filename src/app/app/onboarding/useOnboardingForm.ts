@@ -7,7 +7,7 @@
  * components. All business logic lives here.
  */
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
@@ -337,6 +337,13 @@ export default function useOnboardingForm() {
 	const [domainChecking, setDomainChecking] = useState(false);
 	const [domainWarning, setDomainWarning] = useState<string | null>(null);
 
+	// Ref pra handleActivate. Evita dep circular entre dismissMirror e
+	// handleActivate (handleActivate depende de hasActiveOrg/form/etc;
+	// dismissMirror precisa chamar handleActivate no caso terminal).
+	// A ref é atualizada via useEffect logo após handleActivate ser
+	// definida.
+	const handleActivateRef = useRef<(() => void) | null>(null);
+
 	// Wave 22 Fase B — new-env flow flag. Read once here so every gate
 	// below (prefill, redirect, submit) can branch on it consistently.
 	const isNewEnvFlow = searchParams.get("new_env") === "true";
@@ -587,9 +594,20 @@ export default function useOnboardingForm() {
 	}, [currentStep, form.domain, t, totalSteps]);
 
 	const dismissMirror = useCallback(() => {
+		const wasFinalStep = stepIndex === totalSteps - 1;
 		setShowMirrorFor(null);
+		// Wave-22.6 cleanup: o step `ticket` foi removido do flow. A
+		// activate logic ficou orfanada — revenue virou o step final
+		// pra hasActiveOrg mas o JSX só chamava next() (soft-lock).
+		// Quando o mirror do revenue é dispensado E estamos no último
+		// step do flow administrativo, dispara activate em vez de
+		// tentar avançar pra um step que não existe.
+		if (wasFinalStep && hasActiveOrg) {
+			handleActivateRef.current?.();
+			return;
+		}
 		setStepIndex((s: number) => Math.min(s + 1, totalSteps - 1));
-	}, [totalSteps]);
+	}, [stepIndex, totalSteps, hasActiveOrg]);
 
 	const prev = useCallback(() => {
 		// Going back from a mirror just clears it — user lands back on
@@ -724,6 +742,13 @@ export default function useOnboardingForm() {
 			setLoading(false);
 		}
 	}, [hasActiveOrg, form, selectedPlan, session, t, updateSession, router]);
+
+	// Sync handleActivate ref — sempre aponta pra última versão do
+	// callback. Usado por dismissMirror pra disparar activate sem dep
+	// circular.
+	useEffect(() => {
+		handleActivateRef.current = handleActivate;
+	}, [handleActivate]);
 
 	// ── Can advance? ──
 	const canAdvance =

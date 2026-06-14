@@ -485,7 +485,7 @@ export default function OnboardPage() {
 				/>
 			)}
 
-			{/* ── Revenue (slider) ── */}
+			{/* ── Revenue (slider) — terminal step for hasActiveOrg ── */}
 			{!f.showMirrorFor && f.currentStep === "revenue" && (
 				<SliderInputStep
 					title={f.t("revenue.title")}
@@ -497,34 +497,14 @@ export default function OnboardPage() {
 					formatValue={(v) => `R$${v >= 1000000 ? `${(v / 1000000).toFixed(1)}M` : `${Math.round(v / 1000)}k`}`}
 					minLabel="R$5k"
 					maxLabel="R$10M"
-					buttonLabel={f.t("continue")}
-					onSubmit={(v) => {
-						f.update("monthlyRevenue", v);
-						f.next();
-					}}
-				/>
-			)}
-
-			{/* ── Average Ticket (slider) ── */}
-			{!f.showMirrorFor && f.currentStep === "ticket" && (
-				<SliderInputStep
-					title={f.t("ticket.title")}
-					subtitle={f.t("ticket.subtitle")}
-					min={20}
-					max={40000}
-					step={10}
-					defaultValue={f.form.averageTicket}
-					formatValue={(v) => `R$${v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}`}
-					minLabel="R$20"
-					maxLabel="R$40k"
 					buttonLabel={
-						f.hasActiveOrg
+						f.isFinalStep && f.hasActiveOrg
 							? f.t("review.activate_environment")
 							: f.t("continue")
 					}
 					onSubmit={(v) => {
-						f.update("averageTicket", v);
-						f.hasActiveOrg ? f.handleActivate() : f.next();
+						f.update("monthlyRevenue", v);
+						f.next();
 					}}
 					loading={f.loading}
 				/>

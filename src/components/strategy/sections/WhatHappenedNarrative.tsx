@@ -36,9 +36,17 @@ interface Props {
 // Cobertura: todos os packs do registry — antes só 7 packs tinham cor;
 // os outros (revenue_integrity, funnel_journey, money_moment_exposure,
 // etc.) caíam no zinc-400 fallback e a barra ficava com várias fatias
-// cinza idênticas. Customer feedback: uma fatia amarela aparecia sem
-// legenda — era trust em posição 6+ (legenda truncada em slice(0, 5));
-// corrigido renderizando todas as fatias na legenda também.
+// cinza idênticas.
+//
+// Cores únicas por pack canônico (2026-06-14 audit): packs canônicos
+// distintos NÃO podem partilhar hex, senão a Distribuição por Tema fica
+// ilegível (dois packs viram "a mesma fatia"). Os pares legacy↔canonical
+// do MESMO pack (revenue ↔ revenue_integrity, saas ↔ saas_growth_readiness,
+// behavioral ↔ behavioral_heuristics) propositalmente partilham hex
+// porque só uma chave por pack é emitida por plano.
+//
+// Customer caso: copy_alignment + funnel_integrity ambos em rose-400 →
+// as duas maiores fatias eram a mesma cor. Corrigido.
 const PACK_COLORS: Record<string, string> = {
 	// Legacy short keys (mantidos por compatibilidade)
 	copy_alignment: "rgb(248 113 113)", // rose-400
@@ -48,16 +56,16 @@ const PACK_COLORS: Record<string, string> = {
 	saas: "rgb(56 189 248)", // sky-400
 	behavioral: "rgb(167 139 250)", // violet-400
 	chargeback: "rgb(244 114 182)", // pink-400
-	// Packs canônicos do registry (rev/funnel/money/saas-growth/etc.)
-	revenue_integrity: "rgb(74 222 128)", // green-400
-	chargeback_resilience: "rgb(244 114 182)", // pink-400
-	money_moment_exposure: "rgb(250 204 21)", // yellow-400
-	saas_growth_readiness: "rgb(56 189 248)", // sky-400
+	// Packs canônicos do registry — cada hex único.
+	revenue_integrity: "rgb(74 222 128)", // green-400 — ALIAS de `revenue`
+	chargeback_resilience: "rgb(244 114 182)", // pink-400 — ALIAS de `chargeback`
+	money_moment_exposure: "rgb(129 140 248)", // indigo-400 — era yellow-400 (colidia c/ trust)
+	saas_growth_readiness: "rgb(56 189 248)", // sky-400 — ALIAS de `saas`
 	channel_integrity: "rgb(45 212 191)", // teal-400
 	discoverability: "rgb(192 132 252)", // purple-400
 	brand_integrity: "rgb(232 121 249)", // fuchsia-400
-	funnel_journey: "rgb(251 146 60)", // orange-400
-	funnel_integrity: "rgb(248 113 113)", // rose-400
+	funnel_journey: "rgb(251 191 36)", // amber-400 — era orange-400 (colidia c/ scale_readiness)
+	funnel_integrity: "rgb(239 68 68)", // red-500 — era rose-400 (colidia c/ copy_alignment)
 	first_impression_revenue: "rgb(34 211 238)", // cyan-400
 	action_value_map: "rgb(163 230 53)", // lime-400
 	acquisition_integrity: "rgb(96 165 250)", // blue-400
@@ -68,10 +76,10 @@ const PACK_COLORS: Record<string, string> = {
 	payment_health: "rgb(134 239 172)", // green-300
 	content_freshness: "rgb(196 181 253)", // violet-300
 	vertical_specific: "rgb(216 180 254)", // purple-300
-	cross_signal: "rgb(244 114 182)", // pink-400
+	cross_signal: "rgb(249 168 212)", // pink-300 — era pink-400 (colidia c/ chargeback)
 	email_deliverability: "rgb(94 234 212)", // teal-300
 	competitive_lens: "rgb(240 171 252)", // fuchsia-300
-	behavioral_heuristics: "rgb(167 139 250)", // violet-400
+	behavioral_heuristics: "rgb(167 139 250)", // violet-400 — ALIAS de `behavioral`
 };
 
 function colorForPack(pack: string): string {

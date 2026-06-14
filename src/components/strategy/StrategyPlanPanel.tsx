@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useTrack } from "@/hooks/useProductTrack";
 import "@/styles/strategy.css";
 import type { StrategyPlan } from "./types";
-import { planToRichText } from "./plan-to-richtext";
+import { buildCopyPayload, COPY_FORMATS, type CopyFormat } from "./plan-to-richtext";
 import HeroMetrics from "./sections/HeroMetrics";
 import BuyerSegments from "./sections/BuyerSegments";
 import WhatHappenedNarrative from "./sections/WhatHappenedNarrative";
@@ -120,36 +120,57 @@ function StickyHeader({
 	const [exporting, setExporting] = useState(false);
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
+	const [copyMenuOpen, setCopyMenuOpen] = useState(false);
+	const copyMenuRef = useRef<HTMLDivElement | null>(null);
 
-	// Share = copy structured plan (HTML + plain fallback) so a paste
-	// into email / Slack / Notion preserves bold + spacing + lists.
-	// Previously this just copied a permalink — useful, but the URL is
-	// only valuable to people inside the org. Customers wanted to forward
-	// the plan summary to non-Vestigio stakeholders (CFO, agency, board
-	// deck), and a raw URL behind SSO doesn't accomplish that.
-	//
-	// Strategy: write BOTH "text/html" and "text/plain" via ClipboardItem.
-	// Modern paste targets auto-pick HTML; legacy plain-text targets
-	// (chat shells, terminal, search bars) receive a clean text layout.
-	const handleShare = async () => {
+	// Outside-click + escape close the copy menu. Pattern used elsewhere
+	// in the app (CustomSelect) — kept local here because the menu has
+	// only one consumer.
+	useEffect(() => {
+		if (!copyMenuOpen) return;
+		function onPointerDown(e: PointerEvent) {
+			if (copyMenuRef.current && !copyMenuRef.current.contains(e.target as Node)) {
+				setCopyMenuOpen(false);
+			}
+		}
+		function onKey(e: KeyboardEvent) {
+			if (e.key === "Escape") setCopyMenuOpen(false);
+		}
+		document.addEventListener("pointerdown", onPointerDown);
+		document.addEventListener("keydown", onKey);
+		return () => {
+			document.removeEventListener("pointerdown", onPointerDown);
+			document.removeEventListener("keydown", onKey);
+		};
+	}, [copyMenuOpen]);
+
+	// Copy in a specific format. Customers paste into different surfaces
+	// (email, WhatsApp, Notion, terminal) and each has its own formatting
+	// dialect — the menu lets them pick the right one instead of relying
+	// on the destination to interpret a one-size-fits-all blob.
+	const handleCopy = async (format: CopyFormat) => {
+		setCopyMenuOpen(false);
 		try {
 			const url = `${window.location.origin}/app/library/strategy/${encodeURIComponent(
 				plan.month,
 			)}?envId=${encodeURIComponent(plan.environmentId)}`;
-			const { html, text } = planToRichText(plan, url);
+			const payload = buildCopyPayload(format, plan, url);
 
-			// Prefer the rich-clipboard path. Falls back to plain text on
-			// browsers/contexts that don't support ClipboardItem (e.g.
-			// older Safari, restricted iframe).
-			if (typeof window !== "undefined" && "ClipboardItem" in window) {
+			if (payload.html && typeof window !== "undefined" && "ClipboardItem" in window) {
+				// Rich format — write BOTH text/html and text/plain so the
+				// paste target picks whichever it supports.
 				await navigator.clipboard.write([
 					new ClipboardItem({
-						"text/html": new Blob([html], { type: "text/html" }),
-						"text/plain": new Blob([text], { type: "text/plain" }),
+						"text/html": new Blob([payload.html], { type: "text/html" }),
+						"text/plain": new Blob([payload.text], { type: "text/plain" }),
 					}),
 				]);
 			} else {
-				await navigator.clipboard.writeText(text);
+				// Text-only format (whatsapp/markdown/plain) OR a browser
+				// without ClipboardItem support (older Safari, sandboxed
+				// iframe). Plain fallback preserves the formatting markup
+				// characters as-is — they render correctly at the paste site.
+				await navigator.clipboard.writeText(payload.text);
 			}
 			setShareState("copied");
 			setTimeout(() => setShareState("idle"), 2500);
@@ -280,42 +301,83 @@ function StickyHeader({
 					    as a uniform action cluster. State (copied/error/
 					    exporting) shows as a transient label swap on the
 					    aria-label + tooltip. */}
-					<button
-						type="button"
-						onClick={handleShare}
-						aria-label={
-							shareState === "copied"
-								? "Plano copiado"
-								: shareState === "error"
-									? "Falha ao copiar"
-									: "Copiar plano"
-						}
-						title={
-							shareState === "copied"
-								? "Plano copiado!"
-								: shareState === "error"
-									? "Falha ao copiar"
-									: "Copiar plano estruturado (cola formatado em email/Slack)"
-						}
-						className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content ${
-							shareState === "copied" ? "border-emerald-500/40 text-emerald-300" : "border-edge"
-						}`}
-					>
-						{shareState === "copied" ? (
-							<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2}>
-								<path strokeLinecap="round" strokeLinejoin="round" d="M3 8.5L6.5 12 13 5" />
-							</svg>
-						) : (
-							// Copy icon: two overlapping rounded rectangles, the
-							// universally-recognized "duplicate to clipboard" glyph.
-							// Replaces the previous share/network icon — the action
-							// is "copy this to my clipboard", not "broadcast outward".
-							<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4}>
-								<rect x="5" y="5" width="8" height="9" rx="1.5" />
-								<path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H10" strokeLinecap="round" />
-							</svg>
+					<div ref={copyMenuRef} className="relative">
+						<button
+							type="button"
+							onClick={() => setCopyMenuOpen((v) => !v)}
+							aria-haspopup="menu"
+							aria-expanded={copyMenuOpen}
+							aria-label={
+								shareState === "copied"
+									? "Plano copiado"
+									: shareState === "error"
+										? "Falha ao copiar"
+										: "Copiar plano"
+							}
+							title={
+								shareState === "copied"
+									? "Plano copiado!"
+									: shareState === "error"
+										? "Falha ao copiar"
+										: "Copiar plano em diferentes formatos"
+							}
+							className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content ${
+								shareState === "copied" ? "border-emerald-500/40 text-emerald-300" : "border-edge"
+							}`}
+						>
+							{shareState === "copied" ? (
+								<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={2}>
+									<path strokeLinecap="round" strokeLinejoin="round" d="M3 8.5L6.5 12 13 5" />
+								</svg>
+							) : (
+								// Copy icon: two overlapping rounded rectangles.
+								// Universal glyph for "duplicate to clipboard".
+								<svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.4}>
+									<rect x="5" y="5" width="8" height="9" rx="1.5" />
+									<path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H10" strokeLinecap="round" />
+								</svg>
+							)}
+						</button>
+
+						{copyMenuOpen && (
+							<div
+								role="menu"
+								aria-label="Escolha o formato"
+								className="absolute right-0 top-full z-40 mt-1.5 w-56 overflow-hidden rounded-lg border border-edge bg-surface-card shadow-lg"
+							>
+								<div className="border-b border-edge px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-content-faint">
+									Copiar como
+								</div>
+								{COPY_FORMATS.map((fmt) => (
+									<button
+										key={fmt.id}
+										type="button"
+										role="menuitem"
+										onClick={() => handleCopy(fmt.id)}
+										className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left transition-colors hover:bg-surface-card-hover"
+									>
+										<div className="min-w-0 flex-1">
+											<div className="text-[12.5px] font-medium leading-tight text-content">
+												{fmt.label}
+											</div>
+											<div className="mt-0.5 text-[10.5px] leading-tight text-content-faint">
+												{fmt.hint}
+											</div>
+										</div>
+										<svg
+											className="h-3 w-3 shrink-0 text-content-faint"
+											viewBox="0 0 12 12"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth={1.5}
+										>
+											<path strokeLinecap="round" d="M5 3l3 3-3 3" />
+										</svg>
+									</button>
+								))}
+							</div>
 						)}
-					</button>
+					</div>
 					<button
 						type="button"
 						onClick={handleExport}

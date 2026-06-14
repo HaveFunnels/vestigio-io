@@ -25,6 +25,10 @@ interface SliderInputStepProps {
 	buttonLabel: string;
 	onSubmit: (value: number) => void;
 	loading?: boolean;
+	/** Optional live-updating hint rendered below the slider (above the
+	 *  button). Receives the current slider value — used by /audit to
+	 *  show "calibrando faixa de exposição" inline. */
+	valueHint?: (value: number) => React.ReactNode;
 }
 
 export default function SliderInputStep({
@@ -40,6 +44,7 @@ export default function SliderInputStep({
 	buttonLabel,
 	onSubmit,
 	loading = false,
+	valueHint,
 }: SliderInputStepProps) {
 	const [value, setValue] = useState(defaultValue);
 
@@ -97,6 +102,13 @@ export default function SliderInputStep({
 						<span>{minLabel}</span>
 						<span>{maxLabel}</span>
 					</div>
+				)}
+
+				{/* Inline value hint — live updates with the slider value.
+				    Used by /audit to project the impact-range while the
+				    visitor is still calibrating revenue. */}
+				{valueHint && (
+					<div className="mb-5 mt-1">{valueHint(value)}</div>
 				)}
 
 				{/* Submit button */}

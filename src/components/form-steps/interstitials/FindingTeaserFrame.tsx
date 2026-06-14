@@ -50,7 +50,7 @@ export default function FindingTeaserFrame({
 	rangeHighBrlCents,
 	continueLabel,
 	onContinue,
-	revealDelayMs = 2400,
+	revealDelayMs = 1800,
 }: Props) {
 	const [ready, setReady] = useState(false);
 	useEffect(() => {
@@ -75,7 +75,7 @@ export default function FindingTeaserFrame({
 					Enquanto você respondia
 				</div>
 				<h2 className="text-[22px] font-semibold leading-snug text-content sm:text-[26px]">
-					Encontramos algo no seu site
+					Seu primeiro vazamento detectado
 				</h2>
 			</div>
 

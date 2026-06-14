@@ -62,7 +62,7 @@ export default function AnticipationFrame({
 		>
 			<div className="space-y-2 text-center">
 				<div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-500/80">
-					Quase lá
+					Último passo
 				</div>
 				<h2 className="text-[22px] font-semibold leading-snug text-content sm:text-[26px]">
 					Sua análise de {domain} vai conter

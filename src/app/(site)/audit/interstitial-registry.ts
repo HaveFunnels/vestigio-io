@@ -20,15 +20,17 @@ import { pickAnchorsFor } from "@/lib/market-anchors";
 import type { LeadState } from "./useLpAuditForm";
 
 // Copy for the headline of the benchmark frame, per business model.
-// Keeps the tone "calibrando contra X" — not "vocês são piores que X".
+// Wave-23 polish: tom passa de "comparando contra X" (passivo, sistema
+// falando do próprio trabalho) para "você joga na categoria onde X"
+// (ativo, posiciona o visitante como protagonista da disputa).
 const BENCHMARK_HEADLINE_BY_BM: Record<string, string> = {
-	ecommerce: "Comparando a sua loja com benchmarks reais de e-commerce",
-	saas: "Comparando o seu funil com benchmarks de SaaS B2B",
-	lead_gen: "Comparando a sua captação com benchmarks de lead-gen B2B",
-	services: "Comparando a sua operação com benchmarks de serviços",
-	app_conversion: "Comparando o seu funil com benchmarks de app conversion",
-	enterprise: "Comparando a sua operação com benchmarks enterprise",
-	hybrid: "Comparando o seu funil com benchmarks de mercado",
+	ecommerce: "Sua loja joga na categoria onde estes são os números",
+	saas: "Seu SaaS joga na categoria onde estes são os números",
+	lead_gen: "Sua captação joga na categoria onde estes são os números",
+	services: "Sua operação joga na categoria onde estes são os números",
+	app_conversion: "Seu app joga na categoria onde estes são os números",
+	enterprise: "Sua operação joga na categoria onde estes são os números",
+	hybrid: "Seu funil joga na categoria onde estes são os números",
 };
 
 const BUSINESS_TYPE_LABEL: Record<string, string> = {
@@ -183,14 +185,25 @@ export const INTERSTITIAL_REGISTRY: InterstitialDef[] = [
  * Resolve the interstitial (if any) to show after the visitor completes
  * `completedScreen`. Returns null when no entry matches OR when the
  * matched entry's resolve() returned null (data not ready).
+ *
+ * Wave-23 polish: when `seenBefore` is true (returning visitor who
+ * already saw interstitials in a prior session), skip variants that
+ * don't carry personalized data — benchmark + anticipation are the
+ * same on every visit and create friction the second time. The
+ * finding_teaser variant always shows because each finding is
+ * uniquely derived from THIS visit's crawl.
  */
 export function resolveInterstitialFor(
 	completedScreen: ScreenIdLite,
 	form: LeadState,
 	crawl: Parameters<InterstitialDef["resolve"]>[1],
+	seenBefore: boolean = false,
 ) {
 	for (const def of INTERSTITIAL_REGISTRY) {
 		if (def.afterScreen !== completedScreen) continue;
+		if (seenBefore && (def.variant === "benchmark" || def.variant === "anticipation")) {
+			continue;
+		}
 		const props = def.resolve(form, crawl);
 		if (props) return props;
 	}

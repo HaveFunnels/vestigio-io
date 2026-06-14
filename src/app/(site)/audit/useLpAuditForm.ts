@@ -269,6 +269,31 @@ function readLocalStoragePrefill(): PrefillFromStorage {
 	}
 }
 
+// Wave-23 value-on-fill — track whether the visitor has already seen
+// the non-personalized interstitials (benchmark + anticipation) on a
+// prior visit. Set when they dismiss the first interstitial. The
+// finding_teaser is always shown because it's uniquely derived from
+// the current visit's crawl.
+const SEEN_INTERSTITIALS_KEY = "vestigio_seen_interstitials_v1";
+
+function readSeenInterstitials(): boolean {
+	if (typeof window === "undefined") return false;
+	try {
+		return window.localStorage.getItem(SEEN_INTERSTITIALS_KEY) === "1";
+	} catch {
+		return false;
+	}
+}
+
+function markInterstitialsSeen(): void {
+	if (typeof window === "undefined") return;
+	try {
+		window.localStorage.setItem(SEEN_INTERSTITIALS_KEY, "1");
+	} catch {
+		// best effort
+	}
+}
+
 function writeLocalStorageHandoff(form: LeadState): void {
 	if (typeof window === "undefined") return;
 	try {
@@ -312,6 +337,19 @@ export default function useLpAuditForm() {
 	// matching entry for the just-completed screen. Dismissed by user
 	// click on the frame's Continue button.
 	const [activeInterstitial, setActiveInterstitial] = useState<InterstitialProps | null>(null);
+	// Track whether the visitor saw interstitials on a previous visit —
+	// gate non-personalized ones (benchmark + anticipation) to fire only
+	// the first time. Read once on mount.
+	const [seenInterstitialsBefore] = useState<boolean>(() => readSeenInterstitials());
+
+	// ── Returning visitor flag ──
+	// True when the form rendered with a prefilled domain from a prior
+	// session (via localStorage handoff). Drives the welcome-back banner
+	// on the domain step so the prefill doesn't feel uncanny.
+	const [prefilledFromStorage] = useState<boolean>(() => {
+		const p = readLocalStoragePrefill();
+		return !!p.domain;
+	});
 
 	// ── Step state ──
 	const [stepIndex, setStepIndex] = useState(0);
@@ -651,10 +689,13 @@ export default function useLpAuditForm() {
 		// Value-on-fill: check the registry for an interstitial frame to
 		// show before advancing. The just-completed screen is `currentScreen`
 		// (stepIndex still references it until we increment below).
+		// Returning visitors skip the non-personalized variants (benchmark +
+		// anticipation) — the registry gates this internally.
 		const interstitial = resolveInterstitialFor(
 			currentScreen,
 			overrides ? { ...form, ...overrides } : form,
 			crawlProgress,
+			seenInterstitialsBefore,
 		);
 		if (interstitial) {
 			setActiveInterstitial(interstitial);
@@ -676,16 +717,43 @@ export default function useLpAuditForm() {
 		form,
 		totalScreens,
 		crawlProgress,
+		seenInterstitialsBefore,
 	]);
 
 	const dismissInterstitial = useCallback(() => {
 		setActiveInterstitial(null);
+		markInterstitialsSeen();
 	}, []);
 
 	const prev = useCallback(() => {
 		setFieldError(null);
 		setGlobalError(null);
 		setStepIndex((s) => Math.max(0, s - 1));
+	}, []);
+
+	// Returning-visitor escape hatch — clears the localStorage prefill
+	// + interstitial-seen flag and reloads, giving the visitor a clean
+	// slate. Triggered from the "começar do zero" link on the welcome-
+	// back banner.
+	const resetFromStorage = useCallback(() => {
+		if (typeof window === "undefined") return;
+		try {
+			[
+				"vestigio_onboard_domain",
+				"vestigio_onboard_business_type",
+				"vestigio_onboard_revenue",
+				"vestigio_onboard_concern",
+				"vestigio_onboard_current_method",
+				"vestigio_onboard_why_now",
+				"vestigio_onboard_service_category",
+				"vestigio_onboard_app_platform",
+				"vestigio_onboard_enterprise_segment",
+				SEEN_INTERSTITIALS_KEY,
+			].forEach((k) => window.localStorage.removeItem(k));
+		} catch {
+			// best effort
+		}
+		window.location.reload();
 	}, []);
 
 	// Helper pra click-then-advance dos CardSelectionStep. Sem isso,
@@ -729,5 +797,8 @@ export default function useLpAuditForm() {
 		activeInterstitial,
 		dismissInterstitial,
 		crawlProgress,
+		// Returning-visitor recognition
+		prefilledFromStorage,
+		resetFromStorage,
 	};
 }

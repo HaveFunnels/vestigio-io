@@ -45,6 +45,30 @@ function getClientIp(request: Request): string {
 	return "0.0.0.0";
 }
 
+// Wave-23 — map evaluateDefenses() verdict.reason → human-friendly
+// pt-BR message. Generic "Form session expired" hid the actual cause;
+// legitimate humans need to know whether to refresh or just slow down.
+// Bots get any message — they don't care.
+function userMessageForReason(reason: string | undefined): string {
+	switch (reason) {
+		case "form_too_fast":
+			return "Você foi mais rápido que o esperado. Reabra a página e tente novamente.";
+		case "low_behavioral_score":
+			return "Detectamos navegação atípica. Atualize a página e tente de novo.";
+		case "token_expired":
+			return "Esta sessão expirou. Atualize a página pra continuar.";
+		case "missing_token":
+		case "malformed_token":
+		case "bad_signature":
+		case "bad_timestamp":
+			return "A sessão do formulário precisa ser renovada. Atualize a página.";
+		case "honeypot":
+			return "Algo deu errado. Atualize a página.";
+		default:
+			return "Não conseguimos validar essa submissão. Atualize a página e tente novamente.";
+	}
+}
+
 interface StepBody {
 	formToken: string;
 	behavioral: BehavioralSignals;
@@ -175,10 +199,12 @@ export async function PATCH(
 				`hasHeader=${!!headers.get(FORM_SESSION_HEADER)} ` +
 				`ua=${headers.get("user-agent")?.slice(0, 80) ?? "?"}`,
 		);
-		return NextResponse.json(
-			{ message: "Form session expired or invalid. Please refresh." },
-			{ status: 403 },
-		);
+		// Map verdict.reason → user-facing message (pt-BR). Generic
+		// "session expired" hid the actual cause from users hitting
+		// dwell threshold or behavioral score floors. Specific copy
+		// per reason lets humans recover; bots don't care either way.
+		const message = userMessageForReason(verdict.reason);
+		return NextResponse.json({ message }, { status: 403 });
 	}
 
 	// ── Per-step validation + persistence ──
@@ -243,6 +269,18 @@ export async function PATCH(
 			const domainClean = body.domain!.trim().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
 			const orgFromDomain = domainClean.split(".")[0];
 			updates.organizationName = orgFromDomain.charAt(0).toUpperCase() + orgFromDomain.slice(1);
+			// Wave-23 — optional email on step 1 for drop-off recovery.
+			// If the visitor provides it, persist now so a future cron
+			// (or future dunning) can email them when they don't reach
+			// step 7. Silently ignore on invalid input — step 7 will
+			// re-ask. Honest fail: don't 422 because the email field is
+			// genuinely optional here.
+			if (body.email && typeof body.email === "string" && body.email.trim().length > 0) {
+				const emailCheck = validateLeadEmail(body.email);
+				if (emailCheck.ok) {
+					updates.email = body.email.trim().toLowerCase();
+				}
+			}
 		}
 
 		if (stepNum === 2) {

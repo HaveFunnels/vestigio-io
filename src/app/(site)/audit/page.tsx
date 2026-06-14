@@ -219,6 +219,17 @@ function inferEmailPlaceholder(domain: string | null | undefined): string {
 	return `voce@${clean}`;
 }
 
+// Inline impact-range projection — calibration hint shown LIVE under
+// the revenue slider. Uses a defensible band (2-8% of monthly revenue
+// is the typical leak surface across categories) so the number changes
+// reactively as the visitor drags. Honest framing: "calibrando faixa",
+// not "você está perdendo X" (no claim before the analysis runs).
+function formatImpactRange(monthlyRevenue: number): string {
+	const low = Math.round((monthlyRevenue * 0.02) / 1000);
+	const high = Math.round((monthlyRevenue * 0.08) / 1000);
+	return `R$ ${low}k–${high}k/mês`;
+}
+
 export default function LpAuditPage() {
 	const f = useLpAuditForm();
 
@@ -255,7 +266,7 @@ export default function LpAuditPage() {
 			) : interstitial.variant === "finding_teaser" ? (
 				<FindingTeaserFrame
 					{...interstitial}
-					continueLabel="Continuar"
+					continueLabel="Ver os outros vazamentos"
 					onContinue={f.dismissInterstitial}
 				/>
 			) : null
@@ -299,30 +310,70 @@ export default function LpAuditPage() {
 
 				{/* ── Screen 1: Domain ── */}
 				{!interstitialNode && f.currentScreen === "domain" && (
-					<TextInputStep
-						title="Qual site devemos analisar?"
-						subtitle="Só analisamos páginas públicas. Nenhum acesso ao seu código ou dados."
-						inputType="url"
-						value={f.form.domain}
-						onChange={(v) => {
-							f.update("domain", v);
-							f.setDomainWarning(null);
-						}}
-						placeholder="https://seusite.com.br"
-						error={f.fieldError?.field === "domain" ? f.fieldError.message : null}
-						warning={
-							f.domainWarning ? (
-								<>
-									{f.domainWarning}{" "}
-									<span className="font-medium">Você ainda pode prosseguir.</span>
-								</>
-							) : undefined
-						}
-						buttonLabel="Iniciar análise"
-						onSubmit={f.next}
-						disabled={f.form.domain.length === 0 || f.domainChecking}
-						loading={f.domainChecking || f.submitting}
-					/>
+					<>
+						{/* Welcome-back banner — only on the first screen when
+						    localStorage prefilled the domain. Silent prefill
+						    is uncanny; explicit recognition + opt-out is human. */}
+						{f.prefilledFromStorage && (
+							<div className="mb-5 flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 px-3.5 py-2.5 dark:border-emerald-500/30 dark:bg-emerald-500/5">
+								<div className="text-[12px] leading-snug text-content">
+									Continuando de onde você parou.
+								</div>
+								<button
+									type="button"
+									onClick={f.resetFromStorage}
+									className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.1em] text-emerald-700 underline-offset-2 hover:underline dark:text-emerald-400"
+								>
+									Começar do zero
+								</button>
+							</div>
+						)}
+						<TextInputStep
+							title="Qual site devemos analisar?"
+							subtitle="Só analisamos páginas públicas. Nenhum acesso ao seu código ou dados."
+							inputType="url"
+							value={f.form.domain}
+							onChange={(v) => {
+								f.update("domain", v);
+								f.setDomainWarning(null);
+							}}
+							placeholder="https://seusite.com.br"
+							error={f.fieldError?.field === "domain" ? f.fieldError.message : null}
+							warning={
+								f.domainWarning ? (
+									<>
+										{f.domainWarning}{" "}
+										<span className="font-medium">Você ainda pode prosseguir.</span>
+									</>
+								) : undefined
+							}
+							buttonLabel="Iniciar análise"
+							onSubmit={f.next}
+							disabled={f.form.domain.length === 0 || f.domainChecking}
+							loading={f.domainChecking || f.submitting}
+						>
+							{/* Optional email — drop-off recovery hook. The
+							    visitor isn't required to fill it; if they do,
+							    backend persists on step 1 so a future cron
+							    can re-engage abandoned flows. Tight, low-
+							    pressure copy so it doesn't read as "give me
+							    your email NOW". */}
+							<label className="mt-1 block">
+								<div className="mb-1.5 flex items-center justify-between gap-2 text-[11px] text-content-faint">
+									<span>Email <span className="text-content-faint">(opcional)</span></span>
+									<span className="text-[10px] uppercase tracking-[0.1em]">Pra não perder o resultado</span>
+								</div>
+								<input
+									type="email"
+									value={f.form.email}
+									onChange={(e) => f.update("email", e.target.value)}
+									placeholder={inferEmailPlaceholder(f.form.domain)}
+									autoComplete="email"
+									className="shiny-input w-full rounded-xl bg-surface-card px-3.5 py-2.5 text-[13px] text-content placeholder:text-content-faint outline-none"
+								/>
+							</label>
+						</TextInputStep>
+					</>
 				)}
 
 				{/* ── Screen 2: Business Type (cards, auto-advance) ── */}
@@ -393,6 +444,14 @@ export default function LpAuditPage() {
 								? `R$ ${(v / 1000000).toFixed(1).replace(".", ",")}M`
 								: `R$ ${Math.round(v / 1000)}k`
 						}
+						valueHint={(v) => (
+							<div className="flex items-baseline justify-center gap-2 text-[12px] text-content-muted">
+								<span>Calibrando faixa de exposição:</span>
+								<span className="font-mono font-semibold tabular-nums text-red-500 dark:text-red-400">
+									{formatImpactRange(v)}
+								</span>
+							</div>
+						)}
 						onSubmit={(v) => f.updateAndAdvance("monthlyRevenue", v)}
 						buttonLabel="Calibrar análise"
 						loading={f.submitting}

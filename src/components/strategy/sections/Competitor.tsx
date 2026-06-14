@@ -181,10 +181,13 @@ export default function Competitor({ competitor }: Props) {
 							<span className="text-content-secondary">posicionamento de pesquisas de marca</span> e{" "}
 							<span className="text-content-secondary">postura de confiança</span> de cada concorrente contra o seu site, a cada ciclo.
 						</p>
+						<p className="mb-2 text-[11.5px] text-content-muted">
+							Os concorrentes abaixo são as marcas que o seu cliente encontra quando busca por ofertas como a sua. Se não são os que você esperava, isso é uma descoberta: seu posicionamento está te colocando num espaço diferente do mercado que você tem em mente.
+						</p>
 						<p className="mb-3 text-[11.5px] text-content-muted">
-							Os concorrentes acima são as marcas que o seu cliente encontra quando busca por ofertas como a sua. Se não são os que você esperava, não é a análise — é o seu posicionamento apontando pra um espaço diferente do mercado. Em{" "}
+							Em{" "}
 							<span className="font-medium text-content-secondary">Gerenciar concorrentes</span>,
-							{" "}liste quem você pretende disputar — vamos comparar pretendidos × reais a cada ciclo.
+							{" "}adicione os concorrentes esperados e vamos comparar esperados × reais a cada ciclo.
 						</p>
 						<ul className="space-y-2">
 							{competitor.entries.map((e) => {

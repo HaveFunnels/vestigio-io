@@ -230,7 +230,7 @@ function StickyHeader({
 									{isActive && (
 										<span
 											aria-hidden
-											className="h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60"
+											className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
 										/>
 									)}
 									{label}

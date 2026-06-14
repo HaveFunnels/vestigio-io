@@ -77,29 +77,33 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 		>
 			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
-					Placar do time em {monthLabel}
+					O que seu time recuperou em {monthLabel}
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					Recuperação atribuída por ação fechada
+					Recuperações já confirmadas
 				</div>
 			</div>
 
 			{rows.length === 0 ? (
 				// Empty state — encoraja o cliente a fechar ações no
 				// próximo ciclo sem soar como punição.
+				// Copy refactor: substitui jargão técnico ("atribuída",
+				// "marcada como done", "ciclo seguinte", "movimento
+				// principal") por linguagem plana. O usuário médio
+				// entende "fechar ação" + "próxima análise confirma".
 				<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
 					<div className="mb-2 text-[14px] font-medium text-content-secondary">
-						Nenhuma recuperação atribuída este mês.
+						Seu time ainda não recuperou nada este mês.
 					</div>
 					<p className="text-[13px] leading-relaxed text-content-muted">
-						Quando uma ação for marcada como <span className="font-medium text-content">done</span> e o ciclo seguinte confirmar que o problema sumiu, ela aparece aqui com o nome de quem fechou e o impacto atribuído. Comece pelo movimento principal nos próximos passos.
+						Quando seu time fecha uma ação e a próxima análise confirma que o problema sumiu, ela aparece aqui com quem fechou, quando e quanto seu site recuperou. Comece pela primeira ação dos próximos passos.
 					</p>
 				</div>
 			) : (
 				<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
 					{/* Headline summary — "seu time recuperou R$ X em N ações" */}
 					<div className="mb-5 border-b border-edge/60 pb-4">
-						<div className="text-[11px] text-content-faint">Recuperado total atribuído</div>
+						<div className="text-[11px] text-content-faint">Total recuperado este mês</div>
 						<div className="mt-1 flex items-baseline gap-2">
 							<span className="font-mono text-[28px] font-semibold tabular-nums text-emerald-400">
 								{fmtCurrencyUnits(totalValue, currency)}
@@ -145,7 +149,7 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 										<div className="font-mono text-[15px] font-semibold tabular-nums text-emerald-400">
 											{fmtCurrencyUnits(r.baselineImpactMidpoint, currency)}
 										</div>
-										<div className="text-[10px] text-content-faint">atribuído</div>
+										<div className="text-[10px] text-content-faint">recuperado</div>
 									</div>
 								</div>
 							);

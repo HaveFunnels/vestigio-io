@@ -94,8 +94,8 @@ export default function Competitor({ competitor }: Props) {
 								Ninguém está copiando você este ciclo.
 							</div>
 							<p className="mt-1.5 text-[12.5px] leading-snug text-content-secondary">
-								Vestigio analisou copy, posicionamento em SERP e trust posture dos {competitor.totalMonitored}{" "}
-								{competitor.totalMonitored === 1 ? "concorrente monitorado" : "concorrentes monitorados"} e não detectou nenhum sinal material de cópia, avanço em SERP de marca ou colapso de diferenciação.
+								Vestigio analisou copy, posicionamento de pesquisas de marca e postura de confiança dos {competitor.totalMonitored}{" "}
+								{competitor.totalMonitored === 1 ? "concorrente monitorado" : "concorrentes monitorados"} e não detectou nenhum sinal material de cópia, avanço em pesquisas de marca ou colapso de diferenciação.
 							</p>
 						</>
 					) : (
@@ -170,11 +170,21 @@ export default function Competitor({ competitor }: Props) {
 						    customer sees the surface area we cover even when no
 						    competitor produced a signal. Previously the rows
 						    just said "sem sinal este ciclo" and the customer
-						    had no idea what was being checked. */}
-						<p className="mb-3 text-[11.5px] text-content-muted">
+						    had no idea what was being checked.
+						    Wave-23 polish: termos técnicos ("SERP", "trust
+						    posture") traduzidos pra pt-BR + segundo parágrafo
+						    de "por que esses concorrentes" preempta a dúvida
+						    "vocês acharam errado" reposicionando como sinal
+						    de mercado (não de qualidade da análise). */}
+						<p className="mb-2 text-[11.5px] text-content-muted">
 							Vestigio compara <span className="text-content-secondary">copy de páginas comerciais</span>,{" "}
-							<span className="text-content-secondary">posicionamento em SERP de marca</span> e{" "}
-							<span className="text-content-secondary">trust posture</span> de cada concorrente contra o seu site, a cada ciclo.
+							<span className="text-content-secondary">posicionamento de pesquisas de marca</span> e{" "}
+							<span className="text-content-secondary">postura de confiança</span> de cada concorrente contra o seu site, a cada ciclo.
+						</p>
+						<p className="mb-3 text-[11.5px] text-content-muted">
+							Os concorrentes acima são as marcas que o seu cliente encontra quando busca por ofertas como a sua. Se não são os que você esperava, não é a análise — é o seu posicionamento apontando pra um espaço diferente do mercado. Em{" "}
+							<span className="font-medium text-content-secondary">Gerenciar concorrentes</span>,
+							{" "}liste quem você pretende disputar — vamos comparar pretendidos × reais a cada ciclo.
 						</p>
 						<ul className="space-y-2">
 							{competitor.entries.map((e) => {

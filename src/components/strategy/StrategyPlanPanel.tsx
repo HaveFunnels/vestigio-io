@@ -78,16 +78,18 @@ function formatMonthLabel(monthIso: string): string {
 }
 
 function formatTimestamp(date: Date): string {
-	// UTC formatting: the server renders in Node's TZ (UTC) and the
-	// browser would otherwise render local time, producing a hydration
-	// mismatch on the same Date object. Locking to UTC keeps both
-	// surfaces consistent. The product chose to surface UTC timestamps
-	// explicitly — the operator's locale shows up elsewhere via Intl.
-	const dd = String(date.getUTCDate()).padStart(2, "0");
-	const mmName = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][date.getUTCMonth()];
-	const hh = String(date.getUTCHours()).padStart(2, "0");
-	const min = String(date.getUTCMinutes()).padStart(2, "0");
-	return `${dd} ${mmName} · ${hh}:${min} UTC`;
+	// Renderiza no TZ local do visitante. Comportamento histórico era
+	// lock-em-UTC pra evitar hydration mismatch (server roda em UTC,
+	// browser em local), mas customer rejeitou — quer ver o horário
+	// real do relógio dele, não converter mentalmente UTC→local.
+	// Os spans que renderizam isso DEVEM usar suppressHydrationWarning
+	// pra silenciar o mismatch esperado (server vê UTC, client vê local
+	// — a versão certa é a do client).
+	const dd = String(date.getDate()).padStart(2, "0");
+	const mmName = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][date.getMonth()];
+	const hh = String(date.getHours()).padStart(2, "0");
+	const min = String(date.getMinutes()).padStart(2, "0");
+	return `${dd} ${mmName} · ${hh}:${min}`;
 }
 
 /** Plan view mode.
@@ -223,7 +225,7 @@ function StickyHeader({
 			<div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-4 py-2.5 sm:px-6 sm:py-3">
 				<div className="order-2 flex items-center gap-2 text-[11.5px] text-content-muted sm:order-1 sm:gap-3 sm:text-[12px]">
 					<span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-					<span className="truncate">
+					<span className="truncate" suppressHydrationWarning>
 						<span className="hidden sm:inline">Plano publicado · </span>
 						<span className="sm:hidden">Publicado </span>
 						{formatTimestamp(plan.generatedAt)}
@@ -454,11 +456,11 @@ function PlanHeader({ plan }: { plan: StrategyPlan }) {
 				<span className="text-edge">·</span>
 				<span className="font-mono">{plan.envDomain}</span>
 				<span className="text-edge">·</span>
-				<span>Gerado {formatTimestamp(plan.generatedAt)}</span>
+				<span suppressHydrationWarning>Gerado {formatTimestamp(plan.generatedAt)}</span>
 				{plan.lastRegenerated.getTime() !== plan.generatedAt.getTime() && (
 					<>
 						<span className="text-edge">·</span>
-						<span>Revisão semanal {formatTimestamp(plan.lastRegenerated)}</span>
+						<span suppressHydrationWarning>Revisão semanal {formatTimestamp(plan.lastRegenerated)}</span>
 					</>
 				)}
 			</div>

@@ -69,13 +69,15 @@ function getEnvironmentId(explicit?: string): string | null {
 function formatDate(iso: string): string {
 	try {
 		const d = new Date(iso);
-		const day = String(d.getUTCDate()).padStart(2, "0");
+		// TZ local do visitante (não UTC). Span renderizador usa
+		// suppressHydrationWarning pra silenciar mismatch de SSR.
+		const day = String(d.getDate()).padStart(2, "0");
 		const months = [
 			"Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
 		];
-		const year = d.getUTCFullYear();
-		const currentYear = new Date().getUTCFullYear();
-		const monthLabel = months[d.getUTCMonth()];
+		const year = d.getFullYear();
+		const currentYear = new Date().getFullYear();
+		const monthLabel = months[d.getMonth()];
 		// Omit year quando é o ano corrente (concisão)
 		return year === currentYear ? `${day}/${monthLabel}` : `${day}/${monthLabel}/${year}`;
 	} catch {
@@ -208,7 +210,7 @@ export default function CausalTimeline({ findingId, envId: explicitEnvId }: Prop
 											<div className="text-[12.5px] font-medium leading-snug text-content">
 												{ev.title}
 											</div>
-											<div className="shrink-0 font-mono text-[11px] tabular-nums text-content-faint">
+											<div className="shrink-0 font-mono text-[11px] tabular-nums text-content-faint" suppressHydrationWarning>
 												{formatDate(ev.at)}
 											</div>
 										</div>

@@ -43,11 +43,15 @@ function fmtDateShort(iso: string | null): string {
 	if (!iso) return "";
 	try {
 		const d = new Date(iso);
-		// Formato curto: 24/Nov ou Nov 24 dependendo do locale. Mantém
-		// fixo em pt-BR (DD/MMM) para consistência com o resto do plano.
-		const day = String(d.getUTCDate()).padStart(2, "0");
+		// Formato curto: 24/Nov fixo pt-BR. Usa TZ local do visitante —
+		// customer prefere ver o dia "real" do relógio dele em vez de UTC
+		// (alinhado com formatTimestamp em StrategyPlanPanel). Quando uma
+		// timestamp cai perto da meia-noite UTC, o dia exibido pode
+		// variar ±1 entre server-side render (Node UTC) e client. O span
+		// renderizador usa suppressHydrationWarning pra silenciar.
+		const day = String(d.getDate()).padStart(2, "0");
 		const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-		return `${day}/${months[d.getUTCMonth()]}`;
+		return `${day}/${months[d.getMonth()]}`;
 	} catch {
 		return "";
 	}
@@ -131,7 +135,7 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 													<span className="text-content-faint">·</span>
 													<span>
 														<span className="text-content-faint">Confirmado em:</span>{" "}
-														<span className="font-medium text-content-secondary">{date}</span>
+														<span className="font-medium text-content-secondary" suppressHydrationWarning>{date}</span>
 													</span>
 												</>
 											)}

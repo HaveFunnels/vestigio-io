@@ -10,6 +10,7 @@ import {
 import { generateDomainCandidates } from '../../packages/brand-adapter/domain-generator';
 import { scoreCandidate, extractHtmlEnrichment, computeFaviconSimilarity } from '../../packages/brand-adapter/similarity-scorer';
 import { checkSafeBrowsing, urlsForDomain } from './safe-browsing';
+import { safeFetch } from '../ingestion/enrichment/competitor-fetch';
 
 // ──────────────────────────────────────────────
 // Brand Intelligence Scanner — Phase 3E.1 Upgrade
@@ -197,16 +198,30 @@ export async function runBrandScan(
   };
 }
 
+const FAVICON_MAX_BYTES = 100_000;
+
 /**
  * Wave 23 P1.1 — fetch favicon bytes + SHA256 hash.
  *
- * Resolve URL relativa contra o host base, fetcha com timeout curto +
- * size cap (favicons normalmente são <100KB), retorna SHA256 hex dos
- * bytes brutos. Match exato entre 2 hashes = mesmo arquivo de favicon
- * = sinal forte de clone visual.
+ * Resolve URL relativa contra o host base, fetcha via safeFetch (mesma
+ * SSRF guard que competitor-fetch usa: DNS lookup com isBlockedAddress,
+ * scheme http/https whitelist, redirect chain re-validada a cada hop),
+ * retorna SHA256 hex dos bytes brutos.
  *
- * Cap de 100KB protege contra payload bombs (alguém serve 100MB
- * pretending ser favicon).
+ * Por que SSRF guard é crítico aqui (security review 2026-06-15): o
+ * faviconUrl vem do HTML do CANDIDATO — atacante pode injetar
+ * <link rel="icon" href="http://169.254.169.254/latest/meta-data/">
+ * ou apontar pra serviços internos (localhost:5432, RFC1918). Sem o
+ * guard, o worker fetcharia esses internamente, exfiltrando dados ou
+ * permitindo lateral movement.
+ *
+ * Match exato entre 2 hashes = mesmo arquivo de favicon = sinal forte
+ * de clone visual.
+ *
+ * Cap aplicado nos bytes lidos (não confiando em content-length, que
+ * o servidor pode mentir). safeFetch já tem cap interno de 3MB; aqui
+ * truncamos ainda mais agressivo (100KB) porque favicons reais são
+ * sempre pequenos.
  */
 async function fetchFaviconBytesHash(
   faviconUrl: string | null,
@@ -222,23 +237,15 @@ async function fetchFaviconBytesHash(
           ? `https://${baseHost}${faviconUrl}`
           : `https://${baseHost}/${faviconUrl}`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000);
-    const response = await fetch(absolute, {
-      method: 'GET',
-      signal: controller.signal,
-      headers: { 'User-Agent': 'Vestigio-BrandIntel/1.0' },
-    });
-    clearTimeout(timeout);
+    const result = await safeFetch(absolute);
+    if (result.status_code < 200 || result.status_code >= 300) return null;
 
-    if (!response.ok) return null;
-    const contentLength = Number(response.headers.get('content-length') || '0');
-    if (contentLength > 100_000) return null;
+    // Cap PÓS-leitura: não confia em content-length, valida nos bytes
+    // realmente lidos. safeFetch já tem cap interno de 3MB; reduzimos
+    // aqui pra 100KB porque favicons reais não passam disso.
+    if (result.body_bytes.length === 0 || result.body_bytes.length > FAVICON_MAX_BYTES) return null;
 
-    const buffer = await response.arrayBuffer();
-    if (buffer.byteLength === 0 || buffer.byteLength > 100_000) return null;
-
-    return createHash('sha256').update(Buffer.from(buffer)).digest('hex');
+    return createHash('sha256').update(result.body_bytes).digest('hex');
   } catch {
     return null;
   }

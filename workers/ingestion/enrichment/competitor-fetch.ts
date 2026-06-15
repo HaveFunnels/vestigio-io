@@ -74,6 +74,13 @@ export interface SafeFetchResult {
 	status_code: number;
 	headers: Record<string, string>;
 	body: string;
+	/**
+	 * Wave 23 — raw bytes do body, antes da conversão pra utf-8. Usado por
+	 * callers que precisam de byte-precise data (favicon hashing, binary
+	 * fingerprinting). Tem o MESMO content de `body` mas sem perda de
+	 * encoding pra arquivos binários (PNG/ICO/JPEG).
+	 */
+	body_bytes: Buffer;
 }
 
 // SSRF-hardened single-hop fetch. Resolves DNS via a custom lookup
@@ -144,6 +151,7 @@ function singleSafeFetch(targetUrl: string): Promise<SafeFetchResult> {
 						status_code: res.statusCode,
 						headers,
 						body: "",
+						body_bytes: Buffer.alloc(0),
 					});
 					return;
 				}
@@ -164,11 +172,17 @@ function singleSafeFetch(targetUrl: string): Promise<SafeFetchResult> {
 					chunks.push(chunk);
 				});
 				res.on("end", () => {
+					// Wave 23 — Buffer.concat retém os bytes brutos, e
+					// toString("utf-8") faz a versão texto. Callers binários
+					// (favicon hashing) leem body_bytes pra evitar perda de
+					// encoding em arquivos PNG/ICO/etc.
+					const bodyBytes = Buffer.concat(chunks);
 					resolve({
 						final_url: targetUrl,
 						status_code: res.statusCode || 0,
 						headers,
-						body: Buffer.concat(chunks).toString("utf-8"),
+						body: bodyBytes.toString("utf-8"),
+						body_bytes: bodyBytes,
 					});
 				});
 				res.on("error", reject);

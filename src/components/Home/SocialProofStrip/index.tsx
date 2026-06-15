@@ -13,7 +13,7 @@ const SocialProofStrip = async () => {
 				{t("before_highlight")}
 				<RotatingStat
 					items={items}
-					className="inline-flex items-baseline gap-1 rounded-full border border-red-500/20 bg-red-500/[0.06] px-2 py-0.5 font-mono text-[13px] font-semibold text-red-400 sm:text-sm"
+					className="mx-1 inline-block rounded-full border border-red-500/20 bg-red-500/[0.06] px-1.5 font-semibold text-red-400"
 				/>
 				{t("after_highlight")}
 			</p>

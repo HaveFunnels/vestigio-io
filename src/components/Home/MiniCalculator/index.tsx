@@ -245,6 +245,12 @@ const MiniCalculator = ({
 	// can read the media query so the odometer-style digit roll only
 	// animates for users who haven't opted out of motion.
 	const [prefersReducedMotion, setPrefersReducedMotion] = useState(true);
+	// displayMin/displayMax drive the total-impact reveal animation. They
+	// hold the in-flight values during the loading→results count-up so
+	// the giant "−$X–$Y/mo" line ramps from 0 to the final loss range
+	// instead of slamming into view fully formed.
+	const [displayMin, setDisplayMin] = useState(0);
+	const [displayMax, setDisplayMax] = useState(0);
 	const revenueRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -359,6 +365,39 @@ const MiniCalculator = ({
 
 	const totalMin = findingImpacts.reduce((s, [min]) => s + min, 0);
 	const totalMax = findingImpacts.reduce((s, [, max]) => s + max, 0);
+
+	// Total impact reveal — when state flips to "results", count up
+	// displayMin/displayMax from 0 to the final loss range over ~1.4s
+	// (cubic easeOut). SlotText rolls digit-by-digit so the giant
+	// "−$X–$Y/mo" line spins up into view instead of slamming in already
+	// formed. Reduced-motion skips the animation and jumps to the
+	// final values. The 0-state on any non-results transition resets
+	// so a follow-up scan replays the count-up.
+	useEffect(() => {
+		if (state !== "results") {
+			setDisplayMin(0);
+			setDisplayMax(0);
+			return;
+		}
+		if (prefersReducedMotion) {
+			setDisplayMin(totalMin);
+			setDisplayMax(totalMax);
+			return;
+		}
+		const DURATION = 1400;
+		const startTime = performance.now();
+		let animFrame: number;
+		const tick = (now: number) => {
+			const elapsed = now - startTime;
+			const frac = Math.min(elapsed / DURATION, 1);
+			const eased = easeOut(frac);
+			setDisplayMin(totalMin * eased);
+			setDisplayMax(totalMax * eased);
+			if (frac < 1) animFrame = requestAnimationFrame(tick);
+		};
+		animFrame = requestAnimationFrame(tick);
+		return () => cancelAnimationFrame(animFrame);
+	}, [state, totalMin, totalMax, prefersReducedMotion]);
 
 	const inputClass =
 		"w-full rounded-xl border border-zinc-700 bg-zinc-900/80 px-5 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none transition-all hover:border-zinc-600 focus:border-emerald-500 focus:bg-zinc-900 focus:ring-1 focus:ring-emerald-500/40";
@@ -752,19 +791,39 @@ const MiniCalculator = ({
                 you're losing every month, so it renders as `−$X-$Y/mo`
                 in red with a colored drop shadow that scales the visual
                 weight of the loss. JetBrains Mono + tabular-nums so the
-                digits never jitter. */}
+                digits never jitter. Reveal: the giant number rolls up
+                from 0 via SlotText over ~1.4s (see displayMin/Max
+                effect above). Reduced-motion users get the final values
+                immediately. */}
 								<div className='mb-10 text-center sm:mb-12'>
 									<p className='mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500'>
 										{t("total_impact")}
 									</p>
-									<p className='font-mono text-3xl font-medium tabular-nums leading-none tracking-tight text-red-400 sm:text-5xl lg:text-6xl'>
+									<p className='inline-flex items-baseline justify-center font-mono text-3xl font-medium tabular-nums leading-none tracking-tight text-red-400 sm:text-5xl lg:text-6xl'>
 										<span
+											className='inline-flex items-baseline'
 											style={{
 												textShadow:
 													"0 8px 32px rgba(239,68,68,0.35), 0 2px 8px rgba(239,68,68,0.25)",
 											}}
 										>
-											{formatLoss(totalMin, sym)}–{formatCurrency(totalMax, sym)}
+											{prefersReducedMotion ? (
+												<>
+													{formatLoss(totalMin, sym)}–{formatCurrency(totalMax, sym)}
+												</>
+											) : (
+												<>
+													<SlotText
+														text={formatLoss(displayMin, sym)}
+														options={{ direction: "up", stagger: 0, duration: 180, bounce: 0.2, skipUnchanged: false }}
+													/>
+													<span>–</span>
+													<SlotText
+														text={formatCurrency(displayMax, sym)}
+														options={{ direction: "up", stagger: 0, duration: 180, bounce: 0.2, skipUnchanged: false }}
+													/>
+												</>
+											)}
 										</span>
 										<span className='ml-1 font-mono text-base font-normal text-zinc-500 sm:text-lg lg:text-xl'>
 											/mo

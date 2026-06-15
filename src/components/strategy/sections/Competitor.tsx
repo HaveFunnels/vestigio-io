@@ -40,7 +40,12 @@ const SEVERITY_TONE: Record<string, { fg: string; bg: string; ring: string; labe
 
 const KIND_LABEL: Record<string, string> = {
 	copy_mirror: "Copy espelhada",
-	serp_encroachment: "Avanço em SERP de marca",
+	serp_encroachment: "Avanço em pesquisas de marca",
+	// Wave 23.1 — trend signals computados na plan-section cross-cycle
+	price_increase: "Subiu preço",
+	dropped_free_tier: "Removeu tier grátis",
+	content_acceleration: "Acelerou conteúdo",
+	content_silence: "Silêncio em conteúdo",
 };
 
 function SeverityChip({ severity, children }: { severity: "low" | "medium" | "high"; children?: React.ReactNode }) {

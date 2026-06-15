@@ -128,12 +128,23 @@ export interface CompetitorDeepSnapshot {
 	blogUrl: string | null;
 }
 
+/** Mirror do CompetitorSignalKind do plan-side. UI usa pra chip color +
+ *  label. Novos kinds (price/content trends) computados na plan-section
+ *  por comparação cross-cycle de CompetitorDeepSnapshot. */
+export type CompetitorSignalKind =
+	| "copy_mirror"
+	| "serp_encroachment"
+	| "price_increase"
+	| "dropped_free_tier"
+	| "content_acceleration"
+	| "content_silence";
+
 export interface CompetitorEntry {
 	domain: string;
 	label: string | null;
 	discoveryMethod: string;
 	signals: Array<{
-		kind: "copy_mirror" | "serp_encroachment";
+		kind: CompetitorSignalKind;
 		severity: "low" | "medium" | "high";
 		detail: string;
 	}>;

@@ -52,6 +52,160 @@ function trimSummary(text: string | null | undefined, max = 280): string {
 	return `${clean.slice(0, max - 1).trimEnd()}…`;
 }
 
+// ── Wave 23.1 — trend signal helpers ─────────────────────────
+//
+// Quatro detecções cross-cycle a partir de CompetitorDeepSnapshot:
+//
+//   1. price_increase — tier mais barato subiu >5% vs ciclo anterior
+//      (com mesma currency + interval). Severity por % de aumento.
+//
+//   2. dropped_free_tier — hasFreeTier era true, virou false.
+//      Sempre high (free→paid é movimento estratégico raro).
+//
+//   3. content_acceleration — blog_post_count >2x previous (mínimo 3 no
+//      previous pra evitar ruído de baseline pequena). Severity por
+//      multiplier.
+//
+//   4. content_silence — latest_post_date > 60 dias atrás. Severity por
+//      idade.
+//
+// Detecção é defensiva: silenciosa em qualquer mismatch de unidades
+// (currency change, interval change). Trend sem comparável = sem signal.
+
+interface DeepSnapshotForTrend {
+	pricing_tiers: Array<{
+		amount: number | null;
+		currency: string | null;
+		interval: "month" | "year" | "one_time" | null;
+	}>;
+	has_free_tier: boolean;
+	tier_count: number;
+	blog_post_count: number | null;
+	blog_latest_post_date: string | null;
+}
+
+function findCheapestPaidTier(
+	tiers: DeepSnapshotForTrend["pricing_tiers"],
+): { amount: number; currency: string; interval: string } | null {
+	const valid = tiers
+		.filter((t) => t.amount != null && t.amount > 0 && t.currency && t.interval)
+		.sort((a, b) => a.amount! - b.amount!);
+	const cheapest = valid[0];
+	if (!cheapest) return null;
+	return {
+		amount: cheapest.amount!,
+		currency: cheapest.currency!,
+		interval: cheapest.interval!,
+	};
+}
+
+function fmtBrl(amount: number, currency: string): string {
+	const symbol =
+		currency === "BRL" ? "R$ " :
+		currency === "EUR" ? "€" :
+		currency === "GBP" ? "£" : "$";
+	return `${symbol}${Math.round(amount)}`;
+}
+
+function computeTrendSignals(
+	current: DeepSnapshotForTrend,
+	previous: DeepSnapshotForTrend | null,
+	now: Date,
+): Array<{
+	kind:
+		| "price_increase"
+		| "dropped_free_tier"
+		| "content_acceleration"
+		| "content_silence";
+	severity: "low" | "medium" | "high";
+	detail: string;
+}> {
+	const signals: Array<{
+		kind:
+			| "price_increase"
+			| "dropped_free_tier"
+			| "content_acceleration"
+			| "content_silence";
+		severity: "low" | "medium" | "high";
+		detail: string;
+	}> = [];
+
+	// 1 + 2 — pricing trends (precisa de previous)
+	if (previous) {
+		const curCheapest = findCheapestPaidTier(current.pricing_tiers);
+		const prevCheapest = findCheapestPaidTier(previous.pricing_tiers);
+
+		// price_increase: mesma currency + interval, current > previous +5%
+		if (
+			curCheapest &&
+			prevCheapest &&
+			curCheapest.currency === prevCheapest.currency &&
+			curCheapest.interval === prevCheapest.interval &&
+			curCheapest.amount > prevCheapest.amount * 1.05
+		) {
+			const pct = Math.round(
+				((curCheapest.amount - prevCheapest.amount) / prevCheapest.amount) * 100,
+			);
+			const severity: "low" | "medium" | "high" =
+				pct >= 25 ? "high" : pct >= 10 ? "medium" : "low";
+			signals.push({
+				kind: "price_increase",
+				severity,
+				detail: `Tier mais barato subiu de ${fmtBrl(prevCheapest.amount, prevCheapest.currency)} pra ${fmtBrl(curCheapest.amount, curCheapest.currency)} (+${pct}%).`,
+			});
+		}
+
+		// dropped_free_tier: tinha free, perdeu
+		if (previous.has_free_tier && !current.has_free_tier) {
+			signals.push({
+				kind: "dropped_free_tier",
+				severity: "high",
+				detail: "Removeu o tier gratuito. Sinal forte de movimento de monetização — janela pra customers expostos.",
+			});
+		}
+	}
+
+	// 3 — content_acceleration: posts >2x previous (e previous >= 3 pra
+	//     evitar baseline ruidosa do tipo 1→3 = "acelerou 3x")
+	if (
+		previous &&
+		current.blog_post_count != null &&
+		previous.blog_post_count != null &&
+		previous.blog_post_count >= 3 &&
+		current.blog_post_count > previous.blog_post_count * 2
+	) {
+		const multiplier = (current.blog_post_count / previous.blog_post_count).toFixed(1);
+		const severity: "low" | "medium" | "high" =
+			current.blog_post_count > previous.blog_post_count * 3 ? "high" : "medium";
+		signals.push({
+			kind: "content_acceleration",
+			severity,
+			detail: `Acelerou conteúdo ${multiplier}x — passou de ${previous.blog_post_count} pra ${current.blog_post_count} posts no blog.`,
+		});
+	}
+
+	// 4 — content_silence: latest post >60 dias atrás
+	if (current.blog_latest_post_date) {
+		try {
+			const latest = new Date(current.blog_latest_post_date);
+			const ageDays = Math.floor((now.getTime() - latest.getTime()) / (24 * 60 * 60 * 1000));
+			if (ageDays >= 60) {
+				const severity: "low" | "medium" | "high" =
+					ageDays >= 120 ? "high" : "medium";
+				signals.push({
+					kind: "content_silence",
+					severity,
+					detail: `Sem post novo há ${ageDays} dias. Investimento em conteúdo desacelerou.`,
+				});
+			}
+		} catch {
+			// Data malformada — skip silenciosamente.
+		}
+	}
+
+	return signals;
+}
+
 /**
  * Try to extract the competitor domain a per-domain Finding is about.
  * The competitive-lens pack sets it in the engine signal_refs/reasoning;
@@ -197,6 +351,15 @@ export async function generateCompetitorRadar(
 	// blog content velocity) por competitor. Lê CompetitorDeepSnapshot
 	// evidence, mais recente por (env, competitor_domain) ganha. Atacha
 	// no entries antes do sort.
+	//
+	// Wave 23.1 — cross-cycle trend detection. Segunda-mais-recente
+	// snapshot por competitor é guardada como `previous` pra computar
+	// 4 trends inline (não passa pelo signal engine porque o engine
+	// trabalha within-cycle; essas comparações são cross-cycle):
+	//   - price_increase       (cheapest tier subiu >5%)
+	//   - dropped_free_tier    (free tier sumiu)
+	//   - content_acceleration (blog posts >2x previous)
+	//   - content_silence      (latest post >60d)
 	const deepEvidence = await prisma.evidence.findMany({
 		where: {
 			environmentRef: ctx.environmentId,
@@ -205,17 +368,30 @@ export async function generateCompetitorRadar(
 		select: { payload: true, observedAt: true },
 		orderBy: { observedAt: "desc" },
 	});
-	const deepByDomain = new Map<string, CompetitorEntryOutput["deepSnapshot"]>();
+
+	interface DeepSnapshot {
+		pricing_tiers: Array<{
+			label: string | null;
+			amount: number | null;
+			currency: string | null;
+			interval: "month" | "year" | "one_time" | null;
+		}>;
+		has_free_tier: boolean;
+		tier_count: number;
+		pricing_url: string | null;
+		blog_post_count: number | null;
+		blog_latest_post_date: string | null;
+		blog_url: string | null;
+		observed_at: Date;
+	}
+
+	// Guarda current + previous por competitor pra trend comparison.
+	const snapshotsByDomain = new Map<string, DeepSnapshot[]>();
 	for (const ev of deepEvidence) {
 		try {
 			const p = JSON.parse(ev.payload) as {
 				competitor_domain: string;
-				pricing_tiers: Array<{
-					label: string | null;
-					amount: number | null;
-					currency: string | null;
-					interval: "month" | "year" | "one_time" | null;
-				}>;
+				pricing_tiers: DeepSnapshot["pricing_tiers"];
 				has_free_tier: boolean;
 				tier_count: number;
 				pricing_url: string | null;
@@ -224,23 +400,61 @@ export async function generateCompetitorRadar(
 				blog_url: string | null;
 			};
 			const key = p.competitor_domain.toLowerCase();
-			if (deepByDomain.has(key)) continue; // mais recente já anotada
-			deepByDomain.set(key, {
-				pricingTiers: p.pricing_tiers ?? [],
-				hasFreeTier: !!p.has_free_tier,
-				tierCount: p.tier_count ?? 0,
-				pricingUrl: p.pricing_url,
-				blogPostCount: p.blog_post_count,
-				blogLatestPostDate: p.blog_latest_post_date,
-				blogUrl: p.blog_url,
+			const list = snapshotsByDomain.get(key) ?? [];
+			if (list.length >= 2) continue; // só precisamos do current + previous
+			list.push({
+				pricing_tiers: p.pricing_tiers ?? [],
+				has_free_tier: !!p.has_free_tier,
+				tier_count: p.tier_count ?? 0,
+				pricing_url: p.pricing_url,
+				blog_post_count: p.blog_post_count,
+				blog_latest_post_date: p.blog_latest_post_date,
+				blog_url: p.blog_url,
+				observed_at: ev.observedAt,
 			});
+			snapshotsByDomain.set(key, list);
 		} catch {
 			// Malformed payload — skip.
 		}
 	}
+
 	for (const entry of entriesByDomain.values()) {
-		const deep = deepByDomain.get(entry.domain.toLowerCase());
-		if (deep) entry.deepSnapshot = deep;
+		const key = entry.domain.toLowerCase();
+		const list = snapshotsByDomain.get(key);
+		if (!list || list.length === 0) continue;
+		const current = list[0];
+		entry.deepSnapshot = {
+			pricingTiers: current.pricing_tiers,
+			hasFreeTier: current.has_free_tier,
+			tierCount: current.tier_count,
+			pricingUrl: current.pricing_url,
+			blogPostCount: current.blog_post_count,
+			blogLatestPostDate: current.blog_latest_post_date,
+			blogUrl: current.blog_url,
+		};
+
+		// Trend signals — só fire quando tem previous (>= 2 snapshots).
+		const previous = list[1] ?? null;
+		const now = new Date();
+		const trendSignals = computeTrendSignals(current, previous, now);
+		for (const s of trendSignals) {
+			// Dedupe contra signals já existentes (ex: copy_mirror,
+			// serp_encroachment vindas de findings) por kind.
+			if (entry.signals.some((existing) => existing.kind === s.kind)) continue;
+			entry.signals.push(s);
+		}
+	}
+
+	// Sort signals dentro de cada entry: severity desc (high → low), depois
+	// alphabetical por kind pra estabilidade visual. Garante que o chip
+	// mais grave aparece primeiro no row do concorrente.
+	const SEVERITY_RANK = { high: 0, medium: 1, low: 2 } as const;
+	for (const entry of entriesByDomain.values()) {
+		entry.signals.sort((a, b) => {
+			const ds = SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity];
+			if (ds !== 0) return ds;
+			return a.kind.localeCompare(b.kind);
+		});
 	}
 
 	const entries = Array.from(entriesByDomain.values()).sort((a, b) => {

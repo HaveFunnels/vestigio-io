@@ -296,13 +296,29 @@ export interface CompetitorDeepSnapshotOutput {
 	blogUrl: string | null;
 }
 
+/**
+ * Wave 23 — competitor signal kinds. Originais (copy_mirror, serp_encroachment)
+ * vêm do signal engine via inference packs. As 4 trends novas (price_increase,
+ * dropped_free_tier, content_acceleration, content_silence) são computadas
+ * inline na plan-section comparando CompetitorDeepSnapshot atual vs ciclo
+ * anterior — não passam por inference pack pq são comparações cross-cycle
+ * que o engine (within-cycle) não suporta.
+ */
+export type CompetitorSignalKind =
+	| "copy_mirror"
+	| "serp_encroachment"
+	| "price_increase"
+	| "dropped_free_tier"
+	| "content_acceleration"
+	| "content_silence";
+
 export interface CompetitorEntryOutput {
 	domain: string;
 	label: string | null;
 	/** 'manual' = pasted by owner; 'auto' = SERP-discovered (Wave 25). */
 	discoveryMethod: string;
 	signals: Array<{
-		kind: "copy_mirror" | "serp_encroachment";
+		kind: CompetitorSignalKind;
 		severity: "low" | "medium" | "high";
 		detail: string;
 	}>;

@@ -471,7 +471,7 @@ function detectSecurityRevenueChain(
     pack: 'revenue_integrity',
     role: 'consequence',
     surface: '/ (sitewide)',
-    description: 'Attribution blind — unable to measure campaign effectiveness',
+    description: 'Attribution blind. Unable to measure campaign effectiveness',
   });
 
   // Impact: 30% of ad spend wasted without attribution
@@ -487,7 +487,7 @@ function detectSecurityRevenueChain(
   // — saying "With unknown/mo in ads" leaks the placeholder to the UI.
   const adSpendClause = adSpendMonthly > 0
     ? `With ${formatDollars(adSpendMonthly * 100)}/mo in ads, you're flying blind on which campaigns convert.`
-    : `Your tracking is broken across paid acquisition surfaces — campaign attribution is missing.`;
+    : `Your tracking is broken across paid acquisition surfaces. Campaign attribution is missing.`;
   const narrative = `Your ${topSecurity.title.toLowerCase()} on ${topSecurity.surface} is blocking tracking scripts. ${adSpendClause}`;
 
   return {
@@ -832,7 +832,7 @@ function detectSecurityTrustDoubleExposure(
     severity: 'critical',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `Seu checkout tem falhas de segurança E nada tranquiliza o comprador — risco duplo que custa ${formatDollars(combinedImpact)}/mês em abandonos.`,
+    narrative: `Seu checkout tem falhas de segurança e nada tranquiliza o comprador. Risco duplo que custa ${formatDollars(combinedImpact)}/mês em abandonos.`,
     affected_surfaces: ['/checkout'],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -953,7 +953,7 @@ function detectCopyConversionParalysis(
       pack: 'revenue_integrity',
       role: 'consequence',
       surface: topCta.surface,
-      description: 'Paralisia de conversão — visitante não sabe o que fazer nem por que confiar',
+      description: 'Paralisia de conversão. Visitante não sabe o que fazer nem por que confiar',
     },
   ];
 
@@ -963,7 +963,7 @@ function detectCopyConversionParalysis(
     severity: 'high',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `Ninguém sabe o que clicar E não tem motivo para confiar — dois bloqueios simultâneos que custam ${formatDollars(combinedImpact)}/mês em conversões perdidas.`,
+    narrative: `Ninguém sabe o que clicar e não tem motivo para confiar. Dois bloqueios simultâneos que custam ${formatDollars(combinedImpact)}/mês em conversões perdidas.`,
     affected_surfaces: [...new Set([topCta.surface, topSocial.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1016,7 +1016,7 @@ function detectCopyPricingConfusion(
       pack: 'revenue_integrity',
       role: 'consequence',
       surface: topPricing.surface,
-      description: 'Desistência dupla — mensagem não convence e preço não faz sentido',
+      description: 'Desistência dupla. Mensagem não convence e preço não faz sentido',
     },
   ];
 
@@ -1026,7 +1026,7 @@ function detectCopyPricingConfusion(
     severity: 'high',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `A mensagem não convence E o preço não faz sentido — o comprador desiste duas vezes antes de chegar no checkout. Perda: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `A mensagem não convence e o preço não faz sentido. O comprador desiste duas vezes antes de chegar no checkout. Perda: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set([topCopy.surface, topPricing.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1079,7 +1079,7 @@ function detectVerticalSaasTrialTrust(
       pack: 'revenue_integrity',
       role: 'consequence',
       surface: topSaas.surface,
-      description: 'Barreira dupla — incompreensão do produto + risco financeiro sem trial',
+      description: 'Barreira dupla. Incompreensão do produto + risco financeiro sem trial',
     },
   ];
 
@@ -1089,7 +1089,7 @@ function detectVerticalSaasTrialTrust(
     severity: 'high',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `O comprador não entende o produto E não pode testar — barreira dupla que bloqueia ${formatDollars(combinedImpact)}/mês em assinaturas potenciais.`,
+    narrative: `O comprador não entende o produto e não pode testar. Barreira dupla que bloqueia ${formatDollars(combinedImpact)}/mês em assinaturas potenciais.`,
     affected_surfaces: [...new Set([topSaas.surface, topCopy.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1156,7 +1156,7 @@ function detectVerticalEcommerceSizeReturns(
     severity: 'high',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `Sem guia de tamanho E sem política clara de devolução — o comprador que arrisca VAI devolver. Custo em logística reversa: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `Sem guia de tamanho e sem política clara de devolução. O comprador que arrisca devolve. Custo em logística reversa: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set([topSize.surface, topReturn.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1209,7 +1209,7 @@ function detectVerticalFoodFrictionChain(
       pack: 'revenue_integrity',
       role: 'consequence',
       surface: topMenu.surface,
-      description: 'Abandono antes do pedido — duas barreiras pré-decisão',
+      description: 'Abandono antes do pedido. Duas barreiras pré-decisão',
     },
   ];
 
@@ -1219,7 +1219,7 @@ function detectVerticalFoodFrictionChain(
     severity: 'high',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `O cliente não vê o cardápio E não sabe se entrega na região dele — duas barreiras antes de PENSAR em pedir. Pedidos perdidos: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `O cliente não vê o cardápio e não sabe se entrega na região dele. Duas barreiras antes de pensar em pedir. Pedidos perdidos: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set([topMenu.surface, topDelivery.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1284,7 +1284,7 @@ function detectPerformanceConversionBleed(
     severity: 'critical',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `Suas páginas comerciais são as mais lentas do site E já estão vazando receita — cada segundo de atraso multiplica o abandono. Impacto: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `Suas páginas comerciais são as mais lentas do site e já estão vazando receita. Cada segundo de atraso multiplica o abandono. Impacto: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set([topPerf.surface, topRevenue.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1364,7 +1364,7 @@ function detectMobileRevenueCompound(
     severity: 'critical',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `Compradores no celular não conseguem nem navegar até o checkout — e quando conseguem, o formulário é hostil ao toque. Receita mobile perdida: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `Compradores no celular não conseguem chegar até o checkout. Quando chegam, o formulário é hostil ao toque. Receita mobile perdida: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set([topNav.surface, topFriction.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1411,7 +1411,7 @@ function detectStaleContentTrustErosion(
     severity: 'high',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `Nada no site foi atualizado — conteúdo velho, prova social desatualizada. O comprador conclui que a empresa morreu. Custo: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `Nada no site foi atualizado. Conteúdo velho, prova social desatualizada. O comprador conclui que a empresa morreu. Custo: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set(freshnessFindings.map(f => f.surface))],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1477,7 +1477,7 @@ function detectFreshnessBrandDecay(
     severity: 'high',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `Conteúdo desatualizado + marca inconsistente entre plataformas — o comprador não sabe se está no site oficial ou num clone abandonado. Perda: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `Conteúdo desatualizado + marca inconsistente entre plataformas. O comprador não sabe se está no site oficial ou num clone abandonado. Perda: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set([topFreshness.surface, topBrand.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1545,7 +1545,7 @@ function detectInvisibleCommercialPages(
     severity: 'critical',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `Suas páginas de venda são invisíveis pro Google E quando alguém chega, o caminho de compra está quebrado. Receita invisível: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `Suas páginas de venda são invisíveis pro Google e quando alguém chega, o caminho de compra está quebrado. Receita invisível: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set([topDiscover.surface, topRevenue.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1608,7 +1608,7 @@ function detectSeoConversionMisalignment(
     severity: 'high',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `O Google mostra uma versão do seu site que não convence, e quem clica encontra uma mensagem diferente — duplo desperdício de tráfego orgânico. Custo: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `O Google mostra uma versão do seu site que não convence, e quem clica encontra uma mensagem diferente. Duplo desperdício de tráfego orgânico. Custo: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set([topDiscover.surface, topCopy.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1741,7 +1741,7 @@ function detectSubdomainTrustFragmentation(
     severity: 'high',
     chain,
     combined_impact_cents: combinedImpact,
-    narrative: `O comprador é jogado entre subdomínios no checkout E cada um parece um site diferente — confiança se fragmenta em cada redirect. Perda: ${formatDollars(combinedImpact)}/mês.`,
+    narrative: `O comprador é jogado entre subdomínios no checkout e cada um parece um site diferente. Confiança se fragmenta em cada redirect. Perda: ${formatDollars(combinedImpact)}/mês.`,
     affected_surfaces: [...new Set([topChannel.surface, topTrust.surface])],
     packs_involved: [...new Set(chain.map(c => c.pack))],
     remediation_chain: [
@@ -1799,7 +1799,7 @@ function detectBrandImpersonationRevenue(
     pack: 'revenue_integrity',
     role: 'consequence',
     surface: '/ (sitewide)',
-    description: 'Brand trust eroded by impersonation activity',
+    description: 'Impersonation activity is eroding brand trust',
   });
 
   // Impact: heuristic based on severity

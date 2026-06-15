@@ -176,7 +176,7 @@ function inferBrandTrustCliffAtPayment(
   const refs = [...domainChanges.slice(0, 2), ...ckPages.slice(0, 1), ...ckInd.slice(0, 1)].map(e => makeRef('evidence', e.id));
 
   return [mk('brand_trust_cliff_at_payment', InferenceCategory.TrustBoundary, scoping, cycleRef, 'true', 'high', confidence, [], refs,
-    'O comprador navega no seu domínio, cria confiança com sua marca, e no momento do pagamento é jogado para outro domínio sem qualquer selo ou elemento de confiança. Essa quebra abrupta é como trocar de loja na hora de pagar — 40% dos compradores abandonam quando percebem a mudança de URL porque associam a um golpe.',
+    'O comprador navega no seu domínio, cria confiança com sua marca, e no momento do pagamento é jogado para outro domínio sem qualquer selo ou elemento de confiança. Essa quebra abrupta é como trocar de loja na hora de pagar. 40% dos compradores abandonam quando percebem a mudança de URL porque associam a um golpe.',
   )];
 }
 
@@ -234,7 +234,7 @@ function inferAdLandingExperienceDisconnect(
   const refs = [...metaEv.slice(0, 2), ...pc.slice(0, 2)].map(e => makeRef('evidence', e.id));
 
   return [mk('ad_landing_experience_disconnect', InferenceCategory.ExpectationAlignment, scoping, cycleRef, 'true', 'medium', confidence, [], refs,
-    'As meta tags e OG tags prometem benefícios específicos que a página não entrega acima da dobra. O visitante chega esperando ver exatamente o que o Google ou redes sociais mostraram — quando a mensagem não bate, o cérebro registra "isca" e a taxa de rejeição dispara nos primeiros 5 segundos. Cada clique pago que encontra essa desconexão é dinheiro jogado fora duas vezes.',
+    'As meta tags e OG tags prometem benefícios específicos que a página não entrega acima da dobra. O visitante chega esperando ver exatamente o que o Google ou redes sociais mostraram. Quando a mensagem não bate, o cérebro registra "isca" e a taxa de rejeição dispara nos primeiros 5 segundos. Cada clique pago que encontra essa desconexão é dinheiro jogado fora duas vezes.',
   )];
 }
 
@@ -280,7 +280,7 @@ function inferCheckoutFormMobileHostile(
   if (hasLlm) confidence += 5;
 
   return [mk('checkout_form_mobile_hostile', InferenceCategory.FrictionPath, scoping, cycleRef, 'true', 'high', confidence, [], big.slice(0, 3).map(e => makeRef('evidence', e.id)),
-    'O formulário de checkout tem mais de 4 campos sem autocomplete e sem tipos especializados (email, tel). No mobile, isso significa digitar tudo manualmente em teclado genérico — cada campo extra aumenta 10% o abandono. Com 60%+ do tráfego vindo de celular, formulários hostis ao mobile são o maior destruidor silencioso de conversão.',
+    'O formulário de checkout tem mais de 4 campos sem autocomplete e sem tipos especializados (email, tel). No mobile, isso significa digitar tudo manualmente em teclado genérico. Cada campo extra aumenta 10% o abandono. Com 60%+ do tráfego vindo de celular, formulários hostis ao mobile são o maior destruidor silencioso de conversão.',
   )];
 }
 
@@ -323,7 +323,7 @@ function inferPricingPageComplexityParalysis(
   if (hasLlm) confidence += 5;
 
   return [mk('pricing_page_complexity_paralysis', InferenceCategory.ConversionClarity, scoping, cycleRef, 'true', 'medium', confidence, [], pricingPages.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'A página de preços apresenta 4+ planos com 10+ linhas de funcionalidades sem nenhum destaque de "recomendado". O paradoxo da escolha paralisa o visitante — quando tudo parece igual mas diferente, ninguém escolhe. Pesquisas mostram que reduzir opções de 4 para 3 com destaque claro aumenta conversão em 25%.',
+    'A página de preços apresenta 4+ planos com 10+ linhas de funcionalidades sem nenhum destaque de "recomendado". O paradoxo da escolha paralisa o visitante. Quando tudo parece igual mas diferente, ninguém escolhe. Pesquisas mostram que reduzir opções de 4 para 3 com destaque claro aumenta conversão em 25%.',
   )];
 }
 
@@ -362,7 +362,7 @@ function inferSupportPromiseImpossibleToFulfill(
   const refs = supPg.length > 0 ? supPg.slice(0, 2).map(e => makeRef('evidence', e.id)) : pc.slice(0, 1).map(e => makeRef('evidence', e.id));
 
   return [mk('support_promise_impossible_to_fulfill', InferenceCategory.SupportAccessibility, scoping, cycleRef, 'true', 'medium', confidence, [], refs,
-    'O site promete atendimento rápido ou 24/7 mas não tem canal funcional para cumprir. Promessas de SLA quebradas geram mais raiva do que não prometer nada — o cliente que esperava resposta em 1h e não recebeu vai direto pro chargeback ao invés de esperar. Cada promessa impossível é um convite para disputa.',
+    'O site promete atendimento rápido ou 24/7 mas não tem canal funcional para cumprir. Promessas de SLA quebradas geram mais raiva do que não prometer nada. O cliente que esperava resposta em 1h e não recebeu vai direto pro chargeback ao invés de esperar. Cada promessa impossível é um convite para disputa.',
   )];
 }
 
@@ -406,7 +406,7 @@ function inferTrustJourneyInconsistency(
   const refs = [...home.slice(0, 1), ...chk.slice(0, 1), ...prod.slice(0, 1)].map(e => makeRef('evidence', e.id));
 
   return [mk('trust_journey_inconsistency', InferenceCategory.TrustRevenue, scoping, cycleRef, 'true', 'medium', confidence, [], refs,
-    'Elementos de confiança (selos, depoimentos, avaliações) existem na homepage mas desaparecem nas páginas críticas de decisão. O comprador constrói confiança navegando mas ao chegar no checkout ou produto, não encontra nada que confirme a segurança. Essa inconsistência funciona como um "alarme silencioso" — o cérebro detecta a ausência e ativa o modo defensivo justo na hora de pagar.',
+    'Elementos de confiança (selos, depoimentos, avaliações) existem na homepage mas desaparecem nas páginas críticas de decisão. O comprador constrói confiança navegando mas ao chegar no checkout ou produto, não encontra nada que confirme a segurança. Essa inconsistência funciona como um "alarme silencioso". O cérebro detecta a ausência e ativa o modo defensivo justo na hora de pagar.',
   )];
 }
 
@@ -470,7 +470,7 @@ function inferMultilingualConversionLeak(
   const refs = pageLangs.slice(0, 3).map(pl => makeRef('evidence', pl.page.id));
 
   return [mk('multilingual_conversion_leak', InferenceCategory.LanguageDiscontinuity, scoping, cycleRef, 'true', 'high', confidence, [], refs,
-    'O idioma muda entre páginas do funil sem aviso. O visitante começa em uma língua e encontra outra na hora de decidir ou pagar. Mudanças de idioma mid-funnel destroem a fluidez cognitiva — o comprador precisa "recalcular" mentalmente e esse esforço extra é suficiente para abandonar. Sites multilíngues que mantêm consistência de idioma por sessão convertem 30% mais.',
+    'O idioma muda entre páginas do funil sem aviso. O visitante começa em uma língua e encontra outra na hora de decidir ou pagar. Mudanças de idioma mid-funnel destroem a fluidez cognitiva. O comprador precisa "recalcular" mentalmente e esse esforço extra é suficiente para abandonar. Sites multilíngues que mantêm consistência de idioma por sessão convertem 30% mais.',
   )];
 }
 

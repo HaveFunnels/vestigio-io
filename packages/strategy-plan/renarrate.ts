@@ -174,7 +174,7 @@ export async function maybeTriggerRenarrative(
 			});
 			console.log(
 				`[strategy-plan/renarrate] env=${args.environmentId} month=${month} ` +
-					`trigger=${args.trigger} fell back to deterministic text — slot refunded ` +
+					`trigger=${args.trigger} fell back to deterministic text. Slot refunded ` +
 					`(refundedRows=${refund.count}, regenCountAfter=${after?.regenCount ?? "?"})`,
 			);
 			return {

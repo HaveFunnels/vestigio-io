@@ -42,7 +42,7 @@ import { customerVoicePass } from "./customer-voice";
  */
 const PASS_REGISTRY: EnrichmentPass[] = [
   subdomainDiscoveryPass,
-  emailDeliverabilityPass, // Wave 23.1 — pure DNS, ~200ms, no deps
+  emailDeliverabilityPass, // Wave 23.1. Pure DNS, ~200ms, no deps
   selectiveHeadlessPass,
   katanaDiscoveryPass,
   nucleiScanPass,
@@ -57,11 +57,11 @@ const PASS_REGISTRY: EnrichmentPass[] = [
   // 2026-06-09 against havefunnels: bootstrap activated 5 competitors
   // but competitor_fetch had already finished, leaving surface_inventory
   // in self-only mode for that cycle.
-  serpObservationPass, // Wave 25 — brand + category SERP capture (cached), gated by TAVILY_API_KEY
-  competitorFetchPass, // Wave 24 — polite homepage fetch of user-curated + auto-activated competitors, full-mode only
-  competitorDeepFetchPass, // Wave 23 P0.2/P1.2 — pricing page + blog content velocity probe, full-mode only
-  surfaceInventoryPass, // Wave 26 — LLM extracts buyer-decision surface elements (yours + each competitor), gated by ANTHROPIC_API_KEY
-  customerVoicePass,   // Wave 27 — Reclame Aqui snapshot for self + curated competitors, full-mode only
+  serpObservationPass, // Wave 25. Brand + category SERP capture (cached), gated by TAVILY_API_KEY
+  competitorFetchPass, // Wave 24. Polite homepage fetch of user-curated + auto-activated competitors, full-mode only
+  competitorDeepFetchPass, // Wave 23 P0.2/P1.2. Pricing page + blog content velocity probe, full-mode only
+  surfaceInventoryPass, // Wave 26. LLM extracts buyer-decision surface elements (yours + each competitor), gated by ANTHROPIC_API_KEY
+  customerVoicePass,   // Wave 27. Reclame Aqui snapshot for self + curated competitors, full-mode only
   externalReconPass,
   semanticEnrichmentPass,
 ];

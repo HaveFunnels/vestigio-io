@@ -67,7 +67,7 @@ export interface CrossPageAnalysis {
 
 const SYSTEM_PROMPT = buildSystemPrompt(
   "cross-page narrative consistency analyst",
-  "Compare copy elements across multiple pages of the same website to detect contradictions, tone shifts, naming inconsistencies, abandoned commitments, and value proposition drift. A buyer who sees a different promise on the landing page than the pricing page hesitates — the inconsistency is the leak.",
+  "Compare copy elements across multiple pages of the same website to detect contradictions, tone shifts, naming inconsistencies, abandoned commitments, and value proposition drift. A buyer who sees a different promise on the landing page than the pricing page hesitates. The inconsistency is the leak.",
 );
 
 function buildCrossPagePrompt(

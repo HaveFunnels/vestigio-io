@@ -62,7 +62,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Mova o formulário de pagamento para o mesmo domínio da loja ou use o checkout embedded do gateway.',
 			'Se a mudança de domínio for inevitável, adicione logotipo da loja e selo de segurança na página externa.',
-			'Garanta HTTPS e certificado válido em ambos os domínios — verifique em navegadores em modo anônimo.',
+			'Garanta HTTPS e certificado válido em ambos os domínios. Verifique em navegadores em modo anônimo.',
 			'Adicione copy no botão do checkout explicando que o próximo passo é uma página segura do processador de pagamento.',
 		],
 		estimated_effort_hours: 16,
@@ -104,7 +104,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	revenue_path_fragile: {
 		remediation_steps: [
 			'Identifique os 3 endpoints mais críticos do caminho de compra (produto → carrinho → checkout) e configure health checks de 1 minuto.',
-			'Remova dependências de third-party scripts que bloqueiam o render do checkout — mova pra async / defer.',
+			'Remova dependências de third-party scripts que bloqueiam o render do checkout. Mova pra async / defer.',
 			'Implemente fallback para o checkout quando o gateway primário falhar (retry automático + mensagem ao usuário).',
 			'Adicione logging de erros client-side no checkout pra ter visibilidade de quais requests falham em produção.',
 		],
@@ -131,7 +131,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	critical_path_broken: {
 		remediation_steps: [
-			'Investigue o status code retornado por /checkout, /cart e páginas de produto — priorize as URLs com 4xx/5xx.',
+			'Investigue o status code retornado por /checkout, /cart e páginas de produto. Priorize as URLs com 4xx/5xx.',
 			'Restore URLs quebradas imediatamente (via revert de deploy recente ou hotfix no roteamento).',
 			'Configure alerta no Sentry / Datadog / UptimeRobot pra disparar quando status code não for 2xx em qualquer URL crítica.',
 			'Revise o release pipeline pra bloquear deploy se smoke-test do checkout falhar.',
@@ -145,7 +145,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	form_data_leaves_domain: {
 		remediation_steps: [
-			'Audite o atributo `action` de todos os forms — liste quais apontam pra domínios externos.',
+			'Audite o atributo `action` de todos os forms. Liste quais apontam pra domínios externos.',
 			'Whitelist forms legítimos (OAuth, processador de pagamento hosted) com documentação de por quê saem do domínio.',
 			'Forms não-essenciais que saem do domínio: migre pra endpoints internos que proxyficam pro serviço externo.',
 			'Adicione aria-label em todos os forms descrevendo o propósito (signup, checkout, support, search) pra facilitar a análise.',
@@ -160,7 +160,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	untrusted_embeds_near_purchase: {
 		remediation_steps: [
 			'Audite embeds (iframes, scripts de terceiros) presentes nas páginas de produto, carrinho e checkout.',
-			'Remova embeds não-essenciais do caminho de compra — trust badges decorativos, widgets de chat genéricos.',
+			'Remova embeds não-essenciais do caminho de compra. Trust badges decorativos, widgets de chat genéricos.',
 			'Para embeds essenciais (gateway de pagamento, chat oficial), valide que vêm de domínios reconhecidos com certificado válido.',
 			'Configure Content-Security-Policy restritivo no checkout permitindo apenas os domínios necessários.',
 		],
@@ -181,13 +181,13 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 4,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Vamos reavaliar o finding após sua próxima análise — sem dado novo, é um assessment estrutural do risco de dependência de plataforma.',
+			'Vamos reavaliar o finding após sua próxima análise. Sem dado novo, é um assessment estrutural do risco de dependência de plataforma.',
 		verification_eta_seconds: 2,
 	},
 
 	revenue_path_regressed: {
 		remediation_steps: [
-			'Compare a análise atual com a anterior — identifique quais findings pioraram (severidade ou confidence subiu).',
+			'Compare a análise atual com a anterior. Identifique quais findings pioraram (severidade ou confidence subiu).',
 			'Isole o deploy ou mudança de produto que coincide com a janela da regressão.',
 			'Se a regressão veio de deploy: considere rollback enquanto investiga. Se veio de mudança operacional: revise o processo que causou.',
 			'Adicione teste de smoke no caminho de receita pra prevenir esse tipo específico de regressão no próximo deploy.',
@@ -204,7 +204,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Adicione no mínimo 3 trust markers visíveis na home: selo SSL, selos de pagamento (bandeiras aceitas), depoimentos / avaliações.',
 			'Na página de produto, inclua: avaliações de clientes, política de reembolso, informações de contato, prazo de entrega.',
 			'No checkout, reforce: selo SSL explícito, política de reembolso linkada, canal de suporte visível, logos de gateway.',
-			'Evite trust markers genéricos sem contexto (badges sem certificação real por trás) — podem enfraquecer mais do que ajudar.',
+			'Evite trust markers genéricos sem contexto (badges sem certificação real por trás). Podem enfraquecer mais do que ajudar.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -217,19 +217,19 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Liste todos os canais de tráfego ativos (orgânico, pago, social, email) e qual tag cada um precisa pra atribuição.',
 			'Instale e valide: GA4, GTM, Meta Pixel (se Meta Ads), Google Ads tag (se Google Ads), TikTok Pixel (se TikTok).',
-			'Implemente CAPI / server-side para Meta e Google — mitigação crítica da perda de cookies no Safari/iOS.',
+			'Implemente CAPI / server-side para Meta e Google. Mitigação crítica da perda de cookies no Safari/iOS.',
 			'Documente qual evento (purchase, add_to_cart, initiate_checkout) cada tag deve capturar e teste em Tag Assistant.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos disparar um checkout simulado automaticamente e conferir quais tags disparam — retorna lista de tags presentes vs esperadas.',
+			'Vamos disparar um checkout simulado automaticamente e conferir quais tags disparam. Retorna lista de tags presentes vs esperadas.',
 		verification_eta_seconds: 50,
 	},
 
 	mobile_commercial_path_blocked: {
 		remediation_steps: [
-			'Execute o checkout completo em um iPhone e um Android — anote cada ponto onde o fluxo trava (viewport, teclado, botão).',
+			'Execute o checkout completo em um iPhone e um Android. Anote cada ponto onde o fluxo trava (viewport, teclado, botão).',
 			'Corrija viewport meta tag (`width=device-width, initial-scale=1`) e garanta que o checkout não exige scroll horizontal.',
 			'Teste botões: devem ter no mínimo 44x44px de área clicável e espaçamento ≥8px de outros elementos.',
 			'Elimine overlays / modals que quebram em mobile (scroll trapped, close button fora da viewport).',
@@ -243,8 +243,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mobile_trust_weaker_than_desktop: {
 		remediation_steps: [
-			'Compare home + produto + checkout em desktop vs mobile — trust markers que aparecem em desktop devem aparecer em mobile também.',
-			'Mobile geralmente esconde trust markers em favor de espaço — priorize selo SSL, política de reembolso, e contato como sempre visíveis.',
+			'Compare home + produto + checkout em desktop vs mobile. Trust markers que aparecem em desktop devem aparecer em mobile também.',
+			'Mobile geralmente esconde trust markers em favor de espaço. Priorize selo SSL, política de reembolso, e contato como sempre visíveis.',
 			'Use acordeões / drawers pra expor trust markers sob demanda em vez de escondê-los completamente.',
 			'Teste em viewport de 375px de largura que as informações de segurança do checkout não ficam truncadas.',
 		],
@@ -260,26 +260,26 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Identifique os fluxos secundários: compra via WhatsApp, formulário de orçamento, deep link de ads, app externo.',
 			'Para cada fluxo secundário, valide que o buyer cruza os mesmos trust markers (política, selo SSL, contato) antes da compra.',
 			'Se um fluxo secundário pula o checkout oficial, adicione página intermediária com os trust markers essenciais.',
-			'Meça conversão de cada fluxo secundário separadamente no GA4 — compare com o caminho oficial pra isolar onde trust está erodindo.',
+			'Meça conversão de cada fluxo secundário separadamente no GA4. Compare com o caminho oficial pra isolar onde trust está erodindo.',
 		],
 		estimated_effort_hours: 14,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'A próxima fase do Vestigio introduz probes nos fluxos secundários (WhatsApp, form) — hoje a verificação é reavaliar sobre evidência existente.',
+			'A próxima fase do Vestigio introduz probes nos fluxos secundários (WhatsApp, form). Hoje a verificação é reavaliar sobre evidência existente.',
 		verification_eta_seconds: 3,
 	},
 
 	runtime_errors_interrupt_purchase: {
 		remediation_steps: [
-			'Configure error tracking (Sentry, Rollbar, Datadog RUM) no frontend do checkout e cart — não em todas as páginas ainda, foco no caminho de receita.',
-			'Reveja os últimos 50 erros de JS capturados — priorize os que disparam em páginas de produto, cart, checkout.',
+			'Configure error tracking (Sentry, Rollbar, Datadog RUM) no frontend do checkout e cart. Não em todas as páginas ainda, foco no caminho de receita.',
+			'Reveja os últimos 50 erros de JS capturados. Priorize os que disparam em páginas de produto, cart, checkout.',
 			'Adicione try/catch em calls externos do checkout (gateway, CAPI, anti-fraude) com fallback que não bloqueia o usuário.',
 			'Configure source maps no build para que os stack traces em produção sejam legíveis.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
 		verification_notes:
-			'Vamos navegar o checkout automaticamente coletando erros JS de console — retorna lista de erros encontrados vs baseline anterior.',
+			'Vamos navegar o checkout automaticamente coletando erros JS de console. Retorna lista de erros encontrados vs baseline anterior.',
 		verification_eta_seconds: 45,
 	},
 
@@ -300,7 +300,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	high_intent_surfaces_blind: {
 		remediation_steps: [
 			'Identifique as páginas de maior intent comercial (produto, pricing, comparação) e valide que todas têm GA4 + Pixel tagged.',
-			'Configure scroll tracking e time-on-page especificamente nessas surfaces — intent precisa ser medido além de pageview.',
+			'Configure scroll tracking e time-on-page especificamente nessas surfaces. Intent precisa ser medido além de pageview.',
 			'Adicione eventos customizados de engagement: view_item, add_to_cart, scroll_75, time_on_page_60s.',
 			'Crie dashboard de funil apenas pra essas surfaces pra visualizar drop-off por etapa de intent.',
 		],
@@ -318,7 +318,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	conversion_flow_fragmented: {
 		remediation_steps: [
 			'Mapeie o funil atual: home → produto → carrinho → checkout → confirmação. Identifique onde há mais de um caminho possível.',
-			'Consolide CTAs duplicados na home e produto — um CTA primário claro por página.',
+			'Consolide CTAs duplicados na home e produto. Um CTA primário claro por página.',
 			'Remova etapas opcionais que quebram o momentum (newsletter popup antes do checkout, survey pós-add-to-cart).',
 			'Padronize o layout do checkout: uma coluna em mobile, campos agrupados logicamente, indicador de progresso se multi-step.',
 		],
@@ -331,9 +331,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	friction_on_critical_path: {
 		remediation_steps: [
-			'Conte quantos campos de formulário existem entre "ver produto" e "pagar" — reduza pra ≤ 8 obrigatórios.',
-			'Elimine logins forçados antes do checkout — ofereça checkout como convidado com opção de criar conta depois.',
-			'Remova modais, popups e overlays no caminho de compra — apenas o necessário pra efetivar o pagamento.',
+			'Conte quantos campos de formulário existem entre "ver produto" e "pagar". Reduza pra ≤ 8 obrigatórios.',
+			'Elimine logins forçados antes do checkout. Ofereça checkout como convidado com opção de criar conta depois.',
+			'Remova modais, popups e overlays no caminho de compra. Apenas o necessário pra efetivar o pagamento.',
 			'Se há múltiplos steps no checkout, garanta que volta e edita cada step sem perder dados já preenchidos.',
 		],
 		estimated_effort_hours: 14,
@@ -345,7 +345,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	revenue_leakage: {
 		remediation_steps: [
-			'Revise a lista de findings de maior impacto — priorize os que têm confidence ≥ 70% e severity ≥ high.',
+			'Revise a lista de findings de maior impacto. Priorize os que têm confidence ≥ 70% e severity ≥ high.',
 			'Para cada finding prioritário, marque o owner responsável e a janela de implementação.',
 			'Bloqueie deploys que impactem o caminho de receita até que os findings críticos sejam resolvidos.',
 			'Crie um dashboard semanal com sum of monthly_range.mid dos findings abertos pra rastrear leakage acumulado.',
@@ -353,7 +353,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Reavaliar sobre a evidência atual pra recalcular o leakage agregado — sem novo data, apenas a soma atual.',
+			'Reavaliar sobre a evidência atual pra recalcular o leakage agregado. Sem novo data, apenas a soma atual.',
 		verification_eta_seconds: 3,
 	},
 
@@ -361,7 +361,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Abra o checkout e identifique cada momento onde o buyer poderia hesitar (mudança de domínio, selo faltando, política escondida).',
 			'Adicione selo SSL explícito ("Conexão segura") próximo ao campo de cartão de crédito.',
-			'Exiba política de reembolso em 1 clique a partir do checkout — não esconda em footer genérico.',
+			'Exiba política de reembolso em 1 clique a partir do checkout. Não esconda em footer genérico.',
 			'Mostre logos das bandeiras de cartão aceitas + logo do gateway (Stripe, Mercado Pago, etc.) para reforçar credibilidade.',
 		],
 		estimated_effort_hours: 6,
@@ -373,8 +373,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	measurement_blindspot: {
 		remediation_steps: [
-			'Identifique surfaces comerciais sem tag analítica — páginas de produto órfãs, URLs legadas, landing pages de campanha.',
-			'Adicione GA4 + Pixel nessas surfaces específicas — pode ser via GTM ou tag direta.',
+			'Identifique surfaces comerciais sem tag analítica. Páginas de produto órfãs, URLs legadas, landing pages de campanha.',
+			'Adicione GA4 + Pixel nessas surfaces específicas. Pode ser via GTM ou tag direta.',
 			'Configure eventos customizados pro contexto daquela surface (view_item em produto, generate_lead em landing).',
 			'Valide em GA4 DebugView que eventos chegam com o contexto correto (product_id, value, etc.).',
 		],
@@ -387,10 +387,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	unclear_conversion_intent: {
 		remediation_steps: [
-			'Identifique o CTA primário de cada página comercial — deve ser explícito e único no viewport.',
+			'Identifique o CTA primário de cada página comercial. Deve ser explícito e único no viewport.',
 			'Reescreva textos de CTA vagos ("Saiba mais", "Clique aqui") pra verbos de ação claros ("Comprar agora", "Ver preços", "Agendar demo").',
 			'Teste se o CTA comunica a próxima etapa: "Adicionar ao carrinho" vs "Prosseguir pra pagamento" têm intents diferentes.',
-			'Use cor de destaque contrastante apenas no CTA primário — CTAs secundários em estilo outline / ghost.',
+			'Use cor de destaque contrastante apenas no CTA primário. CTAs secundários em estilo outline / ghost.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
@@ -401,15 +401,15 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	redirect_chain_erodes_checkout_trust: {
 		remediation_steps: [
-			'Audite a cadeia de redirects do /checkout — use curl -L -I ou DevTools Network pra listar cada hop.',
-			'Elimine redirects desnecessários (http→https→www→subdomain) — idealmente um único redirect ou zero.',
+			'Audite a cadeia de redirects do /checkout. Use curl -L -I ou DevTools Network pra listar cada hop.',
+			'Elimine redirects desnecessários (http→https→www→subdomain). Idealmente um único redirect ou zero.',
 			'Se o gateway requer saída de domínio, garanta que o redirect final é direto e não passa por intermediários.',
 			'Configure HSTS no domínio raiz pra forçar HTTPS sem round-trip de redirect.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos reabrir /checkout seguindo redirects e contar hops — relatório inclui cada URL intermediária.',
+			'Vamos reabrir /checkout seguindo redirects e contar hops. Relatório inclui cada URL intermediária.',
 		verification_eta_seconds: 10,
 	},
 
@@ -431,7 +431,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Audite a navegação: a partir da home, quantos cliques são necessários pra chegar numa página de produto?',
 			'Garanta que categorias / produtos principais estão linkados da home em até 2 cliques.',
-			'Revise o footer — links pra produtos-chave e políticas devem aparecer em toda página comercial.',
+			'Revise o footer. Links pra produtos-chave e políticas devem aparecer em toda página comercial.',
 			'Adicione breadcrumbs nas páginas de produto e categoria pra melhorar navegação e SEO.',
 		],
 		estimated_effort_hours: 10,
@@ -446,7 +446,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Audite a página de confirmação pós-compra: deve ter número do pedido, resumo do que foi comprado, e prazo estimado de entrega.',
 			'Configure email transacional de confirmação disparado imediatamente após o purchase event.',
 			'Inclua no email: nota fiscal (ou prazo de envio dela), canal de suporte, e link de rastreio quando disponível.',
-			'Configure retry + fallback no envio do email — não dependa de um único provider sem backup.',
+			'Configure retry + fallback no envio do email. Não dependa de um único provider sem backup.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
@@ -458,9 +458,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	refund_process_unclear: {
 		remediation_steps: [
 			'Reescreva a página de política de reembolso com estrutura: prazo → processo → canal de contato → exceções.',
-			'Inclua exemplos concretos ("Se você recebeu produto errado, envie email X com foto") — não deixe só regras abstratas.',
+			'Inclua exemplos concretos ("Se você recebeu produto errado, envie email X com foto"). Não deixe só regras abstratas.',
 			'Adicione FAQ de refund no checkout ou próximo ao botão de pagar, com link pra política completa.',
-			'Meça tempo médio até primeiro contato do cliente via canal de refund — menos que 2h úteis é benchmark bom.',
+			'Meça tempo médio até primeiro contato do cliente via canal de refund. Menos que 2h úteis é benchmark bom.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -474,21 +474,21 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Configure email de confirmação profissional (template branded, não texto plano) disparado em <1min após compra.',
 			'Inclua nota fiscal eletrônica / recibo PDF anexado ou linkado pra download.',
 			'Adicione código de rastreio assim que disponível (webhook do transportador → email automático).',
-			'Envie email de follow-up pós-entrega pedindo avaliação — reforça o fechamento do ciclo de trust.',
+			'Envie email de follow-up pós-entrega pedindo avaliação. Reforça o fechamento do ciclo de trust.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'not_verifiable_explain',
 		verification_notes:
-			'Post-purchase proof acontece via email/SMS externo ao site — não dá pra verificar via crawl. A próxima fase do Vestigio explora integração com ESP pra validar templates de transacional.',
+			'Post-purchase proof acontece via email/SMS externo ao site. Não dá pra verificar via crawl. A próxima fase do Vestigio explora integração com ESP pra validar templates de transacional.',
 		verification_eta_seconds: null,
 	},
 
 	support_reassurance_too_late: {
 		remediation_steps: [
-			'Posicione canal de suporte visível antes do checkout — footer com WhatsApp/chat em toda página comercial.',
+			'Posicione canal de suporte visível antes do checkout. Footer com WhatsApp/chat em toda página comercial.',
 			'Adicione microcopy próximo ao botão de pagamento: "Dúvidas? Fale com nosso time via WhatsApp".',
 			'Se você tem chat widget, garanta que ele carrega rápido (sem bloquear o render do checkout) e responde em <5min úteis.',
-			'Inclua FAQ de compra direto na página de produto e checkout — responda as 5 dúvidas mais comuns antes que o buyer precise perguntar.',
+			'Inclua FAQ de compra direto na página de produto e checkout. Responda as 5 dúvidas mais comuns antes que o buyer precise perguntar.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -500,9 +500,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	reassurance_routes_disconnected: {
 		remediation_steps: [
 			'Teste cada rota de reassurance: clicar "Política de reembolso" do checkout abre em nova aba ou leva pra footer genérico?',
-			'Garanta que cada trust marker (política, contato, depoimentos) abre CONTEXTUAL — modal ou página dedicada com link de volta.',
-			'Evite políticas em URLs soltas do footer — ancore-as no contexto da compra (link direto do checkout pra política de reembolso).',
-			'Meça a taxa de retorno pós-clique nesses links — se >50% dos cliques não voltam, o link está desviando o buyer.',
+			'Garanta que cada trust marker (política, contato, depoimentos) abre CONTEXTUAL. Modal ou página dedicada com link de volta.',
+			'Evite políticas em URLs soltas do footer. Ancore-as no contexto da compra (link direto do checkout pra política de reembolso).',
+			'Meça a taxa de retorno pós-clique nesses links. Se >50% dos cliques não voltam, o link está desviando o buyer.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'browser_runtime',
@@ -514,21 +514,21 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	alternate_flows_unmeasured: {
 		remediation_steps: [
 			'Liste todos os fluxos alternativos de compra: WhatsApp, email, ligação, formulário de orçamento, marketplace.',
-			'Para cada fluxo, garanta que o evento de conversão é capturado (mesmo que manualmente — registrar no CRM + evento customizado no GA4).',
+			'Para cada fluxo, garanta que o evento de conversão é capturado (mesmo que manualmente. Registrar no CRM + evento customizado no GA4).',
 			'Configure UTMs + custom source/medium pra separar conversões desses fluxos das do site principal.',
 			'Crie dashboard no GA4 que consolide todas as fontes de conversão pra você enxergar o funil completo.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Fluxos alternativos acontecem fora do site — verificação é reavaliar depois que você marca os eventos.',
+			'Fluxos alternativos acontecem fora do site. Verificação é reavaliar depois que você marca os eventos.',
 		verification_eta_seconds: 3,
 	},
 
 	runtime_breaking_reassurance: {
 		remediation_steps: [
 			'Audite se componentes de reassurance (política, chat widget, trust badges) disparam erro JS que quebra a página.',
-			'Garanta que chat widgets carregam de forma async/defer — não bloqueiam o render do conteúdo principal.',
+			'Garanta que chat widgets carregam de forma async/defer. Não bloqueiam o render do conteúdo principal.',
 			'Se um trust badge falha ao carregar (imagem 404, script externo timeout), tenha fallback que não mostra espaço quebrado.',
 			'Configure alerta de erro JS no checkout pra detectar regressões antes do buyer chegar.',
 		],
@@ -543,22 +543,22 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Se você usa um único provedor de checkout, tenha contingência: gateway backup configurado + processo manual documentado.',
 			'Revise o contrato com o provedor pra entender SLA e compensação em downtime.',
-			'Configure monitoring externo (UptimeRobot) especificamente contra a URL do checkout — não confie apenas no status page do provedor.',
+			'Configure monitoring externo (UptimeRobot) especificamente contra a URL do checkout. Não confie apenas no status page do provedor.',
 			'Tenha checklist escrito pra quando o provedor ficar fora: comunicar time, ativar backup, atender buyers por WhatsApp temporariamente.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Risco estrutural de provider único — verificação é reavaliar após você diversificar ou documentar contingência.',
+			'Risco estrutural de provider único. Verificação é reavaliar após você diversificar ou documentar contingência.',
 		verification_eta_seconds: 3,
 	},
 
 	trust_and_measurement_both_absent: {
 		remediation_steps: [
-			'Resolva primeiro o trust — é barato e tem impacto imediato (políticas publicadas + selos visíveis em ≤1 dia).',
+			'Resolva primeiro o trust. É barato e tem impacto imediato (políticas publicadas + selos visíveis em ≤1 dia).',
 			'Em paralelo, configure GA4 + Pixel básicos na home + checkout pra ter pelo menos 1 camada de medição.',
-			'Não deploy nenhuma campanha paga enquanto esses dois gaps estão abertos — você paga ads sem medir e sem fechar vendas.',
-			'Crie checkpoint semanal com o time revisando progresso em ambas frentes — trust + measurement não devem divergir.',
+			'Não deploy nenhuma campanha paga enquanto esses dois gaps estão abertos. Você paga ads sem medir e sem fechar vendas.',
+			'Crie checkpoint semanal com o time revisando progresso em ambas frentes. Trust + measurement não devem divergir.',
 		],
 		estimated_effort_hours: 20,
 		verification_strategy: 'http_static',
@@ -570,7 +570,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	consent_undermining_measurement: {
 		remediation_steps: [
 			'Revise seu banner de consent: está bloqueando GA4 / Pixel ANTES mesmo do buyer responder? Troque pra bloqueio condicional.',
-			'Configure Google Consent Mode v2 — permite medição com dados agregados mesmo sem consent total.',
+			'Configure Google Consent Mode v2. Permite medição com dados agregados mesmo sem consent total.',
 			'No Meta, ative Conversions API server-side como fallback quando o Pixel no browser é bloqueado.',
 			'Valide em ambientes opt-in e opt-out: em ambos casos, alguma medição deve chegar (mesmo que limitada em opt-out).',
 		],
@@ -584,9 +584,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	checkout_provider_fragmented: {
 		remediation_steps: [
 			'Liste quantos gateways / checkouts diferentes seus fluxos usam (site, mobile app, marketplace, WhatsApp).',
-			'Consolide: idealmente 1-2 gateways cobrindo 95% do volume — fragmentação aumenta custo + complexidade.',
+			'Consolide: idealmente 1-2 gateways cobrindo 95% do volume. Fragmentação aumenta custo + complexidade.',
 			'Para fluxos remanescentes que precisam de gateway dedicado, documente o motivo (regulatório, geográfico) pra justificar.',
-			'Padronize a experiência visual do checkout mesmo quando o backend varia — consumidor não deveria perceber a fragmentação.',
+			'Padronize a experiência visual do checkout mesmo quando o backend varia. Consumidor não deveria perceber a fragmentação.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'http_static',
@@ -603,7 +603,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Publique política de reembolso com prazo (7 dias CDC), processo, e email de contato explícito.',
 			'Vincule a política no footer do checkout e no email de confirmação pós-compra.',
-			'Mencione a política na página do produto próxima ao botão de compra — reduz dispute rate.',
+			'Mencione a política na página do produto próxima ao botão de compra. Reduz dispute rate.',
 		],
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
@@ -615,9 +615,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	support_unreachable: {
 		remediation_steps: [
 			'Exponha pelo menos 2 canais de suporte no footer de toda página: email + WhatsApp (ou telefone).',
-			'Configure resposta automática em <5min úteis nos canais principais — buyer não deve esperar mais que isso pra primeiro contato.',
+			'Configure resposta automática em <5min úteis nos canais principais. Buyer não deve esperar mais que isso pra primeiro contato.',
 			'Publique horário de atendimento ("seg-sex 9h-18h") pra setar expectativa clara.',
-			'Meça tempo médio até primeira resposta e first-contact-resolution — use como KPI de suporte.',
+			'Meça tempo médio até primeira resposta e first-contact-resolution. Use como KPI de suporte.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
@@ -628,9 +628,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	expectation_misalignment: {
 		remediation_steps: [
-			'Revise prazos de entrega declarados no produto vs prazos reais — desalinhamento gera chargeback.',
+			'Revise prazos de entrega declarados no produto vs prazos reais. Desalinhamento gera chargeback.',
 			'Se o prazo varia por região (frete), exiba calculadora de CEP na página do produto antes do checkout.',
-			'Comunique delays proativamente por email quando descobertos — não deixe buyer perceber sozinho e reclamar.',
+			'Comunique delays proativamente por email quando descobertos. Não deixe buyer perceber sozinho e reclamar.',
 			'Inclua "prazo de entrega estimado" na página de confirmação pós-compra com base real de logística.',
 		],
 		estimated_effort_hours: 10,
@@ -643,21 +643,21 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	dispute_risk_elevated: {
 		remediation_steps: [
 			'Priorize fix em TODAS as frentes simultaneamente: refund_policy + support_unreachable + expectation_misalignment não podem ficar abertas juntas.',
-			'Monitore chargeback rate semanalmente — alert se exceder 0.9% do volume (limiar de atenção do gateway).',
+			'Monitore chargeback rate semanalmente. Alert se exceder 0.9% do volume (limiar de atenção do gateway).',
 			'Implemente pre-dispute: antes do cliente abrir chargeback, emita uma comunicação proativa "teve algum problema? Nós resolvemos".',
 			'Se o gateway suspender processamento por chargeback alto, tenha plano B (outro gateway) já implementado.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Risco composto — a verificação é reavaliar sobre a evidência após você fechar as frentes individuais (refund, support, expectations).',
+			'Risco composto. A verificação é reavaliar sobre a evidência após você fechar as frentes individuais (refund, support, expectations).',
 		verification_eta_seconds: 3,
 	},
 
 	refund_terms_too_thin: {
 		remediation_steps: [
 			'Expanda a política de reembolso pra incluir: prazo exato, processo passo-a-passo, exceções explícitas, canal de contato.',
-			'Evite linguagem legalesa — escreva como você explicaria pra um amigo o que fazer em caso de problema.',
+			'Evite linguagem legalesa. Escreva como você explicaria pra um amigo o que fazer em caso de problema.',
 			'Adicione exemplos concretos ("Se o produto chegou quebrado, envie email X com foto").',
 			'Vincule a FAQ com as 5 dúvidas mais comuns sobre reembolso direto no checkout.',
 		],
@@ -673,7 +673,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'No checkout, adicione microcopy ou banner: "Dúvidas? Fale com nosso time: WhatsApp XXXX-XXXX".',
 			'Chat widget (se houver) deve estar visível no canto sem bloquear os campos de pagamento.',
 			'Botão de suporte deve abrir o canal PRIMÁRIO, não uma página de FAQ genérica.',
-			'Configure handover automático pra humano quando o buyer está no checkout — intent de compra > intent de auto-serviço.',
+			'Configure handover automático pra humano quando o buyer está no checkout. Intent de compra > intent de auto-serviço.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'browser_runtime',
@@ -690,7 +690,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Mapeie o fluxo de ativação: signup → primeiro login → primeiro valor entregue. Cronometre cada etapa.',
 			'Elimine bloqueadores técnicos: email verification obrigatório que pode ser deferido, setup wizard com steps opcionais demais.',
-			'Garanta que o primeiro login entrega valor imediato — dashboard com sample data, tour guiado, ou wizard curto.',
+			'Garanta que o primeiro login entrega valor imediato. Dashboard com sample data, tour guiado, ou wizard curto.',
 			'Meça taxa de ativação (% usuários que chegam ao "aha moment") e configure alerta se cair abaixo de baseline.',
 		],
 		estimated_effort_hours: 24,
@@ -702,7 +702,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	activation_friction_high: {
 		remediation_steps: [
-			'Reduza campos obrigatórios no signup — idealmente apenas email + senha ou OAuth.',
+			'Reduza campos obrigatórios no signup. Idealmente apenas email + senha ou OAuth.',
 			'Dados adicionais (empresa, cargo, tamanho) peça progressivamente depois que o usuário já experimentou o produto.',
 			'Permita signup via OAuth (Google, GitHub) pra reduzir barreira de entrada.',
 			'Se setup wizard é necessário, mostre progresso e permita "pular por enquanto" em steps opcionais.',
@@ -719,7 +719,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Audite a primeira tela pós-login: há um CTA primário claro indicando o próximo passo?',
 			'Implemente onboarding checklist visível (ex: "Complete seu perfil", "Adicione seu primeiro item") com progresso.',
 			'Empty states (listas vazias, dashboard sem dados) devem ter CTA específico para preencher aquele contexto.',
-			'Evite dashboards densos na primeira sessão — apresente o produto em camadas conforme o usuário demonstra intent.',
+			'Evite dashboards densos na primeira sessão. Apresente o produto em camadas conforme o usuário demonstra intent.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
@@ -744,9 +744,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	navigation_overcomplex: {
 		remediation_steps: [
-			'Conte quantos itens top-level sua navegação tem — se >7, simplifique agrupando sob categorias.',
-			'Organize navegação por frequência de uso — itens mais usados acima, raramente usados atrás de "Mais" ou settings.',
-			'Implemente busca global (Cmd+K) pra compensar navegação profunda — atalho reduz clicks para features escondidas.',
+			'Conte quantos itens top-level sua navegação tem. Se >7, simplifique agrupando sob categorias.',
+			'Organize navegação por frequência de uso. Itens mais usados acima, raramente usados atrás de "Mais" ou settings.',
+			'Implemente busca global (Cmd+K) pra compensar navegação profunda. Atalho reduz clicks para features escondidas.',
 			'Remova itens órfãos: analytics mostra features nunca acessadas? Esconda ou remova.',
 		],
 		estimated_effort_hours: 16,
@@ -761,7 +761,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Liste features premium/avançadas e verifique se cada uma tem um entry point descobrível na UI.',
 			'Adicione hints contextuais: quando o usuário faz X, tooltip sugere feature Y que complementa.',
 			'Configure product tours (Appcues, Intro.js) para features introduzidas recentemente.',
-			'Meça via analytics % de usuários que usam cada feature em 30 dias — features com <5% podem precisar de reposicionamento.',
+			'Meça via analytics % de usuários que usam cada feature em 30 dias. Features com <5% podem precisar de reposicionamento.',
 		],
 		estimated_effort_hours: 20,
 		verification_strategy: 'browser_runtime',
@@ -775,7 +775,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Adicione CTA de upgrade visível em pontos de contato com features gated (ex: badge "Premium" no item bloqueado).',
 			'Na settings/pricing page, exiba comparação de planos com feature-by-feature matrix clara.',
 			'Configure prompts contextuais: quando o usuário atinge limite do plano, modal oferece upgrade direto daquela ação.',
-			'Evite paywalls agressivos no primeiro contato — dá valor primeiro, upgrade depois.',
+			'Evite paywalls agressivos no primeiro contato. Dá valor primeiro, upgrade depois.',
 		],
 		estimated_effort_hours: 14,
 		verification_strategy: 'http_static',
@@ -786,15 +786,15 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	upgrade_timing_wrong: {
 		remediation_steps: [
-			'Revise quando os prompts de upgrade aparecem — não devem interromper task crítica (ex: durante fluxo de criação).',
+			'Revise quando os prompts de upgrade aparecem. Não devem interromper task crítica (ex: durante fluxo de criação).',
 			'Timing ideal: após o usuário ter experimentado valor, estar próximo ao limite do plano atual, ou ter tentado feature premium.',
-			'Evite upgrade popups aleatórios — use triggers comportamentais (limite atingido, feature acessada, 30 dias ativos).',
-			'Meça taxa de conversão de cada trigger de upgrade — desative os com <1% de CR.',
+			'Evite upgrade popups aleatórios. Use triggers comportamentais (limite atingido, feature acessada, 30 dias ativos).',
+			'Meça taxa de conversão de cada trigger de upgrade. Desative os com <1% de CR.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Timing de upgrade é signal comportamental + produto — reavaliar sobre evidência após você ajustar triggers.',
+			'Timing de upgrade é signal comportamental + produto. Reavaliar sobre evidência após você ajustar triggers.',
 		verification_eta_seconds: 3,
 	},
 
@@ -803,21 +803,21 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Para cada plano atual, defina o próximo degrau natural: "Pro: 10 users → Business: 50 users" é um exemplo de expansion clara.',
 			'Configure signal de expansion readiness: uso próximo ao limite, novos users adicionados, features avançadas adotadas.',
 			'Implemente self-service upgrade (não exigir sales call) pra expansion automática.',
-			'Meça Net Revenue Retention mensal — healthy SaaS tem NRR >110%.',
+			'Meça Net Revenue Retention mensal. Healthy SaaS tem NRR >110%.',
 		],
 		estimated_effort_hours: 20,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Expansion é uma estratégia de produto — verificação é reavaliar após você definir caminho claro e instrumentar.',
+			'Expansion é uma estratégia de produto. Verificação é reavaliar após você definir caminho claro e instrumentar.',
 		verification_eta_seconds: 3,
 	},
 
 	landing_app_mismatch: {
 		remediation_steps: [
 			'Compare a landing page com o produto real: prometem a mesma coisa? Tom, layout, e value prop devem se alinhar.',
-			'Se a landing promete "simples e rápido", o primeiro login do app deve entregar essa sensação — não uma wizard de 15 steps.',
+			'Se a landing promete "simples e rápido", o primeiro login do app deve entregar essa sensação. Não uma wizard de 15 steps.',
 			'Faça teste com 5 novos usuários: peça feedback específico sobre "o que a landing prometeu vs o que o app entregou".',
-			'Revise mensalmente — landing evolui rápido em SaaS, app às vezes não acompanha.',
+			'Revise mensalmente. Landing evolui rápido em SaaS, app às vezes não acompanha.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
@@ -834,7 +834,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Adicione copy próximo ao botão de pagar reforçando segurança: "Pagamento criptografado", "Certificado SSL", "Seus dados não são compartilhados".',
 			'Inclua microcopy explicando próximos passos: "Após o pagamento você receberá email com nota fiscal e rastreio".',
-			'Evite copy genérico ("Seguro e rápido") — use frases específicas ao contexto da compra.',
+			'Evite copy genérico ("Seguro e rápido"). Use frases específicas ao contexto da compra.',
 		],
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
@@ -846,7 +846,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	cta_clarity_weak_on_commercial: {
 		remediation_steps: [
 			'Substitua CTAs vagos ("Saiba mais", "Clique aqui") por verbos de ação específicos ("Comprar", "Ver preços", "Agendar demo").',
-			'Cada página comercial deve ter 1 CTA primário dominante — secundários em estilo outline/link.',
+			'Cada página comercial deve ter 1 CTA primário dominante. Secundários em estilo outline/link.',
 			'O texto do CTA deve comunicar o que acontece no próximo clique: "Adicionar ao carrinho" ≠ "Ir pro pagamento".',
 		],
 		estimated_effort_hours: 4,
@@ -861,7 +861,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Reescreva descrição de produto focando em benefícios específicos, não features genéricas.',
 			'Substitua copy de templates ("Produto de alta qualidade") por claims verificáveis ("Algodão 100% orgânico certificado GOTS").',
 			'Inclua contexto de uso: quem é o comprador ideal, quando usa, qual problema resolve.',
-			'Teste A/B headlines — copy genérico geralmente perde 10-20% de conversão vs copy específico.',
+			'Teste A/B headlines. Copy genérico geralmente perde 10-20% de conversão vs copy específico.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -872,10 +872,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	pricing_page_framing_unclear: {
 		remediation_steps: [
-			'Clarifique o que diferencia cada plano — features específicas, não apenas limites numéricos.',
+			'Clarifique o que diferencia cada plano. Features específicas, não apenas limites numéricos.',
 			'Destaque visualmente o plano recomendado (badge "Mais popular", cor diferente).',
 			'Responda as 5 dúvidas mais comuns direto na pricing: "Posso trocar de plano?", "Tem fidelidade?", "Tem período de teste?".',
-			'Remova pricing com "Entre em contato" se possível — preços transparentes convertem melhor em SMB.',
+			'Remova pricing com "Entre em contato" se possível. Preços transparentes convertem melhor em SMB.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
@@ -892,7 +892,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Substitua depoimentos genéricos por depoimentos com nome completo, foto, empresa/contexto.',
 			'Adicione números concretos: "12.000 clientes", "4.8 estrelas em 3.200 avaliações", "reduzimos X em Y%".',
-			'Inclua logos de clientes conhecidos (com permissão) — social proof visual impacta mais que texto.',
+			'Inclua logos de clientes conhecidos (com permissão). Social proof visual impacta mais que texto.',
 			'Evite badges genéricos sem fundamento ("Nº 1 em qualidade") que enfraquecem em vez de fortalecer.',
 		],
 		estimated_effort_hours: 12,
@@ -904,10 +904,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	form_error_messages_unhelpful: {
 		remediation_steps: [
-			'Audite mensagens de erro de cada form crítico (signup, checkout) — devem explicar o problema específico, não só "Erro".',
-			'Erros devem indicar como corrigir: "Email já cadastrado — fazer login?" em vez de "Email inválido".',
+			'Audite mensagens de erro de cada form crítico (signup, checkout). Devem explicar o problema específico, não só "Erro".',
+			'Erros devem indicar como corrigir: "Email já cadastrado. Fazer login?" em vez de "Email inválido".',
 			'Destaque visualmente o campo com erro (borda vermelha, ícone) e foca automaticamente pro usuário corrigir.',
-			'Valide client-side em real-time — não espere submit pra mostrar que o email tá com typo.',
+			'Valide client-side em real-time. Não espere submit pra mostrar que o email tá com typo.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
@@ -918,10 +918,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	onboarding_no_quick_win: {
 		remediation_steps: [
-			'Defina o "aha moment" do produto — qual é a menor demonstração de valor que o novo usuário pode experimentar em <5min?',
-			'Redesign o primeiro login pra entregar esse aha moment na primeira sessão — não na terceira.',
+			'Defina o "aha moment" do produto. Qual é a menor demonstração de valor que o novo usuário pode experimentar em <5min?',
+			'Redesign o primeiro login pra entregar esse aha moment na primeira sessão. Não na terceira.',
 			'Se for necessário setup (importação, integração), mostre preview com sample data primeiro.',
-			'Meça taxa de "aha moment completion" e otimize pra subir essa métrica — é o melhor preditor de retenção.',
+			'Meça taxa de "aha moment completion" e otimize pra subir essa métrica. É o melhor preditor de retenção.',
 		],
 		estimated_effort_hours: 24,
 		verification_strategy: 'browser_runtime',
@@ -936,9 +936,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	value_proposition_buried: {
 		remediation_steps: [
-			'Reescreva o headline do hero para comunicar O QUE o produto faz, PARA QUEM, e POR QUE importa — tudo em uma frase.',
+			'Reescreva o headline do hero para comunicar O QUE o produto faz, PARA QUEM, e POR QUE importa. Tudo em uma frase.',
 			'Mova a proposta de valor para acima da dobra: o visitante precisa entender em 5 segundos sem rolar.',
-			'Reduza elementos competindo no hero — 1 headline, 1 sub-headline, 1 CTA. Remova banners, sliders e widgets secundários.',
+			'Reduza elementos competindo no hero. 1 headline, 1 sub-headline, 1 CTA. Remova banners, sliders e widgets secundários.',
 			'Teste A/B headlines usando fórmulas comprovadas: "Resultado [desejado] sem [objeção principal]" ou "[Número] [tipo de cliente] já [resultado]".',
 		],
 		estimated_effort_hours: 6,
@@ -953,7 +953,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Adicione copy de segurança próximo ao botão de pagamento: "Pagamento criptografado SSL", "Garantia de 30 dias", "Seus dados protegidos".',
 			'Inclua microcopy explicando o que acontece após a compra: "Você receberá confirmação por email em até 2 minutos".',
 			'Posicione selos de trust (SSL, Reclame Aqui, Google Reviews) visíveis sem scroll na página de checkout.',
-			'Remova qualquer urgência artificial (timers falsos, estoque fabricado) — substitua por urgência autêntica baseada em dados reais.',
+			'Remova qualquer urgência artificial (timers falsos, estoque fabricado). Substitua por urgência autêntica baseada em dados reais.',
 			'Adicione garantia de satisfação ou política de devolução resumida diretamente na página de preços.',
 		],
 		estimated_effort_hours: 4,
@@ -968,7 +968,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Substitua depoimentos genéricos por depoimentos com nome completo, cargo, empresa e resultado mensurável.',
 			'Posicione social proof próximo aos CTAs de decisão (botão de compra, formulário de trial, página de pricing).',
 			'Adicione números concretos: "12.000 clientes", "4.8 estrelas em 3.200 avaliações", "reduziu X em Y%".',
-			'Inclua logos de clientes reais com permissão — social proof visual impacta mais que texto genérico.',
+			'Inclua logos de clientes reais com permissão. Social proof visual impacta mais que texto genérico.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
@@ -979,10 +979,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	cta_competing_or_unclear: {
 		remediation_steps: [
-			'Defina hierarquia de CTAs: 1 primário (cor forte), 1 secundário (outline), links terciários — nunca 2+ botões dominantes competindo.',
+			'Defina hierarquia de CTAs: 1 primário (cor forte), 1 secundário (outline), links terciários. Nunca 2+ botões dominantes competindo.',
 			'Substitua labels vagos ("Saiba mais", "Clique aqui") por verbos de ação específicos com resultado: "Começar teste grátis", "Ver preços", "Agendar demo".',
 			'Revise labels de navegação: substitua jargão interno por linguagem que o comprador usa ("Dashboard" → "Painel de resultados").',
-			'Teste heat maps para confirmar que o CTA primário recebe a maioria dos cliques — se não, ajuste posição e contraste.',
+			'Teste heat maps para confirmar que o CTA primário recebe a maioria dos cliques. Se não, ajuste posição e contraste.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
@@ -995,8 +995,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Liste as 5 objeções mais comuns do comprador (pesquisa, suporte, reviews negativos) e responda cada uma na página de decisão.',
 			'Adicione FAQ na página de pricing respondendo: "Posso cancelar?", "Tem garantia?", "O que acontece se não gostar?".',
-			'Inclua comparação com alternativas na página de produto — o comprador vai comparar de qualquer forma, melhor que faça no seu site.',
-			'Adicione risk reversal explícito próximo ao CTA: "Garantia de 30 dias — se não servir, devolvemos 100%".',
+			'Inclua comparação com alternativas na página de produto. O comprador vai comparar de qualquer forma, melhor que faça no seu site.',
+			'Adicione risk reversal explícito próximo ao CTA: "Garantia de 30 dias. Se não servir, devolvemos 100%".',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -1007,10 +1007,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	copy_cross_page_inconsistent: {
 		remediation_steps: [
-			'Crie um brand voice guide definindo tom, vocabulário e promessas — distribua para todos que escrevem copy.',
-			'Audite homepage, pricing, produto e checkout lado a lado — identifique contradições de tom e promessa.',
+			'Crie um brand voice guide definindo tom, vocabulário e promessas. Distribua para todos que escrevem copy.',
+			'Audite homepage, pricing, produto e checkout lado a lado. Identifique contradições de tom e promessa.',
 			'Unifique terminologia: se homepage diz "simples", pricing não pode listar 47 features em tabela complexa.',
-			'Implemente revisão cross-page antes de publicar — cada página deve reforçar, não contradizer, as outras.',
+			'Implemente revisão cross-page antes de publicar. Cada página deve reforçar, não contradizer, as outras.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
@@ -1022,10 +1022,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	copy_funnel_misalignment: {
 		remediation_steps: [
 			'Mapeie cada página ao estágio do funil (awareness, consideração, decisão) e ajuste copy para responder a pergunta daquele estágio.',
-			'Reescreva descrições de produto focando em benefícios e resultado — não features genéricas do fornecedor.',
-			'Redesign onboarding copy para prometer e entregar um quick win em <5 minutos — "Em 2 minutos você vai ver X".',
+			'Reescreva descrições de produto focando em benefícios e resultado. Não features genéricas do fornecedor.',
+			'Redesign onboarding copy para prometer e entregar um quick win em <5 minutos. "Em 2 minutos você vai ver X".',
 			'Substitua mensagens de erro técnicas por linguagem humana que explica o problema E como resolver.',
-			'Teste copy com 5 usuários reais: pergunte "O que essa página quer que você faça?" — se não souberem, reescreva.',
+			'Teste copy com 5 usuários reais: pergunte "O que essa página quer que você faça?". Se não souberem, reescreva.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'http_static',
@@ -1040,9 +1040,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	localization_persuasion_lost: {
 		remediation_steps: [
-			'Compare versões primária e traduzida lado a lado — identifique onde urgência, prova social e CTA foram "achatados" para texto genérico.',
-			'Use transcriação (não tradução literal) para CTAs, headlines e social proof — contrate copywriters nativos que entendam persuasão.',
-			'Mantenha elementos de urgência e escassez nas versões traduzidas — adapte culturalmente em vez de remover.',
+			'Compare versões primária e traduzida lado a lado. Identifique onde urgência, prova social e CTA foram "achatados" para texto genérico.',
+			'Use transcriação (não tradução literal) para CTAs, headlines e social proof. Contrate copywriters nativos que entendam persuasão.',
+			'Mantenha elementos de urgência e escassez nas versões traduzidas. Adapte culturalmente em vez de remover.',
 			'Implemente review process para copy localizado: tradutor + revisor nativo + aprovação de marketing antes de publicar.',
 		],
 		estimated_effort_hours: 20,
@@ -1055,10 +1055,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	micro_copy_friction_high: {
 		remediation_steps: [
 			'Substitua botões genéricos ("Submit", "Send", "OK") por texto específico orientado a ação ("Começar trial grátis", "Enviar minha proposta").',
-			'Revise labels de formulário: cada label deve explicar O QUE preencher e POR QUE — ex: "Email corporativo (para receber seu acesso)" em vez de apenas "Email".',
-			'Adicione texto helper inline nos campos que mais causam abandono — placeholder com exemplo real, não repetição do label.',
-			'Reescreva mensagens de erro em linguagem humana: "O email precisa ter @ — verifique e tente de novo" em vez de "Invalid input".',
-			'Teste micro-copy com 3 usuários: peça para preencherem o formulário em voz alta — onde pausam ou perguntam é onde o copy falha.',
+			'Revise labels de formulário: cada label deve explicar O QUE preencher e POR QUE. Ex: "Email corporativo (para receber seu acesso)" em vez de apenas "Email".',
+			'Adicione texto helper inline nos campos que mais causam abandono. Placeholder com exemplo real, não repetição do label.',
+			'Reescreva mensagens de erro em linguagem humana: "O email precisa ter @. Verifique e tente de novo" em vez de "Invalid input".',
+			'Teste micro-copy com 3 usuários: peça para preencherem o formulário em voz alta. Onde pausam ou perguntam é onde o copy falha.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -1069,11 +1069,11 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	seo_conversion_conflict: {
 		remediation_steps: [
-			'Reescreva H1s keyword-stuffed para comunicar valor ao comprador — use a keyword no title tag e meta, mas o H1 deve vender.',
+			'Reescreva H1s keyword-stuffed para comunicar valor ao comprador. Use a keyword no title tag e meta, mas o H1 deve vender.',
 			'Separe SEO content blocks do conversion path: mova parágrafos keyword-rich para abaixo do fold ou para subpáginas dedicadas.',
 			'Unifique title tag e H1: se o title diz "Best CRM Software 2026", o H1 deve dizer algo como "O CRM que [resultado específico]".',
-			'Revise alt text de imagens: deve descrever a imagem para acessibilidade E incluir keyword naturalmente — não keyword-spam.',
-			'Avalie se large SEO content blocks abaixo do fold estão diluindo a mensagem de conversão — considere mover para /blog ou /resources.',
+			'Revise alt text de imagens: deve descrever a imagem para acessibilidade E incluir keyword naturalmente. Não keyword-spam.',
+			'Avalie se large SEO content blocks abaixo do fold estão diluindo a mensagem de conversão. Considere mover para /blog ou /resources.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
@@ -1084,10 +1084,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	copy_stale_references: {
 		remediation_steps: [
-			'Atualize o ano de copyright no footer para o ano vigente — configure auto-update se possível.',
+			'Atualize o ano de copyright no footer para o ano vigente. Configure auto-update se possível.',
 			'Busque e remova referências a datas passadas, promoções expiradas e métricas desatualizadas em todas as páginas comerciais.',
 			'Implemente review trimestral de copy: agende audit de conteúdo a cada 3 meses para detectar referências que envelheceram.',
-			'Substitua métricas de prova social por números atualizados — se o homepage dizia "1000+ clientes" em 2024, atualize para o número real.',
+			'Substitua métricas de prova social por números atualizados. Se o homepage dizia "1000+ clientes" em 2024, atualize para o número real.',
 			'Configure alertas automáticos para detectar copy com datas hard-coded que ficarão obsoletas.',
 		],
 		estimated_effort_hours: 4,
@@ -1103,7 +1103,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	commercial_page_stale: {
 		remediation_steps: [
-			'Audite todas as páginas comerciais (checkout, pricing, produto, home) procurando referências desatualizadas — datas, promoções, métricas de prova social.',
+			'Audite todas as páginas comerciais (checkout, pricing, produto, home) procurando referências desatualizadas. Datas, promoções, métricas de prova social.',
 			'Atualize ou remova datas hard-coded, ofertas expiradas e claims competitivos defasados.',
 			'Crie um calendário trimestral de review de conteúdo focado nas páginas de maior conversão.',
 			'Implemente copyright ano dinâmico e timestamp "última atualização" que se atualiza sozinho.',
@@ -1116,7 +1116,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	pricing_page_outdated: {
 		remediation_steps: [
-			'Revise toda a pricing page — comparações com concorrente, lista de features, ofertas promocionais — e atualize pro estado atual do produto.',
+			'Revise toda a pricing page. Comparações com concorrente, lista de features, ofertas promocionais. E atualize pro estado atual do produto.',
 			'Remova ou atualize qualquer linguagem "tempo limitado" que já expirou.',
 			'Confirme que nomes de plano, tiers de preço e comparação de features batem com o produto atual.',
 			'Atualize ROI calculators, case studies ou métricas citadas na pricing page.',
@@ -1124,33 +1124,33 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		],
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
-		verification_notes: 'Vamos reabrir a pricing page e confirmar que o conteúdo está atualizado — sem datas defasadas, ofertas expiradas ou claims competitivos antigos.',
+		verification_notes: 'Vamos reabrir a pricing page e confirmar que o conteúdo está atualizado. Sem datas defasadas, ofertas expiradas ou claims competitivos antigos.',
 		verification_eta_seconds: 8,
 	},
 	social_proof_expired: {
 		remediation_steps: [
-			'Atualize datas de todos os depoimentos pra recentes — ou remova as datas se os depoimentos forem evergreen.',
+			'Atualize datas de todos os depoimentos pra recentes. Ou remova as datas se os depoimentos forem evergreen.',
 			'Atualize contagem de clientes, números de receita e métricas de uso pros valores correntes.',
 			'Substitua logo walls antigos pelos clientes atuais e adicione qualificadores "atualizado em [data]" nas métricas.',
 			'Implemente social proof dinâmico (contadores em tempo real, score de reviews recentes) quando possível.',
-			'Crie um refresh trimestral — peça depoimentos novos, atualize números dos cases.',
+			'Crie um refresh trimestral. Peça depoimentos novos, atualize números dos cases.',
 		],
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
-		verification_notes: 'Vamos reabrir e checar social proof atualizado — sem datas defasadas em depoimentos, métricas correntes, referências de clientes recentes.',
+		verification_notes: 'Vamos reabrir e checar social proof atualizado. Sem datas defasadas em depoimentos, métricas correntes, referências de clientes recentes.',
 		verification_eta_seconds: 8,
 	},
 	content_decay_progression: {
 		remediation_steps: [
-			'Faça uma análise completa de conteúdo em todas as páginas comerciais — sinalize tudo com data > 6 meses.',
-			'Priorize as atualizações por tráfego e impacto em conversão — comece pelas páginas de checkout e pricing.',
+			'Faça uma análise completa de conteúdo em todas as páginas comerciais. Sinalize tudo com data > 6 meses.',
+			'Priorize as atualizações por tráfego e impacto em conversão. Comece pelas páginas de checkout e pricing.',
 			'Implemente monitoramento contínuo de freshness (este finding do Vestigio vai re-checar a cada ciclo).',
-			'Atribua dono por página comercial — cada uma precisa de um responsável nomeado pelo review trimestral.',
+			'Atribua dono por página comercial. Cada uma precisa de um responsável nomeado pelo review trimestral.',
 			'Considere ferramentas de refresh assistido por IA pra acelerar updates em várias páginas em paralelo.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
-		verification_notes: 'Monitoramento multi-ciclo — este finding vai rastrear se os scores de staleness melhoram nos próximos ciclos de análise.',
+		verification_notes: 'Monitoramento multi-ciclo. Este finding vai rastrear se os scores de staleness melhoram nos próximos ciclos de análise.',
 		verification_eta_seconds: 10,
 	},
 
@@ -1163,7 +1163,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Implemente HSTS: header `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload`.',
 			'Configure CSP restritivo no checkout: apenas domínios whitelisted (seu site, gateway, GA/Pixel oficiais).',
 			'Adicione X-Content-Type-Options: nosniff, X-Frame-Options: DENY (ou SAMEORIGIN se legítimo), Referrer-Policy: strict-origin.',
-			'Valide em securityheaders.com — target é score A ou A+ em domínios de commerce.',
+			'Valide em securityheaders.com. Target é score A ou A+ em domínios de commerce.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -1174,10 +1174,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mixed_content_exposure: {
 		remediation_steps: [
-			'Liste recursos HTTP carregados em páginas HTTPS — use DevTools Console que reporta mixed content warnings.',
+			'Liste recursos HTTP carregados em páginas HTTPS. Use DevTools Console que reporta mixed content warnings.',
 			'Migre todos os recursos pra HTTPS: imagens, scripts, CSS, fonts, iframes.',
 			'Configure Content-Security-Policy com `upgrade-insecure-requests` pra forçar browser a tentar HTTPS automaticamente.',
-			'Corrija links internos hardcoded com http:// — migre pra protocol-relative (//) ou https://.',
+			'Corrija links internos hardcoded com http://. Migre pra protocol-relative (//) ou https://.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
@@ -1188,8 +1188,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	sensitive_endpoint_exposed: {
 		remediation_steps: [
-			'Remova URLs administrativas de paths previsíveis (/admin, /wp-admin, /.env, /api/debug) — 404 ou redirect pra home.',
-			'Adicione autenticação em todos endpoints administrativos — não confie em obscuridade.',
+			'Remova URLs administrativas de paths previsíveis (/admin, /wp-admin, /.env, /api/debug). 404 ou redirect pra home.',
+			'Adicione autenticação em todos endpoints administrativos. Não confie em obscuridade.',
 			'Configure robots.txt pra disallow rotas sensíveis (mas saiba que robots.txt não é mecanismo de segurança).',
 			'Rode scanner regular (varredura do Vestigio, varredura do Vestigio) pra detectar endpoints expostos em produção.',
 		],
@@ -1202,10 +1202,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	checkout_script_hijack_risk: {
 		remediation_steps: [
-			'Audite todos scripts carregados no checkout — elimine third-parties não-essenciais.',
+			'Audite todos scripts carregados no checkout. Elimine third-parties não-essenciais.',
 			'Para third-parties essenciais, implemente Subresource Integrity (SRI): `<script integrity="sha384-...">` previne injeção se o CDN for comprometido.',
 			'Configure CSP restritivo no checkout: apenas hashes/nonces de scripts conhecidos.',
-			'Monitore mudanças no script inventário — alerta se script novo aparecer em produção sem deploy.',
+			'Monitore mudanças no script inventário. Alerta se script novo aparecer em produção sem deploy.',
 		],
 		estimated_effort_hours: 14,
 		verification_strategy: 'browser_runtime',
@@ -1217,7 +1217,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	buyer_session_theft_risk: {
 		remediation_steps: [
 			'Cookies de sessão: configure `HttpOnly`, `Secure`, `SameSite=Lax` ou `Strict`.',
-			'Tokens CSRF em todos os forms sensíveis — signup, checkout, password change.',
+			'Tokens CSRF em todos os forms sensíveis. Signup, checkout, password change.',
 			'Implemente rotação de session ID após login pra prevenir session fixation.',
 			'Configure session timeout razoável (30-60min de inatividade) e renovação em ação do usuário.',
 		],
@@ -1233,7 +1233,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Configure X-Frame-Options: DENY (ou SAMEORIGIN se você embute o checkout em legítimo iframe próprio).',
 			'Ou use CSP `frame-ancestors \'none\'` pra bloquear qualquer site externo de colocar seu checkout em iframe.',
 			'Teste em clickjack testers (como /teste-clickjacking tools) pra confirmar que o checkout não renderiza em iframe externo.',
-			'Revise páginas de ação sensível (mudança de senha, delete account) — apliquem mesma proteção.',
+			'Revise páginas de ação sensível (mudança de senha, delete account). Apliquem mesma proteção.',
 		],
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
@@ -1244,9 +1244,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	error_page_information_leak: {
 		remediation_steps: [
-			'Customize páginas 404 e 500 — não expor stack traces, versões de framework, ou paths do servidor.',
+			'Customize páginas 404 e 500. Não expor stack traces, versões de framework, ou paths do servidor.',
 			'Configure error handler genérico em produção que loga detalhes server-side mas retorna mensagem amigável.',
-			'Audite respostas JSON de APIs — não incluir detalhes de exception em produção.',
+			'Audite respostas JSON de APIs. Não incluir detalhes de exception em produção.',
 			'Remova comentários HTML com informações sensíveis (versões, paths internos) do output.',
 		],
 		estimated_effort_hours: 6,
@@ -1258,10 +1258,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	payment_data_unencrypted: {
 		remediation_steps: [
-			'Verifique se forms de pagamento enviam dados via HTTPS — target do form deve ser https://.',
-			'Nunca receba PAN (número do cartão) direto em seu backend — use tokenização do gateway.',
+			'Verifique se forms de pagamento enviam dados via HTTPS. Target do form deve ser https://.',
+			'Nunca receba PAN (número do cartão) direto em seu backend. Use tokenização do gateway.',
 			'Se necessário mostrar mask do cartão (últimos 4 dígitos), armazene apenas token + mask, nunca PAN completo.',
-			'Configure PCI-DSS SAQ A ou A-EP conforme integração com gateway — documente o escopo.',
+			'Configure PCI-DSS SAQ A ou A-EP conforme integração com gateway. Documente o escopo.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
@@ -1274,7 +1274,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Configure SPF, DKIM, e DMARC corretos no DNS do domínio de envio.',
 			'Use subdomínio dedicado pra transacional (ex: mail.dominio.com) separado de marketing.',
-			'Monitore bounce rate + spam complaint rate — target é <5% bounce e <0.1% complaint.',
+			'Monitore bounce rate + spam complaint rate. Target é <5% bounce e <0.1% complaint.',
 			'Use provedor reputado (SendGrid, AWS SES, Postmark) em vez de SMTP próprio pra melhor deliverability.',
 		],
 		estimated_effort_hours: 8,
@@ -1286,8 +1286,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	cors_misconfiguration_risk: {
 		remediation_steps: [
-			'Audite Access-Control-Allow-Origin em APIs — nunca usar `*` em endpoints com cookies/auth.',
-			'Whitelist explícita de origens permitidas — use lista ao invés de wildcard em produção.',
+			'Audite Access-Control-Allow-Origin em APIs. Nunca usar `*` em endpoints com cookies/auth.',
+			'Whitelist explícita de origens permitidas. Use lista ao invés de wildcard em produção.',
 			'Configure Access-Control-Allow-Credentials apenas quando necessário + origem específica.',
 			'Nunca exponha endpoints sensíveis (mudança de senha, payment) via CORS pra origem externa.',
 		],
@@ -1301,9 +1301,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	rate_limiting_absent_on_commerce: {
 		remediation_steps: [
 			'Implemente rate limit nas APIs críticas: login (5/min), signup (3/hora), checkout (10/min por IP).',
-			'Use WAF (Cloudflare, AWS WAF) como primeira camada — rate limit + bot protection.',
+			'Use WAF (Cloudflare, AWS WAF) como primeira camada. Rate limit + bot protection.',
 			'Configure alertas para picos anômalos: 100 tentativas/min em login = ataque de credential stuffing.',
-			'Retorne HTTP 429 com Retry-After header — clientes legítimos entendem, bots desistem.',
+			'Retorne HTTP 429 com Retry-After header. Clientes legítimos entendem, bots desistem.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
@@ -1315,8 +1315,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	predictable_order_urls: {
 		remediation_steps: [
 			'Substitua IDs sequenciais em URLs de pedido (/order/123) por UUIDs ou tokens opacos (/order/a7f3...).',
-			'Valide authorization em toda request — usuário só pode ver pedidos próprios, não por conhecer URL.',
-			'Rote audit logs de acesso a pedidos — detecta enumeração / IDOR attacks.',
+			'Valide authorization em toda request. Usuário só pode ver pedidos próprios, não por conhecer URL.',
+			'Rote audit logs de acesso a pedidos. Detecta enumeração / IDOR attacks.',
 			'Configure tokens temporários pra links públicos (rastreio, confirmação) com expiração curta.',
 		],
 		estimated_effort_hours: 14,
@@ -1333,23 +1333,23 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	payment_surface_compromised: {
 		remediation_steps: [
 			'Investigue imediatamente: revise commits recentes, scripts carregados, e logs de acesso no checkout.',
-			'Rote todas as credenciais de gateway + API keys expostas — comprometimento de payment surface vaza dados de buyers.',
-			'Desative temporariamente o checkout até forensics completo — fraude em andamento compounds rápido.',
-			'Notifique o gateway + autoridades (se LGPD breach) + buyers afetados — requerido por lei.',
+			'Rote todas as credenciais de gateway + API keys expostas. Comprometimento de payment surface vaza dados de buyers.',
+			'Desative temporariamente o checkout até forensics completo. Fraude em andamento compounds rápido.',
+			'Notifique o gateway + autoridades (se LGPD breach) + buyers afetados. Requerido por lei.',
 		],
 		estimated_effort_hours: 40,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Incidente crítico — dispara a varredura completa do Vestigio full scan + análise de scripts + diff com baseline conhecido limpo.',
+			'Incidente crítico. Dispara a varredura completa do Vestigio full scan + análise de scripts + diff com baseline conhecido limpo.',
 		verification_eta_seconds: 300,
 	},
 
 	channel_traffic_divertible: {
 		remediation_steps: [
-			'Audite links externos na home e páginas de produto — cada link externo é oportunidade de diversão de tráfego.',
+			'Audite links externos na home e páginas de produto. Cada link externo é oportunidade de diversão de tráfego.',
 			'Se você tem afiliados, use link shorteners oficiais (não redirects genéricos que podem ser sequestrados).',
 			'Configure CSP restritivo pra prevenir injeção de links externos via scripts comprometidos.',
-			'Monitore outbound traffic analytics — picos anormais podem indicar redirect malicioso injetado.',
+			'Monitore outbound traffic analytics. Picos anormais podem indicar redirect malicioso injetado.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
@@ -1362,7 +1362,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Identifique endpoints de operação comercial expostos publicamente: painéis, APIs internas, webhooks.',
 			'Implemente autenticação + IP allowlist em todos endpoints administrativos.',
-			'Remova referências a endpoints internos de HTML/JS públicos — operators não devem aparecer em robots.txt nem em source.',
+			'Remova referências a endpoints internos de HTML/JS públicos. Operators não devem aparecer em robots.txt nem em source.',
 			'Segmente rede: endpoints operacionais em VPC privada, não no mesmo cluster do site público.',
 		],
 		estimated_effort_hours: 20,
@@ -1374,10 +1374,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	traffic_landing_low_trust_posture: {
 		remediation_steps: [
-			'Landing pages de campanha devem herdar trust markers do site principal — políticas, contato, selos visíveis.',
-			'Evite landing pages em subdomínios ou domínios separados sem trust markers — buyer não sabe que é você.',
+			'Landing pages de campanha devem herdar trust markers do site principal. Políticas, contato, selos visíveis.',
+			'Evite landing pages em subdomínios ou domínios separados sem trust markers. Buyer não sabe que é você.',
 			'Se necessário usar domínio separado (ex: campanha Black Friday), replique visual identity + trust markers do principal.',
-			'Audite landings ativas trimestralmente — algumas ficam órfãs sem manutenção e regridem em trust.',
+			'Audite landings ativas trimestralmente. Algumas ficam órfãs sem manutenção e regridem em trust.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
@@ -1388,22 +1388,22 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	channel_compromise_visible: {
 		remediation_steps: [
-			'Incidente ativo — escale pra time de security + resposta imediata.',
+			'Incidente ativo. Escale pra time de security + resposta imediata.',
 			'Identifique vetor: script injetado, DNS hijack, certificado comprometido, ou credencial vazada.',
 			'Isole o vetor (remova script, rote credencial, revogue cert) e documente timeline do incidente.',
-			'Comunique buyers afetados com transparência — silêncio durante incidente piora reputação mais que o incidente em si.',
+			'Comunique buyers afetados com transparência. Silêncio durante incidente piora reputação mais que o incidente em si.',
 		],
 		estimated_effort_hours: 40,
 		verification_strategy: 'external_scan',
 		verification_notes:
-			'Crítico — dispara scan completo (a varredura completa do Vestigio + brand-intel) pra mapear extensão do comprometimento.',
+			'Crítico. Dispara scan completo (a varredura completa do Vestigio + brand-intel) pra mapear extensão do comprometimento.',
 		verification_eta_seconds: 300,
 	},
 
 	commercial_path_abuse_friendly: {
 		remediation_steps: [
 			'Audite endpoints de compra/promoção pra padrões abusáveis: IDs sequenciais, promos sem validação, price override aceito.',
-			'Implemente validação server-side em todos pricing — nunca confie no preço vindo do cliente.',
+			'Implemente validação server-side em todos pricing. Nunca confie no preço vindo do cliente.',
 			'Rate limit agressivo em endpoints críticos: checkout, apply_coupon, add_to_cart.',
 			'Configure fraud detection: padrões suspeitos (mesmo card, mesmo IP, múltiplos emails) bloqueiam com review manual.',
 		],
@@ -1416,10 +1416,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	economic_exploitation_active: {
 		remediation_steps: [
-			'Incidente financeiro ativo — investigue immediatamente quais compras/promos foram exploradas.',
+			'Incidente financeiro ativo. Investigue immediatamente quais compras/promos foram exploradas.',
 			'Bloqueie o vetor específico (cupom abusado, preço manipulado, checkout bypass).',
 			'Calcule perda acumulada e decida se rollback de transações fraudulentas é viável ou se chargeback é mais barato.',
-			'Audite todas promoções ativas com a mesma lógica — exploit tipicamente funciona em múltiplas campanhas.',
+			'Audite todas promoções ativas com a mesma lógica. Exploit tipicamente funciona em múltiplas campanhas.',
 		],
 		estimated_effort_hours: 30,
 		verification_strategy: 'external_scan',
@@ -1448,10 +1448,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	promotion_logic_exposed: {
 		remediation_steps: [
-			'Migre lógica de desconto pro backend — cliente nunca deve calcular promoções.',
+			'Migre lógica de desconto pro backend. Cliente nunca deve calcular promoções.',
 			'Valide server-side: coupon code existe, não expirou, aplica a esses produtos, não excedeu limite.',
 			'Logue cada aplicação de cupom com user_id + IP pra detectar padrões de abuso.',
-			'Revise cupons ativos trimestralmente — remova os que não geram receita mas ainda podem ser abusados.',
+			'Revise cupons ativos trimestralmente. Remova os que não geram receita mas ainda podem ser abusados.',
 		],
 		estimated_effort_hours: 20,
 		verification_strategy: 'external_scan',
@@ -1462,8 +1462,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	cart_variant_weak_control: {
 		remediation_steps: [
-			'Toda validação de estoque + preço deve ocorrer server-side no checkout — nunca confie no cart do cliente.',
-			'Implemente token de segurança por sessão de cart — invalida se detectar manipulação.',
+			'Toda validação de estoque + preço deve ocorrer server-side no checkout. Nunca confie no cart do cliente.',
+			'Implemente token de segurança por sessão de cart. Invalida se detectar manipulação.',
 			'Revise endpoints PATCH/PUT de cart: devem autenticar user e validar ownership antes de mudar.',
 			'Logue divergências entre cart client e server pra detectar tentativas de manipulação.',
 		],
@@ -1476,10 +1476,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	hidden_discount_refund_route: {
 		remediation_steps: [
-			'Audite URLs /refund, /discount, /coupon, /comp — são acessíveis publicamente? Devem exigir autenticação.',
+			'Audite URLs /refund, /discount, /coupon, /comp. São acessíveis publicamente? Devem exigir autenticação.',
 			'Rotas administrativas de reembolso/desconto devem estar atrás de staff auth + audit log.',
-			'Remove query strings que aceitam override de preço (?discount=50, ?price=1) — vulnerabilidade comum.',
-			'Monitore logs pra padrões de exploração — picos em /refund sem transação correspondente = abuso.',
+			'Remove query strings que aceitam override de preço (?discount=50, ?price=1). Vulnerabilidade comum.',
+			'Monitore logs pra padrões de exploração. Picos em /refund sem transação correspondente = abuso.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'external_scan',
@@ -1491,9 +1491,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	guessable_business_endpoint: {
 		remediation_steps: [
 			'Substitua IDs sequenciais em endpoints críticos por UUIDs opacos: /api/order/abc-123-def em vez de /api/order/1.',
-			'Implemente authorization por endpoint — user só acessa seus próprios recursos (IDOR protection).',
+			'Implemente authorization por endpoint. User só acessa seus próprios recursos (IDOR protection).',
 			'Audite APIs públicas: quais expõem enumeração de recursos? Adicione rate limit + auth.',
-			'Rode scanner de IDOR regular — test if changing ID returns other user data.',
+			'Rode scanner de IDOR regular. Test if changing ID returns other user data.',
 		],
 		estimated_effort_hours: 18,
 		verification_strategy: 'external_scan',
@@ -1505,9 +1505,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	alternate_pricing_safeguard_bypass: {
 		remediation_steps: [
 			'Identifique variantes de pricing (BRL, USD, promo region, B2B) e consolidar validação server-side única.',
-			'Elimine rotas de pricing alternativas sem controle — buyer não deve escolher qual preço paga.',
-			'Configure feature flag com lista de clientes autorizados pra pricing especial — não via URL exposta.',
-			'Logue transações fora do pricing padrão — alert pra review manual.',
+			'Elimine rotas de pricing alternativas sem controle. Buyer não deve escolher qual preço paga.',
+			'Configure feature flag com lista de clientes autorizados pra pricing especial. Não via URL exposta.',
+			'Logue transações fora do pricing padrão. Alert pra review manual.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'external_scan',
@@ -1518,7 +1518,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	js_discovered_purchase_variant: {
 		remediation_steps: [
-			'Revise bundles JS públicos — removem paths/endpoints sensíveis que podem ser descobertos via crawl.',
+			'Revise bundles JS públicos. Removem paths/endpoints sensíveis que podem ser descobertos via crawl.',
 			'Use source maps em dev, desabilite em produção.',
 			'Obfusque (não security, mas raise bar) código crítico de pricing/checkout no build de produção.',
 			'Audite trimestralmente: quais endpoints estão referenciados em JS público?',
@@ -1532,7 +1532,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	dynamic_route_weak_control: {
 		remediation_steps: [
-			'Audite rotas dinâmicas (regex routes, wildcard routes) — fácil introduzir ACL gap.',
+			'Audite rotas dinâmicas (regex routes, wildcard routes). Fácil introduzir ACL gap.',
 			'Use framework de autorização centralizado (policies/guards) em vez de checks inline por route.',
 			'Rode test automatizado de autorização: cada route protegida com lista de quem pode acessar.',
 			'Revise após cada deploy que adiciona ou modifica rotas dinâmicas.',
@@ -1546,24 +1546,24 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	hidden_support_burden: {
 		remediation_steps: [
-			'Meça tempo médio de resolução de suporte separado por categoria — identifique qual tipo de ticket consome mais recursos.',
-			'Resolva root cause dos tickets recorrentes — cada ticket evitado é redução de custo + buyer satisfaction.',
-			'Automatize respostas para dúvidas frequentes via FAQ + chatbot — escale suporte sem aumentar headcount.',
+			'Meça tempo médio de resolução de suporte separado por categoria. Identifique qual tipo de ticket consome mais recursos.',
+			'Resolva root cause dos tickets recorrentes. Cada ticket evitado é redução de custo + buyer satisfaction.',
+			'Automatize respostas para dúvidas frequentes via FAQ + chatbot. Escale suporte sem aumentar headcount.',
 			'Revise mensalmente: quais produtos/features geram mais suporte? Priorize UX aí.',
 		],
 		estimated_effort_hours: 20,
 		verification_strategy: 'heuristic_recompute',
 		verification_notes:
-			'Suporte é métrica operacional externa ao site — reavaliar após você documentar tickets + tempo de resolução.',
+			'Suporte é métrica operacional externa ao site. Reavaliar após você documentar tickets + tempo de resolução.',
 		verification_eta_seconds: 3,
 	},
 
 	alternate_variant_control_breakdown: {
 		remediation_steps: [
-			'Audite lógica de variantes (tamanho, cor, região) no checkout — garante que cada variante tem preço + estoque distintos validados.',
+			'Audite lógica de variantes (tamanho, cor, região) no checkout. Garante que cada variante tem preço + estoque distintos validados.',
 			'Implemente validação consistente server-side: qty, variant, price devem bater com catalog real.',
 			'Teste edge cases: comprar variante sem estoque, variante inexistente, variante de produto arquivado.',
-			'Logue divergências — tentativa de comprar variante inválida é signal de probe automatizado.',
+			'Logue divergências. Tentativa de comprar variante inválida é signal de probe automatizado.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'external_scan',
@@ -1574,10 +1574,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	deep_commerce_exploitation_risk: {
 		remediation_steps: [
-			'Incidente composto — múltiplos vetores de exploração ativos simultaneamente. Escale pra security team.',
+			'Incidente composto. Múltiplos vetores de exploração ativos simultaneamente. Escale pra security team.',
 			'Rode full scan (a varredura completa do Vestigio) pra mapear extensão do problema.',
 			'Priorize patch pelos vetores de maior impacto financeiro (preço, cupom, checkout) primeiro.',
-			'Configure monitoramento contínuo pós-remediação — exploração composta geralmente tem tentativas de re-entrada.',
+			'Configure monitoramento contínuo pós-remediação. Exploração composta geralmente tem tentativas de re-entrada.',
 		],
 		estimated_effort_hours: 40,
 		verification_strategy: 'external_scan',
@@ -1592,9 +1592,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	checkout_api_latency_degraded: {
 		remediation_steps: [
-			'Meça latência dos endpoints críticos do checkout em produção — identifique P95 e P99.',
+			'Meça latência dos endpoints críticos do checkout em produção. Identifique P95 e P99.',
 			'Otimize queries do backend do checkout: indexes, caching, n+1 query removal.',
-			'Configure CDN pra assets estáticos do checkout (CSS, JS, imagens) — reduz TTFB.',
+			'Configure CDN pra assets estáticos do checkout (CSS, JS, imagens). Reduz TTFB.',
 			'Implemente timeout graceful: se API demora >5s, mostre mensagem ao usuário em vez de travar.',
 		],
 		estimated_effort_hours: 16,
@@ -1606,7 +1606,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	commercial_pages_slow: {
 		remediation_steps: [
-			'Rode análise de performance em páginas de produto e categoria — target LCP <2.5s, TTFB <600ms.',
+			'Rode análise de performance em páginas de produto e categoria. Target LCP <2.5s, TTFB <600ms.',
 			'Otimize imagens: formato WebP/AVIF, lazy loading, responsive sizes.',
 			'Remova scripts third-party não-essenciais ou mova pra async/defer.',
 			'Configure cache agressivo de assets estáticos (1 ano via Cache-Control) + ETag pra HTML.',
@@ -1620,9 +1620,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	paid_landing_overloaded: {
 		remediation_steps: [
-			'Landing pages de campanha devem ser minimalistas — remova widgets, chats, analytics não-essenciais.',
+			'Landing pages de campanha devem ser minimalistas. Remova widgets, chats, analytics não-essenciais.',
 			'Mantenha apenas 1 CTA primário acima da dobra + seção de benefícios + prova social.',
-			'Teste com PageSpeed Insights — landing de ads deve ter LCP <2s pra maximizar quality score.',
+			'Teste com PageSpeed Insights. Landing de ads deve ter LCP <2s pra maximizar quality score.',
 			'Hospede landings em infra otimizada (Vercel, Netlify) em vez do mesmo stack do app principal.',
 		],
 		estimated_effort_hours: 12,
@@ -1637,7 +1637,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Liste third-party scripts no checkout: analytics, chat, pixel, A/B testing. Peso total?',
 			'Elimine não-essenciais (A/B testing no checkout é risco, chat pode carregar depois).',
 			'Para essenciais (GA, Pixel), carregue async + depois do main content render.',
-			'Configure timeout — se third-party não responde em 3s, desiste e não bloqueia render.',
+			'Configure timeout. Se third-party não responde em 3s, desiste e não bloqueia render.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'browser_runtime',
@@ -1648,7 +1648,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	checkout_brittle_third_party: {
 		remediation_steps: [
-			'Identifique dependências críticas do checkout em third-parties — gateway, anti-fraude, tax calc.',
+			'Identifique dependências críticas do checkout em third-parties. Gateway, anti-fraude, tax calc.',
 			'Configure fallback: se anti-fraude não responde, permita compra com flag de review manual pós-facto.',
 			'Para gateway, tenha backup configurado (Stripe + Mercado Pago) e switchover automático via feature flag.',
 			'Monitore status pages dos providers + configure alerta no seu lado se detectar degradation.',
@@ -1662,10 +1662,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	purchase_blocked_failing_requests: {
 		remediation_steps: [
-			'Capture os 10 últimos erros de network no checkout — dê priority pelos que afetam pagamento.',
+			'Capture os 10 últimos erros de network no checkout. Dê priority pelos que afetam pagamento.',
 			'Configure retry automático em requests não-idempotentes com backoff exponential.',
 			'Para requests críticos (payment_intent), garanta idempotency key pra evitar duplicação em retry.',
-			'Logue taxa de sucesso por endpoint no checkout — alert se cair abaixo de 98%.',
+			'Logue taxa de sucesso por endpoint no checkout. Alert se cair abaixo de 98%.',
 		],
 		estimated_effort_hours: 14,
 		verification_strategy: 'browser_runtime',
@@ -1678,7 +1678,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Se tag analítica bloqueia ou atrasa o checkout, reconfigure pra load async/defer.',
 			'Se GA/Pixel quebra a página quando bloqueado por adblocker, envolva em try/catch + fallback silencioso.',
-			'Configure tags com performance budget — se ultrapassar X ms de exec, aborta.',
+			'Configure tags com performance budget. Se ultrapassar X ms de exec, aborta.',
 			'Use Tag Manager com triggers condicionais pra medir sem bloquear interação.',
 		],
 		estimated_effort_hours: 10,
@@ -1691,9 +1691,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	purchase_before_deps_ready: {
 		remediation_steps: [
 			'Audite ordem de carregamento: botão de pagamento não deve estar clicável antes de scripts críticos (anti-fraude, tokenizer) carregarem.',
-			'Desabilite botão de submit até scripts essenciais estarem prontos — mostre loading state.',
+			'Desabilite botão de submit até scripts essenciais estarem prontos. Mostre loading state.',
 			'Configure eventos `DOMContentLoaded` + check de deps antes de ativar o fluxo de compra.',
-			'Teste em conexão slow 3G — deps devem carregar dentro de 5s ou o fluxo falha graciosamente.',
+			'Teste em conexão slow 3G. Deps devem carregar dentro de 5s ou o fluxo falha graciosamente.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
@@ -1704,9 +1704,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	trust_assets_late_load: {
 		remediation_steps: [
-			'Trust markers (selos SSL, logos de pagamento, política) devem estar no HTML inicial — não carregados via JS.',
-			'Evite carregar logos via CDN externo que pode ser lento ou bloquear — hospede internally.',
-			'Priorize LCP — selos de trust acima da dobra devem aparecer em <2.5s.',
+			'Trust markers (selos SSL, logos de pagamento, política) devem estar no HTML inicial. Não carregados via JS.',
+			'Evite carregar logos via CDN externo que pode ser lento ou bloquear. Hospede internally.',
+			'Priorize LCP. Selos de trust acima da dobra devem aparecer em <2.5s.',
 			'Use preload hints pra imagens críticas de trust: `<link rel="preload" as="image">`.',
 		],
 		estimated_effort_hours: 8,
@@ -1718,10 +1718,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mobile_heavy_runtime_chain: {
 		remediation_steps: [
-			'Mobile tem CPU/network mais limitado — agressivamente reduza JS executado no primeiro paint.',
+			'Mobile tem CPU/network mais limitado. Agressivamente reduza JS executado no primeiro paint.',
 			'Use code splitting: carregue apenas código necessário pra rota atual, lazy-load o resto.',
-			'Remova polyfills desnecessários — modern browsers em mobile não precisam de suporte IE.',
-			'Meça JS main thread blocking em mobile simulation — target <200ms de long tasks.',
+			'Remova polyfills desnecessários. Modern browsers em mobile não precisam de suporte IE.',
+			'Meça JS main thread blocking em mobile simulation. Target <200ms de long tasks.',
 		],
 		estimated_effort_hours: 20,
 		verification_strategy: 'browser_runtime',
@@ -1732,10 +1732,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mobile_trust_payment_deps_failing: {
 		remediation_steps: [
-			'Teste payment deps (gateway scripts, tokenizer) especificamente em mobile — deps web às vezes falham em WebView.',
+			'Teste payment deps (gateway scripts, tokenizer) especificamente em mobile. Deps web às vezes falham em WebView.',
 			'Configure fallback de payment method quando script primário falha (ex: fallback de Stripe Elements pra redirect flow).',
-			'Monitore erros JS específicos de mobile — alertar quando divergem do desktop.',
-			'Teste em iOS Safari + Chrome Android reais, não só emulator — cada tem quirks diferentes.',
+			'Monitore erros JS específicos de mobile. Alertar quando divergem do desktop.',
+			'Teste em iOS Safari + Chrome Android reais, não só emulator. Cada tem quirks diferentes.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
@@ -1748,8 +1748,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Mapeie quais trust surfaces dependem de third-parties (selos dinâmicos, reviews widgets).',
 			'Para cada dep third-party, mensure uptime + configure fallback estático se falhar.',
-			'Prefira trust markers servidos do seu próprio domínio — selos self-hosted não dependem de provider externo.',
-			'Configure monitoring específico pra trust surfaces — queda de provider = queda de conversão imediata.',
+			'Prefira trust markers servidos do seu próprio domínio. Selos self-hosted não dependem de provider externo.',
+			'Configure monitoring específico pra trust surfaces. Queda de provider = queda de conversão imediata.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
@@ -1766,8 +1766,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Reescreva title tags das páginas comerciais: 50-60 chars, incluindo marca + produto + benefício.',
 			'Meta description: 140-160 chars descrevendo produto + call-to-action. Evite duplicatas entre páginas.',
-			'Garanta que title e H1 da página estão alinhados mas não idênticos — title otimizado pra search, H1 pra humano.',
-			'Audite trimestralmente quais títulos rankam e quais não aparecem no top 10 — ajuste copy do que underperforma.',
+			'Garanta que title e H1 da página estão alinhados mas não idênticos. Title otimizado pra search, H1 pra humano.',
+			'Audite trimestralmente quais títulos rankam e quais não aparecem no top 10. Ajuste copy do que underperforma.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
@@ -1781,7 +1781,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Configure Open Graph tags: og:title, og:description, og:image (1200x630), og:url em todas páginas comerciais.',
 			'Twitter Card: summary_large_image com imagem otimizada pra compartilhamento.',
 			'Teste previews em debuggers oficiais: developers.facebook.com/tools/debug + cards-dev.twitter.com.',
-			'Customize preview image por categoria de produto — genérico de logo é desperdício de share.',
+			'Customize preview image por categoria de produto. Genérico de logo é desperdício de share.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -1793,8 +1793,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	brand_inconsistent_across_surfaces: {
 		remediation_steps: [
 			'Defina brand guide curto: logo, paleta, tipografia, tom de voz. Publique internamente.',
-			'Audite surfaces existentes (home, app, email, landing, redes sociais) — elemina divergências de logo/cor/copy.',
-			'Centralize assets de marca em CDN próprio — evita versões antigas circulando.',
+			'Audite surfaces existentes (home, app, email, landing, redes sociais). Elemina divergências de logo/cor/copy.',
+			'Centralize assets de marca em CDN próprio. Evita versões antigas circulando.',
 			'Configure checklist pré-deploy pra revisar mudanças visuais contra brand guide.',
 		],
 		estimated_effort_hours: 16,
@@ -1806,10 +1806,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	commercial_pages_unlikely_indexed: {
 		remediation_steps: [
-			'Verifique robots.txt + meta robots das páginas comerciais — não devem ter noindex acidental.',
-			'Configure canonical tags corretos — aponte pra versão preferida da página (sem query params ruido).',
+			'Verifique robots.txt + meta robots das páginas comerciais. Não devem ter noindex acidental.',
+			'Configure canonical tags corretos. Aponte pra versão preferida da página (sem query params ruido).',
 			'Envie sitemap.xml atualizado pro Google Search Console + Bing Webmaster Tools.',
-			'Gere links internos pra páginas comerciais da home/blog — pages sem backlinks internos raramente rankam.',
+			'Gere links internos pra páginas comerciais da home/blog. Pages sem backlinks internos raramente rankam.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
@@ -1821,9 +1821,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	weak_semantic_intent_signals: {
 		remediation_steps: [
 			'Adicione JSON-LD Schema em páginas comerciais: Product (preço, estoque), Offer, Organization, BreadcrumbList.',
-			'Use schema.org vocab correto — Product em páginas de produto, Article em blog, Review em depoimentos.',
-			'Valide com Rich Results Test do Google — schema inválido não ajuda SEO.',
-			'Monitore rich results no Search Console — tickets pra schema errors aparecem lá.',
+			'Use schema.org vocab correto. Product em páginas de produto, Article em blog, Review em depoimentos.',
+			'Valide com Rich Results Test do Google. Schema inválido não ajuda SEO.',
+			'Monitore rich results no Search Console. Tickets pra schema errors aparecem lá.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'http_static',
@@ -1835,9 +1835,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	previews_disconnected_from_conversion: {
 		remediation_steps: [
 			'Social preview images devem enfatizar produto + benefício, não só logo.',
-			'Title do preview deve comunicar valor comercial — "50% OFF" ou "Frete grátis" funciona melhor que título genérico.',
-			'Teste A/B images diferentes pra mesma URL — mede qual gera mais CTR de compartilhamento.',
-			'Cada campanha de ads/social deve ter preview otimizado pro contexto — não usa o default da página.',
+			'Title do preview deve comunicar valor comercial. "50% OFF" ou "Frete grátis" funciona melhor que título genérico.',
+			'Teste A/B images diferentes pra mesma URL. Mede qual gera mais CTR de compartilhamento.',
+			'Cada campanha de ads/social deve ter preview otimizado pro contexto. Não usa o default da página.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'http_static',
@@ -1848,7 +1848,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	commercial_pages_not_exposed_for_discovery: {
 		remediation_steps: [
-			'Adicione páginas comerciais ao sitemap.xml — priorize produto e categoria com priority > 0.8.',
+			'Adicione páginas comerciais ao sitemap.xml. Priorize produto e categoria com priority > 0.8.',
 			'Gere internal linking: home → categorias → produtos (3 cliques máx).',
 			'Se você tem filtros (cor, tamanho), use canonical pra variantes e evita duplicação.',
 			'Solicite reindexing no Search Console após mudanças significativas de estrutura.',
@@ -1867,9 +1867,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	lookalike_domain_competing_for_traffic: {
 		remediation_steps: [
 			'Registre domínios defensivos comuns: typos (.com.br, .net, .shop), variantes (com hífen, sem hífen).',
-			'Configure redirect 301 dos domínios defensivos pra domínio principal — recupera tráfego de erro de digitação.',
+			'Configure redirect 301 dos domínios defensivos pra domínio principal. Recupera tráfego de erro de digitação.',
 			'Para lookalikes ativamente competindo: registre trademark e envie takedown notice via registrar.',
-			'Monitore SERPs regularmente — detecta lookalikes novos e age antes que ganhem tração.',
+			'Monitore SERPs regularmente. Detecta lookalikes novos e age antes que ganhem tração.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'external_scan',
@@ -1880,7 +1880,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	external_sites_mimicking_brand: {
 		remediation_steps: [
-			'Identifique sites que copiam visual/copy — capture screenshots como evidência.',
+			'Identifique sites que copiam visual/copy. Capture screenshots como evidência.',
 			'Envie DMCA takedown (EUA) ou notificação LGPD/CDC (BR) ao host do site clonado.',
 			'Se clone vende produto falsificado, acione Polícia Federal / Procon + plataforma onde vende (ML, Shopee).',
 			'Configure Google Alerts pra menções não-autorizadas da marca.',
@@ -1894,10 +1894,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	brand_traffic_exposed_to_deceptive_surfaces: {
 		remediation_steps: [
-			'Audite ads pagos usando sua marca — competidores podem estar fazendo branded search em cima do seu nome.',
+			'Audite ads pagos usando sua marca. Competidores podem estar fazendo branded search em cima do seu nome.',
 			'Registre trademark pra protegê-lo em Google Ads + Facebook Ads.',
-			'Configure bid defensivo em branded keywords — não deixe competidor roubar tráfego barato.',
-			'Monitore search suggestions no Google — "marca X reclamação" ou "marca X golpe" indica problema reputacional.',
+			'Configure bid defensivo em branded keywords. Não deixe competidor roubar tráfego barato.',
+			'Monitore search suggestions no Google. "marca X reclamação" ou "marca X golpe" indica problema reputacional.',
 		],
 		estimated_effort_hours: 14,
 		verification_strategy: 'external_scan',
@@ -1924,7 +1924,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Alerte buyers via email / redes sociais sobre sites phishing identificados.',
 			'Configure DMARC strict (p=reject) no domínio pra prevenir spoofing de emails.',
-			'Reporte phishing pages a Google Safe Browsing + Microsoft Defender SmartScreen — removem do browsing.',
+			'Reporte phishing pages a Google Safe Browsing + Microsoft Defender SmartScreen. Removem do browsing.',
 			'Crie página /seguranca ou /phishing no site oficial documentando golpes conhecidos e como identificar.',
 		],
 		estimated_effort_hours: 16,
@@ -1937,8 +1937,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	brand_presence_diluted_across_variants: {
 		remediation_steps: [
 			'Consolide domínios e subdomínios: elimina variantes desnecessárias ou configure canonical + redirect.',
-			'Unifique o branding em todas as surfaces ativas — inconsistência confunde buyer.',
-			'Defina domínio master único para ads, emails, social — evita dispersão de tráfego.',
+			'Unifique o branding em todas as surfaces ativas. Inconsistência confunde buyer.',
+			'Defina domínio master único para ads, emails, social. Evita dispersão de tráfego.',
 			'Audite trimestralmente quais variantes de domínio estão ativas e por quê.',
 		],
 		estimated_effort_hours: 12,
@@ -1971,7 +1971,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Configure sync real-time de estoque entre Shopify e canais de promoção (ads, email, afiliados).',
 			'Pause automaticamente campanhas de ads quando produto fica out-of-stock.',
 			'Adicione "Notify when available" nos produtos esgotados pra capturar demanda.',
-			'Priorize replenishment dos produtos mais promovidos — estoque perdido durante campanha é receita perdida.',
+			'Priorize replenishment dos produtos mais promovidos. Estoque perdido durante campanha é receita perdida.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'integration_pull',
@@ -1982,8 +1982,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	high_refund_rate_eroding_revenue: {
 		remediation_steps: [
-			'Audite top 10 razões de refund no Shopify — identifique padrões por produto / SKU.',
-			'Melhore fotos + descrições dos produtos mais reembolsados — misalinhamento de expectativa é causa comum.',
+			'Audite top 10 razões de refund no Shopify. Identifique padrões por produto / SKU.',
+			'Melhore fotos + descrições dos produtos mais reembolsados. Misalinhamento de expectativa é causa comum.',
 			'Se produto específico tem >15% refund rate, considere delistar ou renegociar com fornecedor.',
 			'Configure pré-sale checklist: FAQs visíveis, sizing guide, política de reembolso clara.',
 		],
@@ -1999,7 +1999,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Integre gateway secundário (Stripe + Mercado Pago, por exemplo) pra ter redundância.',
 			'Configure roteamento inteligente: PIX pra BR (mais barato), cartão pra internacional.',
 			'Tenha plano de contingência documentado: se gateway primário cai, como switchar em <15min.',
-			'Negocie contratos com SLA — gateway sem garantia de uptime é aposta.',
+			'Negocie contratos com SLA. Gateway sem garantia de uptime é aposta.',
 		],
 		estimated_effort_hours: 20,
 		verification_strategy: 'integration_pull',
@@ -2010,10 +2010,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	discount_abuse_pattern: {
 		remediation_steps: [
-			'Audite cupons ativos — limite uso por customer (1x), por email, por IP.',
+			'Audite cupons ativos. Limite uso por customer (1x), por email, por IP.',
 			'Configure fraud detection: mesmo CPF comprando 10x com cupom = abuso.',
-			'Expire cupons regularmente — cupons permanentes são convite pra compartilhamento em sites tipo Cuponeria.',
-			'Meça margem pós-desconto por campanha — alguns cupons podem estar negativos.',
+			'Expire cupons regularmente. Cupons permanentes são convite pra compartilhamento em sites tipo Cuponeria.',
+			'Meça margem pós-desconto por campanha. Alguns cupons podem estar negativos.',
 		],
 		estimated_effort_hours: 14,
 		verification_strategy: 'integration_pull',
@@ -2024,9 +2024,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	ad_spend_platform_concentration_risk: {
 		remediation_steps: [
-			'Identifique a segunda melhor plataforma pro seu ICP — testar não precisa esperar a primeira quebrar.',
+			'Identifique a segunda melhor plataforma pro seu ICP. Testar não precisa esperar a primeira quebrar.',
 			'Desloque 15-25% do budget pra segunda plataforma em campanhas espelho (mesmo creative, mesma audiência).',
-			'Documente a posta-em-pé de um novo ad account: credenciais, tags, pixel, aprovação — tempo esperado pra standup é 1-3 semanas.',
+			'Documente a posta-em-pé de um novo ad account: credenciais, tags, pixel, aprovação. Tempo esperado pra standup é 1-3 semanas.',
 			'Configure alertas de account health em ambas plataformas (disable, policy warning, spend anomaly).',
 		],
 		estimated_effort_hours: 24,
@@ -2038,8 +2038,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	ads_without_conversion_visibility: {
 		remediation_steps: [
-			'Conecte sua plataforma de commerce (Shopify, Nuvemshop ou Stripe) em Settings → Data Sources — o wizard faz OAuth e reconcilia histórico em minutos.',
-			'Valide que orders dos últimos 30 dias estão sendo importadas — ROAS calculável vai aparecer no dashboard imediatamente.',
+			'Conecte sua plataforma de commerce (Shopify, Nuvemshop ou Stripe) em Settings → Data Sources. O wizard faz OAuth e reconcilia histórico em minutos.',
+			'Valide que orders dos últimos 30 dias estão sendo importadas. ROAS calculável vai aparecer no dashboard imediatamente.',
 			'Configure UTM tagging nas campanhas (utm_source, utm_campaign) pra attribution por criativo, não só por plataforma.',
 			'Depois de 30 dias com conversion tracking ativo, revise criativos: pause os bottom 20% ROAS, dobre budget no top 10%.',
 		],
@@ -2052,9 +2052,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	ad_creative_dead_destination: {
 		remediation_steps: [
-			'Identifique o criativo no Ads Manager que aponta pra URL morta — o finding carrega o nome do criativo + plataforma.',
+			'Identifique o criativo no Ads Manager que aponta pra URL morta. O finding carrega o nome do criativo + plataforma.',
 			'Atualize a destination URL do criativo pra uma página viva e relevante pro mesmo público.',
-			'Se a página foi removida intencionalmente, pause o criativo imediatamente — cada hora ligado é gasto perdido.',
+			'Se a página foi removida intencionalmente, pause o criativo imediatamente. Cada hora ligado é gasto perdido.',
 			'Configure redirect 301 da URL antiga pra nova se outras fontes também linkam (SEO, email, etc.).',
 		],
 		estimated_effort_hours: 1,
@@ -2067,7 +2067,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	ad_creative_landing_trust_gap: {
 		remediation_steps: [
 			'Adicione trust badge (SSL seal, reviews widget, logo de segurança) na landing page que o anúncio direciona.',
-			'Coloque depoimentos/reviews próximo ao formulário de dados sensíveis — proximity é o que importa.',
+			'Coloque depoimentos/reviews próximo ao formulário de dados sensíveis. Proximity é o que importa.',
 			'Garanta que a política de privacidade esteja linkada no mesmo viewport do campo de dados.',
 			'Se possível, adicione structured data tipo Organization/LocalBusiness pra confiança via rich snippets.',
 		],
@@ -2080,7 +2080,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	ad_creative_form_friction_waste: {
 		remediation_steps: [
-			'Reduza o formulário da landing page pra 6 campos ou menos — remova tudo que não é essencial pra primeira conversão.',
+			'Reduza o formulário da landing page pra 6 campos ou menos. Remova tudo que não é essencial pra primeira conversão.',
 			'Se precisa de mais dados, divida em steps (guest checkout → coleta pós-conversão) em vez de um form monolítico.',
 			'Remova campos como "confirme o email" ou "telefone fixo" que geram atrito sem valor real pra conversão.',
 			'A/B test: versão curta vs versão atual. Meça conversion rate por variante durante 14 dias.',
@@ -2095,7 +2095,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	ad_creative_mobile_checkout_degraded: {
 		remediation_steps: [
 			'Teste a landing page no mobile real (Chrome DevTools mobile viewport não substitui device real).',
-			'Identifique scripts que bloqueiam render — lazy-load tudo que não é above-the-fold.',
+			'Identifique scripts que bloqueiam render. Lazy-load tudo que não é above-the-fold.',
 			'Garanta que CTA principal ("Comprar", "Assinar") seja visible sem scroll no mobile viewport.',
 			'Se possível, use AMP ou otimize critical rendering path pra < 3s first meaningful paint.',
 		],
@@ -2109,7 +2109,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	ad_creative_message_mismatch: {
 		remediation_steps: [
 			'Abra o criativo no Gerenciador de Anúncios e leia headline + corpo do anúncio lado a lado com a landing page.',
-			'Atualize o H1 da landing page pra ecoar a promessa principal do anúncio — match exato de palavras aumenta relevância percebida e reduz CPL.',
+			'Atualize o H1 da landing page pra ecoar a promessa principal do anúncio. Match exato de palavras aumenta relevância percebida e reduz CPL.',
 			'Garanta que a CTA da landing combina com a ação prometida no anúncio (ex: anúncio diz "Teste grátis" mas LP diz "Fale com vendas" é mismatch).',
 			'Se o anúncio menciona uma oferta específica (desconto, trial, feature), confirme que ela aparece acima da dobra na LP.',
 			'Alternativa: atualize o anúncio pra refletir o que a LP entrega de fato, em vez de prometer algo que a página não cumpre.',
@@ -2124,9 +2124,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	low_repeat_purchase_rate: {
 		remediation_steps: [
 			'Configure email de re-engagement 30/60/90 dias pós-compra com recomendações personalizadas.',
-			'Implemente programa de loyalty/pontos — reduz atrito pra segunda compra.',
-			'Analise LTV por cohort — qual canal de aquisição traz customers que recompram?',
-			'Crie subscription option pra produtos consumíveis — recurring revenue é o maior leverage.',
+			'Implemente programa de loyalty/pontos. Reduz atrito pra segunda compra.',
+			'Analise LTV por cohort. Qual canal de aquisição traz customers que recompram?',
+			'Crie subscription option pra produtos consumíveis. Recurring revenue é o maior leverage.',
 		],
 		estimated_effort_hours: 20,
 		verification_strategy: 'integration_pull',
@@ -2137,10 +2137,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	dead_weight_products: {
 		remediation_steps: [
-			'Liste produtos com zero venda em 30 dias — delista ou reposicione.',
+			'Liste produtos com zero venda em 30 dias. Delista ou reposicione.',
 			'Mova SKUs dead-weight pra categoria "clearance" com desconto real pra girar estoque.',
-			'Analise se dead weight é por preço, posicionamento, ou demanda — ação varia.',
-			'Mensalmente, faça purge de SKUs sem venda em 90 dias — polui busca e dilui inventário.',
+			'Analise se dead weight é por preço, posicionamento, ou demanda. Ação varia.',
+			'Mensalmente, faça purge de SKUs sem venda em 90 dias. Polui busca e dilui inventário.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'integration_pull',
@@ -2185,7 +2185,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	failed_payment_revenue_drain: {
 		remediation_steps: [
 			'Ative card updater automático no Stripe pra renovar cartões expirados sem intervenção do cliente.',
-			'Configure smart retry (Stripe Billing) com backoff progressivo — 3 a 5 tentativas antes de cancelar.',
+			'Configure smart retry (Stripe Billing) com backoff progressivo. 3 a 5 tentativas antes de cancelar.',
 			'Envie email ao cliente no primeiro failure com link direto pra atualizar método de pagamento.',
 			'Implemente grace period de 5-7 dias antes de suspender acesso após falha de pagamento.',
 			'Monitore failed_payment_rate semanal com alerta quando ultrapassar 5%.',
@@ -2202,7 +2202,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Implemente pesquisa de cancelamento (1-2 perguntas obrigatórias) pra mapear motivos reais de churn.',
 			'Crie ofertas de retenção escalonadas: pause → downgrade → extensão → desconto temporário.',
 			'Configure dunning automation com emails personalizados pra recuperar involuntary churn.',
-			'Analise cohorts de churn por tenure — identifique em qual mês os subscribers mais cancelam.',
+			'Analise cohorts de churn por tenure. Identifique em qual mês os subscribers mais cancelam.',
 			'Implemente health score de subscriber baseado em uso do produto pra intervir antes do cancelamento.',
 		],
 		estimated_effort_hours: 24,
@@ -2216,7 +2216,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Integre gateway secundário (ex: Stripe + Adyen, ou Stripe + PayPal) pra redundância.',
 			'Configure roteamento inteligente: PIX/boleto pra BR, cartão internacional via gateway secundário.',
-			'Implemente failover automático — se o gateway primário retorna erro, tenta no secundário.',
+			'Implemente failover automático. Se o gateway primário retorna erro, tenta no secundário.',
 			'Monitore uptime e taxa de sucesso por gateway pra detectar degradação antes que vire outage.',
 		],
 		estimated_effort_hours: 40,
@@ -2229,7 +2229,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	mrr_contraction_detected: {
 		remediation_steps: [
 			'Identifique se a contração vem de pagamentos falhos (involuntary churn) ou cancelamentos (voluntary churn) via cohort no Stripe.',
-			'Para involuntary: ative Card Updater + Smart Retries + dunning emails na primeira falha — recupera 30-50% dos casos.',
+			'Para involuntary: ative Card Updater + Smart Retries + dunning emails na primeira falha. Recupera 30-50% dos casos.',
 			'Para voluntary: implemente cancellation survey + retention offers (pausa, downgrade, extensão) antes do cancel final.',
 			'Configure alerta semanal de MRR delta para detectar contração antes que compõe 3+ ciclos.',
 		],
@@ -2250,9 +2250,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	revenue_attribution_mismatch: {
 		remediation_steps: [
-			'Reconcilie a receita total do mês somando TODOS os canais de cobrança — Stripe, boleto, PIX, MercadoPago, transferência bancária, pagamento presencial, PayPal e quaisquer outros gateways. Compare o total com o que Meta + Google estão reportando como atribuído.',
+			'Reconcilie a receita total do mês somando TODOS os canais de cobrança. Stripe, boleto, PIX, MercadoPago, transferência bancária, pagamento presencial, PayPal e quaisquer outros gateways. Compare o total com o que Meta + Google estão reportando como atribuído.',
 			'Se a soma de TODOS os canais bate com o atribuído pelas plataformas: a divergência era só Stripe não enxergando os outros canais. Não há overattribution. Próximo passo é puxar essa receita off-Stripe pro Vestigio (Wave 6.x: integrar MercadoPago, gateway de boleto, etc.) pra a comparação ficar honesta nos próximos ciclos.',
-			'Se a soma de TODOS os canais ainda for substancialmente menor que o atribuído: aí sim é overattribution real. Rode um holdout test (pause 20-30% dos campaigns por 14 dias) e meça a queda real de receita total vs a perda projetada pela plataforma — a diferença é o lift incremental verdadeiro.',
+			'Se a soma de TODOS os canais ainda for substancialmente menor que o atribuído: aí sim é overattribution real. Rode um holdout test (pause 20-30% dos campaigns por 14 dias) e meça a queda real de receita total vs a perda projetada pela plataforma. A diferença é o lift incremental verdadeiro.',
 			'Configure multi-touch attribution (data-driven no GA4 ou Triple Whale/Northbeam) e compare ROAS por modelo data-driven vs last-click. Re-tier o ad spend pelo modelo mais conservador APENAS depois da reconciliação total.',
 		],
 		estimated_effort_hours: 6,
@@ -2265,7 +2265,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	// Wave 7.11M — pixel coverage gap (measurement integrity)
 	pixel_coverage_gap: {
 		remediation_steps: [
-			'Identifique quais páginas críticas (checkout, thank_you, cart) estão sem o snippet do pixel — inspecione o HTML em modo anônimo procurando o <script src="/snippet/vestigio.js">.',
+			'Identifique quais páginas críticas (checkout, thank_you, cart) estão sem o snippet do pixel. Inspecione o HTML em modo anônimo procurando o <script src="/snippet/vestigio.js">.',
 			'Instale o snippet no <head> dessas páginas. Se sua plataforma usa template comum (Shopify, Nuvemshop, etc), basta uma edição global no theme.',
 			'Confirme que o evento page_view dispara em cada página instalada via DevTools > Network filtrando "vestigio.js".',
 			'Rode um audit cycle novo: o sinal pixel_coverage_gap deve sumir e os findings de checkout abandono / conversion rate vão aparecer com dados reais.',
@@ -2287,7 +2287,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	policy_view_then_abandonment: {
 		remediation_steps: [
-			'Revise a copy das políticas (refund, privacidade, termos) — leitura deve reforçar confiança, não criar dúvida.',
+			'Revise a copy das políticas (refund, privacidade, termos). Leitura deve reforçar confiança, não criar dúvida.',
 			'Adicione CTA sutil na política de refund: "Qualquer dúvida? Fale com nosso time" com link pra suporte.',
 			'Se buyers visitam política e abandonam, inclua reassurance pós-política (modal ou banner) sugerindo que a política é favorável.',
 		],
@@ -2300,9 +2300,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	high_intent_detour_before_abandonment: {
 		remediation_steps: [
-			'Detecte páginas visitadas por high-intent buyers antes do abandono — geralmente FAQ, comparação, reviews.',
+			'Detecte páginas visitadas por high-intent buyers antes do abandono. Geralmente FAQ, comparação, reviews.',
 			'Identifique objeção específica nessas pages e resolva direto no fluxo principal.',
-			'Teste redirecionar parte do tráfego direto pro fluxo principal sem detour — vê se conversão sobe.',
+			'Teste redirecionar parte do tráfego direto pro fluxo principal sem detour. Vê se conversão sobe.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'pixel_accumulation',
@@ -2313,9 +2313,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	support_discovered_too_late_to_convert: {
 		remediation_steps: [
-			'Mova canal de suporte pra posição proeminente no fluxo de compra — footer persistente ou chat visível.',
+			'Mova canal de suporte pra posição proeminente no fluxo de compra. Footer persistente ou chat visível.',
 			'Proativamente ofereça chat quando buyer passa >60s no checkout sem progredir.',
-			'Meça First Response Time — <5min úteis no chat reduz friction significativamente.',
+			'Meça First Response Time. <5min úteis no chat reduz friction significativamente.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'pixel_accumulation',
@@ -2326,9 +2326,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	cta_visible_but_behaviorally_dead: {
 		remediation_steps: [
-			'CTA aparece no viewport mas ninguém clica — revise copy, contraste, e proximity com value prop.',
-			'Teste variantes (A/B) de cor, tamanho, e copy do CTA — pequenas mudanças geram grandes swings.',
-			'Garanta que CTA está acima da dobra em desktop E mobile — mobile tende a enterrar o CTA.',
+			'CTA aparece no viewport mas ninguém clica. Revise copy, contraste, e proximity com value prop.',
+			'Teste variantes (A/B) de cor, tamanho, e copy do CTA. Pequenas mudanças geram grandes swings.',
+			'Garanta que CTA está acima da dobra em desktop E mobile. Mobile tende a enterrar o CTA.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'pixel_accumulation',
@@ -2339,8 +2339,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	purchase_hesitation_with_backtrack: {
 		remediation_steps: [
-			'Buyers voltam pro carrinho múltiplas vezes — objeção tá nos dados mostrados ali (preço? frete? entrega?).',
-			'Exponha TODOS custos (frete + impostos) antes do checkout — surpresa no total é causa top de abandono.',
+			'Buyers voltam pro carrinho múltiplas vezes. Objeção tá nos dados mostrados ali (preço? frete? entrega?).',
+			'Exponha TODOS custos (frete + impostos) antes do checkout. Surpresa no total é causa top de abandono.',
 			'Adicione "por que escolher" recap próximo ao botão de pagar pra reforçar decisão.',
 		],
 		estimated_effort_hours: 8,
@@ -2352,8 +2352,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	critical_step_retries_before_abandonment: {
 		remediation_steps: [
-			'Identifique qual step retry mais antes do abandono — geralmente é cartão rejeitado ou CEP sem entrega.',
-			'Melhore mensagens de erro nesses steps — explique CAUSA + PRÓXIMO PASSO.',
+			'Identifique qual step retry mais antes do abandono. Geralmente é cartão rejeitado ou CEP sem entrega.',
+			'Melhore mensagens de erro nesses steps. Explique CAUSA + PRÓXIMO PASSO.',
 			'Ofereça caminhos alternativos: cartão rejeitado → oferece PIX; CEP sem entrega → oferece retirada.',
 		],
 		estimated_effort_hours: 10,
@@ -2365,7 +2365,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mobile_fails_first_commercial_action: {
 		remediation_steps: [
-			'Primeira ação comercial em mobile (add-to-cart, inicia checkout) falha mais que desktop — teste em iOS + Android reais.',
+			'Primeira ação comercial em mobile (add-to-cart, inicia checkout) falha mais que desktop. Teste em iOS + Android reais.',
 			'Valide tamanho de botões (≥44px), viewport, teclado não cobrindo input ativo.',
 			'Elimine modais/overlays que em mobile ficam scroll-trapped ou sem close button visível.',
 		],
@@ -2378,7 +2378,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	funnel_step_alive_but_not_advancing: {
 		remediation_steps: [
-			'Step tem atividade (clicks, form fills) mas não avança — há bloqueador técnico ou UX silencioso.',
+			'Step tem atividade (clicks, form fills) mas não avança. Há bloqueador técnico ou UX silencioso.',
 			'Revise validações: mensagens de erro escondidas, submit button desabilitado sem feedback claro.',
 			'Adicione analytics de form validation failures pra ver qual campo mais bloqueia.',
 		],
@@ -2391,7 +2391,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	hesitation_before_conversion_missing_trust: {
 		remediation_steps: [
-			'Buyer hesita perto do botão de pagar — trust markers não estão onde precisa.',
+			'Buyer hesita perto do botão de pagar. Trust markers não estão onde precisa.',
 			'Adicione selos (SSL, bandeiras, gateway) VISÍVEIS no viewport do pagamento.',
 			'Inclua microcopy de reassurance próximo ao botão: "Pagamento seguro via [gateway]".',
 		],
@@ -2404,7 +2404,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	pricing_hesitation_unclear_value: {
 		remediation_steps: [
-			'Buyer revisita pricing multiple times — indicador de que value prop não tá clara.',
+			'Buyer revisita pricing multiple times. Indicador de que value prop não tá clara.',
 			'Re-escreva cada plano em termos de OUTCOME ("economize X horas/semana"), não features.',
 			'Adicione comparativo visual pros-cons ou ROI calculator ajudando buyer decidir.',
 		],
@@ -2417,7 +2417,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	policy_detour_before_conversion: {
 		remediation_steps: [
-			'Buyer visita política antes de converter — preocupação tá na mente. Endereça proativamente.',
+			'Buyer visita política antes de converter. Preocupação tá na mente. Endereça proativamente.',
 			'Destaque a política de reembolso favorável DIRETO no checkout (não escondida no footer).',
 			'Use linguagem positiva: "30 dias pra trocar de ideia" em vez de "política de reembolso".',
 		],
@@ -2430,9 +2430,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	cta_viewed_not_engaged: {
 		remediation_steps: [
-			'CTA aparece mas engagement é baixo — copy não compele ação.',
+			'CTA aparece mas engagement é baixo. Copy não compele ação.',
 			'Use verbos específicos: "Comprar agora" > "Saiba mais". Urgência real: "Restam 3 em estoque".',
-			'Teste variantes diferentes — small copy changes geram 5-20% swings em CTR.',
+			'Teste variantes diferentes. Small copy changes geram 5-20% swings em CTR.',
 		],
 		estimated_effort_hours: 4,
 		verification_strategy: 'pixel_accumulation',
@@ -2443,7 +2443,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	sensitive_input_abandonment: {
 		remediation_steps: [
-			'Buyer abandona ao ver campo sensível (CPF, cartão, endereço) — trust deficit naquele campo específico.',
+			'Buyer abandona ao ver campo sensível (CPF, cartão, endereço). Trust deficit naquele campo específico.',
 			'Adicione microcopy explicando POR QUE precisa do dado: "CPF usado apenas pra nota fiscal".',
 			'Mostre ícone de cadeado + selo SSL próximo ao campo sensível pra reforçar segurança.',
 		],
@@ -2456,7 +2456,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	form_excessive_fields_before_conversion: {
 		remediation_steps: [
-			'Form tem >8 campos obrigatórios antes da conversão — cada campo extra reduz completion em ~5%.',
+			'Form tem >8 campos obrigatórios antes da conversão. Cada campo extra reduz completion em ~5%.',
 			'Elimine campos opcionais que podem ser pedidos depois (ex: NPS, pesquisa de perfil).',
 			'Use auto-preenchimento agressivo: ViaCEP pra endereço, mask pra CPF/telefone.',
 		],
@@ -2469,9 +2469,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	form_submission_retry_friction: {
 		remediation_steps: [
-			'Form retorna erro e buyer retenta múltiplas vezes — validação não tá clara ou UX trava.',
-			'Valide em real-time (inline) em vez de só no submit — buyer sabe na hora o que tá errado.',
-			'Quando submit falha, preserve TODOS os dados preenchidos — não force retyping.',
+			'Form retorna erro e buyer retenta múltiplas vezes. Validação não tá clara ou UX trava.',
+			'Valide em real-time (inline) em vez de só no submit. Buyer sabe na hora o que tá errado.',
+			'Quando submit falha, preserve TODOS os dados preenchidos. Não force retyping.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'pixel_accumulation',
@@ -2482,8 +2482,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	surface_oscillation_before_dropoff: {
 		remediation_steps: [
-			'Buyer oscila entre surfaces (home ↔ produto ↔ cart) antes de abandonar — decision paralysis.',
-			'Reduza paths alternativos no fluxo comercial — one clear path from product to purchase.',
+			'Buyer oscila entre surfaces (home ↔ produto ↔ cart) antes de abandonar. Decision paralysis.',
+			'Reduza paths alternativos no fluxo comercial. One clear path from product to purchase.',
 			'Adicione comparativo direto no produto pra reduzir necessidade de voltar pra categoria.',
 		],
 		estimated_effort_hours: 10,
@@ -2495,7 +2495,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	conversion_final_step_retry: {
 		remediation_steps: [
-			'Último step (submit pagamento) retry frequente — cartão rejeita ou anti-fraude bloqueia.',
+			'Último step (submit pagamento) retry frequente. Cartão rejeita ou anti-fraude bloqueia.',
 			'Melhore mensagem pós-rejeição: explique causa provável + sugira ação (novo cartão, PIX).',
 			'Adicione fallback automático pra outros métodos quando primário falha.',
 		],
@@ -2508,9 +2508,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	cta_late_availability_delays_action: {
 		remediation_steps: [
-			'CTA aparece depois de render completo — scripts atrasam interatividade.',
+			'CTA aparece depois de render completo. Scripts atrasam interatividade.',
 			'Pré-renderize CTAs críticos no HTML inicial, sem depender de JS.',
-			'Meça Time To Interactive especificamente pra botão de conversão — deve ser <2s.',
+			'Meça Time To Interactive especificamente pra botão de conversão. Deve ser <2s.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'pixel_accumulation',
@@ -2522,7 +2522,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	checkout_abandon_no_feedback: {
 		remediation_steps: [
 			'Buyer abandona checkout sem deixar sinal (não preencheu nada, saiu silencioso).',
-			'Adicione exit-intent modal perguntando "o que faltou?" com campo livre — captura objections.',
+			'Adicione exit-intent modal perguntando "o que faltou?" com campo livre. Captura objections.',
 			'Configure recovery email pra quem iniciou checkout mas não finalizou, com link direto pro carrinho.',
 		],
 		estimated_effort_hours: 8,
@@ -2534,9 +2534,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	sensitive_input_perceived_risk_dropoff: {
 		remediation_steps: [
-			'Campos sensíveis causam drop direto — perceção de risco é mais forte que benefício percebido.',
+			'Campos sensíveis causam drop direto. Perceção de risco é mais forte que benefício percebido.',
 			'Adicione trust signals CONTÍGUOS ao campo: selo SSL, explicação de uso, política de privacidade link.',
-			'Teste reordenar: peça dados sensíveis DEPOIS de criar conta ou adicionar ao carrinho — drops menos.',
+			'Teste reordenar: peça dados sensíveis DEPOIS de criar conta ou adicionar ao carrinho. Drops menos.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'pixel_accumulation',
@@ -2547,7 +2547,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	first_session_milestone_stall: {
 		remediation_steps: [
-			'Primeira sessão empaca antes de atingir marco de valor — reduza fricção nos primeiros 60s.',
+			'Primeira sessão empaca antes de atingir marco de valor. Reduza fricção nos primeiros 60s.',
 			'Defina o "aha moment" do primeiro uso e otimize o caminho direto pra ele.',
 			'Ofereça tour guiado opcional que demonstra valor em <2min.',
 		],
@@ -2560,7 +2560,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	first_session_trust_barrier: {
 		remediation_steps: [
-			'Novos visitantes encontram trust barrier — exponha social proof + credenciais mais proeminentemente.',
+			'Novos visitantes encontram trust barrier. Exponha social proof + credenciais mais proeminentemente.',
 			'Logos de clientes, depoimentos com foto, awards visíveis na home above-the-fold.',
 			'Para produto novo, inclua "como funciona" explicativo + garantia explícita pra reduzir risk percebido.',
 		],
@@ -2573,7 +2573,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	first_session_cta_timing_gap: {
 		remediation_steps: [
-			'CTA aparece tarde demais na primeira sessão — visitante sai antes de ver a oferta.',
+			'CTA aparece tarde demais na primeira sessão. Visitante sai antes de ver a oferta.',
 			'Mostre CTA primário visível no primeiro paint, sem depender de scroll.',
 			'Configure exit-intent modal pra capturar visitante saindo sem ter tomado ação.',
 		],
@@ -2587,7 +2587,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	low_value_action_dominates: {
 		remediation_steps: [
 			'Ações de baixo valor (scroll, leitura de blog) dominam vs ações de alto valor (add-to-cart, signup).',
-			'Revise CTAs em páginas de tráfego — muitos levam pra conteúdo ao invés de conversão.',
+			'Revise CTAs em páginas de tráfego. Muitos levam pra conteúdo ao invés de conversão.',
 			'Adicione CTA de conversão em páginas de conteúdo populares (blog, ajuda).',
 		],
 		estimated_effort_hours: 8,
@@ -2599,9 +2599,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	high_value_action_underexposed: {
 		remediation_steps: [
-			'Ações de alto valor (compra, upgrade) não recebem exposure suficiente — posicione em surfaces de alto tráfego.',
+			'Ações de alto valor (compra, upgrade) não recebem exposure suficiente. Posicione em surfaces de alto tráfego.',
 			'Home deve ter CTA principal apontando pra ação de maior valor comercial.',
-			'Evite esconder features premium atrás de múltiplos cliques — expõe direto com paywall contextual.',
+			'Evite esconder features premium atrás de múltiplos cliques. Expõe direto com paywall contextual.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'pixel_accumulation',
@@ -2613,7 +2613,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	dead_weight_surface_traffic: {
 		remediation_steps: [
 			'Páginas com tráfego mas zero conversão drenam budget de ads e dividem análise.',
-			'Audite top 10 páginas de tráfego por conversion rate — priorize fix nas de 0% CR.',
+			'Audite top 10 páginas de tráfego por conversion rate. Priorize fix nas de 0% CR.',
 			'Se página não converte estruturalmente (ex: post de blog genérico), reduz paid spend direcionado a ela.',
 		],
 		estimated_effort_hours: 10,
@@ -2625,7 +2625,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	paid_traffic_friction_elevated: {
 		remediation_steps: [
-			'Tráfego pago encontra mais friction que orgânico — landing pages de ads precisam ser dedicadas.',
+			'Tráfego pago encontra mais friction que orgânico. Landing pages de ads precisam ser dedicadas.',
 			'Crie landing pages específicas por campanha, sem navegação que distrai do CTA.',
 			'Valide message match: ad promete X, landing entrega X (não a home genérica).',
 		],
@@ -2638,7 +2638,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	paid_traffic_trust_gap: {
 		remediation_steps: [
-			'Tráfego pago tem trust menor que orgânico — reforce credenciais nas landings de ads.',
+			'Tráfego pago tem trust menor que orgânico. Reforce credenciais nas landings de ads.',
 			'Social proof (reviews, número de clientes, mídia) visível no primeiro viewport.',
 			'Garantia forte e explícita ("30 dias pra devolver sem perguntas") reduz risk percebido.',
 		],
@@ -2664,7 +2664,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mobile_conversion_gap: {
 		remediation_steps: [
-			'Conversion rate em mobile significativamente abaixo de desktop — UX mobile precisa de attention dedicada.',
+			'Conversion rate em mobile significativamente abaixo de desktop. UX mobile precisa de attention dedicada.',
 			'Audite form completion em mobile: campos muito pequenos, teclado cobrindo input, submit inacessível.',
 			'Simplifique fluxo em mobile: uma única coluna, steps numerados, salve progresso.',
 		],
@@ -2677,7 +2677,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mobile_form_friction_elevated: {
 		remediation_steps: [
-			'Forms em mobile têm abandonment rate mais alto — campos + teclado causam friction.',
+			'Forms em mobile têm abandonment rate mais alto. Campos + teclado causam friction.',
 			'Use input types corretos (tel, email, number) pra ativar teclados otimizados.',
 			'Auto-avance entre campos quando possível (ex: CEP preenche cidade/UF automaticamente).',
 		],
@@ -2690,8 +2690,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mobile_cta_timing_degraded: {
 		remediation_steps: [
-			'CTA em mobile demora a ficar interativo — scripts pesados bloqueiam main thread.',
-			'Priorize TTI (Time To Interactive) em mobile — target <3s em 4G simulado.',
+			'CTA em mobile demora a ficar interativo. Scripts pesados bloqueiam main thread.',
+			'Priorize TTI (Time To Interactive) em mobile. Target <3s em 4G simulado.',
 			'Reduza JS bundle inicial, lazy-load o resto.',
 		],
 		estimated_effort_hours: 14,
@@ -2703,9 +2703,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	funnel_step_friction_cost: {
 		remediation_steps: [
-			'Cada step do funnel tem custo de conversão — conte os steps atuais e elimine redundantes.',
+			'Cada step do funnel tem custo de conversão. Conte os steps atuais e elimine redundantes.',
 			'Consolide "step 1: adicionar endereço" + "step 2: confirmar endereço" em um único step.',
-			'Teste one-page checkout vs multi-step — pra carrinhos simples, one-page converte melhor.',
+			'Teste one-page checkout vs multi-step. Pra carrinhos simples, one-page converte melhor.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'pixel_accumulation',
@@ -2717,8 +2717,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	oscillation_decision_cost: {
 		remediation_steps: [
 			'Buyer oscila entre opções (planos, variantes, métodos de pagamento) = decision fatigue.',
-			'Destaque default recomendado pra reduzir carga cognitiva — "escolha mais popular" funciona bem.',
-			'Limite opções — 3 planos é sweet spot pra SaaS, 2-3 variantes por produto pra e-commerce.',
+			'Destaque default recomendado pra reduzir carga cognitiva. "escolha mais popular" funciona bem.',
+			'Limite opções. 3 planos é sweet spot pra SaaS, 2-3 variantes por produto pra e-commerce.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'pixel_accumulation',
@@ -2729,9 +2729,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	checkout_entry_friction: {
 		remediation_steps: [
-			'Entrada no checkout já tem friction — botão escondido, modal interrompendo, login forçado.',
+			'Entrada no checkout já tem friction. Botão escondido, modal interrompendo, login forçado.',
 			'Garanta CTA de "Finalizar compra" visível no carrinho e em todas as páginas de produto.',
-			'Guest checkout como default — opção de criar conta pós-compra.',
+			'Guest checkout como default. Opção de criar conta pós-compra.',
 		],
 		estimated_effort_hours: 10,
 		verification_strategy: 'pixel_accumulation',
@@ -2742,7 +2742,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	trust_deficit_conversion_drag: {
 		remediation_steps: [
-			'Trust deficit generalizado está puxando conversion geral pra baixo — não é fix pontual, é reforço sistêmico.',
+			'Trust deficit generalizado está puxando conversion geral pra baixo. Não é fix pontual, é reforço sistêmico.',
 			'Adicione trust markers em TODAS surfaces comerciais: home, produto, carrinho, checkout, confirmação.',
 			'Social proof concreto (números, nomes, logos) reduz trust deficit mais que badges genéricos.',
 		],
@@ -2755,8 +2755,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	reassurance_seeking_elevated: {
 		remediation_steps: [
-			'Buyers procuram reassurance (FAQ, reviews, contato) antes de decidir — atenda essa necessidade proativamente.',
-			'Coloque FAQ relevante direto nas páginas de produto — não force buyer a navegar pra achar.',
+			'Buyers procuram reassurance (FAQ, reviews, contato) antes de decidir. Atenda essa necessidade proativamente.',
+			'Coloque FAQ relevante direto nas páginas de produto. Não force buyer a navegar pra achar.',
 			'Adicione badges de "quantidade vendida" ou "avaliação média" pra social proof explícito.',
 		],
 		estimated_effort_hours: 8,
@@ -2768,9 +2768,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	sensitive_input_trust_gap: {
 		remediation_steps: [
-			'Trust gap específico em campos sensíveis — perceção de risco supera trust genérico do site.',
+			'Trust gap específico em campos sensíveis. Perceção de risco supera trust genérico do site.',
 			'Adicione microcopy explicando coleta + link pra política de privacidade próximo ao campo.',
-			'Use ícones de cadeado + selo SSL CONTÍGUOS ao campo — trust precisa ser percebido onde o risk é sentido.',
+			'Use ícones de cadeado + selo SSL CONTÍGUOS ao campo. Trust precisa ser percebido onde o risk é sentido.',
 		],
 		estimated_effort_hours: 5,
 		verification_strategy: 'pixel_accumulation',
@@ -2781,9 +2781,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	path_length_exceeds_efficient: {
 		remediation_steps: [
-			'Path médio do buyer até conversão é longo demais — cada página extra dilui intent.',
+			'Path médio do buyer até conversão é longo demais. Cada página extra dilui intent.',
 			'Identifique atalhos: produto destacado na home, CTA direto sem categoria intermediária, quick-add na categoria.',
-			'Minimize pageviews necessários pra compra — ideal <5 pageviews do ponto de entrada ao pagamento.',
+			'Minimize pageviews necessários pra compra. Ideal <5 pageviews do ponto de entrada ao pagamento.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'pixel_accumulation',
@@ -2794,7 +2794,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	intent_absorber_detected: {
 		remediation_steps: [
-			'Alguma surface está absorvendo intent sem converter — blog post, FAQ genérico, categoria rica.',
+			'Alguma surface está absorvendo intent sem converter. Blog post, FAQ genérico, categoria rica.',
 			'Identifique as intent absorbers via analytics e adicione CTAs de conversão relevantes naquelas pages.',
 			'Ou: reduza exposure dessas pages em navegação principal se não são conversível.',
 		],
@@ -2807,7 +2807,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	intent_decay_time_excessive: {
 		remediation_steps: [
-			'Intent decay muito rápido — buyer esfria se sessão passa de X minutos sem conversão.',
+			'Intent decay muito rápido. Buyer esfria se sessão passa de X minutos sem conversão.',
 			'Use urgency/scarcity real (estoque baixo, promo com timer) pra acelerar decisão.',
 			'Se buyer retorna em nova sessão, re-engage com email lembrando onde parou + incentivo pequeno.',
 		],
@@ -2824,9 +2824,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	information_disclosure: {
 		remediation_steps: [
-			'Configure error handler genérico em produção — logue detalhes server-side, retorne mensagem amigável ao cliente.',
+			'Configure error handler genérico em produção. Logue detalhes server-side, retorne mensagem amigável ao cliente.',
 			'Remova header Server com versão (Apache/nginx): use ServerTokens Prod ou server_tokens off.',
-			'Audite respostas 4xx/5xx — nenhuma deve conter stack trace, path interno, ou versão de framework.',
+			'Audite respostas 4xx/5xx. Nenhuma deve conter stack trace, path interno, ou versão de framework.',
 			'Configure framework para modo produção (DEBUG=false, RAILS_ENV=production, NODE_ENV=production).',
 		],
 		estimated_effort_hours: 6,
@@ -2841,7 +2841,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Adicione atributo integrity= (SRI hash) em todo <script> externo no checkout e páginas comerciais.',
 			'Gere hash SHA-384 ou SHA-512 do script versionado: openssl dgst -sha384 -binary file | base64.',
 			'Configure CSP require-sri-for pra bloquear scripts sem integrity automaticamente.',
-			'Monitore CDN provider pra alertas de comprometimento — troque hash quando versão muda.',
+			'Monitore CDN provider pra alertas de comprometimento. Troque hash quando versão muda.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -2852,7 +2852,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	auth_surface_insecure: {
 		remediation_steps: [
-			'Corrija campos de senha pra type="password" — nunca use type="text" pra senhas.',
+			'Corrija campos de senha pra type="password". Nunca use type="text" pra senhas.',
 			'Garanta que form action do login/signup use HTTPS (nunca HTTP).',
 			'Adicione autocomplete="current-password" nos inputs de login e "new-password" nos de signup.',
 			'Implemente HSTS pra garantir que mesmo links HTTP sejam redirecionados pra HTTPS antes do submit.',
@@ -2873,7 +2873,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Adicione comparação clara entre tiers: tabela feature-por-feature com checkmarks explícitos.',
 			'Destaque um plano recomendado (badge "Mais Popular" ou "Melhor Valor") pra reduzir decision paralysis.',
 			'Inclua descrição de 1 linha por tier explicando pra quem é (freelancer, startup, enterprise).',
-			'Se pricing model não é determinável, simplifique — menos opções convertem mais.',
+			'Se pricing model não é determinável, simplifique. Menos opções convertem mais.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
@@ -2884,10 +2884,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	page_purpose_mismatch: {
 		remediation_steps: [
-			'Alinhe título e H1 com o propósito real da página — pricing page deve conter "planos/preços".',
+			'Alinhe título e H1 com o propósito real da página. Pricing page deve conter "planos/preços".',
 			'Se conteúdo migrou, reclassifique a página e atualize navegação + sitemap.',
-			'Revise meta description pra refletir conteúdo atual — desalinhamento prejudica CTR orgânico.',
-			'Audite funnel analytics — se buyers chegam esperando X e encontram Y, bounce rate sobe.',
+			'Revise meta description pra refletir conteúdo atual. Desalinhamento prejudica CTR orgânico.',
+			'Audite funnel analytics. Se buyers chegam esperando X e encontram Y, bounce rate sobe.',
 		],
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
@@ -2900,8 +2900,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Audite JSON-LD vs conteúdo visível: preço no schema deve ser idêntico ao preço na página.',
 			'Use Google Rich Results Test pra validar que schema data reflete realidade.',
-			'Automatize geração de JSON-LD a partir do CMS/database — evite valores hardcoded que ficam stale.',
-			'Monitore mudanças de preço/nome — atualize schema junto quando produto muda.',
+			'Automatize geração de JSON-LD a partir do CMS/database. Evite valores hardcoded que ficam stale.',
+			'Monitore mudanças de preço/nome. Atualize schema junto quando produto muda.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
@@ -2916,11 +2916,11 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	payment_handoff_dropoff: {
 		remediation_steps: [
-			'Monitore a taxa de retorno pós-handoff de pagamento — identifique em qual gateway a queda é maior.',
+			'Monitore a taxa de retorno pós-handoff de pagamento. Identifique em qual gateway a queda é maior.',
 			'Substitua redirect externo por checkout embedded (Stripe Elements, PayPal Smart Buttons) quando possível.',
 			'Se o redirect for inevitável, adicione logotipo da loja + selo de segurança na página do gateway.',
 			'Implemente callback/webhook para detectar sessões que nunca retornam e acione recuperação por email.',
-			'Teste o fluxo em mobile e desktop — gateways com pop-up podem bloquear no Safari/iOS.',
+			'Teste o fluxo em mobile e desktop. Gateways com pop-up podem bloquear no Safari/iOS.',
 		],
 		estimated_effort_hours: 16,
 		verification_strategy: 'browser_runtime',
@@ -2933,7 +2933,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Mapeie a primeira ação de valor (first meaningful action) e meça quantos trial users a completam.',
 			'Reduza o onboarding pra no máximo 3 steps antes da primeira vitória.',
-			'Elimine campos opcionais no signup — peça apenas email e senha, complete perfil depois.',
+			'Elimine campos opcionais no signup. Peça apenas email e senha, complete perfil depois.',
 			'Adicione empty states com CTAs claros que guiem pra primeira ação de valor.',
 			'Implemente progress indicator mostrando quanto falta pra ativar o produto.',
 		],
@@ -2964,7 +2964,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Configure retry automático com backoff exponencial pra scripts de pagamento e analytics.',
 			'Implemente fallback visual quando trust badges falham (ex: texto estático ao invés de widget dinâmico).',
 			'Monitore uptime dos provedores críticos com alerta sub-5-min e failover automático.',
-			'Reduza dependências third-party no checkout — inline o que puder.',
+			'Reduza dependências third-party no checkout. Inline o que puder.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'browser_runtime',
@@ -2975,10 +2975,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mobile_trust_gap: {
 		remediation_steps: [
-			'Audite mobile vs desktop lado a lado — liste todos os trust signals visíveis apenas no desktop.',
+			'Audite mobile vs desktop lado a lado. Liste todos os trust signals visíveis apenas no desktop.',
 			'Garanta que selos de segurança, avaliações, e garantias estejam visíveis above-the-fold no mobile.',
-			'Evite trust badges em carousels ou abas — no mobile eles precisam estar inline e visíveis sem scroll.',
-			'Teste carregamento de widgets de review no 3G throttled — substitua por estático se falharem.',
+			'Evite trust badges em carousels ou abas. No mobile eles precisam estar inline e visíveis sem scroll.',
+			'Teste carregamento de widgets de review no 3G throttled. Substitua por estático se falharem.',
 			'Adicione microdata de segurança visível no header mobile (SSL lock icon + texto "Compra Segura").',
 		],
 		estimated_effort_hours: 8,
@@ -2990,10 +2990,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	behavioral_micro_pattern_cascade: {
 		remediation_steps: [
-			'Não trate cada sintoma isolado — o padrão composto indica que o fluxo de decisão inteiro precisa reestruturação.',
+			'Não trate cada sintoma isolado. O padrão composto indica que o fluxo de decisão inteiro precisa reestruturação.',
 			'Simplifique a página de decisão: reduza opções, elimine dead clicks, e centralize informação de preço + valor.',
 			'Adicione reassurance progressiva ao longo do funil ao invés de concentrar no checkout.',
-			'Implemente form validation inline com mensagens claras — elimine retries por erro de UX.',
+			'Implemente form validation inline com mensagens claras. Elimine retries por erro de UX.',
 			'Monitore o cascade score após cada mudança pra validar que o padrão está se dissolvendo.',
 		],
 		estimated_effort_hours: 20,
@@ -3030,7 +3030,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 8,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos reabrir as páginas de produto e contar o número de imagens por produto — mínimo 4 para passar.',
+			'Vamos reabrir as páginas de produto e contar o número de imagens por produto. Mínimo 4 para passar.',
 		verification_eta_seconds: 25,
 	},
 
@@ -3149,7 +3149,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	menu_requires_signup: {
 		remediation_steps: [
-			'Remova o gate de login/cadastro para visualização do cardápio — permita acesso público completo.',
+			'Remova o gate de login/cadastro para visualização do cardápio. Permita acesso público completo.',
 			'Mova o requisito de cadastro para o momento do pedido, não da navegação.',
 			'Garanta que o cardápio completo seja indexável por buscadores (HTML, não apenas PDF).',
 		],
@@ -3404,7 +3404,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos reabrir a página de contato e contar o número de campos obrigatórios — máximo 5 para passar.',
+			'Vamos reabrir a página de contato e contar o número de campos obrigatórios. Máximo 5 para passar.',
 		verification_eta_seconds: 20,
 	},
 
@@ -3429,7 +3429,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Reescreva a meta description de cada página pra refletir exatamente o que o visitante encontra no H1 e primeiro parágrafo.',
 			'Garanta que o benefício principal mencionado na meta description aparece acima da dobra na página.',
-			'Revise as meta descriptions das 10 páginas com maior tráfego orgânico — comece pelas comerciais.',
+			'Revise as meta descriptions das 10 páginas com maior tráfego orgânico. Comece pelas comerciais.',
 			'Configure alerta no Search Console pra monitorar taxa de rejeição por página e identificar novas divergências.',
 		],
 		estimated_effort_hours: 4,
@@ -3441,9 +3441,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	pricing_terms_contradictory: {
 		remediation_steps: [
-			'Audite todas as páginas que mencionam preço — produto, pricing, landing pages, FAQ — e unifique os valores.',
+			'Audite todas as páginas que mencionam preço. Produto, pricing, landing pages, FAQ. E unifique os valores.',
 			'Centralize a tabela de preços em um componente reutilizável pra evitar divergências futuras.',
-			'Remova preços hardcoded de textos livres — referência sempre deve vir de uma fonte única.',
+			'Remova preços hardcoded de textos livres. Referência sempre deve vir de uma fonte única.',
 			'Configure teste automatizado que compara preços exibidos entre as páginas comerciais.',
 		],
 		estimated_effort_hours: 6,
@@ -3458,7 +3458,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Remova toda linguagem de urgência que não tem data de expiração real ("últimas vagas" permanente, "oferta limitada" que nunca acaba).',
 			'Se a oferta for genuinamente limitada, vincule a um countdown real com data de término.',
 			'Substitua urgência artificial por prova social real ("127 pessoas compraram esta semana").',
-			'Se usar escassez, conecte ao estoque real — "3 unidades restantes" com backend de inventário.',
+			'Se usar escassez, conecte ao estoque real. "3 unidades restantes" com backend de inventário.',
 		],
 		estimated_effort_hours: 3,
 		verification_strategy: 'http_static',
@@ -3498,7 +3498,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	faq_answers_wrong_questions: {
 		remediation_steps: [
 			'Adicione ao FAQ as 5 objeções de compra mais comuns: preço, reembolso, garantia, prazo, e "funciona pra mim?".',
-			'Coloque as perguntas sobre compra no topo do FAQ — antes das perguntas técnicas.',
+			'Coloque as perguntas sobre compra no topo do FAQ. Antes das perguntas técnicas.',
 			'Cada resposta deve eliminar a objeção e terminar com link pra CTA ("Pronto pra começar? Comece aqui").',
 			'Revise o FAQ mensalmente com os tickets de suporte mais frequentes.',
 		],
@@ -3512,7 +3512,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	testimonials_feel_fabricated: {
 		remediation_steps: [
 			'Substitua depoimentos genéricos por depoimentos com resultado específico ("Aumentei 32% em 60 dias").',
-			'Varie o comprimento e formato dos depoimentos — alguns curtos, alguns longos, alguns em vídeo.',
+			'Varie o comprimento e formato dos depoimentos. Alguns curtos, alguns longos, alguns em vídeo.',
 			'Adicione foto real, nome completo e empresa/cargo ao lado de cada depoimento.',
 			'Inclua pelo menos um depoimento com número concreto de resultado por seção de social proof.',
 			'Se possível, vincule ao perfil LinkedIn ou review verificado (Google, G2, Trustpilot).',
@@ -3558,7 +3558,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Adicione atributo autocomplete correto em cada campo (name, email, tel, address, cc-number).',
 			'Use input type="email" para email, type="tel" para telefone e inputmode="numeric" para números.',
-			'Reduza campos ao mínimo necessário — elimine campos opcionais ou mova para pós-compra.',
+			'Reduza campos ao mínimo necessário. Elimine campos opcionais ou mova para pós-compra.',
 			'Aumente o tamanho dos campos para tap target mínimo de 44px no mobile.',
 		],
 		estimated_effort_hours: 8,
@@ -3569,9 +3569,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	pricing_page_complexity_paralysis: {
 		remediation_steps: [
-			'Reduza para no máximo 3 planos visíveis — oculte o 4o atrás de "ver todos os planos".',
+			'Reduza para no máximo 3 planos visíveis. Oculte o 4o atrás de "ver todos os planos".',
 			'Destaque um plano como "Mais Popular" ou "Recomendado" com badge visual e borda diferenciada.',
-			'Simplifique a tabela de funcionalidades — mostre apenas as 5-7 diferenças mais relevantes.',
+			'Simplifique a tabela de funcionalidades. Mostre apenas as 5-7 diferenças mais relevantes.',
 			'Adicione um CTA claro em cada plano que indique o próximo passo imediato.',
 		],
 		estimated_effort_hours: 6,
@@ -3582,7 +3582,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	support_promise_impossible_to_fulfill: {
 		remediation_steps: [
-			'Remova promessas de SLA que não pode cumprir — substitua por expectativas realistas ("Respondemos em até 24h úteis").',
+			'Remova promessas de SLA que não pode cumprir. Substitua por expectativas realistas ("Respondemos em até 24h úteis").',
 			'Instale um chat widget funcional se promete "chat ao vivo" ou "tempo real".',
 			'Configure autoresponder no formulário de contato confirmando recebimento e informando prazo real.',
 			'Se promete 24/7, garanta cobertura real ou substitua por horário comercial honesto.',
@@ -3609,8 +3609,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	multilingual_conversion_leak: {
 		remediation_steps: [
 			'Garanta que o atributo lang do HTML seja consistente em todas as páginas do mesmo funil.',
-			'Implemente detecção automática de idioma por sessão — uma vez escolhido, mantenha em todo o fluxo.',
-			'Traduza completamente as páginas de checkout e produto — não misture idiomas na mesma página.',
+			'Implemente detecção automática de idioma por sessão. Uma vez escolhido, mantenha em todo o fluxo.',
+			'Traduza completamente as páginas de checkout e produto. Não misture idiomas na mesma página.',
 			'Adicione seletor de idioma visível no header com flag para que o usuário controle a escolha.',
 		],
 		estimated_effort_hours: 12,
@@ -3628,7 +3628,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Restrinja o acesso ao subdomínio staging/dev com autenticação básica (HTTP Basic Auth) ou VPN.',
 			'Configure regras de firewall ou Cloudflare Access para permitir apenas IPs internos.',
-			'Remova dados reais de clientes do ambiente de staging — use dados simulados.',
+			'Remova dados reais de clientes do ambiente de staging. Use dados simulados.',
 			'Adicione o subdomínio ao robots.txt com Disallow: / para evitar indexação.',
 			'Configure monitoramento para alertar se o ambiente ficar público novamente.',
 		],
@@ -3701,7 +3701,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Consolide o checkout no mesmo domínio usando checkout embedded do gateway (Stripe Elements, MercadoPago Bricks).',
 			'Se a mudança de domínio for inevitável, adicione logotipo da loja e selo de segurança na página de pagamento.',
 			'Implemente um loading state entre domínios explicando "Você está sendo direcionado para pagamento seguro".',
-			'Garanta HTTPS e certificado válido no subdomínio de pagamento — visível ao comprador.',
+			'Garanta HTTPS e certificado válido no subdomínio de pagamento. Visível ao comprador.',
 			'Adicione breadcrumb visual mostrando progresso (Carrinho → Dados → Pagamento → Confirmação).',
 		],
 		estimated_effort_hours: 16,
@@ -3718,7 +3718,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	form_submit_unreachable_mobile: {
 		remediation_steps: [
 			'Adicione position:sticky ou position:fixed ao botão de submit em formulários com mais de 5 campos.',
-			'Reduza o número de campos obrigatórios — mova campos opcionais para depois do primeiro envio.',
+			'Reduza o número de campos obrigatórios. Mova campos opcionais para depois do primeiro envio.',
 			'Teste o formulário em viewport de 375px de largura e verifique se o botão fica sempre visível.',
 			'Considere dividir o formulário em etapas (wizard) com botão de próximo visível em cada passo.',
 		],
@@ -3731,7 +3731,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	trust_badges_invisible_at_checkout: {
 		remediation_steps: [
-			'Mova selos de confiança (SSL, gateway, garantia) para próximo ao botão de pagamento — não no rodapé.',
+			'Mova selos de confiança (SSL, gateway, garantia) para próximo ao botão de pagamento. Não no rodapé.',
 			'Adicione selo de "Compra Segura" ou "Pagamento Protegido" imediatamente acima ou ao lado do formulário de cartão.',
 			'Garanta que os selos estejam visíveis sem scroll na resolução mais comum do checkout (mobile e desktop).',
 			'Teste com heatmap para confirmar que a área de confiança recebe atenção visual antes do clique de compra.',
@@ -3759,10 +3759,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	social_proof_loads_too_late: {
 		remediation_steps: [
-			'Remova lazy-load dos primeiros 2-3 depoimentos — carregue-os inline no HTML estático.',
+			'Remova lazy-load dos primeiros 2-3 depoimentos. Carregue-os inline no HTML estático.',
 			'Mova pelo menos um bloco de social proof para acima do fold na página principal e de produto.',
 			'Se usar widget externo (Trustpilot, Google Reviews), configure server-side rendering ou cache estático.',
-			'Adicione contagem de avaliações (ex: "4.8/5 — 127 avaliações") como texto estático, sem dependência de JS.',
+			'Adicione contagem de avaliações (ex: "4.8/5. 127 avaliações") como texto estático, sem dependência de JS.',
 		],
 		estimated_effort_hours: 4,
 		verification_strategy: 'http_static',
@@ -3773,10 +3773,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	consent_banner_obscures_first_action: {
 		remediation_steps: [
-			'Configure o banner de consentimento para não sobrepor o CTA principal — posicione-o no rodapé ou como barra fina no topo.',
+			'Configure o banner de consentimento para não sobrepor o CTA principal. Posicione-o no rodapé ou como barra fina no topo.',
 			'Reduza a altura do banner de cookies para no máximo 80px em mobile.',
 			'Implemente dismiss automático após interação com qualquer elemento da página (não apenas o botão "Aceitar").',
-			'Teste A/B o posicionamento do banner — bottom-bar vs overlay — e meça impacto na taxa de clique do CTA.',
+			'Teste A/B o posicionamento do banner. Bottom-bar vs overlay. E meça impacto na taxa de clique do CTA.',
 		],
 		estimated_effort_hours: 3,
 		verification_strategy: 'browser_runtime',
@@ -3790,12 +3790,12 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Renderize pelo menos o preço base de cada plano no HTML estático da página de pricing (server-side).',
 			'Se o preço depende de configuração, mostre um "a partir de R$ X/mês" visível sem JavaScript.',
 			'Adicione schema markup de preço (PriceSpecification) para que buscadores e AI também vejam o preço.',
-			'Teste a página com JavaScript desabilitado — se nenhum preço aparece, o problema está confirmado.',
+			'Teste a página com JavaScript desabilitado. Se nenhum preço aparece, o problema está confirmado.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
 		verification_notes:
-			'Vamos fazer request HTTP GET na página de pricing e buscar padrões de preço (R$, $, €, /mês) no HTML retornado — sem executar JavaScript.',
+			'Vamos fazer request HTTP GET na página de pricing e buscar padrões de preço (R$, $, €, /mês) no HTML retornado. Sem executar JavaScript.',
 		verification_eta_seconds: 15,
 	},
 
@@ -3820,7 +3820,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Reduza o número de mensagens acima da dobra pra no máximo 1 proposta de valor + 1 CTA.',
 			'Remova sliders, carrosséis e banners competidores da primeira tela.',
-			'Priorize hierarquia visual: headline > subtítulo > CTA — nada mais deve competir por atenção.',
+			'Priorize hierarquia visual: headline > subtítulo > CTA. Nada mais deve competir por atenção.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'http_static',
@@ -3831,7 +3831,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	primary_cta_delayed: {
 		remediation_steps: [
-			'Mova o CTA principal pra acima da dobra — o visitante deve ver a primeira ação sem rolar.',
+			'Mova o CTA principal pra acima da dobra. O visitante deve ver a primeira ação sem rolar.',
 			'Adicione um CTA fixo (sticky) no header ou bottom bar pra mobile.',
 			'Reduza o conteúdo entre o hero e o primeiro botão de ação pra no máximo 2 blocos.',
 		],
@@ -3887,7 +3887,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	page_depth_before_conversion: {
 		remediation_steps: [
-			'Mapeie o caminho mais comum entre landing e checkout — reduza pra no máximo 3 cliques.',
+			'Mapeie o caminho mais comum entre landing e checkout. Reduza pra no máximo 3 cliques.',
 			'Adicione atalho direto pro checkout/pricing no hero da homepage e páginas de produto.',
 			'Remova etapas intermediárias obrigatórias que não agregam valor na decisão de compra.',
 		],
@@ -3927,7 +3927,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	objection_echo_chamber: {
 		remediation_steps: [
 			'Reescreva o FAQ com as 5-7 principais objeções de compra (preço, prazo, garantia, suporte, segurança).',
-			'Posicione o FAQ perto do CTA principal ou na página de pricing — não em página separada.',
+			'Posicione o FAQ perto do CTA principal ou na página de pricing. Não em página separada.',
 			'Cada resposta deve desarmar a objeção e terminar com reforço de confiança (dado, garantia, depoimento).',
 		],
 		estimated_effort_hours: 4,
@@ -3984,7 +3984,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Mostre os logos dos meios de pagamento aceitos na página de pricing e no footer.',
 			'Adicione ícones de bandeiras de cartão, Pix, boleto (se aplicável) perto do botão de compra.',
-			'Mencione opções de parcelamento antes do checkout — não espere o comprador descobrir sozinho.',
+			'Mencione opções de parcelamento antes do checkout. Não espere o comprador descobrir sozinho.',
 		],
 		estimated_effort_hours: 2,
 		verification_strategy: 'http_static',
@@ -4009,7 +4009,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	urgency_mechanics_absent: {
 		remediation_steps: [
 			'Implemente pelo menos 1 mecanismo legítimo de urgência (vagas limitadas, preço por tempo, bônus temporário).',
-			'Evite urgência falsa (contadores permanentes) — use mecanismos verificáveis e limitados no tempo.',
+			'Evite urgência falsa (contadores permanentes). Use mecanismos verificáveis e limitados no tempo.',
 			'Comunique escassez real quando existir: "restam X vagas" ou "oferta válida até DD/MM".',
 		],
 		estimated_effort_hours: 4,
@@ -4026,7 +4026,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	first_value_path_unclear: {
 		remediation_steps: [
 			'Crie um onboarding com 3 passos claros que leve o novo usuário ao primeiro resultado em menos de 5 minutos.',
-			'Envie email pós-compra com guia visual do "primeiro resultado" — não apenas confirmação de pagamento.',
+			'Envie email pós-compra com guia visual do "primeiro resultado". Não apenas confirmação de pagamento.',
 			'Adicione checklist de progresso no dashboard mostrando o caminho até o primeiro valor.',
 		],
 		estimated_effort_hours: 12,
@@ -4124,7 +4124,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	mobile_journey_friction_compound: {
 		remediation_steps: [
-			'Audite o funil completo no celular: homepage → produto → pricing → checkout — anote cada ponto de fricção.',
+			'Audite o funil completo no celular: homepage → produto → pricing → checkout. Anote cada ponto de fricção.',
 			'Corrija botões pequenos demais, formulários que não cabem na tela e elementos que travam o scroll.',
 			'Priorize mobile-first: se funciona bem no celular, funciona em tudo.',
 		],
@@ -4172,7 +4172,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Audite quais crawlers de IA estão bloqueados no /robots.txt e libere GPTBot, ClaudeBot, PerplexityBot, Google-Extended.',
 			'Publique /llms.txt na raiz com um resumo de uma página do que o produto faz e links pra pricing + docs.',
-			'Adicione JSON-LD (Organization na home + Product/Offer no /pricing + FAQPage onde houver Q&A) — IAs preferem schema-rico.',
+			'Adicione JSON-LD (Organization na home + Product/Offer no /pricing + FAQPage onde houver Q&A). IAs preferem schema-rico.',
 			'Reivindique perfis em diretórios da sua categoria (G2/Capterra pra SaaS, listicles independentes pra ecommerce).',
 			'Construa páginas "<sua marca> vs <concorrente top>" no seu próprio domínio antes que concorrentes ownem essa narrativa.',
 		],
@@ -4185,7 +4185,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	discoverability_gaps_significant: {
 		remediation_steps: [
 			'Comece pelos quick-wins: /llms.txt + Product schema no /pricing (30 minutos cada).',
-			'Reivindique listings em terceiros (G2 / Capterra / Product Hunt) — IAs citam mais marcas que aparecem em fontes terceiras.',
+			'Reivindique listings em terceiros (G2 / Capterra / Product Hunt). IAs citam mais marcas que aparecem em fontes terceiras.',
 			'Resolva o ponto mais visível: se a marca não aparece na busca branded, fix título + canonical + schema da home.',
 			'Publique uma página "best <categoria>" no seu domínio mirando queries de comparação que você não cobre hoje.',
 		],
@@ -4197,7 +4197,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	discoverability_improvable: {
 		remediation_steps: [
-			'Core de discoverability já está OK — refine pra busca por IA pra compor visibilidade.',
+			'Core de discoverability já está OK. Refine pra busca por IA pra compor visibilidade.',
 			'Considere /llms.txt + /pricing.md se ainda não tiver, pra destravar AI agent parsing.',
 			'Audite schema markup: adicione FAQPage onde houver Q&A relevante, HowTo nos docs.',
 			'Monitore o AI Visibility Score trimestralmente e investigue qualquer queda.',
@@ -4210,7 +4210,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	discoverability_adequate: {
 		remediation_steps: [
-			'Discoverability saudável — continue alimentando conteúdo fresco + estrutura.',
+			'Discoverability saudável. Continue alimentando conteúdo fresco + estrutura.',
 			'Agende recon externo trimestral pra pegar regressões cedo (perda de citação, schema removido).',
 			'Mantenha presença em terceiros: responda reviews novas, atualize listings, monitore mentions.',
 		],
@@ -4227,7 +4227,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 
 	brand_integrity_critical: {
 		remediation_steps: [
-			'Resolva reclamações públicas pendentes em Trustpilot / Reclame Aqui — comprador BR/EU verifica antes de comprar.',
+			'Resolva reclamações públicas pendentes em Trustpilot / Reclame Aqui. Comprador BR/EU verifica antes de comprar.',
 			'Configure alerta de review nova e mire taxa de resposta sub-48h acima de 70%.',
 			'Conteste páginas de concorrente rodando ads pagos no seu trademark via Google Ads Trademark Complaints.',
 			'Abra UDRP ou compre domínios lookalike capturando tráfego branded.',
@@ -4242,7 +4242,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	brand_integrity_elevated: {
 		remediation_steps: [
 			'Responda reviews negativas pendentes em Trustpilot/RA com acknowledgment empático + próximo passo concreto.',
-			'Negocie deals diretos com top afiliados ganhando comissão no seu tráfego branded — margem melhor que rede.',
+			'Negocie deals diretos com top afiliados ganhando comissão no seu tráfego branded. Margem melhor que rede.',
 			'Publique press kit + about page que owna brand authority nos SERPs.',
 			'Monitore lookalike domains semanalmente; faça takedown nos confirmados.',
 		],
@@ -4266,7 +4266,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	brand_integrity_strong: {
 		remediation_steps: [
-			'Integridade da marca está forte — continue monitorando plataformas de review e lookalike domains.',
+			'Integridade da marca está forte. Continue monitorando plataformas de review e lookalike domains.',
 			'Mantenha cadência de resposta sub-48h pra qualquer review nova.',
 			'Agende recon externo trimestral pra pegar regressões.',
 		],
@@ -4353,7 +4353,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Liste todas reviews 1-2★ sem resposta no painel do Trustpilot.',
 			'Responda cada uma em até 48h com acknowledgment + próximo passo concreto.',
-			'Pra reviews antigas (>3 meses), responda mesmo assim — credibilidade ainda volta.',
+			'Pra reviews antigas (>3 meses), responda mesmo assim. Credibilidade ainda volta.',
 			'Configure alerta de notificação pra qualquer review nova.',
 			'Documente padrões nas reclamações e ajuste produto/UX pra reduzir reincidência.',
 		],
@@ -4366,10 +4366,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	reclame_aqui_reputation_critical: {
 		remediation_steps: [
 			'Acesse o painel da empresa no Reclame Aqui e liste reclamações pendentes.',
-			'Resolva cada reclamação publicamente — marque como Resolvido após acordo com cliente.',
+			'Resolva cada reclamação publicamente. Marque como Resolvido após acordo com cliente.',
 			'Configure tempo de resposta sub-5 dias úteis pra novas reclamações.',
 			'Trabalhe pra subir o "Índice de Solução" acima de 7/10 em 90 dias.',
-			'Comprador BR confere RA antes de pagar — esse é um dos sinais de confiança mais críticos pro mercado BR.',
+			'Comprador BR confere RA antes de pagar. Esse é um dos sinais de confiança mais críticos pro mercado BR.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'external_scan',
@@ -4410,7 +4410,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Adicione descrição completa, 5+ screenshots, integrações listadas, e categorias relevantes.',
 			'Convide 10-15 clientes felizes a deixar review honesto nos primeiros 30 dias.',
 			'Configure alerta de review nova e responda dentro de 48h.',
-			'Meta: chegar a 50+ reviews em 90 dias — IAs preferem marcas com volume de social proof verificado.',
+			'Meta: chegar a 50+ reviews em 90 dias. IAs preferem marcas com volume de social proof verificado.',
 		],
 		estimated_effort_hours: 6,
 		verification_strategy: 'external_scan',
@@ -4423,7 +4423,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Reivindique perfis em Capterra + GetApp + SoftwareAdvice (todos da Gartner, um único onboarding).',
 			'Adicione descrição, features, integrations, e screenshots.',
 			'Configure cadência de coleta de reviews mensal com clientes ativos.',
-			'Submeta a categorias relevantes — Gartner curated, leva 1-2 semanas pra aprovar.',
+			'Submeta a categorias relevantes. Gartner curated, leva 1-2 semanas pra aprovar.',
 		],
 		estimated_effort_hours: 4,
 		verification_strategy: 'external_scan',
@@ -4434,9 +4434,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	wikipedia_article_thin_or_outdated: {
 		remediation_steps: [
 			'Liste fontes independentes existentes sobre a marca: imprensa, blogs editoriais, papers, awards.',
-			'Recrute editores Wikipedia independentes (NÃO escreva você mesmo — viola NPOV).',
+			'Recrute editores Wikipedia independentes (NÃO escreva você mesmo. Viola NPOV).',
 			'Forneça material fonte: press kit + factsheet com datas, equipe, milestones, customer logos.',
-			'Edição incrementa autoridade da marca em respostas de IA — Wikipedia é ~7.8% das citações ChatGPT.',
+			'Edição incrementa autoridade da marca em respostas de IA. Wikipedia é ~7.8% das citações ChatGPT.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'external_scan',
@@ -4447,10 +4447,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	// ── Wave 23.1 — email_deliverability ──
 	dmarc_record_absent: {
 		remediation_steps: [
-			'Publique um registro TXT em `_dmarc.<seu-dominio>` começando com `v=DMARC1; p=none; rua=mailto:dmarc@<seu-dominio>` (modo monitoramento — não bloqueia nada ainda, mas coleta relatórios).',
-			'Configure uma caixa que receba os relatórios `rua=` (Postmark DMARC, EasyDMARC, dmarcian — todos têm tier free).',
+			'Publique um registro TXT em `_dmarc.<seu-dominio>` começando com `v=DMARC1; p=none; rua=mailto:dmarc@<seu-dominio>` (modo monitoramento. Não bloqueia nada ainda, mas coleta relatórios).',
+			'Configure uma caixa que receba os relatórios `rua=` (Postmark DMARC, EasyDMARC, dmarcian. Todos têm tier free).',
 			'Após 2-4 semanas de relatórios, identifique todos os ESPs legítimos e suba pra `p=quarantine; pct=10`, crescendo `pct` semana a semana.',
-			'Quando confiante, mude pra `p=reject` — receivers passam a bloquear emails se passando pelo seu domínio.',
+			'Quando confiante, mude pra `p=reject`. Receivers passam a bloquear emails se passando pelo seu domínio.',
 		],
 		estimated_effort_hours: 3,
 		verification_strategy: 'dns_recheck',
@@ -4460,7 +4460,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	dmarc_policy_weak: {
 		remediation_steps: [
-			'Confirme que você já recebe relatórios `rua=` há pelo menos 2 semanas — sem dados é arriscado subir política.',
+			'Confirme que você já recebe relatórios `rua=` há pelo menos 2 semanas. Sem dados é arriscado subir política.',
 			'Audite os relatórios pra identificar fontes legítimas (Workspace, M365, Mailgun, SendGrid, etc.) que ainda não passam por SPF+DKIM alinhados.',
 			'Configure SPF e DKIM em cada ESP legítimo até 100% dos volumes legítimos alinharem.',
 			'Suba pra `p=quarantine; pct=10` e cresça `pct` semanal (10→25→50→100) monitorando relatórios.',
@@ -4476,8 +4476,8 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		remediation_steps: [
 			'Identifique todos os ESPs que enviam email pelo seu domínio (Workspace, M365, Mailgun, SendGrid, transactional do app).',
 			'Construa o registro `v=spf1` incluindo cada provedor: ex. `v=spf1 include:_spf.google.com include:spf.protection.outlook.com -all`.',
-			'Publique como TXT no apex (sem subdomínio). Mantenha apenas UM registro SPF — múltiplos invalidam.',
-			'Termine com `-all` (hardfail) ou `~all` (softfail) — nunca `+all`.',
+			'Publique como TXT no apex (sem subdomínio). Mantenha apenas UM registro SPF. Múltiplos invalidam.',
+			'Termine com `-all` (hardfail) ou `~all` (softfail). Nunca `+all`.',
 		],
 		estimated_effort_hours: 2,
 		verification_strategy: 'dns_recheck',
@@ -4487,10 +4487,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	spf_includes_too_broad: {
 		remediation_steps: [
-			'Se a terminação está em `+all`: troque imediatamente — `+all` é open relay efetivo. Use `-all` ou `~all` após validar ESPs.',
+			'Se a terminação está em `+all`: troque imediatamente. `+all` é open relay efetivo. Use `-all` ou `~all` após validar ESPs.',
 			'Se include_count > 10: liste cada `include:` e identifique includes redundantes (ex. dois CRMs cobrindo o mesmo caso de uso).',
 			'Consolide envios: ESPs marginais podem mover pra um subdomínio dedicado (`mail.<dominio>`) com SPF próprio.',
-			'Use SPF flattening (EasyDMARC, spf-flatten, dmarcian) pra trazer includes pra dentro do registro — recalcula a cada mês quando ESPs mudam IPs.',
+			'Use SPF flattening (EasyDMARC, spf-flatten, dmarcian) pra trazer includes pra dentro do registro. Recalcula a cada mês quando ESPs mudam IPs.',
 		],
 		estimated_effort_hours: 3,
 		verification_strategy: 'dns_recheck',
@@ -4504,7 +4504,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Para cada ESP, ative DKIM no console (Workspace → Apps → Workspace → Gmail → Authenticate email; SendGrid → Settings → Sender Authentication; etc).',
 			'Cada ESP gera 1-2 registros TXT com formato `<selector>._domainkey.<seu-dominio>` → `v=DKIM1; k=rsa; p=<chave-publica>`.',
 			'Publique todos os registros no DNS e aguarde a propagação (até 24h).',
-			'Volte ao console do ESP e clique em "Verify DKIM" — eles confirmam a chave e habilitam a assinatura.',
+			'Volte ao console do ESP e clique em "Verify DKIM". Eles confirmam a chave e habilitam a assinatura.',
 		],
 		estimated_effort_hours: 2,
 		verification_strategy: 'dns_recheck',
@@ -4517,7 +4517,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 			'Pré-requisito obrigatório: DMARC com `p=quarantine` ou `p=reject` (NÃO funciona com `p=none`).',
 			'Prepare seu logo em SVG no formato BIMI (SVG Tiny 1.2, square viewBox, ≤32KB). Use o validador da bimigroup.org pra confirmar.',
 			'Publique o SVG em uma URL HTTPS pública (ex. `https://<seu-dominio>/bimi-logo.svg`).',
-			'Opcional (necessário pra Gmail mostrar logo): adquira um VMC (Verified Mark Certificate) via Entrust ou DigiCert — ~$1k/ano, requer marca registrada.',
+			'Opcional (necessário pra Gmail mostrar logo): adquira um VMC (Verified Mark Certificate) via Entrust ou DigiCert. ~$1k/ano, requer marca registrada.',
 			'Publique TXT em `default._bimi.<seu-dominio>` com `v=BIMI1; l=<url-do-svg>; a=<url-do-vmc>` (omita `a=` se não tiver VMC).',
 		],
 		estimated_effort_hours: 4,
@@ -4529,9 +4529,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	// ── Wave 24 — competitive_lens ──
 	copy_mirror_detected: {
 		remediation_steps: [
-			'Liste no detalhe do finding as frases compartilhadas com cada competidor — são suas, deles, ou commodity de categoria?',
+			'Liste no detalhe do finding as frases compartilhadas com cada competidor. São suas, deles, ou commodity de categoria?',
 			'Se 1 competidor copia: documente caso de uso de defesa (proof, case study, depoimento específico) que só você pode mostrar.',
-			'Se 2-3 competidores convergem: substitua a hero por um pilar único — um benefício, um caso, ou uma promessa de prazo que nenhum dos outros entrega.',
+			'Se 2-3 competidores convergem: substitua a hero por um pilar único. Um benefício, um caso, ou uma promessa de prazo que nenhum dos outros entrega.',
 			'Se 4+: o vocabulário virou commodity. Reescreva o ângulo principal apoiado em diferencial concreto de produto (não promessa de marketing).',
 			'A/B teste o novo ângulo por 2-4 semanas comparando conversão de homepage / signup.',
 		],
@@ -4543,7 +4543,7 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	trust_posture_lag: {
 		remediation_steps: [
-			'Veja o sub-eixo mais penalizado (security headers, DMARC, SPF, HSTS) no detalhe do finding — atacar primeiro normalmente fecha 60-70% do gap.',
+			'Veja o sub-eixo mais penalizado (security headers, DMARC, SPF, HSTS) no detalhe do finding. Atacar primeiro normalmente fecha 60-70% do gap.',
 			'Security headers: configure HSTS + CSP + X-Frame-Options + X-Content-Type-Options + Referrer-Policy + Permissions-Policy no servidor / CDN. Cada um é 1-2 linhas de config.',
 			'DMARC ausente / fraco: siga o caminho `p=none` + `rua` → `p=quarantine; pct` crescente → `p=reject` (ver finding email_deliverability se existente).',
 			'SPF ausente: publique `v=spf1 include:<seu-ESP> -all` no apex.',
@@ -4559,9 +4559,9 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	brand_serp_encroachment: {
 		remediation_steps: [
 			'Audite quem está no top-5 e classifique cada concorrente: (a) competidor direto, (b) afiliado seu, (c) marketplace listando você, (d) site editorial com review/comparativo.',
-			'Pra (a): produza páginas próprias que ranqueiem pelas top-related queries da sua marca ("vs", "preço", "alternativas a", "como funciona") — defesa de marca via conteúdo.',
+			'Pra (a): produza páginas próprias que ranqueiem pelas top-related queries da sua marca ("vs", "preço", "alternativas a", "como funciona"). Defesa de marca via conteúdo.',
 			'Pra (b/c): negocie acordo de cláusula de marca registrada (eles param de bidding em SEO/Ads na sua brand, você dá comissão extra ou exclusividade).',
-			'Pra (d): contato proativo com o site editorial pra atualizar dados / corrigir comparativos desatualizados — reviews que aparecem em busca de marca movem agulha.',
+			'Pra (d): contato proativo com o site editorial pra atualizar dados / corrigir comparativos desatualizados. Reviews que aparecem em busca de marca movem agulha.',
 			'Cadastre sua marca no Google Trademark Complaint pra bloquear ads pagos usando seu nome (efeito imediato em Ads, não em SEO).',
 		],
 		estimated_effort_hours: 12,
@@ -4572,10 +4572,10 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	},
 	serp_overlap_detected: {
 		remediation_steps: [
-			'Abra a Lente Competitiva e revise os candidatos "Auto-descobertos" — pinar os que importam (3-5) ativa monitoramento de copy mirror + trust posture comparativo.',
+			'Abra a Lente Competitiva e revise os candidatos "Auto-descobertos". Pinar os que importam (3-5) ativa monitoramento de copy mirror + trust posture comparativo.',
 			'Pros pinados que ranqueiem ACIMA de você em queries de alta intenção: produza landing pages dedicadas pra essas queries específicas, com diferencial concreto na hero.',
-			'Pros pinados que ranqueiem ABAIXO: monitore — se subirem nos próximos ciclos, você vê o drift e age antes da perda de posição se materializar.',
-			'Pra categorias muito saturadas (5+ overlaps): pare de competir em queries genéricas. Mude pro ângulo "qualidade de prospect" — ranqueie em long-tail específico de seu ICP em vez de top-of-funnel.',
+			'Pros pinados que ranqueiem ABAIXO: monitore. Se subirem nos próximos ciclos, você vê o drift e age antes da perda de posição se materializar.',
+			'Pra categorias muito saturadas (5+ overlaps): pare de competir em queries genéricas. Mude pro ângulo "qualidade de prospect". Ranqueie em long-tail específico de seu ICP em vez de top-of-funnel.',
 		],
 		estimated_effort_hours: 8,
 		verification_strategy: 'heuristic_recompute',
@@ -4602,11 +4602,11 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	// ── Wave 26 — competitive_lens surface delta ──
 	surface_gap_detected: {
 		remediation_steps: [
-			'Abra o detalhe do finding e leia as categorias listadas — cada uma vem com (a) quantos peers mostram, (b) onde você está hoje, (c) exemplo do texto que peers usam.',
+			'Abra o detalhe do finding e leia as categorias listadas. Cada uma vem com (a) quantos peers mostram, (b) onde você está hoje, (c) exemplo do texto que peers usam.',
 			'Comece pela primeira categoria da lista (maior peso × maior gap). Pra cada uma, decida: você tem o elemento e só não comunica? Ou genuinamente não tem ainda?',
-			'Se tem mas não comunica: prioriza adicionar à hero (acima da dobra) com texto inspirado nos exemplos dos peers — mas adaptado pro seu posicionamento. Não copie.',
+			'Se tem mas não comunica: prioriza adicionar à hero (acima da dobra) com texto inspirado nos exemplos dos peers. Mas adaptado pro seu posicionamento. Não copie.',
 			'Se não tem ainda: avalie esforço de produto × impacto. Categorias de peso ≥0.8 (frete grátis, transformation_promise, address_visibility, core_features) geralmente justificam priorização imediata.',
-			'Não tente fechar todas as categorias de uma vez — 2-3 por cycle mantém foco e permite medir impacto no próximo audit.',
+			'Não tente fechar todas as categorias de uma vez. 2-3 por cycle mantém foco e permite medir impacto no próximo audit.',
 		],
 		estimated_effort_hours: 12,
 		verification_strategy: 'heuristic_recompute',
@@ -4652,7 +4652,7 @@ export function getDynamicRemediation(key: string): typeof REMEDIATION_CATALOG[s
 	if (key.startsWith('funnel_weak_connection_')) {
 		return {
 			remediation_steps: [
-				'A conexão entre esses estágios existe apenas via menu de navegação — não há CTA no corpo da página.',
+				'A conexão entre esses estágios existe apenas via menu de navegação. Não há CTA no corpo da página.',
 				'Adicione um CTA contextual no conteúdo principal que guie o visitante ao próximo passo.',
 				'Use texto que comunique benefício (ex: "Descubra nossos planos" em vez de apenas "Pricing").',
 				'Considere adicionar prova social ou urgência ao CTA para aumentar conversão.',

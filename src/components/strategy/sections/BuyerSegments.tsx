@@ -240,7 +240,7 @@ export default function BuyerSegments({
 								</span>
 							</div>
 							<div className="mt-0.5 font-mono text-[10px] tabular-nums text-content-faint">
-								faixa {fmtCurrencyUnits(s.impactMin, currency)} — {fmtCurrencyUnits(s.impactMax, currency)}
+								faixa {fmtCurrencyUnits(s.impactMin, currency)} a {fmtCurrencyUnits(s.impactMax, currency)}
 							</div>
 
 							<div className="mt-4 flex-1 space-y-1.5 border-t border-edge/40 pt-3">

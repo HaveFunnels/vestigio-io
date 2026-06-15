@@ -35,7 +35,7 @@ export const katanaDiscoveryPass: EnrichmentPass = {
     // max_pages=100, timeout=120s.
     return {
       run: true,
-      reason: "Full-mode audit — will check katana binary at runtime.",
+      reason: "Full-mode audit. Will check katana binary at runtime.",
     };
   },
 
@@ -81,7 +81,7 @@ export const katanaDiscoveryPass: EnrichmentPass = {
         return {
           pass_name: "katana_discovery",
           status: "completed",
-          reason: `Discovered ${scanResult.urls_discovered} URLs — none commercially relevant beyond static crawl.`,
+          reason: `Discovered ${scanResult.urls_discovered} URLs. None commercially relevant beyond static crawl.`,
           evidence_added: [],
           duration_ms: Date.now() - start,
           attempts: 1,

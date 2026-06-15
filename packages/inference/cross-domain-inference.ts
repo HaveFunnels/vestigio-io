@@ -174,7 +174,7 @@ function inferMetaPromiseContentMismatch(
         scoping, cycleRef, 'true', 'high', 72,
         [],
         [...metaEvidence.slice(0, 2), ...enrichments.slice(0, 1)].map(e => makeRef('evidence', e.id)),
-        'A meta description promete um benefício que a página não entrega no conteúdo principal — visitante chega esperando uma coisa, vê outra, e sai em segundos. Cada clique orgânico desperdiçado é um visitante pré-qualificado que você perdeu.',
+        'A meta description promete um benefício que a página não entrega no conteúdo principal. Visitante chega esperando uma coisa, vê outra, e sai em segundos. Cada clique orgânico desperdiçado é um visitante pré-qualificado que você perdeu.',
       )];
     }
   }
@@ -208,7 +208,7 @@ function inferMetaPromiseContentMismatch(
         scoping, cycleRef, 'true', 'high', 72,
         [],
         [meta, matchingPage].map(e => makeRef('evidence', e.id)),
-        'A meta description promete um benefício que a página não entrega no conteúdo principal — visitante chega esperando uma coisa, vê outra, e sai em segundos. Cada clique orgânico desperdiçado é um visitante pré-qualificado que você perdeu.',
+        'A meta description promete um benefício que a página não entrega no conteúdo principal. Visitante chega esperando uma coisa, vê outra, e sai em segundos. Cada clique orgânico desperdiçado é um visitante pré-qualificado que você perdeu.',
       )];
     }
   }
@@ -245,7 +245,7 @@ function inferPricingTermsContradictory(
         scoping, cycleRef, 'true', 'high', 78,
         [],
         [...pageEvidence.slice(0, 3), ...enrichments.slice(0, 1)].map(e => makeRef('evidence', e.id)),
-        'Páginas diferentes mostram preços conflitantes pro mesmo produto ou plano — o comprador que percebe a inconsistência perde confiança imediata. Preço confuso vira objeção, não venda.',
+        'Páginas diferentes mostram preços conflitantes pro mesmo produto ou plano. O comprador que percebe a inconsistência perde confiança imediata. Preço confuso vira objeção, não venda.',
       )];
     }
   }
@@ -301,7 +301,7 @@ function inferPricingTermsContradictory(
           scoping, cycleRef, 'true', 'high', 78,
           [],
           evidenceRefs,
-          'Páginas diferentes mostram preços conflitantes pro mesmo produto ou plano — o comprador que percebe a inconsistência perde confiança imediata. Preço confuso vira objeção, não venda.',
+          'Páginas diferentes mostram preços conflitantes pro mesmo produto ou plano. O comprador que percebe a inconsistência perde confiança imediata. Preço confuso vira objeção, não venda.',
         )];
       }
     }
@@ -347,7 +347,7 @@ function inferUrgencyClaimUnverifiable(
         scoping, cycleRef, 'true', 'medium', 70,
         [],
         enrichments.slice(0, 2).map(e => makeRef('evidence', e.id)),
-        'A página usa linguagem de urgência ("últimas vagas", "por tempo limitado") que está permanentemente no HTML — não é urgência real, é manipulação. Comprador que percebe perde toda a confiança e não volta.',
+        'A página usa linguagem de urgência ("últimas vagas", "por tempo limitado") que está permanentemente no HTML. Não é urgência real, é manipulação. Comprador que percebe perde toda a confiança e não volta.',
       )];
     }
   }
@@ -368,7 +368,7 @@ function inferUrgencyClaimUnverifiable(
       scoping, cycleRef, 'true', 'medium', 70,
       [],
       pagesWithUrgency.slice(0, 3).map(e => makeRef('evidence', e.id)),
-      'A página usa linguagem de urgência ("últimas vagas", "por tempo limitado") que está permanentemente no HTML — não é urgência real, é manipulação. Comprador que percebe perde toda a confiança e não volta.',
+      'A página usa linguagem de urgência ("últimas vagas", "por tempo limitado") que está permanentemente no HTML. Não é urgência real, é manipulação. Comprador que percebe perde toda a confiança e não volta.',
     )];
   }
 
@@ -383,7 +383,7 @@ function inferUrgencyClaimUnverifiable(
         scoping, cycleRef, 'true', 'medium', 70,
         [],
         pagesWithUrgency.map(e => makeRef('evidence', e.id)),
-        'A página usa linguagem de urgência ("últimas vagas", "por tempo limitado") que está permanentemente no HTML — não é urgência real, é manipulação. Comprador que percebe perde toda a confiança e não volta.',
+        'A página usa linguagem de urgência ("últimas vagas", "por tempo limitado") que está permanentemente no HTML. Não é urgência real, é manipulação. Comprador que percebe perde toda a confiança e não volta.',
       )];
     }
   }
@@ -417,7 +417,7 @@ function inferValuePropDilutedByNavigation(
         scoping, cycleRef, 'true', 'medium', 68,
         [],
         enrichments.slice(0, 2).map(e => makeRef('evidence', e.id)),
-        'A homepage tenta comunicar 4+ propostas de valor ao mesmo tempo sem hierarquia clara — visitante que não entende o que você faz em 5 segundos vai embora. Cada proposta a mais dilui todas as outras.',
+        'A homepage tenta comunicar 4+ propostas de valor ao mesmo tempo sem hierarquia clara. Visitante que não entende o que você faz em 5 segundos vai embora. Cada proposta a mais dilui todas as outras.',
       )];
     }
   }
@@ -465,7 +465,7 @@ function inferValuePropDilutedByNavigation(
         scoping, cycleRef, 'true', 'medium', 68,
         [],
         [hp, ...enrichments.slice(0, 1)].map(e => makeRef('evidence', e.id)),
-        'A homepage tenta comunicar 4+ propostas de valor ao mesmo tempo sem hierarquia clara — visitante que não entende o que você faz em 5 segundos vai embora. Cada proposta a mais dilui todas as outras.',
+        'A homepage tenta comunicar 4+ propostas de valor ao mesmo tempo sem hierarquia clara. Visitante que não entende o que você faz em 5 segundos vai embora. Cada proposta a mais dilui todas as outras.',
       )];
     }
   }
@@ -514,7 +514,7 @@ function inferCheckoutCopyCreatesAnxiety(
         scoping, cycleRef, 'true', 'high', 75,
         [],
         enrichments.slice(0, 2).map(e => makeRef('evidence', e.id)),
-        'O texto do checkout aumenta o medo do comprador ao invés de reduzir — frases como "não garantimos" e "taxa adicional" na hora do pagamento disparam abandono. A copy deveria tranquilizar, não assustar.',
+        'O texto do checkout aumenta o medo do comprador ao invés de reduzir. Frases como "não garantimos" e "taxa adicional" na hora do pagamento disparam abandono. A copy deveria tranquilizar, não assustar.',
       )];
     }
   }
@@ -544,7 +544,7 @@ function inferCheckoutCopyCreatesAnxiety(
         scoping, cycleRef, 'true', 'high', 75,
         [],
         [cp, ...enrichments.slice(0, 1)].map(e => makeRef('evidence', e.id)),
-        'O texto do checkout aumenta o medo do comprador ao invés de reduzir — frases como "não garantimos" e "taxa adicional" na hora do pagamento disparam abandono. A copy deveria tranquilizar, não assustar.',
+        'O texto do checkout aumenta o medo do comprador ao invés de reduzir. Frases como "não garantimos" e "taxa adicional" na hora do pagamento disparam abandono. A copy deveria tranquilizar, não assustar.',
       )];
     }
   }
@@ -583,7 +583,7 @@ function inferFaqAnswersWrongQuestions(
         scoping, cycleRef, 'true', 'medium', 68,
         [],
         enrichments.slice(0, 2).map(e => makeRef('evidence', e.id)),
-        'O FAQ existe mas responde perguntas técnicas ao invés de eliminar objeções de compra — nenhuma pergunta sobre preço, reembolso, garantia ou prazo de entrega. FAQ que não vende é oportunidade desperdiçada.',
+        'O FAQ existe mas responde perguntas técnicas ao invés de eliminar objeções de compra. Nenhuma pergunta sobre preço, reembolso, garantia ou prazo de entrega. FAQ que não vende é oportunidade desperdiçada.',
       )];
     }
   }
@@ -624,7 +624,7 @@ function inferFaqAnswersWrongQuestions(
         scoping, cycleRef, 'true', 'medium', 68,
         [],
         pageEvidence.slice(0, 2).map(e => makeRef('evidence', e.id)),
-        'O FAQ existe mas responde perguntas técnicas ao invés de eliminar objeções de compra — nenhuma pergunta sobre preço, reembolso, garantia ou prazo de entrega. FAQ que não vende é oportunidade desperdiçada.',
+        'O FAQ existe mas responde perguntas técnicas ao invés de eliminar objeções de compra. Nenhuma pergunta sobre preço, reembolso, garantia ou prazo de entrega. FAQ que não vende é oportunidade desperdiçada.',
       )];
     }
     return [];
@@ -645,7 +645,7 @@ function inferFaqAnswersWrongQuestions(
         scoping, cycleRef, 'true', 'medium', 68,
         [],
         [faqPage].map(e => makeRef('evidence', e.id)),
-        'O FAQ existe mas responde perguntas técnicas ao invés de eliminar objeções de compra — nenhuma pergunta sobre preço, reembolso, garantia ou prazo de entrega. FAQ que não vende é oportunidade desperdiçada.',
+        'O FAQ existe mas responde perguntas técnicas ao invés de eliminar objeções de compra. Nenhuma pergunta sobre preço, reembolso, garantia ou prazo de entrega. FAQ que não vende é oportunidade desperdiçada.',
       )];
     }
   }
@@ -680,7 +680,7 @@ function inferTestimonialsFeelFabricated(
         scoping, cycleRef, 'true', 'medium', 65,
         [],
         enrichments.slice(0, 2).map(e => makeRef('evidence', e.id)),
-        'Os depoimentos seguem um padrão suspeito — mesmo tamanho, mesma estrutura, sem resultados concretos. Comprador sofisticado reconhece depoimentos fabricados e perde confiança em toda a marca.',
+        'Os depoimentos seguem um padrão suspeito. Mesmo tamanho, mesma estrutura, sem resultados concretos. Comprador sofisticado reconhece depoimentos fabricados e perde confiança em toda a marca.',
       )];
     }
   }
@@ -722,7 +722,7 @@ function inferTestimonialsFeelFabricated(
             scoping, cycleRef, 'true', 'medium', 65,
             [],
             [ev].map(e => makeRef('evidence', e.id)),
-            'Os depoimentos seguem um padrão suspeito — mesmo tamanho, mesma estrutura, sem resultados concretos. Comprador sofisticado reconhece depoimentos fabricados e perde confiança em toda a marca.',
+            'Os depoimentos seguem um padrão suspeito. Mesmo tamanho, mesma estrutura, sem resultados concretos. Comprador sofisticado reconhece depoimentos fabricados e perde confiança em toda a marca.',
           )];
         }
       }
@@ -747,7 +747,7 @@ function inferTestimonialsFeelFabricated(
             scoping, cycleRef, 'true', 'medium', 65,
             [],
             [ev].map(e => makeRef('evidence', e.id)),
-            'Os depoimentos seguem um padrão suspeito — mesmo tamanho, mesma estrutura, sem resultados concretos. Comprador sofisticado reconhece depoimentos fabricados e perde confiança em toda a marca.',
+            'Os depoimentos seguem um padrão suspeito. Mesmo tamanho, mesma estrutura, sem resultados concretos. Comprador sofisticado reconhece depoimentos fabricados e perde confiança em toda a marca.',
           )];
         }
       }
@@ -973,7 +973,7 @@ function inferSubdomainBrandVisualFragmentation(
     `${alive.length} subdomínios ativos detectados (${subdomains}). ` +
     `Quando múltiplas superfícies da marca operam em subdomínios distintos sem identidade visual unificada, ` +
     `clientes que navegam entre elas perdem continuidade e confiança. Fragmentação de marca erode reconhecimento ` +
-    `e aumenta taxa de abandono entre superfícies. Confiança reduzida — confirmação visual requer Playwright.`,
+    `e aumenta taxa de abandono entre superfícies. Confiança reduzida. Confirmação visual requer Playwright.`,
   )];
 }
 
@@ -1011,7 +1011,7 @@ function inferAppSubdomainDisconnectedFromSite(
     [],
     disconnected.map(p => makeRef('evidence', p.evidence.id)),
     `Subdomínio(s) de aplicação ativo(s) detectado(s) sem link visível no site principal: ${subdomains}. ` +
-    `Clientes existentes não encontram como acessar o produto — recorrem ao suporte ou simplesmente abandonam. ` +
+    `Clientes existentes não encontram como acessar o produto. Recorrem ao suporte ou simplesmente abandonam. ` +
     `Canal de atendimento sobrecarregado e risco de churn por fricção de acesso.`,
   )];
 }
@@ -1050,7 +1050,7 @@ function inferWhatsappChannelDisconnected(
     [],
     disconnected.map(p => makeRef('evidence', p.evidence.id)),
     `Subdomínio(s) de WhatsApp/atendimento ativo(s) detectado(s) sem link nas páginas comerciais: ${subdomains}. ` +
-    `Canal de vendas existe mas ninguém o encontra — investimento desperdiçado em infraestrutura de atendimento. ` +
+    `Canal de vendas existe mas ninguém o encontra. Investimento desperdiçado em infraestrutura de atendimento. ` +
     `Compradores que querem tirar dúvidas antes de comprar não conseguem, reduzindo conversão.`,
   )];
 }
@@ -1085,7 +1085,7 @@ function inferMultiplePaymentSubdomainsFragmentingTrust(
     [],
     alivePayment.map(p => makeRef('evidence', p.evidence.id)),
     `${alivePayment.length} subdomínio(s) de pagamento detectado(s) ativo(s): ${subdomains}. ` +
-    `Comprador é redirecionado para domínio desconhecido no momento do pagamento — gatilho de ansiedade de fraude. ` +
+    `Comprador é redirecionado para domínio desconhecido no momento do pagamento. Gatilho de ansiedade de fraude. ` +
     `Mudança de domínio no momento mais sensível da jornada de compra reduz confiança e suprime conversão.`,
   )];
 }
@@ -1111,7 +1111,7 @@ function inferFormSubmitUnreachableMobile(scoping: Scoping, cycleRef: string, ev
   let confidence = 70; if (hb) confidence += 10;
   const fieldCount = (() => { const p = longForms[0].payload as { fields?: unknown[]; input_count?: number; field_count?: number }; return (p.fields as unknown[] | undefined)?.length ?? p.input_count ?? p.field_count ?? 7; })();
   const severity = fieldCount > 8 ? 'high' : 'medium';
-  return [buildInference('form_submit_unreachable_mobile', InferenceCategory.FrictionPath, scoping, cycleRef, severity, severity, confidence, [], [...longForms.slice(0, 2).map(e => makeRef('evidence', e.id)), ...getBrowserEvidenceRefs(evidence)], `Formulário com ${fieldCount} campos detectado sem botão de submit fixo. Em mobile, botão fica fora do viewport — comprador desiste antes de submeter. ${hb ? 'Confirmado por navegador real.' : 'Heurística: >6 campos sem position:sticky/fixed no submit.'}`)];
+  return [buildInference('form_submit_unreachable_mobile', InferenceCategory.FrictionPath, scoping, cycleRef, severity, severity, confidence, [], [...longForms.slice(0, 2).map(e => makeRef('evidence', e.id)), ...getBrowserEvidenceRefs(evidence)], `Formulário com ${fieldCount} campos detectado sem botão de submit fixo. Em mobile, botão fica fora do viewport. Comprador desiste antes de submeter. ${hb ? 'Confirmado por navegador real.' : 'Heurística: >6 campos sem position:sticky/fixed no submit.'}`)];
 }
 
 function inferTrustBadgesInvisibleAtCheckout(scoping: Scoping, cycleRef: string, evidence: readonly Evidence[], _corpus: string, _enrichments: Evidence[], _hasLLM: boolean): Inference[] {
@@ -1127,7 +1127,7 @@ function inferTrustBadgesInvisibleAtCheckout(scoping: Scoping, cycleRef: string,
     if (tp.some(t => af.toLowerCase().includes(t))) continue;
     const hb = hasBrowserEvidencePresent(evidence);
     let confidence = 68; if (hb) confidence += 10;
-    return [buildInference('trust_badges_invisible_at_checkout', InferenceCategory.TrustRevenue, scoping, cycleRef, 'medium', 'medium', confidence, [], [makeRef('evidence', cp.id), ...getBrowserEvidenceRefs(evidence)], `Selos de confiança existem no checkout mas abaixo do viewport — comprador não vê garantias que fechariam a venda. ${hb ? 'Confirmado: navegador visitou checkout sem interação com área de confiança.' : 'Heurística: trust elements presentes mas ausentes acima do fold.'}`)];
+    return [buildInference('trust_badges_invisible_at_checkout', InferenceCategory.TrustRevenue, scoping, cycleRef, 'medium', 'medium', confidence, [], [makeRef('evidence', cp.id), ...getBrowserEvidenceRefs(evidence)], `Selos de confiança existem no checkout mas abaixo do viewport. Comprador não vê garantias que fechariam a venda. ${hb ? 'Confirmado: navegador visitou checkout sem interação com área de confiança.' : 'Heurística: trust elements presentes mas ausentes acima do fold.'}`)];
   }
   return [];
 }
@@ -1168,7 +1168,7 @@ function inferSocialProofLoadsTooLate(scoping: Scoping, cycleRef: string, eviden
     if (!lp.some(l => raw.includes(l))) continue;
     const hb = hasBrowserEvidencePresent(evidence);
     let confidence = 66; if (hb) confidence += 10;
-    return [buildInference('social_proof_loads_too_late', InferenceCategory.TrustRevenue, scoping, cycleRef, 'medium', 'medium', confidence, [], [makeRef('evidence', page.id), ...getBrowserEvidenceRefs(evidence)], `Prova social usa lazy-load e só aparece depois do carregamento inicial. Comprador forma impressão sem validação social — prova chega tarde demais. ${hb ? 'Confirmado: depoimentos só aparecem 3+ segundos após load.' : 'Heurística: lazy-load em social proof abaixo do fold.'}`)];
+    return [buildInference('social_proof_loads_too_late', InferenceCategory.TrustRevenue, scoping, cycleRef, 'medium', 'medium', confidence, [], [makeRef('evidence', page.id), ...getBrowserEvidenceRefs(evidence)], `Prova social usa lazy-load e só aparece depois do carregamento inicial. Comprador forma impressão sem validação social. Prova chega tarde demais. ${hb ? 'Confirmado: depoimentos só aparecem 3+ segundos após load.' : 'Heurística: lazy-load em social proof abaixo do fold.'}`)];
   }
   return [];
 }
@@ -1186,7 +1186,7 @@ function inferConsentBannerObscuresFirstAction(scoping: Scoping, cycleRef: strin
   const hb = hasBrowserEvidencePresent(evidence);
   let confidence = 72; if (hb) confidence += 10; if (!hasCtaAboveFold) confidence -= 5;
   const severity = hb ? 'high' : 'medium';
-  return [buildInference('consent_banner_obscures_first_action', InferenceCategory.FrictionPath, scoping, cycleRef, severity, severity, confidence, [], [...sev.slice(0, 2).map(e => makeRef('evidence', e.id)), ...pev.slice(0, 1).map(e => makeRef('evidence', e.id)), ...getBrowserEvidenceRefs(evidence)], `Script de consentimento (${provider}) detectado. Banner oculta primeira ação comercial nos primeiros 400px — cada segundo de hesitação é comprador perdido. ${hb ? 'Confirmado: interação bloqueada pelo banner.' : 'Heurística: consent script + CTA nos primeiros 400px.'}`)];
+  return [buildInference('consent_banner_obscures_first_action', InferenceCategory.FrictionPath, scoping, cycleRef, severity, severity, confidence, [], [...sev.slice(0, 2).map(e => makeRef('evidence', e.id)), ...pev.slice(0, 1).map(e => makeRef('evidence', e.id)), ...getBrowserEvidenceRefs(evidence)], `Script de consentimento (${provider}) detectado. Banner oculta primeira ação comercial nos primeiros 400px. Cada segundo de hesitação é comprador perdido. ${hb ? 'Confirmado: interação bloqueada pelo banner.' : 'Heurística: consent script + CTA nos primeiros 400px.'}`)];
 }
 
 function inferPriceHiddenBehindInteraction(scoping: Scoping, cycleRef: string, evidence: readonly Evidence[], _corpus: string, _enrichments: Evidence[], _hasLLM: boolean): Inference[] {
@@ -1201,7 +1201,7 @@ function inferPriceHiddenBehindInteraction(scoping: Scoping, cycleRef: string, e
     if (priceRx.test(text) || text.length <= 100) continue;
     const hb = hasBrowserEvidencePresent(evidence);
     let confidence = 74; if (hb) confidence += 10;
-    return [buildInference('price_hidden_behind_interaction', InferenceCategory.ConversionClarity, scoping, cycleRef, 'high', 'high', confidence, [], [makeRef('evidence', pp.id), ...getBrowserEvidenceRefs(evidence)], `Nenhum preço (R$, $, €, /mês) no HTML estático da página de pricing. Preço só aparece após interação JS — visitantes não veem valor antes de clicar. ${hb ? 'Confirmado: preço só aparece após interação dinâmica.' : 'Heurística: página pricing sem preço no HTML estático.'}`)];
+    return [buildInference('price_hidden_behind_interaction', InferenceCategory.ConversionClarity, scoping, cycleRef, 'high', 'high', confidence, [], [makeRef('evidence', pp.id), ...getBrowserEvidenceRefs(evidence)], `Nenhum preço (R$, $, €, /mês) no HTML estático da página de pricing. Preço só aparece após interação JS. Visitantes não veem valor antes de clicar. ${hb ? 'Confirmado: preço só aparece após interação dinâmica.' : 'Heurística: página pricing sem preço no HTML estático.'}`)];
   }
   return [];
 }

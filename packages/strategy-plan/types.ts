@@ -25,8 +25,8 @@ export interface GenerateContext {
 	/** Engine translation maps for the owner's locale. Sub-generators
 	    that synthesise human-facing strings (Next Step titles, etc.)
 	    consult these instead of mechanical snake_case humanizing. When
-	    absent — English-locale orgs or when the dictionary lookup
-	    fails — sub-generators fall back to humanizing the key. */
+	    absent. English-locale orgs or when the dictionary lookup
+	    fails. Sub-generators fall back to humanizing the key. */
 	translations?: import("../projections/types").EngineTranslations;
 	/** True when no prior-month plan exists for this env. Narrative
 	    uses this to flip the opening paragraph from accusatory

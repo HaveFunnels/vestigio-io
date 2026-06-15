@@ -22,15 +22,15 @@
 // shared rules → JSON output requirement.
 // ──────────────────────────────────────────────
 
-const SHARED_RULES = `RULES — APPLY TO EVERY ASSESSMENT:
+const SHARED_RULES = `RULES. APPLY TO EVERY ASSESSMENT:
 - Anchor every observation to a concrete buyer behavior: what does a real visitor / buyer do when they hit this signal? Hesitate? Bounce? Refund? Skip checkout?
-- Quantify when possible — severity should reflect dollar-weight, not aesthetic preference. A confusing CTA on a checkout page is high-impact; the same on an About page is not.
-- NEVER raise generic-internet advice the operator would learn from a SEO blog: "add a blog", "improve favicon", "use HTTPS", "install Google Analytics", "improve meta tags". The platform deliberately does not surface these — flagging them dilutes signal.
+- Quantify when possible. Severity should reflect dollar-weight, not aesthetic preference. A confusing CTA on a checkout page is high-impact; the same on an About page is not.
+- NEVER raise generic-internet advice the operator would learn from a SEO blog: "add a blog", "improve favicon", "use HTTPS", "install Google Analytics", "improve meta tags". The platform deliberately does not surface these. Flagging them dilutes signal.
 - "Trust signals" is too generic on its own. If you reference trust, name the specific signal (returns policy, named reviews, guarantee, last-updated date, support reachability) and the hesitation it relieves.
-- If the page genuinely meets the bar, say so — false positives degrade the operator's trust in the platform. A clean page should score clean.
+- If the page genuinely meets the bar, say so. False positives degrade the operator's trust in the platform. A clean page should score clean.
 - Confidence reflects how certain you are about the buyer-behavior conclusion, not how thorough your scan was. If you can describe what fires it but cannot be sure it actually moves money in this context, drop confidence below 60.`;
 
-const JSON_REQUIREMENT = `You MUST respond with valid JSON only — no markdown, no explanation, no preamble. The output is parsed by code; any non-JSON token breaks the pipeline.`;
+const JSON_REQUIREMENT = `You MUST respond with valid JSON only. No markdown, no explanation, no preamble. The output is parsed by code; any non-JSON token breaks the pipeline.`;
 
 /**
  * Build a system prompt for an enricher. Composes:

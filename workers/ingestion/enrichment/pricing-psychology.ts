@@ -76,7 +76,7 @@ function buildPricingPsychologySystemPrompt(guidelinesText: string): string {
 GUIDELINES (cite guideline IDs in your findings):
 ${guidelinesText}
 
-You MUST respond with valid JSON only — no markdown fences, no explanation, no preamble.`;
+You MUST respond with valid JSON only. No markdown fences, no explanation, no preamble.`;
 }
 
 function buildPricingPsychologyPrompt(
@@ -85,12 +85,12 @@ function buildPricingPsychologyPrompt(
 ): string {
   return `Analyze this pricing page using pricing psychology principles. Evaluate:
 
-1. **Charm pricing**: Are prices ending in 9/99? ($99 vs $100 — left-digit bias)
+1. **Charm pricing**: Are prices ending in 9/99? ($99 vs $100. Left-digit bias)
 2. **Rule of 100**: For items <$100, is % discount shown? For >$100, is $ amount shown?
 3. **Good-Better-Best**: Are there 3 tiers? Is middle recommended? Is there a visual anchor/decoy?
 4. **Mental accounting framing**: Is price shown as $/day, $/month, $/year? Which frame is used?
 5. **Anchoring**: Is the highest price shown first? Is cost-of-inaction anchoring used?
-6. **Loss framing**: "Save $X" vs "Don't lose $X/month" — which frame is used?
+6. **Loss framing**: "Save $X" vs "Don't lose $X/month". Which frame is used?
 7. **Social proof on pricing**: Are testimonials on the pricing page? Do they reference value/ROI?
 8. **Objection handling**: FAQ below pricing? Money-back guarantee visible?
 

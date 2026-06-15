@@ -212,7 +212,7 @@ function fallbackReasoning(action: ActionRow, order: number): string {
 		switch (action.severity) {
 			case "critical":
 				return impact
-					? `Esse é o movimento principal do mês. **${impact}** de perda potencial nesse ponto — o maior vazamento aberto neste ciclo. Deixar pra próxima janela amplia o impacto e atrasa o ganho dos outros passos.`
+					? `Esse é o movimento principal do mês. **${impact}** de perda potencial nesse ponto. O maior vazamento aberto neste ciclo. Deixar pra próxima janela amplia o impacto e atrasa o ganho dos outros passos.`
 					: `Esse é o movimento principal do mês, o ponto mais crítico que detectamos. Atacar agora antes que o padrão se enraíze.`;
 			case "high":
 				return impact
@@ -220,7 +220,7 @@ function fallbackReasoning(action: ActionRow, order: number): string {
 					: `Esse é o movimento principal do mês. Perda potencial alta nesse ponto. Vestigio recomenda fechar antes do próximo ciclo de medição.`;
 			default:
 				return impact
-					? `Esse é o movimento principal do mês — não pelo tamanho do impacto isolado (**${impact}**), mas pelo desbloqueio que abre pros próximos passos.`
+					? `Esse é o movimento principal do mês. Não pelo tamanho do impacto isolado (**${impact}**), mas pelo desbloqueio que abre pros próximos passos.`
 					: `Esse é o movimento principal do mês, começo do plano e ponto de alavanca pra os movimentos seguintes.`;
 		}
 	}
@@ -240,7 +240,7 @@ function fallbackReasoning(action: ActionRow, order: number): string {
 	];
 	const phrase = positionPhrases[(order - 2) % positionPhrases.length];
 	const supportingClosers = [
-		"compõe com o Passo 1 — mesmo time, fix correlacionado.",
+		"compõe com o Passo 1. Mesmo time, fix correlacionado.",
 		"fica na mesma sprint do Passo 1 sem competir por foco.",
 		"endereçar antes que o tema dominante consolide.",
 		"fechar para reduzir ruído cumulativo no funil.",
@@ -250,15 +250,15 @@ function fallbackReasoning(action: ActionRow, order: number): string {
 	switch (action.severity) {
 		case "critical":
 			return impact
-				? `${phrase} **${impact}** de perda potencial nesse ponto. Severidade alta — ${closer}`
+				? `${phrase} **${impact}** de perda potencial nesse ponto. Severidade alta. ${closer}`
 				: `${phrase} ponto crítico secundário, endereçar uma vez que o movimento principal estiver em andamento.`;
 		case "high":
 			return impact
-				? `${phrase} **${impact}** de perda potencial estimada. Não é o sangramento principal — ${closer}`
+				? `${phrase} **${impact}** de perda potencial estimada. Não é o sangramento principal. ${closer}`
 				: `${phrase} perda potencial alta nesse ponto, fechar antes do próximo ciclo de medição.`;
 		case "medium":
 			return impact
-				? `${phrase} perda potencial em **${impact}**. Resolver reduz ruído cumulativo — sem urgência de semana, dentro do mês.`
+				? `${phrase} perda potencial em **${impact}**. Resolver reduz ruído cumulativo. Sem urgência de semana, dentro do mês.`
 				: `${phrase} ponto secundário no funil. Endereçar pra liberar foco dos passos críticos.`;
 		default:
 			return impact
@@ -353,7 +353,7 @@ async function pickTopActions(
 	}
 	if (dupes.length > 0) {
 		console.warn(
-			`[strategy-plan] pickTopActions returned ${dupes.length} duplicate decisionKey(s) — the dedupe in the query likely regressed:`,
+			`[strategy-plan] pickTopActions returned ${dupes.length} duplicate decisionKey(s). The dedupe in the query likely regressed:`,
 			{ envId: ctx.environmentId, dupes, returnedCount: out.length },
 		);
 	}
@@ -385,12 +385,12 @@ function buildPrompt(
 	// potencial" or "vazamento" instead.
 	const roleLine =
 		order === 1
-			? `Este é o MOVIMENTO PRINCIPAL do mês — a alavanca central que o resto do plano sustenta.`
-			: `Este é um MOVIMENTO DE APOIO (posição ${order}) — entra depois que o movimento principal estiver em andamento.`;
+			? `Este é o MOVIMENTO PRINCIPAL do mês. A alavanca central que o resto do plano sustenta.`
+			: `Este é um MOVIMENTO DE APOIO (posição ${order}). Entra depois que o movimento principal estiver em andamento.`;
 	const voiceLine =
 		order === 1
 			? `Tom: lead confiante. "Essa é a alavanca principal porque...". Sem hedge. Termine sinalizando que o restante do plano se desdobra a partir disso.`
-			: `Tom: complementar. "Depois do movimento principal, esse entra porque...". Não compete com o passo 1 em peso — explicita por que NÃO é principal.`;
+			: `Tom: complementar. "Depois do movimento principal, esse entra porque...". Não compete com o passo 1 em peso. Explicita por que NÃO é principal.`;
 
 	const system = `Você é Vestigio, escrevendo a seção "POR QUE PRIMEIRO" do passo ${order} do Plano de Estratégia mensal para ${envDomain}.
 
@@ -406,14 +406,14 @@ Regras:
 2. Use **negrito** para destacar números, severidades e nomes de componentes. Use \`código inline\` APENAS para nomes técnicos reais (caminhos de arquivo, props, classes CSS).
 3. NUNCA reproduza identificadores em snake_case, slugs internos, termos como "weak_cta", "trust_boundary_crossed", "compound_*", "priorityScore", "decisionKey" ou qualquer outro código do engine. Use sempre os nomes humanos fornecidos.
 4. NÃO use listas, NÃO use cabeçalhos.
-5. Primeiro parágrafo: por que esse passo é prioritário. Lidere com o **valor financeiro** ("R$ X.XXX/mês de vazamento") e o contexto da causa — não com "severidade alta" abstrato.
+5. Primeiro parágrafo: por que esse passo é prioritário. Lidere com o **valor financeiro** ("R$ X.XXX/mês de vazamento") e o contexto da causa. Não com "severidade alta" abstrato.
 6. Segundo parágrafo: o que está em jogo se não fizer (impacto composto, dependência com outro passo, prazo). Termine indicando a ação concreta.
 7. ${voiceLine}
 8. PROIBIDO escrever "Resolver esse item primeiro", "no topo da fila de prioridade", "porque ele aparece no topo" ou variantes. Cada passo tem uma justificativa única, não repita boilerplate de ranqueamento.
-9. PROIBIDO repetir a MESMA frase de fechamento que outros passos: nunca escreva variantes literais de "compõe com o passo 1", "mesmo time, padrão correlacionado", "movimento de apoio porque a remediação se compõe". Cada passo tem um motivo PRÓPRIO para estar nessa posição — diga esse motivo, não um chavão.
+9. PROIBIDO repetir a MESMA frase de fechamento que outros passos: nunca escreva variantes literais de "compõe com o passo 1", "mesmo time, padrão correlacionado", "movimento de apoio porque a remediação se compõe". Cada passo tem um motivo PRÓPRIO para estar nessa posição. Diga esse motivo, não um chavão.
 10. NÃO mencione "o engine", "a análise revelou", "foi capturado" ou outras passivas. Voz ativa, primeira pessoa do plural ("Vestigio observou", "Detectamos") quando precisar atribuir.
 11. PROIBIDO travessão (—) em qualquer parte do texto. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.
-12. PROIBIDO a palavra "exposição" — substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.`;
+12. PROIBIDO a palavra "exposição". Substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.`;
 
 	// Resolve inference keys to friendly names so the LLM has no
 	// raw snake_case to echo. Falls back to mechanical humanize when
@@ -439,7 +439,7 @@ Regras:
 	}
 	lines.push(`- Categoria: ${action.category}`);
 	lines.push("");
-	lines.push("Escreva o POR QUE PRIMEIRO agora — sem repetir os códigos do engine, apenas os nomes humanos.");
+	lines.push("Escreva o POR QUE PRIMEIRO agora. Sem repetir os códigos do engine, apenas os nomes humanos.");
 	return { system, user: lines.join("\n") };
 }
 

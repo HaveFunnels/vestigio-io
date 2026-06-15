@@ -54,11 +54,11 @@ export interface MicroCopyAnalysis {
 
 const SYSTEM_PROMPT = buildSystemPrompt(
   "micro-copy specialist",
-  "Analyze form labels, button text, error messages, placeholder text, helper text, empty states, and confirmation messages for clarity, helpfulness, and human tone. The form is where intent dies — every generic label or unhelpful error costs a conversion.",
+  "Analyze form labels, button text, error messages, placeholder text, helper text, empty states, and confirmation messages for clarity, helpfulness, and human tone. The form is where intent dies. Every generic label or unhelpful error costs a conversion.",
 );
 
 function buildMicroCopyPrompt(copyElements: string, bodyText: string): string {
-  return `Analyze the micro-copy on this page — form labels, button text, error messages, placeholder text, helper text. Is it clear, human, and helpful? Or is it technical, generic, or confusing? Rate form friction based on label clarity and field count.
+  return `Analyze the micro-copy on this page. Form labels, button text, error messages, placeholder text, helper text. Is it clear, human, and helpful? Or is it technical, generic, or confusing? Rate form friction based on label clarity and field count.
 
 Look for:
 - **Form labels**: Are they descriptive? Do they tell users what to enter? Or are they generic ("Name", "Email") without context?

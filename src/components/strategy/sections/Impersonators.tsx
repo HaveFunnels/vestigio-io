@@ -188,7 +188,7 @@ export default function Impersonators({ impersonators, embedded = false }: Props
 											{m.hasFaviconBytesMatch && (
 												<span
 													className="inline-flex items-center gap-1 rounded-md bg-rose-500/10 px-1.5 py-0.5 text-[10px] text-rose-200 ring-1 ring-inset ring-rose-500/20"
-													title="Favicon idêntico ao seu (bytes-match SHA256) — cópia visual direta do arquivo"
+													title="Favicon idêntico ao seu (bytes-match SHA256). Cópia visual direta do arquivo."
 												>
 													<Copy className="h-3 w-3" /> cópia visual
 												</span>

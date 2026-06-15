@@ -694,7 +694,7 @@ function StepCard({
 								Atacar com Vestigio
 							</div>
 							<div className="text-[11.5px] text-content-muted">
-								Vestigio já tem o plano e os problemas em contexto — só pedir o próximo movimento.
+								Vestigio já tem o plano e os problemas em contexto. Só pedir o próximo movimento.
 							</div>
 						</div>
 					</div>
@@ -1127,13 +1127,13 @@ export default function NextSteps({
 						<path strokeLinecap="round" d="M8 5v3.5M8 11v.2" />
 					</svg>
 					<p>
-						Lente operacional — os mesmos passos do plano, reagrupados por
+						Lente operacional: os mesmos passos do plano, reagrupados por
 						página pra você distribuir entre times. A análise estratégica
 						(tese, tema dominante, causa raiz) vive nas seções acima. Passos com badge{" "}
 						<span className="rounded bg-surface-card px-1 py-0.5 font-mono text-[10.5px] text-content">
 							afeta também
 						</span>{" "}
-						cruzam mais de uma página — atacar isolado normalmente vira retrabalho.
+						cruzam mais de uma página. Atacar isolado normalmente vira retrabalho.
 					</p>
 				</div>
 

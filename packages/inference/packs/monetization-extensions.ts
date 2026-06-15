@@ -47,7 +47,7 @@ function inferSubscriberChurnElevated(byKey: Map<string, Signal>, scoping: Scopi
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Monthly subscriber churn rate of ${sig.numeric_value}% is above the 5% SaaS benchmark. At this rate, you lose your entire subscriber base in ${Math.round(100 / (sig.numeric_value ?? 5))} months without new signups. Churn compounds — every lost subscriber is lost LTV, and replacing them costs acquisition spend that would have otherwise expanded revenue.`,
+    reasoning: `Monthly subscriber churn rate of ${sig.numeric_value}% is above the 5% SaaS benchmark. At this rate, you lose your entire subscriber base in ${Math.round(100 / (sig.numeric_value ?? 5))} months without new signups. Churn compounds. Every lost subscriber is lost LTV, and replacing them costs acquisition spend that would have otherwise expanded revenue.`,
     reasoning_slots: { severity },
   })];
 }
@@ -66,7 +66,7 @@ function inferFailedPaymentRateHigh(byKey: Map<string, Signal>, scoping: Scoping
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `${sig.numeric_value}% of payment attempts are failing — this is involuntary churn from expired cards, insufficient funds, and gateway errors. Each failed payment is a subscriber who intends to pay but cannot. Without dunning automation and card updater integration, these subscribers silently churn without ever making a conscious decision to leave.`,
+    reasoning: `${sig.numeric_value}% of payment attempts are failing. This is involuntary churn from expired cards, insufficient funds, and gateway errors. Each failed payment is a subscriber who intends to pay but cannot. Without dunning automation and card updater integration, these subscribers silently churn without ever making a conscious decision to leave.`,
     reasoning_slots: { severity },
   })];
 }
@@ -90,7 +90,7 @@ function inferFailedPaymentRevenueDrain(byKey: Map<string, Signal>, scoping: Sco
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Failed payments are draining revenue through involuntary churn at a rate of ${rate}%. Every failed charge is a subscriber who wants to pay but can't — expired cards, insufficient funds, and gateway errors are silently converting paying customers into churned ones. Without dunning automation, card updater integration, and grace periods, this revenue loss compounds monthly.`,
+    reasoning: `Failed payments are draining revenue through involuntary churn at a rate of ${rate}%. Every failed charge is a subscriber who wants to pay but can't. Expired cards, insufficient funds, and gateway errors are silently converting paying customers into churned ones. Without dunning automation, card updater integration, and grace periods, this revenue loss compounds monthly.`,
     reasoning_slots: { severity, rate },
   })];
 }
@@ -110,7 +110,7 @@ function inferSubscriberChurnUnsustainable(byKey: Map<string, Signal>, scoping: 
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Subscriber churn rate of ${rate}% exceeds the sustainable threshold of 7%. At this rate, the subscriber base turns over completely in ${Math.round(100 / rate)} months. Growth cannot outpace attrition — every new subscriber acquired is offset by churn. This requires immediate intervention through retention offers, cancellation surveys, and involuntary churn recovery via dunning automation.`,
+    reasoning: `Subscriber churn rate of ${rate}% exceeds the sustainable threshold of 7%. At this rate, the subscriber base turns over completely in ${Math.round(100 / rate)} months. Growth cannot outpace attrition. Every new subscriber acquired is offset by churn. This requires immediate intervention through retention offers, cancellation surveys, and involuntary churn recovery via dunning automation.`,
     reasoning_slots: { severity, rate },
   })];
 }
@@ -130,7 +130,7 @@ function inferPaymentDiversityInsufficient(byKey: Map<string, Signal>, scoping: 
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `${sig.numeric_value}% of payment volume flows through a single gateway. A single provider outage, rate limit change, or policy update halts all recurring revenue collection. Payment infrastructure diversity is a prerequisite for subscription business resilience — without a fallback gateway, any disruption converts a technical issue into a mass involuntary churn event.`,
+    reasoning: `${sig.numeric_value}% of payment volume flows through a single gateway. A single provider outage, rate limit change, or policy update halts all recurring revenue collection. Payment infrastructure diversity is a prerequisite for subscription business resilience. Without a fallback gateway, any disruption converts a technical issue into a mass involuntary churn event.`,
     reasoning_slots: { severity },
   })];
 }
@@ -191,7 +191,7 @@ function inferRevenueAttributionMismatch(byKey: Map<string, Signal>, scoping: Sc
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Two of your revenue data sources disagree by a factor of ${ratioX}x — Meta/Google report substantially more attributed revenue than Stripe shows transacted. Three plausible causes, each with a different fix: (a) you collect significant revenue OUTSIDE Stripe (boleto, PIX, MercadoPago, bank transfer, PayPal, in-person) — the ad platforms may be attributing correctly to revenue Stripe simply doesn't see; (b) last-click attribution is over-claiming touches as conversions, inflating ROAS; (c) attribution windows are too generous. Start with reconciliation: pull your full month's revenue across EVERY collection channel and compare against the ad-platform totals. Only adjust ad budget after the gap is explained by (a) or confirmed as (b/c).`,
+    reasoning: `Two of your revenue data sources disagree by a factor of ${ratioX}x. Meta/Google report substantially more attributed revenue than Stripe shows transacted. Three plausible causes, each with a different fix: (a) you collect significant revenue OUTSIDE Stripe (boleto, PIX, MercadoPago, bank transfer, PayPal, in-person). The ad platforms may be attributing correctly to revenue Stripe simply doesn't see; (b) last-click attribution is over-claiming touches as conversions, inflating ROAS; (c) attribution windows are too generous. Start with reconciliation: pull your full month's revenue across EVERY collection channel and compare against the ad-platform totals. Only adjust ad budget after the gap is explained by (a) or confirmed as (b/c).`,
     reasoning_slots: { severity, ratio_pct: ratioPct },
   })];
 }

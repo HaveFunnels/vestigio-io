@@ -31,7 +31,7 @@ function inferPromotionLogicExposed(byKey: Map<string, Signal>, scoping: Scoping
     conclusion: 'promotion_logic_exposed', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Deep discovery found promotion, discount, or coupon routes that are structurally exposed to abuse. These endpoints follow predictable patterns or lack rate limiting and authentication gates — the exact conditions that enable automated coupon enumeration, discount stacking, and promotional code brute-forcing. Each exploited promotion directly reduces margin and erodes the ROI of marketing campaigns.`,
+    reasoning: `Deep discovery found promotion, discount, or coupon routes that are structurally exposed to abuse. These endpoints follow predictable patterns or lack rate limiting and authentication gates. The exact conditions that enable automated coupon enumeration, discount stacking, and promotional code brute-forcing. Each exploited promotion directly reduces margin and erodes the ROI of marketing campaigns.`,
     reasoning_slots: { severity },
   })];
 }
@@ -46,7 +46,7 @@ function inferCartVariantWeakControl(byKey: Map<string, Signal>, scoping: Scopin
     conclusion: 'cart_variant_weak_control', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Multiple cart or checkout route variants were discovered through deep crawling. Alternate cart paths often carry weaker price validation, missing inventory checks, or inconsistent tax calculations compared to the primary flow. When pricing controls are not uniform across all cart variants, the weakest path becomes the attack surface — bots route through whichever variant applies the fewest safeguards.`,
+    reasoning: `Multiple cart or checkout route variants were discovered through deep crawling. Alternate cart paths often carry weaker price validation, missing inventory checks, or inconsistent tax calculations compared to the primary flow. When pricing controls are not uniform across all cart variants, the weakest path becomes the attack surface. Bots route through whichever variant applies the fewest safeguards.`,
     reasoning_slots: { severity },
   })];
 }
@@ -76,7 +76,7 @@ function inferGuessableBusinessEndpoint(byKey: Map<string, Signal>, scoping: Sco
     conclusion: 'guessable_business_endpoint', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Business-critical commerce endpoints follow predictable URL patterns and lack visible safeguards proportional to their business importance. Order management, billing, account, and refund actions are reachable through guessable paths — enabling automated probing, IDOR-style access, and business-logic manipulation. The risk is not theoretical: these patterns are the first targets in automated commerce fraud because they are trivially discoverable.`,
+    reasoning: `Business-critical commerce endpoints follow predictable URL patterns and lack visible safeguards proportional to their business importance. Order management, billing, account, and refund actions are reachable through guessable paths. Enabling automated probing, IDOR-style access, and business-logic manipulation. The risk is not theoretical: these patterns are the first targets in automated commerce fraud because they are trivially discoverable.`,
     reasoning_slots: { severity },
   })];
 }
@@ -91,7 +91,7 @@ function inferAlternatePricingSafeguardBypass(byKey: Map<string, Signal>, scopin
     conclusion: 'alternate_pricing_safeguard_bypass', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Deep discovery found alternate commercial actions (legacy endpoints, beta paths, test routes, or parameter-based variants) that may bypass intended pricing safeguards. These are not generic alternate pages — they are structurally different commercial actions that process transactions or pricing through weaker validation than the primary checkout flow. The margin and offer integrity risk is that the weakest pricing path determines the actual price floor.`,
+    reasoning: `Deep discovery found alternate commercial actions (legacy endpoints, beta paths, test routes, or parameter-based variants) that may bypass intended pricing safeguards. These are not generic alternate pages. They are structurally different commercial actions that process transactions or pricing through weaker validation than the primary checkout flow. The margin and offer integrity risk is that the weakest pricing path determines the actual price floor.`,
     reasoning_slots: { severity },
   })];
 }
@@ -106,7 +106,7 @@ function inferJsDiscoveredPurchaseVariant(byKey: Map<string, Signal>, scoping: S
     conclusion: 'js_discovered_purchase_variant', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Client-side JavaScript reveals commerce routes not visible through static navigation — alternate checkout paths, dynamic cart endpoints, or SPA-rendered purchase flows. These variants typically escape the main safeguard model: they may lack analytics instrumentation (invisible to optimization), skip trust-building elements (policies, provider badges), or bypass server-side validation that the primary flow enforces. Revenue flowing through these paths is both unprotected and unmeasured.`,
+    reasoning: `Client-side JavaScript reveals commerce routes not visible through static navigation. Alternate checkout paths, dynamic cart endpoints, or SPA-rendered purchase flows. These variants typically escape the main safeguard model: they may lack analytics instrumentation (invisible to optimization), skip trust-building elements (policies, provider badges), or bypass server-side validation that the primary flow enforces. Revenue flowing through these paths is both unprotected and unmeasured.`,
     reasoning_slots: { severity },
   })];
 }
@@ -121,7 +121,7 @@ function inferDynamicRouteWeakControl(byKey: Map<string, Signal>, scoping: Scopi
     conclusion: 'dynamic_route_weak_control', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Dynamically discovered commerce routes show weaker governance than the visible purchase flow. Routes found through JavaScript rendering lack the safeguards (authentication gates, rate limiting, CSRF protection) that protect the primary path. The structural gap means that the deeper you crawl, the weaker the controls become — creating a gradient of decreasing protection that automated tools exploit preferentially.`,
+    reasoning: `Dynamically discovered commerce routes show weaker governance than the visible purchase flow. Routes found through JavaScript rendering lack the safeguards (authentication gates, rate limiting, CSRF protection) that protect the primary path. The structural gap means that the deeper you crawl, the weaker the controls become. Creating a gradient of decreasing protection that automated tools exploit preferentially.`,
     reasoning_slots: { severity },
   })];
 }
@@ -136,7 +136,7 @@ function inferHiddenSupportBurden(byKey: Map<string, Signal>, scoping: Scoping, 
     conclusion: 'hidden_support_burden', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Support, help, and FAQ routes exist but are structurally disconnected from the commercial journey — they were found through deep crawling, not through the normal buying path. This means buyers who need reassurance during purchase cannot find it, while the same support infrastructure generates downstream ticket volume from post-purchase confusion. The result is the worst of both worlds: support cost without conversion benefit.`,
+    reasoning: `Support, help, and FAQ routes exist but are structurally disconnected from the commercial journey. They were found through deep crawling, not through the normal buying path. This means buyers who need reassurance during purchase cannot find it, while the same support infrastructure generates downstream ticket volume from post-purchase confusion. The result is the worst of both worlds: support cost without conversion benefit.`,
     reasoning_slots: { severity },
   })];
 }

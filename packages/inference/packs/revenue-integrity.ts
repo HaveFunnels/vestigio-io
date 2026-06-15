@@ -144,12 +144,12 @@ function inferRevenueLeakage(
   let score = 0;
 
   if (offDomain?.value === 'true') {
-    leakPoints.push('checkout leaves domain — attribution and trust break');
+    leakPoints.push('checkout leaves domain. Attribution and trust break');
     relevantSignals.push(offDomain);
     score += 25;
   }
   if (noFunnel?.value === 'false') {
-    leakPoints.push('no clear conversion path entry — users cannot find how to convert');
+    leakPoints.push('no clear conversion path entry. Users cannot find how to convert');
     relevantSignals.push(noFunnel);
     score += 20;
   }
@@ -159,12 +159,12 @@ function inferRevenueLeakage(
     score += 20;
   }
   if (brokenForm?.value === 'true') {
-    leakPoints.push(`${brokenForm.numeric_value} broken form(s) — direct revenue loss`);
+    leakPoints.push(`${brokenForm.numeric_value} broken form(s). Direct revenue loss`);
     relevantSignals.push(brokenForm);
     score += 30;
   }
   if (missingTracking) {
-    leakPoints.push('no measurement on commercial pages — leakage is invisible');
+    leakPoints.push('no measurement on commercial pages. Leakage is invisible');
     relevantSignals.push(missingTracking);
     score += 15;
   }
@@ -208,7 +208,7 @@ function inferTrustRevenueImpact(
   let score = 0;
 
   if (missingPolicy?.value === 'true') {
-    factors.push('no policies near checkout — legal and trust risk at conversion point');
+    factors.push('no policies near checkout. Legal and trust risk at conversion point');
     relevantSignals.push(missingPolicy);
     score += 30;
   }
@@ -268,13 +268,13 @@ function inferMeasurementBlindspot(
     relevantSignals.push(measurement);
     score += 30;
   } else if (measurement?.value === 'shallow') {
-    factors.push('only basic analytics — attribution gaps likely');
+    factors.push('only basic analytics. Attribution gaps likely');
     relevantSignals.push(measurement);
     score += 15;
   }
 
   if (missingCommercial) {
-    factors.push('no tracking on commercial pages — conversion measurement impossible');
+    factors.push('no tracking on commercial pages. Conversion measurement impossible');
     relevantSignals.push(missingCommercial);
     score += 25;
   }

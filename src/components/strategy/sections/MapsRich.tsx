@@ -240,7 +240,7 @@ export default function MapsRich({ maps, month: _month }: Props) {
 			{/* Purpose statement — what this page IS. */}
 			<div className="mb-8 max-w-2xl">
 				<p className="text-[14.5px] leading-relaxed text-content-secondary">
-					Os mapas mostram o desenho que Vestigio enxerga do seu site neste ciclo. Cada lente abaixo abre uma visão diferente do mesmo grafo — clique pra navegar.
+					Os mapas mostram o desenho que Vestigio enxerga do seu site neste ciclo. Cada lente abaixo abre uma visão diferente do mesmo grafo. Clique pra navegar.
 				</p>
 			</div>
 

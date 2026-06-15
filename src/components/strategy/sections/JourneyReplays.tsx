@@ -301,7 +301,7 @@ function PixelInstallHero({ envId, sessionCount }: { envId: string; sessionCount
 							Veja onde a receita escapa em tempo real
 						</h3>
 						<p className="mt-1.5 text-[13px] leading-relaxed text-content-secondary">
-							Esta seção precisa do pixel Vestigio instalado. Cole o snippet abaixo nas páginas comerciais e o próximo plano vai mostrar as 3 jornadas mais críticas do mês — sessões reais de buyers perdendo dinheiro, com timeline e diagnóstico.
+							Esta seção precisa do pixel Vestigio instalado. Cole o snippet abaixo nas páginas comerciais e o próximo plano vai mostrar as 3 jornadas mais críticas do mês: sessões reais de buyers perdendo dinheiro, com timeline e diagnóstico.
 						</p>
 						{sessionCount > 0 && (
 							<p className="mt-2 text-[11.5px] text-content-muted">
@@ -469,7 +469,7 @@ function PixelInstructionsDrawer({
 						Privacidade
 					</div>
 					<p className="text-[11.5px] leading-relaxed text-content-muted">
-						Sem cookies de tracking persistentes. Session ID rotaciona a cada visita. IP é hasheado com salt diário no servidor (não reversível). Sem captura de campos sensíveis (CPF, cartão, senha) — só metadata estrutural. Compatível com LGPD e GDPR sob legítimo interesse.
+						Sem cookies de tracking persistentes. Session ID rotaciona a cada visita. IP é hasheado com salt diário no servidor (não reversível). Sem captura de campos sensíveis (CPF, cartão, senha). Só metadata estrutural. Compatível com LGPD e GDPR sob legítimo interesse.
 					</p>
 				</div>
 			</div>

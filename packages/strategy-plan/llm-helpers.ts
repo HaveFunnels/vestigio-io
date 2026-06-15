@@ -56,7 +56,7 @@ interface CallTextOptions {
 	environmentId: string;
 	/** Fallback text rendered when the LLM call fails (cost cap, API
 	    error, timeout). Should be a coherent placeholder so the plan
-	    section still reads as intentional — not "ERROR". */
+	    section still reads as intentional. Not "ERROR". */
 	fallbackText: string;
 }
 

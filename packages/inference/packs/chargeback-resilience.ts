@@ -180,17 +180,17 @@ function inferExpectationAlignment(
   let score = 0;
 
   if (pricingNotVisible) {
-    factors.push('no pricing page — customers may not understand charges');
+    factors.push('no pricing page. Customers may not understand charges');
     relevantSignals.push(pricingNotVisible);
     score += 25;
   }
   if (noPostPurchase) {
-    factors.push('no order confirmation page — customers unsure if purchase completed');
+    factors.push('no order confirmation page. Customers unsure if purchase completed');
     relevantSignals.push(noPostPurchase);
     score += 20;
   }
   if (checkoutOffDomain?.value === 'true') {
-    factors.push('checkout leaves domain — brand disconnect creates charge confusion');
+    factors.push('checkout leaves domain. Brand disconnect creates charge confusion');
     relevantSignals.push(checkoutOffDomain);
     score += 15;
   }

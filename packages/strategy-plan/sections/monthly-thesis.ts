@@ -217,17 +217,17 @@ Total: 25-44 palavras. Mais curto sempre vence.
 
 **Os 3 ingredientes obrigatórios (qualquer um pode aparecer em qualquer frase):**
 1. Um valor financeiro AGREGADO (R$ X.XXX/mês somado, não impacto de um único item).
-2. Pelo menos UMA página específica em texto natural (página inicial, checkout, página de preços, página de signup) — sem usar "/" literal ou "\`/\`" como nome.
+2. Pelo menos UMA página específica em texto natural (página inicial, checkout, página de preços, página de signup). Sem usar "/" literal ou "\`/\`" como nome.
 3. Uma direção/decisão imperativa pra leitura do resto do plano.
 
 **Use negrito** UMA vez, no valor em R$ agregado.
 
 **PROIBIDO:**
-- A palavra "exposição" em qualquer lugar — substitua por "vazamento" ou "perda potencial".
-- A palavra "surface" em qualquer lugar — substitua por "página".
-- "\`/\`" literal como nome de página — escreva "página inicial".
-- "eixo" — substitua por "foco" ou "tema".
-- "aposta" / "Vestigio aposta" / "Vestigio acredita" / "Vestigio estima" — Vestigio AFIRMA com base em dado.
+- A palavra "exposição" em qualquer lugar. Substitua por "vazamento" ou "perda potencial".
+- A palavra "surface" em qualquer lugar. Substitua por "página".
+- "\`/\`" literal como nome de página. Escreva "página inicial".
+- "eixo". Substitua por "foco" ou "tema".
+- "aposta" / "Vestigio aposta" / "Vestigio acredita" / "Vestigio estima". Vestigio AFIRMA com base em dado.
 - TRAVESSÃO (—) em qualquer lugar do texto. Use ponto, vírgula, dois pontos, ou parênteses.
 - "é sintoma de", "é sinal de", "é manifestação de", "indica que" (claims causais frágeis).
 - "padrão dominante", "padrão estrutural", "desalinhamento de copy", "checkout fragmentado", "mensagens desconectadas" (nomes abstratos sem âncora).
@@ -241,7 +241,7 @@ Total: 25-44 palavras. Mais curto sempre vence.
 > Vestigio mapeou **R$ 17.500/mês** de perda potencial concentrada no checkout (redirecionamento de domínio mais ausência de contexto de preço). O movimento principal é o que acontece entre ver preço e pagar. Comece pelos Próximos Passos 1 e 4.
 
 **Exemplo BOM** (variante por foco de funil):
-> Identificamos **R$ 76.000/mês** vazando no topo do funil — página inicial e página de preços. O foco do mês é refazer o que o comprador encontra antes de qualquer CTA. O Passo 1 abre essa frente.
+> Identificamos **R$ 76.000/mês** vazando no topo do funil. Página inicial e página de preços. O foco do mês é refazer o que o comprador encontra antes de qualquer CTA. O Passo 1 abre essa frente.
 
 **Exemplo RUIM** (finding restated, não tese):
 > Vestigio detectou **R$ 8.750/mês** saindo no clique de pagar no checkout. Comprador é jogado pra outro domínio.
@@ -250,7 +250,7 @@ Total: 25-44 palavras. Mais curto sempre vence.
 > Este mês, o padrão dominante é o desalinhamento de copy, sintoma de um checkout fragmentado que dispersa compradores antes da conversão.`;
 
 	const lines: string[] = [];
-	lines.push(`Dados disponíveis (use só os que sustentam a tese — não cite todos):`);
+	lines.push(`Dados disponíveis (use só os que sustentam a tese. Não cite todos):`);
 	lines.push(`- Resolvidos no mês: ${i.resolvedCount} (R$ ${i.resolvedCapturedTotal.toLocaleString("pt-BR")} recuperado)`);
 	lines.push(`- Exposição agregada em aberto: R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês em ${i.exposureFindingCount} pontos`);
 	if (i.dominantPack) {
@@ -264,7 +264,7 @@ Total: 25-44 palavras. Mais curto sempre vence.
 	lines.push(`- Regressões detectadas: ${i.regressionCount}`);
 	lines.push(`- Problemas recorrentes (3+ ciclos): ${i.chronicCount}`);
 	lines.push("");
-	lines.push(`Escreva agora a tese — UMA frase.`);
+	lines.push(`Escreva agora a tese. UMA frase.`);
 	return { system, user: lines.join("\n") };
 }
 

@@ -55,7 +55,7 @@ export interface SeoConversionTension {
 
 const SYSTEM_PROMPT = buildSystemPrompt(
   "SEO-conversion tension analyst",
-  "Detect when a page has been over-optimized for search engines at the expense of conversion persuasion. The page that ranks but does not close costs more than the page that converts but trails on rank — flag when the balance tips toward keyword-stuffed copy.",
+  "Detect when a page has been over-optimized for search engines at the expense of conversion persuasion. The page that ranks but does not close costs more than the page that converts but trails on rank. Flag when the balance tips toward keyword-stuffed copy.",
 );
 
 function buildSeoConversionPrompt(copyElements: string, bodyText: string): string {

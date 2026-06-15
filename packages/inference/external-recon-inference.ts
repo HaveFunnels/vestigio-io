@@ -107,7 +107,7 @@ function listingVoidInference(
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `No listing found on ${platform.label}. Buyers researching the category on ${platform.label} never encounter the brand. Even a skeletal profile beats invisibility — at minimum, claim the page and add basic copy + screenshots.`,
+			reasoning: `No listing found on ${platform.label}. Buyers researching the category on ${platform.label} never encounter the brand. Even a skeletal profile beats invisibility. At minimum, claim the page and add basic copy + screenshots.`,
 		}),
 	];
 }
@@ -255,7 +255,7 @@ function inferTrustpilotComplaintCluster(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `${count} negative reviews on Trustpilot have no owner response. Buyers who research the brand see complaints with no rebuttal — every unanswered 1-2★ review costs trust and conversion. Assign someone to respond within 48h. A short empathetic reply to a 5-month-old complaint still moves the credibility needle.`,
+			reasoning: `${count} negative reviews on Trustpilot have no owner response. Buyers who research the brand see complaints with no rebuttal. Every unanswered 1-2★ review costs trust and conversion. Assign someone to respond within 48h. A short empathetic reply to a 5-month-old complaint still moves the credibility needle.`,
 		}),
 	];
 }
@@ -277,7 +277,7 @@ function inferTrustpilotResponseSilence(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Owner response rate is ${sig.numeric_value ?? 0}% on Trustpilot. Industry benchmark is >70%. Silence on the review platform signals "we don't engage with feedback" — the most common reason high-intent prospects pick a competitor with similar features but visible care. Set up an alert for any new review and target sub-48h response.`,
+			reasoning: `Owner response rate is ${sig.numeric_value ?? 0}% on Trustpilot. Industry benchmark is >70%. Silence on the review platform signals "we don't engage with feedback". The most common reason high-intent prospects pick a competitor with similar features but visible care. Set up an alert for any new review and target sub-48h response.`,
 		}),
 	];
 }
@@ -323,7 +323,7 @@ function inferHnTechAudienceInvisible(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Zero mentions of the brand on Hacker News. For a SaaS / developer-adjacent product, this means the tech early-adopter audience has never discussed it — neither in launch threads, "Show HN," nor comparison posts. Worth a Show HN launch with a real story, or a deep-dive technical post that hits the front page.`,
+			reasoning: `Zero mentions of the brand on Hacker News. For a SaaS / developer-adjacent product, this means the tech early-adopter audience has never discussed it. Neither in launch threads, "Show HN," nor comparison posts. Worth a Show HN launch with a real story, or a deep-dive technical post that hits the front page.`,
 		}),
 	];
 }
@@ -366,7 +366,7 @@ function inferRedditCategoryDemandUnmet(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Visible category demand on Reddit but no brand presence. ${sig.description} This is the highest-conversion-potential surface: people actively shopping the category are signal of high purchase intent — and competitors are getting the recommendations instead. Tactics: identify the top 3 most-active subs, share a non-promotional post about a problem the brand solves, and respond to existing threads asking for tools in the space (without spamming — Reddit moderators penalize obvious self-promo).`,
+			reasoning: `Visible category demand on Reddit but no brand presence. ${sig.description} This is the highest-conversion-potential surface: people actively shopping the category are signal of high purchase intent. And competitors are getting the recommendations instead. Tactics: identify the top 3 most-active subs, share a non-promotional post about a problem the brand solves, and respond to existing threads asking for tools in the space (without spamming. Reddit moderators penalize obvious self-promo).`,
 		}),
 	];
 }
@@ -520,7 +520,7 @@ function inferAiVisibilityScore(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs,
 			evidence_refs: [],
-			reasoning: `AI Visibility Score: ${score}/100. Breakdown: branded SERP ${breakdown.branded_serp}, Wikipedia ${breakdown.wikipedia}, schema ${breakdown.schema}, bot access ${breakdown.bot_access}, llms.txt ${breakdown.llms_txt}, machine-readable pricing ${breakdown.machine_readable_pricing}, comparison ownership ${breakdown.comparison_ownership}, third-party citations ${breakdown.third_party_citations}.${score < 60 ? ` Below 60 means AI assistants struggle to recommend the brand confidently. Highest-leverage gaps first: ${Object.entries(breakdown).filter(([, v]) => v === 0).map(([k]) => k).slice(0, 3).join(", ")}.` : ` Strong AI footprint — protect and extend.`}`,
+			reasoning: `AI Visibility Score: ${score}/100. Breakdown: branded SERP ${breakdown.branded_serp}, Wikipedia ${breakdown.wikipedia}, schema ${breakdown.schema}, bot access ${breakdown.bot_access}, llms.txt ${breakdown.llms_txt}, machine-readable pricing ${breakdown.machine_readable_pricing}, comparison ownership ${breakdown.comparison_ownership}, third-party citations ${breakdown.third_party_citations}.${score < 60 ? ` Below 60 means AI assistants struggle to recommend the brand confidently. Highest-leverage gaps first: ${Object.entries(breakdown).filter(([, v]) => v === 0).map(([k]) => k).slice(0, 3).join(", ")}.` : ` Strong AI footprint. Protect and extend.`}`,
 			reasoning_slots: { score, ...breakdown },
 		}),
 	];
@@ -544,7 +544,7 @@ function inferAiBotsBlocked(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `${sig.numeric_value} AI crawler(s) blocked in robots.txt. Each blocked bot is a platform that physically cannot cite the brand — even if your content would otherwise be the best answer. ${sig.description} Fix: review robots.txt and remove Disallow rules for GPTBot, ClaudeBot, PerplexityBot, Google-Extended unless deliberate.`,
+			reasoning: `${sig.numeric_value} AI crawler(s) blocked in robots.txt. Each blocked bot is a platform that physically cannot cite the brand. Even if your content would otherwise be the best answer. ${sig.description} Fix: review robots.txt and remove Disallow rules for GPTBot, ClaudeBot, PerplexityBot, Google-Extended unless deliberate.`,
 		}),
 	];
 }
@@ -590,7 +590,7 @@ function inferNoMachineReadablePricing(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `No /pricing.md or /pricing.txt file. AI agents increasingly compare products programmatically on behalf of buyers — opaque pricing pages (JavaScript-rendered, behind "contact sales", or scattered across plan-feature tables) get skipped in favor of competitors with parseable plan data. A 30-line markdown file with tier names + monthly prices + key limits unblocks that flow.`,
+			reasoning: `No /pricing.md or /pricing.txt file. AI agents increasingly compare products programmatically on behalf of buyers. Opaque pricing pages (JavaScript-rendered, behind "contact sales", or scattered across plan-feature tables) get skipped in favor of competitors with parseable plan data. A 30-line markdown file with tier names + monthly prices + key limits unblocks that flow.`,
 		}),
 	];
 }
@@ -611,7 +611,7 @@ function inferSchemaMarkupMissingForProduct(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Product / SoftwareApplication JSON-LD is missing on key commercial pages. AI assistants weight structured data heavily — without Product schema, the AI has to guess what's on the page from prose. Princeton GEO study found schema-rich content gets cited 30-40% more. Highest-priority fix: add Product schema + Offer schema to /pricing first.`,
+			reasoning: `Product / SoftwareApplication JSON-LD is missing on key commercial pages. AI assistants weight structured data heavily. Without Product schema, the AI has to guess what's on the page from prose. Princeton GEO study found schema-rich content gets cited 30-40% more. Highest-priority fix: add Product schema + Offer schema to /pricing first.`,
 		}),
 	];
 }
@@ -637,7 +637,7 @@ function inferUnfindableInComparisonSearches(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `${sig.numeric_value} comparison pages exist for "<brand> vs ..." queries — but the brand's own domain doesn't surface in top 3. Competitors are authoring the comparison narrative. AI assistants summarize "<brand> vs X" using whoever owns those pages. Fix: publish own "<brand> vs <top competitor>" comparison pages on the brand's domain.`,
+			reasoning: `${sig.numeric_value} comparison pages exist for "<brand> vs ..." queries. But the brand's own domain doesn't surface in top 3. Competitors are authoring the comparison narrative. AI assistants summarize "<brand> vs X" using whoever owns those pages. Fix: publish own "<brand> vs <top competitor>" comparison pages on the brand's domain.`,
 		}),
 	];
 }
@@ -659,7 +659,7 @@ function inferWikipediaArticleThinOrOutdated(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Wikipedia article exists but is thin or stale (${sig.description}). Wikipedia accounts for ~7.8% of all ChatGPT citations — stub articles get cited far less than substantive, recently-edited ones. Expand the article with sourced facts (founding date, leadership, product timeline, notable customers, press coverage). Don't author edits yourself — recruit independent editors or provide press kit material that gets picked up.`,
+			reasoning: `Wikipedia article exists but is thin or stale (${sig.description}). Wikipedia accounts for ~7.8% of all ChatGPT citations. Stub articles get cited far less than substantive, recently-edited ones. Expand the article with sourced facts (founding date, leadership, product timeline, notable customers, press coverage). Don't author edits yourself. Recruit independent editors or provide press kit material that gets picked up.`,
 		}),
 	];
 }
@@ -682,7 +682,7 @@ function inferWikipediaAuthoritative(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Wikipedia article is substantive and recently maintained — this is a major AI visibility asset. ${sig.description} Protect it: monitor for vandalism, keep the press kit fresh so independent editors have sources for updates.`,
+			reasoning: `Wikipedia article is substantive and recently maintained. This is a major AI visibility asset. ${sig.description} Protect it: monitor for vandalism, keep the press kit fresh so independent editors have sources for updates.`,
 		}),
 	];
 }
@@ -703,7 +703,7 @@ function inferSchemaMarkupComprehensive(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Schema markup is comprehensive (${sig.numeric_value} AI-priority types present). AI assistants get full structured context when parsing the site. ${sig.description} Maintain this — every new page should include relevant schema.`,
+			reasoning: `Schema markup is comprehensive (${sig.numeric_value} AI-priority types present). AI assistants get full structured context when parsing the site. ${sig.description} Maintain this. Every new page should include relevant schema.`,
 		}),
 	];
 }
@@ -793,7 +793,7 @@ function inferComparisonPageOwnsVsQuery(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Brand owns its own "<brand> vs <competitor>" comparison narrative on page 1. AI assistants summarize comparison queries using whoever ranks first — that's you. Maintain these comparison pages with fresh feature/pricing data.`,
+			reasoning: `Brand owns its own "<brand> vs <competitor>" comparison narrative on page 1. AI assistants summarize comparison queries using whoever ranks first. That's you. Maintain these comparison pages with fresh feature/pricing data.`,
 		}),
 	];
 }
@@ -827,7 +827,7 @@ function inferHighAuthorityThirdPartyCitations(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [],
 			evidence_refs: [],
-			reasoning: `Brand is cited across ${presentCount} authoritative third-party surfaces (${sources.join(", ")}). Per Princeton GEO study, brands are 6.5× more likely to be cited via third-party sources than their own domain. This is structural moat — invest in keeping these listings current.`,
+			reasoning: `Brand is cited across ${presentCount} authoritative third-party surfaces (${sources.join(", ")}). Per Princeton GEO study, brands are 6.5× more likely to be cited via third-party sources than their own domain. This is structural moat. Invest in keeping these listings current.`,
 		}),
 	];
 }
@@ -883,7 +883,7 @@ function inferCompetitorOwnsComparison(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Comparison query for the brand is authored by ${competitors}. When buyers shop, AI assistants summarize "<brand> vs X" using the competitor's framing — your weaknesses are highlighted, your strengths buried. Counter with own comparison page using fair side-by-side criteria.`,
+			reasoning: `Comparison query for the brand is authored by ${competitors}. When buyers shop, AI assistants summarize "<brand> vs X" using the competitor's framing. Your weaknesses are highlighted, your strengths buried. Counter with own comparison page using fair side-by-side criteria.`,
 		}),
 	];
 }
@@ -911,7 +911,7 @@ function inferWikipediaGapToFill(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", wiki.id)],
 			evidence_refs: wiki.evidence_refs,
-			reasoning: `No Wikipedia article, but the brand has industry-listing presence — meaning it likely meets notability for an article. Wikipedia is responsible for ~7.8% of ChatGPT citations. Action: collect 3-5 independent press references, draft a notability-compliant article, and submit via WP:AfC (Articles for Creation) — don't author it yourself.`,
+			reasoning: `No Wikipedia article, but the brand has industry-listing presence. Meaning it likely meets notability for an article. Wikipedia is responsible for ~7.8% of ChatGPT citations. Action: collect 3-5 independent press references, draft a notability-compliant article, and submit via WP:AfC (Articles for Creation). Don't author it yourself.`,
 		}),
 	];
 }
@@ -986,7 +986,7 @@ function inferThirdPartyCitationTarget(input: ReconInput): Inference[] {
 			ids: input.ids,
 			signal_refs: [makeRef("signal", g2?.id ?? capterra?.id ?? "")],
 			evidence_refs: [...(g2?.evidence_refs ?? []), ...(capterra?.evidence_refs ?? [])],
-			reasoning: `Missing presence on ${missing.join(" and ")}. These are the highest-leverage citation targets for SaaS — AI assistants prefer category-listed products with review counts >50. Action: claim profiles (free), seed 10-15 reviews from happy customers in first 30 days, target review count parity with median competitor in your category.`,
+			reasoning: `Missing presence on ${missing.join(" and ")}. These are the highest-leverage citation targets for SaaS. AI assistants prefer category-listed products with review counts >50. Action: claim profiles (free), seed 10-15 reviews from happy customers in first 30 days, target review count parity with median competitor in your category.`,
 		}),
 	];
 }
@@ -1053,7 +1053,7 @@ function inferAiVisibilityTrajectory(input: ReconInput): Inference[] {
 			signal_refs: [],
 			evidence_refs: [],
 			reasoning: improved
-				? `AI Visibility Score: ${prior} → ${current} (+${delta}) since last audit. Whatever changed (new Wikipedia edit, schema rollout, llms.txt published) is working — keep it going.`
+				? `AI Visibility Score: ${prior} → ${current} (+${delta}) since last audit. Whatever changed (new Wikipedia edit, schema rollout, llms.txt published) is working. Keep it going.`
 				: `AI Visibility Score: ${prior} → ${current} (${delta}) since last audit. Either something broke (schema removed, bot blocked, listing lost) OR a competitor improved their footprint and pushed you down. Investigate before AI weight decays further.`,
 			reasoning_slots: { prior_score: prior, current_score: current, delta },
 		}),
@@ -1096,7 +1096,7 @@ function inferCitationDeltas(input: ReconInput): Inference[] {
 					ids: input.ids,
 					signal_refs: currentSig ? [makeRef("signal", currentSig.id)] : [],
 					evidence_refs: currentSig?.evidence_refs ?? [],
-					reasoning: `New citation surface detected: ${label}. AI citation pool just grew — surface this internally + amplify (announce on social, link to it from homepage trust strip).`,
+					reasoning: `New citation surface detected: ${label}. AI citation pool just grew. Surface this internally + amplify (announce on social, link to it from homepage trust strip).`,
 				}),
 			);
 		} else if (priorPresent && !currentPresent) {
@@ -1113,7 +1113,7 @@ function inferCitationDeltas(input: ReconInput): Inference[] {
 					ids: input.ids,
 					signal_refs: priorSig ? [makeRef("signal", priorSig.id)] : [],
 					evidence_refs: priorSig?.evidence_refs ?? [],
-					reasoning: `Lost citation: ${label} was present last audit, gone now. Investigate immediately — possible reasons: listing claimed but profile got deleted, Wikipedia article merged/deleted via AfD, G2/Capterra moderation removed page. AI weight will decay within weeks if not restored.`,
+					reasoning: `Lost citation: ${label} was present last audit, gone now. Investigate immediately. Possible reasons: listing claimed but profile got deleted, Wikipedia article merged/deleted via AfD, G2/Capterra moderation removed page. AI weight will decay within weeks if not restored.`,
 				}),
 			);
 		}

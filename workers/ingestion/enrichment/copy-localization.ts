@@ -132,7 +132,7 @@ function detectHreflangTags(html: string): Array<{ locale: string; url: string }
 
 const SYSTEM_PROMPT = buildSystemPrompt(
   "localization quality analyst specializing in persuasive copy",
-  "Compare the persuasive structure of translated page versions to detect when translation weakens the sales message. A literal but flat translation loses buyers as effectively as a mistranslation — the bar is whether the localized copy still closes.",
+  "Compare the persuasive structure of translated page versions to detect when translation weakens the sales message. A literal but flat translation loses buyers as effectively as a mistranslation. The bar is whether the localized copy still closes.",
 );
 
 function buildLocalizationPrompt(
@@ -311,7 +311,7 @@ export async function runLocalizationQualityEnrichment(
     type: "step",
     stage: "enrichment",
     data: {
-      message: `Wave 3.10: localization quality analysis — multi-locale site detected (${hasLocalePrefix ? 'URL prefixes' : 'hreflang tags'})`,
+      message: `Wave 3.10: localization quality analysis. Multi-locale site detected (${hasLocalePrefix ? 'URL prefixes' : 'hreflang tags'})`,
       index: budget.processed + 1,
     },
     timestamp: new Date(),

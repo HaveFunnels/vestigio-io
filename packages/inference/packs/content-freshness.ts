@@ -48,7 +48,7 @@ function inferCommercialPageStale(byKey: Map<string, Signal>, scoping: Scoping, 
     scoping, cycle_ref, ids,
     signal_refs: highStakePages.map(s => makeRef('signal', s.id)),
     evidence_refs: highStakePages.flatMap(s => s.evidence_refs),
-    reasoning: `${highStakePages.length} high-conversion page(s) have stale content (worst score ${worstScore}/100). Commercial pages — checkout, pricing, product — are where buying decisions happen. Outdated content on these surfaces directly reduces conversion confidence.`,
+    reasoning: `${highStakePages.length} high-conversion page(s) have stale content (worst score ${worstScore}/100). Commercial pages. Checkout, pricing, product. Are where buying decisions happen. Outdated content on these surfaces directly reduces conversion confidence.`,
     reasoning_slots: { severity, worstScore },
   })];
 }
@@ -71,7 +71,7 @@ function inferPricingPageOutdated(byKey: Map<string, Signal>, scoping: Scoping, 
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Pricing page has stale content (staleness score ${worstScore}/100). The pricing page is the highest-leverage conversion surface — outdated competitor comparisons, old feature lists, or stale promotional claims directly reduce willingness to pay. Buyers cross-reference pricing with competitors; stale claims are instantly detectable.`,
+    reasoning: `Pricing page has stale content (staleness score ${worstScore}/100). The pricing page is the highest-leverage conversion surface. Outdated competitor comparisons, old feature lists, or stale promotional claims directly reduce willingness to pay. Buyers cross-reference pricing with competitors; stale claims are instantly detectable.`,
     reasoning_slots: { severity, worstScore },
   })];
 }
@@ -120,11 +120,11 @@ function inferContentDecayProgression(byKey: Map<string, Signal>, scoping: Scopi
     conclusion: 'content_decay_progression',
     conclusion_value: severity,
     severity_hint: severity,
-    confidence: 75, // Slightly lower — aggregate heuristic
+    confidence: 75, // Slightly lower. Aggregate heuristic
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Content decay detected across ${matches.length} pages (average staleness ${Math.round(avgScore)}/100). When multiple commercial pages show signs of neglect simultaneously, the site signals systemic content abandonment. AI search engines deprioritize stale content — sites last updated >30 days ago on competitive topics are 25.7% less likely to be cited.`,
+    reasoning: `Content decay detected across ${matches.length} pages (average staleness ${Math.round(avgScore)}/100). When multiple commercial pages show signs of neglect simultaneously, the site signals systemic content abandonment. AI search engines deprioritize stale content. Sites last updated >30 days ago on competitive topics are 25.7% less likely to be cited.`,
     reasoning_slots: { severity, avgScore: Math.round(avgScore) },
   })];
 }

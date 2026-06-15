@@ -316,7 +316,7 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					staticTone="loss"
 					captionWhenStatic="em vazamento agora"
 					methodologyDescription={withReceipt(
-						"Vazamento estimado: soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número diminui à medida que ações são marcadas como done e o ciclo seguinte confirma que a finding linkada não aparece mais — quando isso acontece, o valor migra para 'Recuperado/mês'.",
+						"Vazamento estimado: soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número diminui à medida que ações são marcadas como done e o ciclo seguinte confirma que a finding linkada não aparece mais. Quando isso acontece, o valor migra para 'Recuperado/mês'.",
 						hero.exposureMin,
 						hero.exposureMax,
 						hero.exposureFindingCount,
@@ -337,7 +337,7 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					rawNumber={hero.retainedFindingCount ?? hero.criticalCount}
 					delta={hero.criticalDeltaMoM}
 					invertDelta
-					methodologyDescription="Total de findings em estado aberto neste ciclo — incluindo low/medium/high. Vestigio mantém esse número em monitoramento contínuo entre ciclos. Apenas findings com confiança >= medium aparecem aqui."
+					methodologyDescription="Total de findings em estado aberto neste ciclo, incluindo low/medium/high. Vestigio mantém esse número em monitoramento contínuo entre ciclos. Apenas findings com confiança >= medium aparecem aqui."
 					methodologyDrillHref="/app/findings"
 				/>
 				<Tile

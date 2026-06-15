@@ -45,7 +45,7 @@ import { urlTemplate } from "../../../packages/url-normalize";
 // ──────────────────────────────────────────────
 
 const PASS_NAME = "selective_headless";
-const PASS_LABEL = "Stage D — Selective Headless";
+const PASS_LABEL = "Stage D. Selective Headless";
 
 // Retry policy
 const MAX_ATTEMPTS = 3;
@@ -66,7 +66,7 @@ function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
   if (ctx.mode !== "full") {
     return {
       run: false,
-      reason: `mode is '${ctx.mode}' — Stage D only runs in 'full' mode`,
+      reason: `mode is '${ctx.mode}'. Stage D only runs in 'full' mode`,
     };
   }
 
@@ -90,7 +90,7 @@ function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
 
   const reason = ctx.spa_detected
     ? "SPA detected, mode=full, landing URL valid"
-    : "Non-SPA site, mode=full — running with reduced budget for overlay/CTA verification";
+    : "Non-SPA site, mode=full. Running with reduced budget for overlay/CTA verification";
   return { run: true, reason };
 }
 
@@ -192,7 +192,7 @@ async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
       type: "step",
       stage: "headless",
       data: {
-        message: `Stage D: attempt ${attempt}/${MAX_ATTEMPTS} — running ${scenarios.length} scenarios`,
+        message: `Stage D: attempt ${attempt}/${MAX_ATTEMPTS}. Running ${scenarios.length} scenarios`,
         index: attempt,
       },
       timestamp: new Date(),

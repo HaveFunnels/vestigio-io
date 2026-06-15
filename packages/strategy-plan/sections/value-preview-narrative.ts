@@ -98,7 +98,7 @@ function fallback(i: PreviewInputs): string {
 				: i.nextMilestoneLabel === "M6"
 					? "comparativo vs. categoria liga: você vê onde está acima e abaixo dos seus pares"
 					: "histórico suficiente pro Vestigio prever regressões antes delas afetarem receita. Manutenção vira preventiva, não reativa";
-		return `Você está há **${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}** com Vestigio. Próximo marco: **${i.nextMilestoneLabel}** ${monthsTxt} — a partir daí, ${unlock}.`;
+		return `Você está há **${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}** com Vestigio. Próximo marco: **${i.nextMilestoneLabel}** ${monthsTxt}. A partir daí, ${unlock}.`;
 	}
 	return `Você completou **${i.cycleCount} ciclos** com Vestigio. Histórico suficiente pra prever regressões antes delas afetarem receita.`;
 }
@@ -127,9 +127,9 @@ Regras:
 		if (i.nextMilestoneLabel === "M3") {
 			lines.push(`  · Atribuição de receita real via Stripe + behavioral (sai de "estimativa de plano" pra "captura medida")`);
 		} else if (i.nextMilestoneLabel === "M6") {
-			lines.push(`  · Comparativo vs. categoria — buyer vê onde está acima/abaixo dos pares`);
+			lines.push(`  · Comparativo vs. categoria. Buyer vê onde está acima/abaixo dos pares`);
 		} else {
-			lines.push(`  · Predição de regressões antes de afetarem receita — manutenção preventiva, não reativa`);
+			lines.push(`  · Predição de regressões antes de afetarem receita. Manutenção preventiva, não reativa`);
 		}
 	}
 	lines.push("");

@@ -160,7 +160,7 @@ function computeTrendSignals(
 			signals.push({
 				kind: "dropped_free_tier",
 				severity: "high",
-				detail: "Removeu o tier gratuito. Sinal forte de movimento de monetização — janela pra customers expostos.",
+				detail: "Removeu o tier gratuito. Sinal forte de movimento de monetização. Janela pra customers expostos.",
 			});
 		}
 	}
@@ -180,7 +180,7 @@ function computeTrendSignals(
 		signals.push({
 			kind: "content_acceleration",
 			severity,
-			detail: `Acelerou conteúdo ${multiplier}x — passou de ${previous.blog_post_count} pra ${current.blog_post_count} posts no blog.`,
+			detail: `Acelerou conteúdo ${multiplier}x. Passou de ${previous.blog_post_count} pra ${current.blog_post_count} posts no blog.`,
 		});
 	}
 

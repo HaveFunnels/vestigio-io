@@ -389,7 +389,7 @@ export const INFERENCE_TITLES: Record<string, string> = {
   value_proposition_buried: 'Your value proposition is buried or invisible to visitors',
   social_proof_ineffective: 'Social proof is generic or missing where it matters',
   objection_unaddressed: 'Buyer objections go unanswered on commercial pages',
-  cta_competing_or_unclear: 'Too many CTAs compete for attention — visitors choose none',
+  cta_competing_or_unclear: 'Too many CTAs compete for attention. Visitors choose none',
   trust_copy_absent_at_decision: 'No trust language where buyers make their purchase decision',
   copy_funnel_misalignment: 'Copy tone and message do not match the funnel stage',
   copy_cross_page_inconsistent: 'Messaging contradicts itself across pages',
@@ -471,7 +471,7 @@ export const INFERENCE_TITLES: Record<string, string> = {
   // Phase 2D: Network analysis findings
   checkout_api_latency_degraded: 'Your checkout is slow and buyers are giving up',
   commercial_pages_slow: 'Your product and checkout pages are slower than the rest of your site',
-  paid_landing_overloaded: 'Your ad landing pages are too heavy — buyers leave before acting',
+  paid_landing_overloaded: 'Your ad landing pages are too heavy. Buyers leave before acting',
   third_party_weight_delays_trust: 'Outside scripts are making your site load slowly',
   checkout_brittle_third_party: 'Your checkout breaks when outside services have a bad day',
   purchase_blocked_failing_requests: "Buyers can't complete purchases because outside services are failing",
@@ -543,19 +543,19 @@ export const INFERENCE_TITLES: Record<string, string> = {
   pricing_page_framing_unclear: "Your visitor doesn't know which plan to choose",
   // Phase 4A: Commerce context (Shopify-powered)
   checkout_abandonment_revenue_leak: 'Your checkout loses money every time a buyer walks away',
-  promoted_product_out_of_stock: "Products on your site can't be bought — out of stock",
+  promoted_product_out_of_stock: "Products on your site can't be bought. Out of stock",
   high_refund_rate_eroding_revenue: 'Refund rate is eating into your revenue',
   single_payment_gateway_risk: 'One payment gateway outage stops all your revenue',
   discount_abuse_pattern: 'Discount overuse is leaking margin on most orders',
-  ad_spend_platform_concentration_risk: 'Most of your ad budget lives on one platform — one policy change halts acquisition',
+  ad_spend_platform_concentration_risk: 'Most of your ad budget lives on one platform. One policy change halts acquisition',
   ads_without_conversion_visibility: "You're spending on ads without the commerce data to prove they work",
   ad_creative_dead_destination: 'An ad creative is spending money sending buyers to a dead page',
   ad_creative_landing_trust_gap: 'An ad sends buyers to a page that asks for card data but shows no trust signals',
   ad_creative_form_friction_waste: 'An ad sends buyers to a form so long they abandon before converting',
   ad_creative_mobile_checkout_degraded: 'An ad sends mobile buyers to a page where checkout is broken or too slow',
-  ad_creative_message_mismatch: 'An ad promises one thing but the landing page delivers another — the message disconnect wastes ad spend',
-  low_repeat_purchase_rate: "Buyers aren't coming back — acquisition cost isn't being recovered",
-  dead_weight_products: "Listed products haven't sold in 30 days — dead weight",
+  ad_creative_message_mismatch: 'An ad promises one thing but the landing page delivers another. The message disconnect wastes ad spend',
+  low_repeat_purchase_rate: "Buyers aren't coming back. Acquisition cost isn't being recovered",
+  dead_weight_products: "Listed products haven't sold in 30 days. Dead weight",
   // Wave 8.1: Payment Health & Involuntary Churn
   failed_payment_revenue_drain: 'Failed payments are draining revenue from subscribers who want to pay',
   subscriber_churn_unsustainable: 'Subscriber churn rate has crossed the sustainable threshold',
@@ -583,7 +583,7 @@ export const INFERENCE_TITLES: Record<string, string> = {
   no_product_screenshot_visible: "Buyers can't see what they're signing up for",
   // Food/Restaurant
   menu_requires_signup: 'Hungry customers leave before seeing what you offer',
-  no_food_photos: 'Customers choose with their eyes — text-only menus lose',
+  no_food_photos: 'Customers choose with their eyes. Text-only menus lose',
   delivery_area_unclear: "Customers don't know if you deliver to them",
   delivery_time_not_shown: "Customers won't wait without knowing how long",
   allergen_info_missing: "Customers with dietary needs can't safely order from you",
@@ -608,11 +608,11 @@ export const INFERENCE_TITLES: Record<string, string> = {
   // Cross-domain: Static + LLM correlation findings
   meta_promise_content_mismatch: 'Your page promises one thing in Google but delivers something else',
   pricing_terms_contradictory: 'Different pages show conflicting prices for the same thing',
-  urgency_claim_unverifiable: 'Your urgency claims are permanent — buyers notice the trick',
+  urgency_claim_unverifiable: 'Your urgency claims are permanent. Buyers notice the trick',
   value_prop_diluted_by_navigation: 'Your homepage tries to say too many things at once',
   checkout_copy_creates_anxiety: 'Your checkout text scares buyers instead of reassuring them',
   faq_answers_wrong_questions: 'Your FAQ answers technical questions instead of buying objections',
-  testimonials_feel_fabricated: 'Your testimonials look fabricated — buyers distrust them',
+  testimonials_feel_fabricated: 'Your testimonials look fabricated. Buyers distrust them',
   // Wave 9: Subdomain discovery findings
   staging_environment_publicly_accessible: 'Your staging/dev environment is publicly accessible without protection',
   admin_panel_exposed_to_internet: 'Your admin panel is publicly accessible to anyone on the internet',
@@ -626,11 +626,11 @@ export const INFERENCE_TITLES: Record<string, string> = {
   navigation_traps_commercial_flow: 'Your content pages trap visitors with no path back to buying',
   social_proof_loads_too_late: 'Your testimonials load too late to influence the buying decision',
   consent_banner_obscures_first_action: 'Your cookie banner blocks the first thing buyers want to click',
-  price_hidden_behind_interaction: 'Buyers see no price until they click — most leave before clicking',
+  price_hidden_behind_interaction: 'Buyers see no price until they click. Most leave before clicking',
   // ── Funnel Journey Findings ────────────────────
   // Moment 1 — First Impression
   hero_outcome_absent: 'Your headline describes what you do but not what the buyer gets',
-  cognitive_load_first_screen: "Your homepage says too many things at once — visitors can't focus",
+  cognitive_load_first_screen: "Your homepage says too many things at once. Visitors can't focus",
   primary_cta_delayed: 'Visitors have to scroll past content walls to find the first action',
   specificity_deficit: 'Your commercial text uses adjectives every competitor also uses',
   // Moment 2 — Consideration
@@ -642,8 +642,8 @@ export const INFERENCE_TITLES: Record<string, string> = {
   objection_echo_chamber: 'Your FAQ answers questions you want to answer, not buying objections',
   social_channels_decorative: 'Social media links point to inactive or abandoned profiles',
   // Moment 3 — Decision
-  pricing_without_context: "Prices appear without ROI context — buyers see cost, not investment",
-  checkout_identity_break: "Visual identity breaks at the payment moment — brand continuity lost",
+  pricing_without_context: "Prices appear without ROI context. Buyers see cost, not investment",
+  checkout_identity_break: "Visual identity breaks at the payment moment. Brand continuity lost",
   payment_options_invisible: "Accepted payment methods aren't visible before checkout",
   guarantee_invisible_at_decision: 'Your guarantee exists but is hidden when buyers need it most',
   urgency_mechanics_absent: 'Nothing tells the buyer why acting today is better than tomorrow',
@@ -656,11 +656,11 @@ export const INFERENCE_TITLES: Record<string, string> = {
   referral_path_nonexistent: 'No mechanism exists for satisfied customers to bring others',
   success_story_feedback_loop_broken: 'Customer success happens but is never captured as social proof',
   // Cross-journey
-  tone_shift_across_journey: "Brand voice changes between pages — feels like different companies",
+  tone_shift_across_journey: "Brand voice changes between pages. Feels like different companies",
   mobile_journey_friction_compound: 'Small mobile issues compound into an unbearable purchase experience',
   trust_gradient_inverted: "Trust signals are strongest where buyers already trust and absent where they don't",
   // Wave 12 — Brand Echo (off-site reconnaissance)
-  g2_listing_void: "B2B buyers research you on G2 — there's no profile to find",
+  g2_listing_void: "B2B buyers research you on G2. There's no profile to find",
   capterra_listing_void: 'Buyers comparing on Capterra never reach your brand',
   producthunt_listing_void: "Early-adopters scanning Product Hunt don't see you",
   wikipedia_listing_void: 'Your brand has no Wikipedia presence to back up authority claims',
@@ -669,51 +669,51 @@ export const INFERENCE_TITLES: Record<string, string> = {
   affiliate_outranks_own: 'Affiliate and review sites earn commission on your branded traffic',
   category_intent_invisible: 'Buyers shopping the category never see you on page 1',
   trustpilot_complaint_cluster: 'Negative Trustpilot reviews sit unanswered for prospects to read',
-  trustpilot_response_silence: "Owner barely responds on Trustpilot — buyers read silence as 'they don't care'",
-  reclame_aqui_reputation_critical: 'Reclame Aqui flags your brand — Brazilian buyers check this before paying',
+  trustpilot_response_silence: "Owner barely responds on Trustpilot. Buyers read silence as 'they don't care'",
+  reclame_aqui_reputation_critical: 'Reclame Aqui flags your brand. Brazilian buyers check this before paying',
   hn_tech_audience_invisible: 'Tech early-adopters have never discussed you on Hacker News',
   reddit_forum_absence: 'Reddit recommendation threads never mention your brand',
-  reddit_category_demand_unmet: 'Buyers shopping your category on Reddit — visible demand, invisible brand',
+  reddit_category_demand_unmet: 'Buyers shopping your category on Reddit. Visible demand, invisible brand',
   // Wave 13 — AI Visibility pack
-  ai_visibility_score: 'AI Visibility Score — how likely AI assistants are to recommend you',
-  ai_bots_blocked: "Your robots.txt blocks AI crawlers — those platforms can't cite you",
-  no_llms_txt: 'No /llms.txt — AI assistants guess what you do instead of reading your summary',
-  no_machine_readable_pricing: "Pricing isn't machine-readable — AI agents comparing tools skip you",
-  schema_markup_missing_for_product: "Pricing and product pages lack JSON-LD — AI can't extract your offer",
-  unfindable_in_comparison_searches: "Competitors author the '<brand> vs' pages — they shape how AI describes you",
+  ai_visibility_score: 'AI Visibility Score. How likely AI assistants are to recommend you',
+  ai_bots_blocked: "Your robots.txt blocks AI crawlers. Those platforms can't cite you",
+  no_llms_txt: 'No /llms.txt. AI assistants guess what you do instead of reading your summary',
+  no_machine_readable_pricing: "Pricing isn't machine-readable. AI agents comparing tools skip you",
+  schema_markup_missing_for_product: "Pricing and product pages lack JSON-LD. AI can't extract your offer",
+  unfindable_in_comparison_searches: "Competitors author the '<brand> vs' pages. They shape how AI describes you",
   branded_query_ai_overview_competitor: 'When AI summarizes searches for your brand, it cites competitors first',
   wikipedia_article_thin_or_outdated: 'Wikipedia article exists but is too thin or stale to be cited confidently',
-  wikipedia_article_authoritative: 'Strong Wikipedia article — AI assistants cite you confidently for definitional queries',
-  schema_markup_comprehensive: 'Comprehensive schema markup — AI gets full structured context when parsing your site',
-  ai_bot_access_optimal: 'All major AI crawlers can access your site — maximum citation pool available',
-  pricing_machine_readable: 'Machine-readable pricing — AI agents comparing tools can parse your plans without rendering',
-  branded_query_owns_ai_overview: 'Your domain ranks #1 for your brand — AI answers anchor on your own page',
-  comparison_page_owns_vs_query: "You own your '<brand> vs' comparison narrative — AI summarizes using your framing",
-  high_authority_third_party_citations: 'Cited across authoritative third-party sources — structural moat for AI visibility',
-  competitor_owns_category_query: "Competitors dominate 'best <category>' queries — AI recommends them, not you",
-  competitor_owns_comparison: "Competitor authored 'you vs them' — AI summarizes with their framing of your weaknesses",
-  wikipedia_gap_to_fill: "You meet notability for Wikipedia but don't have an article — high-leverage citation gap",
+  wikipedia_article_authoritative: 'Strong Wikipedia article. AI assistants cite you confidently for definitional queries',
+  schema_markup_comprehensive: 'Comprehensive schema markup. AI gets full structured context when parsing your site',
+  ai_bot_access_optimal: 'All major AI crawlers can access your site. Maximum citation pool available',
+  pricing_machine_readable: 'Machine-readable pricing. AI agents comparing tools can parse your plans without rendering',
+  branded_query_owns_ai_overview: 'Your domain ranks #1 for your brand. AI answers anchor on your own page',
+  comparison_page_owns_vs_query: "You own your '<brand> vs' comparison narrative. AI summarizes using your framing",
+  high_authority_third_party_citations: 'Cited across authoritative third-party sources. Structural moat for AI visibility',
+  competitor_owns_category_query: "Competitors dominate 'best <category>' queries. AI recommends them, not you",
+  competitor_owns_comparison: "Competitor authored 'you vs them'. AI summarizes with their framing of your weaknesses",
+  wikipedia_gap_to_fill: "You meet notability for Wikipedia but don't have an article. High-leverage citation gap",
   llms_txt_quick_win: '15-minute action: publish /llms.txt and /pricing.md to unblock AI agent visibility',
   schema_priority_list: 'Prioritized schema rollout to lift AI citation rate within 60 days',
-  third_party_citation_target: 'Specific third-party listings missing — claim them to enter AI citation pool',
-  high_leverage_query_unowned: "A buying-intent query you're not addressing — content gap with measurable AI lift",
-  ai_visibility_trajectory_improved: "AI Visibility Score improved since last audit — keep doing what's working",
-  ai_visibility_trajectory_declined: 'AI Visibility Score dropped since last audit — something broke or a competitor moved',
+  third_party_citation_target: 'Specific third-party listings missing. Claim them to enter AI citation pool',
+  high_leverage_query_unowned: "A buying-intent query you're not addressing. Content gap with measurable AI lift",
+  ai_visibility_trajectory_improved: "AI Visibility Score improved since last audit. Keep doing what's working",
+  ai_visibility_trajectory_declined: 'AI Visibility Score dropped since last audit. Something broke or a competitor moved',
   new_citation_detected: 'A new authoritative citation surface has appeared since last audit',
-  lost_citation_detected: 'A citation you had last audit is gone — investigate why before AI weight decays',
+  lost_citation_detected: 'A citation you had last audit is gone. Investigate why before AI weight decays',
   // Wave 14 — Cross-pack compound insights
-  compound_reputation_blocks_ai_citation: 'Your reputation problem is blocking AI search citation — fix reviews before investing in schema',
-  compound_invisible_and_unclear: "Buyers can't find your category page — and when they do, the value prop is buried",
-  compound_brand_authority_crisis: 'Brand authority crisis on multiple fronts — competitors, affiliates, and SEO all undermining you',
-  compound_ai_agent_invisibility: "AI agents can't parse your product across llms.txt + schema + machine-readable pricing — 30-min fix",
-  compound_mobile_commerce_broken: 'Mobile commerce broken across conversion, forms, and CTA timing — paid traffic burning',
-  compound_funnel_triple_leak: 'Revenue leaking at top + middle + bottom of funnel — order matters in the fix',
-  compound_paid_acquisition_burn: 'Paid acquisition compounding waste across friction + trust + mobile — pause or rebuild',
+  compound_reputation_blocks_ai_citation: 'Your reputation problem is blocking AI search citation. Fix reviews before investing in schema',
+  compound_invisible_and_unclear: "Buyers can't find your category page. And when they do, the value prop is buried",
+  compound_brand_authority_crisis: 'Brand authority crisis on multiple fronts. Competitors, affiliates, and SEO all undermining you',
+  compound_ai_agent_invisibility: "AI agents can't parse your product across llms.txt + schema + machine-readable pricing. 30-min fix",
+  compound_mobile_commerce_broken: 'Mobile commerce broken across conversion, forms, and CTA timing. Paid traffic burning',
+  compound_funnel_triple_leak: 'Revenue leaking at top + middle + bottom of funnel. Order matters in the fix',
+  compound_paid_acquisition_burn: 'Paid acquisition compounding waste across friction + trust + mobile. Pause or rebuild',
   compound_trust_journey_collapse: 'Trust signals collapse progressively from homepage to mobile to checkout',
-  compound_saas_activation_to_expansion_blocked: "SaaS loop broken — users don't activate, don't upgrade, don't expand",
-  compound_dead_ad_spend: 'DARK WASTE — ads to dead pages AND no conversion tracking — pause everything',
-  compound_pricing_unclear_and_unparseable: 'Pricing fails on humans AND AI agents — one rewrite covers both',
-  compound_category_invisible_and_authority_thin: 'Invisible in category SERP AND no Wikipedia authority — bottom-of-stack visibility',
+  compound_saas_activation_to_expansion_blocked: "SaaS loop broken. Users don't activate, don't upgrade, don't expand",
+  compound_dead_ad_spend: 'DARK WASTE. Ads to dead pages AND no conversion tracking. Pause everything',
+  compound_pricing_unclear_and_unparseable: 'Pricing fails on humans AND AI agents. One rewrite covers both',
+  compound_category_invisible_and_authority_thin: 'Invisible in category SERP AND no Wikipedia authority. Bottom-of-stack visibility',
 };
 
 // ── Parametric Title Resolution ──
@@ -2242,7 +2242,7 @@ export function projectWorkspaces(
       ? 'No structural friction detected on the buyer journey today.'
       : worstFunnelSeverity >= 3
         ? 'Structural friction on the buyer journey is dropping conversion at material steps.'
-        : 'Some friction on the buyer journey — visible but not yet at material-impact levels.';
+        : 'Some friction on the buyer journey. Visible but not yet at material-impact levels.';
   workspaces.push(
     buildWorkspaceProjection(
       'funnel_journey', wn?.funnel_journey ?? 'Funnel Journey', 'funnel_journey',
@@ -2250,7 +2250,7 @@ export function projectWorkspaces(
       funnelDecisionKey,
       funnelDecisionImpact,
       funnelJourneyFindings,
-      null, // synthesized decision — no pack-level coherence to attach
+      null, // synthesized decision. No pack-level coherence to attach
       narrative,
       changeSummaryMap.get('funnel_journey_pack') ?? null,
     ),
@@ -2279,8 +2279,8 @@ export function projectWorkspaces(
     competitiveLensFindings.length === 0
       ? 'Nenhuma pressão competitiva material detectada no ciclo atual.'
       : worstCompetitiveSeverity >= 3
-        ? 'Pressão competitiva alta — diferenciação ou trust posture estão materialmente atrás do peer set.'
-        : 'Pressão competitiva detectada — diferenças vs peer set visíveis, ainda não em nível material.';
+        ? 'Pressão competitiva alta. Diferenciação ou trust posture estão materialmente atrás do peer set.'
+        : 'Pressão competitiva detectada. Diferenças vs peer set visíveis, ainda não em nível material.';
   workspaces.push(
     buildWorkspaceProjection(
       'competitive_lens', wn?.competitive_lens ?? 'Competitive Lens', 'competitive_lens',
@@ -2288,7 +2288,7 @@ export function projectWorkspaces(
       competitiveDecisionKey,
       competitiveDecisionImpact,
       competitiveLensFindings,
-      null, // synthesized decision — no pack-level coherence to attach
+      null, // synthesized decision. No pack-level coherence to attach
       narrative,
       changeSummaryMap.get('competitive_lens_pack') ?? null,
     ),
@@ -2571,10 +2571,10 @@ export const POSITIVE_CHECKS: { key: string; title: string; description: string;
     description: 'Your buy button is clear and there is no competing call-to-action stealing attention. Visitors do not have to think twice about how to purchase.',
     check: (infs) => !infs.some(i => i.inference_key === 'unclear_conversion_intent') },
   { key: 'trust_continuity_good', title: 'Customers stay on your domain through checkout', pack: 'revenue_integrity',
-    description: 'The buyer never gets bounced to a strange domain during payment. The whole flow happens where they expect it — no surprise redirects, no broken trust.',
+    description: 'The buyer never gets bounced to a strange domain during payment. The whole flow happens where they expect it. No surprise redirects, no broken trust.',
     check: (infs) => !infs.some(i => i.inference_key === 'trust_boundary_crossed' || i.inference_key === 'trust_break_in_checkout') },
   { key: 'policy_coverage_complete', title: 'Your policies are in place and easy to find', pack: 'scale_readiness',
-    description: 'Privacy, terms, and refund policies are visible and accessible. Buyers can find what they need before clicking buy — and that builds trust.',
+    description: 'Privacy, terms, and refund policies are visible and accessible. Buyers can find what they need before clicking buy. And that builds trust.',
     check: (infs) => !infs.some(i => i.inference_key === 'policy_gap') },
   { key: 'low_friction_checkout', title: 'Your purchase path runs clean', pack: 'revenue_integrity',
     description: 'No broken forms, no redirect chains, no slow pages between cart and confirmation. The buyer who wants to buy can actually buy.',
@@ -2596,7 +2596,7 @@ export const POSITIVE_CHECKS: { key: string; title: string; description: string;
     description: 'Upgrade options are visible and explain what the user gets. People who want to pay you more can actually find the path to do so.',
     check: (infs) => !infs.some(i => i.inference_key === 'upgrade_invisible' || i.inference_key === 'upgrade_timing_wrong' || i.inference_key === 'no_expansion_path') },
   { key: 'empty_states_guided', title: 'New users are not left staring at blank screens', pack: 'saas_growth_readiness',
-    description: 'Empty screens guide the user toward a first action — sample data, suggestions, or clear next steps. No one opens your app and feels lost.',
+    description: 'Empty screens guide the user toward a first action. Sample data, suggestions, or clear next steps. No one opens your app and feels lost.',
     check: (infs) => !infs.some(i => i.inference_key === 'empty_state_without_guidance') },
 ];
 
@@ -2984,12 +2984,12 @@ function buildConfidenceNarrative(result: MultiPackResult, translations?: Engine
       'Consider verification to strengthen confidence in the identified issues.');
   } else {
     narrative = cn?.low_low ?? ('Both structural evidence and economic data carry uncertainty. ' +
-      'Findings are directional — verify before taking action on specific dollar estimates.');
+      'Findings are directional. Verify before taking action on specific dollar estimates.');
   }
 
   // Only return narrative if there's something meaningful to say
   if (structuralConf === 'high' && economicConf === 'high' && uncertaintyFactors.length === 0) {
-    return null; // no narrative needed — everything is high confidence
+    return null; // no narrative needed. Everything is high confidence
   }
 
   return {

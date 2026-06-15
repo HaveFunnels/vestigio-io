@@ -62,7 +62,7 @@ function inferCriticalPathBroken(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', criticalError.id)],
     evidence_refs: criticalError.evidence_refs,
-    reasoning: `${count} revenue-critical page(s) (checkout, cart, pricing, login) are returning HTTP errors. These pages are directly on the conversion path — every visitor hitting an error page is a lost transaction. This is not a generic SEO concern; it is an active break in the revenue path.`,
+    reasoning: `${count} revenue-critical page(s) (checkout, cart, pricing, login) are returning HTTP errors. These pages are directly on the conversion path. Every visitor hitting an error page is a lost transaction. This is not a generic SEO concern; it is an active break in the revenue path.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -90,7 +90,7 @@ function inferFormDataLeavesDomain(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', exposure.id)],
     evidence_refs: exposure.evidence_refs,
-    reasoning: `${exposure.numeric_value} form(s) submit user data to unrecognized external domains. ${isPayment ? 'Payment fields are included — this is a direct trust and compliance risk at the conversion point.' : 'User data leaves the domain boundary without a recognized payment provider, creating trust and privacy concerns.'} This is distinct from a known provider redirect (Stripe, PayPal) — these are unrecognized external endpoints.`,
+    reasoning: `${exposure.numeric_value} form(s) submit user data to unrecognized external domains. ${isPayment ? 'Payment fields are included. This is a direct trust and compliance risk at the conversion point.' : 'User data leaves the domain boundary without a recognized payment provider, creating trust and privacy concerns.'} This is distinct from a known provider redirect (Stripe, PayPal). These are unrecognized external endpoints.`,
     reasoning_slots: { severity, count: exposure.numeric_value || 0 },
   })];
 }
@@ -200,7 +200,7 @@ function inferLanguageDiscontinuity(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `${count} commercial page(s) switch language compared to the homepage. When a buyer moves from browsing in one language to a checkout or pricing page in another, it creates confusion, reduces trust, and increases abandonment — especially in markets where the primary audience does not speak the checkout language.`,
+    reasoning: `${count} commercial page(s) switch language compared to the homepage. When a buyer moves from browsing in one language to a checkout or pricing page in another, it creates confusion, reduces trust, and increases abandonment. Especially in markets where the primary audience does not speak the checkout language.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -305,7 +305,7 @@ function inferPostPurchaseGap(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `No order confirmation page and no refund policy detected. This compound gap means customers who just paid have no immediate proof their order was received and no way to understand return terms. The result is "did my order go through?" support contacts and "I don't recognize this charge" disputes — the two highest-volume chargeback drivers.`,
+    reasoning: `No order confirmation page and no refund policy detected. This compound gap means customers who just paid have no immediate proof their order was received and no way to understand return terms. The result is "did my order go through?" support contacts and "I don't recognize this charge" disputes. The two highest-volume chargeback drivers.`,
     reasoning_slots: { severity: 'high' },
   })];
 }
@@ -340,7 +340,7 @@ function inferCommercialMeasurementBlind(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', missingCommercial.id), ...(measurement ? [makeRef('signal', measurement.id)] : [])],
     evidence_refs: missingCommercial.evidence_refs,
-    reasoning: `Analytics tools are present on the site but absent from checkout and payment pages. The highest-intent surfaces — where conversion actually happens — are operating without measurement. Ad spend optimization, attribution, and conversion rate improvement are impossible on the pages that generate revenue.`,
+    reasoning: `Analytics tools are present on the site but absent from checkout and payment pages. The highest-intent surfaces. Where conversion actually happens. Are operating without measurement. Ad spend optimization, attribution, and conversion rate improvement are impossible on the pages that generate revenue.`,
     reasoning_slots: { severity: 'high' },
   })];
 }
@@ -371,7 +371,7 @@ function inferThinPolicyContent(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `The refund/return policy is ${wordCount} words — too thin to defuse buyer disputes. A policy this brief cannot meaningfully explain return windows, refund processes, or exception handling. When dissatisfied customers cannot find clear terms, they bypass the merchant and file chargebacks.`,
+    reasoning: `The refund/return policy is ${wordCount} words. Too thin to defuse buyer disputes. A policy this brief cannot meaningfully explain return windows, refund processes, or exception handling. When dissatisfied customers cannot find clear terms, they bypass the merchant and file chargebacks.`,
     reasoning_slots: { severity, count: wordCount },
   })];
 }
@@ -395,7 +395,7 @@ function inferHiddenSupportWidget(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `A live support widget exists on the site but is absent from checkout and payment pages. Buyers who hesitate at the purchase moment — with questions about shipping, returns, or product fit — have no way to get immediate answers. This pushes uncertain buyers toward abandonment instead of resolution.`,
+    reasoning: `A live support widget exists on the site but is absent from checkout and payment pages. Buyers who hesitate at the purchase moment. With questions about shipping, returns, or product fit. Have no way to get immediate answers. This pushes uncertain buyers toward abandonment instead of resolution.`,
     reasoning_slots: { severity: 'medium' },
   })];
 }
@@ -422,7 +422,7 @@ function inferTrustSignalsThin(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Only ${count} trust-building signal(s) found across the commercial surface (business schema, policy pages, recognized providers). Buyers evaluate trust through visible signals — business identity, review presence, policy accessibility, recognized checkout partners. A thin trust surface directly reduces checkout confidence and increases abandonment.`,
+    reasoning: `Only ${count} trust-building signal(s) found across the commercial surface (business schema, policy pages, recognized providers). Buyers evaluate trust through visible signals. Business identity, review presence, policy accessibility, recognized checkout partners. A thin trust surface directly reduces checkout confidence and increases abandonment.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -472,7 +472,7 @@ function inferConsentMeasurementConflict(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `A consent management platform is present but no tag manager was detected. Without a consent-aware tag firing mechanism, analytics scripts may be blocked entirely for users who consent — creating a silent gap in conversion data. The site appears to have measurement, but the consent layer may be preventing it from actually working for a portion of visitors.`,
+    reasoning: `A consent management platform is present but no tag manager was detected. Without a consent-aware tag firing mechanism, analytics scripts may be blocked entirely for users who consent. Creating a silent gap in conversion data. The site appears to have measurement, but the consent layer may be preventing it from actually working for a portion of visitors.`,
     reasoning_slots: { severity: 'medium' },
   })];
 }
@@ -502,7 +502,7 @@ function inferMobilePathBlocked(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `The commercial path is blocked or degraded on mobile. Mobile visitors — who represent the majority of traffic for most sites — cannot reach checkout, pricing, or key conversion pages. This is not a layout issue; it is a revenue path that does not exist for mobile buyers.`,
+    reasoning: `The commercial path is blocked or degraded on mobile. Mobile visitors. Who represent the majority of traffic for most sites. Cannot reach checkout, pricing, or key conversion pages. This is not a layout issue; it is a revenue path that does not exist for mobile buyers.`,
     reasoning_slots: { severity },
   })];
 }
@@ -576,7 +576,7 @@ function inferRuntimeMeasurementBreak(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Analytics, pixel, or tag manager scripts are failing at runtime on commercial pages. The tracking infrastructure appears to be present in the source code, but JavaScript errors prevent it from actually executing. Conversion data is silently dropping — the site thinks it has measurement, but the runtime tells a different story.`,
+    reasoning: `Analytics, pixel, or tag manager scripts are failing at runtime on commercial pages. The tracking infrastructure appears to be present in the source code, but JavaScript errors prevent it from actually executing. Conversion data is silently dropping. The site thinks it has measurement, but the runtime tells a different story.`,
     reasoning_slots: { severity },
   })];
 }
@@ -632,7 +632,7 @@ function inferRefundProcessUnclear(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `A refund/return policy page exists but is missing ${sig.numeric_value} critical detail(s) that buyers need when something goes wrong. Without a clear return window, a described refund process, and contact information for returns, the policy exists in name only — it cannot actually guide a dissatisfied customer through resolution. The gap between "policy present" and "policy useful" is where chargebacks happen.`,
+    reasoning: `A refund/return policy page exists but is missing ${sig.numeric_value} critical detail(s) that buyers need when something goes wrong. Without a clear return window, a described refund process, and contact information for returns, the policy exists in name only. It cannot actually guide a dissatisfied customer through resolution. The gap between "policy present" and "policy useful" is where chargebacks happen.`,
     reasoning_slots: { severity },
   })];
 }
@@ -658,7 +658,7 @@ function inferPostPurchaseProofWeak(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `An order confirmation page exists but contains only ${sig.numeric_value} words — too little to serve as meaningful purchase proof. A confirmation page that does not clearly show order details, expected delivery timeline, and next steps leaves the buyer uncertain whether the purchase was actually processed. This uncertainty drives "I didn't order this" and "I never received it" disputes. The page exists, but it does not reassure.`,
+    reasoning: `An order confirmation page exists but contains only ${sig.numeric_value} words. Too little to serve as meaningful purchase proof. A confirmation page that does not clearly show order details, expected delivery timeline, and next steps leaves the buyer uncertain whether the purchase was actually processed. This uncertainty drives "I didn't order this" and "I never received it" disputes. The page exists, but it does not reassure.`,
     reasoning_slots: { severity },
   })];
 }
@@ -682,7 +682,7 @@ function inferSupportLateInJourney(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Support and help pages exist on the site but are not accessible from the commercial journey (checkout, pricing, cart). Buyers who hesitate — with questions about sizing, shipping, returns, or product fit — have no reassurance pathway available at the moment of decision. They must leave the purchase flow to find help, and most will not return.`,
+    reasoning: `Support and help pages exist on the site but are not accessible from the commercial journey (checkout, pricing, cart). Buyers who hesitate. With questions about sizing, shipping, returns, or product fit. Have no reassurance pathway available at the moment of decision. They must leave the purchase flow to find help, and most will not return.`,
     reasoning_slots: { severity: 'medium' },
   })];
 }
@@ -708,7 +708,7 @@ function inferHiddenReassuranceRoutes(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Help, FAQ, confirmation, or warranty pages were discovered but have no navigation links from the main commercial journey. These pages were built to reduce buyer anxiety — but buyers cannot find them. The investment in reassurance content is wasted because the content is disconnected from the path where anxiety occurs.`,
+    reasoning: `Help, FAQ, confirmation, or warranty pages were discovered but have no navigation links from the main commercial journey. These pages were built to reduce buyer anxiety. But buyers cannot find them. The investment in reassurance content is wasted because the content is disconnected from the path where anxiety occurs.`,
     reasoning_slots: { severity },
   })];
 }
@@ -734,7 +734,7 @@ function inferAlternateFlowMeasurementGap(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Some commercial pages lack analytics coverage while others have it. Revenue flowing through the untracked paths cannot be attributed, measured, or optimized. The ad spend driving traffic to these paths is unaccountable — the business cannot tell whether these routes convert, leak, or waste budget.`,
+    reasoning: `Some commercial pages lack analytics coverage while others have it. Revenue flowing through the untracked paths cannot be attributed, measured, or optimized. The ad spend driving traffic to these paths is unaccountable. The business cannot tell whether these routes convert, leak, or waste budget.`,
     reasoning_slots: { severity },
   })];
 }
@@ -760,7 +760,7 @@ function inferRuntimeReassuranceBreak(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Support widgets, chat tools, or consent managers are failing at runtime on commercial pages. These are the reassurance mechanisms that convert hesitant buyers — live chat answers last-minute questions, consent tools enable tracking. When they fail, buyers lose their reassurance channel at the exact moment they need it most.`,
+    reasoning: `Support widgets, chat tools, or consent managers are failing at runtime on commercial pages. These are the reassurance mechanisms that convert hesitant buyers. Live chat answers last-minute questions, consent tools enable tracking. When they fail, buyers lose their reassurance channel at the exact moment they need it most.`,
     reasoning_slots: { severity },
   })];
 }
@@ -786,7 +786,7 @@ function inferProviderPathWeak(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `The checkout redirects buyers to an external domain, but no recognized payment provider (Stripe, PayPal, etc.) was detected on the destination. Combined with thin policy coverage, this creates a payment handoff that looks weaker than what buyers expect. Legitimate payment flows typically display recognized provider branding — this one does not.`,
+    reasoning: `The checkout redirects buyers to an external domain, but no recognized payment provider (Stripe, PayPal, etc.) was detected on the destination. Combined with thin policy coverage, this creates a payment handoff that looks weaker than what buyers expect. Legitimate payment flows typically display recognized provider branding. This one does not.`,
     reasoning_slots: { severity },
   })];
 }

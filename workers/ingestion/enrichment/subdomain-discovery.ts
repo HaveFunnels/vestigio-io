@@ -132,10 +132,10 @@ function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
 	if (ctx.mode !== "full") {
 		return {
 			run: false,
-			reason: `mode is '${ctx.mode}' — subdomain discovery only runs in 'full' mode`,
+			reason: `mode is '${ctx.mode}'. Subdomain discovery only runs in 'full' mode`,
 		};
 	}
-	return { run: true, reason: "Full-mode audit — discovering subdomains via CT logs" };
+	return { run: true, reason: "Full-mode audit. Discovering subdomains via CT logs" };
 }
 
 async function run(ctx: EnrichmentContext): Promise<EnrichmentResult> {

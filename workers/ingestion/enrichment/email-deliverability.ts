@@ -252,7 +252,7 @@ export const __testing = { collect, parseSpf, parseDmarcTags, parseBimiTag };
 
 export const emailDeliverabilityPass: EnrichmentPass = {
 	name: "email_deliverability",
-	label: "Auditando autenticação de email (DMARC / SPF / DKIM / BIMI)",
+	label: "Analisando autenticação de email (DMARC / SPF / DKIM / BIMI)",
 
 	shouldRun(_ctx: EnrichmentContext): ShouldRunDecision {
 		// Cheap DNS lookups — run on every cycle mode. No reason to

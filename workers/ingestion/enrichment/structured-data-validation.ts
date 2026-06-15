@@ -66,7 +66,7 @@ export async function runStructuredDataValidation(
         bodyText = extractBodyText(resp.body);
       }
     } catch {
-      continue; // Non-fatal — skip this page
+      continue; // Non-fatal. Skip this page
     }
 
     if (!html || !bodyText) continue;

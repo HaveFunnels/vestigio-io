@@ -74,7 +74,7 @@ interface MessageMatchAssessment {
 
 const SYSTEM_PROMPT = buildSystemPrompt(
   "ad-landing-page consistency analyst",
-  "Compare the promise made in a paid ad creative against the actual content delivered on the landing page. Detect mismatches that waste ad spend — a buyer who clicks an ad for 'free shipping' should land on a page that says it within the first scroll.",
+  "Compare the promise made in a paid ad creative against the actual content delivered on the landing page. Detect mismatches that waste ad spend. A buyer who clicks an ad for 'free shipping' should land on a page that says it within the first scroll.",
 );
 
 function buildUserPrompt(

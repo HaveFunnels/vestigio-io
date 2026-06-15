@@ -63,7 +63,7 @@ function inferSecurityHeaderWeakness(
     scoping, cycle_ref, ids,
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
-    reasoning: `Browser trust signals ${severity}. ${factors.join('; ')}. Browsers show "Not Secure" warnings and remove the padlock when these headers are missing — buyers see these signals and abandon.`,
+    reasoning: `Browser trust signals ${severity}. ${factors.join('; ')}. Browsers show "Not Secure" warnings and remove the padlock when these headers are missing. Buyers see these signals and abandon.`,
     reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
@@ -100,7 +100,7 @@ function inferMixedContentExposure(
     scoping, cycle_ref, ids,
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
-    reasoning: `Checkout breakage risk ${severity}. ${factors.join('; ')}. Payment scripts, forms, and trust badges loaded over HTTP are silently blocked on HTTPS pages — the buyer clicks Pay and nothing happens.`,
+    reasoning: `Checkout breakage risk ${severity}. ${factors.join('; ')}. Payment scripts, forms, and trust badges loaded over HTTP are silently blocked on HTTPS pages. The buyer clicks Pay and nothing happens.`,
     reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
@@ -135,7 +135,7 @@ function inferOpenRedirectIndicator(
     scoping, cycle_ref, ids,
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
-    reasoning: `Domain phishing risk ${severity}. ${factors.join('; ')}. Attackers create legitimate-looking links on your domain that redirect buyers to fake checkout pages — real customers lose money thinking they are on your site.`,
+    reasoning: `Domain phishing risk ${severity}. ${factors.join('; ')}. Attackers create legitimate-looking links on your domain that redirect buyers to fake checkout pages. Real customers lose money thinking they are on your site.`,
     reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
@@ -172,7 +172,7 @@ function inferSensitiveEndpointExposed(
     scoping, cycle_ref, ids,
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
-    reasoning: `Infrastructure exposure ${severity}. ${factors.join('; ')}. Publicly accessible credentials and admin panels mean one breach away from total commerce shutdown — revenue goes to zero.`,
+    reasoning: `Infrastructure exposure ${severity}. ${factors.join('; ')}. Publicly accessible credentials and admin panels mean one breach away from total commerce shutdown. Revenue goes to zero.`,
     reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }
@@ -200,7 +200,7 @@ function inferCheckoutScriptHijackRisk(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', hijackRisk.id)],
     evidence_refs: hijackRisk.evidence_refs,
-    reasoning: `Checkout hijack risk ${severity}. ${count} unvetted external script(s) load on payment pages without CSP protection. A single compromised script can silently replace the payment form, redirect card data to an attacker, or inject fake checkout flows — buyers see your domain and trust it.`,
+    reasoning: `Checkout hijack risk ${severity}. ${count} unvetted external script(s) load on payment pages without CSP protection. A single compromised script can silently replace the payment form, redirect card data to an attacker, or inject fake checkout flows. Buyers see your domain and trust it.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -228,7 +228,7 @@ function inferBuyerSessionTheftRisk(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', cookieWeak.id)],
     evidence_refs: cookieWeak.evidence_refs,
-    reasoning: `Session theft risk ${severity}. ${count} cookie(s) on commercial pages lack Secure, HttpOnly, or SameSite flags. Attackers can steal buyer sessions via XSS or network sniffing, make purchases with saved payment methods, or access account data — all without the buyer knowing.`,
+    reasoning: `Session theft risk ${severity}. ${count} cookie(s) on commercial pages lack Secure, HttpOnly, or SameSite flags. Attackers can steal buyer sessions via XSS or network sniffing, make purchases with saved payment methods, or access account data. All without the buyer knowing.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -258,7 +258,7 @@ function inferCheckoutClickjackRisk(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', clickjackMissing.id)],
     evidence_refs: clickjackMissing.evidence_refs,
-    reasoning: `Clickjack risk ${severity}. Clickjacking protection missing on ${count} page(s) and commercial checkout exists. Attackers can embed your checkout page inside a fake site using an invisible iframe — buyers think they are clicking on the attacker's page but are actually authorizing payments on yours.`,
+    reasoning: `Clickjack risk ${severity}. Clickjacking protection missing on ${count} page(s) and commercial checkout exists. Attackers can embed your checkout page inside a fake site using an invisible iframe. Buyers think they are clicking on the attacker's page but are actually authorizing payments on yours.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -286,7 +286,7 @@ function inferPaymentDataUnencrypted(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', insecureTarget.id)],
     evidence_refs: insecureTarget.evidence_refs,
-    reasoning: `Payment data exposure ${severity}. ${count} payment form(s) submit to insecure or untrusted destinations. Card numbers, CVVs, and personal data cross an unencrypted boundary where any network observer — coffee shop WiFi, ISP, compromised router — can capture them in plaintext.`,
+    reasoning: `Payment data exposure ${severity}. ${count} payment form(s) submit to insecure or untrusted destinations. Card numbers, CVVs, and personal data cross an unencrypted boundary where any network observer. Coffee shop WiFi, ISP, compromised router. Can capture them in plaintext.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -314,7 +314,7 @@ function inferErrorPageInformationLeak(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', leaks.id)],
     evidence_refs: leaks.evidence_refs,
-    reasoning: `Error page information leak ${severity}. ${count} error page(s) return verbose responses (> 2 KB) on 4xx/5xx status codes. These likely expose stack traces, framework versions, database connection details, or internal file paths — giving attackers a detailed map of the system architecture to craft targeted exploits.`,
+    reasoning: `Error page information leak ${severity}. ${count} error page(s) return verbose responses (> 2 KB) on 4xx/5xx status codes. These likely expose stack traces, framework versions, database connection details, or internal file paths. Giving attackers a detailed map of the system architecture to craft targeted exploits.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -342,7 +342,7 @@ function inferEmailDeliverabilityRisk(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', emailAbsent.id)],
     evidence_refs: emailAbsent.evidence_refs,
-    reasoning: `Email deliverability risk ${severity}. Commerce site with checkout but no detectable email infrastructure (ESP, transactional email provider). Without SPF/DKIM/DMARC configured through a reputable email provider, order confirmation emails land in spam — buyers assume the purchase failed or was fraudulent and file chargebacks.`,
+    reasoning: `Email deliverability risk ${severity}. Commerce site with checkout but no detectable email infrastructure (ESP, transactional email provider). Without SPF/DKIM/DMARC configured through a reputable email provider, order confirmation emails land in spam. Buyers assume the purchase failed or was fraudulent and file chargebacks.`,
     reasoning_slots: { severity },
   })];
 }
@@ -370,7 +370,7 @@ function inferCorsMisconfigurationRisk(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', corsWildcard.id)],
     evidence_refs: corsWildcard.evidence_refs,
-    reasoning: `CORS misconfiguration risk ${severity}. ${count} commercial page(s) return Access-Control-Allow-Origin: *. Wildcard CORS on payment endpoints lets any website make authenticated cross-origin requests — malicious sites can read session data, initiate purchases, and extract customer information using the buyer's authenticated session.`,
+    reasoning: `CORS misconfiguration risk ${severity}. ${count} commercial page(s) return Access-Control-Allow-Origin: *. Wildcard CORS on payment endpoints lets any website make authenticated cross-origin requests. Malicious sites can read session data, initiate purchases, and extract customer information using the buyer's authenticated session.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -398,7 +398,7 @@ function inferRateLimitingAbsent(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', noRateLimit.id)],
     evidence_refs: noRateLimit.evidence_refs,
-    reasoning: `Rate limiting risk ${severity}. No rate-limit headers detected on ${count} commercial endpoint(s). Without rate limiting, fraud bots can test thousands of stolen cards per minute, hoard inventory through automated cart requests, and scrape pricing — generating chargebacks, stock manipulation, and operational chaos.`,
+    reasoning: `Rate limiting risk ${severity}. No rate-limit headers detected on ${count} commercial endpoint(s). Without rate limiting, fraud bots can test thousands of stolen cards per minute, hoard inventory through automated cart requests, and scrape pricing. Generating chargebacks, stock manipulation, and operational chaos.`,
     reasoning_slots: { severity, count },
   })];
 }
@@ -426,7 +426,7 @@ function inferPredictableOrderUrls(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', predictable.id)],
     evidence_refs: predictable.evidence_refs,
-    reasoning: `Predictable URL exposure ${severity}. ${count} URL(s) matching sequential patterns (e.g. /order/123, /invoice/456) return HTTP 200. Sequential URLs let anyone enumerate orders, invoices, and customer profiles — exposing personal and financial data at scale without authentication barriers.`,
+    reasoning: `Predictable URL exposure ${severity}. ${count} URL(s) matching sequential patterns (e.g. /order/123, /invoice/456) return HTTP 200. Sequential URLs let anyone enumerate orders, invoices, and customer profiles. Exposing personal and financial data at scale without authentication barriers.`,
     reasoning_slots: { severity, count },
   })];
 }

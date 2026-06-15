@@ -443,7 +443,7 @@ function buildNarrative(
     case 'improving':
       return `${key} has been improving for ${streakLength} consecutive cycles (risk ${totalDelta} over ${totalCycles} cycles)`;
     case 'oscillating':
-      return `${key} is oscillating — risk score alternating direction across ${totalCycles} cycles`;
+      return `${key} is oscillating. Risk score alternating direction across ${totalCycles} cycles`;
     case 'stable':
       return `${key} is stable across ${totalCycles} cycles`;
   }

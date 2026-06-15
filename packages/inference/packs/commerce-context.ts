@@ -46,7 +46,7 @@ function inferCheckoutAbandonmentRevenueLeak(byKey: Map<string, Signal>, scoping
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Checkout abandonment rate is ${sig.numeric_value}%. Every abandoned cart is revenue that reached the final step and walked away. At this rate, your checkout is the single largest revenue leak in the business — more than any marketing problem or product issue.`,
+    reasoning: `Checkout abandonment rate is ${sig.numeric_value}%. Every abandoned cart is revenue that reached the final step and walked away. At this rate, your checkout is the single largest revenue leak in the business. More than any marketing problem or product issue.`,
     reasoning_slots: { severity },
   })];
 }
@@ -65,7 +65,7 @@ function inferPromotedProductOutOfStock(byKey: Map<string, Signal>, scoping: Sco
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `${sig.numeric_value} promoted product(s) are out of stock. Buyers arrive ready to purchase and find they cannot — ad spend drives traffic to dead ends, organic rankings reward pages that frustrate instead of convert.`,
+    reasoning: `${sig.numeric_value} promoted product(s) are out of stock. Buyers arrive ready to purchase and find they cannot. Ad spend drives traffic to dead ends, organic rankings reward pages that frustrate instead of convert.`,
     reasoning_slots: { severity, count: sig.numeric_value ?? 0 },
   })];
 }
@@ -103,7 +103,7 @@ function inferSinglePaymentGatewayRisk(byKey: Map<string, Signal>, scoping: Scop
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `${sig.numeric_value}% of transactions flow through a single payment gateway. A single point of failure for all revenue — one gateway outage, rate limit, or policy change stops every transaction until resolved. No fallback means zero revenue during downtime.`,
+    reasoning: `${sig.numeric_value}% of transactions flow through a single payment gateway. A single point of failure for all revenue. One gateway outage, rate limit, or policy change stops every transaction until resolved. No fallback means zero revenue during downtime.`,
     reasoning_slots: { severity },
   })];
 }
@@ -122,7 +122,7 @@ function inferDiscountAbusePattern(byKey: Map<string, Signal>, scoping: Scoping,
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `${sig.numeric_value}% of orders use discount codes. When most orders are discounted, full-price purchases become the exception — buyers learn to wait for codes, share them freely, and never pay the listed price. Margin erosion compounds every month.`,
+    reasoning: `${sig.numeric_value}% of orders use discount codes. When most orders are discounted, full-price purchases become the exception. Buyers learn to wait for codes, share them freely, and never pay the listed price. Margin erosion compounds every month.`,
     reasoning_slots: { severity },
   })];
 }
@@ -141,7 +141,7 @@ function inferAdSpendPlatformConcentrationRisk(byKey: Map<string, Signal>, scopi
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `${sig.numeric_value}% of monthly ad spend is concentrated on a single platform. An account disable, policy change, or platform outage would halt acquisition — standing up an alternative channel typically takes weeks, and revenue drops during the gap. Single-platform dependency is the acquisition-side analogue of single-payment-gateway risk.`,
+    reasoning: `${sig.numeric_value}% of monthly ad spend is concentrated on a single platform. An account disable, policy change, or platform outage would halt acquisition. Standing up an alternative channel typically takes weeks, and revenue drops during the gap. Single-platform dependency is the acquisition-side analogue of single-payment-gateway risk.`,
     reasoning_slots: { severity },
   })];
 }
@@ -160,7 +160,7 @@ function inferAdsWithoutConversionVisibility(byKey: Map<string, Signal>, scoping
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Ad spend of $${sig.numeric_value}/month is running without a commerce platform connected to measure its return. Every dollar of ad spend without conversion tracking is a dollar that cannot be attributed, compared against the next dollar, or defended as worth the spend. ROAS is not low — it's literally unknown.`,
+    reasoning: `Ad spend of $${sig.numeric_value}/month is running without a commerce platform connected to measure its return. Every dollar of ad spend without conversion tracking is a dollar that cannot be attributed, compared against the next dollar, or defended as worth the spend. ROAS is not low. It's literally unknown.`,
     reasoning_slots: { severity },
   })];
 }
@@ -178,7 +178,7 @@ function inferAdCreativeDeadDestination(byKey: Map<string, Signal>, scoping: Sco
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `$${sig.numeric_value}/month of ad spend is directed at a URL that returns an error or redirects through too many hops. Every dollar of this spend reaches a dead end — buyers who click the ad cannot complete the intended action. This is 100% waste, recoverable immediately by updating the creative's destination URL.`,
+    reasoning: `$${sig.numeric_value}/month of ad spend is directed at a URL that returns an error or redirects through too many hops. Every dollar of this spend reaches a dead end. Buyers who click the ad cannot complete the intended action. This is 100% waste, recoverable immediately by updating the creative's destination URL.`,
     reasoning_slots: { severity: sig.value || 'medium' },
   })];
 }
@@ -196,7 +196,7 @@ function inferAdCreativeLandingTrustGap(byKey: Map<string, Signal>, scoping: Sco
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `$${sig.numeric_value}/month of ad spend sends buyers to a page that collects sensitive data (payment, password, identity) but shows fewer than 2 trust signals (badges, reviews, certificates). The gap between what the ad promises and what the landing page reassures drives abandonment — buyers who were ready to convert decide the risk is not worth it at the moment they are asked for sensitive information.`,
+    reasoning: `$${sig.numeric_value}/month of ad spend sends buyers to a page that collects sensitive data (payment, password, identity) but shows fewer than 2 trust signals (badges, reviews, certificates). The gap between what the ad promises and what the landing page reassures drives abandonment. Buyers who were ready to convert decide the risk is not worth it at the moment they are asked for sensitive information.`,
     reasoning_slots: { severity: sig.value || 'medium' },
   })];
 }
@@ -214,7 +214,7 @@ function inferAdCreativeFormFrictionWaste(byKey: Map<string, Signal>, scoping: S
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `$${sig.numeric_value}/month of ad spend sends buyers to a page with a form that demands excessive input. Every field past six measurably increases abandonment — the ad brought a buyer to the conversion step, and the form pushed them away. A portion of this spend converts to friction instead of revenue.`,
+    reasoning: `$${sig.numeric_value}/month of ad spend sends buyers to a page with a form that demands excessive input. Every field past six measurably increases abandonment. The ad brought a buyer to the conversion step, and the form pushed them away. A portion of this spend converts to friction instead of revenue.`,
     reasoning_slots: { severity: sig.value || 'medium' },
   })];
 }
@@ -232,7 +232,7 @@ function inferAdCreativeMobileCheckoutDegraded(byKey: Map<string, Signal>, scopi
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `$${sig.numeric_value}/month of ad spend sends mobile buyers to a page where the commercial path shows step failures or extended load times. Mobile users who arrive from the ad encounter a degraded experience — CTAs load late, forms fail, or the checkout path stalls. The ad did its job getting the click; the landing page fails to convert it.`,
+    reasoning: `$${sig.numeric_value}/month of ad spend sends mobile buyers to a page where the commercial path shows step failures or extended load times. Mobile users who arrive from the ad encounter a degraded experience. CTAs load late, forms fail, or the checkout path stalls. The ad did its job getting the click; the landing page fails to convert it.`,
     reasoning_slots: { severity: sig.value || 'medium' },
   })];
 }
@@ -261,7 +261,7 @@ function inferAdCreativeMessageMismatch(byKey: Map<string, Signal>, scoping: Sco
     scoping, cycle_ref, ids,
     signal_refs: matches.map(s => makeRef('signal', s.id)),
     evidence_refs: matches.flatMap(s => s.evidence_refs),
-    reasoning: `$${totalSpend}/month of ad spend sends traffic to ${matches.length} page(s) where the ad's promise doesn't match the landing page's content. The ad headline, value proposition, or CTA sets an expectation that the landing page fails to deliver — buyers arrive expecting one thing and find another, driving bounce rates up and conversion rates down.`,
+    reasoning: `$${totalSpend}/month of ad spend sends traffic to ${matches.length} page(s) where the ad's promise doesn't match the landing page's content. The ad headline, value proposition, or CTA sets an expectation that the landing page fails to deliver. Buyers arrive expecting one thing and find another, driving bounce rates up and conversion rates down.`,
     reasoning_slots: { severity, totalSpend },
   })];
 }
@@ -280,7 +280,7 @@ function inferLowRepeatPurchaseRate(byKey: Map<string, Signal>, scoping: Scoping
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)],
     evidence_refs: sig.evidence_refs,
-    reasoning: `Only ${sig.numeric_value}% of customers return to buy again. Customer acquisition cost is not being amortized across multiple purchases — each customer is effectively a one-time transaction, making every new sale as expensive as the first.`,
+    reasoning: `Only ${sig.numeric_value}% of customers return to buy again. Customer acquisition cost is not being amortized across multiple purchases. Each customer is effectively a one-time transaction, making every new sale as expensive as the first.`,
     reasoning_slots: { severity },
   })];
 }

@@ -34,7 +34,7 @@ export const nucleiScanPass: EnrichmentPass = {
     if (ctx.mode !== "full") {
       return { run: false, reason: "Nuclei scan only runs in full mode." };
     }
-    return { run: true, reason: "Full-mode audit — will check if nuclei binary is available at runtime." };
+    return { run: true, reason: "Full-mode audit. Will check if nuclei binary is available at runtime." };
   },
 
   async run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
@@ -74,7 +74,7 @@ export const nucleiScanPass: EnrichmentPass = {
         return {
           pass_name: "nuclei_scan",
           status: "completed",
-          reason: `Scanned ${scanResult.templates_executed} templates — no commercial-relevant matches found.`,
+          reason: `Scanned ${scanResult.templates_executed} templates. No commercial-relevant matches found.`,
           evidence_added: [],
           duration_ms: Date.now() - start,
           attempts: 1,

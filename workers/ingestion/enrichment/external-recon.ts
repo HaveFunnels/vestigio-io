@@ -109,7 +109,7 @@ function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
 	if (ctx.mode !== "full") {
 		return {
 			run: false,
-			reason: `mode is '${ctx.mode}' — external recon only runs in full-mode audits`,
+			reason: `mode is '${ctx.mode}'. External recon only runs in full-mode audits`,
 		};
 	}
 	if (!ctx.root_domain) {
@@ -117,7 +117,7 @@ function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
 	}
 	return {
 		run: true,
-		reason: "Full-mode audit — collecting off-site reputation, discoverability, industry listings",
+		reason: "Full-mode audit. Collecting off-site reputation, discoverability, industry listings",
 	};
 }
 

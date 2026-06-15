@@ -272,7 +272,7 @@ function inferHeroOutcomeAbsent(
     scoping, cycleRef, 'true', 'high', 72,
     [],
     homePages.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'O título da sua página descreve o que seu produto é, mas não o que ele faz pelo comprador. Visitantes gastam 5 segundos decidindo se vale explorar — sem resultado concreto visível, a maioria fecha a aba.',
+    'O título da sua página descreve o que seu produto é, mas não o que ele faz pelo comprador. Visitantes gastam 5 segundos decidindo se vale explorar. Sem resultado concreto visível, a maioria fecha a aba.',
   )];
 }
 
@@ -334,7 +334,7 @@ function inferCognitiveLoadFirstScreen(
     scoping, cycleRef, 'true', 'medium', 68,
     [],
     homePages.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Sua homepage tenta comunicar tudo de uma vez. Quando 5 propostas competem por atenção, nenhuma recebe — o visitante sente sobrecarga e sai sem clicar em nada.',
+    'Sua homepage tenta comunicar tudo de uma vez. Quando 5 propostas competem por atenção, nenhuma recebe. O visitante sente sobrecarga e sai sem clicar em nada.',
   )];
 }
 
@@ -507,7 +507,7 @@ function inferProofOfWorkMissing(
     scoping, cycleRef, 'true', 'high', 75,
     [],
     pageContent.slice(0, 3).map(e => makeRef('evidence', e.id)),
-    'Nenhuma página do site mostra evidência de que outras empresas compraram e tiveram resultados. Compradores B2B precisam justificar internamente — sem prova de que funciona pra outros, a decisão é adiada indefinidamente.',
+    'Nenhuma página do site mostra evidência de que outras empresas compraram e tiveram resultados. Compradores B2B precisam justificar internamente. Sem prova de que funciona pra outros, a decisão é adiada indefinidamente.',
   )];
 }
 
@@ -545,7 +545,7 @@ function inferNavigationDeadEnds(
     scoping, cycleRef, 'true', 'medium', 70,
     [],
     deadEndPages.slice(0, 3).map(e => makeRef('evidence', e.id)),
-    'Suas páginas de suporte e documentação são becos sem saída — o visitante que foi explorar "como funciona o suporte" não encontra caminho de volta pra comprar. Esse interesse alto vira aba abandonada.',
+    'Suas páginas de suporte e documentação são becos sem saída. O visitante que foi explorar "como funciona o suporte" não encontra caminho de volta pra comprar. Esse interesse alto vira aba abandonada.',
   )];
 }
 
@@ -609,7 +609,7 @@ function inferPageDepthBeforeConversion(
     scoping, cycleRef, 'true', 'medium', 72,
     [],
     [...homePages.slice(0, 1), ...pageContent.slice(0, 2)].map(e => makeRef('evidence', e.id)),
-    'O caminho mais curto da homepage até o checkout exige muitos cliques. Cada etapa intermediária perde 20-30% dos visitantes — quanto mais longo o caminho, menos gente chega no final.',
+    'O caminho mais curto da homepage até o checkout exige muitos cliques. Cada etapa intermediária perde 20-30% dos visitantes. Quanto mais longo o caminho, menos gente chega no final.',
   )];
 }
 
@@ -653,7 +653,7 @@ function inferFeatureBenefitDisconnect(
     scoping, cycleRef, 'true', 'medium', 68,
     [],
     pageContent.slice(0, 3).map(e => makeRef('evidence', e.id)),
-    'Suas páginas listam funcionalidades técnicas sem explicar o que cada uma significa em resultado de negócio. O comprador vê "automação de emails" mas não vê "economize 15h/semana" — sem o "e daí?", não calcula o ROI.',
+    'Suas páginas listam funcionalidades técnicas sem explicar o que cada uma significa em resultado de negócio. O comprador vê "automação de emails" mas não vê "economize 15h/semana". Sem o "e daí?", não calcula o ROI.',
   )];
 }
 
@@ -691,7 +691,7 @@ function inferComparisonAbsent(
     scoping, cycleRef, 'true', 'medium', 65,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Nenhuma página posiciona seu produto contra alternativas. O comprador SEMPRE compara 3-5 opções — se você não controla essa narrativa, ele compara por preço e escolhe o mais barato.',
+    'Nenhuma página posiciona seu produto contra alternativas. O comprador SEMPRE compara 3-5 opções. Se você não controla essa narrativa, ele compara por preço e escolhe o mais barato.',
   )];
 }
 
@@ -736,7 +736,7 @@ function inferObjectionEchoChamber(
     scoping, cycleRef, 'true', 'medium', 68,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Seu FAQ responde perguntas técnicas que a empresa quer responder, não as dúvidas que impedem a compra. As 4 objeções universais — "é caro", "é difícil", "é arriscado", "demora" — ficam sem resposta.',
+    'Seu FAQ responde perguntas técnicas que a empresa quer responder, não as dúvidas que impedem a compra. As 4 objeções universais. "é caro", "é difícil", "é arriscado", "demora". Ficam sem resposta.',
   )];
 }
 
@@ -753,7 +753,7 @@ function inferSocialChannelsDecorative(
     'facebook.com', 'youtube.com', 'tiktok.com'];
 
   const hasSocialLinks = socialDomains.some(d => corpus.includes(d));
-  if (!hasSocialLinks) return []; // No social links at all — different problem
+  if (!hasSocialLinks) return []; // No social links at all. Different problem
 
   // Check for expected social channels based on business model
   const expectedChannels: string[] = [];
@@ -810,7 +810,7 @@ function inferSocialChannelsDecorative(
       scoping, cycleRef, 'true', 'medium', 65,
       [],
       pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
-      'Seus links de redes sociais existem mas apontam para perfis inativos. Compradores B2B clicam no LinkedIn pra validar que a empresa é real e ativa — perfil abandonado é pior que sem perfil.',
+      'Seus links de redes sociais existem mas apontam para perfis inativos. Compradores B2B clicam no LinkedIn pra validar que a empresa é real e ativa. Perfil abandonado é pior que sem perfil.',
     )];
   }
 
@@ -820,7 +820,7 @@ function inferSocialChannelsDecorative(
     scoping, cycleRef, 'true', 'medium', 65,
     [],
     refs,
-    'Seus links de redes sociais existem mas apontam para perfis inativos. Compradores B2B clicam no LinkedIn pra validar que a empresa é real e ativa — perfil abandonado é pior que sem perfil.',
+    'Seus links de redes sociais existem mas apontam para perfis inativos. Compradores B2B clicam no LinkedIn pra validar que a empresa é real e ativa. Perfil abandonado é pior que sem perfil.',
   )];
 }
 
@@ -871,7 +871,7 @@ function inferPricingWithoutContext(
     scoping, cycleRef, 'true', 'high', 70,
     [],
     refs,
-    'Sua página de preço mostra valores sem contexto de retorno. R$297/mês parece caro. "R$10/dia que gera R$3.000/mês em economia" parece barato. Sem contexto, o cérebro do comprador categoriza como custo, não investimento.',
+    'Sua página de preço mostra valores sem contexto de retorno. Sem framing, o comprador compara R$297/mês contra qualquer outra despesa mensal e desiste. Quando o preço aparece reframado como "R$10/dia que gera R$3.000/mês em economia", a percepção muda. O cérebro categoriza como custo enquanto faltar o link com o retorno.',
   )];
 }
 
@@ -956,7 +956,7 @@ function inferCheckoutIdentityBreak(
     scoping, cycleRef, 'true', 'high', 72,
     [],
     refs.slice(0, 3),
-    'A identidade visual muda entre o seu site e o checkout — domínio diferente, cores diferentes, até idioma diferente. O comprador sente que saiu do ambiente seguro e hesita em colocar dados de pagamento.',
+    'A identidade visual muda entre o seu site e o checkout. Domínio diferente, cores diferentes, até idioma diferente. O comprador sente que saiu do ambiente seguro e hesita em colocar dados de pagamento.',
   )];
 }
 
@@ -1010,7 +1010,7 @@ function inferPaymentOptionsInvisible(
     scoping, cycleRef, 'true', 'high', 72,
     [],
     refs,
-    'Nenhuma informação sobre métodos de pagamento aceitos aparece antes do checkout. No Brasil, 45% das compras online são por PIX ou boleto — se o comprador não vê que aceita o método dele, nem começa.',
+    'Nenhuma informação sobre métodos de pagamento aceitos aparece antes do checkout. No Brasil, 45% das compras online são por PIX ou boleto. Se o comprador não vê que aceita o método dele, nem começa.',
   )];
 }
 
@@ -1032,7 +1032,7 @@ function inferGuaranteeInvisibleAtDecision(
 
   // Check if guarantee exists anywhere in the site
   const hasGuaranteeAnywhere = guaranteePatterns.some(p => corpus.includes(p));
-  if (!hasGuaranteeAnywhere) return []; // No guarantee at all — different problem
+  if (!hasGuaranteeAnywhere) return []; // No guarantee at all. Different problem
 
   // Now check if it appears on pricing/checkout pages specifically
   const decisionPages = [...getPricingEvidence(evidence, cp), ...getCheckoutEvidence(evidence, cp)];
@@ -1050,7 +1050,7 @@ function inferGuaranteeInvisibleAtDecision(
     scoping, cycleRef, 'true', 'high', 70,
     [],
     decisionPages.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Sua garantia de satisfação existe escondida nos termos, mas não aparece perto do botão de compra. Garantia visível ao lado do CTA aumenta conversão em 12-32% — enterrada nos termos equivale a sem garantia.',
+    'Sua garantia de satisfação existe escondida nos termos, mas não aparece perto do botão de compra. Garantia visível ao lado do CTA aumenta conversão em 12-32%. Enterrada nos termos equivale a sem garantia.',
   )];
 }
 
@@ -1090,7 +1090,7 @@ function inferUrgencyMechanicsAbsent(
     scoping, cycleRef, 'true', 'medium', 65,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Não existe nenhum motivo para o visitante agir hoje em vez de amanhã. Sem razão concreta para agir agora, o comprador favorece a inércia — "vou pensar depois" e 70% nunca voltam.',
+    'Não existe nenhum motivo para o visitante agir hoje em vez de amanhã. Sem razão concreta para agir agora, o comprador favorece a inércia. "vou pensar depois" e 70% nunca voltam.',
   )];
 }
 
@@ -1182,7 +1182,7 @@ function inferSupportResponseExpectationGap(
     scoping, cycleRef, 'true', 'medium', 68,
     [],
     supportPages.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Sua página de suporte não promete tempo de resposta e o canal de "chat" é um agendamento de chamada. Cliente com problema urgente não pode esperar 2 dias por uma call — pede reembolso em vez de esperar.',
+    'Sua página de suporte não promete tempo de resposta e o canal de "chat" é um agendamento de chamada. Cliente com problema urgente não pode esperar 2 dias por uma call. Pede reembolso em vez de esperar.',
   )];
 }
 
@@ -1217,7 +1217,7 @@ function inferBillingTransparencyAbsent(
     scoping, cycleRef, 'true', 'medium', 68,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Nenhuma página explica claramente como funciona a cobrança recorrente ou como cancelar. A incerteza sobre cobrança é barreira número 1 para SaaS — "vou ser cobrado sem aviso? posso cancelar fácil?" — sem resposta, o comprador não arrisca.',
+    'Nenhuma página explica claramente como funciona a cobrança recorrente ou como cancelar. A incerteza sobre cobrança é barreira número 1 para SaaS. "vou ser cobrado sem aviso? posso cancelar fácil?". Sem resposta, o comprador não arrisca.',
   )];
 }
 
@@ -1264,7 +1264,7 @@ function inferUpgradeValueGap(
     scoping, cycleRef, 'true', 'medium', 65,
     [],
     pricingPages.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Seu plano superior lista funcionalidades extras mas não explica o RESULTADO de cada uma. O cliente atual não vê por que gastar mais — upgrade é a receita mais rentável (custo de aquisição zero) mas sem valor articulado, ninguém sobe de plano.',
+    'Seu plano superior lista funcionalidades extras mas não explica o RESULTADO de cada uma. O cliente atual não vê por que gastar mais. Upgrade é a receita mais rentável (custo de aquisição zero) mas sem valor articulado, ninguém sobe de plano.',
   )];
 }
 
@@ -1295,7 +1295,7 @@ function inferReferralPathNonexistent(
     scoping, cycleRef, 'true', 'medium', 65,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Nenhuma página pede indicação ou oferece benefício por referral. Clientes satisfeitos não têm mecanismo fácil para trazer outros — a empresa depende 100% de aquisição paga, que custa infinitamente mais.',
+    'Nenhuma página pede indicação ou oferece benefício por referral. Clientes satisfeitos não têm mecanismo fácil para trazer outros. A empresa depende 100% de aquisição paga, que custa infinitamente mais.',
   )];
 }
 
@@ -1346,7 +1346,7 @@ function inferSuccessStoryFeedbackLoopBroken(
     scoping, cycleRef, 'true', 'medium', 65,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
-    'Seu produto gera resultados mas o site não captura nem exibe esses resultados. Cada cliente satisfeito é uma prova social que nunca é coletada — novos compradores não veem evidência de sucesso e o ciclo de crescimento não gira.',
+    'Seu produto gera resultados mas o site não captura nem exibe esses resultados. Cada cliente satisfeito é uma prova social que nunca é coletada. Novos compradores não veem evidência de sucesso e o ciclo de crescimento não gira.',
   )];
 }
 
@@ -1428,7 +1428,7 @@ function inferToneShiftAcrossJourney(
     scoping, cycleRef, 'true', 'medium', 65,
     [],
     pageContent.slice(0, 3).map(e => makeRef('evidence', e.id)),
-    'O tom do site muda radicalmente entre as páginas — homepage descontraída, checkout burocrático, suporte robótico. Cada mudança é um micro-sinal de "essa empresa não é coesa" — a soma dessas micro-dúvidas causa abandono.',
+    'O tom do site muda radicalmente entre as páginas. Homepage descontraída, checkout burocrático, suporte robótico. Cada mudança é um micro-sinal de "essa empresa não é coesa". A soma dessas micro-dúvidas causa abandono.',
   )];
 }
 
@@ -1503,7 +1503,7 @@ function inferMobileJourneyFrictionCompound(
     scoping, cycleRef, 'true', 'high', 70,
     frictionRefs.filter(r => r.startsWith('signal:')),
     frictionRefs.filter(r => r.startsWith('evidence:')),
-    'Nenhum problema mobile isolado é grave. Mas somados — botão apertado, formulário sem preenchimento automático, preço que exige scroll lateral, checkout em outro site — a experiência no celular se torna insuportável. 65% do tráfego é mobile.',
+    'Nenhum problema mobile isolado é grave. Mas somados. Botão apertado, formulário sem preenchimento automático, preço que exige scroll lateral, checkout em outro site. A experiência no celular se torna insuportável. 65% do tráfego é mobile.',
   )];
 }
 
@@ -1552,7 +1552,7 @@ function inferTrustGradientInverted(
     scoping, cycleRef, 'true', 'high', 72,
     [],
     [...homePages.slice(0, 1), ...decisionPages.slice(0, 2)].map(e => makeRef('evidence', e.id)),
-    'Os sinais de confiança estão concentrados na homepage (onde o comprador já confia) e ausentes no checkout (onde ele precisa de mais segurança). O gradiente de confiança está invertido — confiança precisa CRESCER ao longo do funil, não diminuir.',
+    'Os sinais de confiança estão concentrados na homepage (onde o comprador já confia) e ausentes no checkout (onde ele precisa de mais segurança). O gradiente de confiança está invertido. Confiança precisa CRESCER ao longo do funil, não diminuir.',
   )];
 }
 

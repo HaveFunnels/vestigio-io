@@ -52,7 +52,7 @@ function inferCheckoutTrustLanguageAbsent(byKey: Map<string, Signal>, scoping: S
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Checkout pages lack trust language (trust score ${score}/100). Buyers at the payment moment see no security language, guarantees, or social proof — the absence of reassurance at the most anxious point in the journey directly suppresses conversion.`,
+    reasoning: `Checkout pages lack trust language (trust score ${score}/100). Buyers at the payment moment see no security language, guarantees, or social proof. The absence of reassurance at the most anxious point in the journey directly suppresses conversion.`,
     reasoning_slots: { severity, score },
   })];
 }
@@ -76,7 +76,7 @@ function inferCtaClarityWeak(byKey: Map<string, Signal>, scoping: Scoping, cycle
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Commercial pages have weak CTA clarity (score ${score}/100). Competing, generic, or unclear calls-to-action leave visitors unsure what to do next — when every button competes equally, none wins the click.`,
+    reasoning: `Commercial pages have weak CTA clarity (score ${score}/100). Competing, generic, or unclear calls-to-action leave visitors unsure what to do next. When every button competes equally, none wins the click.`,
     reasoning_slots: { severity, score },
   })];
 }
@@ -100,7 +100,7 @@ function inferProductPageCopyGeneric(byKey: Map<string, Signal>, scoping: Scopin
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Product pages use generic supplier text (quality score ${score}/100). Manufacturer-standard descriptions fail to differentiate, address objections, or communicate benefits — buyers comparison-shop and leave because every store says the same thing.`,
+    reasoning: `Product pages use generic supplier text (quality score ${score}/100). Manufacturer-standard descriptions fail to differentiate, address objections, or communicate benefits. Buyers comparison-shop and leave because every store says the same thing.`,
     reasoning_slots: { severity, score },
   })];
 }
@@ -124,7 +124,7 @@ function inferPricingPageFramingUnclear(byKey: Map<string, Signal>, scoping: Sco
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Pricing page framing is weak (framing score ${score}/100). When the recommended plan isn't obvious, features aren't framed as benefits, and objections aren't handled — visitors stall at the plan selection step because they can't decide.`,
+    reasoning: `Pricing page framing is weak (framing score ${score}/100). When the recommended plan isn't obvious, features aren't framed as benefits, and objections aren't handled. Visitors stall at the plan selection step because they can't decide.`,
     reasoning_slots: { severity, score },
   })];
 }
@@ -141,7 +141,7 @@ function inferSocialProofGeneric(byKey: Map<string, Signal>, scoping: Scoping, c
   if (matches.length === 0) return [];
   const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'social_proof_generic', category: InferenceCategory.SocialProofGeneric, conclusion: 'social_proof_generic', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `Testimonials are generic and unattributed. Reviews like "Great product!" without a name, company, or measurable outcome reduce trust instead of building it — buyers question if the reviews are real. ${matches.length} page(s) show social proof that lacks specificity.`, reasoning_slots: { severity } })];
+  return [createInference({ inference_key: 'social_proof_generic', category: InferenceCategory.SocialProofGeneric, conclusion: 'social_proof_generic', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `Testimonials are generic and unattributed. Reviews like "Great product!" without a name, company, or measurable outcome reduce trust instead of building it. Buyers question if the reviews are real. ${matches.length} page(s) show social proof that lacks specificity.`, reasoning_slots: { severity } })];
 }
 
 function inferFormErrorMessagesUnhelpful(byKey: Map<string, Signal>, scoping: Scoping, cycle_ref: string, ids: IdGenerator): Inference[] {
@@ -157,7 +157,7 @@ function inferOnboardingNoQuickWin(byKey: Map<string, Signal>, scoping: Scoping,
   if (matches.length === 0) return [];
   const sig = matches.reduce((best, [, s]) => (!best || (s.numeric_value ?? 0) > (best.numeric_value ?? 0) ? s : best), undefined as Signal | undefined)!;
   const severity = sig.value === 'high' ? 'high' : sig.value === 'medium' ? 'medium' : 'low';
-  return [createInference({ inference_key: 'onboarding_no_quick_win', category: InferenceCategory.OnboardingNoQuickWin, conclusion: 'onboarding_no_quick_win', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `New users don't experience product value in the first session. Without a quick win in the first minutes — a visible result, a completed setup, a personalized recommendation — trial users conclude the product isn't for them and never return. ${matches.length} onboarding surface(s) lack immediate value delivery.`, reasoning_slots: { severity } })];
+  return [createInference({ inference_key: 'onboarding_no_quick_win', category: InferenceCategory.OnboardingNoQuickWin, conclusion: 'onboarding_no_quick_win', conclusion_value: severity, severity_hint: severity, confidence: Math.min(80, sig.confidence + 5), scoping, cycle_ref, ids, signal_refs: matches.map(([, s]) => makeRef('signal', s.id)), evidence_refs: matches.flatMap(([, s]) => s.evidence_refs), reasoning: `New users don't experience product value in the first session. Without a quick win in the first minutes. A visible result, a completed setup, a personalized recommendation. Trial users conclude the product isn't for them and never return. ${matches.length} onboarding surface(s) lack immediate value delivery.`, reasoning_slots: { severity } })];
 }
 
 // ──────────────────────────────────────────────
@@ -185,7 +185,7 @@ function inferValuePropositionBuried(byKey: Map<string, Signal>, scoping: Scopin
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `The value proposition is ${score < 30 ? 'absent' : 'buried below the fold'} (score ${score}/100). Visitors cannot tell what you do or why it matters within 5 seconds of landing. The hero section — the single highest-leverage piece of copy on the site — fails to communicate the core promise. ${allMatches.length} page(s) affected.`,
+    reasoning: `The value proposition is ${score < 30 ? 'absent' : 'buried below the fold'} (score ${score}/100). Visitors cannot tell what you do or why it matters within 5 seconds of landing. The hero section. The single highest-leverage piece of copy on the site. Fails to communicate the core promise. ${allMatches.length} page(s) affected.`,
     reasoning_slots: { severity, score },
   })];
 }
@@ -211,7 +211,7 @@ function inferSocialProofIneffective(byKey: Map<string, Signal>, scoping: Scopin
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Social proof is present but ineffective — ${genericMatches.length > 0 ? 'testimonials lack names, companies, or measurable outcomes' : ''}${genericMatches.length > 0 && misplacedMatches.length > 0 ? ' and ' : ''}${misplacedMatches.length > 0 ? 'proof is placed away from decision points' : ''}. Generic or misplaced social proof doesn't just fail to convince — it signals inauthenticity. ${allMatches.length} page(s) affected.`,
+    reasoning: `Social proof is present but ineffective. ${genericMatches.length > 0 ? 'Testimonials lack names, companies, or measurable outcomes' : ''}${genericMatches.length > 0 && misplacedMatches.length > 0 ? ' and ' : ''}${misplacedMatches.length > 0 ? 'proof is placed away from decision points' : ''}. Generic or misplaced social proof doesn't just fail to convince. It signals inauthenticity. ${allMatches.length} page(s) affected.`,
     reasoning_slots: { severity, score },
   })];
 }
@@ -235,7 +235,7 @@ function inferObjectionUnaddressed(byKey: Map<string, Signal>, scoping: Scoping,
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Key buyer objections go unanswered on decision pages (objection coverage score ${score}/100). Pricing pages without FAQ or guarantee, product pages without comparison or risk reversal — buyers who can't find answers to their concerns leave and buy from someone who addresses them. ${matches.length} decision page(s) affected.`,
+    reasoning: `Key buyer objections go unanswered on decision pages (objection coverage score ${score}/100). Pricing pages without FAQ or guarantee, product pages without comparison or risk reversal. Buyers who can't find answers to their concerns leave and buy from someone who addresses them. ${matches.length} decision page(s) affected.`,
     reasoning_slots: { severity, score },
   })];
 }
@@ -277,7 +277,7 @@ function inferOnboardingCopyWeak(byKey: Map<string, Signal>, scoping: Scoping, c
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Onboarding copy does not promise or deliver a quick win on ${matches.length} surface(s). The copy fails to guide new users to an immediate value moment — without a clear "here's what you'll get in 2 minutes" promise, users disengage before experiencing the product's core benefit.`,
+    reasoning: `Onboarding copy does not promise or deliver a quick win on ${matches.length} surface(s). The copy fails to guide new users to an immediate value moment. Without a clear "here's what you'll get in 2 minutes" promise, users disengage before experiencing the product's core benefit.`,
     reasoning_slots: { severity: 'medium' },
   })];
 }
@@ -301,7 +301,7 @@ function inferNavigationConfusing(byKey: Map<string, Signal>, scoping: Scoping, 
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Navigation uses internal jargon instead of buyer language (clarity score ${score}/100). When navigation labels don't match the words buyers think in, they can't find what they need and leave — navigation is the silent CTA hierarchy that either guides or loses visitors. ${matches.length} surface(s) affected.`,
+    reasoning: `Navigation uses internal jargon instead of buyer language (clarity score ${score}/100). When navigation labels don't match the words buyers think in, they can't find what they need and leave. Navigation is the silent CTA hierarchy that either guides or loses visitors. ${matches.length} surface(s) affected.`,
     reasoning_slots: { severity, score },
   })];
 }
@@ -325,7 +325,7 @@ function inferAboveFoldCluttered(byKey: Map<string, Signal>, scoping: Scoping, c
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Above-the-fold area is cluttered (density score ${score}/100). Too many elements, competing CTAs, and visual noise above the fold bury the value proposition and overwhelm visitors — when everything screams for attention, nothing gets it. ${matches.length} page(s) affected.`,
+    reasoning: `Above-the-fold area is cluttered (density score ${score}/100). Too many elements, competing CTAs, and visual noise above the fold bury the value proposition and overwhelm visitors. When everything screams for attention, nothing gets it. ${matches.length} page(s) affected.`,
     reasoning_slots: { severity, score },
   })];
 }
@@ -449,7 +449,7 @@ function inferCopyStaleReferences(byKey: Map<string, Signal>, scoping: Scoping, 
     scoping, cycle_ref, ids,
     signal_refs: signals.map(s => makeRef('signal', s.id)),
     evidence_refs: signals.flatMap(s => s.evidence_refs),
-    reasoning: `Stale content detected across ${matches.length} page(s) (worst staleness score ${score}/100). Outdated copyright years, past dates, expired promotion references, or old social proof numbers signal neglect. Buyers notice when a site looks abandoned — an old copyright year or a "Black Friday sale" in March tells them nobody is maintaining this store.`,
+    reasoning: `Stale content detected across ${matches.length} page(s) (worst staleness score ${score}/100). Outdated copyright years, past dates, expired promotion references, or old social proof numbers signal neglect. Buyers notice when a site looks abandoned. An old copyright year or a "Black Friday sale" in March tells them nobody is maintaining this store.`,
     reasoning_slots: { severity, score },
   })];
 }

@@ -196,7 +196,7 @@ export const customerVoicePass: EnrichmentPass = {
 				return {
 					pass_name: PASS_NAME,
 					status: "completed",
-					reason: "No active competitors — customer voice delta needs ≥1 peer",
+					reason: "No active competitors. Customer voice delta needs ≥1 peer",
 					evidence_added: [],
 					duration_ms: Date.now() - start,
 					attempts: 1,

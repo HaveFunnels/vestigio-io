@@ -31,7 +31,7 @@ function inferCheckoutApiLatency(byKey: Map<string, Signal>, scoping: Scoping, c
     conclusion: 'checkout_api_latency_degraded', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Payment-critical API responses on checkout surfaces exceed acceptable latency thresholds. Every second of checkout latency costs conversion: buyers who wait for payment processing to respond are progressively more likely to abandon. This is not generic page slowness — it is latency at the exact moment of purchase commitment.`,
+    reasoning: `Payment-critical API responses on checkout surfaces exceed acceptable latency thresholds. Every second of checkout latency costs conversion: buyers who wait for payment processing to respond are progressively more likely to abandon. This is not generic page slowness. It is latency at the exact moment of purchase commitment.`,
     reasoning_slots: { severity },
   })];
 }
@@ -61,7 +61,7 @@ function inferPaidLandingOverloaded(byKey: Map<string, Signal>, scoping: Scoping
     conclusion: 'paid_landing_overloaded', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `The landing page is overloaded with third-party requests before buyers reach any meaningful action. Paid traffic — which has a real per-click cost — is hitting a heavy runtime wall. CAC increases because media spend arrives into a page that cannot present the offer quickly enough to capture intent.`,
+    reasoning: `The landing page is overloaded with third-party requests before buyers reach any meaningful action. Paid traffic. Which has a real per-click cost. Is hitting a heavy runtime wall. CAC increases because media spend arrives into a page that cannot present the offer quickly enough to capture intent.`,
     reasoning_slots: { severity },
   })];
 }
@@ -105,7 +105,7 @@ function inferPurchaseBlockedFailingRequests(byKey: Map<string, Signal>, scoping
     conclusion: 'purchase_blocked_failing_requests', conclusion_value: 'high', severity_hint: 'high',
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Payment or commerce API requests are failing on purchase surfaces. This is not slow loading — it is active failure. Buyers who reach checkout and attempt to purchase are being blocked by requests that return errors or never complete. Every instance is a buyer who wanted to pay but could not.`,
+    reasoning: `Payment or commerce API requests are failing on purchase surfaces. This is not slow loading. It is active failure. Buyers who reach checkout and attempt to purchase are being blocked by requests that return errors or never complete. Every instance is a buyer who wanted to pay but could not.`,
     reasoning_slots: { severity: sig.value || 'high' },
   })];
 }
@@ -120,7 +120,7 @@ function inferMeasurementBreaksRevenuePath(byKey: Map<string, Signal>, scoping: 
     conclusion: 'measurement_breaks_revenue_path', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Analytics and measurement requests are failing at runtime on the pages that generate revenue. The instrumentation appears to be present but is not actually executing — conversion data, attribution, and funnel metrics are silently dropping on the surfaces that matter most for optimization and ROI measurement.`,
+    reasoning: `Analytics and measurement requests are failing at runtime on the pages that generate revenue. The instrumentation appears to be present but is not actually executing. Conversion data, attribution, and funnel metrics are silently dropping on the surfaces that matter most for optimization and ROI measurement.`,
     reasoning_slots: { severity },
   })];
 }
@@ -135,7 +135,7 @@ function inferPurchaseBeforeDepsReady(byKey: Map<string, Signal>, scoping: Scopi
     conclusion: 'purchase_before_deps_ready', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Critical payment and trust dependencies take too long to become available on checkout surfaces. Buyers can see and interact with the purchase UI before payment processing, trust badges, or support widgets are ready. This sequencing gap means the purchase moment arrives before the infrastructure that supports it — leading to failed transactions, missing trust signals, and incomplete checkout experiences.`,
+    reasoning: `Critical payment and trust dependencies take too long to become available on checkout surfaces. Buyers can see and interact with the purchase UI before payment processing, trust badges, or support widgets are ready. This sequencing gap means the purchase moment arrives before the infrastructure that supports it. Leading to failed transactions, missing trust signals, and incomplete checkout experiences.`,
     reasoning_slots: { severity },
   })];
 }
@@ -150,7 +150,7 @@ function inferTrustAssetsLateLoad(byKey: Map<string, Signal>, scoping: Scoping, 
     conclusion: 'trust_assets_late_load', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Trust and reassurance assets — support chat, review widgets, trust badges — start loading well after the page is interactive. Buyers form their trust impression in the first few seconds. When reassurance layers arrive late, the hesitation window is already open and abandonment decisions have already been made. The reassurance investment is wasted because it arrives after the moment it was needed.`,
+    reasoning: `Trust and reassurance assets. Support chat, review widgets, trust badges. Start loading well after the page is interactive. Buyers form their trust impression in the first few seconds. When reassurance layers arrive late, the hesitation window is already open and abandonment decisions have already been made. The reassurance investment is wasted because it arrives after the moment it was needed.`,
     reasoning_slots: { severity },
   })];
 }
@@ -165,7 +165,7 @@ function inferMobileHeavyRuntimeChain(byKey: Map<string, Signal>, scoping: Scopi
     conclusion: 'mobile_heavy_runtime_chain', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `The mobile commerce path carries a heavy third-party runtime dependency chain. Mobile connections are slower and more constrained than desktop — the same dependency weight that is tolerable on desktop becomes conversion-killing on mobile. Media spend directed at mobile audiences is landing into an experience that physically cannot convert as efficiently as desktop due to runtime overload.`,
+    reasoning: `The mobile commerce path carries a heavy third-party runtime dependency chain. Mobile connections are slower and more constrained than desktop. The same dependency weight that is tolerable on desktop becomes conversion-killing on mobile. Media spend directed at mobile audiences is landing into an experience that physically cannot convert as efficiently as desktop due to runtime overload.`,
     reasoning_slots: { severity },
   })];
 }
@@ -180,7 +180,7 @@ function inferMobileTrustPaymentDepsFailing(byKey: Map<string, Signal>, scoping:
     conclusion: 'mobile_trust_payment_deps_failing', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `Payment, trust, and measurement dependencies are failing on mobile commercial surfaces. Mobile buyers — who typically represent the majority of traffic — are entering a weaker operational environment than desktop. Payment SDKs fail to load, support widgets do not appear, and measurement breaks on the very surfaces where mobile conversion needs the most support.`,
+    reasoning: `Payment, trust, and measurement dependencies are failing on mobile commercial surfaces. Mobile buyers. Who typically represent the majority of traffic. Are entering a weaker operational environment than desktop. Payment SDKs fail to load, support widgets do not appear, and measurement breaks on the very surfaces where mobile conversion needs the most support.`,
     reasoning_slots: { severity },
   })];
 }
@@ -195,7 +195,7 @@ function inferTrustSurfacesUnstableDeps(byKey: Map<string, Signal>, scoping: Sco
     conclusion: 'trust_surfaces_unstable_deps', conclusion_value: severity, severity_hint: severity,
     confidence: sig.confidence, scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', sig.id)], evidence_refs: sig.evidence_refs,
-    reasoning: `The layers that make buyers feel safe — support widgets, review badges, trust signals, chat tools — depend on external services that are failing or unreliable. Trust-critical surfaces are supposed to reduce hesitation and prevent abandonment, but when these dependencies fail, the trust infrastructure becomes invisible exactly when it matters most. The result is a checkout that looks bare and untrustworthy during outage or degradation of external providers.`,
+    reasoning: `The layers that make buyers feel safe. Support widgets, review badges, trust signals, chat tools. Depend on external services that are failing or unreliable. Trust-critical surfaces are supposed to reduce hesitation and prevent abandonment, but when these dependencies fail, the trust infrastructure becomes invisible exactly when it matters most. The result is a checkout that looks bare and untrustworthy during outage or degradation of external providers.`,
     reasoning_slots: { severity },
   })];
 }

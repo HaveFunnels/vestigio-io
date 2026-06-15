@@ -237,7 +237,7 @@ async function upsertAutoDiscoveries(
 	}
 	if (mode === "bootstrap" && newlyActivated > 0) {
 		console.log(
-			`[serp-observation] env=${envId} had 0 curated competitors — bootstrap-activated ${newlyActivated} discovered candidate(s)`,
+			`[serp-observation] env=${envId} had 0 curated competitors. Bootstrap-activated ${newlyActivated} discovered candidate(s)`,
 		);
 	} else if (mode === "topup" && newlyActivated > 0) {
 		console.log(

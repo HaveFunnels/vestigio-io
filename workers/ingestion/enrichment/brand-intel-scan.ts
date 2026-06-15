@@ -186,7 +186,7 @@ export const brandIntelScanPass: EnrichmentPass = {
 			return {
 				run: false,
 				reason:
-					"No brand tokens could be derived from the root domain — brand scan skipped.",
+					"No brand tokens could be derived from the root domain. Brand scan skipped.",
 			};
 		}
 		return { run: true, reason: "Full-mode audit with derivable brand tokens." };
@@ -233,7 +233,7 @@ export const brandIntelScanPass: EnrichmentPass = {
 				return {
 					pass_name: "brand_intel_scan",
 					status: "completed",
-					reason: `Scanned ${scanResult.candidates_generated} candidates (${scanResult.candidates_active} active) — no significant lookalike matches.`,
+					reason: `Scanned ${scanResult.candidates_generated} candidates (${scanResult.candidates_active} active). No significant lookalike matches.`,
 					evidence_added: [],
 					duration_ms: Date.now() - start,
 					attempts: 1,

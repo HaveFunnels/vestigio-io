@@ -71,7 +71,7 @@ function inferDmarcAbsent(
 			ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Sem DMARC em \`_dmarc.${apex}\`. Receivers (Gmail, Outlook, Yahoo) não têm como saber se uma mensagem assinando como @${apex} é legítima — qualquer atacante pode mandar phishing se passando por sua marca e os destinatários veem como "vindo de você". DMARC é a primeira camada de defesa contra spoofing de marca, e a ausência total é table-stakes para reputação. Mesmo um \`p=none\` inicial (monitoramento) já estabelece a chain of trust.`,
+			reasoning: `Sem DMARC em \`_dmarc.${apex}\`. Receivers (Gmail, Outlook, Yahoo) não têm como saber se uma mensagem assinando como @${apex} é legítima. Qualquer atacante pode mandar phishing se passando por sua marca e os destinatários veem como "vindo de você". DMARC é a primeira camada de defesa contra spoofing de marca, e a ausência total é table-stakes para reputação. Mesmo um \`p=none\` inicial (monitoramento) já estabelece a chain of trust.`,
 			reasoning_slots: { apex },
 		}),
 	];
@@ -106,7 +106,7 @@ function inferDmarcPolicyWeak(
 			ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `DMARC presente mas com política fraca (\`p=${policy}\`) em \`_dmarc.${apex}\` — registro atual: \`${raw}\`. Com \`p=none\` o receiver registra a violação mas entrega a mensagem; com \`p=quarantine\` cai no spam (atacante ainda alcança quem garimpa lixeira). Só \`p=reject\` bloqueia phishing de marca de forma efetiva. ${hasRua ? "Você já recebe relatórios via `rua=` — boa base para calibrar antes de subir pra reject." : "Sem `rua=` configurado, você nem sabe quem está spoofando seu domínio."} Migração padrão: 2 semanas em \`none\` + \`rua\`, 2 semanas em \`quarantine\` (com \`pct=10\` crescendo), depois \`reject\`.`,
+			reasoning: `DMARC presente mas com política fraca (\`p=${policy}\`) em \`_dmarc.${apex}\`. Registro atual: \`${raw}\`. Com \`p=none\` o receiver registra a violação mas entrega a mensagem; com \`p=quarantine\` cai no spam (atacante ainda alcança quem garimpa lixeira). Só \`p=reject\` bloqueia phishing de marca de forma efetiva. ${hasRua ? "Você já recebe relatórios via `rua=`. Boa base para calibrar antes de subir pra reject." : "Sem `rua=` configurado, você nem sabe quem está spoofando seu domínio."} Migração padrão: 2 semanas em \`none\` + \`rua\`, 2 semanas em \`quarantine\` (com \`pct=10\` crescendo), depois \`reject\`.`,
 			reasoning_slots: { policy, severity, apex, hasRua: hasRua ? "yes" : "no" },
 		}),
 	];
@@ -134,7 +134,7 @@ function inferSpfAbsent(
 			ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Sem registro SPF (\`v=spf1\`) em ${apex}. SPF declara quais servidores podem enviar email pelo seu domínio; sem ele, receivers não conseguem validar a origem e suas mensagens transacionais (confirmação de pedido, reset de senha) caem no spam com mais facilidade. Configure pelo menos \`v=spf1 include:<seu-provedor> -all\` — onde \`<seu-provedor>\` é o include padrão do seu ESP (ex: \`include:_spf.google.com\` para Workspace, \`include:spf.protection.outlook.com\` para Microsoft 365).`,
+			reasoning: `Sem registro SPF (\`v=spf1\`) em ${apex}. SPF declara quais servidores podem enviar email pelo seu domínio; sem ele, receivers não conseguem validar a origem e suas mensagens transacionais (confirmação de pedido, reset de senha) caem no spam com mais facilidade. Configure pelo menos \`v=spf1 include:<seu-provedor> -all\`. Onde \`<seu-provedor>\` é o include padrão do seu ESP (ex: \`include:_spf.google.com\` para Workspace, \`include:spf.protection.outlook.com\` para Microsoft 365).`,
 			reasoning_slots: { apex },
 		}),
 	];
@@ -158,8 +158,8 @@ function inferSpfTooBroad(
 	const isOverLimit = includeCount > limit;
 	const severity = isOpenRelay ? "high" : "medium";
 	const issue = isOpenRelay
-		? `terminação \`+all\` deixa qualquer servidor enviar email se passando pelo ${apex} — efetivamente o registro não bloqueia nada (open relay).`
-		: `${includeCount} \`include:\` mechanisms — acima do limite de ${limit} lookups DNS do SPF (RFC 7208 §4.6.4). Receivers retornam permerror e ignoram o registro inteiro, então sua política de "quem pode enviar" deixa de valer.`;
+		? `terminação \`+all\` deixa qualquer servidor enviar email se passando pelo ${apex}. Efetivamente o registro não bloqueia nada (open relay).`
+		: `${includeCount} \`include:\` mechanisms. Acima do limite de ${limit} lookups DNS do SPF (RFC 7208 §4.6.4). Receivers retornam permerror e ignoram o registro inteiro, então sua política de "quem pode enviar" deixa de valer.`;
 
 	return [
 		createInference({
@@ -207,7 +207,7 @@ function inferDkimSelectorMissing(
 			ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `Nenhuma assinatura DKIM (\`v=DKIM1\`) encontrada em selectors comuns para ${apex} (testamos: ${probed.slice(0, 6).join(", ")}${probed.length > 6 ? "…" : ""}). DKIM assina criptograficamente cada email para o receiver verificar que o conteúdo não foi adulterado em trânsito — sem ele, DMARC com \`p=reject\` ainda bloqueia spoofing mas a mensagem pode ser modificada por proxies maliciosos. Confirme com seu ESP qual selector eles usam (Google: \`google\`, SendGrid: \`s1.domainkey\`, Mailgun: \`k1\`/\`pic\`) e publique o registro \`<selector>._domainkey.${apex}\`.`,
+			reasoning: `Nenhuma assinatura DKIM (\`v=DKIM1\`) encontrada em selectors comuns para ${apex} (testamos: ${probed.slice(0, 6).join(", ")}${probed.length > 6 ? "…" : ""}). DKIM assina criptograficamente cada email para o receiver verificar que o conteúdo não foi adulterado em trânsito. Sem ele, DMARC com \`p=reject\` ainda bloqueia spoofing mas a mensagem pode ser modificada por proxies maliciosos. Confirme com seu ESP qual selector eles usam (Google: \`google\`, SendGrid: \`s1.domainkey\`, Mailgun: \`k1\`/\`pic\`) e publique o registro \`<selector>._domainkey.${apex}\`.`,
 			reasoning_slots: { apex },
 		}),
 	];
@@ -235,7 +235,7 @@ function inferBimiUnconfigured(
 			ids,
 			signal_refs: [makeRef("signal", sig.id)],
 			evidence_refs: sig.evidence_refs,
-			reasoning: `BIMI não configurado em \`default._bimi.${apex}\`. BIMI faz seu logo de marca aparecer ao lado de cada email na inbox do Gmail, Apple Mail e Yahoo — sinal visual de autenticidade que aumenta open-rate em emails transacionais (~10% em estudos). Pré-requisito: DMARC com \`p=quarantine\` ou \`p=reject\`. Passos: publique seu SVG no formato BIMI no domínio, obtenha um VMC (Verified Mark Certificate) se quiser logo no Gmail (custo: ~$1k/ano, opcional fora do Gmail), adicione o registro \`v=BIMI1; l=<url-do-svg>; a=<url-do-vmc>\` em \`default._bimi.${apex}\`.`,
+			reasoning: `BIMI não configurado em \`default._bimi.${apex}\`. BIMI faz seu logo de marca aparecer ao lado de cada email na inbox do Gmail, Apple Mail e Yahoo. Sinal visual de autenticidade que aumenta open-rate em emails transacionais (~10% em estudos). Pré-requisito: DMARC com \`p=quarantine\` ou \`p=reject\`. Passos: publique seu SVG no formato BIMI no domínio, obtenha um VMC (Verified Mark Certificate) se quiser logo no Gmail (custo: ~$1k/ano, opcional fora do Gmail), adicione o registro \`v=BIMI1; l=<url-do-svg>; a=<url-do-vmc>\` em \`default._bimi.${apex}\`.`,
 			reasoning_slots: { apex },
 		}),
 	];

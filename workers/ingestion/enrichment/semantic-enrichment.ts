@@ -53,7 +53,7 @@ import type { CopyElementsPayload } from "../../../packages/domain";
 // ──────────────────────────────────────────────
 
 const PASS_NAME = "semantic_enrichment";
-const PASS_LABEL = "Wave 3.1 — Semantic Enrichment";
+const PASS_LABEL = "Wave 3.1. Semantic Enrichment";
 
 /**
  * Max total LLM-analyzed pages per cycle across all enrichment types (cost control).
@@ -73,7 +73,7 @@ const MAX_TEXT_CHARS = 8_000;
 
 const SYSTEM_PROMPT = buildSystemPrompt(
   "policy quality analyst",
-  "Assess e-commerce policy pages (refund, privacy, terms, shipping, etc.) for clarity, completeness, and consumer-friendliness. Flag the gaps that turn a buyer into a chargeback or a refund — not stylistic preferences.",
+  "Assess e-commerce policy pages (refund, privacy, terms, shipping, etc.) for clarity, completeness, and consumer-friendliness. Flag the gaps that turn a buyer into a chargeback or a refund. Not stylistic preferences.",
 );
 
 function buildUserPrompt(policyType: string, bodyText: string): string {
@@ -100,7 +100,7 @@ ${bodyText}
 
 const CHECKOUT_TRUST_SYSTEM = buildSystemPrompt(
   "checkout trust analyst",
-  "Assess e-commerce checkout pages for trust language at the moment of payment. Name the specific signal (guarantee, security, named social proof, payment badges) and the hesitation it relieves — generic 'add trust signals' is not acceptable output.",
+  "Assess e-commerce checkout pages for trust language at the moment of payment. Name the specific signal (guarantee, security, named social proof, payment badges) and the hesitation it relieves. Generic 'add trust signals' is not acceptable output.",
 );
 
 function buildCheckoutTrustPrompt(bodyText: string): string {
@@ -128,7 +128,7 @@ ${bodyText}
 
 const CTA_CLARITY_SYSTEM = buildSystemPrompt(
   "CTA clarity analyst",
-  "Assess web pages for call-to-action effectiveness, competing actions, and clarity of the primary conversion path. The output decides whether the platform tells the operator to consolidate CTAs — apply the bar strictly only on pages that decide money (PDP, checkout, pricing, paid landing).",
+  "Assess web pages for call-to-action effectiveness, competing actions, and clarity of the primary conversion path. The output decides whether the platform tells the operator to consolidate CTAs. Apply the bar strictly only on pages that decide money (PDP, checkout, pricing, paid landing).",
 );
 
 function buildCtaClarityPrompt(bodyText: string): string {
@@ -155,7 +155,7 @@ ${bodyText}
 
 const PRODUCT_PAGE_SYSTEM = buildSystemPrompt(
   "product page copy analyst",
-  "Assess product descriptions for quality, uniqueness, benefit-orientation, and persuasiveness. Manufacturer-generic copy is the failure mode that costs money — a page that reads like the supplier's PIM is invisible in the buyer's decision moment.",
+  "Assess product descriptions for quality, uniqueness, benefit-orientation, and persuasiveness. Manufacturer-generic copy is the failure mode that costs money. A page that reads like the supplier's PIM is invisible in the buyer's decision moment.",
 );
 
 function buildProductPagePrompt(bodyText: string): string {
@@ -182,7 +182,7 @@ ${bodyText}
 
 const PRICING_FRAMING_SYSTEM = buildSystemPrompt(
   "pricing page analyst",
-  "Assess pricing pages for clarity of plan recommendation, value framing, comparison anchoring, and objection handling. The pricing page is the closer — vague framing here directly leaves money on the table.",
+  "Assess pricing pages for clarity of plan recommendation, value framing, comparison anchoring, and objection handling. The pricing page is the closer. Vague framing here directly leaves money on the table.",
 );
 
 function buildPricingFramingPrompt(bodyText: string): string {
@@ -217,13 +217,13 @@ function buildGuidelinesSystemPrompt(role: string, guidelinesSubset: string): st
 GUIDELINES (cite guideline IDs in your findings):
 ${guidelinesSubset}
 
-You MUST respond with valid JSON only — no markdown, no explanation, no preamble.`;
+You MUST respond with valid JSON only. No markdown, no explanation, no preamble.`;
 }
 
 // ── 1. Homepage Hero ──
 
 function buildHomepageHeroPrompt(copyElements: string, bodyText: string): string {
-  return `Analyze this homepage hero section. Does the value proposition communicate what the product does and why it matters in under 5 seconds? Evaluate the headline against proven formulas (outcome-without-pain, outcome-by-mechanism, never-X-again, etc.). Check CTA specificity — does it communicate value or is it generic?
+  return `Analyze this homepage hero section. Does the value proposition communicate what the product does and why it matters in under 5 seconds? Evaluate the headline against proven formulas (outcome-without-pain, outcome-by-mechanism, never-X-again, etc.). Check CTA specificity. Does it communicate value or is it generic?
 
 Respond with ONLY a JSON object matching this exact schema:
 {
@@ -297,7 +297,7 @@ ${bodyText}
 // ── 4. Urgency & Scarcity ──
 
 function buildUrgencyScarcityPrompt(copyElements: string, bodyText: string): string {
-  return `Analyze urgency and scarcity elements on this page. Are they authentic or manipulative? Look for countdown timers, stock counts, "limited offer" language. Flag dark patterns — fake timers that reset, fabricated scarcity, manipulative language. Authentic urgency (real deadlines, genuine capacity limits) is fine.
+  return `Analyze urgency and scarcity elements on this page. Are they authentic or manipulative? Look for countdown timers, stock counts, "limited offer" language. Flag dark patterns. Fake timers that reset, fabricated scarcity, manipulative language. Authentic urgency (real deadlines, genuine capacity limits) is fine.
 
 Respond with ONLY a JSON object matching this exact schema:
 {
@@ -393,7 +393,7 @@ ${bodyText}
 // ── 8. Above-Fold Density ──
 
 function buildAboveFoldDensityPrompt(copyElements: string, bodyText: string): string {
-  return `Analyze above-the-fold content density. Is the primary message clear or diluted by competing elements? Count: pop-ups, banners, competing CTAs, auto-play videos, chat widgets, cookie notices. Is there a clear visual hierarchy with one dominant element? Evaluate using BJ Fogg's ability model — does complexity reduce the user's ability to act?
+  return `Analyze above-the-fold content density. Is the primary message clear or diluted by competing elements? Count: pop-ups, banners, competing CTAs, auto-play videos, chat widgets, cookie notices. Is there a clear visual hierarchy with one dominant element? Evaluate using BJ Fogg's ability model. Does complexity reduce the user's ability to act?
 
 Respond with ONLY a JSON object matching this exact schema:
 {
@@ -878,7 +878,7 @@ function shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
   if (ctx.mode !== "full" && ctx.mode !== "shallow_plus") {
     return {
       run: false,
-      reason: `mode is '${ctx.mode}' — semantic enrichment runs in 'full' and 'shallow_plus' modes`,
+      reason: `mode is '${ctx.mode}'. Semantic enrichment runs in 'full' and 'shallow_plus' modes`,
     };
   }
 

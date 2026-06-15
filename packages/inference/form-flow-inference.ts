@@ -305,7 +305,7 @@ export function computeFormFlowInferences(input: FormFlowInput): { signals: Sign
       severity_hint: 'high',
       confidence: 85,
       signal_refs: [`signal:checkout_external_handoff_${lastStep}`],
-      reasoning: `The final checkout step on ${lastStep} hands the buyer off to ${chain.finalHost} (different domain than ${input.rootDomain}). Trust drops at the handoff — buyers can't tell if it's a phishing redirect. Either move checkout to a subdomain (checkout.${input.rootDomain}) or surface the partner's brand explicitly before redirect.`,
+      reasoning: `The final checkout step on ${lastStep} hands the buyer off to ${chain.finalHost} (different domain than ${input.rootDomain}). Trust drops at the handoff. Buyers can't tell if it's a phishing redirect. Either move checkout to a subdomain (checkout.${input.rootDomain}) or surface the partner's brand explicitly before redirect.`,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     } as any);

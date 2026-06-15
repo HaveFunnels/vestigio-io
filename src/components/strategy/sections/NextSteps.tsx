@@ -11,6 +11,7 @@ import type {
 } from "../types";
 import PlanSideDrawer from "../PlanSideDrawer";
 import { ActionListBody, FindingListBody } from "../drawer-bodies";
+import { humanizeSurfaceLabel } from "@/lib/surface-label";
 import {
 	buildPlanHash,
 	parsePlanHash,
@@ -906,33 +907,6 @@ function StepCard({
 // ──────────────────────────────────────────────
 // "Por página" lens helpers
 // ──────────────────────────────────────────────
-
-const SURFACE_LABEL_PT_BR: Record<string, string> = {
-	"/": "Página inicial",
-	"/pricing": "Página de preços",
-	"/checkout": "Checkout",
-	"/signup": "Cadastro",
-	"/login": "Login",
-	"/dashboard": "Dashboard",
-	"/app": "App autenticado",
-	"/about": "Página sobre",
-	"/contact": "Página de contato",
-	"/blog": "Blog",
-	"/faq": "FAQ",
-};
-
-function humanizeSurfaceLabel(surface: string): string {
-	const trimmed = surface.trim();
-	if (SURFACE_LABEL_PT_BR[trimmed]) return SURFACE_LABEL_PT_BR[trimmed];
-	if (trimmed.includes(",")) {
-		return trimmed
-			.split(",")
-			.map((s) => humanizeSurfaceLabel(s.trim()))
-			.join(" + ");
-	}
-	// Unknown path — show the raw path but trimmed of leading slash
-	return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-}
 
 interface SurfaceGroup {
 	surface: string; // raw surface key, used to derive "afeta também" diff

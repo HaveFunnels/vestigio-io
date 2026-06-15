@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
+import { humanizeSurfaceLabel } from "@/lib/surface-label";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type { FindingProjection } from "../../../packages/projections";
 
@@ -116,7 +117,7 @@ export default function FindingCard({
 						{finding.surface && (
 							<>
 								<span className="text-content-faint">·</span>
-								<span className="truncate font-mono text-[11px]">{finding.surface}</span>
+								<span className="truncate text-[11px]">{humanizeSurfaceLabel(finding.surface)}</span>
 							</>
 						)}
 						{/* Phase 3.3 — Maps reused contextually. When a finding

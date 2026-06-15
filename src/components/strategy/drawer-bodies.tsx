@@ -7,6 +7,7 @@ import { ChevronDown, ExternalLink } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
+import { humanizeSurfaceLabel } from "@/lib/surface-label";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import type {
 	FindingProjection,
@@ -386,8 +387,8 @@ function FindingCard({
 								{finding.surface && (
 									<>
 										<span className="text-content-faint">·</span>
-										<span className="truncate font-mono text-[10.5px]">
-											{finding.surface}
+										<span className="truncate text-[10.5px]">
+											{humanizeSurfaceLabel(finding.surface)}
 										</span>
 									</>
 								)}

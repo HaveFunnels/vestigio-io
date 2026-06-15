@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { formatDate } from "@/lib/format-date";
 import { renderRichText } from "@/lib/rich-text";
+import { humanizeSurfaceLabel } from "@/lib/surface-label";
 import Link from "next/link";
 import type { FindingProjection, ActionProjection } from "@/../../packages/projections/types";
 import { useCopilot } from "@/components/app/CopilotProvider";
@@ -128,14 +129,9 @@ export default function FindingDetailPanel({
 		const k = `pack_labels.${key}`;
 		return tc.has(k) ? tc(k) : humanizePackKey(key);
 	}
-	// Drop any trailing parenthetical context that's baked into the
-	// surface string in code (e.g. "/checkout, /payment (clickjack
-	// protection)"). The parenthetical is untranslated English jargon;
-	// the finding title + cause already convey the same context in the
-	// user's language.
-	function cleanSurface(s: string): string {
-		return s.replace(/\s*\(.+?\)\s*$/, "").trim() || s;
-	}
+	// Wave 23.2 — cleanSurface foi substituído por humanizeSurfaceLabel
+	// importado de @/lib/surface-label, que faz mais: traduz paths pra
+	// pt-BR + traduz parenthetical quando reconhece + estrutura arrows.
 
 	const impactTypeLabels: Record<string, string> = {
 		revenue_loss: tc("impact_types.revenue_loss"),
@@ -178,9 +174,9 @@ export default function FindingDetailPanel({
 						{packLabel(finding.pack)}
 					</span>
 					{finding.surface && (
-						<code className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
-							{cleanSurface(finding.surface)}
-						</code>
+						<span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
+							{humanizeSurfaceLabel(finding.surface)}
+						</span>
 					)}
 				</div>
 			</DrawerSection>

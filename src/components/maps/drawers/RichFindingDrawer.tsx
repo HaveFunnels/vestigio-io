@@ -10,6 +10,7 @@ import ChangeBadge from "@/components/console/ChangeBadge";
 import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import { DrawerSection } from "@/components/console/DrawerSection";
+import { humanizeSurfaceLabel } from "@/lib/surface-label";
 import { formatCurrency } from "../map-utils";
 import type { MapNode } from "../../../../packages/maps";
 import type { FindingProjection } from "../../../../packages/projections";
@@ -166,8 +167,8 @@ export default function RichFindingDrawer({
             />
           </svg>
           {tm("insights.view_in_journey")}
-          <span className="ml-auto font-mono text-[10px] text-content-faint">
-            {finding.surface}
+          <span className="ml-auto text-[10px] text-content-faint">
+            {humanizeSurfaceLabel(finding.surface)}
           </span>
         </Link>
       )}

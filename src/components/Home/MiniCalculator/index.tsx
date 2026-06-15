@@ -3,8 +3,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { SlotText } from "slot-text/react";
 import { ShinyButton } from "@/components/ui/shiny-button";
 import { ChevronDown } from "lucide-react";
+import "slot-text/style.css";
 
 // ── MiniCalculator section
 //
@@ -239,7 +241,19 @@ const MiniCalculator = ({
 	const [findingCounter, setFindingCounter] = useState(0);
 	const [totalFindings, setTotalFindings] = useState(0);
 	const [selectedFindings, setSelectedFindings] = useState<FindingDef[]>([]);
+	// SSR-safe default = true (no animation). Hydration flips it once we
+	// can read the media query so the odometer-style digit roll only
+	// animates for users who haven't opted out of motion.
+	const [prefersReducedMotion, setPrefersReducedMotion] = useState(true);
 	const revenueRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+		setPrefersReducedMotion(mq.matches);
+		const onChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+		mq.addEventListener("change", onChange);
+		return () => mq.removeEventListener("change", onChange);
+	}, []);
 
 	const monthlyRevenue = Math.max(parseInt(revenue) || 100000, 10000);
 	const profile = IMPACT_PROFILES[businessType];
@@ -634,9 +648,22 @@ const MiniCalculator = ({
 									<div className='pointer-events-none absolute bottom-0 h-[30%] w-full [background-image:linear-gradient(to_top,#080812_10%,transparent_100%)]' />
 								</div>
 
-								{/* Counter below cards */}
+								{/* Counter below cards — findingCounter rolls digit-by-digit
+								    (odometer style) so it reads as "Vestigio counting real
+								    findings" instead of a jittery RAF tick. Progress %
+								    stays plain text (updates ~60fps, too fast for slot). */}
 								<div className='mt-4 flex items-center justify-center gap-3 font-mono text-[11px] tabular-nums text-zinc-500'>
-									<span>{findingCounter} {t("findings_found")}</span>
+									<span className='inline-flex items-center gap-1'>
+										{prefersReducedMotion ? (
+											<span>{findingCounter}</span>
+										) : (
+											<SlotText
+												text={String(findingCounter)}
+												options={{ direction: "up", stagger: 20, duration: 220, bounce: 0.3, skipUnchanged: true }}
+											/>
+										)}
+										<span>{t("findings_found")}</span>
+									</span>
 									<span>·</span>
 									<span>{Math.round(progress)}%</span>
 								</div>

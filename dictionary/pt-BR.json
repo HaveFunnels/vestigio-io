@@ -48,7 +48,12 @@
 		},
 		"social_proof_strip": {
 			"before_highlight": "Empresas como a sua encontram em média 9 vazamentos críticos e ",
-			"highlight": "−R$31k/mês ou 27% a 43% do faturamento",
+			"highlight": "−R$31k/mês em perdas",
+			"rotating_highlights": [
+				"−R$31k/mês em perdas",
+				"27% a 43% do faturamento",
+				"12s extras no checkout"
+			],
 			"after_highlight": " no primeiro diagnóstico Vestigio."
 		},
 		"demo_surface": {

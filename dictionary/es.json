@@ -48,7 +48,12 @@
 		},
 		"social_proof_strip": {
 			"before_highlight": "Empresas como la tuya encuentran en promedio 9 fugas críticas y ",
-			"highlight": "−$81k/mes",
+			"highlight": "−$81k/mes en pérdidas",
+			"rotating_highlights": [
+				"−$81k/mes en pérdidas",
+				"27% al 43% de ingresos",
+				"12s extra en el checkout"
+			],
 			"after_highlight": " en su primer diagnóstico Vestigio."
 		},
 		"demo_surface": {

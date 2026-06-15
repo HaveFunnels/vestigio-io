@@ -48,7 +48,12 @@
 		},
 		"social_proof_strip": {
 			"before_highlight": "Companies like yours find an average of 9 critical leaks and ",
-			"highlight": "−$81k/mo",
+			"highlight": "−$81k/mo in losses",
+			"rotating_highlights": [
+				"−$81k/mo in losses",
+				"27% to 43% of revenue",
+				"12s extra at checkout"
+			],
 			"after_highlight": " in their first Vestigio diagnostic."
 		},
 		"demo_surface": {

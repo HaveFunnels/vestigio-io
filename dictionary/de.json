@@ -48,7 +48,12 @@
 		},
 		"social_proof_strip": {
 			"before_highlight": "Unternehmen wie Ihres finden durchschnittlich 9 kritische Lecks und ",
-			"highlight": "−81.000 €/Monat",
+			"highlight": "−81.000 €/Monat Verlust",
+			"rotating_highlights": [
+				"−81.000 €/Monat Verlust",
+				"27% bis 43% des Umsatzes",
+				"12s länger im Checkout"
+			],
 			"after_highlight": " in ihrer ersten Vestigio-Diagnose."
 		},
 		"demo_surface": {

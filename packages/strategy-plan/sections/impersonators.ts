@@ -79,6 +79,9 @@ interface RawMatchPayload {
 	has_credential_capture?: boolean;
 	has_payment_capture?: boolean;
 	favicon_similarity_score?: number | null;
+	// Wave 23 P1.1 — match exato dos bytes do favicon. UI usa pra
+	// destacar "cópia visual de favicon" (sinal mais forte de clone).
+	favicon_bytes_match?: boolean | null;
 }
 
 export async function generateImpersonators(
@@ -167,6 +170,9 @@ export async function generateImpersonators(
 			hasCredentialCapture: !!m.has_credential_capture,
 			hasSensitivePath: !!m.has_sensitive_path,
 			commercialInterpretation: m.commercial_interpretation,
+			// Wave 23 P1.1 — passa pra UI. Default false quando o
+			// scanner não checou ou não bateu.
+			hasFaviconBytesMatch: m.favicon_bytes_match === true,
 		}));
 
 	// 6. Peer-set Findings from the brand_integrity pack.

@@ -193,6 +193,56 @@ export async function generateCompetitorRadar(
 		});
 	}
 
+	// 5. Wave 23 P0.2 + P1.2 — attach deep snapshot (pricing tiers +
+	// blog content velocity) por competitor. Lê CompetitorDeepSnapshot
+	// evidence, mais recente por (env, competitor_domain) ganha. Atacha
+	// no entries antes do sort.
+	const deepEvidence = await prisma.evidence.findMany({
+		where: {
+			environmentRef: ctx.environmentId,
+			evidenceType: "competitor_deep_snapshot",
+		},
+		select: { payload: true, observedAt: true },
+		orderBy: { observedAt: "desc" },
+	});
+	const deepByDomain = new Map<string, CompetitorEntryOutput["deepSnapshot"]>();
+	for (const ev of deepEvidence) {
+		try {
+			const p = JSON.parse(ev.payload) as {
+				competitor_domain: string;
+				pricing_tiers: Array<{
+					label: string | null;
+					amount: number | null;
+					currency: string | null;
+					interval: "month" | "year" | "one_time" | null;
+				}>;
+				has_free_tier: boolean;
+				tier_count: number;
+				pricing_url: string | null;
+				blog_post_count: number | null;
+				blog_latest_post_date: string | null;
+				blog_url: string | null;
+			};
+			const key = p.competitor_domain.toLowerCase();
+			if (deepByDomain.has(key)) continue; // mais recente já anotada
+			deepByDomain.set(key, {
+				pricingTiers: p.pricing_tiers ?? [],
+				hasFreeTier: !!p.has_free_tier,
+				tierCount: p.tier_count ?? 0,
+				pricingUrl: p.pricing_url,
+				blogPostCount: p.blog_post_count,
+				blogLatestPostDate: p.blog_latest_post_date,
+				blogUrl: p.blog_url,
+			});
+		} catch {
+			// Malformed payload — skip.
+		}
+	}
+	for (const entry of entriesByDomain.values()) {
+		const deep = deepByDomain.get(entry.domain.toLowerCase());
+		if (deep) entry.deepSnapshot = deep;
+	}
+
 	const entries = Array.from(entriesByDomain.values()).sort((a, b) => {
 		const dt = b.signals.length - a.signals.length;
 		if (dt !== 0) return dt;

@@ -185,51 +185,136 @@ export default function Competitor({ competitor, embedded = false }: Props) {
 						<ul className="space-y-2">
 							{competitor.entries.map((e) => {
 								const hasSignals = e.signals.length > 0;
+								const deep = e.deepSnapshot;
+								// Wave 23 P0.2 + P1.2 — formata pricing tiers + blog
+								// cadence pra exibir abaixo do nome do concorrente.
+								// Só renderiza quando há pelo menos um dos dois sinais
+								// detectados; sem isso, fica vazio (pristino).
+								const hasDeepData =
+									deep && (deep.tierCount > 0 || deep.blogPostCount != null);
+								const pricingHint = (() => {
+									if (!deep || deep.tierCount === 0) return null;
+									const lowest = deep.pricingTiers
+										.filter((t) => t.amount != null)
+										.sort((a, b) => (a.amount! - b.amount!))[0];
+									if (!lowest || lowest.amount == null) {
+										return `${deep.tierCount} ${deep.tierCount === 1 ? "tier" : "tiers"}`;
+									}
+									const currencySymbol =
+										lowest.currency === "BRL" ? "R$" :
+										lowest.currency === "EUR" ? "€" :
+										lowest.currency === "GBP" ? "£" : "$";
+									const intervalLabel =
+										lowest.interval === "month" ? "/mês" :
+										lowest.interval === "year" ? "/ano" :
+										lowest.interval === "one_time" ? "" : "";
+									const freeBadge = deep.hasFreeTier ? "Free · " : "";
+									return `${deep.tierCount} ${deep.tierCount === 1 ? "tier" : "tiers"} · ${freeBadge}a partir de ${currencySymbol} ${Math.round(lowest.amount)}${intervalLabel}`;
+								})();
+								const blogHint = (() => {
+									if (!deep || deep.blogPostCount == null) return null;
+									const dateStr = deep.blogLatestPostDate
+										? (() => {
+											try {
+												const d = new Date(deep.blogLatestPostDate);
+												const dd = String(d.getDate()).padStart(2, "0");
+												const mmName = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"][d.getMonth()];
+												return ` (último: ${dd} ${mmName})`;
+											} catch {
+												return "";
+											}
+										})()
+										: "";
+									return `Blog: ${deep.blogPostCount} ${deep.blogPostCount === 1 ? "post" : "posts"}${dateStr}`;
+								})();
 								return (
 									<li
 										key={e.domain}
-										className="flex flex-col gap-2 rounded-xl border border-edge/40 bg-surface-inset/20 p-3 sm:flex-row sm:items-center sm:gap-4"
+										className="flex flex-col gap-2 rounded-xl border border-edge/40 bg-surface-inset/20 p-3"
 									>
-										<div className="flex flex-1 items-baseline gap-2">
-											<Radio
-												className={`h-3 w-3 shrink-0 ${hasSignals ? "text-rose-300" : "text-emerald-400/70"}`}
-												aria-hidden
-											/>
-											<div className="min-w-0">
-												<div className="truncate font-mono text-[13px] text-content">
-													{e.domain}
-												</div>
-												{e.label && e.label !== e.domain && (
-													<div className="truncate text-[11px] text-content-muted">
-														{e.label}
+										<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+											<div className="flex flex-1 items-baseline gap-2">
+												<Radio
+													className={`h-3 w-3 shrink-0 ${hasSignals ? "text-rose-300" : "text-emerald-400/70"}`}
+													aria-hidden
+												/>
+												<div className="min-w-0">
+													<div className="truncate font-mono text-[13px] text-content">
+														{e.domain}
 													</div>
+													{e.label && e.label !== e.domain && (
+														<div className="truncate text-[11px] text-content-muted">
+															{e.label}
+														</div>
+													)}
+												</div>
+												<span className="rounded-md bg-surface-inset px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-content-faint">
+													{e.discoveryMethod}
+												</span>
+											</div>
+											{hasSignals ? (
+												<div className="flex flex-wrap gap-1.5 sm:justify-end">
+													{e.signals.map((s, i) => {
+														const tone = SEVERITY_TONE[s.severity];
+														return (
+															<span
+																key={`${e.domain}-${s.kind}-${i}`}
+																className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10.5px] ring-1 ring-inset ${tone.bg} ${tone.ring}`}
+																title={s.detail}
+															>
+																<span className={`font-semibold ${tone.fg}`}>{tone.label}</span>
+																<span className="text-content-secondary">·</span>
+																<span className="text-content-secondary">{KIND_LABEL[s.kind] ?? s.kind}</span>
+															</span>
+														);
+													})}
+												</div>
+											) : (
+												<span className="inline-flex items-center gap-1 self-start rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20 sm:self-center">
+													Sem ameaça
+												</span>
+											)}
+										</div>
+										{/* Wave 23 P0.2 + P1.2 — deep snapshot row. Surface
+										    pricing tiers + blog cadence detectados pelo
+										    deep-fetch pass. Sem isso, os dados ficavam coletados
+										    mas invisíveis ao customer. */}
+										{hasDeepData && (
+											<div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-edge/30 pt-2 text-[11px] text-content-muted">
+												{pricingHint && (
+													<span className="inline-flex items-baseline gap-1">
+														<span className="text-content-faint">Pricing:</span>
+														{deep!.pricingUrl ? (
+															<a
+																href={deep!.pricingUrl}
+																target="_blank"
+																rel="noopener noreferrer"
+																className="text-content-secondary hover:text-content hover:underline"
+															>
+																{pricingHint}
+															</a>
+														) : (
+															<span className="text-content-secondary">{pricingHint}</span>
+														)}
+													</span>
+												)}
+												{blogHint && (
+													<span className="inline-flex items-baseline gap-1">
+														{deep!.blogUrl ? (
+															<a
+																href={deep!.blogUrl}
+																target="_blank"
+																rel="noopener noreferrer"
+																className="text-content-secondary hover:text-content hover:underline"
+															>
+																{blogHint}
+															</a>
+														) : (
+															<span className="text-content-secondary">{blogHint}</span>
+														)}
+													</span>
 												)}
 											</div>
-											<span className="rounded-md bg-surface-inset px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-[0.08em] text-content-faint">
-												{e.discoveryMethod}
-											</span>
-										</div>
-										{hasSignals ? (
-											<div className="flex flex-wrap gap-1.5 sm:justify-end">
-												{e.signals.map((s, i) => {
-													const tone = SEVERITY_TONE[s.severity];
-													return (
-														<span
-															key={`${e.domain}-${s.kind}-${i}`}
-															className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10.5px] ring-1 ring-inset ${tone.bg} ${tone.ring}`}
-															title={s.detail}
-														>
-															<span className={`font-semibold ${tone.fg}`}>{tone.label}</span>
-															<span className="text-content-secondary">·</span>
-															<span className="text-content-secondary">{KIND_LABEL[s.kind] ?? s.kind}</span>
-														</span>
-													);
-												})}
-											</div>
-										) : (
-											<span className="inline-flex items-center gap-1 self-start rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20 sm:self-center">
-												Sem ameaça
-											</span>
 										)}
 									</li>
 								);

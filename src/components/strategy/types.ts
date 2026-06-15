@@ -113,6 +113,21 @@ export interface CompetitorPeerSignal {
 	summary: string;
 }
 
+export interface CompetitorDeepSnapshot {
+	pricingTiers: Array<{
+		label: string | null;
+		amount: number | null;
+		currency: string | null;
+		interval: "month" | "year" | "one_time" | null;
+	}>;
+	hasFreeTier: boolean;
+	tierCount: number;
+	pricingUrl: string | null;
+	blogPostCount: number | null;
+	blogLatestPostDate: string | null;
+	blogUrl: string | null;
+}
+
 export interface CompetitorEntry {
 	domain: string;
 	label: string | null;
@@ -122,6 +137,8 @@ export interface CompetitorEntry {
 		severity: "low" | "medium" | "high";
 		detail: string;
 	}>;
+	/** Wave 23 — pricing/blog snapshot. Opcional pra back-compat. */
+	deepSnapshot?: CompetitorDeepSnapshot | null;
 }
 
 export interface CompetitorSection {
@@ -152,6 +169,9 @@ export interface ImpersonatorMatchEntry {
 	hasCredentialCapture: boolean;
 	hasSensitivePath: boolean;
 	commercialInterpretation: string;
+	/** Wave 23 P1.1 — match exato dos bytes do favicon = clone visual.
+	 *  Opcional pra back-compat com plans persistidos antes do field. */
+	hasFaviconBytesMatch?: boolean;
 }
 
 export interface ImpersonatorsPeerSignal {

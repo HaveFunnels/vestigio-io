@@ -3515,28 +3515,41 @@ function extractBrandIntegritySignals(
   }
 
   // ── 2. External sites mimicking brand (title OR favicon match) ──
+  // Wave 23 P1.1 — também conta favicon_bytes_match (SHA256 dos bytes
+  // do favicon bate exatamente com o root). Esse é o sinal MAIS forte
+  // de clone visual (golpista copiou o arquivo, não só linkou pra mesma
+  // URL). Quando presente, força severity high.
   const mimicryEvidence = active.filter(e => {
     const p = e.payload as BrandImpersonationMatchPayload;
+    const hasFaviconBytesMatch = p.favicon_bytes_match === true;
     const hasVisualMatch = p.favicon_similarity_score !== null && p.favicon_similarity_score >= 60;
     const hasTitleMatch = p.title_similarity !== null && p.title_similarity > 50;
-    return (hasVisualMatch || hasTitleMatch) && p.confidence_score >= 40;
+    return (hasFaviconBytesMatch || hasVisualMatch || hasTitleMatch) && p.confidence_score >= 40;
   });
   if (mimicryEvidence.length >= 1) {
-    const faviconMatches = mimicryEvidence.filter(e =>
+    const byteCloneMatches = mimicryEvidence.filter(e =>
+      (e.payload as BrandImpersonationMatchPayload).favicon_bytes_match === true,
+    );
+    const faviconUrlMatches = mimicryEvidence.filter(e =>
       (e.payload as BrandImpersonationMatchPayload).favicon_similarity_score !== null &&
       (e.payload as BrandImpersonationMatchPayload).favicon_similarity_score! >= 60,
     );
-    const severity = mimicryEvidence.length >= 3 ? 'high' : mimicryEvidence.length >= 2 ? 'high' : 'medium';
+    // Byte-clone match força severity high; senão segue threshold de count.
+    const severity = byteCloneMatches.length > 0 || mimicryEvidence.length >= 2 ? 'high' : 'medium';
+    const description = byteCloneMatches.length > 0
+      ? `${mimicryEvidence.length} external domains mimick the brand (${byteCloneMatches.length} are bit-for-bit favicon copies — strong visual clone signal, ${faviconUrlMatches.length - byteCloneMatches.length} have similar favicon URL, ${mimicryEvidence.length - faviconUrlMatches.length} have similar titles). Active impersonation detected.`
+      : `${mimicryEvidence.length} external domains mimick the brand (${faviconUrlMatches.length} with matching favicon, ${mimicryEvidence.length - faviconUrlMatches.length} with similar titles). Active impersonation detected.`;
     signals.push(createSignal({
       signal_key: 'external_sites_mimicking_brand',
       category: SignalCategory.BrandIntegrity,
       attribute: 'brand.content_mimicry',
       value: severity,
       numeric_value: mimicryEvidence.length,
-      confidence: faviconMatches.length > 0 ? 80 : 70,
+      // Byte-clone match = 90 confidence; URL match = 80; title-only = 70.
+      confidence: byteCloneMatches.length > 0 ? 90 : faviconUrlMatches.length > 0 ? 80 : 70,
       scoping, cycle_ref, ids,
       evidence_refs: mimicryEvidence.map(e => makeRef('evidence', e.id)),
-      description: `${mimicryEvidence.length} external domains mimick the brand (${faviconMatches.length} with matching favicon, ${mimicryEvidence.length - faviconMatches.length} with similar titles). Active impersonation detected.`,
+      description,
     }));
   }
 

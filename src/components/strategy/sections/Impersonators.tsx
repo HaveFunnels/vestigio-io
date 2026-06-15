@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, AlertTriangle, KeyRound, CreditCard, Globe2 } from "lucide-react";
+import { Shield, AlertTriangle, KeyRound, CreditCard, Globe2, Copy, ShieldAlert } from "lucide-react";
 import type { ImpersonatorsSection, ImpersonatorThreatType } from "../types";
 
 /*
@@ -181,6 +181,18 @@ export default function Impersonators({ impersonators, embedded = false }: Props
 										    convert "domain exists" to "domain is actually
 										    doing something dangerous". */}
 										<div className="flex flex-wrap items-center gap-1.5">
+											{/* Wave 23 P1.1 — favicon byte-clone match. Sinal MAIS
+											    forte de impersonação visual (golpista copiou o
+											    arquivo, não só linkou pra mesma URL). Em primeiro
+											    pra puxar o olho. */}
+											{m.hasFaviconBytesMatch && (
+												<span
+													className="inline-flex items-center gap-1 rounded-md bg-rose-500/10 px-1.5 py-0.5 text-[10px] text-rose-200 ring-1 ring-inset ring-rose-500/20"
+													title="Favicon idêntico ao seu (bytes-match SHA256) — cópia visual direta do arquivo"
+												>
+													<Copy className="h-3 w-3" /> cópia visual
+												</span>
+											)}
 											{m.hasCommerceSignals && (
 												<span
 													className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-200 ring-1 ring-inset ring-amber-500/20"
@@ -212,6 +224,32 @@ export default function Impersonators({ impersonators, embedded = false }: Props
 												<span className={`font-semibold ${tone.fg}`}>{m.confidenceScore}</span>
 											</span>
 										</div>
+										{/* Wave 23 P2.2 — commercial_interpretation. Quando
+										    Google Safe Browsing flagrou esse domínio, o scanner
+										    prefixa "[Google Safe Browsing já flagrou]" — UI
+										    converte em badge separado + remove prefix do texto. */}
+										{m.commercialInterpretation && (() => {
+											const gsbPrefix = "[Google Safe Browsing já flagrou]";
+											const flaggedByGsb = m.commercialInterpretation.startsWith(gsbPrefix);
+											const text = flaggedByGsb
+												? m.commercialInterpretation.slice(gsbPrefix.length).trim()
+												: m.commercialInterpretation;
+											return (
+												<div className="flex w-full flex-wrap items-start gap-1.5 border-t border-edge/30 pt-2 sm:basis-full">
+													{flaggedByGsb && (
+														<span
+															className="inline-flex shrink-0 items-center gap-1 rounded-md bg-rose-600/15 px-1.5 py-0.5 text-[10px] font-semibold text-rose-200 ring-1 ring-inset ring-rose-600/30"
+															title="Google Safe Browsing já listou esse domínio como phishing/malware"
+														>
+															<ShieldAlert className="h-3 w-3" /> Google Safe Browsing
+														</span>
+													)}
+													<span className="text-[11px] leading-snug text-content-muted">
+														{text}
+													</span>
+												</div>
+											);
+										})()}
 									</li>
 								);
 							})}

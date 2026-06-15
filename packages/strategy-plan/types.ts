@@ -226,6 +226,12 @@ export interface ImpersonatorMatchEntryOutput {
 	hasCredentialCapture: boolean;
 	hasSensitivePath: boolean;
 	commercialInterpretation: string;
+	/**
+	 * Wave 23 P1.1 — bytes-match exato do favicon contra o root. UI usa
+	 * pra mostrar badge "cópia visual de favicon" (sinal mais forte de
+	 * clone que match só de URL).
+	 */
+	hasFaviconBytesMatch: boolean;
 }
 
 export interface ImpersonatorsPeerSignalOutput {
@@ -264,6 +270,32 @@ export interface CompetitorPeerSignalOutput {
 	summary: string;
 }
 
+export interface CompetitorDeepSnapshotOutput {
+	/** Wave 23 P0.2 — pricing tiers extraídos via regex (money pattern +
+	 *  heading proximity). Vazio quando concorrente não tem pricing page
+	 *  detectável OU quando o parser não bateu em nenhum tier. */
+	pricingTiers: Array<{
+		label: string | null;
+		amount: number | null;
+		currency: string | null;
+		interval: "month" | "year" | "one_time" | null;
+	}>;
+	/** True quando "grátis", "free", "$0/mo" detectado entre os tiers. */
+	hasFreeTier: boolean;
+	/** Total de tiers distintos (count de pricingTiers). */
+	tierCount: number;
+	/** URL da pricing page detectada — null se nenhum path comum bateu. */
+	pricingUrl: string | null;
+	/** Wave 23 P1.2 — count aproximado de posts no blog index. Null = não
+	 *  inferiu (sem <article> tags + sem padrão de slug de post). */
+	blogPostCount: number | null;
+	/** ISO da data do post mais recente (best-effort via <time datetime>
+	 *  ou JSON-LD datePublished). */
+	blogLatestPostDate: string | null;
+	/** URL do blog index detectado — null se nenhum path comum bateu. */
+	blogUrl: string | null;
+}
+
 export interface CompetitorEntryOutput {
 	domain: string;
 	label: string | null;
@@ -274,6 +306,11 @@ export interface CompetitorEntryOutput {
 		severity: "low" | "medium" | "high";
 		detail: string;
 	}>;
+	/**
+	 * Wave 23 P0.2 + P1.2 — pricing + content velocity. Opcional pra
+	 * back-compat (planos antigos não têm o campo).
+	 */
+	deepSnapshot?: CompetitorDeepSnapshotOutput | null;
 }
 
 export interface CompetitorSectionOutput {

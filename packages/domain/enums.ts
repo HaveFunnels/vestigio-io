@@ -256,6 +256,12 @@ export enum EvidenceType {
   // can add Trustpilot, G2, etc as additional CustomerVoiceSnapshot
   // rows with different `platform` values.
   CustomerVoiceSnapshot = 'customer_voice_snapshot',
+  // Wave 23 P0.2/P1.2 — Competitive Deep Lens. One per (env, competitor,
+  // cycle) capturando snapshot da pricing page + content velocity
+  // (blog post count). Sobe além do homepage-only do CompetitorPageSnapshot
+  // pra trazer pricing tiers (sinal mais pedido pra SaaS B2B) e ritmo
+  // de publicação (sinal de momentum).
+  CompetitorDeepSnapshot = 'competitor_deep_snapshot',
 }
 
 // ──────────────────────────────────────────────

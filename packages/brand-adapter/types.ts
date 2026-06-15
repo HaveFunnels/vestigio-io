@@ -62,6 +62,12 @@ export interface BrandImpersonationCandidate {
   has_payment_capture: boolean;
   /** Favicon similarity score (0-100, null if not compared) */
   favicon_similarity_score: number | null;
+  /**
+   * Wave 23 P1.1 — bytes-match favicon. Match exato dos bytes do
+   * favicon contra o root. Null = não verificado (candidato abaixo do
+   * threshold de score pra justificar fetch extra).
+   */
+  favicon_bytes_match: boolean | null;
 }
 
 /**

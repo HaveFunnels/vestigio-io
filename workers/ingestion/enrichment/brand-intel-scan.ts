@@ -16,6 +16,7 @@ import {
 } from "../../../packages/domain";
 import { runBrandScan } from "../../brand-intel/scanner";
 import type { BrandImpersonationCandidate } from "../../../packages/brand-adapter/types";
+import { prisma } from "../../../src/libs/prismaDb";
 
 // ──────────────────────────────────────────────
 // Brand Intelligence Scan — enrichment pass
@@ -58,6 +59,73 @@ function deriveBrandTokens(rootDomain: string): string[] {
 	return Array.from(tokens);
 }
 
+// Stopwords pra não virar token de marca. "the inc llc corp" etc. são
+// genéricos demais — gerar candidatos tipo "thelogin.com" floodaria.
+const BRAND_STOPWORDS = new Set([
+	"the", "a", "an", "and", "or", "of", "for",
+	"inc", "ltda", "ltd", "llc", "sa", "corp", "co", "company",
+	"app", "site", "web", "online", "io", "com", "net",
+	// pt-BR
+	"da", "do", "de", "das", "dos", "e",
+]);
+
+function envIdFromScopingRef(environmentRef: string): string | null {
+	const idx = environmentRef.indexOf(":");
+	if (idx < 0) return null;
+	return environmentRef.slice(idx + 1) || null;
+}
+
+// Wave 23 — Extended brand tokens com dados do banco. Antes deriveBrandTokens
+// só fazia split do domain, então marcas com palavras compostas no nome
+// (mas dominium colapsado tipo "havefunnels.com") perdiam tokens
+// individuais. Agora puxa Organization.name pra captar tokens humanos.
+//
+// Exemplo: `havefunnels.com` + Organization.name="Have Funnels"
+//   antes: ["havefunnels"]
+//   agora: ["havefunnels", "have", "funnels", "havefunnels"]
+//
+// Resultado: generator de candidatos cria `have-funnels.com`,
+// `have-funnels-oficial.com`, `havefunnels.net` etc. — domínios reais
+// que typosquatters/golpistas usariam.
+async function deriveExtendedBrandTokens(
+	ctx: EnrichmentContext,
+): Promise<string[]> {
+	const baseTokens = deriveBrandTokens(ctx.root_domain);
+	const tokens = new Set<string>(baseTokens);
+
+	const envId = envIdFromScopingRef(ctx.scoping.environment_ref);
+	if (!envId) return Array.from(tokens);
+
+	try {
+		const env = await prisma.environment.findUnique({
+			where: { id: envId },
+			select: { organization: { select: { name: true } } },
+		});
+		const orgName = env?.organization?.name?.trim();
+		if (!orgName) return Array.from(tokens);
+
+		// Token full (normalizado)
+		const normalized = orgName.toLowerCase().replace(/[^a-z0-9]/g, "");
+		if (normalized.length >= 3) tokens.add(normalized);
+
+		// Tokens individuais (split em whitespace + drop stopwords curtas)
+		for (const part of orgName.toLowerCase().split(/[\s\-_]+/)) {
+			const clean = part.replace(/[^a-z0-9]/g, "");
+			if (clean.length < 3) continue;
+			if (BRAND_STOPWORDS.has(clean)) continue;
+			tokens.add(clean);
+		}
+	} catch (err) {
+		// DB indisponível — degrada graciosamente pra tokens do domain.
+		console.warn(
+			`[brand-intel-scan] couldn't fetch org name for ${envId}:`,
+			err instanceof Error ? err.message : err,
+		);
+	}
+
+	return Array.from(tokens);
+}
+
 function candidateToEvidence(
 	ids: IdGenerator,
 	ctx: EnrichmentContext,
@@ -88,6 +156,7 @@ function candidateToEvidence(
 			has_credential_capture: candidate.has_credential_capture,
 			has_payment_capture: candidate.has_payment_capture,
 			favicon_similarity_score: candidate.favicon_similarity_score,
+			favicon_bytes_match: candidate.favicon_bytes_match,
 		} as BrandImpersonationMatchPayload,
 		freshness: {
 			observed_at: new Date(),
@@ -125,7 +194,9 @@ export const brandIntelScanPass: EnrichmentPass = {
 
 	async run(ctx: EnrichmentContext): Promise<EnrichmentResult> {
 		const start = Date.now();
-		const tokens = deriveBrandTokens(ctx.root_domain);
+		// Wave 23 — extended tokens via Organization.name (P2.1 do audit
+		// de robustez). Fall back pra domain-only se DB falhar.
+		const tokens = await deriveExtendedBrandTokens(ctx);
 
 		try {
 			ctx.emit({

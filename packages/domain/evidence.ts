@@ -74,6 +74,7 @@ export type EvidencePayload =
   | OffSiteReconPayload
   | EmailAuthRecordPayload
   | CompetitorPageSnapshotPayload
+  | CompetitorDeepSnapshotPayload
   | SerpResultsPayload
   | CustomerVoiceSnapshotPayload;
 
@@ -593,6 +594,12 @@ export interface BrandImpersonationMatchPayload {
   has_payment_capture: boolean;
   /** Favicon similarity score (0-100, null if not compared) */
   favicon_similarity_score: number | null;
+  /**
+   * Wave 23 P1.1 — bytes-match favicon. True quando os bytes do favicon
+   * do candidato batem exatamente com os do root (clone visual de
+   * arquivo idêntico). Null = não verificado.
+   */
+  favicon_bytes_match?: boolean | null;
 }
 
 // ──────────────────────────────────────────────
@@ -1141,4 +1148,50 @@ export interface CustomerVoiceSnapshotPayload {
   fetched_at: string;
   /** URL we actually fetched (DDG SERP URL). For audit trail. */
   fetched_url: string;
+}
+
+// ──────────────────────────────────────────────
+// Wave 23 P0.2/P1.2 — CompetitorDeepSnapshotPayload
+//
+// Snapshot dos sinais "profundos" de um concorrente que NÃO vivem
+// na homepage: pricing tiers + content velocity (blog post count +
+// data mais recente). Drive de sinais como "concorrente subiu preço"
+// ou "concorrente acelerou publicação 3x" que o CompetitorPageSnapshot
+// (homepage-only) não pega.
+// ──────────────────────────────────────────────
+
+export interface CompetitorDeepSnapshotPayload {
+  type: 'competitor_deep_snapshot';
+  competitor_domain: string;
+
+  // ── Pricing ──
+  /** URL da pricing page detectada (null se nenhum path comum bateu). */
+  pricing_url: string | null;
+  pricing_fetch_failed: boolean;
+  pricing_error: string | null;
+  /** Tiers detectados (regex sobre money + heading proximity). */
+  pricing_tiers: Array<{
+    label: string | null;       // "Free", "Pro", "Enterprise", "Starter"
+    amount: number | null;      // valor numérico (ex: 49)
+    currency: string | null;    // "USD" | "BRL" | "EUR" | etc
+    interval: 'month' | 'year' | 'one_time' | null;
+    amount_raw: string;         // string original ex: "$49/mo" pra audit
+  }>;
+  /** True quando "free", "grátis", "$0/mo" detectado entre os tiers. */
+  has_free_tier: boolean;
+  /** Total de tiers distintos. */
+  tier_count: number;
+
+  // ── Content velocity ──
+  /** URL da blog index detectada (null se nenhum path bateu). */
+  blog_url: string | null;
+  blog_fetch_failed: boolean;
+  blog_error: string | null;
+  /** Aproximação do número de posts no índice (count de <article>,
+   *  links matching post-URL pattern). Null = não conseguiu inferir. */
+  blog_post_count: number | null;
+  /** Data ISO do post mais recente extraído via meta/article (best effort). */
+  blog_latest_post_date: string | null;
+
+  fetched_at: string;
 }

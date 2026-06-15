@@ -36,15 +36,17 @@ import { isBlockedAddress } from "../../../packages/url-normalize/ssrf";
 //   - DNS lookup of `_dmarc.<domain>` and `<domain>` TXT (SPF).
 //   - NO authenticated paths, NO crawl, NO nuclei/katana.
 //
-// Cap: max 10 competitors fetched per cycle. Anyone with 20 active
-// rows gets the most-recently-added 10 (cost + signal density). UI
-// surfaces the cap so the owner can prune.
+// Cap: max 25 competitors fetched per cycle (Wave 23 — era 10). Customer
+// feedback: clientes com 15-20 concorrentes ativos só viam metade
+// analisada por ciclo. 25 cobre o típico universo SaaS B2B + ecommerce
+// sem custar muito (fetches são paralelos, ~3s cada — cycle ganha 2-3min
+// a mais no worst case). UI continua avisando se ainda houver overflow.
 //
 // Gated to full-mode audits — same as brand-intel-scan. Hot/warm
 // cycles skip; the data refreshes every audit cycle.
 // ──────────────────────────────────────────────
 
-const MAX_COMPETITORS_PER_CYCLE = 10;
+const MAX_COMPETITORS_PER_CYCLE = 25;
 const DNS_TIMEOUT_MS = 3_000;
 const HTTP_TIMEOUT_MS = 12_000;
 const MAX_REDIRECTS = 5;
@@ -67,7 +69,7 @@ interface CompetitorRow {
 	domain: string;
 }
 
-interface SafeFetchResult {
+export interface SafeFetchResult {
 	final_url: string;
 	status_code: number;
 	headers: Record<string, string>;
@@ -181,7 +183,9 @@ function singleSafeFetch(targetUrl: string): Promise<SafeFetchResult> {
 	});
 }
 
-async function safeFetch(initialUrl: string): Promise<SafeFetchResult> {
+// Wave 23 — exportado pra competitor-deep-fetch.ts reusar o mesmo
+// SSRF guard sem duplicar 200 linhas.
+export async function safeFetch(initialUrl: string): Promise<SafeFetchResult> {
 	let currentUrl = initialUrl;
 	for (let hop = 0; hop < MAX_REDIRECTS; hop++) {
 		const result = await singleSafeFetch(currentUrl);

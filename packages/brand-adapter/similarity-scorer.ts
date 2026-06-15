@@ -27,8 +27,9 @@ const WEIGHTS = {
   brand_token_presence: 15,
   title_similarity_high: 18,      // title sim > 60
   title_similarity_medium: 10,    // title sim > 30
-  favicon_match: 22,              // HIGH — visual match is strong indicator
-  favicon_similar: 12,            // favicon sim > 50
+  favicon_match: 22,              // HIGH — URL match (path/filename)
+  favicon_similar: 12,            // favicon URL sim > 50
+  favicon_bytes_match: 30,        // VERY HIGH — bytes-match (Wave 23 P1.1)
   commerce_signals: 18,           // HIGH — commerce intent is strong indicator
   sensitive_path: 20,             // HIGH — login/payment/verify paths
   credential_capture: 28,         // VERY HIGH — password/form capture
@@ -150,6 +151,31 @@ export function computeFaviconSimilarity(
 }
 
 /**
+ * Wave 23 — byte-hash favicon comparison (P1.1).
+ *
+ * Compara o conteúdo BINÁRIO do favicon contra o do root. Detecta o
+ * caso típico de clone: golpista copia o favicon original (mesmo bytes
+ * ou re-export idêntico) hospedado num caminho/host diferente — onde a
+ * comparação só-de-URL retorna 0 e perde o sinal.
+ *
+ * Estratégia: SHA256 dos bytes brutos. Match exato = forte sinal de
+ * impersonação visual. Não é perceptual hash (não pega re-encoding ou
+ * cropping leve), mas captura 70-80% dos casos reais sem precisar de
+ * dep pesada tipo sharp.
+ *
+ * Follow-up: perceptual hash (pHash via 8x8 DCT) seria upgrade, mas
+ * exige decodificador PNG/ICO + DCT = 200+ linhas. SHA256 cobre o
+ * caso comum sem essa complexidade.
+ */
+export function computeFaviconBytesMatch(
+  candidateHash: string | null,
+  rootHash: string | null,
+): boolean {
+  if (!candidateHash || !rootHash) return false;
+  return candidateHash === rootHash;
+}
+
+/**
  * Compute overall impersonation score for a candidate.
  * Uses weighted multi-signal model.
  */
@@ -250,6 +276,9 @@ export function scoreCandidate(
     has_credential_capture: hasCredentialCapture,
     has_payment_capture: hasPaymentCapture,
     favicon_similarity_score: faviconSim,
+    // Wave 23 P1.1 — null por padrão; scanner.ts sobrescreve quando
+    // fetcha bytes do favicon e compara contra root.
+    favicon_bytes_match: null,
   };
 }
 

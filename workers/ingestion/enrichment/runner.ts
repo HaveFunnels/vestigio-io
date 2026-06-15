@@ -13,6 +13,7 @@ import { subdomainDiscoveryPass } from "./subdomain-discovery";
 import { externalReconPass } from "./external-recon";
 import { emailDeliverabilityPass } from "./email-deliverability";
 import { competitorFetchPass } from "./competitor-fetch";
+import { competitorDeepFetchPass } from "./competitor-deep-fetch";
 import { serpObservationPass } from "./serp-observation";
 import { surfaceInventoryPass } from "./surface-inventory";
 import { customerVoicePass } from "./customer-voice";
@@ -58,6 +59,7 @@ const PASS_REGISTRY: EnrichmentPass[] = [
   // in self-only mode for that cycle.
   serpObservationPass, // Wave 25 — brand + category SERP capture (cached), gated by TAVILY_API_KEY
   competitorFetchPass, // Wave 24 — polite homepage fetch of user-curated + auto-activated competitors, full-mode only
+  competitorDeepFetchPass, // Wave 23 P0.2/P1.2 — pricing page + blog content velocity probe, full-mode only
   surfaceInventoryPass, // Wave 26 — LLM extracts buyer-decision surface elements (yours + each competitor), gated by ANTHROPIC_API_KEY
   customerVoicePass,   // Wave 27 — Reclame Aqui snapshot for self + curated competitors, full-mode only
   externalReconPass,

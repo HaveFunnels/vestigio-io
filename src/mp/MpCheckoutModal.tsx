@@ -93,7 +93,6 @@ export function MpCheckoutModal({
 	useEffect(() => {
 		if (!open || tab !== "card") return;
 		if (typeof window === "undefined" || !window.__mp) {
-			console.warn("[MpCheckoutModal] MP SDK not loaded yet");
 			return;
 		}
 

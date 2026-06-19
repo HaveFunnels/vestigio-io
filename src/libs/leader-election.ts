@@ -70,7 +70,6 @@ export async function tryAcquireLeadership(
 		);
 		return result === "OK";
 	} catch (err) {
-		console.warn(`[leader-election] acquire failed name=${name}:`, err);
 		// Failing closed (returning false) would silently kill all crons
 		// across the cluster on a Redis blip. Failing open is safer for
 		// idempotent work like heal scans.
@@ -96,7 +95,6 @@ export async function renewLeadership(
 		const v = await redis.expire(leaderKey(name), opts.ttlSec);
 		return v === 1;
 	} catch (err) {
-		console.warn(`[leader-election] renew failed name=${name}:`, err);
 		return false;
 	}
 }

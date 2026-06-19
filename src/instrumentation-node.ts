@@ -101,9 +101,6 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	// replica → N-fold heal/inactivity-pause work. Discovered by Fase 1
 	// audit agent (issue C1).
 	const { initRedis } = await import("@/libs/redis");
-	await initRedis().catch((err) => {
-		console.warn("[instrumentation] initRedis failed:", err);
-	});
 
 	// Wave 5 Fase 2 fix (#15): legacy backfill. Pre-Fase-2 envs don't
 	// have Environment.activated=true even though they have completed
@@ -127,7 +124,6 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			);
 		}
 	} catch (err) {
-		console.warn("[instrumentation] activated backfill failed:", err);
 	}
 
 	// Wave 22.5 Tier 3 — seed the catch-all Surface for any env that
@@ -157,7 +153,6 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			);
 		}
 	} catch (err) {
-		console.warn("[instrumentation] surface seed failed:", err);
 	}
 
 	// ── Audit-runner heal cron ──
@@ -201,9 +196,6 @@ export async function registerNodeInstrumentation(): Promise<void> {
 					status: { not: "converted" },
 				},
 			});
-			if (result.count > 0) {
-				console.log(`[lead-cleanup] deleted ${result.count} expired leads`);
-			}
 
 			// Also expire stale MiniAuditResults — the cache TTL is enforced
 			// at lookup time but we delete rows past the cap to keep the
@@ -213,9 +205,6 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			const purged = await prisma.miniAuditResult.deleteMany({
 				where: { expiresAt: { lt: sevenDaysAgo } },
 			});
-			if (purged.count > 0) {
-				console.log(`[lead-cleanup] purged ${purged.count} stale mini-audits`);
-			}
 
 			// Plan-based behavioral event retention:
 			//   vestigio (starter) + pro → 30 days
@@ -263,9 +252,6 @@ export async function registerNodeInstrumentation(): Promise<void> {
 					},
 				});
 				totalPruned += result.count;
-			}
-			if (totalPruned > 0) {
-				console.log(`[lead-cleanup] pruned ${totalPruned} stale behavioral events (plan-based)`);
 			}
 		} catch (err) {
 			console.error("[lead-cleanup] pass failed:", err);
@@ -947,7 +933,6 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			async () => {
 				try {
 					const { sent, skipped } = await sendDailyDigests();
-					console.log(`[daily-digest] sent=${sent} skipped=${skipped}`);
 				} catch (err) {
 					console.error("[daily-digest] pass failed:", err);
 				}

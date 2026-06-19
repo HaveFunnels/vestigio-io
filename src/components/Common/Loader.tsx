@@ -1,4 +1,3 @@
-import React from "react";
 
 /*
  * Loader — 3-dot breathing indicator used for inline button-state and

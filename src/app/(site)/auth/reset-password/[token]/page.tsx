@@ -1,4 +1,3 @@
-import React from "react";
 import ResetPassword from "@/components/Auth/ResetPassword";
 import { Metadata } from "next";
 

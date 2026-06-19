@@ -77,7 +77,6 @@ export async function requireAdmin(): Promise<AdminGateResult> {
 	} catch (err) {
 		// Fail-closed: deny on DB outage instead of granting access
 		// based on the cached JWT alone.
-		console.warn(`[require-admin] DB role check failed for ${userId}:`, err);
 		return { denied: NextResponse.json({ message: "Service unavailable" }, { status: 503 }) };
 	}
 }

@@ -139,7 +139,6 @@ export function DashboardShell({
 					);
 				} catch (err) {
 					if ((err as Error).name === "AbortError") return;
-					console.warn("[dashboard/shell] save failed", err);
 					setSaveStatus("error");
 				}
 			}, SAVE_DEBOUNCE_MS);

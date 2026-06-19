@@ -273,10 +273,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 		}
 	}
 
-	if (usedCacheFastPath) {
-		console.log(`[layout] cache fast-path: skipped ensureContext for env=${orgCtx.envId}`);
-	}
-
 	const currentOrg = {
 		orgId: orgCtx.orgId,
 		orgName: orgCtx.orgName,

@@ -9,11 +9,8 @@ export async function POST(request: Request) {
   const { valid, body, error } = await verifyNuvemshopWebhook(request);
 
   if (!valid) {
-    console.warn(`[nuvemshop-webhook] customers/data_request rejected: ${error}`);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  console.log(`[nuvemshop-webhook] customers/data_request store_id=${body.store_id} customer=${body.customer?.id}`);
 
   return NextResponse.json({
     status: "ok",

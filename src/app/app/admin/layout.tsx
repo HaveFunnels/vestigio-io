@@ -40,7 +40,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     });
     dbRole = user?.role ?? null;
   } catch (err) {
-    console.warn(`[admin-layout] DB role check failed for user ${userId}:`, err);
     redirect("/app");
   }
 

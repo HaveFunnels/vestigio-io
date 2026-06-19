@@ -10,12 +10,10 @@ export async function POST(request: Request) {
   const { valid, body, error } = await verifyNuvemshopWebhook(request);
 
   if (!valid) {
-    console.warn(`[nuvemshop-webhook] store/redact rejected: ${error}`);
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const storeId = body.store_id ? String(body.store_id) : null;
-  console.log(`[nuvemshop-webhook] store/redact store_id=${storeId}`);
 
   if (!storeId) {
     return NextResponse.json({ status: "ok" }, { status: 200 });
@@ -35,7 +33,6 @@ export async function POST(request: Request) {
             where: { id: conn.id },
             data: { status: "disconnected", config: "", syncError: null },
           });
-          console.log(`[nuvemshop-webhook] store/redact: disconnected connection ${conn.id} for store ${storeId}`);
         }
       } catch {
         // Can't decrypt — skip (may be already cleared)

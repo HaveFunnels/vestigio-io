@@ -77,7 +77,6 @@ export async function readLlmCache<T>(key: CacheKey): Promise<T | null> {
   } catch (err) {
     // Defensive: a missing/migrating table must not break the
     // endpoint — fall through to the LLM call.
-    console.warn("[llm-result-cache] read failed:", err instanceof Error ? err.message : err);
     return null;
   }
 }
@@ -118,7 +117,6 @@ export async function writeLlmCache<T>(
   } catch (err) {
     // Memory cache still serves this request; we just lose
     // cross-deploy persistence.
-    console.warn("[llm-result-cache] write failed:", err instanceof Error ? err.message : err);
   }
 }
 

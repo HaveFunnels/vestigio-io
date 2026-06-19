@@ -100,7 +100,6 @@ const processedWebhookIds = new Map<string, number>();
 
 // Helper: log webhook event for debugging
 function logEvent(eventType: string, detail: string) {
-	console.log(`[Paddle Webhook] ${eventType}: ${detail}`);
 }
 
 export const POST = withErrorTracking(async function POST(req: NextRequest) {
@@ -302,7 +301,6 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 						sessionId: "server-webhook",
 					});
 				} catch (err) {
-					console.warn("[paddle webhook] cancel telemetry failed:", err);
 				}
 			}
 		}

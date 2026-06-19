@@ -208,7 +208,6 @@ async function computeMoneyRecovered(
 		result.caption = captionForMoneyRecovered(result, _captionT);
 		return result;
 	} catch (err) {
-		console.warn("[dashboard/aggregator] money_recovered failed:", err);
 		const fallback: MoneyRecoveredData = {
 			totalCents: 0,
 			confirmedCents: 0,
@@ -337,7 +336,6 @@ async function computeHealthScore(
 				actionQuality = Math.round((completed / runs.length) * 100);
 			}
 		} catch (err) {
-			console.warn("[dashboard/aggregator] playbook query failed:", err);
 		}
 
 		// Composite: weighted average of ONLY components that have data.
@@ -414,7 +412,6 @@ async function computeHealthScore(
 		result.caption = captionForHealthScore(result, _captionT);
 		return result;
 	} catch (err) {
-		console.warn("[dashboard/aggregator] health_score failed:", err);
 		const fallback: HealthScoreData = {
 			current: 0,
 			deltaVsLastCycle: 0,
@@ -566,7 +563,6 @@ async function computeExposure(
 		result.caption = captionForExposure(result, _captionT);
 		return result;
 	} catch (err) {
-		console.warn("[dashboard/aggregator] exposure failed:", err);
 		const fallback: ExposureData = {
 			monthlyCents: 0,
 			deltaVsLastCycleCents: 0,
@@ -694,7 +690,6 @@ async function computeChangeReport(
 		result.caption = captionForChangeReport(result, _captionT);
 		return result;
 	} catch (err) {
-		console.warn("[dashboard/aggregator] change_report failed:", err);
 		const fallback: ChangeReportData = {
 			newFindings: [],
 			regressions: [],
@@ -791,7 +786,6 @@ async function computeActivityHeatmap(
 		result.caption = captionForActivityHeatmap(result, _captionT);
 		return result;
 	} catch (err) {
-		console.warn("[dashboard/aggregator] activity_heatmap failed:", err);
 		const fallback: ActivityHeatmapData = {
 			days: buildEmptyHeatmap(),
 			currentStreak: 0,

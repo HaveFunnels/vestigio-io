@@ -525,7 +525,6 @@ export default function useLpAuditForm() {
 		if (!leadId || !formToken) {
 			// Dev mode without DB: can't fire audit, just log
 			if (process.env.NODE_ENV === "development") {
-				console.log("[dev] Would fire audit here. Form data:", form);
 				return false;
 			}
 			return false;

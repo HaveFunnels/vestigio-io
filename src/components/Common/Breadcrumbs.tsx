@@ -1,5 +1,4 @@
 import Link from "next/link";
-import React from "react";
 
 const Breadcrumbs = ({ title, pages }: { title: string; pages: string[] }) => {
 	return (

@@ -375,12 +375,10 @@ function StepCard({
 			);
 			if (!res.ok) {
 				const data = await res.json().catch(() => ({}));
-				console.warn("[NextSteps] PATCH failed:", res.status, data);
 				return false;
 			}
 			return true;
 		} catch (err) {
-			console.warn("[NextSteps] PATCH threw:", err);
 			return false;
 		}
 	}

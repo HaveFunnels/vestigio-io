@@ -51,7 +51,6 @@ function dedupe(eventKey: string): boolean {
 }
 
 function log(event: string, detail: string) {
-	console.log(`[MP Webhook] ${event}: ${detail}`);
 }
 
 // ──────────────────────────────────────────────
@@ -273,7 +272,6 @@ async function handlePreapprovalEvent(preapprovalId: string) {
 				});
 			}
 		} catch (err) {
-			console.warn("[mp webhook] cancel telemetry failed:", err);
 		}
 	} else {
 		log("preapproval.pending", `org=${org.id} sub=${sub.id} status=${sub.status}`);

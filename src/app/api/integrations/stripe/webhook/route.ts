@@ -118,7 +118,6 @@ export async function POST(request: Request) {
 			event?.account || event?.data?.object?.id;
 
 		if (!stripeAccountId) {
-			console.warn("[stripe-webhook] deauthorized event missing account id");
 			return NextResponse.json({ received: true });
 		}
 

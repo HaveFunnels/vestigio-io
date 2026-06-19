@@ -111,7 +111,9 @@ const widgetDefinitions: WidgetDefinition[] = [];
 export function registerWidget(def: WidgetDefinition): void {
 	const existing = widgetDefinitions.find((w) => w.id === def.id);
 	if (existing) {
-		console.warn(`[widget-registry] duplicate registration for "${def.id}" — ignoring second copy`);
+		console.warn(
+			`[widget-registry] duplicate registration for "${def.id}" — ignoring second copy`,
+		);
 		return;
 	}
 	widgetDefinitions.push(def);

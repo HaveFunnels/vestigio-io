@@ -138,12 +138,10 @@ export async function loadProjectionsCacheForEnv(envId: string): Promise<CachedP
     } catch (err) {
       // Table not migrated yet or query failed — leave JSON-backed actions
       // alone, no regression vs pre-table behavior.
-      console.warn('[loadProjectionsCacheForEnv] action-table read failed, falling back to JSON:', err);
     }
 
     return cached;
   } catch (err) {
-    console.warn('[loadProjectionsCacheForEnv] failed:', err);
     return null;
   }
 }
@@ -168,7 +166,6 @@ export async function hasRunningCycleForEnv(envId: string): Promise<boolean> {
     });
     return running > 0;
   } catch (err) {
-    console.warn('[hasRunningCycleForEnv] failed:', err);
     // Fail-open: if the check itself errors, fall through to legacy
     // path so we don't break the happy case.
     return false;
@@ -197,7 +194,6 @@ export async function hasCompletedCycleForEnv(envId: string): Promise<boolean> {
     });
     return count > 0;
   } catch (err) {
-    console.warn('[hasCompletedCycleForEnv] failed:', err);
     return false;
   }
 }
@@ -286,7 +282,6 @@ async function _ensureContextBody(orgCtx: {
       const prev = await snapshotStore.asyncGetLatest(workspaceRef, environmentRef);
       previousSnapshot = prev?.snapshot ?? null;
     } catch (err) {
-      console.warn('[ensureContext] previous snapshot lookup failed:', err);
     }
 
     const domain = orgCtx.domain.replace(/^https?:\/\//, '').split('/')[0];
@@ -639,7 +634,6 @@ export async function loadInventoryForEnv(envId: string): Promise<DataState<Inve
         ]);
         deltas = { total: newPages, findings: newFindings };
       } catch (err) {
-        console.warn('[loadInventoryForEnv] deltas computation failed:', err);
       }
     }
 
@@ -705,7 +699,6 @@ export async function loadInventoryForEnv(envId: string): Promise<DataState<Inve
       },
     };
   } catch (err) {
-    console.warn('[loadInventoryForEnv] failed:', err);
     return {
       status: 'error',
       message: err instanceof Error ? err.message : 'Unknown error preloading inventory',

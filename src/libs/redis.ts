@@ -36,20 +36,16 @@ async function createRedisClient(): Promise<any> {
     });
 
     client.on("error", (err: Error) => {
-      console.warn(`[Redis] Connection error: ${err.message}`);
     });
 
     client.on("connect", () => {
-      console.log("[Redis] Connected");
       connectionFailed = false;
     });
 
     client.on("close", () => {
-      console.warn("[Redis] Connection closed");
     });
 
     await client.connect().catch((err: Error) => {
-      console.warn(`[Redis] Failed to connect: ${err.message}`);
       connectionFailed = true;
       client.disconnect();
       return null;

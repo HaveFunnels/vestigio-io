@@ -60,7 +60,6 @@ export function initOtel(opts: InitOtelOptions): boolean {
 
 	const endpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
 	if (!endpoint) {
-		console.log("[otel] OTEL_EXPORTER_OTLP_ENDPOINT not set — telemetry disabled");
 		return false;
 	}
 
@@ -158,13 +157,10 @@ export function initOtel(opts: InitOtelOptions): boolean {
 		process.on("SIGTERM", () => {
 			sdk
 				.shutdown()
-				.then(() => console.log("[otel] shutdown complete"))
-				.catch((err) => console.warn("[otel] shutdown error:", err));
 		});
 
 		return true;
 	} catch (err) {
-		console.warn("[otel] start failed:", err);
 		_sdk = null;
 		return false;
 	}

@@ -73,7 +73,6 @@ export async function evaluateAlerts(metric: string): Promise<void> {
           }
 
           default: {
-            console.log(`[alert-evaluator] Unknown metric: ${metric}`);
             continue;
           }
         }
@@ -124,8 +123,6 @@ export async function evaluateAlerts(metric: string): Promise<void> {
           data: { lastTriggered: now },
         });
 
-        console.log(`[alert-evaluator] TRIGGERED: ${message}`);
-
         // 7. Send email notification if channel includes "email"
         if (rule.channel === "email" || rule.channel === "both") {
           try {
@@ -148,7 +145,6 @@ export async function evaluateAlerts(metric: string): Promise<void> {
                 senderProfile: "notifications",
               });
               if (res.ok) {
-                console.log(`[alert-evaluator] Email sent to ${recipient} for rule "${rule.name}"`);
               } else {
                 console.error(`[alert-evaluator] Brevo error for rule "${rule.name}": ${res.error}`);
               }

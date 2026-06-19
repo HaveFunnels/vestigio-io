@@ -117,9 +117,6 @@ export async function GET(request: Request) {
 	// If long-lived upgrade worked, use its reported expiry; otherwise mark as short-lived (1h).
 	const expiresInSec = isShortLived ? 3600 : (longLived.data?.expires_in ?? 5184000);
 	const tokenType = isShortLived ? "short_lived" : "long_lived";
-	if (isShortLived) {
-		console.warn("[Meta Ads Callback] Long-lived token upgrade failed — using short-lived token (expires in ~1h). Error:", longLived.error);
-	}
 
 	// Step 3: identify the Meta user so deletion/deauthorize webhooks
 	// can be correlated back to this environment.

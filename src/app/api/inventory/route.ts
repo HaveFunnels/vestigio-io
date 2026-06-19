@@ -187,7 +187,6 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       ]);
       deltas = { total: newPages, findings: newFindings };
     } catch (err) {
-      console.warn("[api/inventory] deltas computation failed:", err);
     }
   }
 

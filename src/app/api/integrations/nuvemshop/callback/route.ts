@@ -160,6 +160,5 @@ async function saveNuvemshopCredentials(
       });
     }
   } catch (err) {
-    console.warn(`[nuvemshop-callback] Verification failed (non-fatal):`, err);
   }
 }

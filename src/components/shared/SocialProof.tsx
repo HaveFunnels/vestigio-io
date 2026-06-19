@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 export interface Testimonial {
   quote: string;
   name: string;

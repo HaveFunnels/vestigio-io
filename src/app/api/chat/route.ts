@@ -548,7 +548,6 @@ export async function POST(request: Request) {
           );
           assistantMessageContent = JSON.stringify(resolvedBlocks);
         } catch (err) {
-          console.warn("[chat route] block resolution failed, persisting raw text:", err);
         }
 
         // ── Persist messages to conversation store ──

@@ -44,7 +44,6 @@ export async function verifyNuvemshopWebhook(
 
   // Constant-time comparison to prevent timing attacks
   if (!safeCompare(hmacHeader, expectedHmac)) {
-    console.warn("[nuvemshop-webhook] HMAC mismatch — rejecting request");
     return { valid: false, body: null, error: "Invalid HMAC signature" };
   }
 

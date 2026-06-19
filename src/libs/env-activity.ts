@@ -52,7 +52,6 @@ export async function touchEnvActivity(envId: string): Promise<boolean> {
 		});
 		return true;
 	} catch (err) {
-		console.warn("[env-activity.touch] failed:", err);
 		return false;
 	}
 }
@@ -147,7 +146,6 @@ export async function resumeIfPaused(envId: string): Promise<boolean> {
 
 		return true;
 	} catch (err) {
-		console.warn("[env-activity.resume] failed:", err);
 		return false;
 	}
 }

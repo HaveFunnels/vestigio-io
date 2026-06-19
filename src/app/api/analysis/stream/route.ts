@@ -191,7 +191,6 @@ export async function GET(request: Request) {
           );
           previousSnapshot = prev?.snapshot ?? null;
         } catch (err) {
-          console.warn('[analysis-stream] previous snapshot lookup failed:', err);
         }
 
         // Final recompute with all evidence

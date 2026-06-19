@@ -118,7 +118,6 @@ export async function getOrgUsage(
 			computeSeconds: lookup["compute_seconds"] ?? 0,
 		};
 	} catch (err) {
-		console.warn(`[usage-meter] getOrgUsage failed org=${organizationId}:`, err);
 		return {
 			organizationId,
 			period: p,
@@ -153,7 +152,6 @@ export async function getTopUsageOrgs(
 		}
 		return results;
 	} catch (err) {
-		console.warn("[usage-meter] getTopUsageOrgs failed:", err);
 		return [];
 	}
 }

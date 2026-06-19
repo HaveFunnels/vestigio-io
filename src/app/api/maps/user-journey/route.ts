@@ -516,7 +516,6 @@ export async function GET(request: Request) {
         }
       }
     } catch (err) {
-      console.warn("[User Journey API] behavioral enrichment skipped:", err);
     }
 
     // Wave 7.10: Apply dagre layout to compute optimal positions.
@@ -599,8 +598,6 @@ export async function GET(request: Request) {
         funnelStages: funnelStages?.map(s => ({ key: s.key, label: s.label, order: s.order })) ?? null,
       },
     };
-
-    console.log(`[User Journey API] orgId=${orgCtx.orgId} envId=${env.id} pages=${pages.length} commercialPages=${sortedCommercial.length} nodes=${nodes.length} edges=${edges.length} model=${funnelModelRow?.modelType ?? 'fallback-ecommerce'}`);
 
     return NextResponse.json({ map });
   } catch (err) {

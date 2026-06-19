@@ -52,7 +52,6 @@ export async function initMcpServer(): Promise<any> {
   try {
     const { McpServer } = await import('../../apps/mcp/server');
     globalStore[GLOBAL_KEY] = new McpServer();
-    console.log('[initMcpServer] McpServer created successfully');
     return globalStore[GLOBAL_KEY];
   } catch (err) {
     console.error('[initMcpServer] Failed to create McpServer:', err instanceof Error ? err.message : err);

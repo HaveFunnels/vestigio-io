@@ -1,4 +1,3 @@
-import React from "react";
 import ForgotPassword from "@/components/Auth/ForgotPassword";
 import { Metadata } from "next";
 

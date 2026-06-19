@@ -204,7 +204,6 @@ export default function MiniAuditResultPage() {
 		if (isPreview) {
 			// In preview mode we never want to actually open a gateway —
 			// just acknowledge the click so the buttons feel alive.
-			console.info("[preview] checkout would open here");
 			return;
 		}
 		if (activeProvider === "mercadopago") {

@@ -92,12 +92,9 @@ export async function POST(request: Request) {
 	// Step 2: Locate the connection.
 	const conn = await findConnectionByShopDomain(shopDomain);
 	if (!conn) {
-		console.warn(`[shopify-webhook] no connection found for shop=${shopDomain} topic=${topic}`);
 		// Still 200 — we don't want Shopify retrying webhooks for stores we don't know.
 		return NextResponse.json({ received: true, matched: false });
 	}
-
-	console.log(`[shopify-webhook] topic=${topic} shop=${shopDomain} webhookId=${webhookId} conn=${conn.id}`);
 
 	// Step 3: Dispatch by topic.
 	try {

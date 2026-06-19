@@ -154,7 +154,6 @@ export async function resolveEnvironment(
     envCache.set(envId, { exists, domain, cachedAt: now });
     return { exists, domain };
   } catch (err) {
-    console.warn("[behavioral-ingest] env validation failed:", err);
     return { exists: true, domain: null };
   }
 }

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import crypto from "node:crypto";
 import { prisma } from "@/libs/prismaDb";
 import { encryptConfig } from "@/libs/integration-crypto";
 import { decodeOAuthState } from "@/libs/oauth-state";

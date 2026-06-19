@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Network } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { MapDefinition, MapNode, MapNodeType } from "../../../../packages/maps";
 import type { MapsSection } from "../types";
 

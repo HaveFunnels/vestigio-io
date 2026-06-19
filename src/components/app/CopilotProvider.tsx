@@ -138,7 +138,7 @@ export function CopilotProvider({ children }: { children: ReactNode }) {
 	}, [pathname]);
 
 	// SSE streaming hook
-	const { sendMessage, isStreaming, streamingMessage, error, abort } =
+	const { sendMessage, isStreaming, streamingMessage, abort } =
 		useChatStream({
 			onDone: (response: any) => {
 				// Merge the final streaming message into the messages array

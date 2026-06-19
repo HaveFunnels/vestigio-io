@@ -537,7 +537,7 @@ function StepIndicator({ current, labels, onSelect }: { current: Step; labels: s
 // Sidebar cards (reused from previous version)
 // ─────────────────────────────────────────────────────────────────────
 
-function SidebarRecoveryCard() {
+function _SidebarRecoveryCard() {
 	const t = useTranslations("homepage.product_tour.overlay_recovery");
 	return (
 		<div className="mt-8 overflow-hidden rounded-lg border border-emerald-500/25 bg-gradient-to-br from-emerald-500/[0.12] to-emerald-500/[0.02] p-3">
@@ -568,7 +568,7 @@ const DATA_SOURCES = [
 	{ src: "/logos/nuvemshop.svg", alt: "Nuvemshop" },
 ];
 
-function SidebarDataSourcesCard() {
+function _SidebarDataSourcesCard() {
 	const t = useTranslations("homepage.product_tour");
 	return (
 		<div className="mt-3 overflow-hidden rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">

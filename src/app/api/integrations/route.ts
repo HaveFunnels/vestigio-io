@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
-import { encryptConfig, decryptConfig } from "@/libs/integration-crypto";
+import { encryptConfig } from "@/libs/integration-crypto";
 import { verifyMetaAdsConnection } from "../../../../workers/meta-ads/poller";
 import { verifyGoogleAdsConnection } from "../../../../workers/google-ads/poller";
 import { verifyStripeConnection } from "../../../../workers/stripe/poller";

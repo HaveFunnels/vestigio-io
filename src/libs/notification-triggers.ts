@@ -578,7 +578,7 @@ export async function sendMiniAuditPreExpiryEmail(args: {
 	});
 }
 
-export async function sendPasswordResetEmail(userId: string, email: string, link: string): Promise<void> {
+export async function sendPasswordResetEmail(userId: string, _email: string, link: string): Promise<void> {
 	const userLocale = await getUserLocale(userId);
 	const vars = { link };
 	const rendered = renderEmailFromTemplate("password_reset", vars, getBaseUrl(), userLocale)!;

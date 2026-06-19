@@ -9,7 +9,6 @@ import {
 } from "@/libs/whatsapp-meta";
 import {
 	WHATSAPP_TEMPLATES,
-	type WhatsAppLanguage,
 } from "@/libs/whatsapp-templates";
 import { prisma } from "@/libs/prismaDb";
 

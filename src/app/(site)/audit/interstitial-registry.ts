@@ -17,7 +17,7 @@
 
 import type { InterstitialDef, ScreenIdLite } from "@/types/interstitial";
 import { pickAnchorsFor } from "@/lib/market-anchors";
-import type { LeadState } from "./useLpAuditForm";
+import type { LeadState } from "@/types/lp-audit";
 
 // Copy for the headline of the benchmark frame, per business model.
 // Wave-23 polish: tom passa de "comparando contra X" (passivo, sistema

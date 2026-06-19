@@ -36,7 +36,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 export default async function AuthorPage(props: Props) {
 	if (!integrations?.isSanityEnabled) return notFound();
 
-	const { getPostsByAuthor, getAuthorBySlug, imageBuilder } = await import("@/sanity/sanity-utils");
+	const { getPostsByAuthor, getAuthorBySlug } = await import("@/sanity/sanity-utils");
 	const BlogItem = (await import("@/components/Blog/BlogItem")).default;
 	const Image = (await import("next/image")).default;
 

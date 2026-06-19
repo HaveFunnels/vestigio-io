@@ -12,7 +12,6 @@ import type { AnalysisJobRecord } from "../../../../../apps/platform/mcp-persist
 import { trackError } from "@/libs/error-tracker";
 import { PrismaEvidenceStore } from "../../../../../packages/evidence";
 import { PrismaSnapshotStore } from "../../../../../packages/change-detection";
-import { PrismaFindingStore } from "../../../../../packages/projections";
 import { prisma } from "@/libs/prismaDb";
 import { triggerIncidentNotifications, triggerRegressionNotifications } from "@/libs/notification-triggers";
 
@@ -33,7 +32,7 @@ import { triggerIncidentNotifications, triggerRegressionNotifications } from "@/
 const eventCache = new Map<string, { events: Array<{ id: string; event: string; data: any }>; timestamp: number }>();
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-function getCacheKey(userId: string, domain: string): string {
+function _getCacheKey(userId: string, domain: string): string {
   return `${userId}:${domain}`;
 }
 

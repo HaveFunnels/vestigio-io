@@ -1,17 +1,15 @@
 import { Blog } from "@/types/blog";
 import {
-	postQuery,
-	postQueryBySlug,
-	postQueryByTag,
-	postQueryByAuthor,
-	postQueryByCategory,
-	kbAllQuery,
-	kbAllByLocaleQuery,
-	kbBySlugQuery,
-	kbBySlugAndLocaleQuery,
-	kbByCategoryQuery,
-	kbByFindingKeyQuery,
-	kbByRootCauseKeyQuery,
+  postQuery,
+  postQueryBySlug,
+  postQueryByTag,
+  postQueryByAuthor,
+  postQueryByCategory,
+  kbAllByLocaleQuery,
+  kbBySlugAndLocaleQuery,
+  kbByCategoryQuery,
+  kbByFindingKeyQuery,
+  kbByRootCauseKeyQuery
 } from "./sanity-query";
 import {
 	getFoundationArticleByFindingKey,

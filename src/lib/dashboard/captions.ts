@@ -273,7 +273,7 @@ export function captionForVerificationRate(rate: number): string {
 	return "Verification queue is backing up";
 }
 
-export function captionForTopPack(pack: string, cents: number): string {
+export function captionForTopPack(_pack: string, cents: number): string {
 	if (cents === 0) return "No exposure recorded yet";
 	return `${formatUSD(cents)}/mo concentrated in this pack`;
 }

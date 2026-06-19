@@ -11,7 +11,6 @@ import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import { DrawerSection } from "@/components/console/DrawerSection";
 import { humanizeSurfaceLabel } from "@/lib/surface-label";
-import { formatCurrency } from "../map-utils";
 import type { MapNode } from "../../../../packages/maps";
 import type { FindingProjection } from "../../../../packages/projections";
 

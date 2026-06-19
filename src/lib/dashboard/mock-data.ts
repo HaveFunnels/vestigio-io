@@ -32,7 +32,7 @@ import {
 	captionForMoneyRecovered,
 } from "./captions";
 
-function isoDay(daysAgo: number): string {
+function _isoDay(daysAgo: number): string {
 	const d = new Date();
 	d.setUTCHours(12, 0, 0, 0);
 	d.setUTCDate(d.getUTCDate() - daysAgo);

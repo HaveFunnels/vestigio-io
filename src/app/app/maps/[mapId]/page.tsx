@@ -13,11 +13,8 @@ import { useCopilot } from "@/components/app/CopilotProvider";
 import MapCanvas from "@/components/maps/MapCanvas";
 import JourneyFiltersBar, {
   type JourneyFilters,
-  type JourneyStage,
-  type JourneyRange,
   pickStage,
-  pickRange,
-  JOURNEY_STAGES,
+  pickRange
 } from "@/components/maps/JourneyFiltersBar";
 import type { MapDefinition } from "../../../../../packages/maps";
 

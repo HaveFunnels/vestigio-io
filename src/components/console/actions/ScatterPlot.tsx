@@ -99,8 +99,6 @@ export default function ScatterPlot({ actions, onSelect }: Props) {
 		const svg = svgRef.current;
 		if (!svg) return;
 		const rect = svg.getBoundingClientRect();
-		const scaleX = rect.width / W;
-		const scaleY = rect.height / H;
 		const x = e.clientX - rect.left;
 		const y = e.clientY - rect.top;
 		setHovered({ action, x, y });

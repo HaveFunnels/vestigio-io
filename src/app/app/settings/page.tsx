@@ -226,7 +226,7 @@ function NotificationSettings() {
 		return <div className='text-sm text-content-muted'>{t("loading")}</div>;
 	}
 
-	const channelDisabled = (channel: "sms" | "whatsapp") =>
+	const _channelDisabled = (channel: "sms" | "whatsapp") =>
 		!phone && (prefs as any)[`${channel}Enabled`] === false;
 
 	return (

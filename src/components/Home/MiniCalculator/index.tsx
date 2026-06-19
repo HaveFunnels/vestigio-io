@@ -633,7 +633,6 @@ const MiniCalculator = ({
 									{STATUS_KEYS.map((key, i) => {
 										const isDone = i < statusIdx;
 										const isActive = i === statusIdx;
-										const isPending = i > statusIdx;
 										const chunkFrom = i === 0 ? 0 : [15, 28, 42, 56, 70, 85, 100][i - 1];
 										const chunkTo = [15, 28, 42, 56, 70, 85, 100][i];
 										const chunkFrac = isActive

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import ConsoleState from "@/components/console/ConsoleState";
@@ -22,8 +22,6 @@ import type {
 // crowded, and (b) each map has space to explain itself before the
 // user commits to opening its canvas.
 // ──────────────────────────────────────────────
-
-const JOURNEY_MAP_ID = "user_journey";
 
 export default function MapsGalleryPage() {
 	const t = useTranslations("console.maps");

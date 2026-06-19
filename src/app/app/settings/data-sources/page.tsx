@@ -1486,7 +1486,7 @@ function mapStatus(status: string): SourceStatus {
 }
 
 /** Compute hours since last sync — used for stale detection. */
-function hoursSinceSync(lastSyncedAt: string | null): number | null {
+function _hoursSinceSync(lastSyncedAt: string | null): number | null {
 	if (!lastSyncedAt) return null;
 	return Math.round((Date.now() - new Date(lastSyncedAt).getTime()) / (1000 * 60 * 60));
 }

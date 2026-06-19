@@ -12,7 +12,7 @@
 // Variables use {{1}}, {{2}}, {{3}} numbered placeholders per Meta spec.
 // ──────────────────────────────────────────────
 
-import type { NotificationEvent } from "@/libs/notifications";
+import type { NotificationEvent } from "@/types/notification-event";
 
 export type WhatsAppLanguage = "pt_BR" | "en_US" | "es_LA" | "de";
 

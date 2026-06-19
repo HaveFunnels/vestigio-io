@@ -1,11 +1,9 @@
-import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { randomBytes } from "node:crypto";
 import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
 import { requireAdmin } from "@/libs/require-admin";
-import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 /**

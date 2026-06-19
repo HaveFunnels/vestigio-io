@@ -5,7 +5,15 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
 import Link from "next/link";
 import Image from "next/image";
-import { Trophy, ShieldCheck, ShieldX, Lock, Sparkles, ChevronDown, Target, ShieldHalf } from "lucide-react";
+import {
+  Trophy,
+  ShieldCheck,
+  ShieldX,
+  Lock,
+  ChevronDown,
+  Target,
+  ShieldHalf
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { AnimatePresence, motion } from "framer-motion";
@@ -376,7 +384,7 @@ export default function MiniAuditResultPage() {
 	}
 
 	// ── Results view ──
-	const { preview, visibleFindings, blurredFindings, computedAt } = lead.result!;
+	const { preview, visibleFindings, blurredFindings } = lead.result!;
 
 	// Separate negative vs positive — both shown, but only negatives count toward limit
 	const negativeFindings = visibleFindings.filter((f) => f.severity !== "positive");
@@ -1739,7 +1747,7 @@ function CTAFinalSection({
 	);
 }
 
-function PreviewCard({
+function _PreviewCard({
 	preview,
 	totalFindings,
 	negativeFindings,
@@ -2107,7 +2115,7 @@ function CostSummaryBanner({
 	);
 }
 
-function UnlockSection({
+function _UnlockSection({
 	negativeFindings,
 	blurredCount,
 	onCheckout,
@@ -2884,7 +2892,7 @@ function severityClasses(severity: MiniFindingSeverity): { dot: string; label: s
 
 const RESULT_TTL_MS = 24 * 60 * 60 * 1000;
 
-function CountdownTimer({ computedAt }: { computedAt: string }) {
+function _CountdownTimer({ computedAt }: { computedAt: string }) {
 	const expiresAt = useMemo(() => new Date(computedAt).getTime() + RESULT_TTL_MS, [computedAt]);
 	const [remaining, setRemaining] = useState(() => Math.max(0, expiresAt - Date.now()));
 

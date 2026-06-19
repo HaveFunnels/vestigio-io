@@ -46,7 +46,7 @@ async function getAdminSession() {
 
 // ── GET: List admin users ──
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const admin = await getAdminSession();
 
   if (!admin) {

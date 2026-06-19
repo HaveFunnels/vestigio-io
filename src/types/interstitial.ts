@@ -9,7 +9,7 @@
 // interstitial-registry.ts — no change to the form state machine.
 // ──────────────────────────────────────────────
 
-import type { LeadState } from "@/app/(site)/audit/useLpAuditForm";
+import type { LeadState } from "@/types/lp-audit";
 import type { CrawlProgress } from "./crawl-progress";
 
 export type ScreenIdLite =

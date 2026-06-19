@@ -148,7 +148,7 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
 
 /* ---------- Skeletons ---------- */
 
-function SkeletonCard() {
+function _SkeletonCard() {
   return (
     <div className="relative overflow-hidden rounded-lg border border-edge bg-surface-card p-5">
       <div className="flex items-start justify-between">

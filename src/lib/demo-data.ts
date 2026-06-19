@@ -1,4 +1,3 @@
-import { buildCustomMap } from "../../packages/maps";
 import type { MapDefinition } from "../../packages/maps";
 import type {
 	FindingProjection,

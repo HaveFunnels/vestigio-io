@@ -83,8 +83,6 @@ export default function FeedbackMoment({
 
 	if (!visible) return null;
 
-	const maxRating = variant === "nps" ? 10 : 5;
-
 	return (
 		<AnimatePresence>
 			{visible && (

@@ -20,7 +20,6 @@ import SeverityBadge from "@/components/console/SeverityBadge";
 import VerificationBadge from "@/components/console/VerificationBadge";
 import ChangeBadge from "@/components/console/ChangeBadge";
 import CustomSelect from "@/components/console/CustomSelect";
-import ChangeTimeline from "@/components/console/ChangeTimeline";
 import ChangeSummaryBanner from "@/components/console/ChangeSummaryBanner";
 import SummaryCards, { SummaryCard } from "@/components/console/SummaryCards";
 import ImpactBadge from "@/components/console/ImpactBadge";
@@ -129,7 +128,6 @@ const effortConfig: Record<string, { labelKey: string; style: string }> = {
 	high: { labelKey: "high", style: "text-orange-600 dark:text-orange-400" },
 	very_high: { labelKey: "very_high", style: "text-red-600 dark:text-red-400" },
 };
-
 
 // ──────────────────────────────────────────────
 // Incident operational timeline steps
@@ -1335,7 +1333,6 @@ function ActionDrawerContent({
 	const t = useTranslations("console.actions");
 	const { currency: orgCurrency } = useMcpData();
 	const currSym = CURRENCY_SYMBOLS[orgCurrency] || "$";
-	const cfg = categoryConfig[action.category];
 
 	const [kbLink, setKbLink] = useState<{
 		slug: string;

@@ -18,11 +18,10 @@
 
 import { useTranslations } from "next-intl";
 import {
-	PlusIcon as Plus,
-	SlidersIcon as Sliders,
-	CheckCircleIcon as CheckCircle,
-	WarningIcon as Warning,
-	CircleNotchIcon as CircleNotch,
+  PlusIcon as Plus,
+  SlidersIcon as Sliders,
+  CheckCircleIcon as CheckCircle,
+  WarningIcon as Warning
 } from "@phosphor-icons/react/dist/ssr";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";

@@ -6,8 +6,6 @@
 // by ChatMessageRenderer.
 // ──────────────────────────────────────────────
 
-import type { FindingProjection, ActionProjection } from '../../packages/projections';
-
 // ── Model Config ─────────────────────────────
 
 export type ModelId = 'sonnet_4_6' | 'opus_4_6';

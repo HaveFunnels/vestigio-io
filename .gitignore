@@ -53,3 +53,7 @@ pricing-*.png
 signup-*.png
 .playwright-mcp/
 scripts/_dev-*.mjs
+
+# desloppify state
+.desloppify/
+scorecard.png

@@ -1,8 +1,6 @@
 // Dynamic import to prevent Playwright from being bundled in client components.
 // McpServer → workers/verification → playwright is a server-only chain.
 // Using dynamic import() allows webpack to tree-shake it from "use client" pages.
-import type { ToolResult } from '../../apps/mcp/tools';
-import type { McpRequestScope } from '../../apps/mcp/types';
 import type {
   WorkspaceSummaryView,
   DecisionExplainabilityView,

@@ -111,7 +111,6 @@ const ENGINE_PHASES = [
 	"intelligence_layer",
 	"final_assembly",
 ];
-const PHASES_IN_ORDER = [...PIPELINE_PHASES, ...ENGINE_PHASES];
 
 function fmtCurrencyShort(n: number, currency: string): string {
 	const symbol = currency === "BRL" ? "R$" : currency === "EUR" ? "€" : "$";

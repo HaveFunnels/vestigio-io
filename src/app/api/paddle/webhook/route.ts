@@ -156,7 +156,7 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 
 		if (eventType === "subscription.created") {
 			// New subscription — link to user and activate org
-			const { subscription_id, customer_id, items, billing_period, custom_data } = data;
+			const { subscription_id, customer_id, items, billing_period } = data;
 			const customer = await getCustomer(customer_id);
 			const priceId = items?.[0]?.price?.id || items?.[0]?.price_id;
 

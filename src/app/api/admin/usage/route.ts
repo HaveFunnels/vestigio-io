@@ -3,7 +3,7 @@ import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { getPlanEntitlements, getPlanLimits, type PlanKey } from "../../../../../packages/plans";
+import { getPlanLimits, type PlanKey } from "../../../../../packages/plans";
 import { getOrgUsageStats, estimateDailyCost, computePlanUnitEconomics } from "../../../../../apps/platform/billing-safety";
 import { getUsageLog } from "../../../../../apps/platform/billing-safety";
 import { getMcpObservabilityDashboard } from "../../../../../apps/platform/mcp-observability";

@@ -21,12 +21,7 @@
 // ──────────────────────────────────────────────
 
 import crypto from "crypto";
-import {
-	WHATSAPP_TEMPLATES,
-	listAllTemplates,
-	type WhatsAppLanguage,
-	type WhatsAppTemplateDef,
-} from "@/libs/whatsapp-templates";
+import { listAllTemplates, type WhatsAppLanguage, type WhatsAppTemplateDef } from "@/libs/whatsapp-templates";
 
 const GRAPH_VERSION = "v21.0";
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_VERSION}`;

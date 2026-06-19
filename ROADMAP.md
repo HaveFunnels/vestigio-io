@@ -86,6 +86,48 @@ Mantido no roadmap como track própria. Não compromete timeline ainda — gated
 
 Pré-trabalho do Surface Audit wave (2026-06-07): NetworkSurface model, Katana `-jc` parsing, Nuclei templates customizados, Platform endpoint catalog. Esforço: cada Wire ~5 dias.
 
+## Track: Payment Surface Integrity (lens premium — plan Max)
+
+Carve-out de segurança que passa o filtro anti-slop: vuln com caminho de dinheiro **mecânico** (formjacking → cartão roubado → chargeback + multa PCI), não probabilidade-de-breach. **Não** é reversão do Won't de SAST/DAST/OWASP — esses seguem rejeitados; esta é a única fatia de segurança on-thesis. Gatilho externo: PCI DSS 4.0 req **6.4.3** (inventário + autorização + integridade de scripts na página de pagamento) e **11.6.1** (detecção de tamper em header/conteúdo da página de pagamento), obrigatórios desde **2025-03-31**.
+
+**Gating**: lens do plano Max (havefunnels já é Max). Única expansão com trigger de *demanda* externo — pode rodar antes das 4 categorias de "Expansão futura" se houver pull, mas sem comprometer o foco PMF.
+
+**Estado**: detecção estática **já existe e é forte** — checks Nuclei (`vi_payment_formjacking_risk`, `vi_payment_sri_missing`, `vi_payment_missing_csp`, `vi_payment_xss_reflected` em [curated-checks.ts](packages/nuclei-adapter/curated-checks.ts)); inferências (`checkout_script_hijack_risk`, `payment_surface_compromised`, `payment_data_unencrypted`, `checkout_clickjack_risk` em [security-posture.ts](packages/inference/packs/security-posture.ts) + [channel-integrity.ts](packages/inference/packs/channel-integrity.ts)); sinais em [signals/engine.ts](packages/signals/engine.ts); `ScriptPayload` com src/host/is_external/known_provider/integrity em [evidence.ts](packages/domain/evidence.ts). O trabalho é **confirmação + diff + empacotamento**, não detecção do zero.
+
+### PS.1 — Inventário de scripts por ciclo (S, ~2-3d)
+
+Persistir o set de scripts da página de pagamento por ciclo. Reusa `ScriptPayload`; falta agrupar + persistir por página+ciclo, ancorado na URL de checkout (`checkout_detected` / `CheckoutIndicatorPayload.target_url`).
+
+### PS.2 — Headless no checkout + enumeração DOM (M, ~4-6d)
+
+Apontar o Playwright pra página de pagamento real e enumerar `<script>` do DOM renderizado + headers + `form.action`. Reusa `PlaywrightRuntime`, [selective-headless.ts](workers/ingestion/enrichment/selective-headless.ts), `captured_requests`. Hoje Stage D roda no `landing_url` com intent genérico e só conta scripts — falta roteamento explícito ao checkout e enumeração DOM.
+
+### PS.3 — Confirm-before-claim (M, ~3-5d)
+
+Findings de payment-surface não afirmam (nem mostram $) até `browser_runtime` confirmar o script vivo na página de pagamento. Reusa verification dispatcher ([workers/verification/](workers/verification/)) + `VerificationMaturity` + `Finding.status`. Falta ligar as inferências a confirmação obrigatória e suprimir o impacto até `verified`.
+
+### PS.4 — Diff entre ciclos / tamper (L, ~8-12d) — irmão de A.4
+
+Detectar script novo/removido, hash SRI mudado, CSP enfraquecido, HSTS sumido, CORS aberto, `form.action` alterado. **Construir o diff genérico uma vez** junto com A.4 (Surface drift) — não duplicar infra. Novas inference keys → PCI 11.6.1.
+
+### PS.5 — Allowlist autorizada do merchant (M, ~5-7d)
+
+Lista de scripts aprovados por env; finding dispara em não-**autorizado** (não só desconhecido-globalmente). `known_provider` vira seed. Modelo por env + UI + workflow → PCI 6.4.3.
+
+### PS.6 — Mapeamento PCI + impacto mecânico (M, ~4-6d)
+
+Mapear cada finding a 6.4.3 / 11.6.1. Impacto = **valor-em-risco** (GMV que passa pela superfície) + custo de incidente confirmado (chargeback + exposição a penalidade), **nunca probabilidade de breach**; $ só quando confirmado. Novo `ImpactType` (ex. `PaymentFraudExposure`) em [enums.ts](packages/domain/enums.ts); entradas PCI no remediation-catalog (pt + en).
+
+### PS.7 — Calibração havefunnels + gate Max (M, ~5-7d)
+
+Rollout feature-flag havefunnels-only (padrão A.2), medir FP rate, gate plano Max antes de release broader.
+
+**Total**: ~4-6 semanas pro lens completo; v1 defensável (PS.1+2+3, PS.6 parcial) em ~2-3 semanas.
+
+**Riscos que sobrevivem ao escopo:**
+- **Checkout redirect/hosted** (ex. MP redirect): se o pagamento sai do domínio, a superfície monitorável encolhe pra página pré-redirect; scripts no domínio do processador não são seus. Ler `checkout_mode` e degradar honestamente quando for redirect.
+- **FP de marketing tag**: GTM/pixel/analytics são scripts externos em página comercial. O finding honesto não é "você foi hackeado" — é "este script não-autorizado consegue ler o formulário de pagamento; autorize (allowlist) ou restrinja (SRI+CSP)", ação PCI-correta e verdadeira independente de intenção. Allowlist (PS.5) + calibração (PS.7) são pré-requisito de release.
+
 ## Deferido (mantém infra, ativa quando precisar)
 
 ### MCP analytics layer
@@ -112,6 +154,8 @@ Pré-requisitos pra ativar:
 - **OWASP/security pack expansion** — security é tangencial, não primary
 - **Standalone pricing strategy surface** — encaixa em existing inventory
 - **Terminal aesthetic** — wrong positioning signal; Vestigio é monitoring infra, não visible AI labor
+
+**Carve-out**: o Won't de SAST/DAST/OWASP segue valendo para segurança *genérica* (header faltando, CVE match, vuln em microsite sem função comercial — impacto probabilístico, território Detectify). A track "Payment Surface Integrity" **não** é reversão disso: é a única fatia que passa o filtro money-mechanism + tem gatilho regulatório (PCI 4.0). Se uma proposta de segurança não tem caminho de dinheiro mecânico e confirmação determinística, continua Won't.
 
 A track "Always-on revenue protection" foi proposta como Won't em uma rodada, mas mantida no roadmap. Reavaliar se ficar 60 dias sem início de execução pós-PMF.
 

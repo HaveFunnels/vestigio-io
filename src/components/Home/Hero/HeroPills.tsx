@@ -109,8 +109,8 @@ export default function HeroPills({ pills }: HeroPillsProps) {
 						{/* Click hotspot — first card only, disappears after any selection */}
 						{i === 0 && !isOn && selected.size === 0 && (
 							<span className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5">
-								<span className="absolute inset-0 rounded-full bg-emerald-400" style={{ animation: "hero-pill-ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
-								<span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.6)]">
+								<span className="absolute inset-0 rounded-full bg-sky-400" style={{ animation: "hero-pill-ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
+								<span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 shadow-[0_0_8px_rgba(56,189,248,0.5)]">
 									<MousePointerClick className="h-2.5 w-2.5 text-white" />
 								</span>
 							</span>

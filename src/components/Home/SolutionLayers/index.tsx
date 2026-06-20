@@ -28,16 +28,17 @@ function renderRichText(input: string): ReactNode[] {
 // ── Accent config per card ──
 const ACCENTS = [
 	{
-		// Card 1 ("O ciclo") — was violet (the homepage's old "AI brand"
-		// accent that doesn't exist in the authenticated product). Now
-		// emerald to keep the bento color-coded vs cards 2/3 (amber/red)
-		// without breaking cohesion with the Plano's restricted palette.
-		border: "border-emerald-500/20",
-		hoverBorder: "group-hover:border-emerald-500/40",
-		hoverShadow: "group-hover:shadow-[0_18px_50px_-18px_rgba(52,211,153,0.55)]",
-		gradient: "from-emerald-500/[0.08] via-transparent to-transparent",
-		topAccent: "bg-emerald-400",
-		pill: "bg-emerald-500/10 text-emerald-400",
+		// Card 1 ("O ciclo") — was violet (the marketing-only "AI brand"
+		// accent). Sky (not emerald) because emerald is reserved for
+		// action/brand-identity moments; the bento keeps 3 distinct
+		// accents (sky/amber/red) and sky doesn't compete with the
+		// emerald-heavy hero + CTAs.
+		border: "border-sky-500/20",
+		hoverBorder: "group-hover:border-sky-500/40",
+		hoverShadow: "group-hover:shadow-[0_18px_50px_-18px_rgba(56,189,248,0.55)]",
+		gradient: "from-sky-500/[0.08] via-transparent to-transparent",
+		topAccent: "bg-sky-400",
+		pill: "bg-sky-500/10 text-sky-400",
 	},
 	{
 		border: "border-amber-500/20",

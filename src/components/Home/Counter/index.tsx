@@ -58,14 +58,13 @@ const Counter = () => {
 						</div>
 
 						{/* Full Visibility — radar with sweep, semantic match for
-						    "15 mil sinais por ciclo" (scanning breadth, not time).
-						    Violet was the marketing surface's "AI brand" signature
-						    and doesn't exist anywhere in the authenticated product;
-						    emerald keeps the visibility metaphor without breaking
-						    cohesion with the Plano's restricted palette. */}
+						    "15 mil sinais por ciclo". Icon kept neutral (zinc)
+						    so it doesn't compete with the emerald 4X hero card
+						    below and the (now neutral) Tese card across; emerald
+						    is reserved for action/identity moments. */}
 						<div className='group flex items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 transition-all duration-300 hover:border-emerald-500/20 hover:bg-white/[0.04] sm:p-6'>
-							<div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10'>
-								<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round' className='h-5 w-5 text-emerald-400'>
+							<div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-500/10'>
+								<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round' className='h-5 w-5 text-zinc-300'>
 									<circle cx='10' cy='10' r='7' />
 									<circle cx='10' cy='10' r='3.5' />
 									<path d='M10 10L15.5 4.5' />
@@ -87,7 +86,7 @@ const Counter = () => {
 								{/* Floating diamonds */}
 								<div className='absolute left-[15%] top-[30%] h-2 w-2 rotate-45 bg-emerald-400/40' style={{ animation: 'vcounter-float 3s ease-in-out infinite' }} />
 								<div className='absolute bottom-[25%] right-[20%] h-2 w-2 rotate-45 bg-emerald-400/30' style={{ animation: 'vcounter-float 3s ease-in-out infinite 1.5s' }} />
-								<div className='absolute bottom-[40%] left-[25%] h-1.5 w-1.5 rotate-45 bg-emerald-400/20' style={{ animation: 'vcounter-float 4s ease-in-out infinite 0.5s' }} />
+								<div className='absolute bottom-[40%] left-[25%] h-1.5 w-1.5 rotate-45 bg-white/20' style={{ animation: 'vcounter-float 4s ease-in-out infinite 0.5s' }} />
 							</div>
 
 							<div className='relative text-center'>
@@ -123,20 +122,24 @@ const Counter = () => {
 							    Plano's MonthlyThesis pattern), then desc + CTA. */}
 							{/* Static dashed concentric rings — ambient depth only,
 							    no animation. Plano uses a Notion-style dotted grid;
-							    these dashed rings are the marketing-card analogue. */}
+							    these dashed rings are the marketing-card analogue.
+							    White-faint (not emerald) so the decoration stays
+							    neutral; emerald in this card is reserved for the
+							    CTA affordance below, signaling the action. */}
 							<div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-								<div className='absolute left-1/2 top-1/2 h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-emerald-500/[0.05]' />
-								<div className='absolute left-1/2 top-1/2 h-[180px] w-[180px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-emerald-500/[0.07]' />
-								<div className='absolute left-1/2 top-1/2 h-[100px] w-[100px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-emerald-500/[0.09]' />
+								<div className='absolute left-1/2 top-1/2 h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/[0.04]' />
+								<div className='absolute left-1/2 top-1/2 h-[180px] w-[180px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/[0.06]' />
+								<div className='absolute left-1/2 top-1/2 h-[100px] w-[100px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/[0.08]' />
 
 								{/* Decorative serif quote glyph — mirrors the Plano's
-								    MonthlyThesis pull-quote pattern. The serif is the
-								    editorial signal; the rings are the ambient frame. */}
-								<div className='absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 font-serif text-[7rem] leading-none text-emerald-400/30 select-none' aria-hidden>“</div>
+								    MonthlyThesis pull-quote pattern. White-faint so
+								    the typography (not the color) carries the
+								    editorial signal. */}
+								<div className='absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 font-serif text-[7rem] leading-none text-white/15 select-none' aria-hidden>“</div>
 							</div>
 
 							<div className='relative mt-auto pt-32 text-center'>
-								<p className='mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-400/70'>{t("pulse_title")}</p>
+								<p className='mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400'>{t("pulse_title")}</p>
 								<p className='mx-auto max-w-[280px] font-serif text-base italic leading-snug text-zinc-300 sm:text-lg'>{t("pulse_desc")}</p>
 								<span className='mt-3 inline-flex items-center gap-1 text-xs font-medium text-emerald-400/70 transition-colors group-hover:text-emerald-300'>
 									{t("pulse_cta")}

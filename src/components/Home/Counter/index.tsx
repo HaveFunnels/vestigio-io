@@ -58,10 +58,14 @@ const Counter = () => {
 						</div>
 
 						{/* Full Visibility — radar with sweep, semantic match for
-						    "15 mil sinais por ciclo" (scanning breadth, not time). */}
+						    "15 mil sinais por ciclo" (scanning breadth, not time).
+						    Violet was the marketing surface's "AI brand" signature
+						    and doesn't exist anywhere in the authenticated product;
+						    emerald keeps the visibility metaphor without breaking
+						    cohesion with the Plano's restricted palette. */}
 						<div className='group flex items-center gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5 transition-all duration-300 hover:border-emerald-500/20 hover:bg-white/[0.04] sm:p-6'>
-							<div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/10'>
-								<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round' className='h-5 w-5 text-violet-400'>
+							<div className='flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10'>
+								<svg viewBox='0 0 20 20' fill='none' stroke='currentColor' strokeWidth='1.6' strokeLinecap='round' strokeLinejoin='round' className='h-5 w-5 text-emerald-400'>
 									<circle cx='10' cy='10' r='7' />
 									<circle cx='10' cy='10' r='3.5' />
 									<path d='M10 10L15.5 4.5' />
@@ -83,7 +87,7 @@ const Counter = () => {
 								{/* Floating diamonds */}
 								<div className='absolute left-[15%] top-[30%] h-2 w-2 rotate-45 bg-emerald-400/40' style={{ animation: 'vcounter-float 3s ease-in-out infinite' }} />
 								<div className='absolute bottom-[25%] right-[20%] h-2 w-2 rotate-45 bg-emerald-400/30' style={{ animation: 'vcounter-float 3s ease-in-out infinite 1.5s' }} />
-								<div className='absolute bottom-[40%] left-[25%] h-1.5 w-1.5 rotate-45 bg-violet-400/30' style={{ animation: 'vcounter-float 4s ease-in-out infinite 0.5s' }} />
+								<div className='absolute bottom-[40%] left-[25%] h-1.5 w-1.5 rotate-45 bg-emerald-400/20' style={{ animation: 'vcounter-float 4s ease-in-out infinite 0.5s' }} />
 							</div>
 
 							<div className='relative text-center'>
@@ -109,45 +113,31 @@ const Counter = () => {
 							className='group relative flex flex-1 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 transition-all duration-300 hover:border-emerald-500/30 hover:bg-white/[0.04]'
 							aria-label={t("pulse_title")}
 						>
-							<style>{`
-								@keyframes vpulse-ring-expand {
-									0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.5; }
-									100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
-								}
-								@keyframes vpulse-core-breathe {
-									0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
-									50% { opacity: 1; transform: translate(-50%, -50%) scale(1.08); }
-								}
-							`}</style>
-							{/* Pulse radar — concentric rings radiating from center */}
+							{/* "Tese do mês" card — formerly a radar/pulse metaphor
+							    for the Vestigio Pulse chat. Pulse is dead (Wave 22.8),
+							    and the radar's expanding rings + breathing core fight
+							    the editorial register the actual Plano sets. Stripped
+							    to a quiet typographic pull-quote: serif quote glyph
+							    over static dashed concentric rings (ambient depth,
+							    no infinite loops), serif title (Fraunces matches the
+							    Plano's MonthlyThesis pattern), then desc + CTA. */}
+							{/* Static dashed concentric rings — ambient depth only,
+							    no animation. Plano uses a Notion-style dotted grid;
+							    these dashed rings are the marketing-card analogue. */}
 							<div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
-								{/* Static concentric rings */}
-								<div className='absolute left-1/2 top-1/2 h-[180px] w-[180px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-500/[0.06]' />
-								<div className='absolute left-1/2 top-1/2 h-[120px] w-[120px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-500/[0.08]' />
-								<div className='absolute left-1/2 top-1/2 h-[60px] w-[60px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-emerald-500/[0.10]' />
+								<div className='absolute left-1/2 top-1/2 h-[260px] w-[260px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-emerald-500/[0.05]' />
+								<div className='absolute left-1/2 top-1/2 h-[180px] w-[180px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-emerald-500/[0.07]' />
+								<div className='absolute left-1/2 top-1/2 h-[100px] w-[100px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-emerald-500/[0.09]' />
 
-								{/* Expanding pulse rings — staggered */}
-								<div className='absolute left-1/2 top-1/2 h-[200px] w-[200px] rounded-full border border-emerald-400/20' style={{ animation: 'vpulse-ring-expand 4s cubic-bezier(0.4, 0, 0.2, 1) infinite' }} />
-								<div className='absolute left-1/2 top-1/2 h-[200px] w-[200px] rounded-full border border-emerald-400/15' style={{ animation: 'vpulse-ring-expand 4s cubic-bezier(0.4, 0, 0.2, 1) infinite 1.3s' }} />
-								<div className='absolute left-1/2 top-1/2 h-[200px] w-[200px] rounded-full border border-emerald-400/10' style={{ animation: 'vpulse-ring-expand 4s cubic-bezier(0.4, 0, 0.2, 1) infinite 2.6s' }} />
-
-								{/* Core glow */}
-								<div className='absolute left-1/2 top-1/2 h-8 w-8 rounded-full bg-emerald-500/20' style={{ animation: 'vpulse-core-breathe 3s ease-in-out infinite', filter: 'blur(8px)' }} />
-
-								{/* Center icon */}
-								<div className='absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2'>
-									<div className='flex h-14 w-14 items-center justify-center rounded-2xl border border-white/[0.08] bg-white/[0.04]'>
-										<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='1.4' className='h-6 w-6 text-emerald-400'>
-											<path d='M4 4H20C20.5523 4 21 4.44772 21 5V17C21 17.5523 20.5523 18 20 18H9L4 22V5C4 4.44772 4.44772 4 5 4Z' strokeLinecap='round' strokeLinejoin='round' />
-											<path d='M9 9H15M9 13H12' strokeLinecap='round' />
-										</svg>
-									</div>
-								</div>
+								{/* Decorative serif quote glyph — mirrors the Plano's
+								    MonthlyThesis pull-quote pattern. The serif is the
+								    editorial signal; the rings are the ambient frame. */}
+								<div className='absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 font-serif text-[7rem] leading-none text-emerald-400/30 select-none' aria-hidden>“</div>
 							</div>
 
 							<div className='relative mt-auto pt-32 text-center'>
-								<h3 className='text-lg font-bold text-white transition-colors group-hover:text-emerald-300'>{t("pulse_title")}</h3>
-								<p className='mt-1 text-sm text-zinc-400'>{t("pulse_desc")}</p>
+								<p className='mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-400/70'>{t("pulse_title")}</p>
+								<p className='mx-auto max-w-[280px] font-serif text-base italic leading-snug text-zinc-300 sm:text-lg'>{t("pulse_desc")}</p>
 								<span className='mt-3 inline-flex items-center gap-1 text-xs font-medium text-emerald-400/70 transition-colors group-hover:text-emerald-300'>
 									{t("pulse_cta")}
 									<svg className='h-3 w-3 transition-transform group-hover:translate-x-0.5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth='2'>

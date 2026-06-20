@@ -23,13 +23,13 @@ This file is the single source of truth. When in doubt, grep this file.
 | **Recuperado** | Money won back, in R$ | HeroMetrics tile label. |
 | **Vazando** | Money currently bleeding, in R$ | HeroMetrics tile label. |
 | **Em monitoramento** | Findings being tracked | HeroMetrics tile label. |
+| **Diagnóstico** | ⚠️ Conditional — allowed for the **top-of-funnel free-tool CTA only** ("Rodar diagnóstico gratuito"). User explicitly chose this over council-recommended "Receber sua análise" because the free-action framing converts (see okara.ai as category reference). Never use as the product noun — the deliverable is "Plano de Estratégia" / "análise", not "diagnóstico". | Use *only* in hero/CTA verb-pair. Body copy uses Análise. |
 
 ## ❌ NO — never use customer-facing
 
 | Term | Why forbidden | Use instead |
 |---|---|---|
 | **Auditoria** | Memory rule: "customer-facing copy uses Análise/Analysis, never Auditoria/Audit" | Análise |
-| **Diagnóstico** | Same family as Auditoria. Triage/medical register fights the editorial frame. | Análise |
 | **Auditing** / **Audit** | EN equivalent of Auditoria | Analysis |
 | **Vestigio Pulse** | Killed product feature (Wave 22.8). Dead-product-in-marketing = credibility leak. | Tese do mês (in marketing context) |
 | **Pulse** (standalone) | Same | Drop the noun; use Plano/Tese as the anchor |
@@ -39,8 +39,7 @@ This file is the single source of truth. When in doubt, grep this file.
 | **Investigation** / **Investigação** | Investigation chat is a ProductTour mockup, not the real product | Análise / Vestigio (without modifier) |
 | **Vestigio AI** (as product name) | Implies conversational dashboard | Vestigio (no modifier) |
 | **Dashboard** | "Não é dashboard" was the OLD positioning vs current "Plano editorial" | (avoid framing, name the artifact instead) |
-| **Rodar diagnóstico** | Violates two rules in one CTA | "Receber sua análise gratuita" |
-| **Rodar análise** | Wrong verb — you don't "rodar" a Plano | "Receber sua análise" / "Começar sua análise" |
+| **Rodar análise** | Wrong verb — you don't "rodar" a Plano. Acceptable in CTA context (see Diagnóstico note above). | "Receber sua análise" / "Começar sua análise" — OR keep "Rodar diagnóstico" per user preference for top-of-funnel CTA |
 
 ## ⚠️ TRANSITIONAL — known violations, scheduled for cleanup
 
@@ -52,28 +51,21 @@ These exist today but are scheduled for removal. Not bugs — backlog items.
 | `dictionary/*.json` — `product_tour.overlay_ai.eyebrow` (566) | "Vestigio Pulse" | Ship A | Same — ProductTour deletion |
 | `dictionary/*.json` — `billing.agentic_insights` (3573) | "Vestigio Pulse AI" | Ship B | D8 pricing rewrite |
 | `dictionary/*.json` — `pricing.tiers.features.agentic_insights*` (4561-4563) | "Vestigio Pulse AI" | Ship B | D8 pricing rewrite |
-| `dictionary/*.json` — `product_tour.cta_primary` (157) | "Rodar diagnóstico gratuito" | Ship A | D2 hero rewrite — paired with dual-CTA |
-| `dictionary/*.json` — `hero_*.cta_primary` (97, 145) | "Rodar diagnóstico gratuito" | Ship A | D2 hero rewrite |
-| `/audit` URL | URL itself | Ship A | Decision: keep route alive (no 301), rename CTAs to "análise", consider rename to `/comecar` in Ship A. Avoids breaking inbound links. |
-| `src/app/(site)/audit/*` | "auditoria"-adjacent copy | Ship A | Sweep against this lexicon |
+| `src/app/(site)/audit/*` | "auditoria"-adjacent copy (NOT "diagnóstico" — see exception above) | Ship A | Sweep against this lexicon; preserve "Rodar diagnóstico gratuito" hero CTA |
+| `/audit` URL | URL itself | Indefinite | User decision: keep route alive — no rename, no redirect. CTA framing stays as today. Avoids breaking inbound links + preserves the free-tool conversion engine. Revisit only if instrumentation shows the CTA is the funnel bottleneck. |
 
 ---
 
 ## /audit URL decision
 
-**Decision (Ship 0):** Keep the `/audit` route alive — no redirect yet.
+**Decision (locked):** Keep `/audit` route alive. Keep the current CTA framing ("Rodar diagnóstico gratuito"). No redirects, no rename.
 
 **Rationale:**
-- CTA copy violation ("Rodar diagnóstico") is the user-visible bug, not the URL itself
-- Inbound links (memory of customers, ads, social, browser bookmarks) cost real money to break
-- A redirect now would cascade into all CTA components and SEO entry points before we know whether Ship A's dual-CTA architecture works
+- User overrode the council's CTA-swap recommendation. The free-action-CTA + free-tool entry path is the homepage's conversion engine and shouldn't be replaced with a passive content-preview CTA
+- okara.ai (same product category, SEO vertical) validates the free-action pattern — that's the user's chosen calibration reference
+- "Diagnóstico" gets a conditional pass in the lexicon: allowed only in the top-of-funnel CTA verb-pair, never as the product noun
 
-**Ship A action:** Decide between:
-1. Rename route to `/comecar` + 301 from `/audit`
-2. Keep `/audit` route, just rename CTAs visible to user
-3. Add new `/exemplo` route alongside `/audit`, keep both
-
-Default recommendation per council: **option 3** (additive, no redirects, no SEO risk).
+**Ship A action:** Add `/exemplo` as a NEW route alongside `/audit`. Both stay. `/exemplo` becomes the secondary "Ler um plano de exemplo" destination in a dual-CTA hero, NOT a replacement for the primary free-diagnostic path.
 
 ---
 

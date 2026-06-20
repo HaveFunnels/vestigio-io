@@ -20,7 +20,12 @@ interface StoryI18n {
 
 // Non-translatable visual config per story
 const STORY_VISUALS = [
-  { image: "/images/stories/story-1.webp", badgeColor: "bg-violet-500" },
+  // Story 1 was violet (the marketing-only "AI brand" accent that
+  // doesn't exist in the authenticated product). Teal keeps the
+  // 5-story palette distinct from sky (story 4) while staying
+  // brand-aligned (teal sits between emerald and cyan, neither of
+  // which are violet-coded).
+  { image: "/images/stories/story-1.webp", badgeColor: "bg-teal-500" },
   { image: "/images/stories/story-2.webp", badgeColor: "bg-emerald-500" },
   { image: "/images/stories/story-3.webp", badgeColor: "bg-amber-500" },
   { image: "/images/stories/story-4.webp", badgeColor: "bg-sky-500" },

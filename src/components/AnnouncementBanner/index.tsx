@@ -69,9 +69,14 @@ export default function AnnouncementBanner({
 					data-vtg-cta="announcement-banner"
 					className='pointer-events-auto group inline-flex max-w-full items-center gap-2 text-[11px] leading-tight text-zinc-300 transition-colors hover:text-white sm:gap-3 sm:text-xs'
 				>
-					<span className='inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-300 sm:text-[10px]'>
-						<span className='h-1 w-1 animate-[vbanner-pulse_1.6s_ease-in-out_infinite] rounded-full bg-emerald-400' />
-						{t("label")}
+					{/* Label was uppercase tracking-[0.14em] sans (terminal-y).
+					    The label now reads "Tese do mês" — an editorial noun
+					    — so the chip switches to Fraunces serif sentence-case
+					    to match the Plano's MonthlyThesis register and signal
+					    "this is the editorial register" from the first paint. */}
+					<span className='inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-medium text-emerald-300 sm:text-[11px]'>
+						<span className='h-1 w-1 rounded-full bg-emerald-400' />
+						<span className='font-serif italic'>{t("label")}</span>
 					</span>
 					<span className='hidden truncate sm:inline'>{t("message")}</span>
 					<span className='inline-flex shrink-0 items-center gap-1 font-medium text-emerald-300 transition-transform group-hover:translate-x-0.5'>

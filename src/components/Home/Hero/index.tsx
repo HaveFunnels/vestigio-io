@@ -244,7 +244,11 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 				    <a><button>, which HTML5 forbids and SEO auditors
 				    flag as a closing-tag mismatch. */}
 				<div className="mt-8 sm:mt-10">
-					<ShinyButton href={primaryCtaHref}>{t("cta_primary")}</ShinyButton>
+					{/* data-vtg-cta picked up by the delegated click listener
+					    in components/analytics/TrackingScript — fires a
+					    cta_click event with target="hero-primary". Stable
+					    name; don't rename without updating the funnel view. */}
+					<ShinyButton href={primaryCtaHref} data-vtg-cta="hero-primary">{t("cta_primary")}</ShinyButton>
 					{/* Trust microcopy — subtle guarantee + platform signals */}
 					<TrustMicrocopy />
 				</div>

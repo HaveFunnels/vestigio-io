@@ -145,9 +145,34 @@ export default function TrackingScript() {
 
     window.addEventListener("beforeunload", handleUnload);
 
+    // ── CTA click tracking (delegated) ──
+    // Captures clicks on any element marked with data-vtg-cta="<name>".
+    // Delegated so adding a new tracked CTA only requires the data attr
+    // on the element — no wiring per component, no per-click handlers.
+    // The label is what shows up as `target` in the marketing_event row,
+    // so use stable kebab-case names (e.g. "hero-primary", "banner",
+    // "counter-tese").
+    function handleClick(e: MouseEvent) {
+      const target = e.target;
+      if (!(target instanceof Element)) return;
+      const el = target.closest<HTMLElement>("[data-vtg-cta]");
+      if (!el) return;
+      const name = el.dataset.vtgCta;
+      if (!name) return;
+      beacon("/api/analytics/event", {
+        sessionId,
+        eventType: "cta_click",
+        path,
+        target: name,
+      });
+    }
+
+    document.addEventListener("click", handleClick, { capture: true, passive: true });
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("beforeunload", handleUnload);
+      document.removeEventListener("click", handleClick, { capture: true } as any);
     };
   }, []);
 

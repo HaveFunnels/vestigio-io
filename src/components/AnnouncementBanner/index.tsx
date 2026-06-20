@@ -66,6 +66,7 @@ export default function AnnouncementBanner({
 				<a
 					href={href}
 					onClick={handleDismiss}
+					data-vtg-cta="announcement-banner"
 					className='pointer-events-auto group inline-flex max-w-full items-center gap-2 text-[11px] leading-tight text-zinc-300 transition-colors hover:text-white sm:gap-3 sm:text-xs'
 				>
 					<span className='inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-emerald-300 sm:text-[10px]'>

@@ -62,8 +62,8 @@
 		},
 		"hero_v2": {
 			"banner": {
-				"label": "Vestigio Pulse",
-				"message": "Respostas contínuas e baseadas em evidência sobre o que está vazando faturamento agora.",
+				"label": "Tese do mês",
+				"message": "Toda análise abre com a tese central do ciclo — o que está custando dinheiro e o que fazer.",
 				"cta": "Como funciona"
 			},
 			"headline_part1": "Tem dinheiro vazando",
@@ -110,8 +110,8 @@
 		},
 		"hero_lp": {
 			"banner": {
-				"label": "Vestigio Pulse",
-				"message": "Respostas contínuas e baseadas em evidência sobre o que está vazando faturamento agora.",
+				"label": "Tese do mês",
+				"message": "Toda análise abre com a tese central do ciclo — o que está custando dinheiro e o que fazer.",
 				"cta": "Como funciona"
 			},
 			"headline_part1": "Quanto dinheiro está",
@@ -1030,9 +1030,9 @@
 			"visibility_desc": "De headers de segurança a copy de checkout. Nada escapa.",
 			"roi_title": "Garantia 4X",
 			"roi_subtitle": "Se a Vestigio não achar 4× o valor do plano em perdas mensais, devolvemos 100%.",
-			"pulse_title": "Converse com seus dados",
-			"pulse_desc": "Por que o checkout caiu? Pergunte. Investigue. Decida.",
-			"pulse_cta": "Veja como funciona",
+			"pulse_title": "Tese do mês",
+			"pulse_desc": "Cada análise abre com uma tese — a leitura central do ciclo, em R$, com próximos passos.",
+			"pulse_cta": "Veja um exemplo",
 			"monitoring_title": "Regressões em horas, não dias",
 			"monitoring_desc": "Toda mudança no site auditada antes do cliente perceber.",
 			"integrations_title": "Funciona com seu stack",

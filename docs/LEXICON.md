@@ -15,7 +15,8 @@ This file is the single source of truth. When in doubt, grep this file.
 | **Tese** | The central observation that opens every Plano | Singular per cycle. "A Tese deste mês foi:" |
 | **Tese do mês** | Marketing surface label for the editorial pull-quote pattern | Used on hero banner + Counter card today. |
 | **Próximos passos** | The action list in a Plano | Capital P only on "Próximos" if sentence-initial. |
-| **Findings** | Granular observations inside a Plano | Loanword, kept English. Lowercase as common noun. Plural form is the default. |
+| **Findings** | Granular observations inside a Plano — used in **product UI** (table columns, HeroMetrics, structured-data labels, technical surfaces) | Loanword, kept English. Lowercase as common noun. Plural form is the default. |
+| **Vestígios** (PT-BR) | Same concept as Findings, but the **PT-BR narrative/editorial form**. Used in marketing body copy where brand tie-in matters (Vestigio → vestígios = the product finding traces). Translated equivalents: "traces" (en) / "Spuren" (de) / "vestigios" (es). | Use in: editorial/narrative paragraphs, hero subtitles, onboarding body copy. Don't use as a column header or structured label — that stays "findings" for product consistency. |
 | **Ciclo** | One monthly Plano generation window | "Ciclo #007", "no ciclo passado". |
 | **Análise** | What Vestigio produces | Use as deliverable verb-noun. "Sua análise está pronta." |
 | **Assinado por Vestigio** | Plano signature, editorial frame | Brand-level signature for the homepage. |

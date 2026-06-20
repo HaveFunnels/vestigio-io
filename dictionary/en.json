@@ -435,20 +435,30 @@
 			"eyebrow": "THE PROBLEM",
 			"title_line1": "More traffic doesn't fix it.",
 			"title_line2": "The money escapes between the click and the conversion.",
-			"frames": [
-				{
-					"label": "The hole",
-					"body": "You pay for every click that comes in. But between the click and the purchase, **up to 67% of visitors vanish** — and the ad bill arrives just the same at the end of the month. The hole sits between what you spend and what comes back. Nobody has to fail for it to grow; time alone does that."
-				},
-				{
-					"label": "The cycle",
-					"body": "You change the ad. The drop-off **moves to the next page**. You fix the landing. Buyers start leaving at checkout. Without an end-to-end view, every fix shoves the problem to the next surface — and the cycle starts again the following month, same spreadsheet, different hypothesis."
-				},
-				{
-					"label": "The silence",
-					"body": "The worst part of the hole is that it **rings no alarm**. No error, no support ticket, no 500 in the log. The buyer just closes the tab — and your analytics only says \"session ended.\" You don't find out you lost until the monthly aggregate doesn't add up."
-				}
-			],
+			"buraco": {
+				"label": "The hole",
+				"stat": "67%",
+				"caption": "of visitors vanish between the **click** and the **purchase**.",
+				"aside": "The ad bill arrives just the same at the end of the month — you pay for every single one."
+			},
+			"ciclo": {
+				"label": "The cycle",
+				"step1": "You change the ad.",
+				"step2": "The drop-off moves to the **landing page**.",
+				"step3": "You fix the landing.",
+				"step4": "Buyers leave at **checkout**.",
+				"aside": "Without end-to-end visibility, every fix shoves the problem to the next surface."
+			},
+			"silencio": {
+				"label": "The silence",
+				"zeros": [
+					"alerts in analytics",
+					"support tickets",
+					"errors in the log"
+				],
+				"one": "hole growing at the end of the month.",
+				"aside": "The buyer just closed the tab. Your dashboard only says \"**session ended**.\""
+			},
 			"closing": "You can keep scaling without seeing this. Or you can see it."
 		},
 		"features_section": {

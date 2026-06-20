@@ -1,42 +1,20 @@
 /**
- * Home > SolutionLayers — "O problema" (editorial essay, rewrite 2026-06-20).
+ * Home > SolutionLayers — "O problema" (editorial essay v2, 2026-06-20).
  *
- * 3 frames of the same observation: O buraco (the leak between click and
- * conversion), O ciclo (fixes move the problem instead of solving it),
- * O silêncio (no alerts, no signal, the leak is invisible).
+ * 3 frames of the same observation, each with its OWN visual moment so
+ * the reader scans instead of skipping. Previous v1 was 3 same-shape
+ * Fraunces paragraphs in a row — wall of text, no visual rhythm,
+ * user feedback "cansativo de ler, mesma fonte em tudo, leitor pula".
  *
- * Layout is intentionally NOT the Features triptych masthead — the
- * homepage already uses that pattern, and repeating it here would
- * collapse the page into one rhythm. SolutionLayers takes a different
- * editorial form: a single-column long-form essay, narrow reading
- * width, with chapter-rule dividers (small label centered between
- * horizontal hairlines, like Aeon / New Yorker "Talk of the Town").
+ *   Frame 1 — O buraco     : massive italic stat (67%) pulled to display
+ *   Frame 2 — O ciclo      : hanging-indent cascade of the problem moving
+ *                            down the funnel — typography IS the diagram
+ *   Frame 3 — O silêncio   : 0 / 0 / 0 / 1 typographic tally — three
+ *                            zeros (no signal) ending in the one thing
+ *                            growing (the buraco)
  *
- *   ┌─────────────────────────────┐
- *   │     [eyebrow]               │
- *   │                             │
- *   │  Mais tráfego não resolve.  │  ← Fraunces, big, the lede
- *   │  O dinheiro escapa entre    │
- *   │  o clique e a conversão.    │
- *   │                             │
- *   │  ─────  O BURACO  ─────     │  ← chapter rule signature
- *   │  [Fraunces body paragraph]  │  ← essay register, body serif
- *   │                             │
- *   │  ─────  O CICLO  ─────      │
- *   │  [Fraunces body paragraph]  │
- *   │                             │
- *   │  ─────  O SILÊNCIO  ─────   │
- *   │  [Fraunces body paragraph]  │
- *   │                             │
- *   │           ─                 │
- *   │  [italic closing line]      │
- *   └─────────────────────────────┘
- *
- * Old SVG visuals (rotating ring, terminal mockup, draining coins) are
- * dropped — terminal aesthetic violates the standing memory rule, and
- * the ornamental graphics fight the editorial register. The frames'
- * copy carries the message; serif body paragraphs prove Vestigio
- * actually reads + writes, not just dashboards.
+ * Constraints: no terminal aesthetic, no SVG illustrations, restricted
+ * palette, Fraunces only where it's editorial display.
  *
  * Server component (`async` + `getTranslations`) so it stays out of
  * the client bundle.
@@ -45,13 +23,7 @@
 import { getTranslations } from "next-intl/server";
 import type { ReactNode } from "react";
 
-// ─────────────────────────────────────────────────────────────────────
-// **bold** marker → <strong>text-content</strong>, otherwise plain text.
-// Used to call out the numeric phrases ("até 67% dos visitantes somem")
-// inside the otherwise muted serif body — earns visual emphasis on the
-// claim without breaking the reading register.
-// ─────────────────────────────────────────────────────────────────────
-
+// **bold** marker → <strong>text-zinc-100</strong>
 function renderBold(text: string): ReactNode[] {
 	const parts = text.split(/(\*\*[^*]+\*\*)/g);
 	return parts.map((part, i) => {
@@ -62,15 +34,12 @@ function renderBold(text: string): ReactNode[] {
 	});
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Chapter rule — small uppercase label centered between hairlines.
-// The section's signature: distinguishes this surface from Features
-// (which uses vertical hairlines dividing columns).
-// ─────────────────────────────────────────────────────────────────────
-
+// Chapter rule — small uppercase italic-serif label flanked by hairlines.
+// Section's signature, distinct from Features (vertical hairlines between
+// columns) and Counter Tese (decorative `"` glyph).
 function ChapterRule({ label }: { label: string }) {
 	return (
-		<div className="my-10 flex items-center gap-4 text-content-faint sm:my-12">
+		<div className="my-12 flex items-center gap-4 text-content-faint sm:my-16">
 			<div className="h-px flex-1 bg-content-faint/25" />
 			<span className="font-serif text-[12px] font-medium italic tracking-[0.06em] text-content-secondary sm:text-[13px]">
 				{label}
@@ -80,30 +49,20 @@ function ChapterRule({ label }: { label: string }) {
 	);
 }
 
-interface Frame {
-	label: string;
-	body: string;
-}
-
 const SolutionLayers = async () => {
 	const t = await getTranslations("homepage.solution_layers");
-	const frames = t.raw("frames") as Frame[];
 
 	return (
 		<section className="relative bg-[#090911] py-16 sm:py-20 lg:py-28">
-			{/* Soft red glow — restrained "this is the problem" ambient
-			    cue. Smaller + softer than the old version's full-width
-			    halo so it stays atmospheric, not loud. */}
+			{/* Restrained rose ambient — problem cue, not loud */}
 			<div
 				className="pointer-events-none absolute left-1/2 top-[30%] -z-10 h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-rose-900/[0.05] blur-[100px]"
 				aria-hidden
 			/>
 
-			{/* Narrow reading column (~680px) — opposite of Features
-			    (1100px wide spread). Reads like a magazine essay opened
-			    inside a wider page. */}
+			{/* Narrow reading column — opposite of Features's 1100px spread. */}
 			<div className="relative mx-auto w-full max-w-[680px] px-4 sm:px-8 xl:px-0">
-				<header className="mb-10 text-center sm:mb-14">
+				<header className="mb-8 text-center sm:mb-12">
 					<div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-content-faint">
 						{t("eyebrow")}
 					</div>
@@ -114,22 +73,73 @@ const SolutionLayers = async () => {
 					</h2>
 				</header>
 
-				{/* Three essay frames separated by chapter rules. Each frame
-				    is one paragraph of Fraunces serif body, ~80–120 words,
-				    paced for sustained reading. No cards, no graphics. */}
-				{frames.map((frame, i) => (
-					<div key={i}>
-						<ChapterRule label={frame.label} />
-						<p className="font-serif text-[16px] leading-[1.65] text-zinc-300 sm:text-[18px]">
-							{renderBold(frame.body)}
-						</p>
+				{/* ═══════════════ FRAME 1 — O BURACO ═══════════════ */}
+				{/* Display moment: the killer stat. Massive Fraunces italic
+				    digit + small caption below. Body underneath, short.   */}
+				<ChapterRule label={t("buraco.label")} />
+				<div className="text-center">
+					<div className="font-serif text-[5.5rem] font-medium leading-none tracking-tight text-rose-300/90 sm:text-[7rem] lg:text-[8.5rem]">
+						<span className="italic">{t("buraco.stat")}</span>
 					</div>
-				))}
+					<div className="mx-auto mt-4 h-px w-12 bg-content-faint/40" />
+					<p className="mx-auto mt-4 max-w-[420px] text-[14px] leading-relaxed text-content-secondary sm:text-[15px]">
+						{renderBold(t("buraco.caption"))}
+					</p>
+				</div>
+				<p className="mx-auto mt-6 max-w-[480px] text-center text-[13px] leading-relaxed text-content-muted sm:text-[14px]">
+					{renderBold(t("buraco.aside"))}
+				</p>
 
-				{/* Closing — italic, set apart from the body with a soft
-				    rule. The single editorial line that pivots from
-				    diagnosis to invitation. */}
-				<div className="mt-14 flex flex-col items-center gap-6 text-center sm:mt-20">
+				{/* ═══════════════ FRAME 2 — O CICLO ═══════════════ */}
+				{/* Display moment: a hanging-indent cascade. Each line steps
+				    further right to show the problem MOVING down the funnel.
+				    Typography is the diagram — no SVG. */}
+				<ChapterRule label={t("ciclo.label")} />
+				<div className="font-serif text-[15px] leading-[1.7] text-zinc-300 sm:text-[17px]">
+					<div className="pl-0">{renderBold(t("ciclo.step1"))}</div>
+					<div className="pl-6 sm:pl-10">{renderBold(t("ciclo.step2"))}</div>
+					<div className="pl-12 sm:pl-20">{renderBold(t("ciclo.step3"))}</div>
+					<div className="pl-[4.5rem] sm:pl-[7.5rem]">{renderBold(t("ciclo.step4"))}</div>
+				</div>
+				<p className="mt-6 text-[13px] leading-relaxed text-content-muted sm:text-[14px]">
+					{renderBold(t("ciclo.aside"))}
+				</p>
+
+				{/* ═══════════════ FRAME 3 — O SILÊNCIO ═══════════════ */}
+				{/* Display moment: 0 / 0 / 0 typographic tally — three
+				    zeros (silence) with the one thing growing at the
+				    bottom (the actual buraco). Numerals in Fraunces,
+				    labels in small sans, hairline divides the contrast. */}
+				<ChapterRule label={t("silencio.label")} />
+				<div className="mx-auto max-w-[360px]">
+					<dl className="space-y-3">
+						{(t.raw("silencio.zeros") as string[]).map((label, i) => (
+							<div key={i} className="flex items-baseline gap-5">
+								<dt className="font-serif text-[36px] font-medium leading-none tabular-nums text-content-faint sm:text-[44px]">
+									0
+								</dt>
+								<dd className="text-[14px] tracking-wide text-content-secondary sm:text-[15px]">
+									{label}
+								</dd>
+							</div>
+						))}
+						<div className="!mt-5 h-px w-full bg-content-faint/25" />
+						<div className="!mt-5 flex items-baseline gap-5">
+							<dt className="font-serif text-[36px] font-medium leading-none tabular-nums text-rose-300/90 sm:text-[44px]">
+								1
+							</dt>
+							<dd className="text-[14px] tracking-wide text-zinc-200 sm:text-[15px]">
+								{t("silencio.one")}
+							</dd>
+						</div>
+					</dl>
+				</div>
+				<p className="mx-auto mt-6 max-w-[480px] text-[13px] leading-relaxed text-content-muted sm:text-[14px]">
+					{renderBold(t("silencio.aside"))}
+				</p>
+
+				{/* Closing pivot — italic, set apart by short hairline. */}
+				<div className="mt-16 flex flex-col items-center gap-5 text-center sm:mt-20">
 					<div className="h-px w-12 bg-content-faint/40" />
 					<p className="max-w-[440px] font-serif text-[15px] italic leading-[1.55] text-content-secondary sm:text-[17px]">
 						{t("closing")}

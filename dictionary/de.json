@@ -428,20 +428,30 @@
 			"eyebrow": "DAS PROBLEM",
 			"title_line1": "Mehr Traffic löst es nicht.",
 			"title_line2": "Das Geld entkommt zwischen dem Klick und der Conversion.",
-			"frames": [
-				{
-					"label": "Das Loch",
-					"body": "Sie bezahlen für jeden Klick, der hereinkommt. Aber zwischen dem Klick und dem Kauf **verschwinden bis zu 67 % der Besucher** — und die Werberechnung kommt am Monatsende trotzdem. Das Loch sitzt zwischen dem, was Sie zahlen, und dem, was zurückkommt. Niemand muss scheitern, damit es wächst; allein die Zeit tut das."
-				},
-				{
-					"label": "Der Zyklus",
-					"body": "Sie ändern die Anzeige. Der Abbruch **wandert auf die nächste Seite**. Sie reparieren die Landing. Käufer beginnen, im Checkout abzuspringen. Ohne End-to-End-Sicht schiebt jede Korrektur das Problem auf die nächste Oberfläche — und der Zyklus beginnt im nächsten Monat von vorn, gleiche Tabelle, andere Hypothese."
-				},
-				{
-					"label": "Die Stille",
-					"body": "Das Schlimmste am Loch ist, dass es **keinen Alarm auslöst**. Kein Fehler, kein Support-Ticket, kein 500 im Log. Der Käufer schließt einfach den Tab — und Ihr Analytics sagt nur \"Sitzung beendet.\" Sie merken erst, dass Sie verloren haben, wenn die Monatsaggregate nicht stimmen."
-				}
-			],
+			"buraco": {
+				"label": "Das Loch",
+				"stat": "67%",
+				"caption": "der Besucher verschwinden zwischen **Klick** und **Kauf**.",
+				"aside": "Die Werberechnung kommt am Monatsende trotzdem — Sie zahlen für jeden einzelnen."
+			},
+			"ciclo": {
+				"label": "Der Zyklus",
+				"step1": "Sie ändern die Anzeige.",
+				"step2": "Der Abbruch wandert auf die **Landing**.",
+				"step3": "Sie reparieren die Landing.",
+				"step4": "Käufer springen im **Checkout** ab.",
+				"aside": "Ohne End-to-End-Sicht schiebt jede Korrektur das Problem auf die nächste Oberfläche."
+			},
+			"silencio": {
+				"label": "Die Stille",
+				"zeros": [
+					"Alarme im Analytics",
+					"Support-Tickets",
+					"Fehler im Log"
+				],
+				"one": "Loch, das am Monatsende wächst.",
+				"aside": "Der Käufer hat einfach den Tab geschlossen. Ihr Dashboard sagt nur \"**Sitzung beendet**.\""
+			},
 			"closing": "Sie können weiter skalieren, ohne das zu sehen. Oder Sie können hinschauen."
 		},
 		"features_section": {

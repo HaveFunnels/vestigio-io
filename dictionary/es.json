@@ -428,20 +428,30 @@
 			"eyebrow": "EL PROBLEMA",
 			"title_line1": "Más tráfico no lo resuelve.",
 			"title_line2": "El dinero escapa entre el clic y la conversión.",
-			"frames": [
-				{
-					"label": "El hueco",
-					"body": "Pagas por cada clic que entra. Pero entre el clic y la compra, **hasta el 67 % de los visitantes desaparecen** — y la factura del anuncio llega igual a fin de mes. El hueco se queda entre lo que pagas y lo que vuelve. Nadie tiene que fallar para que crezca; basta con que pase el tiempo."
-				},
-				{
-					"label": "El ciclo",
-					"body": "Cambias el anuncio. La caída **se muda a la siguiente página**. Arreglas la landing. Los compradores empiezan a salir en el checkout. Sin visión punta a punta, cada corrección empuja el problema a la siguiente superficie — y el ciclo vuelve a empezar el mes siguiente, con la misma planilla y otra hipótesis."
-				},
-				{
-					"label": "El silencio",
-					"body": "Lo peor del hueco es que **no suena ninguna alarma**. Sin error, sin ticket de soporte, sin 500 en el log. El comprador simplemente cierra la pestaña — y tu analytics solo dice \"sesión finalizada.\" Solo descubres que perdiste cuando miras el agregado del mes y los números no cuadran."
-				}
-			],
+			"buraco": {
+				"label": "El hueco",
+				"stat": "67%",
+				"caption": "de los visitantes desaparecen entre el **clic** y la **compra**.",
+				"aside": "La factura del anuncio llega igual a fin de mes — pagas por cada uno de ellos."
+			},
+			"ciclo": {
+				"label": "El ciclo",
+				"step1": "Cambias el anuncio.",
+				"step2": "La caída se muda a la **landing**.",
+				"step3": "Arreglas la landing.",
+				"step4": "Los compradores salen en el **checkout**.",
+				"aside": "Sin visión punta a punta, cada corrección empuja el problema a la siguiente superficie."
+			},
+			"silencio": {
+				"label": "El silencio",
+				"zeros": [
+					"alertas en analytics",
+					"tickets de soporte",
+					"errores en el log"
+				],
+				"one": "hueco creciendo a fin de mes.",
+				"aside": "El comprador solo cerró la pestaña. Tu panel solo dice \"**sesión finalizada**.\""
+			},
 			"closing": "Puedes seguir escalando sin ver esto. O puedes verlo."
 		},
 		"features_section": {

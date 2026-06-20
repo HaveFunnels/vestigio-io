@@ -435,20 +435,30 @@
 			"eyebrow": "O PROBLEMA",
 			"title_line1": "Mais tráfego não resolve.",
 			"title_line2": "O dinheiro escapa entre o clique e a conversão.",
-			"frames": [
-				{
-					"label": "O buraco",
-					"body": "Você paga por cada clique que entra. Mas entre o clique e a compra, **até 67% dos visitantes somem** — e a conta do anúncio chega igual no fim do mês. O buraco fica entre o que você paga e o que volta. Ninguém precisa errar pra ele crescer; basta o tempo passar."
-				},
-				{
-					"label": "O ciclo",
-					"body": "Você muda o anúncio. A desistência **muda de página**. Você corrige a landing. Os compradores começam a sair no checkout. Sem visão ponta a ponta, cada correção empurra o problema pra próxima superfície — e o ciclo recomeça no mês seguinte, com a mesma planilha e outra hipótese."
-				},
-				{
-					"label": "O silêncio",
-					"body": "O pior do buraco é que ele **não toca alarme**. Sem erro, sem ticket de suporte, sem 500 no log. O comprador simplesmente fechou a aba — e o analytics só diz \"sessão encerrada\". Você só descobre que perdeu quando olha o agregado do mês e os números não fecham."
-				}
-			],
+			"buraco": {
+				"label": "O buraco",
+				"stat": "67%",
+				"caption": "dos visitantes somem entre o **clique** e a **compra**.",
+				"aside": "A conta do anúncio chega igual no fim do mês — você paga por cada um deles."
+			},
+			"ciclo": {
+				"label": "O ciclo",
+				"step1": "Você muda o anúncio.",
+				"step2": "A desistência muda pra **landing**.",
+				"step3": "Você corrige a landing.",
+				"step4": "Os compradores saem no **checkout**.",
+				"aside": "Sem visão ponta a ponta, cada correção empurra o problema pra próxima superfície."
+			},
+			"silencio": {
+				"label": "O silêncio",
+				"zeros": [
+					"alertas no analytics",
+					"tickets de suporte",
+					"erros no log"
+				],
+				"one": "buraco crescendo no fim do mês.",
+				"aside": "O comprador só fechou a aba. Seu painel só diz \"**sessão encerrada**.\""
+			},
 			"closing": "Você pode continuar escalando sem ver isso. Ou pode enxergar."
 		},
 		"features_section": {

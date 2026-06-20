@@ -39,6 +39,13 @@ const satoshi = localFont({
 	variable: "--font-satoshi",
 	display: "swap",
 	preload: false,
+	// Explicit (was the implicit default): emit an Arial-based fallback
+	// face with size-adjust/ascent-override/descent-override tuned to
+	// Satoshi's metrics, so when Satoshi swaps in (FOUT window),
+	// surrounding text doesn't reflow. Belt + suspenders for CLS
+	// during the swap — without this, dropping preload would risk a
+	// visible layout shift on every cold load.
+	adjustFontFallback: "Arial",
 	fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
 });
 

@@ -126,6 +126,10 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 					animation-name: vhero-trail;
 					animation-iteration-count: infinite;
 					animation-timing-function: linear;
+					/* will-change promotes to its own GPU layer so the
+					   continuous translateY doesn't repaint surrounding
+					   content. Transform-only animation = no layout cost. */
+					will-change: transform;
 				}
 				@keyframes vhero-pulse {
 					0%, 100% { transform: scale(1); opacity: 0.9; }
@@ -168,10 +172,24 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 			    the glow fades gradually into the ProductTour below
 			    instead of cutting off abruptly at the section boundary.
 			    `overflow-hidden` is removed from the section so these
-			    can bleed out. */}
-			<div className='pointer-events-none absolute -inset-x-40 -top-20 -z-1 h-[200%]' aria-hidden>
-				<div className='absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/[0.04] blur-[100px] sm:h-[700px] sm:w-[1100px] sm:bg-emerald-500/[0.07] sm:blur-[120px]' />
-				<div className='absolute left-1/2 top-[300px] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-indigo-500/[0.03] blur-[100px] sm:h-[600px] sm:w-[1000px] sm:bg-indigo-500/[0.05] sm:blur-[120px]' />
+			    can bleed out.
+
+			    Mobile blur reduced from 100px → 60px: the blur op runs on
+			    every paint at the larger radius (which on a 360px-wide
+			    device is ~17% of viewport — heavy GPU work during LCP).
+			    60px still reads as a soft glow at the opacity used here.
+
+			    content-visibility:auto lets the browser skip painting
+			    this wrapper entirely when it scrolls offscreen — without
+			    it, the halo's 200%-tall box keeps consuming paint cycles
+			    even when below the fold. */}
+			<div
+				className='pointer-events-none absolute -inset-x-40 -top-20 -z-1 h-[200%]'
+				style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 1200px' }}
+				aria-hidden
+			>
+				<div className='absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/[0.04] blur-[60px] sm:h-[700px] sm:w-[1100px] sm:bg-emerald-500/[0.07] sm:blur-[120px]' />
+				<div className='absolute left-1/2 top-[300px] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-indigo-500/[0.03] blur-[60px] sm:h-[600px] sm:w-[1000px] sm:bg-indigo-500/[0.05] sm:blur-[120px]' />
 			</div>
 
 			{/* Animated descending vestigio trails */}

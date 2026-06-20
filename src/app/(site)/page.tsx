@@ -81,6 +81,21 @@ export async function generateMetadata(): Promise<Metadata> {
 export default function HomePage() {
 	return (
 		<main>
+			{/* Preload the hero video poster as the LCP candidate on mobile.
+			    The <video> element keeps preload="none" (no video bytes
+			    fetched on cold load), but the poster is what fills the
+			    16:9 hero box before play starts — so it IS the LCP image
+			    for the first viewport. fetchPriority="high" + early head
+			    hint pulls it ahead of below-the-fold images in the
+			    browser's priority queue. */}
+			<link
+				rel="preload"
+				as="image"
+				href="/images/hero/vsl-poster.jpg"
+				// @ts-expect-error — React's typing for fetchPriority is
+				// still landing; the lowercase attribute is the standard.
+				fetchpriority="high"
+			/>
 			<Home />
 		</main>
 	);

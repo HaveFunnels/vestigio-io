@@ -4,6 +4,44 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 
+// Browser-shell-ish skeleton that fills ProductTour's spot during the
+// dynamic-import fetch. Without it, when phase flips to "tour" before
+// the chunk arrives, the page renders nothing in this slot — exactly
+// the "pop-in / things not loaded correctly" failure mode we want to
+// avoid. Shimmer animation via Tailwind's animate-pulse.
+function ProductTourSkeleton() {
+	return (
+		<div className="min-h-[600px] w-full px-4 sm:px-8 xl:px-0" aria-hidden="true">
+			<div className="mx-auto max-w-[960px] overflow-hidden rounded-2xl border border-white/[0.06] bg-zinc-900/40">
+				{/* Browser chrome bar */}
+				<div className="flex items-center gap-2 border-b border-white/[0.05] px-4 py-3">
+					<div className="h-2.5 w-2.5 rounded-full bg-white/[0.06]" />
+					<div className="h-2.5 w-2.5 rounded-full bg-white/[0.06]" />
+					<div className="h-2.5 w-2.5 rounded-full bg-white/[0.06]" />
+					<div className="ml-4 h-4 w-48 animate-pulse rounded bg-white/[0.04]" />
+				</div>
+				{/* Sidebar + main */}
+				<div className="flex gap-4 p-4 sm:p-6">
+					<div className="hidden w-48 shrink-0 flex-col gap-3 sm:flex">
+						<div className="h-3 w-3/4 animate-pulse rounded bg-white/[0.04]" />
+						<div className="h-3 w-1/2 animate-pulse rounded bg-white/[0.04]" />
+						<div className="h-3 w-2/3 animate-pulse rounded bg-white/[0.04]" />
+						<div className="h-3 w-1/3 animate-pulse rounded bg-white/[0.04]" />
+					</div>
+					<div className="flex-1 space-y-3">
+						<div className="h-5 w-1/2 animate-pulse rounded bg-white/[0.06]" />
+						<div className="h-3 w-full animate-pulse rounded bg-white/[0.04]" />
+						<div className="h-3 w-5/6 animate-pulse rounded bg-white/[0.04]" />
+						<div className="mt-6 h-32 animate-pulse rounded-xl bg-white/[0.03]" />
+						<div className="h-3 w-3/4 animate-pulse rounded bg-white/[0.04]" />
+						<div className="h-3 w-2/3 animate-pulse rounded bg-white/[0.04]" />
+					</div>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 // ProductTour is a 780-line client component (state machine + lucide
 // icons + typewriter effects) that only renders after the video ends
 // (~12-20s into the visit). Static import would bundle it into the
@@ -11,9 +49,12 @@ import dynamic from "next/dynamic";
 // fetch until phase === "tour" is set — mobile cold-load saves
 // roughly the size of the ProductTour module + its lucide icon
 // subset. ssr:false keeps it out of the initial HTML payload too.
+//
+// loading: ProductTourSkeleton fills the slot during chunk fetch so
+// the phase transition never paints empty.
 const ProductTour = dynamic(() => import("./ProductTour"), {
 	ssr: false,
-	loading: () => null,
+	loading: () => <ProductTourSkeleton />,
 });
 
 const VIDEO_MP4 = "https://cdn.vestigio.io/vestigio-hero.mp4";
@@ -72,6 +113,31 @@ export default function DemoSurface() {
 		return () => clearTimeout(id);
 	}, [phase]);
 
+	// Warm the ProductTour chunk while the hero video plays — by the
+	// time the user scrolls/clicks/the video ends, the dynamic import
+	// resolves instantly from cache and the skeleton barely blinks.
+	// requestIdleCallback so we don't compete with the video fetch and
+	// initial render work. Falls back to a short setTimeout in browsers
+	// without rIC (Safari < 16.4).
+	useEffect(() => {
+		if (phase !== "video") return;
+		const ric =
+			typeof window !== "undefined" && "requestIdleCallback" in window
+				? (window as any).requestIdleCallback
+				: (cb: () => void) => setTimeout(cb, 1500);
+		const handle = ric(() => {
+			// Fire-and-forget — just warm the module graph.
+			import("./ProductTour").catch(() => {});
+		});
+		return () => {
+			const cic =
+				typeof window !== "undefined" && "cancelIdleCallback" in window
+					? (window as any).cancelIdleCallback
+					: clearTimeout;
+			cic(handle);
+		};
+	}, [phase]);
+
 	useEffect(() => {
 		if (phase !== "video") return;
 		const el = sectionRef.current;
@@ -107,7 +173,12 @@ export default function DemoSurface() {
 	}, [audio, unmute]);
 
 	return (
-		<div id="demo-video" ref={sectionRef}>
+		// scroll-mt-28: when something like the Pulse banner does
+		// scrollIntoView({ block: "start" }), the page header is fixed at
+		// z-999 — without this margin the video's top edge lands hidden
+		// under the header (~64-88px clipped). Matches ProductTour's
+		// scroll-mt-24 pattern.
+		<div id="demo-video" ref={sectionRef} className="scroll-mt-28">
 			<style>{`
 				@keyframes ds-rise {
 					from { opacity: 0; transform: translateY(24px); }

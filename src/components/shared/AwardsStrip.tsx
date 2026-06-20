@@ -47,7 +47,13 @@ export default function AwardsStrip({ compact = false, darkBg = true, only }: Aw
 					key={badge.alt}
 					src={badge.src}
 					alt={badge.alt}
-					loading="lazy"
+					// Only 3 small files (~17-33KB each at 600×120). Lazy gains
+					// nothing here and risks visible pop-in when ClientGallery
+					// enters viewport — `w-auto` would collapse them to zero
+					// width during decode. width/height + eager kills both
+					// CLS and the pop-in.
+					width={190}
+					height={38}
 					style={darkBg ? { mixBlendMode: "lighten" } : undefined}
 					className={`object-contain opacity-80 transition-opacity hover:opacity-100 ${
 						compact ? "h-6" : "h-6 sm:h-[38px]"

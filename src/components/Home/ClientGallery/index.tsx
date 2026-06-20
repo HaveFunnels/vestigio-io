@@ -72,6 +72,15 @@ const ClientGallery = async () => {
 								src={logo.src}
 								alt={logo.name}
 								title={logo.name}
+								// width/height attrs reserve box dimensions before the
+								// image bytes arrive. Without them, `w-auto` collapses
+								// each logo to zero width until decode, then expands —
+								// visible horizontal pop-in as the marquee scrolls items
+								// in. Tailwind h-6/h-7 still wins at render; these attrs
+								// only affect pre-load layout reservation. 120×28 matches
+								// the desktop max-w-[120px] × h-7 typical case.
+								width={120}
+								height={28}
 								// ClientGallery is the 4th section in HomeBigCard — well
 								// below the first viewport on mobile. lazy lets the browser
 								// defer the marquee logos until they enter view, saving

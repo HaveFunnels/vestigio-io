@@ -98,8 +98,17 @@ const Counter = () => {
 
 					{/* ── Right column (desktop only) ── */}
 					<div className='hidden flex-col gap-3 sm:gap-4 lg:flex'>
-						{/* Vestigio Pulse — large visual card */}
-						<div className='relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8'>
+						{/* Vestigio Pulse — large visual card. Click scrolls back
+						    to the demo video at the top of the page (DemoSurface). */}
+						<a
+							href='#demo-video'
+							onClick={(e) => {
+								e.preventDefault();
+								document.getElementById('demo-video')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+							}}
+							className='group relative flex flex-1 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 transition-all duration-300 hover:border-emerald-500/30 hover:bg-white/[0.04]'
+							aria-label={t("pulse_title")}
+						>
 							<style>{`
 								@keyframes vpulse-ring-expand {
 									0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0.5; }
@@ -137,10 +146,16 @@ const Counter = () => {
 							</div>
 
 							<div className='relative mt-auto pt-32 text-center'>
-								<h3 className='text-lg font-bold text-white'>{t("pulse_title")}</h3>
+								<h3 className='text-lg font-bold text-white transition-colors group-hover:text-emerald-300'>{t("pulse_title")}</h3>
 								<p className='mt-1 text-sm text-zinc-400'>{t("pulse_desc")}</p>
+								<span className='mt-3 inline-flex items-center gap-1 text-xs font-medium text-emerald-400/70 transition-colors group-hover:text-emerald-300'>
+									{t("pulse_cta")}
+									<svg className='h-3 w-3 transition-transform group-hover:translate-x-0.5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth='2'>
+										<path strokeLinecap='round' strokeLinejoin='round' d='M17 8l4 4m0 0l-4 4m4-4H3' />
+									</svg>
+								</span>
 							</div>
-						</div>
+						</a>
 
 						{/* Bottom two small cards */}
 						<div className='flex gap-3 sm:gap-4'>

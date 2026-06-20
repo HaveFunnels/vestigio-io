@@ -1026,6 +1026,7 @@
 			"roi_subtitle": "Si Vestigio no encuentra 4× el valor de tu plan en pérdidas mensuales, devolvemos el 100%.",
 			"pulse_title": "Habla con tus datos",
 			"pulse_desc": "¿Por qué cayó el checkout? Pregunta. Investiga. Decide.",
+			"pulse_cta": "Ve cómo funciona",
 			"monitoring_title": "Regresiones en horas, no días",
 			"monitoring_desc": "Cada cambio en el sitio auditado antes de que el cliente lo note.",
 			"integrations_title": "Funciona con tu stack",

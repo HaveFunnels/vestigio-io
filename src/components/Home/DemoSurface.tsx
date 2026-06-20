@@ -95,7 +95,7 @@ export default function DemoSurface() {
 	}, [audio, unmute]);
 
 	return (
-		<div ref={sectionRef}>
+		<div id="demo-video" ref={sectionRef}>
 			<style>{`
 				@keyframes ds-rise {
 					from { opacity: 0; transform: translateY(24px); }
@@ -126,7 +126,13 @@ export default function DemoSurface() {
 									ref={videoRef}
 									className="absolute inset-0 h-full w-full object-cover"
 									poster="/images/hero/vsl-poster.jpg"
-									preload="metadata"
+									// preload="none" — don't fetch video headers on cold
+									// load. The IntersectionObserver below triggers play()
+									// when the section enters viewport, which kicks off the
+									// fetch then. Trade-off: ~500ms-1s delay before the
+									// muted preview starts vs ~500KB saved on first byte.
+									// Mobile cold load wins.
+									preload="none"
 									playsInline
 									autoPlay
 									muted

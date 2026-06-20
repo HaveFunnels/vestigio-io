@@ -72,7 +72,11 @@ const ClientGallery = async () => {
 								src={logo.src}
 								alt={logo.name}
 								title={logo.name}
-								loading="eager"
+								// ClientGallery is the 4th section in HomeBigCard — well
+								// below the first viewport on mobile. lazy lets the browser
+								// defer the marquee logos until they enter view, saving
+								// 10-20 image fetches on cold load.
+								loading="lazy"
 								className="h-6 w-auto max-w-[100px] shrink-0 object-contain grayscale opacity-[0.35] transition-opacity duration-300 hover:opacity-60 hover:grayscale-0 sm:h-7 sm:max-w-[120px]"
 							/>
 						))}

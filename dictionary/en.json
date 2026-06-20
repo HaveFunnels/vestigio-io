@@ -150,449 +150,135 @@
 			}
 		},
 		"product_tour": {
-			"eyebrow": "Product Tour",
-			"title": "Not a dashboard. A queue of decisions.",
-			"subtitle": "Every tab is a different lens on the same revenue picture — ranked, evidenced, and ready to act on.",
-			"section_headline": "Inside your decision engine",
+			"section_headline": "Strategy Plan · Guided tour",
+			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Run free diagnostic",
-			"url": "app.vestigio.io/dashboard",
-			"tabs": {
-				"actions": "Actions",
-				"analysis": "Analysis",
-				"inventory": "Inventory",
-				"cross_signals": "Cross-Signals",
-				"workspaces": "Workspaces",
-				"chat": "Vestigio AI",
-				"maps": "Maps",
-				"library": "Library"
-			},
-			"user_label": "Vestigio Pro",
-			"actions_panel": {
-				"eyebrow": "Action Queue",
-				"count": "9 actions ranked",
-				"rows": [
+			"step_indicator": [
+				"Thesis",
+				"Reading",
+				"Next steps"
+			],
+			"step1": {
+				"breadcrumb_brand": "Vestigio",
+				"breadcrumb_section": "Strategy Plan",
+				"breadcrumb_month": "Current Month",
+				"masthead_title": "Strategy Plan",
+				"masthead_subtitle": "Current Month",
+				"tese_eyebrow": "THIS MONTH'S THESIS",
+				"tese_body": "Vestigio identified **~$13k/mo** in leakage concentrated on the home page and checkout, where misaligned copy disperses buyers before conversion.",
+				"tese_attribution": "Vestigio · cycle analysis",
+				"metrics": [
 					{
-						"priority": "P1",
-						"title": "Speed up your checkout — it's costing you −$28k/mo",
-						"desc": "68% of your mobile buyers drop off waiting for your payment page to load",
-						"impact": "−$28k",
-						"severity": "critical"
+						"label": "Recovered / mo",
+						"value": "$ ~13k",
+						"delta": "+1 since last cycle",
+						"tone": "win",
+						"spark": [
+							3,
+							4,
+							5,
+							8,
+							11,
+							13
+						]
 					},
 					{
-						"priority": "P2",
-						"title": "Move your buy button above the fold on mobile",
-						"desc": "68% of your mobile sessions require scrolling to find the purchase button",
-						"impact": "−$19k",
-						"severity": "critical"
+						"label": "Leaking / mo",
+						"value": "$ 0",
+						"delta": "stable",
+						"tone": "neutral",
+						"spark": [
+							1,
+							1,
+							1,
+							0,
+							0,
+							0
+						]
 					},
 					{
-						"priority": "P3",
-						"title": "Fix the security warning on your payment page",
-						"desc": "12% of your buyers see a 'Not secure' alert right when entering their card",
-						"impact": "−$13k",
-						"severity": "critical"
-					},
-					{
-						"priority": "P4",
-						"title": "Stop resetting your product filters on navigation",
-						"desc": "Your shoppers lose their selection every time they click — and start over",
-						"impact": "−$9k",
-						"severity": "high"
-					},
-					{
-						"priority": "P5",
-						"title": "Add your return policy to the checkout flow",
-						"desc": "Your chargeback rate is 2.1x above market average when the policy is missing",
-						"impact": "−$6k",
-						"severity": "high"
-					},
-					{
-						"priority": "P6",
-						"title": "Simplify step 3 of your signup — you're losing half",
-						"desc": "Your conversion drops from 78% to 41% at that step in the last 2 cycles",
-						"impact": "−$7k",
-						"severity": "high"
-					},
-					{
-						"priority": "P7",
-						"title": "Add tracking between your cart and purchase",
-						"desc": "You have no visibility into where your buyers drop off in the final steps",
-						"impact": "−$15k",
-						"severity": "medium"
-					},
-					{
-						"priority": "P8",
-						"title": "Add trust signals near your email field",
-						"desc": "9% of your leads abandon at that field — they don't feel safe submitting",
-						"impact": "−$4k",
-						"severity": "medium"
-					},
-					{
-						"priority": "P9",
-						"title": "Increase contrast on your main CTA button",
-						"desc": "4% of your visitors can't find it on dark backgrounds",
-						"impact": "−$2.5k",
-						"severity": "low"
-					}
-				]
-			},
-			"analysis_panel": {
-				"summary_header": "Analysis Summary",
-				"findings_header": "Top Findings",
-				"summary_cards": [
-					{
-						"label": "Total Findings",
-						"value": "23",
-						"sub": "issues across 12 surfaces"
-					},
-					{
-						"label": "Est. Monthly Impact",
-						"value": "−$67.2k",
-						"sub": "lower bound"
-					},
-					{
-						"label": "High Impact",
-						"value": "8",
-						"sub": "critical + high"
-					},
-					{
-						"label": "Surfaces Audited",
-						"value": "12",
-						"sub": "live + verified"
-					},
-					{
-						"label": "Avg Confidence",
-						"value": "82%",
-						"sub": "evidence-based"
-					},
-					{
-						"label": "Strengths",
+						"label": "Critical",
 						"value": "6",
-						"sub": "wins to preserve"
-					}
-				],
-				"rows": [
-					{
-						"title": "Your checkout loads in 4.2s — benchmark is 1.8s",
-						"severity": "critical",
-						"impact": "−$28k"
-					},
-					{
-						"title": "Your buy button is below the fold on 68% of mobile sessions",
-						"severity": "critical",
-						"impact": "−$19k"
-					},
-					{
-						"title": "Your payment page triggers a 'Not secure' browser warning",
-						"severity": "critical",
-						"impact": "−$13k"
-					},
-					{
-						"title": "Your product filters lose state on every navigation click",
-						"severity": "high",
-						"impact": "−$9k"
-					},
-					{
-						"title": "Your checkout has no visible return policy — chargeback rate 2.1x above market",
-						"severity": "high",
-						"impact": "−$6k"
-					},
-					{
-						"title": "Your signup conversion drops from 78% to 41% at step 3",
-						"severity": "high",
-						"impact": "−$7k"
-					},
-					{
-						"title": "Your cart-to-purchase funnel has zero tracking — blind spot detected",
-						"severity": "medium",
-						"impact": "−$15k"
-					},
-					{
-						"title": "Your email field has no trust signals — 9% abandon rate",
-						"severity": "medium",
-						"impact": "−$4k"
-					},
-					{
-						"title": "Your main CTA has 1.2:1 contrast ratio on dark backgrounds",
-						"severity": "low",
-						"impact": "−$2.5k"
-					},
-					{
-						"title": "Your footer has no trust badges — SSL, payment, guarantee absent",
-						"severity": "low",
-						"impact": "−$1.3k"
-					}
-				]
-			},
-			"inventory_panel": {
-				"header": "Surface Inventory",
-				"headers": {
-					"surface": "Surface",
-					"path": "Path",
-					"status": "Status",
-					"http": "HTTP",
-					"findings": "Findings"
-				},
-				"status_live": "Live",
-				"status_down": "Down",
-				"status_warn": "Warn",
-				"findings_label": "findings",
-				"findings_label_one": "finding",
-				"rows": [
-					{
-						"path": "/",
-						"label": "Homepage",
-						"status": "live",
-						"code": 200,
-						"findings": 3
-					},
-					{
-						"path": "/products",
-						"label": "Products",
-						"status": "live",
-						"code": 200,
-						"findings": 2
-					},
-					{
-						"path": "/products/[id]",
-						"label": "Product Detail",
-						"status": "live",
-						"code": 200,
-						"findings": 1
-					},
-					{
-						"path": "/cart",
-						"label": "Cart",
-						"status": "live",
-						"code": 200,
-						"findings": 4
-					},
-					{
-						"path": "/checkout",
-						"label": "Checkout",
-						"status": "live",
-						"code": 200,
-						"findings": 6
-					},
-					{
-						"path": "/checkout/payment",
-						"label": "Payment Step",
-						"status": "warn",
-						"code": 200,
-						"findings": 3
-					},
-					{
-						"path": "/thank-you",
-						"label": "Thank You",
-						"status": "down",
-						"code": 503,
-						"findings": 1
-					},
-					{
-						"path": "/pricing",
-						"label": "Pricing",
-						"status": "live",
-						"code": 200,
-						"findings": 1
-					},
-					{
-						"path": "/onboarding",
-						"label": "Onboarding",
-						"status": "live",
-						"code": 200,
-						"findings": 2
-					},
-					{
-						"path": "/dashboard",
-						"label": "Dashboard",
-						"status": "live",
-						"code": 200,
-						"findings": 0
-					},
-					{
-						"path": "/account",
-						"label": "Account",
-						"status": "live",
-						"code": 200,
-						"findings": 0
-					},
-					{
-						"path": "/blog",
-						"label": "Blog",
-						"status": "warn",
-						"code": 200,
-						"findings": 0
-					}
-				]
-			},
-			"workspaces_panel": {
-				"header": "Workspaces",
-				"rows": [
-					{
-						"name": "Scale Readiness",
-						"urgency": "BLOCK",
-						"tone": "red",
-						"desc": "Critical blockers preventing safe traffic scaling. 5 open issues."
-					},
-					{
-						"name": "Revenue Integrity",
-						"urgency": "FIX",
-						"tone": "orange",
-						"desc": "Active leaks in checkout, pricing, and onboarding. −$54k/mo at risk."
-					},
-					{
-						"name": "Chargeback Resilience",
-						"urgency": "MODERATE",
-						"tone": "amber",
-						"desc": "Dispute readiness and refund policy gaps. 3 open issues."
-					},
-					{
-						"name": "SEO & Discoverability",
-						"urgency": "WATCH",
-						"tone": "sky",
-						"desc": "Schema, sitemap, and trust signals. 2 open issues."
-					},
-					{
-						"name": "Continuous Compliance",
-						"urgency": "STABLE",
-						"tone": "emerald",
-						"desc": "WCAG, GDPR, and regional consent. All current findings closed."
-					}
-				]
-			},
-			"chat_panel": {
-				"header": "Vestigio Pulse",
-				"thread": [
-					{
-						"from": "user",
-						"text": "Where am I losing the most money right now?"
-					},
-					{
-						"from": "ai",
-						"text": "Your biggest leak is at checkout — it takes 2.4s longer than it should, and that's costing you **−$18k to $42k per month** in lost sales. I've created a P1 action to fix this.",
-						"chips": [
-							"Used 3 findings",
-							"Created action P1"
+						"delta": "+1 MoM",
+						"tone": "loss",
+						"spark": [
+							3,
+							4,
+							4,
+							5,
+							5,
+							6
 						]
 					},
 					{
-						"from": "user",
-						"text": "What broke since the last analysis cycle?"
-					},
-					{
-						"from": "ai",
-						"text": "3 regressions detected in the last 14 days: checkout abandonment **+12%**, payment validation failed on 2 routes, SSL cert expires in 5 days. The first two are already in the queue at P1 and P3.",
-						"chips": [
-							"3 regressions",
-							"2 actions ranked"
-						]
+						"label": "In progress",
+						"value": "0",
+						"delta": "stable",
+						"tone": "neutral"
 					}
-				],
-				"input_placeholder": "Ask anything about your business..."
-			},
-			"maps_panel": {
-				"header": "Journey Map",
-				"subtext": "Main conversion path and where visitors drop off.",
-				"start": {
-					"label": "Home",
-					"path": "/",
-					"pct": 100,
-					"main": true
-				},
-				"finish": {
-					"label": "Thank You",
-					"path": "/thank-you",
-					"pct": 3,
-					"main": true
-				},
-				"stages": [
-					[
-						{
-							"label": "Products",
-							"path": "/products",
-							"pct": 68,
-							"main": true
-						},
-						{
-							"label": "Blog",
-							"path": "/blog",
-							"pct": 18
-						},
-						{
-							"label": "Pricing",
-							"path": "/pricing",
-							"pct": 14
-						}
-					],
-					[
-						{
-							"label": "Compare",
-							"path": "/compare",
-							"pct": 9
-						},
-						{
-							"label": "Detail",
-							"path": "/products/[id]",
-							"pct": 52,
-							"main": true
-						},
-						{
-							"label": "Reviews",
-							"path": "/reviews",
-							"pct": 7
-						}
-					],
-					[
-						{
-							"label": "Cart",
-							"path": "/cart",
-							"pct": 15
-						},
-						{
-							"label": "Support",
-							"path": "/support",
-							"pct": 3
-						},
-						{
-							"label": "Checkout",
-							"path": "/checkout",
-							"pct": 24,
-							"main": true
-						}
-					]
 				]
 			},
-			"overlay_ai": {
-				"eyebrow": "Vestigio Pulse",
-				"message": "I scanned 12 surfaces and found 23 findings. The top 3 are critical and account for 64% of the estimated loss.",
-				"chip_evidence": "12 surfaces scanned",
-				"chip_action": "9 actions queued"
-			},
-			"overlay_recovery": {
-				"eyebrow": "Recoverable",
-				"value": "+$67.2k",
-				"unit": "/mo",
-				"sub": "across 9 ranked actions"
-			},
-			"data_sources_label": "Data Sources",
-			"guided": {
-				"step_labels": [
-					"Decisions",
-					"Investigation",
-					"Map"
+			"step2": {
+				"heading": "What your analysis revealed this month",
+				"subheading": "Grouped by who needs to act",
+				"segments": [
+					{
+						"key": "copy",
+						"label": "Marketing",
+						"count": 8,
+						"impactMid": "$ ~6k",
+						"impactRange": "range $3k to $8k",
+						"dot": "bg-rose-400"
+					},
+					{
+						"key": "eng",
+						"label": "Engineering",
+						"count": 9,
+						"impactMid": "$ ~7k",
+						"impactRange": "range $3k to $11k",
+						"dot": "bg-sky-400"
+					},
+					{
+						"key": "leadership",
+						"label": "Leadership",
+						"count": 2,
+						"impactMid": "$ ~1k",
+						"impactRange": "range $0.4k to $1.2k",
+						"dot": "bg-amber-400"
+					}
 				],
-				"hero_label": "Total recoverable",
-				"hero_sub": "across 5 ranked actions",
-				"step1_hint": "Click to investigate ↓",
-				"step2_context": "P1 · Slow checkout — −$28k/mo",
-				"step2_ai": "Just browsed your checkout. Payment stalls at **4.2s** — three scripts load before the form appears, and **12% of your users** are leaving at this point. That's **−$600/day** in revenue.\n\nMonthly cost: **−$28k**.\n\nAlready prioritized the fix as P1 in your queue. Defer the scripts, compress checkout images, and move validation to async. Let me know when it's live — I'll run through again to confirm.\n\nCreated a map for you to monitor user behavior.",
-				"step2_chips": [
-					"View map"
+				"narrative_eyebrow": "WHAT HAPPENED THIS CYCLE",
+				"narrative_body": "Policy coverage on the home page is calibrated and holding revenue. The dominant theme this cycle is **misaligned copy** — headlines describing the product without communicating the buyer's gain — and a **cross-domain redirect** at checkout that dispersed qualified buyers before conversion. Both already resolved."
+			},
+			"step3": {
+				"heading": "Prioritized next steps",
+				"steps": [
+					{
+						"n": "01",
+						"title": "Realign the home page title with the buyer's benefit (not the product feature)",
+						"impact": "$3k–6k/mo",
+						"buyer": "Marketing",
+						"dot": "bg-rose-400"
+					},
+					{
+						"n": "02",
+						"title": "Fix the cross-domain redirect at checkout — it's dispersing qualified buyers",
+						"impact": "$6k–11k/mo",
+						"buyer": "Engineering",
+						"dot": "bg-sky-400"
+					},
+					{
+						"n": "03",
+						"title": "Surface the return policy above the fold on the home page — missing as objection-handler",
+						"impact": "$0.4k–1.2k/mo",
+						"buyer": "Leadership",
+						"dot": "bg-amber-400"
+					}
 				],
-				"step3_leak": "Leak detected",
-				"step3_cta": "See how much I'm losing",
-				"step3_micro": "60-second diagnostic. No credit card required.",
-				"step3_trust": "Connected data sources"
+				"impact_label": "impact/mo",
+				"footer_attribution": "Vestigio · cycle analysis",
+				"export_pdf": "Export PDF",
+				"share_link": "Share"
 			}
 		},
 		"client_gallery": {
@@ -4314,8 +4000,8 @@
 					"body": "You want to solve a specific pain, today you cope a certain way, and now is the moment. We'll prioritize findings from that angle, write your Monthly Plan with this context baked in, and feed Vestigio AI so it can answer you directly. Just one more thing to calibrate the dollar amounts."
 				},
 				"revenue": {
-					"headline": "All calibrated — let's run it.",
-					"body": "With {answer}/mo as a base, every finding ships with a real dollar range. The audit starts now; first report in ~60 seconds."
+					"headline": "Now we can put a dollar amount on what's at stake.",
+					"body": "With your revenue as a base, every finding ships with a real range — not a generic 'high severity'. You see what each problem costs."
 				},
 				"industry": {
 					"headline": "We'll benchmark you against your sector.",
@@ -4324,10 +4010,6 @@
 				"conversion_model": {
 					"headline": "We know which journey to instrument now.",
 					"body": "Vestigio will watch the path up to this conversion point as the most critical leg. Any leak there surfaces first."
-				},
-				"revenue": {
-					"headline": "Now we can put a dollar amount on what's at stake.",
-					"body": "With your revenue as a base, every finding ships with a real range — not a generic 'high severity'. You see what each problem costs."
 				},
 				"ticket": {
 					"headline": "Estimates will fit your volume properly.",
@@ -9899,7 +9581,31 @@
 	},
 	"lp": {
 		"audit_result": {
-			"loading": "Loading your Analysis…",
+			"loading": {
+				"headline": "Analyzing {domain}",
+				"headline_complete": "Analysis of {domain} ready",
+				"subtitle": "First report in ~60 seconds. Your account is getting ready in the meantime.",
+				"subtitle_complete": "All calibrated. You can come in.",
+				"active_label": "Now — Quick analysis",
+				"teaser_label": "Next phases — Full analysis",
+				"teaser_locked": "Locked",
+				"unlock_hint": "Creating an account unlocks the 6 next phases →",
+				"active_phases": [
+					"Getting to know your domain",
+					"Mapping your sales funnel",
+					"Evaluating your copy against 5 proven frameworks",
+					"Calculating how much is leaving your account",
+					"Drafting your attack plan"
+				],
+				"teaser_phases": [
+					"Crawling your entire site like a curious customer",
+					"Visiting your pages as a simulated user",
+					"Machine-learning layer over each finding",
+					"Connecting signals that don't say much alone",
+					"Reading the real behavior of your visitors",
+					"What it all means for you, in one narrative"
+				]
+			},
 			"share_copied": "Link copied",
 			"share": "Share",
 			"success_banner": "Your Analysis is complete. Check the results below.",
@@ -10129,31 +9835,6 @@
 			"auditing_complete_desc": "We found leaks on your site. Click below to see the results.",
 			"auditing_desc": "This usually takes 5–10 seconds. Do not close this tab.",
 			"auditing_view": "See my Analysis",
-			"loading": {
-				"headline": "Analyzing {domain}",
-				"headline_complete": "Analysis of {domain} ready",
-				"subtitle": "First report in ~60 seconds. Your account is getting ready in the meantime.",
-				"subtitle_complete": "All calibrated. You can come in.",
-				"active_label": "Now — Quick analysis",
-				"teaser_label": "Next phases — Full analysis",
-				"teaser_locked": "Locked",
-				"unlock_hint": "Creating an account unlocks the 6 next phases →",
-				"active_phases": [
-					"Getting to know your domain",
-					"Mapping your sales funnel",
-					"Evaluating your copy against 5 proven frameworks",
-					"Calculating how much is leaving your account",
-					"Drafting your attack plan"
-				],
-				"teaser_phases": [
-					"Crawling your entire site like a curious customer",
-					"Visiting your pages as a simulated user",
-					"Machine-learning layer over each finding",
-					"Connecting signals that don't say much alone",
-					"Reading the real behavior of your visitors",
-					"What it all means for you, in one narrative"
-				]
-			},
 			"timeout_title": "The Analysis is taking longer than expected",
 			"timeout_desc": "This can happen if the site is slow or temporarily unavailable. Verify the domain is correct and try again.",
 			"timeout_retry": "Try again",

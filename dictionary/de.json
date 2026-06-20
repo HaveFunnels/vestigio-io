@@ -143,450 +143,135 @@
 			}
 		},
 		"product_tour": {
-			"eyebrow": "Produkt-Tour",
-			"title": "Kein Dashboard. Eine Warteschlange von Entscheidungen.",
-			"subtitle": "Jeder Tab ist eine andere Linse auf dasselbe Umsatzbild — priorisiert, mit Beweisen und bereit zum Handeln.",
+			"section_headline": "Strategieplan · Geführte Tour",
+			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Kostenlose Diagnose starten",
-			"cta_micro": "Perfekt für E-Commerce, SaaS, Lead-Gen, Infoprodukte, Services und Apps.",
-			"url": "app.vestigio.io/dashboard",
-			"tabs": {
-				"actions": "Aktionen",
-				"analysis": "Analyse",
-				"inventory": "Inventar",
-				"cross_signals": "Cross-Signals",
-				"workspaces": "Workspaces",
-				"chat": "Vestigio AI",
-				"maps": "Karten",
-				"library": "Bibliothek"
-			},
-			"user_label": "Vestigio Pro",
-			"actions_panel": {
-				"eyebrow": "Aktionswarteschlange",
-				"count": "9 Aktionen priorisiert",
-				"rows": [
+			"step_indicator": [
+				"These",
+				"Lesung",
+				"Nächste Schritte"
+			],
+			"step1": {
+				"breadcrumb_brand": "Vestigio",
+				"breadcrumb_section": "Strategieplan",
+				"breadcrumb_month": "Aktueller Monat",
+				"masthead_title": "Strategieplan",
+				"masthead_subtitle": "Aktueller Monat",
+				"tese_eyebrow": "DIE THESE DIESES MONATS",
+				"tese_body": "Vestigio hat **~12k €/Monat** an Leckage identifiziert, konzentriert auf Startseite und Checkout, wo unausgerichteter Text Käufer vor der Conversion vertreibt.",
+				"tese_attribution": "Vestigio · Zyklusanalyse",
+				"metrics": [
 					{
-						"priority": "P1",
-						"title": "Beschleunigen Sie Ihren Checkout — kostet Sie −€16k–38k/Monat",
-						"desc": "68% Ihrer mobilen Käufer brechen ab, während Ihre Zahlungsseite lädt",
-						"impact": "−€16k–38k",
-						"severity": "critical"
+						"label": "Erholt / Monat",
+						"value": "~12k €",
+						"delta": "+1 seit letztem Zyklus",
+						"tone": "win",
+						"spark": [
+							2,
+							3,
+							5,
+							7,
+							10,
+							12
+						]
 					},
 					{
-						"priority": "P2",
-						"title": "Verschieben Sie Ihren Kauf-Button über den Fold auf Mobilgeräten",
-						"desc": "68% Ihrer mobilen Sessions erfordern Scrollen, um den Kauf-Button zu finden",
-						"impact": "−€11k–25k",
-						"severity": "critical"
+						"label": "Leckage / Monat",
+						"value": "0 €",
+						"delta": "stabil",
+						"tone": "neutral",
+						"spark": [
+							1,
+							1,
+							0,
+							0,
+							0,
+							0
+						]
 					},
 					{
-						"priority": "P3",
-						"title": "Beheben Sie die Sicherheitswarnung auf Ihrer Zahlungsseite",
-						"desc": "12% Ihrer Käufer sehen eine 'Nicht sicher'-Warnung bei der Karteneingabe",
-						"impact": "−€7k–19k",
-						"severity": "critical"
-					},
-					{
-						"priority": "P4",
-						"title": "Stoppen Sie das Zurücksetzen Ihrer Produktfilter beim Navigieren",
-						"desc": "Ihre Käufer verlieren ihre Auswahl bei jedem Klick — und fangen neu an",
-						"impact": "−€4.5k–13k",
-						"severity": "high"
-					},
-					{
-						"priority": "P5",
-						"title": "Fügen Sie Ihre Rückgaberichtlinie zum Checkout-Flow hinzu",
-						"desc": "Ihre Chargeback-Rate liegt 2,1x über dem Markt wenn die Richtlinie fehlt",
-						"impact": "−€3.2k–8k",
-						"severity": "high"
-					},
-					{
-						"priority": "P6",
-						"title": "Vereinfachen Sie Schritt 3 Ihrer Anmeldung — Sie verlieren die Hälfte",
-						"desc": "Ihre Konversion fällt von 78% auf 41% bei diesem Schritt in den letzten 2 Zyklen",
-						"impact": "−€3.6k–10k",
-						"severity": "high"
-					},
-					{
-						"priority": "P7",
-						"title": "Fügen Sie Tracking zwischen Warenkorb und Kauf hinzu",
-						"desc": "Sie haben keine Sicht darauf, wo Ihre Käufer in den letzten Schritten abbrechen",
-						"impact": "−€8k–22k",
-						"severity": "medium"
-					},
-					{
-						"priority": "P8",
-						"title": "Fügen Sie Vertrauenssignale bei Ihrem E-Mail-Feld hinzu",
-						"desc": "9% Ihrer Leads brechen bei diesem Feld ab — sie fühlen sich unsicher",
-						"impact": "−€1.8k–5k",
-						"severity": "medium"
-					},
-					{
-						"priority": "P9",
-						"title": "Erhöhen Sie den Kontrast Ihres Haupt-Buttons",
-						"desc": "4% Ihrer Besucher finden ihn auf dunklen Hintergründen nicht",
-						"impact": "−€1.3k–3.5k",
-						"severity": "low"
-					}
-				]
-			},
-			"analysis_panel": {
-				"summary_header": "Analyse-Übersicht",
-				"findings_header": "Top-Befunde",
-				"summary_cards": [
-					{
-						"label": "Gesamtbefunde",
-						"value": "23",
-						"sub": "Probleme über 12 Flächen"
-					},
-					{
-						"label": "Geschätzter Monatsverlust",
-						"value": "−€60k",
-						"sub": "Untergrenze"
-					},
-					{
-						"label": "Hohe Wirkung",
-						"value": "8",
-						"sub": "kritisch + hoch"
-					},
-					{
-						"label": "Geprüfte Flächen",
-						"value": "12",
-						"sub": "live + verifiziert"
-					},
-					{
-						"label": "Ø Konfidenz",
-						"value": "82%",
-						"sub": "beweisbasiert"
-					},
-					{
-						"label": "Stärken",
+						"label": "Kritisch",
 						"value": "6",
-						"sub": "zu erhalten"
-					}
-				],
-				"rows": [
-					{
-						"title": "Ihr Checkout lädt in 4,2s — Benchmark ist 1,8s",
-						"severity": "critical",
-						"impact": "−€16k–38k"
-					},
-					{
-						"title": "Ihr Kauf-Button ist unter dem Fold bei 68% der mobilen Sessions",
-						"severity": "critical",
-						"impact": "−€11k–25k"
-					},
-					{
-						"title": "Ihre Zahlungsseite löst eine 'Nicht sicher'-Warnung im Browser aus",
-						"severity": "critical",
-						"impact": "−€7k–19k"
-					},
-					{
-						"title": "Ihre Produktfilter verlieren den Status bei jedem Navigationsklick",
-						"severity": "high",
-						"impact": "−€4.5k–13k"
-					},
-					{
-						"title": "Ihr Checkout hat keine sichtbare Rückgaberichtlinie — Chargeback 2,1x über Markt",
-						"severity": "high",
-						"impact": "−€3.2k–8k"
-					},
-					{
-						"title": "Ihre Anmeldekonversion fällt von 78% auf 41% bei Schritt 3",
-						"severity": "high",
-						"impact": "−€3.6k–10k"
-					},
-					{
-						"title": "Ihr Warenkorb-Kauf-Funnel hat kein Tracking — Blindspot erkannt",
-						"severity": "medium",
-						"impact": "−€8k–22k"
-					},
-					{
-						"title": "Ihr E-Mail-Feld hat keine Vertrauenssignale — 9% Abbruchrate",
-						"severity": "medium",
-						"impact": "−€1.8k–5k"
-					},
-					{
-						"title": "Ihr Haupt-CTA hat 1.2:1 Kontrastverhältnis auf dunklen Hintergründen",
-						"severity": "low",
-						"impact": "−€1.3k–3.5k"
-					},
-					{
-						"title": "Ihr Footer hat keine Vertrauens-Siegel — SSL, Zahlung, Garantie fehlen",
-						"severity": "low",
-						"impact": "−€0.7k–1.8k"
-					}
-				]
-			},
-			"inventory_panel": {
-				"header": "Flächen-Inventar",
-				"headers": {
-					"surface": "Fläche",
-					"path": "Pfad",
-					"status": "Status",
-					"http": "HTTP",
-					"findings": "Befunde"
-				},
-				"status_live": "Live",
-				"status_down": "Ausgefallen",
-				"status_warn": "Warnung",
-				"findings_label": "Befunde",
-				"findings_label_one": "Befund",
-				"rows": [
-					{
-						"path": "/",
-						"label": "Startseite",
-						"status": "live",
-						"code": 200,
-						"findings": 3
-					},
-					{
-						"path": "/products",
-						"label": "Produkte",
-						"status": "live",
-						"code": 200,
-						"findings": 2
-					},
-					{
-						"path": "/products/[id]",
-						"label": "Produktdetails",
-						"status": "live",
-						"code": 200,
-						"findings": 1
-					},
-					{
-						"path": "/cart",
-						"label": "Warenkorb",
-						"status": "live",
-						"code": 200,
-						"findings": 4
-					},
-					{
-						"path": "/checkout",
-						"label": "Kasse",
-						"status": "live",
-						"code": 200,
-						"findings": 6
-					},
-					{
-						"path": "/checkout/payment",
-						"label": "Bezahlung",
-						"status": "warn",
-						"code": 200,
-						"findings": 3
-					},
-					{
-						"path": "/thank-you",
-						"label": "Danke",
-						"status": "down",
-						"code": 503,
-						"findings": 1
-					},
-					{
-						"path": "/pricing",
-						"label": "Preise",
-						"status": "live",
-						"code": 200,
-						"findings": 1
-					},
-					{
-						"path": "/onboarding",
-						"label": "Onboarding",
-						"status": "live",
-						"code": 200,
-						"findings": 2
-					},
-					{
-						"path": "/dashboard",
-						"label": "Dashboard",
-						"status": "live",
-						"code": 200,
-						"findings": 0
-					},
-					{
-						"path": "/account",
-						"label": "Konto",
-						"status": "live",
-						"code": 200,
-						"findings": 0
-					},
-					{
-						"path": "/blog",
-						"label": "Blog",
-						"status": "warn",
-						"code": 200,
-						"findings": 0
-					}
-				]
-			},
-			"workspaces_panel": {
-				"header": "Workspaces",
-				"rows": [
-					{
-						"name": "Skalierungsbereitschaft",
-						"urgency": "BLOCK",
-						"tone": "red",
-						"desc": "Kritische Blocker für sicheres Traffic-Skalieren. 5 offene Probleme."
-					},
-					{
-						"name": "Umsatzintegrität",
-						"urgency": "FIX",
-						"tone": "orange",
-						"desc": "Aktive Lecks in Checkout, Preise und Onboarding. −€48k/Monat in Gefahr."
-					},
-					{
-						"name": "Chargeback-Resilienz",
-						"urgency": "MODERATE",
-						"tone": "amber",
-						"desc": "Disputbereitschaft und Rückgabe-Lücken. 3 offene Probleme."
-					},
-					{
-						"name": "SEO & Auffindbarkeit",
-						"urgency": "WATCH",
-						"tone": "sky",
-						"desc": "Schema, Sitemap und Vertrauenssignale. 2 offene Probleme."
-					},
-					{
-						"name": "Kontinuierliche Compliance",
-						"urgency": "STABLE",
-						"tone": "emerald",
-						"desc": "WCAG, DSGVO und regionale Einwilligung. Alle aktuellen Befunde geschlossen."
-					}
-				]
-			},
-			"chat_panel": {
-				"header": "Vestigio Pulse",
-				"thread": [
-					{
-						"from": "user",
-						"text": "Wo verliere ich gerade am meisten Geld?"
-					},
-					{
-						"from": "ai",
-						"text": "Ihr größtes Leck ist beim Checkout — er dauert 2,4s länger als nötig und das kostet Sie **−€16k bis €38k pro Monat** an verlorenen Verkäufen. Ich habe eine P1-Aktion erstellt, um das zu beheben.",
-						"chips": [
-							"3 Befunde verwendet",
-							"Aktion P1 erstellt"
+						"delta": "+1 MoM",
+						"tone": "loss",
+						"spark": [
+							3,
+							4,
+							4,
+							5,
+							5,
+							6
 						]
 					},
 					{
-						"from": "user",
-						"text": "Was ist seit der letzten Analyse kaputtgegangen?"
-					},
-					{
-						"from": "ai",
-						"text": "3 Regressionen in den letzten 14 Tagen: Checkout-Abbruch **+12%**, Zahlungsvalidierung in 2 Routen fehlgeschlagen, SSL-Zertifikat läuft in 5 Tagen ab. Die ersten beiden sind bereits als P1 und P3 in der Warteschlange.",
-						"chips": [
-							"3 Regressionen",
-							"2 Aktionen priorisiert"
-						]
+						"label": "In Bearbeitung",
+						"value": "0",
+						"delta": "stabil",
+						"tone": "neutral"
 					}
-				],
-				"input_placeholder": "Frage alles über dein Geschäft..."
-			},
-			"maps_panel": {
-				"header": "Reisekarte",
-				"subtext": "Hauptkonversionspfad und wo Besucher abspringen.",
-				"start": {
-					"label": "Start",
-					"path": "/",
-					"pct": 100,
-					"main": true
-				},
-				"finish": {
-					"label": "Danke",
-					"path": "/danke",
-					"pct": 3,
-					"main": true
-				},
-				"stages": [
-					[
-						{
-							"label": "Produkte",
-							"path": "/produkte",
-							"pct": 68,
-							"main": true
-						},
-						{
-							"label": "Blog",
-							"path": "/blog",
-							"pct": 18
-						},
-						{
-							"label": "Preise",
-							"path": "/preise",
-							"pct": 14
-						}
-					],
-					[
-						{
-							"label": "Vergleich",
-							"path": "/vergleich",
-							"pct": 9
-						},
-						{
-							"label": "Detail",
-							"path": "/produkte/[id]",
-							"pct": 52,
-							"main": true
-						},
-						{
-							"label": "Bewertungen",
-							"path": "/bewertungen",
-							"pct": 7
-						}
-					],
-					[
-						{
-							"label": "Warenkorb",
-							"path": "/warenkorb",
-							"pct": 15
-						},
-						{
-							"label": "Support",
-							"path": "/support",
-							"pct": 3
-						},
-						{
-							"label": "Kasse",
-							"path": "/kasse",
-							"pct": 24,
-							"main": true
-						}
-					]
 				]
 			},
-			"overlay_ai": {
-				"eyebrow": "Vestigio Pulse",
-				"message": "Ich habe 12 Flächen gescannt und 23 Befunde gefunden. Die Top 3 sind kritisch und machen 64% des geschätzten Verlusts aus.",
-				"chip_evidence": "12 Flächen gescannt",
-				"chip_action": "9 Aktionen in Warteschlange"
-			},
-			"overlay_recovery": {
-				"eyebrow": "Wiedergewinnbar",
-				"value": "+€60k",
-				"unit": "/Monat",
-				"sub": "über 9 priorisierte Aktionen"
-			},
-			"data_sources_label": "Datenquellen",
-			"section_headline": "In Ihrer Entscheidungsmaschine",
-			"guided": {
-				"step_labels": [
-					"Entscheidungen",
-					"Untersuchung",
-					"Karte"
+			"step2": {
+				"heading": "Was Ihre Analyse diesen Monat enthüllte",
+				"subheading": "Gruppiert nach Verantwortlichkeit",
+				"segments": [
+					{
+						"key": "copy",
+						"label": "Marketing",
+						"count": 8,
+						"impactMid": "~5k €",
+						"impactRange": "Bereich 3k–8k €",
+						"dot": "bg-rose-400"
+					},
+					{
+						"key": "eng",
+						"label": "Entwicklung",
+						"count": 9,
+						"impactMid": "~6k €",
+						"impactRange": "Bereich 2k–10k €",
+						"dot": "bg-sky-400"
+					},
+					{
+						"key": "leadership",
+						"label": "Geschäftsführung",
+						"count": 2,
+						"impactMid": "~700 €",
+						"impactRange": "Bereich 300–1k €",
+						"dot": "bg-amber-400"
+					}
 				],
-				"hero_label": "Wiederherstellbar",
-				"hero_sub": "in 5 priorisierten Aktionen",
-				"step1_hint": "Klicken zum Untersuchen ↓",
-				"step2_context": "P1 · Langsamer Checkout — −$28k/Mo",
-				"step2_ai": "Ich habe gerade Ihren Checkout durchsucht. Die Zahlung stockt bei **4.2s** — drei Skripte laden, bevor das Formular erscheint, und **12% Ihrer Nutzer** verlassen die Seite an diesem Punkt. Das sind **−$600/Tag** Umsatz.\n\nMonatliche Kosten: **−$28k**.\n\nDie Korrektur wurde bereits als P1 in Ihrer Warteschlange priorisiert. Verschieben Sie die Skripte, komprimieren Sie die Checkout-Bilder und stellen Sie die Validierung auf async um. Sagen Sie mir Bescheid — ich prüfe erneut.\n\nIch habe eine Karte erstellt, um das Nutzerverhalten zu überwachen.",
-				"step2_chips": [
-					"Karte ansehen"
+				"narrative_eyebrow": "WAS IN DIESEM ZYKLUS GESCHAH",
+				"narrative_body": "Die Richtlinienabdeckung auf der Startseite ist kalibriert und hält Umsatz. Das dominante Thema dieses Zyklus ist **unausgerichteter Text** — Überschriften, die das Produkt beschreiben, ohne den Käufernutzen zu kommunizieren — und ein **domainübergreifender Redirect** im Checkout, der qualifizierte Käufer vor der Conversion vertrieb. Beide bereits behoben."
+			},
+			"step3": {
+				"heading": "Priorisierte nächste Schritte",
+				"steps": [
+					{
+						"n": "01",
+						"title": "Startseiten-Überschrift auf den Käufernutzen ausrichten (nicht auf das Produktfeature)",
+						"impact": "3k–6k €/Mon",
+						"buyer": "Marketing",
+						"dot": "bg-rose-400"
+					},
+					{
+						"n": "02",
+						"title": "Domainübergreifenden Checkout-Redirect korrigieren — vertreibt qualifizierte Käufer",
+						"impact": "5k–10k €/Mon",
+						"buyer": "Entwicklung",
+						"dot": "bg-sky-400"
+					},
+					{
+						"n": "03",
+						"title": "Rückgaberichtlinie above the fold auf Startseite platzieren — fehlt als Einwandbehandler",
+						"impact": "300–1k €/Mon",
+						"buyer": "Geschäftsführung",
+						"dot": "bg-amber-400"
+					}
 				],
-				"step3_leak": "Leck erkannt",
-				"step3_cta": "Sehen, wie viel ich verliere",
-				"step3_micro": "60-Sekunden-Diagnose. Keine Kreditkarte erforderlich.",
-				"step3_trust": "Verbundene Datenquellen"
+				"impact_label": "Wirkung/Mon",
+				"footer_attribution": "Vestigio · Zyklusanalyse",
+				"export_pdf": "PDF exportieren",
+				"share_link": "Teilen"
 			}
 		},
 		"client_gallery": {

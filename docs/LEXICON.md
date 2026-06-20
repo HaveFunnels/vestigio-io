@@ -23,6 +23,7 @@ This file is the single source of truth. When in doubt, grep this file.
 | **Recuperado** | Money won back, in R$ | HeroMetrics tile label. |
 | **Vazando** | Money currently bleeding, in R$ | HeroMetrics tile label. |
 | **Em monitoramento** | Findings being tracked | HeroMetrics tile label. |
+| **Continuidade** | The Plano section that compares this cycle to the previous one ("o que mudou desde o último ciclo") | Used as eyebrow + concept noun. Maps to `continuityJson` in `MonthlyStrategyPlan`. |
 | **Diagnóstico** | ⚠️ Conditional — allowed for the **top-of-funnel free-tool CTA only** ("Rodar diagnóstico gratuito"). User explicitly chose this over council-recommended "Receber sua análise" because the free-action framing converts (see okara.ai as category reference). Never use as the product noun — the deliverable is "Plano de Estratégia" / "análise", not "diagnóstico". | Use *only* in hero/CTA verb-pair. Body copy uses Análise. |
 
 ## ❌ NO — never use customer-facing

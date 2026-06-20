@@ -492,80 +492,91 @@
 			]
 		},
 		"features_bento": {
-			"eyebrow": "Was wird passieren?",
-			"title_part1": "Schluss mit dem Raten.",
-			"title_part2": "Fang an zu entscheiden.",
-			"subtitle": "",
-			"action_queue": {
-				"eyebrow": "Vestigio priorisiert",
-				"title": "Wissen, was am Montagmorgen zu beheben ist",
-				"description": "Eine priorisierte Warteschlange. Auswirkung in Dollar, nicht in Farbcodes. Das erste Element ist $42k/Monat wert. Das neunte $1.5k. Sie wissen, wo Sie anfangen.",
-				"rows": [
+			"eyebrow": "PLAN-STRUKTUR",
+			"title": "Vier Bewegungen pro Zyklus",
+			"subtitle": "Jeder monatliche Strategieplan beginnt mit der These, zeigt Wo Sie stehen, schlägt die Nächsten Schritte vor und schließt mit der Kontinuität — der Erinnerung daran, was sich seit dem letzten Zyklus geändert hat.",
+			"tese": {
+				"eyebrow": "DIE THESE DES MONATS",
+				"dateline": "Letzte Ausgabe",
+				"attribution": "Vestigio · Zyklusanalyse",
+				"sample": "Das dominante Thema dieses Zyklus ist unausgerichteter Text: Überschriften beschreiben das Produkt, ohne den Käufernutzen zu kommunizieren."
+			},
+			"onde_voce_esta": {
+				"eyebrow": "WO SIE STEHEN",
+				"description": "Vier Metriken jeden Zyklus aktualisiert, mit 6-Monats-Historie.",
+				"tiles": [
 					{
-						"title": "Werbebudget leckt auf Landing",
-						"impact": "−7.840 €"
+						"label": "Erholt diesen Zyklus",
+						"value": "~12k €",
+						"tone": "win"
 					},
 					{
-						"title": "Vertrauenslücke im Formular",
-						"impact": "−2.930 €"
+						"label": "Kritische Findings",
+						"value": "6",
+						"tone": "loss"
 					},
 					{
-						"title": "Verwirrung auf Preisseite",
-						"impact": "−1.790 €"
+						"label": "Gesamt überwacht",
+						"value": "19",
+						"tone": "neutral"
 					},
 					{
-						"title": "Onboarding-Abbruch",
-						"impact": "−1.060 €"
+						"label": "Käufer angesprochen",
+						"value": "3",
+						"tone": "neutral"
 					}
 				]
 			},
-			"revenue_leaks": {
-				"eyebrow": "Vestigio diagnostiziert",
-				"title": "Sehen Sie genau, was jedes Problem kostet",
-				"description": "Nicht 'hohe Schwere'. Kein roter Punkt. Ein Betrag: −$18.420/Monat, 94% Konfidenz. Sie wissen, was Sie Ihrem Team sagen.",
-				"confidence_label": "Konfidenz",
-				"leaking_label": "Leck",
-				"rows": [
+			"proximos_passos": {
+				"eyebrow": "NÄCHSTE SCHRITTE",
+				"description": "Priorisierte Entscheidungen, mit Euro-Wirkung und verantwortlichem Käufer.",
+				"items": [
 					{
-						"surface": "Checkout-Funnel",
-						"loss": "−7.840 €",
-						"confidence": "94%"
+						"n": "01",
+						"title": "Startseiten-Überschrift auf den Käufernutzen ausrichten",
+						"impact": "3k–6k €/Mon",
+						"buyer": "Marketing"
 					},
 					{
-						"surface": "Landing-Page-Copy",
-						"loss": "−2.930 €",
-						"confidence": "88%"
+						"n": "02",
+						"title": "Domainübergreifenden Checkout-Redirect korrigieren",
+						"impact": "5k–10k €/Mon",
+						"buyer": "Entw."
 					},
 					{
-						"surface": "Onboarding-Flow",
-						"loss": "−1.790 €",
-						"confidence": "91%"
+						"n": "03",
+						"title": "Rückgaberichtlinie above the fold platzieren",
+						"impact": "300–1k €/Mon",
+						"buyer": "Leitung"
 					}
 				]
 			},
-			"continuous_watch": {
-				"eyebrow": "Sie erholen sich",
-				"title": "Das Deploy letzte Woche hat die Preisseite beschädigt. Sie wüssten es in Stunden, nicht Tagen.",
-				"description": "Kontinuierliche Zyklen vergleichen jede Oberfläche mit der vorherigen. Wenn sich etwas verschlechtert, erscheint es in Ihrer Warteschlange, bevor ein Kunde sich beschwert.",
-				"axis_label": "Verlorene Einnahmen / Monat",
-				"before_label": "Vor Vestigio",
-				"after_label": "Nach Vestigio",
-				"annotation_label": "Wiedergewonnen",
-				"annotation_value": "+87,2%"
-			},
-			"evidence_orbit": {
-				"eyebrow": "Vestigio verifiziert",
-				"title": "Skalieren Sie mit Beweisen, nicht mit Meinungen",
-				"description": "Jeder Fund: Browser-Screenshot, DOM-Snapshot, Performance-Trace, Zeitstempel. Ihr CTO sieht Beweise, kein Dashboard.",
-				"center_label": "Befund",
-				"evidence_types": {
-					"browser": "Seitenerfassung",
-					"static": "Quellcode-Scan",
-					"behavioral": "Klickpfade",
-					"cross_source": "Kreuzsignal",
-					"vendor": "Pixel-Audit",
-					"timestamped": "Prüfpfad"
-				}
+			"continuidade": {
+				"eyebrow": "KONTINUITÄT",
+				"description": "Was sich seit dem letzten Zyklus geändert hat — die Analyse hat Erinnerung.",
+				"pairs": [
+					{
+						"label": "Kritische Findings",
+						"before": "5",
+						"after": "6",
+						"delta": "+1",
+						"deltaTone": "loss"
+					},
+					{
+						"label": "Erholt / Mon",
+						"before": "9k €",
+						"after": "12k €",
+						"delta": "+3k €",
+						"deltaTone": "win"
+					},
+					{
+						"label": "Käufer angesprochen",
+						"before": "2",
+						"after": "3",
+						"delta": "+1 Team",
+						"deltaTone": "win"
+					}
+				]
 			}
 		},
 		"features_with_image_section": {

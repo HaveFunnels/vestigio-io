@@ -499,80 +499,91 @@
 			]
 		},
 		"features_bento": {
-			"eyebrow": "What will happen?",
-			"title_part1": "Stop guessing.",
-			"title_part2": "Start deciding.",
-			"subtitle": "",
-			"action_queue": {
-				"eyebrow": "Vestigio prioritizes",
-				"title": "Know what to fix Monday morning",
-				"description": "A ranked queue. Impact in dollars, not color codes. The first item is worth $8.4k/month. The last is worth $1.1k. You know where to start.",
-				"rows": [
+			"eyebrow": "PLAN STRUCTURE",
+			"title": "Four moves per cycle",
+			"subtitle": "Each monthly Strategy Plan opens with the Thesis, shows Where you are, proposes the Next steps, and closes with Continuity — the memory of what changed since last cycle.",
+			"tese": {
+				"eyebrow": "THESIS OF THE MONTH",
+				"dateline": "Latest issue",
+				"attribution": "Vestigio · cycle analysis",
+				"sample": "The dominant theme this cycle is misaligned copy: headlines describe the product without communicating the buyer's gain."
+			},
+			"onde_voce_esta": {
+				"eyebrow": "WHERE YOU ARE",
+				"description": "Four metrics refreshed every cycle, with 6-month history.",
+				"tiles": [
 					{
-						"title": "Ad spend leaking on landing",
-						"impact": "−$8,420"
+						"label": "Recovered this cycle",
+						"value": "$ ~13k",
+						"tone": "win"
 					},
 					{
-						"title": "Form trust gap",
-						"impact": "−$3,150"
+						"label": "Critical findings",
+						"value": "6",
+						"tone": "loss"
 					},
 					{
-						"title": "Pricing confusion",
-						"impact": "−$1,920"
+						"label": "Total monitored",
+						"value": "19",
+						"tone": "neutral"
 					},
 					{
-						"title": "Onboarding drop-off",
-						"impact": "−$1,140"
+						"label": "Buyers engaged",
+						"value": "3",
+						"tone": "neutral"
 					}
 				]
 			},
-			"revenue_leaks": {
-				"eyebrow": "Vestigio diagnoses",
-				"title": "See exactly what each problem costs",
-				"description": "Not 'high severity'. Not a red dot. A dollar amount: −$18,420/month, 94% confidence. You know what to tell your team.",
-				"confidence_label": "confidence",
-				"leaking_label": "Leaking",
-				"rows": [
+			"proximos_passos": {
+				"eyebrow": "NEXT STEPS",
+				"description": "Prioritized decisions, with the dollar impact and the responsible buyer.",
+				"items": [
 					{
-						"surface": "Checkout funnel",
-						"loss": "−$7,680",
-						"confidence": "94%"
+						"n": "01",
+						"title": "Realign the home page title with the buyer's benefit",
+						"impact": "$3k–6k/mo",
+						"buyer": "Marketing"
 					},
 					{
-						"surface": "Landing page copy",
-						"loss": "−$2,840",
-						"confidence": "88%"
+						"n": "02",
+						"title": "Fix the cross-domain redirect at checkout",
+						"impact": "$6k–11k/mo",
+						"buyer": "Eng"
 					},
 					{
-						"surface": "Onboarding flow",
-						"loss": "−$1,760",
-						"confidence": "91%"
+						"n": "03",
+						"title": "Surface the return policy above the fold",
+						"impact": "$0.4k–1.2k/mo",
+						"buyer": "Leadership"
 					}
 				]
 			},
-			"continuous_watch": {
-				"eyebrow": "You recover",
-				"title": "Lost revenue drops 87% in the first month.",
-				"description": "Last week's deploy broke your pricing page — you'd know in hours, not days. Continuous cycles compare every surface against the last; when something degrades, it shows up in your queue before a customer complains.",
-				"axis_label": "Revenue lost / mo",
-				"before_label": "Before Vestigio",
-				"after_label": "After Vestigio",
-				"annotation_label": "Revenue recovered",
-				"annotation_value": "+87.2%"
-			},
-			"evidence_orbit": {
-				"eyebrow": "Vestigio verifies",
-				"title": "Scale with proof, not your opinion",
-				"description": "Every finding: browser screenshot, DOM snapshot, performance trace, timestamp. Your CTO sees evidence, not a dashboard.",
-				"center_label": "Finding",
-				"evidence_types": {
-					"browser": "Page capture",
-					"static": "Source scan",
-					"behavioral": "Click paths",
-					"cross_source": "Cross-signal",
-					"vendor": "Pixel audit",
-					"timestamped": "Audit trail"
-				}
+			"continuidade": {
+				"eyebrow": "CONTINUITY",
+				"description": "What changed since the last cycle — the analysis has memory.",
+				"pairs": [
+					{
+						"label": "Critical findings",
+						"before": "5",
+						"after": "6",
+						"delta": "+1",
+						"deltaTone": "loss"
+					},
+					{
+						"label": "Recovered / mo",
+						"before": "$ 10k",
+						"after": "$ 13k",
+						"delta": "+$ 3k",
+						"deltaTone": "win"
+					},
+					{
+						"label": "Buyers engaged",
+						"before": "2",
+						"after": "3",
+						"delta": "+1 team",
+						"deltaTone": "win"
+					}
+				]
 			}
 		},
 		"features_with_image_section": {

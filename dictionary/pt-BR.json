@@ -499,80 +499,91 @@
 			]
 		},
 		"features_bento": {
-			"eyebrow": "O que vai acontecer?",
-			"title_part1": "Pare de adivinhar.",
-			"title_part2": "Comece a decidir.",
-			"subtitle": "",
-			"action_queue": {
-				"eyebrow": "A Vestigio prioriza",
-				"title": "Saiba o que corrigir na segunda de manhã",
-				"description": "Uma fila ranqueada. Impacto em reais, não em cores. O primeiro item vale R$42k/mês. O último vale R$5,7k. Você sabe por onde começar.",
-				"rows": [
+			"eyebrow": "ESTRUTURA DO PLANO",
+			"title": "Quatro movimentos por ciclo",
+			"subtitle": "Cada Plano de Estratégia mensal abre com a Tese, mostra Onde você está, propõe os Próximos passos e fecha com Continuidade — a memória do que mudou desde o último ciclo.",
+			"tese": {
+				"eyebrow": "TESE DO MÊS",
+				"dateline": "Edição mais recente",
+				"attribution": "Vestigio · análise do ciclo",
+				"sample": "O tema dominante deste ciclo é copy desalinhado: títulos descrevem o produto sem comunicar o ganho do comprador."
+			},
+			"onde_voce_esta": {
+				"eyebrow": "ONDE VOCÊ ESTÁ",
+				"description": "Quatro métricas atualizadas todo ciclo, com 6 meses de histórico.",
+				"tiles": [
 					{
-						"title": "Investimento vazando na landing",
-						"impact": "−R$42.100"
+						"label": "Recuperado este ciclo",
+						"value": "R$ ~67k",
+						"tone": "win"
 					},
 					{
-						"title": "Quebra de confiança no formulário",
-						"impact": "−R$15.750"
+						"label": "Findings críticos",
+						"value": "6",
+						"tone": "loss"
 					},
 					{
-						"title": "Confusão na página de preços",
-						"impact": "−R$9.600"
+						"label": "Total monitorados",
+						"value": "19",
+						"tone": "neutral"
 					},
 					{
-						"title": "Queda no onboarding",
-						"impact": "−R$5.700"
+						"label": "Buyers acionados",
+						"value": "3",
+						"tone": "neutral"
 					}
 				]
 			},
-			"revenue_leaks": {
-				"eyebrow": "A Vestigio diagnostica",
-				"title": "Veja exatamente quanto cada problema custa",
-				"description": "Não é 'severidade alta'. Não é um ponto vermelho. Um valor: −R$18.420/mês, 94% de confiança. Você sabe o que dizer pro time.",
-				"confidence_label": "confiança",
-				"leaking_label": "Vazando",
-				"rows": [
+			"proximos_passos": {
+				"eyebrow": "PRÓXIMOS PASSOS",
+				"description": "Decisões priorizadas, com R$ ao lado e o buyer responsável.",
+				"items": [
 					{
-						"surface": "Funil de checkout",
-						"loss": "−R$38.400",
-						"confidence": "94%"
+						"n": "01",
+						"title": "Realinhar título da home com benefício do comprador",
+						"impact": "R$ 14k–28k/mês",
+						"buyer": "Marketing"
 					},
 					{
-						"surface": "Copy da landing page",
-						"loss": "−R$14.200",
-						"confidence": "88%"
+						"n": "02",
+						"title": "Corrigir redirect cross-domain no checkout",
+						"impact": "R$ 30k–57k/mês",
+						"buyer": "Eng"
 					},
 					{
-						"surface": "Fluxo de onboarding",
-						"loss": "−R$8.800",
-						"confidence": "91%"
+						"n": "03",
+						"title": "Calibrar política de devolução above-the-fold",
+						"impact": "R$ 2k–6k/mês",
+						"buyer": "Diretoria"
 					}
 				]
 			},
-			"continuous_watch": {
-				"eyebrow": "Você recupera",
-				"title": "Faturamento perdido cai 87% no primeiro mês.",
-				"description": "A atualização da semana passada quebrou sua página de preços — você saberia em horas, não em dias. Ciclos contínuos comparam cada superfície com a anterior; quando algo degrada, aparece na sua fila antes do cliente reclamar.",
-				"axis_label": "Faturamento perdido / mês",
-				"before_label": "Antes da Vestigio",
-				"after_label": "Depois da Vestigio",
-				"annotation_label": "Faturamento recuperado",
-				"annotation_value": "+87,2%"
-			},
-			"evidence_orbit": {
-				"eyebrow": "A Vestigio verifica",
-				"title": "Escale com prova, não com opinião",
-				"description": "Cada finding: screenshot do browser, snapshot do DOM, trace de performance, timestamp. Seu CTO vê evidência, não um dashboard.",
-				"center_label": "Descoberta",
-				"evidence_types": {
-					"browser": "Captura visual",
-					"static": "Scan de código",
-					"behavioral": "Rastro de uso",
-					"cross_source": "Sinal cruzado",
-					"vendor": "Tags & pixels",
-					"timestamped": "Linha do tempo"
-				}
+			"continuidade": {
+				"eyebrow": "CONTINUIDADE",
+				"description": "O que mudou desde o último ciclo — a análise tem memória.",
+				"pairs": [
+					{
+						"label": "Findings críticos",
+						"before": "5",
+						"after": "6",
+						"delta": "+1",
+						"deltaTone": "loss"
+					},
+					{
+						"label": "Recuperado / mês",
+						"before": "R$ 52k",
+						"after": "R$ 67k",
+						"delta": "+R$ 15k",
+						"deltaTone": "win"
+					},
+					{
+						"label": "Buyers acionados",
+						"before": "2",
+						"after": "3",
+						"delta": "+1 time",
+						"deltaTone": "win"
+					}
+				]
 			}
 		},
 		"features_with_image_section": {

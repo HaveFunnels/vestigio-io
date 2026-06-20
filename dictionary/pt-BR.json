@@ -4135,7 +4135,7 @@
 			},
 			"domain": {
 				"title": "Vamos a fundo.",
-				"subtitle": "Confirme o domínio. A partir daqui analisamos páginas comerciais, jornadas de compra e sinais de risco — e seu primeiro Plano de Estratégia chega no início do mês.",
+				"subtitle": "Confirme o domínio. A partir daqui a análise vai a fundo — páginas comerciais, jornadas de compra, sinais de risco. Os findings aparecem em tempo real.",
 				"label": "Domínio",
 				"placeholder": "https://exemplo.com",
 				"validation_error": "Digite um domínio válido (ex.: exemplo.com ou https://exemplo.com)",

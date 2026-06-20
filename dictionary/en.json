@@ -4051,7 +4051,7 @@
 			},
 			"domain": {
 				"title": "Now we go deeper.",
-				"subtitle": "Confirm the domain. From here we analyze commercial pages, purchase journeys, and risk signals — and your first Strategy Plan arrives at the start of the month.",
+				"subtitle": "Confirm the domain. From here the analysis goes deeper — commercial pages, purchase journeys, risk signals. Findings appear in real time.",
 				"label": "Domain",
 				"placeholder": "https://example.com",
 				"validation_error": "Please enter a valid domain (e.g. example.com or https://example.com)",

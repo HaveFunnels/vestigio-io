@@ -60,10 +60,23 @@ interface NextStepItem {
 	dot: string;
 }
 
+interface NarrativePill {
+	label: string;
+	tone: "rose" | "sky" | "amber" | "emerald";
+}
+
+const PILL_CLASSES: Record<NarrativePill["tone"], string> = {
+	rose: "border-rose-400/30 bg-rose-400/10 text-rose-300",
+	sky: "border-sky-400/30 bg-sky-400/10 text-sky-300",
+	amber: "border-amber-400/30 bg-amber-400/10 text-amber-300",
+	emerald: "border-emerald-400/30 bg-emerald-400/10 text-emerald-300",
+};
+
 // Per-step auto-advance duration (ms). Step 0 + Step 1 hold longer
 // because there's more text to read; Step 2 is denser visually but
-// shorter to parse.
-const STEP_DURATIONS = [9000, 9000, 8000];
+// shorter to parse. Slightly longer than the old tour because the
+// vertical slide-in is also slower (premium "smooth scroll" feel).
+const STEP_DURATIONS = [10000, 10000, 9000];
 
 // ─────────────────────────────────────────────────────────────────────
 // Helpers
@@ -219,13 +232,33 @@ function StepBuyersAndNarrative() {
 				))}
 			</div>
 
-			{/* Narrative excerpt — editorial body, Fraunces serif */}
-			<div className="relative flex-1 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5">
-				<div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-[10px]">
+			{/* Narrative — editorial pull-quote with pills + multi-paragraph
+			    body. Larger Fraunces serif so the card feels populated and
+			    reads like a magazine column, not a dense block. Pills act
+			    as topic tags so the eye has anchor points before the
+			    paragraphs unfold. */}
+			<div className="relative flex-1 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5 sm:p-6 lg:p-7">
+				<div className="mb-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-[10px]">
 					{t("step2.narrative_eyebrow")}
 				</div>
-				<p className="font-serif text-[13px] leading-relaxed text-zinc-300 sm:text-[14px] lg:text-[15px]">
-					{renderBold(t("step2.narrative_body"))}
+
+				{/* Pills row — quick topic tags */}
+				<div className="mb-4 flex flex-wrap gap-1.5 sm:gap-2">
+					{(t.raw("step2.narrative_pills") as NarrativePill[]).map((p, i) => (
+						<span key={i} className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-medium tracking-[0.04em] sm:text-[11px] ${PILL_CLASSES[p.tone]}`}>
+							{p.label}
+						</span>
+					))}
+				</div>
+
+				{/* Lead paragraph — primary serif body */}
+				<p className="font-serif text-[15px] leading-[1.55] text-zinc-200 sm:text-[17px] lg:text-[18px]">
+					{renderBold(t("step2.narrative_lead"))}
+				</p>
+
+				{/* Detail paragraph — slightly smaller, slightly fainter */}
+				<p className="mt-3 font-serif text-[14px] leading-[1.55] text-zinc-400 sm:text-[15px] lg:text-[16px]">
+					{renderBold(t("step2.narrative_detail"))}
 				</p>
 			</div>
 		</div>
@@ -391,16 +424,19 @@ export default function ProductTour({ primaryCtaHref = "/audit" }: ProductTourPr
 	return (
 		<section ref={sectionRef} id="product-tour" className="relative z-1 scroll-mt-24 pt-2 pb-4 sm:pt-3 sm:pb-6 lg:pt-4 lg:pb-8">
 			<style>{`
-				/* Vertical step transitions (replaces old horizontal slide).
-				   advance:  new content rises from below (translateY 24px → 0)
-				   back-nav: new content drops from above (translateY -24px → 0)
-				   prefers-reduced-motion fast-forwards both. */
+				/* Vertical step transitions — premium "smooth scroll" feel.
+				   advance:  new content rises from below (translateY 60px → 0)
+				   back-nav: new content drops from above (translateY -60px → 0)
+				   Longer travel + longer duration + extra-soft ease-out
+				   (cubic-bezier 0.16, 1, 0.3, 1 — Apple-style "expo out") =
+				   reads as "scrolling to the next page of a document" not
+				   "carousel slide". prefers-reduced-motion fast-forwards. */
 				@keyframes vptour-slide-up {
-					from { opacity: 0; transform: translateY(24px); }
+					from { opacity: 0; transform: translateY(60px); }
 					to   { opacity: 1; transform: translateY(0); }
 				}
 				@keyframes vptour-slide-down {
-					from { opacity: 0; transform: translateY(-24px); }
+					from { opacity: 0; transform: translateY(-60px); }
 					to   { opacity: 1; transform: translateY(0); }
 				}
 				@media (prefers-reduced-motion: reduce) {
@@ -452,7 +488,7 @@ export default function ProductTour({ primaryCtaHref = "/audit" }: ProductTourPr
 							key={currentStep}
 							className="vptour-step-anim h-full overflow-y-auto pr-1"
 							style={{
-								animation: `vptour-slide-${slideDir} 0.45s cubic-bezier(0.22, 1, 0.36, 1) both`,
+								animation: `vptour-slide-${slideDir} 0.85s cubic-bezier(0.16, 1, 0.3, 1) both`,
 							}}
 						>
 							{currentStep === 0 && <StepThesisAndMetrics />}

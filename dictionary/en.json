@@ -183,21 +183,7 @@
 						]
 					},
 					{
-						"label": "Leaking / mo",
-						"value": "$ 0",
-						"delta": "stable",
-						"tone": "neutral",
-						"spark": [
-							1,
-							1,
-							1,
-							0,
-							0,
-							0
-						]
-					},
-					{
-						"label": "Critical",
+						"label": "Critical findings",
 						"value": "6",
 						"delta": "+1 MoM",
 						"tone": "loss",
@@ -211,9 +197,23 @@
 						]
 					},
 					{
-						"label": "In progress",
-						"value": "0",
-						"delta": "stable",
+						"label": "Total monitored",
+						"value": "19",
+						"delta": "across 3 segments",
+						"tone": "neutral",
+						"spark": [
+							9,
+							11,
+							13,
+							15,
+							17,
+							19
+						]
+					},
+					{
+						"label": "Buyers engaged",
+						"value": "3",
+						"delta": "Marketing · Eng · Leadership",
 						"tone": "neutral"
 					}
 				]
@@ -248,7 +248,22 @@
 					}
 				],
 				"narrative_eyebrow": "WHAT HAPPENED THIS CYCLE",
-				"narrative_body": "Policy coverage on the home page is calibrated and holding revenue. The dominant theme this cycle is **misaligned copy** — headlines describing the product without communicating the buyer's gain — and a **cross-domain redirect** at checkout that dispersed qualified buyers before conversion. Both already resolved."
+				"narrative_pills": [
+					{
+						"label": "Misaligned copy",
+						"tone": "rose"
+					},
+					{
+						"label": "Cross-domain redirect",
+						"tone": "sky"
+					},
+					{
+						"label": "6 critical · all resolved",
+						"tone": "emerald"
+					}
+				],
+				"narrative_lead": "Policy coverage on the home page is **calibrated** and holding revenue. The dominant theme this cycle is **misaligned copy** — where the buyer's reading breaks from the site's reading.",
+				"narrative_detail": "Headlines described the product without communicating the buyer's gain. At checkout, a **cross-domain redirect** dispersed qualified buyers before conversion. Both already resolved — **~$13k recovered** this month."
 			},
 			"step3": {
 				"heading": "Prioritized next steps",

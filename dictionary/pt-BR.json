@@ -183,21 +183,7 @@
 						]
 					},
 					{
-						"label": "Vazando / mês",
-						"value": "R$ 0",
-						"delta": "estável",
-						"tone": "neutral",
-						"spark": [
-							4,
-							6,
-							3,
-							2,
-							1,
-							0
-						]
-					},
-					{
-						"label": "Críticos",
+						"label": "Findings críticos",
 						"value": "6",
 						"delta": "+1 MoM",
 						"tone": "loss",
@@ -211,9 +197,23 @@
 						]
 					},
 					{
-						"label": "Em progresso",
-						"value": "0",
-						"delta": "estável",
+						"label": "Total monitorados",
+						"value": "19",
+						"delta": "em 3 segmentos",
+						"tone": "neutral",
+						"spark": [
+							9,
+							11,
+							13,
+							15,
+							17,
+							19
+						]
+					},
+					{
+						"label": "Buyers acionados",
+						"value": "3",
+						"delta": "Marketing · Eng · Diretoria",
 						"tone": "neutral"
 					}
 				]
@@ -248,7 +248,22 @@
 					}
 				],
 				"narrative_eyebrow": "O QUE ACONTECEU NESTE CICLO",
-				"narrative_body": "A cobertura de política na página inicial está calibrada e segurando receita. O tema dominante deste ciclo é **copy desalinhado** — títulos que descrevem o produto sem comunicar o ganho do comprador — e um **redirect cross-domain** no checkout que dispersou compradores antes da conversão. Ambos já resolvidos."
+				"narrative_pills": [
+					{
+						"label": "Copy desalinhado",
+						"tone": "rose"
+					},
+					{
+						"label": "Redirect cross-domain",
+						"tone": "sky"
+					},
+					{
+						"label": "6 críticos · todos resolvidos",
+						"tone": "emerald"
+					}
+				],
+				"narrative_lead": "A cobertura de política na página inicial está **calibrada** e segurando receita. O tema dominante deste ciclo é **copy desalinhado** — onde a leitura do comprador rompe com a leitura do site.",
+				"narrative_detail": "Títulos descreviam o produto sem comunicar o ganho do comprador. No checkout, um **redirect cross-domain** dispersou compradores qualificados antes da conversão. Ambos já resolvidos — **R$ ~67k recuperados** neste mês."
 			},
 			"step3": {
 				"heading": "Próximos passos priorizados",

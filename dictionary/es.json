@@ -176,21 +176,7 @@
 						]
 					},
 					{
-						"label": "Fugando / mes",
-						"value": "$ 0",
-						"delta": "estable",
-						"tone": "neutral",
-						"spark": [
-							1,
-							1,
-							0,
-							0,
-							0,
-							0
-						]
-					},
-					{
-						"label": "Críticos",
+						"label": "Findings críticos",
 						"value": "6",
 						"delta": "+1 MoM",
 						"tone": "loss",
@@ -204,9 +190,23 @@
 						]
 					},
 					{
-						"label": "En curso",
-						"value": "0",
-						"delta": "estable",
+						"label": "Total monitoreados",
+						"value": "19",
+						"delta": "en 3 segmentos",
+						"tone": "neutral",
+						"spark": [
+							9,
+							11,
+							13,
+							15,
+							17,
+							19
+						]
+					},
+					{
+						"label": "Buyers activados",
+						"value": "3",
+						"delta": "Marketing · Desarrollo · Liderazgo",
 						"tone": "neutral"
 					}
 				]
@@ -241,7 +241,22 @@
 					}
 				],
 				"narrative_eyebrow": "QUÉ PASÓ EN ESTE CICLO",
-				"narrative_body": "La cobertura de política en la página inicial está calibrada y reteniendo ingresos. El tema dominante este ciclo es **copy desalineado** — títulos que describen el producto sin comunicar la ganancia del comprador — y un **redirect cross-domain** en el checkout que dispersó compradores calificados antes de la conversión. Ambos ya resueltos."
+				"narrative_pills": [
+					{
+						"label": "Copy desalineado",
+						"tone": "rose"
+					},
+					{
+						"label": "Redirect cross-domain",
+						"tone": "sky"
+					},
+					{
+						"label": "6 críticos · todos resueltos",
+						"tone": "emerald"
+					}
+				],
+				"narrative_lead": "La cobertura de política en la página inicial está **calibrada** y reteniendo ingresos. El tema dominante este ciclo es **copy desalineado** — donde la lectura del comprador rompe con la lectura del sitio.",
+				"narrative_detail": "Los títulos describían el producto sin comunicar la ganancia del comprador. En el checkout, un **redirect cross-domain** dispersó compradores calificados antes de la conversión. Ambos ya resueltos — **~$13k recuperados** este mes."
 			},
 			"step3": {
 				"heading": "Próximos pasos priorizados",

@@ -176,21 +176,7 @@
 						]
 					},
 					{
-						"label": "Leckage / Monat",
-						"value": "0 €",
-						"delta": "stabil",
-						"tone": "neutral",
-						"spark": [
-							1,
-							1,
-							0,
-							0,
-							0,
-							0
-						]
-					},
-					{
-						"label": "Kritisch",
+						"label": "Kritische Findings",
 						"value": "6",
 						"delta": "+1 MoM",
 						"tone": "loss",
@@ -204,9 +190,23 @@
 						]
 					},
 					{
-						"label": "In Bearbeitung",
-						"value": "0",
-						"delta": "stabil",
+						"label": "Gesamt überwacht",
+						"value": "19",
+						"delta": "in 3 Segmenten",
+						"tone": "neutral",
+						"spark": [
+							9,
+							11,
+							13,
+							15,
+							17,
+							19
+						]
+					},
+					{
+						"label": "Käufer angesprochen",
+						"value": "3",
+						"delta": "Marketing · Entw. · Leitung",
 						"tone": "neutral"
 					}
 				]
@@ -241,7 +241,22 @@
 					}
 				],
 				"narrative_eyebrow": "WAS IN DIESEM ZYKLUS GESCHAH",
-				"narrative_body": "Die Richtlinienabdeckung auf der Startseite ist kalibriert und hält Umsatz. Das dominante Thema dieses Zyklus ist **unausgerichteter Text** — Überschriften, die das Produkt beschreiben, ohne den Käufernutzen zu kommunizieren — und ein **domainübergreifender Redirect** im Checkout, der qualifizierte Käufer vor der Conversion vertrieb. Beide bereits behoben."
+				"narrative_pills": [
+					{
+						"label": "Unausgerichteter Text",
+						"tone": "rose"
+					},
+					{
+						"label": "Domainübergreifender Redirect",
+						"tone": "sky"
+					},
+					{
+						"label": "6 kritisch · alle behoben",
+						"tone": "emerald"
+					}
+				],
+				"narrative_lead": "Die Richtlinienabdeckung auf der Startseite ist **kalibriert** und hält Umsatz. Das dominante Thema dieses Zyklus ist **unausgerichteter Text** — wo die Lesart des Käufers von der Lesart der Seite abweicht.",
+				"narrative_detail": "Überschriften beschrieben das Produkt, ohne den Käufernutzen zu kommunizieren. Im Checkout vertrieb ein **domainübergreifender Redirect** qualifizierte Käufer vor der Conversion. Beide bereits behoben — **~12k € erholt** in diesem Monat."
 			},
 			"step3": {
 				"heading": "Priorisierte nächste Schritte",

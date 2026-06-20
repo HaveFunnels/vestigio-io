@@ -7,15 +7,22 @@ import { getLocale, getMessages, getNow, getTimeZone } from "next-intl/server";
 import IntlProviderClient from "@/components/IntlProviderClient";
 import "../styles/globals.css";
 
-// Satoshi — body face. Previously loaded via a hand-written
-// satoshi.css with 10 @font-face declarations. That pattern doesn't
-// emit <link rel="preload">, so the browser only discovers the font
-// AFTER parsing the CSS, which pushes LCP later. Switching to
-// next/font/local gives us:
-//   1. Automatic preload hints in <head> (LCP-critical body text)
-//   2. Self-hosted with content-hash URLs (cache-friendly)
-//   3. font-display: swap so text never hides behind invisible glyphs
-// The CSS variable hooks into Tailwind's font-satoshi/font-sans.
+// Satoshi — body face. `preload: false` instead of the prior `true`:
+// a single localFont() with preload:true emits a <link rel="preload">
+// for EVERY src entry (10 weights × ~25KB = ~250KB), competing with
+// HTML/JS for mobile cold-load bandwidth. Hero + SocialProofStrip +
+// Counter use only 400 normal, 500 (font-medium), and 700
+// (font-semibold snaps to 700 since Satoshi has no 600) — preloading
+// the other 7 weights is pure waste on first paint.
+//
+// With preload:false the @font-face blocks still ship (text renders
+// in Satoshi as soon as CSS demand triggers the fetch). `display:
+// swap` already covers the brief render window with system-ui — no
+// FOIT, just a sub-second FOUT for users on cold cache.
+//
+// Tradeoff: hero text shows in fallback for ~100-300ms before swap
+// to Satoshi on a 3G cold load. Acceptable for the ~200KB cold-load
+// bandwidth win.
 const satoshi = localFont({
 	src: [
 		{ path: "../fonts/Satoshi-Light.woff2",       weight: "300", style: "normal" },
@@ -31,7 +38,7 @@ const satoshi = localFont({
 	],
 	variable: "--font-satoshi",
 	display: "swap",
-	preload: true,
+	preload: false,
 	fallback: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "sans-serif"],
 });
 

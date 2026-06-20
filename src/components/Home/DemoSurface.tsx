@@ -2,7 +2,19 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import ProductTour from "./ProductTour";
+import dynamic from "next/dynamic";
+
+// ProductTour is a 780-line client component (state machine + lucide
+// icons + typewriter effects) that only renders after the video ends
+// (~12-20s into the visit). Static import would bundle it into the
+// first JS chunk for zero immediate benefit. dynamic() defers the
+// fetch until phase === "tour" is set — mobile cold-load saves
+// roughly the size of the ProductTour module + its lucide icon
+// subset. ssr:false keeps it out of the initial HTML payload too.
+const ProductTour = dynamic(() => import("./ProductTour"), {
+	ssr: false,
+	loading: () => null,
+});
 
 const VIDEO_MP4 = "https://cdn.vestigio.io/vestigio-hero.mp4";
 const VIDEO_WEBM = "https://cdn.vestigio.io/vestigio-hero.webm";

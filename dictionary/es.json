@@ -425,41 +425,24 @@
 			]
 		},
 		"solution_layers": {
-			"section_label": "El problema",
-			"title": "Más tráfico no lo resuelve. El dinero se escapa entre el clic y la conversión.",
-			"subtitle": "",
-			"cards": [
+			"eyebrow": "EL PROBLEMA",
+			"title_line1": "Más tráfico no lo resuelve.",
+			"title_line2": "El dinero escapa entre el clic y la conversión.",
+			"frames": [
 				{
-					"eyebrow": "El agujero",
-					"title": "Pagas por el clic. Pero entre el clic y la compra, hay un agujero.",
-					"body": "Entre el clic y la compra, **hasta el 67% de los visitantes desaparecen**. Estás pagando por cada uno de ellos.",
-					"top_label": "$5k ads",
-					"bottom_label": "$2.8k ingresos"
+					"label": "El hueco",
+					"body": "Pagas por cada clic que entra. Pero entre el clic y la compra, **hasta el 67 % de los visitantes desaparecen** — y la factura del anuncio llega igual a fin de mes. El hueco se queda entre lo que pagas y lo que vuelve. Nadie tiene que fallar para que crezca; basta con que pase el tiempo."
 				},
 				{
-					"eyebrow": "El ciclo",
-					"title": "Intentas arreglar, pero el problema solo se mueve.",
-					"body": "Cambias el anuncio, el abandono **cambia de página**. Sin visibilidad de punta a punta, cada corrección crea un problema nuevo.",
-					"stages": [
-						"Anuncio",
-						"Landing",
-						"Checkout"
-					]
+					"label": "El ciclo",
+					"body": "Cambias el anuncio. La caída **se muda a la siguiente página**. Arreglas la landing. Los compradores empiezan a salir en el checkout. Sin visión punta a punta, cada corrección empuja el problema a la siguiente superficie — y el ciclo vuelve a empezar el mes siguiente, con la misma planilla y otra hipótesis."
 				},
 				{
-					"eyebrow": "El silencio",
-					"title": "Nadie se queja. El dinero simplemente deja de entrar.",
-					"body": "Sin error, sin ticket, sin alerta. El comprador simplemente **se fue** — y tu analytics solo dice 'sesión terminada'.",
-					"alerts": [
-						"0 alertas",
-						"0 errores",
-						"0 tickets"
-					],
-					"terminal_title": "analytics",
-					"no_alerts": "Sin alertas"
+					"label": "El silencio",
+					"body": "Lo peor del hueco es que **no suena ninguna alarma**. Sin error, sin ticket de soporte, sin 500 en el log. El comprador simplemente cierra la pestaña — y tu analytics solo dice \"sesión finalizada.\" Solo descubres que perdiste cuando miras el agregado del mes y los números no cuadran."
 				}
 			],
-			"closing": "Puedes seguir escalando sin ver esto. O puedes ver de verdad."
+			"closing": "Puedes seguir escalando sin ver esto. O puedes verlo."
 		},
 		"features_section": {
 			"title": "Lanza tu Startup SaaS en Días",

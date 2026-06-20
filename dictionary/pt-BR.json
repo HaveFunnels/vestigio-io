@@ -432,38 +432,21 @@
 			]
 		},
 		"solution_layers": {
-			"section_label": "O problema",
-			"title": "Mais tráfego não resolve. O dinheiro escapa entre o clique e a conversão.",
-			"subtitle": "",
-			"cards": [
+			"eyebrow": "O PROBLEMA",
+			"title_line1": "Mais tráfego não resolve.",
+			"title_line2": "O dinheiro escapa entre o clique e a conversão.",
+			"frames": [
 				{
-					"eyebrow": "O buraco",
-					"title": "Você paga pelo clique. Mas até a compra, tem um buraco.",
-					"body": "Entre o clique e a compra, **até 67% dos visitantes somem**. Você paga por cada um deles.",
-					"top_label": "R$15k ads",
-					"bottom_label": "R$8k receita"
+					"label": "O buraco",
+					"body": "Você paga por cada clique que entra. Mas entre o clique e a compra, **até 67% dos visitantes somem** — e a conta do anúncio chega igual no fim do mês. O buraco fica entre o que você paga e o que volta. Ninguém precisa errar pra ele crescer; basta o tempo passar."
 				},
 				{
-					"eyebrow": "O ciclo",
-					"title": "Você tenta consertar, mas o problema só muda de lugar.",
-					"body": "Você muda o anúncio, a desistência **muda de página**. Sem visão ponta a ponta, cada correção cria um problema novo.",
-					"stages": [
-						"Anúncio",
-						"Landing",
-						"Checkout"
-					]
+					"label": "O ciclo",
+					"body": "Você muda o anúncio. A desistência **muda de página**. Você corrige a landing. Os compradores começam a sair no checkout. Sem visão ponta a ponta, cada correção empurra o problema pra próxima superfície — e o ciclo recomeça no mês seguinte, com a mesma planilha e outra hipótese."
 				},
 				{
-					"eyebrow": "O silêncio",
-					"title": "Ninguém reclama. O dinheiro só para de entrar.",
-					"body": "Sem erro, sem ticket, sem alerta. O comprador simplesmente **saiu** — e seu analytics só diz 'sessão encerrada'.",
-					"alerts": [
-						"0 alertas",
-						"0 erros",
-						"0 tickets"
-					],
-					"terminal_title": "analytics",
-					"no_alerts": "Sem alertas"
+					"label": "O silêncio",
+					"body": "O pior do buraco é que ele **não toca alarme**. Sem erro, sem ticket de suporte, sem 500 no log. O comprador simplesmente fechou a aba — e o analytics só diz \"sessão encerrada\". Você só descobre que perdeu quando olha o agregado do mês e os números não fecham."
 				}
 			],
 			"closing": "Você pode continuar escalando sem ver isso. Ou pode enxergar."

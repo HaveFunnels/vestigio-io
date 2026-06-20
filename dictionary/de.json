@@ -425,38 +425,21 @@
 			]
 		},
 		"solution_layers": {
-			"section_label": "Das Problem",
-			"title": "Mehr Traffic löst es nicht. Das Geld entweicht zwischen Klick und Conversion.",
-			"subtitle": "",
-			"cards": [
+			"eyebrow": "DAS PROBLEM",
+			"title_line1": "Mehr Traffic löst es nicht.",
+			"title_line2": "Das Geld entkommt zwischen dem Klick und der Conversion.",
+			"frames": [
 				{
-					"eyebrow": "Das Loch",
-					"title": "Sie zahlen für den Klick. Aber bis zum Kauf gibt es ein Loch.",
-					"body": "Zwischen Klick und Kauf **verschwinden bis zu 67% der Besucher**. Sie zahlen für jeden einzelnen.",
-					"top_label": "5k€ Ads",
-					"bottom_label": "2,8k€ Umsatz"
+					"label": "Das Loch",
+					"body": "Sie bezahlen für jeden Klick, der hereinkommt. Aber zwischen dem Klick und dem Kauf **verschwinden bis zu 67 % der Besucher** — und die Werberechnung kommt am Monatsende trotzdem. Das Loch sitzt zwischen dem, was Sie zahlen, und dem, was zurückkommt. Niemand muss scheitern, damit es wächst; allein die Zeit tut das."
 				},
 				{
-					"eyebrow": "Der Kreislauf",
-					"title": "Sie versuchen es zu reparieren, aber das Problem verschiebt sich nur.",
-					"body": "Sie ändern die Anzeige, der Abbruch **wechselt die Seite**. Ohne End-to-End-Sicht schafft jede Korrektur ein neues Problem.",
-					"stages": [
-						"Anzeige",
-						"Landing",
-						"Checkout"
-					]
+					"label": "Der Zyklus",
+					"body": "Sie ändern die Anzeige. Der Abbruch **wandert auf die nächste Seite**. Sie reparieren die Landing. Käufer beginnen, im Checkout abzuspringen. Ohne End-to-End-Sicht schiebt jede Korrektur das Problem auf die nächste Oberfläche — und der Zyklus beginnt im nächsten Monat von vorn, gleiche Tabelle, andere Hypothese."
 				},
 				{
-					"eyebrow": "Die Stille",
-					"title": "Niemand beschwert sich. Das Geld hört einfach auf zu kommen.",
-					"body": "Kein Fehler, kein Ticket, keine Warnung. Der Käufer hat einfach **aufgegeben** — und Ihre Analyse sagt nur 'Sitzung beendet'.",
-					"alerts": [
-						"0 Warnungen",
-						"0 Fehler",
-						"0 Tickets"
-					],
-					"terminal_title": "analytics",
-					"no_alerts": "Keine Warnungen"
+					"label": "Die Stille",
+					"body": "Das Schlimmste am Loch ist, dass es **keinen Alarm auslöst**. Kein Fehler, kein Support-Ticket, kein 500 im Log. Der Käufer schließt einfach den Tab — und Ihr Analytics sagt nur \"Sitzung beendet.\" Sie merken erst, dass Sie verloren haben, wenn die Monatsaggregate nicht stimmen."
 				}
 			],
 			"closing": "Sie können weiter skalieren, ohne das zu sehen. Oder Sie können hinschauen."

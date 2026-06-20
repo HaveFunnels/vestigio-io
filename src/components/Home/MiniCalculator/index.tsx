@@ -8,24 +8,31 @@ import { ShinyButton } from "@/components/ui/shiny-button";
 import { ChevronDown } from "lucide-react";
 import "slot-text/style.css";
 
-// ── MiniCalculator section
+// ── MiniCalculator section (editorial restyle 2026-06-20, scan kept)
 //
-// This component is the most direct conversion surface on the home
-// page — visitors enter a domain and immediately see a quantified
-// preview of their revenue leaks. To match the importance, the
-// section is now wrapped in a gradient "hero card" with hover-lift
-// behavior so the calculator stops looking like "just another
-// section" and starts looking like the page's center of gravity.
+// Conversion surface for SMBs: domain + revenue + business type
+// → preview of revenue leaks → signup CTA.
 //
-// The shell is purely presentational — gradient borders, ambient
-// glow, hover lift — and lives in the outer `<section>`. The inner
-// state machine (`input` → `loading` → `results`) is unchanged.
+// This iteration keeps the 7-step AI scan animation (user preference —
+// it's the value-demonstration moment) but drops the editorial slop
+// the rest of the homepage rewrite removed:
+//   - Red shimmering underline on "landing page" (replaced with
+//     editorial Fraunces title)
+//   - Hover-lift on the entire card, conic emerald halos, pulsing
+//     emerald dot in the eyebrow
+//   - Giant red "−$X-$Y/mo" total with text-shadow glow + SlotText
+//     count-up — replaced with a restrained HeroMetrics-style tile
+//     (mono rose-400, no glow, no count-up)
+//   - Red-heavy results table (red bg + red gradient overlay + red
+//     shadow + per-row CRITICAL badges) — replaced with neutral
+//     border + small rose dot + impact range in mono rose
+//   - Hardcoded zinc-700/zinc-900 colors — replaced with product
+//     design tokens (border-edge, bg-surface-card, text-content-*)
 //
-// CTAs:
-//  - input state already uses ShinyButton for "Run Free Audit"
-//  - results state now uses ShinyButton for "Create Free Account"
-//    so the highest-intent click on the page is the most visually
-//    emphatic.
+// Persistence: on CTA click, stashes domain + revenue + business type
+// to localStorage so the signup + onboarding flows can pre-fill.
+// Domain ALSO goes via ?domain= query param. Onboarding form reads
+// `vestigio_onboard_*` keys (see useOnboardingForm.ts).
 
 type State = "input" | "loading" | "results";
 type BusinessType =
@@ -46,8 +53,6 @@ const STATUS_KEYS = [
 	"status_report",
 ] as const;
 
-// ── Impact multipliers per business type ──
-// [min%, max%] of monthly revenue per finding
 const IMPACT_PROFILES: Record<
 	BusinessType,
 	{ base: [number, number]; label: string }
@@ -60,16 +65,12 @@ const IMPACT_PROFILES: Record<
 	institutional: { base: [0.03, 0.09], label: "business_institutional" },
 };
 
-// ── Findings library (30 total) ──
-// Tags: "all" = any business, "checkout" = only saas/ecommerce
-
 interface FindingDef {
 	key: string;
 	tags: ("all" | "checkout")[];
 }
 
 const FINDINGS_LIBRARY: FindingDef[] = [
-	// Checkout / payment specific (saas + ecommerce only)
 	{ key: "f_checkout_trust", tags: ["checkout"] },
 	{ key: "f_chargeback_exposure", tags: ["checkout"] },
 	{ key: "f_payment_redirect_chain", tags: ["checkout"] },
@@ -80,8 +81,6 @@ const FINDINGS_LIBRARY: FindingDef[] = [
 	{ key: "f_subscription_churn_signals", tags: ["checkout"] },
 	{ key: "f_refund_abuse_surface", tags: ["checkout"] },
 	{ key: "f_discount_endpoint_exposed", tags: ["checkout"] },
-
-	// Universal findings (all business types)
 	{ key: "f_analytics_blind_spot", tags: ["all"] },
 	{ key: "f_scripts_blocking", tags: ["all"] },
 	{ key: "f_mobile_friction", tags: ["all"] },
@@ -116,21 +115,11 @@ function formatCurrency(val: number, sym = "$"): string {
 	return `${sym}${Math.round(val)}`;
 }
 
-// Negative-number rule (matches the dashboard's vocabulary): values
-// that represent loss are displayed with a leading minus character
-// (the typographic minus, not a hyphen) so the eye reads "this is
-// money you're losing" before parsing the digits.
-function formatLoss(val: number, sym = "$"): string {
-	return `−${formatCurrency(val, sym)}`;
-}
-
 function pickRandomFindings(businessType: BusinessType): FindingDef[] {
 	const hasCheckout = businessType === "saas" || businessType === "ecommerce";
 	const eligible = FINDINGS_LIBRARY.filter(
-		(f) =>
-			f.tags.includes("all") || (hasCheckout && f.tags.includes("checkout"))
+		(f) => f.tags.includes("all") || (hasCheckout && f.tags.includes("checkout")),
 	);
-	// Shuffle and pick DISPLAY_COUNT
 	const shuffled = [...eligible].sort(() => Math.random() - 0.5);
 	return shuffled.slice(0, DISPLAY_COUNT);
 }
@@ -143,7 +132,21 @@ function easeOut(t: number): number {
 	return 1 - Math.pow(1 - t, 3);
 }
 
-// ── Custom dropdown (replaces native <select>) ──
+// Persist what the visitor typed in the calculator so the signup +
+// onboarding flows can pre-fill instead of re-asking. Called from the
+// CTA click handlers. The onboarding form reads these exact keys
+// (`vestigio_onboard_*`) — see useOnboardingForm.
+function stashForOnboarding(domain: string, revenue: number, businessType: BusinessType): void {
+	try {
+		if (domain) localStorage.setItem("vestigio_onboard_domain", domain);
+		if (revenue) localStorage.setItem("vestigio_onboard_revenue", String(revenue));
+		if (businessType) localStorage.setItem("vestigio_onboard_business_type", businessType);
+	} catch {
+		// Private mode / localStorage unavailable — silent degrade.
+	}
+}
+
+// ── Business type select (custom dropdown) ──
 
 function BusinessTypeSelect({
 	value,
@@ -171,11 +174,6 @@ function BusinessTypeSelect({
 
 	return (
 		<div ref={ref} className="relative w-full">
-			{/* Click hotspot — disappears after first click. Sky (not the
-			    primary emerald) because emerald is reserved for "action /
-			    brand identity" on CTAs + active states; using it on a
-			    decorative attention hotspot here would collapse the
-			    palette into a single hue. Sky is the secondary accent. */}
 			{!touched && (
 				<span className="absolute -right-1.5 -top-1.5 z-10 flex h-5 w-5">
 					<span className="absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-60" style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
@@ -189,13 +187,13 @@ function BusinessTypeSelect({
 			<button
 				type="button"
 				onClick={() => { setOpen((o) => !o); setTouched(true); }}
-				className="flex w-full items-center justify-between rounded-xl border border-zinc-700 bg-zinc-900/80 px-5 py-3.5 text-left text-sm text-zinc-100 outline-none transition-all hover:border-zinc-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
+				className="flex w-full items-center justify-between rounded-xl border border-edge bg-surface-card px-5 py-3.5 text-left text-sm text-zinc-100 outline-none transition-all hover:border-edge-focus focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/40"
 			>
 				<span>{t(IMPACT_PROFILES[value].label)}</span>
 				<ChevronDown className={`h-4 w-4 text-zinc-500 transition-transform ${open ? "rotate-180" : ""}`} />
 			</button>
 			{open && (
-				<ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 shadow-xl shadow-black/40">
+				<ul className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-edge bg-surface-card shadow-xl shadow-black/40">
 					{options.map((key) => (
 						<li key={key}>
 							<button
@@ -204,7 +202,7 @@ function BusinessTypeSelect({
 								className={`flex w-full px-5 py-3 text-left text-sm transition-colors ${
 									key === value
 										? "bg-emerald-500/10 text-emerald-400"
-										: "text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+										: "text-zinc-300 hover:bg-white/[0.04] hover:text-zinc-100"
 								}`}
 							>
 								{t(IMPACT_PROFILES[key].label)}
@@ -220,15 +218,10 @@ function BusinessTypeSelect({
 // ── Component ──
 
 interface MiniCalculatorProps {
-	// Optional CTA destination override. Default = signup flow.
-	// /lp variant passes "/audit" so the result-state CTA jumps
-	// straight into the anonymous lead funnel.
 	primaryCtaHref?: string;
 }
 
-const MiniCalculator = ({
-	primaryCtaHref = "/audit",
-}: MiniCalculatorProps = {}) => {
+const MiniCalculator = ({ primaryCtaHref = "/audit" }: MiniCalculatorProps = {}) => {
 	const t = useTranslations("homepage.mini_calculator");
 	const tCard = useTranslations("homepage.mini_calc_card");
 	const sym = t("currency_symbol") || "$";
@@ -249,12 +242,6 @@ const MiniCalculator = ({
 	// can read the media query so the odometer-style digit roll only
 	// animates for users who haven't opted out of motion.
 	const [prefersReducedMotion, setPrefersReducedMotion] = useState(true);
-	// displayMin/displayMax drive the total-impact reveal animation. They
-	// hold the in-flight values during the loading→results count-up so
-	// the giant "−$X–$Y/mo" line ramps from 0 to the final loss range
-	// instead of slamming into view fully formed.
-	const [displayMin, setDisplayMin] = useState(0);
-	const [displayMax, setDisplayMax] = useState(0);
 	const revenueRef = useRef<HTMLInputElement>(null);
 
 	useEffect(() => {
@@ -286,7 +273,10 @@ const MiniCalculator = ({
 		setState("loading");
 	}, [url, showExtra, businessType]);
 
-	// Progress animation with finding counter
+	// 7-step chunked progress animation. ~12s total — the value
+	// demonstration moment where the visitor sees the analysis ramping
+	// through real-feeling steps before the result tile lands. Kept
+	// per user preference (the AI scan IS the moment).
 	useEffect(() => {
 		if (state !== "loading") return;
 
@@ -298,23 +288,17 @@ const MiniCalculator = ({
 
 		const tick = (now: number) => {
 			if (chunkIndex >= CHUNKS.length) return;
-
 			const elapsed = now - startTime;
 			const target = CHUNKS[chunkIndex];
 			const from = chunkIndex === 0 ? 0 : CHUNKS[chunkIndex - 1];
 			const frac = Math.min(elapsed / CHUNK_DURATION, 1);
 			const current = from + (target - from) * easeOut(frac);
-
 			setProgress(current);
-
-			// Increment finding counter proportionally
 			const globalFrac = current / 100;
 			setFindingCounter(Math.floor(globalFrac * totalFindings));
-
 			if (frac >= 1) {
 				chunkIndex++;
 				startTime = now;
-
 				if (chunkIndex < CHUNKS.length) {
 					setStatusFading(true);
 					setTimeout(() => {
@@ -323,7 +307,6 @@ const MiniCalculator = ({
 					}, 250);
 				}
 			}
-
 			if (chunkIndex < CHUNKS.length) {
 				animFrame = requestAnimationFrame(tick);
 			} else {
@@ -341,7 +324,7 @@ const MiniCalculator = ({
 	};
 
 	const isValidDomain = (v: string): boolean => {
-		const trimmed = v.trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+		const trimmed = v.trim().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
 		return /^([a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/.test(trimmed);
 	};
 
@@ -357,7 +340,6 @@ const MiniCalculator = ({
 		setFindingCounter(0);
 	};
 
-	// Compute impact for selected findings
 	const findingImpacts = useMemo(() => {
 		return selectedFindings.map(() => {
 			const spread = profile.base[1] - profile.base[0];
@@ -370,182 +352,97 @@ const MiniCalculator = ({
 	const totalMin = findingImpacts.reduce((s, [min]) => s + min, 0);
 	const totalMax = findingImpacts.reduce((s, [, max]) => s + max, 0);
 
-	// Total impact reveal — when state flips to "results", count up
-	// displayMin/displayMax from 0 to the final loss range over ~1.4s
-	// (cubic easeOut). SlotText rolls digit-by-digit so the giant
-	// "−$X–$Y/mo" line spins up into view instead of slamming in already
-	// formed. Reduced-motion skips the animation and jumps to the
-	// final values. The 0-state on any non-results transition resets
-	// so a follow-up scan replays the count-up.
-	useEffect(() => {
-		if (state !== "results") {
-			setDisplayMin(0);
-			setDisplayMax(0);
-			return;
-		}
-		if (prefersReducedMotion) {
-			setDisplayMin(totalMin);
-			setDisplayMax(totalMax);
-			return;
-		}
-		const DURATION = 1400;
-		const startTime = performance.now();
-		let animFrame: number;
-		const tick = (now: number) => {
-			const elapsed = now - startTime;
-			const frac = Math.min(elapsed / DURATION, 1);
-			const eased = easeOut(frac);
-			setDisplayMin(totalMin * eased);
-			setDisplayMax(totalMax * eased);
-			if (frac < 1) animFrame = requestAnimationFrame(tick);
-		};
-		animFrame = requestAnimationFrame(tick);
-		return () => cancelAnimationFrame(animFrame);
-	}, [state, totalMin, totalMax, prefersReducedMotion]);
-
 	const inputClass =
-		"w-full rounded-xl border border-zinc-700 bg-zinc-900/80 px-5 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none transition-all hover:border-zinc-600 focus:border-emerald-500 focus:bg-zinc-900 focus:ring-1 focus:ring-emerald-500/40";
+		"w-full rounded-xl border border-edge bg-surface-card px-5 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none transition-all hover:border-edge-focus focus:border-emerald-500 focus:bg-surface-card focus:ring-1 focus:ring-emerald-500/40";
 
 	const domainInputClass =
 		`shiny-input w-full rounded-xl px-5 py-3.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none ${
-			domainReady
-				? "!border-emerald-500 ring-1 ring-emerald-500/40 !bg-zinc-900"
-				: ""
+			domainReady ? "!border-emerald-500 ring-1 ring-emerald-500/40 !bg-surface-card" : ""
 		}`;
 
 	return (
-		<section className='relative z-1 overflow-hidden border-t border-white/5 bg-[#080812] py-8 sm:py-10 lg:py-14'>
-			{/* Ambient page-background halos so the gradient card sits on
-			    a subtly lit canvas instead of a flat plate. */}
-			<div className='pointer-events-none absolute inset-0 -z-1' aria-hidden>
-				<div className='absolute left-1/2 top-1/2 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/[0.07] blur-[90px]' />
-				<div className='absolute left-1/2 top-1/2 h-[250px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-indigo-500/[0.05] blur-[80px]' />
+		<section className="relative z-1 overflow-hidden bg-[#080812] py-12 sm:py-16 lg:py-20">
+			{/* Soft ambient glow — restrained, single source, no infinite
+			    animation. */}
+			<div className="pointer-events-none absolute inset-0 -z-1" aria-hidden>
+				<div className="absolute left-1/2 top-1/2 h-[300px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-500/[0.04] blur-[100px]" />
 			</div>
 
-			<div className='px-4 sm:px-8 lg:px-8 xl:px-12'>
-				{/* Gradient hero card — the calculator's container.
-				    Hover-lift, animated conic border on hover, soft inner
-				    glow. The whole section is "one big card" so the
-				    calculator stops looking like just-another-section. */}
-				<div className='vcalc-card shiny-card group relative overflow-hidden rounded-3xl p-6 shadow-[0_0_0_1px_rgba(16,185,129,0.1),0_25px_80px_-20px_rgba(0,0,0,0.35),0_0_50px_-10px_rgba(16,185,129,0.12)] transition-[transform] duration-500 hover:-translate-y-1 sm:p-10 lg:p-14' style={{ "--shiny-card-bg": "#0d0d18" } as React.CSSProperties}>
-					{/* Soft conic gradient halo behind the card edges */}
-					<div
-						className='pointer-events-none absolute inset-0 -z-1 opacity-50 transition-opacity duration-500 group-hover:opacity-80'
-						aria-hidden
-					>
-						<div className='absolute -left-20 -top-20 h-[300px] w-[300px] rounded-full bg-emerald-400/[0.15] blur-3xl' />
-						<div className='absolute -bottom-20 -right-20 h-[300px] w-[300px] rounded-full bg-emerald-400/[0.10] blur-3xl' />
-					</div>
-
-					{/* Emerald accent lines top and bottom */}
-					<div className='pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent' />
-					<div className='pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/20 to-transparent' />
-
-					{/* Eyebrow + tagline header (only in input state — once the
-					    flow is running, the existing in-card headlines take
-					    over) */}
+			<div className="px-4 sm:px-8 lg:px-8 xl:px-12">
+				<div className="relative overflow-hidden rounded-3xl border border-edge bg-surface-card p-6 shadow-[0_25px_80px_-20px_rgba(0,0,0,0.45)] sm:p-10 lg:p-14">
+					{/* Static eyebrow chip + tagline (input state only) */}
 					{state === "input" && (
-						<div className='relative mb-6 flex flex-col items-center gap-3 text-center sm:mb-8'>
-							<span className='inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1'>
-								<span className='h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500' />
-								<span className='text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400'>
+						<div className="relative mb-6 flex flex-col items-center gap-3 text-center sm:mb-8">
+							<span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1">
+								<span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+								<span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400">
 									{tCard("eyebrow")}
 								</span>
 							</span>
-							<p className='max-w-[420px] text-xs text-zinc-400 sm:text-[13px]'>
+							<p className="max-w-[420px] text-xs text-content-muted sm:text-[13px]">
 								{tCard("tagline")}
 							</p>
 						</div>
 					)}
 
-					<div className='relative mx-auto w-full max-w-[760px]'>
-						{/* ===================== INPUT ===================== */}
+					<div className="relative mx-auto w-full max-w-[760px]">
+						{/* ───────────── INPUT STATE ───────────── */}
 						{state === "input" && (
-							<div className='text-center'>
-								<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-100 sm:text-3xl lg:text-4xl xl:text-5xl'>
-									{t("title_before")}
-									<span className='text-red-400'>{t("title_highlight")}</span>
-									{t("title_after")}
-									<span className='relative inline-block'>
-										<span className='relative z-[1]'>
-											{t("title_underline")}
-										</span>
-										<span
-											className='absolute -bottom-0.5 left-0 z-0 h-[3px] w-full rounded-full'
-											style={{
-												background: "linear-gradient(90deg, rgba(239,68,68,0.15), rgba(248,113,113,0.7), rgba(239,68,68,0.15))",
-												backgroundSize: "200% 100%",
-												animation: "title-underline-shimmer 3s ease-in-out infinite",
-											}}
-											aria-hidden
-										/>
-									</span>
+							<div className="text-center">
+								<h2 className="mb-4 font-serif text-[1.75rem] font-medium leading-[1.15] tracking-tight text-zinc-100 sm:text-3xl lg:text-4xl xl:text-5xl">
+									{t("title")}
 								</h2>
-								<p className='mx-auto mb-8 max-w-[540px] text-sm text-zinc-400 sm:mb-10 sm:text-base'>
+								<p className="mx-auto mb-8 max-w-[540px] text-sm text-content-muted sm:mb-10 sm:text-base">
 									{t("subtitle")}
-									<span className='font-semibold text-emerald-400'>{t("subtitle_accent")}</span>
-									{" "}⚡
 								</p>
 
-								<div className='mx-auto flex max-w-[640px] flex-col items-center gap-4'>
-									{/* Domain step — inline pill: input + ShinyButton
-									    sit inside one shiny-input shell. Outer
-									    container keeps the existing emerald conic
-									    border (continuity with the previous design)
-									    and the ShinyButton retains its own shimmer
-									    + dots animation inside on the right. The
-									    input field itself is transparent so only the
-									    outer shell paints the dark fill. */}
+								<div className="mx-auto flex max-w-[640px] flex-col items-center gap-4">
 									{!showExtra && (
-										<div className='w-full'>
+										<div className="w-full">
 											<div
 												className={`shiny-input relative flex w-full items-center gap-2 !rounded-2xl !p-0 !pl-4 sm:!pl-5 ${
 													domainReady ? "!ring-1 !ring-emerald-500/40" : ""
 												}`}
 											>
 												{domainReady && (
-													<span className='absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5'>
-														<span className='absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-60' style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
-														<span className='relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 shadow-[0_0_8px_rgba(56,189,248,0.5)]'>
-															<svg className='h-2.5 w-2.5 text-white' fill='none' viewBox='0 0 24 24' strokeWidth={3} stroke='currentColor'>
-																<path strokeLinecap='round' strokeLinejoin='round' d='M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59' />
+													<span className="absolute -right-1.5 -top-1.5 z-20 flex h-5 w-5">
+														<span className="absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-60" style={{ animation: "ping 1.2s cubic-bezier(0, 0, 0.2, 1) infinite" }} />
+														<span className="relative inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-500 shadow-[0_0_8px_rgba(56,189,248,0.5)]">
+															<svg className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor">
+																<path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
 															</svg>
 														</span>
 													</span>
 												)}
 												<input
-													type='text'
+													type="text"
 													value={url}
 													onChange={(e) => { setUrl(e.target.value); setUrlNudge(false); }}
 													onKeyDown={handleKeyDown}
 													placeholder={t("url_placeholder")}
-													className='min-w-0 flex-1 bg-transparent py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none'
+													className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none"
 												/>
 												<ShinyButton
 													onClick={() => {
 														if (!domainReady) { setUrlNudge(true); return; }
 														handleSubmit();
 													}}
-													className='!min-h-0 !w-auto shrink-0 !rounded-l-xl !rounded-r-2xl !px-3.5 !py-2.5 !text-xs sm:!px-6 sm:!text-sm'
+													className="!min-h-0 !w-auto shrink-0 !rounded-l-xl !rounded-r-2xl !px-3.5 !py-2.5 !text-xs sm:!px-6 sm:!text-sm"
+													data-vtg-cta="minicalc-domain"
 												>
 													{t("cta_audit")}
 												</ShinyButton>
 											</div>
 											{urlNudge && (
-												<p className='mt-2 text-center text-xs text-amber-400/80'>{t("url_nudge")}</p>
+												<p className="mt-2 text-center text-xs text-amber-400/80">{t("url_nudge")}</p>
 											)}
 										</div>
 									)}
 
-									{/* Revenue + Business Type — fade in from right.
-									    The original domain input stays visible as a
-									    full-width readout so the user remembers what
-									    they typed; the inline pill collapses back
-									    into a column once the form expands. */}
 									{showExtra && (
-										<div className='w-full'>
+										<div className="w-full">
 											<input
-												type='text'
+												type="text"
 												value={url}
 												onChange={(e) => { setUrl(e.target.value); setUrlNudge(false); }}
 												onKeyDown={handleKeyDown}
@@ -553,25 +450,19 @@ const MiniCalculator = ({
 												className={domainInputClass}
 											/>
 											{urlNudge && (
-												<p className='mt-2 text-center text-xs text-amber-400/80'>{t("url_nudge")}</p>
+												<p className="mt-2 text-center text-xs text-amber-400/80">{t("url_nudge")}</p>
 											)}
 										</div>
 									)}
 
-									{/* Revenue + Business Type — fade in from right */}
 									{showExtra && (
-										<div
-											className='w-full space-y-3'
-											style={{ animation: "fadeSlideRight 0.4s ease-out" }}
-										>
-											<div className='flex w-full flex-col items-center gap-3 sm:flex-row'>
-												<div className='relative w-full'>
-													<span className='absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500'>
-														{sym}
-													</span>
+										<div className="w-full space-y-3" style={{ animation: "fadeSlideRight 0.4s ease-out" }}>
+											<div className="flex w-full flex-col items-center gap-3 sm:flex-row">
+												<div className="relative w-full">
+													<span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-zinc-500">{sym}</span>
 													<input
 														ref={revenueRef}
-														type='number'
+														type="number"
 														value={revenue}
 														onChange={(e) => setRevenue(e.target.value)}
 														onKeyDown={handleKeyDown}
@@ -579,15 +470,12 @@ const MiniCalculator = ({
 														className={`${inputClass} pl-8`}
 													/>
 												</div>
-												<BusinessTypeSelect
-													value={businessType}
-													onChange={setBusinessType}
-													t={t}
-												/>
+												<BusinessTypeSelect value={businessType} onChange={setBusinessType} t={t} />
 											</div>
 											<ShinyButton
 												onClick={handleSubmit}
-												className='w-full text-base sm:w-auto sm:text-sm'
+												className="w-full text-base sm:w-auto sm:text-sm"
+												data-vtg-cta="minicalc-submit"
 											>
 												{t("cta_audit")}
 											</ShinyButton>
@@ -595,45 +483,24 @@ const MiniCalculator = ({
 									)}
 								</div>
 
-								{/* Trust badges */}
-								<div className='mx-auto mt-6 flex max-w-[540px] items-center justify-center gap-3 text-[11px] text-zinc-500 sm:gap-5 sm:text-xs'>
-									<span className='flex items-center gap-1.5'>
-										<svg className='h-3.5 w-3.5 text-red-400' fill='none' viewBox='0 0 24 24' strokeWidth={2} stroke='currentColor'>
-											<path strokeLinecap='round' strokeLinejoin='round' d='M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z' />
-										</svg>
-										{t("trust_speed")}
-									</span>
-									<span className='h-3 w-px bg-zinc-700' />
-									<span className='flex items-center gap-1.5'>
-										<svg className='h-3.5 w-3.5 text-emerald-400' fill='none' viewBox='0 0 24 24' strokeWidth={2} stroke='currentColor'>
-											<path strokeLinecap='round' strokeLinejoin='round' d='M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z' />
-										</svg>
-										{t("trust_secure")}
-									</span>
-									<span className='h-3 w-px bg-zinc-700' />
-									<span className='flex items-center gap-1.5'>
-										<svg className='h-3.5 w-3.5 text-emerald-400' fill='none' viewBox='0 0 24 24' strokeWidth={2} stroke='currentColor'>
-											<path strokeLinecap='round' strokeLinejoin='round' d='M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z' />
-										</svg>
-										{t("trust_free")}
-									</span>
-								</div>
+								<p className="mx-auto mt-6 text-[11px] text-content-faint sm:text-xs">
+									{t("trust_line")}
+								</p>
 							</div>
 						)}
 
-						{/* ===================== LOADING ===================== */}
+						{/* ───────────── LOADING STATE (7-step scan) ───────────── */}
 						{state === "loading" && (
-							<div className='text-center'>
-								<h2 className='mb-2 text-lg font-bold tracking-tight text-zinc-100 sm:text-2xl lg:text-3xl'>
+							<div className="text-center">
+								<h2 className="mb-2 text-lg font-bold tracking-tight text-zinc-100 sm:text-2xl lg:text-3xl">
 									{t("analyzing")}{" "}
-									<span className='block truncate sm:inline sm:overflow-visible sm:text-clip'>{domain}</span>
+									<span className="block truncate sm:inline sm:overflow-visible sm:text-clip">{domain}</span>
 								</h2>
-								<p className='mb-8 text-sm text-zinc-400 sm:mb-10'>
+								<p className="mb-8 text-sm text-content-muted sm:mb-10">
 									{t("analyzing_sub")}
 								</p>
 
-								{/* Stacked step cards */}
-								<div className='relative mx-auto flex w-full max-w-[340px] flex-col items-center gap-1.5 sm:max-w-[380px]'>
+								<div className="relative mx-auto flex w-full max-w-[340px] flex-col items-center gap-1.5 sm:max-w-[380px]">
 									{STATUS_KEYS.map((key, i) => {
 										const isDone = i < statusIdx;
 										const isActive = i === statusIdx;
@@ -651,51 +518,44 @@ const MiniCalculator = ({
 														? "scale-100 border-emerald-500/30 bg-emerald-500/[0.06] opacity-100"
 														: isDone
 															? "scale-[0.97] border-emerald-500/20 bg-emerald-500/[0.03] opacity-70"
-															: "scale-[0.97] border-zinc-800 bg-zinc-900/50 opacity-50"
+															: "scale-[0.97] border-edge bg-white/[0.02] opacity-50"
 												}`}
 											>
-												<div className='flex items-center gap-2 text-xs'>
+												<div className="flex items-center gap-2 text-xs">
 													{isDone ? (
-														<span className='flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500'>
-															<svg viewBox='0 0 12 12' fill='none' stroke='white' strokeWidth='2' className='h-2.5 w-2.5'>
-																<path d='M2.5 6.5l2.5 2.5L9.5 3.5' strokeLinecap='round' strokeLinejoin='round' />
+														<span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500">
+															<svg viewBox="0 0 12 12" fill="none" stroke="white" strokeWidth="2" className="h-2.5 w-2.5">
+																<path d="M2.5 6.5l2.5 2.5L9.5 3.5" strokeLinecap="round" strokeLinejoin="round" />
 															</svg>
 														</span>
 													) : isActive ? (
-														<span className='inline-flex items-center gap-0.5 text-emerald-500'>
-														<span className='h-1 w-1 animate-bounce rounded-full bg-current' style={{ animationDelay: "0ms", animationDuration: "1s" }} />
-														<span className='h-1 w-1 animate-bounce rounded-full bg-current' style={{ animationDelay: "150ms", animationDuration: "1s" }} />
-														<span className='h-1 w-1 animate-bounce rounded-full bg-current' style={{ animationDelay: "300ms", animationDuration: "1s" }} />
-													</span>
+														<span className="inline-flex items-center gap-0.5 text-emerald-500">
+															<span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "0ms", animationDuration: "1s" }} />
+															<span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "150ms", animationDuration: "1s" }} />
+															<span className="h-1 w-1 animate-bounce rounded-full bg-current" style={{ animationDelay: "300ms", animationDuration: "1s" }} />
+														</span>
 													) : (
-														<span className='flex h-4 w-4 items-center justify-center rounded-full border border-zinc-700'>
-															<span className='h-1.5 w-1.5 rounded-full bg-zinc-700' />
+														<span className="flex h-4 w-4 items-center justify-center rounded-full border border-edge">
+															<span className="h-1.5 w-1.5 rounded-full bg-content-faint/40" />
 														</span>
 													)}
-													<span className={`font-medium ${isDone ? "text-emerald-400" : isActive ? "text-zinc-100" : "text-zinc-600"}`}>
+													<span className={`font-medium ${isDone ? "text-emerald-400" : isActive ? "text-zinc-100" : "text-content-faint"}`}>
 														{t(key)}
 													</span>
 												</div>
-												<div className='ml-6 mr-1 h-1.5 overflow-hidden rounded-full bg-zinc-800'>
+												<div className="ml-6 mr-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
 													<div
-														className='h-full rounded-full bg-emerald-500 transition-[width] duration-100 ease-linear'
+														className="h-full rounded-full bg-emerald-500 transition-[width] duration-100 ease-linear"
 														style={{ width: `${chunkFrac * 100}%` }}
 													/>
 												</div>
 											</div>
 										);
 									})}
-									{/* Top and bottom fade masks */}
-									<div className='pointer-events-none absolute top-0 h-[30%] w-full [background-image:linear-gradient(to_bottom,#080812_10%,transparent_100%)]' />
-									<div className='pointer-events-none absolute bottom-0 h-[30%] w-full [background-image:linear-gradient(to_top,#080812_10%,transparent_100%)]' />
 								</div>
 
-								{/* Counter below cards — findingCounter rolls digit-by-digit
-								    (odometer style) so it reads as "Vestigio counting real
-								    findings" instead of a jittery RAF tick. Progress %
-								    stays plain text (updates ~60fps, too fast for slot). */}
-								<div className='mt-4 flex items-center justify-center gap-3 font-mono text-[11px] tabular-nums text-zinc-500'>
-									<span className='inline-flex items-center gap-1'>
+								<div className="mt-4 flex items-center justify-center gap-3 font-mono text-[11px] tabular-nums text-content-faint">
+									<span className="inline-flex items-center gap-1">
 										{prefersReducedMotion ? (
 											<span>{findingCounter}</span>
 										) : (
@@ -712,177 +572,93 @@ const MiniCalculator = ({
 							</div>
 						)}
 
-						{/* ===================== RESULTS ===================== */}
+						{/* ───────────── RESULTS STATE ───────────── */}
 						{state === "results" && (
 							<div>
-								<div className='mb-8 text-center sm:mb-10'>
-									<p className='mb-2 font-mono text-xs uppercase tracking-widest text-zinc-500'>
+								<div className="mb-8 text-center sm:mb-10">
+									<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-content-faint">
 										{t("scan_complete")}
 									</p>
-									<h2 className='text-lg font-bold tracking-tight text-zinc-100 sm:text-2xl lg:text-3xl'>
+									<h2 className="font-serif text-[1.5rem] font-medium tracking-tight text-zinc-100 sm:text-[1.75rem] lg:text-3xl">
 										{t("results_for")}{" "}
-										<span className='break-all text-emerald-400'>{domain}</span>
+										<span className="break-all font-mono text-emerald-400">{domain}</span>
 									</h2>
 								</div>
 
-								{/* Findings — uses the dashboard's DrawerStatBox vocabulary:
-                accent gradient overlay + colored shadow scaled to severity
-                so the eye reads "this is a list of losses" before parsing
-                any individual row. */}
-								<div className='relative mb-4 overflow-hidden rounded-2xl border border-red-500/20 bg-red-950/30 shadow-[0_8px_24px_-14px_rgba(239,68,68,0.15)]'>
-									{/* Subtle red gradient highlight in the corner */}
-									<div
-										className='pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br from-red-500/[0.05] via-transparent to-transparent'
-										aria-hidden
-									/>
-
-									{/* Desktop column headers */}
-									<div className='relative hidden grid-cols-[100px_1fr_200px] gap-4 border-b border-red-500/10 px-5 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-zinc-500 sm:grid'>
-										<span>{t("col_severity")}</span>
+								<div className="mb-4 overflow-hidden rounded-2xl border border-edge bg-white/[0.02]">
+									<div className="hidden grid-cols-[1fr_180px] gap-4 border-b border-edge px-5 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-content-faint sm:grid">
 										<span>{t("col_finding")}</span>
-										<span className='text-right'>{t("col_impact")}</span>
+										<span className="text-right">{t("col_impact")}</span>
 									</div>
 
-									<div className='relative'>
-										{selectedFindings.map((finding, i) => {
-											const [impMin, impMax] = findingImpacts[i] || [0, 0];
-											return (
-												<div
-													key={finding.key}
-													className={`px-3 py-3 sm:grid sm:grid-cols-[100px_1fr_200px] sm:items-center sm:gap-4 sm:px-5 sm:py-4 ${
-														i < selectedFindings.length - 1
-															? "border-b border-red-500/10"
-															: ""
-													}`}
-												>
-													{/* Mobile: severity badge + impact on same row */}
-													<div className='mb-2 flex items-center justify-between gap-2 sm:mb-0 sm:block'>
-														<span className='inline-flex shrink-0 items-center gap-1.5 rounded-md border border-red-500/30 bg-red-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.14em] text-red-400 sm:px-2.5 sm:py-1 sm:text-[10px]'>
-															<span
-																className='h-1.5 w-1.5 rounded-full bg-red-500'
-																aria-hidden
-															/>
-															CRITICAL
-														</span>
-														<span className='font-mono text-xs tabular-nums text-red-400 sm:hidden'>
-															−{formatCurrency(impMin, sym)}–{formatCurrency(impMax, sym)}/mo
-														</span>
-													</div>
-													<p className='text-sm leading-snug text-zinc-300 sm:mb-0'>
+									{selectedFindings.map((finding, i) => {
+										const [impMin, impMax] = findingImpacts[i] || [0, 0];
+										return (
+											<div
+												key={finding.key}
+												className={`px-4 py-3 sm:grid sm:grid-cols-[1fr_180px] sm:items-center sm:gap-4 sm:px-5 sm:py-3.5 ${
+													i < selectedFindings.length - 1 ? "border-b border-edge/60" : ""
+												}`}
+											>
+												<div className="flex items-start gap-2.5">
+													<span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-rose-400" aria-hidden />
+													<p className="text-[13px] leading-snug text-zinc-200 sm:text-sm">
 														{t(finding.key)}
 													</p>
-													<p className='hidden font-mono text-sm tabular-nums text-red-400 sm:block sm:text-right'>
-														−{formatCurrency(impMin, sym)}–{formatCurrency(impMax, sym)}
-														/mo
-													</p>
 												</div>
-											);
-										})}
-									</div>
+												<p className="mt-1 pl-5 font-mono text-[12px] tabular-nums text-rose-400 sm:mt-0 sm:pl-0 sm:text-right sm:text-[13px]">
+													−{formatCurrency(impMin, sym)}–{formatCurrency(impMax, sym)}/mo
+												</p>
+											</div>
+										);
+									})}
 								</div>
 
-								{/* Showing X of Y */}
-								<p className='mb-10 text-center text-xs text-zinc-500'>
-									{t("showing_of", {
-										shown: DISPLAY_COUNT,
-										total: totalFindings,
-									})}
+								<p className="mb-8 text-center text-xs text-content-faint">
+									{t("showing_of", { shown: DISPLAY_COUNT, total: totalFindings })}
 								</p>
 
-								{/* Total — hero zone of the entire mini-calc flow.
-                Negative-number rule applied: the value represents revenue
-                you're losing every month, so it renders as `−$X-$Y/mo`
-                in red with a colored drop shadow that scales the visual
-                weight of the loss. JetBrains Mono + tabular-nums so the
-                digits never jitter. Reveal: the giant number rolls up
-                from 0 via SlotText over ~1.4s (see displayMin/Max
-                effect above). Reduced-motion users get the final values
-                immediately. */}
-								<div className='mb-10 text-center sm:mb-12'>
-									<p className='mb-3 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500'>
+								{/* Total impact — restrained mono tile, mirrors
+								    HeroMetrics from the authenticated Plano. No
+								    giant red 6xl with glow + SlotText reveal. */}
+								<div className="mb-10 rounded-2xl border border-edge bg-white/[0.02] px-5 py-6 text-center sm:mb-12 sm:px-8 sm:py-8">
+									<p className="font-mono text-[10px] uppercase tracking-[0.18em] text-content-faint">
 										{t("total_impact")}
 									</p>
-									<p className='inline-flex items-baseline justify-center font-mono text-3xl font-medium tabular-nums leading-none tracking-tight text-red-400 sm:text-5xl lg:text-6xl'>
-										<span
-											className='inline-flex items-baseline'
-											style={{
-												textShadow:
-													"0 8px 32px rgba(239,68,68,0.35), 0 2px 8px rgba(239,68,68,0.25)",
-											}}
-										>
-											{prefersReducedMotion ? (
-												<>
-													{formatLoss(totalMin, sym)}–{formatCurrency(totalMax, sym)}
-												</>
-											) : (
-												<>
-													<SlotText
-														text={formatLoss(displayMin, sym)}
-														options={{ direction: "up", stagger: 0, duration: 180, bounce: 0.2, skipUnchanged: false }}
-													/>
-													<span>–</span>
-													<SlotText
-														text={formatCurrency(displayMax, sym)}
-														options={{ direction: "up", stagger: 0, duration: 180, bounce: 0.2, skipUnchanged: false }}
-													/>
-												</>
-											)}
-										</span>
-										<span className='ml-1 font-mono text-base font-normal text-zinc-500 sm:text-lg lg:text-xl'>
-											/mo
-										</span>
+									<p className="mt-3 font-mono text-[1.75rem] font-semibold tabular-nums text-rose-400 sm:text-[2.25rem] lg:text-[2.75rem]">
+										−{formatCurrency(totalMin, sym)}–{formatCurrency(totalMax, sym)}
+										<span className="ml-1 text-base font-normal text-content-faint sm:text-lg">/mo</span>
 									</p>
 								</div>
 
-								{/* CTA */}
-								<div className='text-center'>
-									<p className='mb-6 text-sm text-zinc-400 sm:text-base'>
+								<div className="text-center">
+									<p className="mb-6 font-serif text-[15px] italic leading-relaxed text-content-secondary sm:text-base">
 										{t("cta_question")}
 									</p>
-									<div className='mb-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4'>
+									<div className="mb-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">
 										<ShinyButton
 											href={domain ? `${primaryCtaHref}?domain=${encodeURIComponent(domain)}` : primaryCtaHref}
-											className='w-full sm:w-auto'
-											onClick={() => {
-												// Stash revenue + business type so the onboarding
-												// form can pre-fill the same values the visitor
-												// just typed on the homepage. Earlier only the
-												// domain survived the signup hop — both other
-												// inputs were re-asked.
-												try {
-													if (monthlyRevenue) {
-														localStorage.setItem(
-															"vestigio_onboard_revenue",
-															String(monthlyRevenue),
-														);
-													}
-													if (businessType) {
-														localStorage.setItem(
-															"vestigio_onboard_business_type",
-															businessType,
-														);
-													}
-												} catch {
-													// localStorage unavailable (private mode) —
-													// degrade silently, onboarding still works.
-												}
-											}}
+											className="w-full sm:w-auto"
+											data-vtg-cta="minicalc-signup"
+											onClick={() => stashForOnboarding(domain, monthlyRevenue, businessType)}
 										>
 											{t("cta_signup")}
 										</ShinyButton>
 										<Link
-											href='/pricing'
-											className='rounded-[1rem] border border-zinc-700 px-7 py-3 text-center text-sm font-semibold text-zinc-100 transition-colors hover:border-zinc-600 hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-600'
+											href="/pricing"
+											className="rounded-[1rem] border border-edge bg-surface-card px-7 py-3 text-center text-sm font-semibold text-zinc-100 transition-colors hover:border-edge-focus focus-visible:ring-2 focus-visible:ring-edge-focus"
+											data-vtg-cta="minicalc-pricing"
+											onClick={() => stashForOnboarding(domain, monthlyRevenue, businessType)}
 										>
 											{t("cta_pricing")}
 										</Link>
 									</div>
-									<p className='mx-auto max-w-[500px] text-xs text-zinc-400'>
+									<p className="mx-auto max-w-[500px] text-xs text-content-muted">
 										{t("disclaimer")}
 									</p>
 									<button
 										onClick={handleReset}
-										className='mt-6 text-xs text-zinc-400 underline underline-offset-2 transition-colors hover:text-zinc-600'
+										className="mt-6 text-xs text-content-faint underline underline-offset-2 transition-colors hover:text-content-muted"
 									>
 										{t("scan_another")}
 									</button>
@@ -890,31 +666,13 @@ const MiniCalculator = ({
 							</div>
 						)}
 					</div>
-					{/* end gradient-card inner max-width wrapper */}
 				</div>
-				{/* end gradient-card */}
 			</div>
 
 			<style jsx>{`
-				@keyframes fadeSlideUp {
-					from {
-						opacity: 0;
-						transform: translateY(8px) scale(0.95);
-					}
-					to {
-						opacity: 1;
-						transform: translateY(0) scale(1);
-					}
-				}
 				@keyframes fadeSlideRight {
-					from {
-						opacity: 0;
-						transform: translateX(20px);
-					}
-					to {
-						opacity: 1;
-						transform: translateX(0);
-					}
+					from { opacity: 0; transform: translateX(20px); }
+					to   { opacity: 1; transform: translateX(0); }
 				}
 			`}</style>
 		</section>

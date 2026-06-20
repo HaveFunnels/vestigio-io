@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import PricingComponent, {
   usePricingPlans,
   FALLBACK_PLANS,
@@ -15,6 +16,7 @@ import FinalCTA from "@/components/shared/FinalCTA";
 const HomePricing = () => {
   const [cycle, setCycle] = useState<BillingCycle>("annually");
   const router = useRouter();
+  const t = useTranslations("homepage.pricing_heading");
   const { plans, loading, currencySymbol, annualReady } = usePricingPlans();
 
   const handlePlanSelect = (planId: string, billingCycle: BillingCycle) => {
@@ -41,8 +43,14 @@ const HomePricing = () => {
         onCycleChange={setCycle}
         onPlanSelect={handlePlanSelect}
         currencySymbol={currencySymbol}
-        heading="Veja exatamente o que est&aacute; perdendo. Corrija. Escale."
-        subheading="Intelig&ecirc;ncia que se paga sozinha. Comece gr&aacute;tis, evolua quando quiser."
+        // Heading + subheading localized + restructured to promise the
+        // actual deliverable (a monthly Plano de Estratégia with PDF
+        // export, share link, cycle cadence) instead of the old
+        // urgency/anxiety frame ("veja o que está perdendo, corrija,
+        // escale"). Cohesion with the rest of the homepage editorial
+        // surfaces.
+        heading={t("heading")}
+        subheading={t("subheading")}
         annualPricingEnabled={annualReady}
       />
       <SocialProof />

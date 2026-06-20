@@ -47,14 +47,15 @@
 			}
 		},
 		"social_proof_strip": {
-			"before_highlight": "Companies like yours find an average of 9 critical leaks and ",
-			"highlight": "−$81k/mo in losses",
+			"before_highlight": "On the first analysis of an operation like yours, on average ",
+			"highlight": "9 critical findings",
 			"rotating_highlights": [
-				"−$81k/mo in losses",
-				"27% to 43% of revenue",
-				"12s extra at checkout"
+				"9 critical findings",
+				"−$ 6k/mo in leakage identified",
+				"27% to 43% of revenue at risk",
+				"12s of extra checkout latency"
 			],
-			"after_highlight": " in their first Vestigio diagnostic."
+			"after_highlight": ". That nobody was seeing."
 		},
 		"demo_surface": {
 			"listen": "Listen",
@@ -331,31 +332,31 @@
 			"items": [
 				{
 					"question": "What does Vestigio do?",
-					"answer": "Vestigio analyzes your site and shows you exactly where you're losing money — from the ad click to the purchase. It finds the problems, calculates the impact in dollars, and tells you what to fix first."
+					"answer": "Vestigio analyzes your operation end-to-end and delivers a monthly Strategy Plan — where money is leaking, who needs to act, the dollar impact, and what to do first. Every Plan is signed by Vestigio and refreshes each cycle."
 				},
 				{
-					"question": "How fast will I see results?",
-					"answer": "Your first diagnostic is ready in 60 seconds. Clients who apply the priority fixes typically see impact within the first week."
+					"question": "How long until I see results?",
+					"answer": "The first analysis is ready in 60 seconds. Your full Strategy Plan — with Thesis of the month, prioritized Next steps, and Continuity — arrives at the start of the following month. Customers who act on the first steps usually see impact within the same cycle."
 				},
 				{
-					"question": "Do I need a developer to set it up?",
-					"answer": "No. Just paste your site URL. Vestigio does everything else — no code, no tags, no technical integration needed to start."
+					"question": "Do I need a developer to install it?",
+					"answer": "No. You paste your URL and Vestigio does the rest — no code, no tag, no technical integration to start the analysis."
 				},
 				{
-					"question": "Is it free? What does it cost after?",
-					"answer": "The first diagnostic is 100% free, no credit card required. After that, you can choose a plan with continuous monitoring and AI-prioritized actions."
+					"question": "Is it free? What's the cost afterward?",
+					"answer": "The first analysis is free, no credit card. After that, you subscribe to a plan with one Strategy Plan per month — continuous analysis of identified leakage, cycle updates, PDF export, and a shareable link. 4× Guarantee in the first 30 days."
 				},
 				{
 					"question": "Does it work with my platform?",
-					"answer": "Yes. Vestigio works with any website — Shopify, WooCommerce, Nuvemshop, WordPress, custom sites, and landing pages. If it has a URL, we can analyze it."
+					"answer": "Yes. Vestigio analyzes any site — Shopify, WooCommerce, BigCommerce, WordPress, custom builds, and landing pages. If it has a URL, we analyze it."
 				}
 			]
 		},
 		"cta": {
-			"title": "The money is leaving now.",
-			"subtitle": "Every day without visibility is revenue you don't recover.",
+			"title": "Your next Plan is waiting.",
+			"subtitle": "Start with the free analysis. Receive your first Strategy Plan within this cycle.",
 			"primary": "Run Free Diagnostic",
-			"micro": "You can be looking at your first diagnostic in 60 seconds."
+			"micro": "First analysis in 60 seconds. Strategy Plan at the start of the month."
 		},
 		"video_testimonials": {
 			"title_before": "They discovered",
@@ -816,6 +817,10 @@
 			"f_admin_panel_exposed": "Administrative interface discoverable externally",
 			"f_error_pages_unbranded": "Error pages losing visitors without recovery path",
 			"f_social_proof_missing": "Social proof missing at key decision points"
+		},
+		"pricing_heading": {
+			"heading": "One Strategy Plan per month.",
+			"subheading": "Continuous analysis, prioritized Next steps, PDF export, and a shareable link. Monthly cadence. 4× Guarantee."
 		}
 	},
 	"footer": {

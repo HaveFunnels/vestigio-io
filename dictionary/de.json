@@ -47,14 +47,15 @@
 			}
 		},
 		"social_proof_strip": {
-			"before_highlight": "Unternehmen wie Ihres finden durchschnittlich 9 kritische Lecks und ",
-			"highlight": "−81.000 €/Monat Verlust",
+			"before_highlight": "Bei der ersten Analyse eines Betriebs wie Ihrem identifiziert Vestigio im Schnitt ",
+			"highlight": "9 kritische Findings",
 			"rotating_highlights": [
-				"−81.000 €/Monat Verlust",
-				"27% bis 43% des Umsatzes",
-				"12s länger im Checkout"
+				"9 kritische Findings",
+				"−6k €/Monat an Leckage",
+				"27% bis 43% des Umsatzes gefährdet",
+				"12s zusätzliche Checkout-Latenz"
 			],
-			"after_highlight": " in ihrer ersten Vestigio-Diagnose."
+			"after_highlight": ". Die niemand sah."
 		},
 		"demo_surface": {
 			"listen": "Anhören",
@@ -324,31 +325,31 @@
 			"items": [
 				{
 					"question": "Was macht Vestigio?",
-					"answer": "Vestigio analysiert Ihre Website und zeigt Ihnen genau, wo Sie Geld verlieren — vom Anzeigenklick bis zum Kauf. Es findet die Probleme, berechnet den Einfluss in Euro und sagt Ihnen, was Sie zuerst beheben sollten."
+					"answer": "Vestigio analysiert Ihren Betrieb End-to-End und liefert einen monatlichen Strategieplan — wo Geld lecks, wer handeln muss, die Euro-Wirkung und was zuerst zu tun ist. Jeder Plan ist von Vestigio signiert und wird jeden Zyklus aktualisiert."
 				},
 				{
-					"question": "Wie schnell sehe ich Ergebnisse?",
-					"answer": "Die erste Diagnose ist in 60 Sekunden fertig. Kunden, die die priorisierten Korrekturen umsetzen, sehen in der Regel innerhalb der ersten Woche Ergebnisse."
+					"question": "Wie lange bis zum Ergebnis?",
+					"answer": "Die erste Analyse ist in 60 Sekunden fertig. Ihr vollständiger Strategieplan — mit These des Monats, priorisierten Nächsten Schritten und Kontinuität — kommt am Anfang des Folgemonats. Kunden, die die ersten Schritte umsetzen, sehen meist schon im selben Zyklus Wirkung."
 				},
 				{
-					"question": "Brauche ich einen Entwickler für die Einrichtung?",
-					"answer": "Nein. Fügen Sie einfach Ihre Website-URL ein. Vestigio erledigt den Rest — kein Code, keine Tags, keine technische Integration nötig."
+					"question": "Brauche ich einen Entwickler zur Installation?",
+					"answer": "Nein. Sie fügen Ihre URL ein und Vestigio macht den Rest — kein Code, kein Tag, keine technische Integration, um die Analyse zu starten."
 				},
 				{
 					"question": "Ist es kostenlos? Was kostet es danach?",
-					"answer": "Die erste Diagnose ist 100% kostenlos, ohne Kreditkarte. Danach wählen Sie einen Plan mit kontinuierlichem Monitoring und KI-priorisierten Maßnahmen."
+					"answer": "Die erste Analyse ist kostenlos, ohne Kreditkarte. Danach abonnieren Sie einen Plan mit einem Strategieplan pro Monat — kontinuierliche Analyse der identifizierten Leckagen, Zyklus-Updates, PDF-Export und teilbarer Link. 4×-Garantie in den ersten 30 Tagen."
 				},
 				{
 					"question": "Funktioniert es mit meiner Plattform?",
-					"answer": "Ja. Vestigio funktioniert mit jeder Website — Shopify, WooCommerce, Nuvemshop, WordPress, individuelle Seiten und Landing Pages. Wenn es eine URL hat, können wir es analysieren."
+					"answer": "Ja. Vestigio analysiert jede Website — Shopify, WooCommerce, BigCommerce, WordPress, individuelle Builds und Landing Pages. Wenn es eine URL hat, analysieren wir es."
 				}
 			]
 		},
 		"cta": {
-			"title": "Das Geld geht jetzt verloren.",
-			"subtitle": "Jeder Tag ohne Sichtbarkeit ist Umsatz, den Sie nicht zurückgewinnen.",
+			"title": "Ihr nächster Plan wartet.",
+			"subtitle": "Beginnen Sie mit der kostenlosen Analyse. Erhalten Sie Ihren ersten Strategieplan noch in diesem Zyklus.",
 			"primary": "Kostenlose Diagnose starten",
-			"micro": "In 60 Sekunden sehen Sie Ihre erste Diagnose."
+			"micro": "Erste Analyse in 60 Sekunden. Strategieplan zu Monatsbeginn."
 		},
 		"video_testimonials": {
 			"title_before": "Sie entdeckten,",
@@ -807,6 +808,10 @@
 			"f_admin_panel_exposed": "Admin-Oberfläche extern auffindbar",
 			"f_error_pages_unbranded": "Fehlerseiten verlieren Besucher ohne Wiederherstellung",
 			"f_social_proof_missing": "Social Proof an Entscheidungspunkten fehlend"
+		},
+		"pricing_heading": {
+			"heading": "Ein Strategieplan pro Monat.",
+			"subheading": "Kontinuierliche Analyse, priorisierte Nächste Schritte, PDF-Export und teilbarer Link. Monatlicher Zyklus. 4×-Garantie."
 		}
 	},
 	"footer": {

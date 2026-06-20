@@ -17,7 +17,11 @@ const CallToAction = async ({
 				<div className='absolute left-1/2 top-1/2 h-[220px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-900/20 blur-[80px] sm:h-[300px] sm:w-[500px] sm:blur-[100px]' />
 
 				<div className='relative'>
-					<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-white sm:mb-5 sm:text-3xl lg:text-4xl xl:text-5xl'>
+					{/* Fraunces medium italic — the new copy ("Seu próximo
+					    Plano te espera") is an editorial brand promise pivot,
+					    not a hard-sell exhortation. Serif italic reads as a
+					    quiet closing line before the final CTA. */}
+					<h2 className='mb-4 font-serif text-[1.75rem] font-medium italic leading-[1.15] tracking-tight text-zinc-100 sm:mb-5 sm:text-3xl lg:text-4xl xl:text-5xl'>
 						{t("title")}
 					</h2>
 
@@ -25,7 +29,7 @@ const CallToAction = async ({
 						{t("subtitle")}
 					</p>
 
-					<ShinyButton href={primaryCtaHref}>{t("primary")}</ShinyButton>
+					<ShinyButton href={primaryCtaHref} data-vtg-cta="final-cta">{t("primary")}</ShinyButton>
 
 					<p className='mt-4 text-xs text-zinc-500'>
 						{t("micro")}

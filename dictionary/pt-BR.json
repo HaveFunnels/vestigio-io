@@ -47,14 +47,15 @@
 			}
 		},
 		"social_proof_strip": {
-			"before_highlight": "Empresas como a sua encontram em média 9 vazamentos críticos e ",
-			"highlight": "−R$31k/mês em perdas",
+			"before_highlight": "Na primeira análise de uma operação como a sua, em média ",
+			"highlight": "9 findings críticos",
 			"rotating_highlights": [
-				"−R$31k/mês em perdas",
-				"27% a 43% do faturamento",
+				"9 findings críticos",
+				"−R$ 31k/mês em vazamento identificado",
+				"27% a 43% do faturamento em risco",
 				"12s extras no checkout"
 			],
-			"after_highlight": " no primeiro diagnóstico Vestigio."
+			"after_highlight": ". Que ninguém estava vendo."
 		},
 		"demo_surface": {
 			"listen": "Ouvir",
@@ -331,31 +332,31 @@
 			"items": [
 				{
 					"question": "O que a Vestigio faz?",
-					"answer": "A Vestigio analisa seu site e mostra exatamente onde você está perdendo dinheiro — desde o clique no anúncio até a compra. Ela encontra os problemas, calcula o impacto em reais e te diz o que corrigir primeiro."
+					"answer": "A Vestigio analisa sua operação ponta a ponta e entrega um Plano de Estratégia mensal — onde o dinheiro está vazando, quem precisa agir, qual o impacto em R$, e o que fazer primeiro. Cada Plano é assinado por Vestigio e atualiza a cada ciclo."
 				},
 				{
 					"question": "Quanto tempo leva pra ter resultado?",
-					"answer": "O primeiro diagnóstico fica pronto em 60 segundos. Clientes que aplicam as correções prioritárias costumam ver impacto na primeira semana."
+					"answer": "A primeira análise fica pronta em 60 segundos. Seu Plano de Estratégia completo — com Tese do mês, Próximos passos priorizados e Continuidade — chega no início do mês seguinte. Os clientes que aplicam os primeiros passos costumam ver impacto já no mesmo ciclo."
 				},
 				{
 					"question": "Precisa de desenvolvedor pra instalar?",
-					"answer": "Não. Você só precisa colar a URL do seu site. A Vestigio faz todo o resto — sem código, sem tag, sem integração técnica pra começar."
+					"answer": "Não. Você cola a URL do seu site e a Vestigio faz o resto — sem código, sem tag, sem integração técnica pra começar a análise."
 				},
 				{
 					"question": "É grátis? Qual o custo depois?",
-					"answer": "O primeiro diagnóstico é 100% grátis, sem cartão de crédito. Depois, você escolhe um plano com monitoramento contínuo e ações priorizadas por IA."
+					"answer": "A primeira análise é gratuita, sem cartão. Depois, você assina um plano com um Plano de Estratégia por mês — análise contínua dos vazamentos identificados, atualização de ciclo, exportação em PDF e link compartilhável. Garantia 4× nos 30 primeiros dias."
 				},
 				{
 					"question": "Funciona com minha plataforma?",
-					"answer": "Sim. Vestigio funciona com qualquer site — Shopify, WooCommerce, Nuvemshop, WordPress, sites customizados e landing pages. Se tem URL, a gente analisa."
+					"answer": "Sim. Vestigio analisa qualquer site — Shopify, WooCommerce, Nuvemshop, WordPress, sites customizados e landing pages. Se tem URL, a gente analisa."
 				}
 			]
 		},
 		"cta": {
-			"title": "O dinheiro está saindo agora.",
-			"subtitle": "Cada dia sem visibilidade é receita que você não recupera.",
+			"title": "Seu próximo Plano te espera.",
+			"subtitle": "Comece pela análise gratuita. Receba seu primeiro Plano de Estratégia ainda este ciclo.",
 			"primary": "Rodar Diagnóstico Gratuito",
-			"micro": "Você pode estar olhando seu primeiro diagnóstico em 60 segundos."
+			"micro": "Primeira análise em 60 segundos. Plano de Estratégia no início do mês."
 		},
 		"video_testimonials": {
 			"title_before": "Eles descobriram",
@@ -816,6 +817,10 @@
 			"f_admin_panel_exposed": "Interface administrativa descobrível externamente",
 			"f_error_pages_unbranded": "Páginas de erro perdendo visitantes sem recuperação",
 			"f_social_proof_missing": "Prova social ausente em pontos-chave de decisão"
+		},
+		"pricing_heading": {
+			"heading": "Um Plano de Estratégia por mês.",
+			"subheading": "Análise contínua, Próximos passos priorizados, exportação em PDF e link compartilhável. Cadência mensal. Garantia 4×."
 		}
 	},
 	"footer": {

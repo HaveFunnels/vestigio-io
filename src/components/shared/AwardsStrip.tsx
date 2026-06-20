@@ -15,11 +15,17 @@ interface Badge {
 	alt: string;
 }
 
-// Order: flanking badges on sides, Product Hunt (widest) in center
+// Order: flanking badges on sides, Product Hunt (widest) in center.
+//
+// Switched from .svg to .png on 2026-06-20: the original SVGs were
+// PNG rasters wrapped in <feColorMatrix> mask filters (250KB each,
+// halo on light backgrounds). Transparent PNGs at 600×120 (3× retina
+// for the ~120px display width) ship at ~17-33KB each — no halo, no
+// filter weirdness, ~85% smaller per badge.
 const BADGES: Badge[] = [
-	{ src: "/images/awards/trustpilot.svg", alt: "Trustpilot" },
-	{ src: "/images/awards/product-hunt.svg", alt: "Product Hunt" },
-	{ src: "/images/awards/reclame-aqui.svg", alt: "Reclame Aqui RA1000" },
+	{ src: "/images/awards/trustpilot.png", alt: "Trustpilot" },
+	{ src: "/images/awards/product-hunt.png", alt: "Product Hunt" },
+	{ src: "/images/awards/reclame-aqui.png", alt: "Reclame Aqui RA1000" },
 ];
 
 interface AwardsStripProps {

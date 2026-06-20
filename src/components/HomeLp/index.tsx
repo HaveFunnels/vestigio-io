@@ -1,6 +1,5 @@
 import dynamic from "next/dynamic";
 import Hero from "@/components/Home/Hero";
-import HomeBigCard from "@/components/Home/HomeBigCard";
 import SocialProofStrip from "@/components/Home/SocialProofStrip";
 import VSL from "@/components/Home/VSL";
 import ProductTour from "@/components/Home/ProductTour";
@@ -28,13 +27,13 @@ const LP_CTA_HREF = "/audit";
 const HomeLp = () => {
 	return (
 		<>
-			<HomeBigCard>
-				<Hero i18nNamespace="homepage.hero_lp" primaryCtaHref={LP_CTA_HREF} />
-				<SocialProofStrip />
-				<VSL />
-				<ProductTour primaryCtaHref={LP_CTA_HREF} />
-				<ClientGallery />
-			</HomeBigCard>
+			{/* HomeBigCard gradient wrapper dropped 2026-06-20 (same as
+			    main Home). Edge-to-edge sections on the dark canvas. */}
+			<Hero i18nNamespace="homepage.hero_lp" primaryCtaHref={LP_CTA_HREF} />
+			<SocialProofStrip />
+			<VSL />
+			<ProductTour primaryCtaHref={LP_CTA_HREF} />
+			<ClientGallery />
 			<MiniCalculator primaryCtaHref={LP_CTA_HREF} />
 			<SocialProof rows="row1" />
 			<SolutionLayers />

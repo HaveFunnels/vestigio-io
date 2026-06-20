@@ -81,7 +81,7 @@ const ClientGallery = async () => {
 								// the desktop max-w-[120px] × h-7 typical case.
 								width={120}
 								height={28}
-								// ClientGallery is the 4th section in HomeBigCard — well
+								// ClientGallery is the 4th section above the fold — well
 								// below the first viewport on mobile. lazy lets the browser
 								// defer the marquee logos until they enter view, saving
 								// 10-20 image fetches on cold load.
@@ -93,7 +93,11 @@ const ClientGallery = async () => {
 				</div>
 
 				<div className="mt-7 px-4 sm:mt-8 sm:px-8 xl:px-0">
-					<AwardsStrip darkBg={false} />
+					{/* darkBg=true now that HomeBigCard's gradient was killed —
+					    ClientGallery sits on the same dark canvas as every
+					    other section, so the mixBlendMode:lighten badge
+					    treatment is correct again. */}
+					<AwardsStrip darkBg={true} />
 				</div>
 			</div>
 		</section>

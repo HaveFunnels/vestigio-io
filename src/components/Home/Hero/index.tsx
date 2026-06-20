@@ -132,21 +132,23 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 
 			{/* ─────────── Headline + subtitle + pills + CTAs ─────────── */}
 			<div className='relative mx-auto w-full max-w-[1000px] px-4 text-center sm:px-8 xl:px-0'>
-				<h1 className='mb-5 font-display text-[2rem] font-semibold leading-[1.1] tracking-tight text-white sm:mb-6 sm:text-[2.75rem] lg:text-[3.75rem] xl:text-[4.25rem]'>
-					{(() => {
-						const gradientParts = t("headline_gradient_parts") ? t("headline_gradient_parts").split(",").map(Number) : [];
-						const gradientClass = "bg-gradient-to-r from-emerald-300 via-white/90 to-emerald-300 bg-clip-text text-transparent";
-						const parts = [
-							{ text: t("headline_part1"), num: 1 },
-							{ text: t("headline_part2"), num: 2 },
-							{ text: t("headline_part3"), num: 3 },
-						].filter(p => p.text);
-						return parts.map((p, i) => (
-							<span key={i} className={`block ${gradientParts.includes(p.num) ? gradientClass : ""}`}>
-								{p.text}
-							</span>
-						));
-					})()}
+				{/* H1 now sets in Fraunces (font-serif) at medium weight — the
+				    copy ("Um Plano de Estratégia / por mês. / Escrito, não
+				    gerado.") is editorial register, so the serif earns its
+				    place (not costume drama).
+				    Line 3 takes italic + muted as the anti-AI-slop signature
+				    ("Escrito, não gerado" — the phrase the council flagged
+				    as the single most positioning-dense line available).
+				    The old emerald gradient is dropped (color-on-text is the
+				    template move; the typography carries identity now). */}
+				<h1 className='mb-5 font-serif text-[2rem] font-medium leading-[1.1] tracking-tight text-zinc-100 sm:mb-6 sm:text-[2.75rem] lg:text-[3.75rem] xl:text-[4.25rem]'>
+					{t("headline_part1") && <span className='block'>{t("headline_part1")}</span>}
+					{t("headline_part2") && <span className='block'>{t("headline_part2")}</span>}
+					{t("headline_part3") && (
+						<span className='mt-1 block font-normal italic text-content-secondary sm:mt-2'>
+							{t("headline_part3")}
+						</span>
+					)}
 				</h1>
 
 				<p className='mx-auto mb-8 w-full max-w-[680px] text-base leading-relaxed text-zinc-400 sm:mb-10 sm:text-lg'>

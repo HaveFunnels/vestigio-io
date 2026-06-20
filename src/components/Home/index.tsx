@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
 import Hero from "./Hero";
+import HomeBigCard from "./HomeBigCard";
 import SocialProofStrip from "./SocialProofStrip";
 import DemoSurface from "./DemoSurface";
 import ClientGallery from "./ClientGallery";
@@ -33,17 +34,18 @@ const CallToAction = dynamic(() => import("./CallToAction"));
 const Home = () => {
 	return (
 		<>
-			{/* Top-of-fold sections render edge-to-edge on the page's dark
-			    canvas. Pre-2026-06 they were wrapped in a HomeBigCard that
-			    applied a dark→white gradient — legacy of an earlier design
-			    where ClientGallery sat on a light surface. The light surface
-			    was killed (council "drop HomeBigCard gradient" — D11) and
-			    the wrapper went with it. The site now reads as one
-			    continuous editorial publication on a single dark canvas. */}
-			<Hero />
-			<SocialProofStrip />
-			<DemoSurface />
-			<ClientGallery />
+			{/* Top-of-fold sections wrapped in HomeBigCard — gradient
+			    canvas (dark → white) that gives the hero + ProductTour +
+			    ClientGallery a contained "lit page" feel against the
+			    surrounding dark body. Restored 2026-06-20 (was briefly
+			    removed; the gradient ending in white was the deliberate
+			    transition signature, not slop). */}
+			<HomeBigCard>
+				<Hero />
+				<SocialProofStrip />
+				<DemoSurface />
+				<ClientGallery />
+			</HomeBigCard>
 			<ScrollReveal>
 				<MiniCalculator />
 			</ScrollReveal>

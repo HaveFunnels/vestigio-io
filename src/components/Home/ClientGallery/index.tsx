@@ -93,11 +93,11 @@ const ClientGallery = async () => {
 				</div>
 
 				<div className="mt-7 px-4 sm:mt-8 sm:px-8 xl:px-0">
-					{/* darkBg=true now that HomeBigCard's gradient was killed —
-					    ClientGallery sits on the same dark canvas as every
-					    other section, so the mixBlendMode:lighten badge
-					    treatment is correct again. */}
-					<AwardsStrip darkBg={true} />
+					{/* darkBg=false: ClientGallery sits at the bottom of
+					    HomeBigCard's dark→white gradient. The badges are
+					    over the white portion, so mixBlendMode:lighten
+					    would wash them out. */}
+					<AwardsStrip darkBg={false} />
 				</div>
 			</div>
 		</section>

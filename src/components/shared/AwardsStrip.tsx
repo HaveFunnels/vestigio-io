@@ -31,8 +31,8 @@ const BADGES: Badge[] = [
 interface AwardsStripProps {
 	/** Smaller variant for footer */
 	compact?: boolean;
-	/** Set false when rendered on a light background. Default true since
-	 *  the homepage is dark canvas-wide after the HomeBigCard kill. */
+	/** Set false when rendered on a light background (e.g. HomeBigCard
+	 *  gradient bottom which transitions to white). */
 	darkBg?: boolean;
 	/** Restrict to specific badges by alt text */
 	only?: string[];

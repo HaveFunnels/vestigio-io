@@ -912,7 +912,7 @@
 						"items": [
 							"1 environment",
 							"Weekly diagnostic cycles",
-							"Vestigio Pulse AI interactions",
+							"Agentic analyses",
 							"Impact quantification"
 						]
 					},
@@ -927,7 +927,7 @@
 						"items": [
 							"3 environments",
 							"Daily diagnostic cycles",
-							"5x Vestigio Pulse AI interactions",
+							"5x Agentic analyses",
 							"Revenue integrity maps"
 						]
 					},
@@ -942,7 +942,7 @@
 						"items": [
 							"10 environments",
 							"Daily diagnostic cycles",
-							"20x Vestigio Pulse AI interactions",
+							"20x Agentic analyses",
 							"Dedicated account manager"
 						]
 					},
@@ -3486,7 +3486,7 @@
 			"cancel_subscription": "Cancel Subscription",
 			"subscribe_to_plan": "Subscribe to a Plan",
 			"usage_period": "Usage This Period",
-			"agentic_insights": "Vestigio Pulse AI",
+			"agentic_insights": "Agentic analysis",
 			"environments": "Environments",
 			"team_members": "Team Members",
 			"cancel_modal_title": "Cancel Subscription",
@@ -4474,9 +4474,9 @@
 				"features": {
 					"domain_singular": "1 domain",
 					"domain_plural": "{count} domains",
-					"agentic_insights": "Vestigio Pulse AI",
-					"agentic_insights_5x": "5x Vestigio Pulse AI",
-					"agentic_insights_20x": "20x Vestigio Pulse AI",
+					"agentic_insights": "Agentic analysis",
+					"agentic_insights_5x": "5x Agentic analysis",
+					"agentic_insights_20x": "20x Agentic analysis",
 					"continuous_audits": "Continuous audits",
 					"full_analysis": "Full analysis",
 					"credits_system": "Credits system",
@@ -4490,7 +4490,7 @@
 						"price": "$99",
 						"features": [
 							"1 domain",
-							"Vestigio Pulse AI interactions/mo",
+							"Agentic analyses/mo",
 							"Full analysis",
 							"Impact quantification"
 						]
@@ -4500,7 +4500,7 @@
 						"price": "$199",
 						"features": [
 							"3 domains",
-							"5x Vestigio Pulse AI interactions/mo",
+							"5x Agentic analyses/mo",
 							"Continuous audits",
 							"Root cause maps"
 						]
@@ -4510,7 +4510,7 @@
 						"price": "$399",
 						"features": [
 							"10 domains",
-							"20x Vestigio Pulse AI interactions/mo",
+							"20x Agentic analyses/mo",
 							"Credits system",
 							"Priority support"
 						]

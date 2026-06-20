@@ -42,57 +42,11 @@ import { ShinyButton } from "@/components/ui/shiny-button";
 // this file only orchestrates the hero layout. CTAs moved to
 // ProductTour so they sit below the product proof surface.
 
-/* ──────────────────────────────────────────────────────────────────
- * Vestigio trails — subtle dashed vertical lines on the LEFT and
- * RIGHT sides of the hero only (never under the headline). Each
- * rail is a thin, dark, dashed vertical line with a small bright
- * pulse that descends along it. Fewer rails (4 total: 2 per side),
- * thinner strokes, darker colors, and slower speeds.
- * ──────────────────────────────────────────────────────────────── */
-
-interface RailDef {
-	/** X position as a percentage of viewport width */
-	xPct: number;
-	/** Negative delay so the loop is already in motion on first paint */
-	delay: number;
-	/** Total cycle length in seconds */
-	duration: number;
-}
-
-// 4 rails: 2 on the far left, 2 on the far right. None between
-// ~15% and ~85% where the hero content sits.
-const RAILS: RailDef[] = [
-	{ xPct: 4,  delay: 0,  duration: 18 },
-	{ xPct: 10, delay: 7,  duration: 22 },
-	{ xPct: 90, delay: 3,  duration: 20 },
-	{ xPct: 96, delay: 11, duration: 16 },
-];
-
-const TrailLayer = () => (
-	<div
-		className='pointer-events-none absolute inset-x-0 top-0 -z-10 h-[300%]'
-		aria-hidden
-	>
-		{RAILS.map((rail, i) => (
-			<div
-				key={i}
-				className='absolute top-0 h-full w-px'
-				style={{ left: `${rail.xPct}%` }}
-			>
-				{/* Faint dashed vertical guide — always visible */}
-				<div className='absolute inset-y-0 left-0 w-px border-l border-dashed border-white/[0.04]' />
-				{/* Moving pulse — a short bright segment */}
-				<div
-					className='vhero-trail absolute left-0 top-0 h-8 w-px bg-gradient-to-b from-transparent via-emerald-400/40 to-transparent'
-					style={{
-						animationDelay: `-${rail.delay}s`,
-						animationDuration: `${rail.duration}s`,
-					}}
-				/>
-			</div>
-		))}
-	</div>
-);
+// Vestigio trails (4 vertical rails with descending emerald pulses,
+// 16-22s loops) were removed 2026-06-20 as part of the homepage cohesion
+// pass: the authenticated Plano has zero infinite-loop animations and
+// the trails were an always-on attention magnet fighting the editorial
+// register. The halos + hero gradient already carry ambient depth.
 
 // (BrowserShell deleted — moved to ProductTour/index.tsx)
 
@@ -112,25 +66,6 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 			{/* Component-scoped keyframes — `vhero-` prefix avoids global
 			    collisions with the rest of the app. */}
 			<style>{`
-				/* Trail keyframe — a short bright segment that descends
-				   through the hero AND into the product tour below.
-				   Using 250vh so the pulse travels well past the hero
-				   section boundary before fading out. */
-				@keyframes vhero-trail {
-					0%   { transform: translateY(-40px); opacity: 0; }
-					5%   { opacity: 1; }
-					85%  { opacity: 1; }
-					100% { transform: translateY(250vh); opacity: 0; }
-				}
-				.vhero-trail {
-					animation-name: vhero-trail;
-					animation-iteration-count: infinite;
-					animation-timing-function: linear;
-					/* will-change promotes to its own GPU layer so the
-					   continuous translateY doesn't repaint surrounding
-					   content. Transform-only animation = no layout cost. */
-					will-change: transform;
-				}
 				@keyframes vhero-pulse {
 					0%, 100% { transform: scale(1); opacity: 0.9; }
 					50%      { transform: scale(1.18); opacity: 0.55; }
@@ -158,7 +93,6 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 					animation: vhero-float-up 1s cubic-bezier(0.16,1,0.3,1) 0.4s both;
 				}
 				@media (prefers-reduced-motion: reduce) {
-					.vhero-trail,
 					.vhero-shell,
 					.vhero-float-left,
 					.vhero-float-right,
@@ -191,9 +125,6 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 				<div className='absolute left-1/2 top-0 h-[400px] w-[600px] -translate-x-1/2 rounded-full bg-emerald-500/[0.04] blur-[60px] sm:h-[700px] sm:w-[1100px] sm:bg-emerald-500/[0.07] sm:blur-[120px]' />
 				<div className='absolute left-1/2 top-[300px] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-indigo-500/[0.03] blur-[60px] sm:h-[600px] sm:w-[1000px] sm:bg-indigo-500/[0.05] sm:blur-[120px]' />
 			</div>
-
-			{/* Animated descending vestigio trails */}
-			<TrailLayer />
 
 			{/* Announcement banner lives in the site layout now
 			    (src/components/AnnouncementBanner) so it sits above the

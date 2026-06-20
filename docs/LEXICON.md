@@ -47,10 +47,8 @@ These exist today but are scheduled for removal. Not bugs — backlog items.
 
 | Location | Term | Scheduled for | Notes |
 |---|---|---|---|
-| `dictionary/*.json` — `product_tour.chat_panel.header` (464) | "Vestigio Pulse" | Ship A | ProductTour entire component dies; D1 replaces with static Plano preview |
-| `dictionary/*.json` — `product_tour.overlay_ai.eyebrow` (566) | "Vestigio Pulse" | Ship A | Same — ProductTour deletion |
-| `dictionary/*.json` — `billing.agentic_insights` (3573) | "Vestigio Pulse AI" | Ship B | D8 pricing rewrite |
-| `dictionary/*.json` — `pricing.tiers.features.agentic_insights*` (4561-4563) | "Vestigio Pulse AI" | Ship B | D8 pricing rewrite |
+| `dictionary/*.json` — `product_tour.chat_panel.header` (464) | "Vestigio Pulse" | Ship A | ProductTour replaced by guided sections of a real Plano (see `[[product-tour-guided-plan-sections]]`); these copy keys get rewritten with the new step content |
+| `dictionary/*.json` — `product_tour.overlay_ai.eyebrow` (566) | "Vestigio Pulse" | Ship A | Same — ProductTour rebuild |
 | `src/app/(site)/audit/*` | "auditoria"-adjacent copy (NOT "diagnóstico" — see exception above) | Ship A | Sweep against this lexicon; preserve "Rodar diagnóstico gratuito" hero CTA |
 | `/audit` URL | URL itself | Indefinite | User decision: keep route alive — no rename, no redirect. CTA framing stays as today. Avoids breaking inbound links + preserves the free-tool conversion engine. Revisit only if instrumentation shows the CTA is the funnel bottleneck. |
 
@@ -81,3 +79,8 @@ These exist today but are scheduled for removal. Not bugs — backlog items.
 ## Change log
 
 - **2026-06-20** — File created. Ship 0 of homepage cohesion rewrite. Pulse killed on hero banners + Counter card across 4 locales. Remaining Pulse refs scheduled for Ship A/B (see Transitional table).
+- **2026-06-20** — User override on diagnóstico CTA: keep "Rodar diagnóstico gratuito" as the top-of-funnel free-action CTA per user preference (okara.ai cited as same-category reference). "Diagnóstico" moves from ❌ NO → ⚠️ Conditional. /audit URL decision locked: keep route + CTA, no rename. Memory rule re: Auditoria/Audit still fully in force.
+- **2026-06-20** — Visual cohesion pass: stripped violet from 5 marketing surfaces, killed Counter Pulse-radar metaphor (Tese card redesigned with serif quote glyph + dashed rings), applied Fraunces selectively (AnnouncementBanner label + Counter Tese card body).
+- **2026-06-20** — Palette rebalance: emerald reserved for action/identity (CTAs, gradient, identity moments). Decorations go sky (secondary) or neutral. Avoid emerald monoculture.
+- **2026-06-20** — Pricing copy cleanup: "Vestigio Pulse AI" → "Análise agêntica" / "Agentic analysis" / "Agentische Analyse" / "Análisis agéntico" across 4 locales (~14 strings). Pulse name now absent from the pricing surface. Remaining Pulse refs are limited to ProductTour internals (dies Ship A) and authenticated product nav/onboarding (out of marketing scope).
+- **2026-06-20** — Vestigio trails (4 vertical hero rails, descending emerald pulses, 16-22s loops) removed entirely from Hero. Plano has zero infinite loops; trails were the largest remaining ambient-loop attention magnet. Halos + gradient carry ambient depth alone.

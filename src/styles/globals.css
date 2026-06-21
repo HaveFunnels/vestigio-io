@@ -127,6 +127,25 @@
 
 	body {
 		@apply relative z-1 font-inter text-base font-normal -tracking-[0.16px] text-body;
+		/* Clip horizontal overflow at body level.
+		 *
+		 * Why: the Hero halos (src/components/Home/Hero/index.tsx) use
+		 * `-inset-x-40` (=-10rem each side ≈ 640px combined overflow on
+		 * mobile) so the glow can bleed down into the ProductTour
+		 * section. The Hero section deliberately has NO overflow-hidden
+		 * for the same reason. Without a clip somewhere higher up, the
+		 * halo bleed forces the document wider than the viewport,
+		 * producing horizontal scroll on mobile — which in turn makes
+		 * the fixed header (and its hamburger button) appear off-center
+		 * relative to the visible page.
+		 *
+		 * `overflow-x: clip` rather than `hidden` because `hidden`
+		 * establishes a scroll container, which would break any
+		 * `position: sticky` descendant (the CadenceFrame and other
+		 * sticky elements would stop sticking). `clip` clips the same
+		 * way without that side effect. Supported in all major
+		 * browsers since 2022. */
+		overflow-x: clip;
 	}
 
 	body[data-scroll-locked] {

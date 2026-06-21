@@ -822,9 +822,9 @@
 			"dismiss": "Fechar"
 		},
 		"pricing_cadence": {
-			"eyebrow": "POR QUE MENSAL",
+			"eyebrow": "A CADÊNCIA",
 			"statement": "Decisão > alerta.",
-			"body": "Vestigio é uma cadência, não um stream de notificação. Os findings aparecem em tempo real, mas o Plano fecha o ciclo. O que move o R$ é clareza pra decidir, não mais um sino tocando."
+			"body": "Vestigio é uma cadência, não um stream de notificação. Os findings aparecem em tempo real, mas o Plano fecha o ciclo. O que move o R$ é clareza pra decidir o que atacar primeiro, não mais um sino tocando."
 		}
 	},
 	"footer": {

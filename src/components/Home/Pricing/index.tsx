@@ -38,6 +38,12 @@ const HomePricing = () => {
 
   return (
     <section id="pricing" className="border-t border-white/5 bg-[#090911]">
+      {/* Cadence frame — placed BEFORE the pricing tiers. The Pricing
+          heading mentions "por mês"; the objection ("monthly = slow")
+          is triggered there, so the frame must answer at that moment,
+          not after social proof has already run past. Validated via
+          marketing-psychology + page-cro skills. */}
+      <CadenceFrame />
       <PricingComponent
         plans={plans || FALLBACK_PLANS}
         billingCycle={cycle}
@@ -54,10 +60,6 @@ const HomePricing = () => {
         subheading={t("subheading")}
         annualPricingEnabled={annualReady}
       />
-      {/* Cadence objection-handler — sits between tiers and social proof
-          to address "why monthly, not real-time?" before the social-proof
-          row reinforces the choice via others. */}
-      <CadenceFrame />
       <SocialProof />
       {/* ROI calculator and the bottom Final CTA both default to the
           paywall-aware signup URL (see their own files). No override

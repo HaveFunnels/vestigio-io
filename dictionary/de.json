@@ -814,9 +814,9 @@
 			"dismiss": "Schließen"
 		},
 		"pricing_cadence": {
-			"eyebrow": "WARUM MONATLICH",
+			"eyebrow": "DIE KADENZ",
 			"statement": "Entscheidung > Alarm.",
-			"body": "Vestigio ist eine Kadenz, kein Benachrichtigungsstrom. Findings erscheinen in Echtzeit, aber der Plan schließt den Zyklus. Was den Umsatz bewegt, ist Klarheit zur Entscheidung — nicht noch eine Glocke, die läutet."
+			"body": "Vestigio ist eine Kadenz, kein Benachrichtigungsstrom. Findings erscheinen in Echtzeit, aber der Plan schließt den Zyklus. Was den Umsatz bewegt, ist Klarheit zur Entscheidung, was zuerst zu beheben ist — nicht noch eine Glocke, die läutet."
 		}
 	},
 	"footer": {

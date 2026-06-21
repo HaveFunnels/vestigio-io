@@ -822,9 +822,9 @@
 			"dismiss": "Close"
 		},
 		"pricing_cadence": {
-			"eyebrow": "WHY MONTHLY",
+			"eyebrow": "THE CADENCE",
 			"statement": "Decision > alert.",
-			"body": "Vestigio is a cadence, not a notification stream. Findings appear in real time, but the Plan closes the cycle. What moves money is clarity to decide, not another bell ringing."
+			"body": "Vestigio is a cadence, not a notification stream. Findings appear in real time, but the Plan closes the cycle. What moves money is clarity to decide what to fix first, not another bell ringing."
 		}
 	},
 	"footer": {

@@ -6,6 +6,7 @@ import VSL from "@/components/Home/VSL";
 import ProductTour from "@/components/Home/ProductTour";
 import ClientGallery from "@/components/Home/ClientGallery";
 import MiniCalculator from "@/components/Home/MiniCalculator";
+import StickyCTA from "@/components/Home/StickyCTA";
 
 const SolutionLayers = dynamic(() => import("@/components/Home/SolutionLayers"));
 const Features = dynamic(() => import("@/components/Home/Features"));
@@ -45,6 +46,7 @@ const HomeLp = () => {
 			<SocialProof rows="row2" />
 			<FAQ />
 			<CallToAction primaryCtaHref={LP_CTA_HREF} />
+			<StickyCTA primaryCtaHref={LP_CTA_HREF} />
 		</>
 	);
 };

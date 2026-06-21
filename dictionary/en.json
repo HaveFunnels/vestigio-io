@@ -815,6 +815,11 @@
 		"pricing_heading": {
 			"heading": "One Strategy Plan per month.",
 			"subheading": "Continuous analysis, prioritized Next steps, PDF export, and a shareable link. Monthly cadence. 4× Guarantee."
+		},
+		"sticky_cta": {
+			"hook": "See where your revenue is leaking.",
+			"cta": "Run analysis",
+			"dismiss": "Close"
 		}
 	},
 	"footer": {

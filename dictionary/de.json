@@ -807,6 +807,11 @@
 		"pricing_heading": {
 			"heading": "Ein Strategieplan pro Monat.",
 			"subheading": "Kontinuierliche Analyse, priorisierte Nächste Schritte, PDF-Export und teilbarer Link. Monatlicher Zyklus. 4×-Garantie."
+		},
+		"sticky_cta": {
+			"hook": "Sehen Sie, wo Ihr Umsatz leckt.",
+			"cta": "Analyse starten",
+			"dismiss": "Schließen"
 		}
 	},
 	"footer": {

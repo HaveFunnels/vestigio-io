@@ -808,6 +808,11 @@
 		"pricing_heading": {
 			"heading": "Un Plan de Estrategia por mes.",
 			"subheading": "Análisis continuo, Próximos pasos priorizados, exportación en PDF y enlace compartible. Cadencia mensual. Garantía 4×."
+		},
+		"sticky_cta": {
+			"hook": "Mira dónde tus ingresos se fugan.",
+			"cta": "Hacer análisis",
+			"dismiss": "Cerrar"
 		}
 	},
 	"footer": {

@@ -815,6 +815,11 @@
 		"pricing_heading": {
 			"heading": "Um Plano de Estratégia por mês.",
 			"subheading": "Análise contínua, Próximos passos priorizados, exportação em PDF e link compartilhável. Cadência mensal. Garantia 4×."
+		},
+		"sticky_cta": {
+			"hook": "Veja onde sua receita está vazando.",
+			"cta": "Rodar análise",
+			"dismiss": "Fechar"
 		}
 	},
 	"footer": {

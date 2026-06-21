@@ -6,6 +6,7 @@ import DemoSurface from "./DemoSurface";
 import ClientGallery from "./ClientGallery";
 import MiniCalculator from "./MiniCalculator";
 import ScrollReveal from "./ScrollReveal";
+import StickyCTA from "./StickyCTA";
 
 // ── Below-the-fold: lazy-load JS chunks, keep SSR HTML ──
 // next/dynamic with ssr: true (default) renders full HTML on the
@@ -73,6 +74,9 @@ const Home = () => {
 			<ScrollReveal>
 				<CallToAction />
 			</ScrollReveal>
+			{/* Sticky CTA bar — slides in after hero, hides near the final
+			    CallToAction section. Dismissible. */}
+			<StickyCTA />
 		</>
 	);
 };

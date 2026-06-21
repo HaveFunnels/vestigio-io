@@ -77,30 +77,26 @@
 			"subtitle_before_bold": "Wir zeigen, ",
 			"subtitle_bold": "wo das Geld entkommt, wie viel, und was Sie tun, um es zu stoppen",
 			"subtitle_after_bold": ".",
-			"pills": [
-				{
-					"impact": "Leads konvertieren nicht?",
-					"solution": "Wir zeigen warum"
-				},
-				{
-					"impact": "Werbebudget ohne Return?",
-					"solution": "Wir zeigen das Leck"
-				},
-				{
-					"impact": "Schöne Seite, kein Umsatz?",
-					"solution": "Wir finden den Engpass"
-				},
-				{
-					"impact": "Im Dunkeln entscheiden?",
-					"solution": "Impact in Euro"
-				}
-			],
 			"cta_primary": "Kostenlose Diagnose starten",
 			"cta_secondary": "Produkt-Tour ansehen",
 			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
-			}
+			},
+			"stats": [
+				{
+					"value": "9 Lecks",
+					"label": "Pro Analyse Ø"
+				},
+				{
+					"value": "Genauer Betrag",
+					"label": "In jedem Leck"
+				},
+				{
+					"value": "4 Schritte",
+					"label": "Pro Ausgabe"
+				}
+			]
 		},
 		"hero_lp": {
 			"banner": {

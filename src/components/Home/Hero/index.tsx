@@ -34,13 +34,20 @@
  */
 
 import { getTranslations } from "next-intl/server";
-import HeroPills, { type Pill } from "./HeroPills";
 import TrustMicrocopy from "./TrustMicrocopy";
 import { ShinyButton } from "@/components/ui/shiny-button";
 
-// Pill icons and the pill interaction state live in HeroPills.tsx —
-// this file only orchestrates the hero layout. CTAs moved to
-// ProductTour so they sit below the product proof surface.
+interface HeroStat { value: string; label: string }
+
+// HeroPills (4 pain→solution liquid-fill cards) removed 2026-06-21
+// per frontend-design audit: pain→solution pills are a 2020-2022
+// conversion trope; 2026 SaaS peers (Linear, Vercel, Anthropic) don't
+// use them. Replaced with a concrete stat-strip (3 product facts in
+// JetBrains Mono) — Stripe-style proof anchor rather than 4 generic
+// rhetorical questions. The stat values are deliberately not
+// fabricated specifics (no made-up R$ amount); they're the actual
+// product facts: median leak count, R$ precision per finding, and
+// prescribed actions per edition.
 
 // Vestigio trails (4 vertical rails with descending emerald pulses,
 // 16-22s loops) were removed 2026-06-20 as part of the homepage cohesion
@@ -56,7 +63,7 @@ import { ShinyButton } from "@/components/ui/shiny-button";
 
 const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/audit" }: { i18nNamespace?: string; primaryCtaHref?: string } = {}) => {
 	const t = await getTranslations(i18nNamespace);
-	const pills = t.raw("pills") as Pill[];
+	const stats = t.raw("stats") as HeroStat[];
 
 	// No brush underline — removed per user feedback ("não está
 	// surtindo o efeito que deveria").
@@ -181,11 +188,27 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 					)}
 				</p>
 
-				{/* 5 interactive impact / solution pills — client component.
-				    Each card uses a liquid-fill animation to invert from
-				    dark + pain → emerald + solution when clicked. See
-				    HeroPills.tsx. */}
-				<HeroPills pills={pills} />
+				{/* Stat-strip — 3 concrete product facts (Stripe-style
+				    proof anchor). Numbers in JetBrains Mono for visual
+				    consistency with HeroMetrics inside the authenticated
+				    Plano. Hairline `divide-x` rules between cells = the
+				    editorial newspaper feature signature already used in
+				    Features and ProductTour. Zinc-100 numbers + small
+				    uppercase labels — no color accents (loss-frame
+				    already lives in the H1; the strip stays neutral so
+				    the data carries on its own). */}
+				<dl className="mx-auto mb-8 grid max-w-[560px] grid-cols-3 divide-x divide-edge sm:mb-10 sm:max-w-[600px]">
+					{stats.map((s, i) => (
+						<div key={i} className="flex flex-col items-center px-2 text-center sm:px-3">
+							<dt className="font-mono text-[16px] font-semibold tabular-nums leading-none text-zinc-100 sm:text-[20px] lg:text-[22px]">
+								{s.value}
+							</dt>
+							<dd className="mt-2 text-[9px] font-medium uppercase tracking-[0.12em] leading-tight text-content-faint sm:text-[10px] sm:tracking-[0.14em]">
+								{s.label}
+							</dd>
+						</div>
+					))}
+				</dl>
 
 				{/* Primary CTA — visible above the fold, before the
 				    visitor scrolls into the Product Tour. The button

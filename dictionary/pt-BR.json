@@ -77,24 +77,6 @@
 			"subtitle_before_bold": "Mostramos ",
 			"subtitle_bold": "onde o dinheiro escapa, quanto, e o que você faz pra parar",
 			"subtitle_after_bold": ".",
-			"pills": [
-				{
-					"impact": "Leads não convertem?",
-					"solution": "Mostramos o porquê"
-				},
-				{
-					"impact": "Investimento sem retorno?",
-					"solution": "Revelamos o ralo"
-				},
-				{
-					"impact": "Site bonito sem vendas?",
-					"solution": "Achamos o gargalo"
-				},
-				{
-					"impact": "Decidindo no escuro?",
-					"solution": "Impacto em reais"
-				}
-			],
 			"cta_primary": "Rodar diagnóstico gratuito",
 			"cta_secondary": "Ver tour do produto",
 			"cta_micro": "",
@@ -104,7 +86,21 @@
 			},
 			"shell": {
 				"_deprecated": "moved to product_tour"
-			}
+			},
+			"stats": [
+				{
+					"value": "9 vazamentos",
+					"label": "Média por análise"
+				},
+				{
+					"value": "R$ exato",
+					"label": "Em cada vazamento"
+				},
+				{
+					"value": "4 passos",
+					"label": "Por edição"
+				}
+			]
 		},
 		"logo_strip": {
 			"headline": "Confiada por empresas, marcas e especialistas em crescimento."

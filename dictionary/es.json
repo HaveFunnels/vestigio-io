@@ -77,30 +77,26 @@
 			"subtitle_before_bold": "Te mostramos ",
 			"subtitle_bold": "dónde se fuga el dinero, cuánto, y qué haces para pararlo",
 			"subtitle_after_bold": ".",
-			"pills": [
-				{
-					"impact": "Leads no convierten?",
-					"solution": "Te mostramos por qué"
-				},
-				{
-					"impact": "Inversión sin retorno?",
-					"solution": "Revelamos la fuga"
-				},
-				{
-					"impact": "Sitio bonito, sin ventas?",
-					"solution": "Hallamos el cuello"
-				},
-				{
-					"impact": "Decidiendo a ciegas?",
-					"solution": "Impacto en dólares"
-				}
-			],
 			"cta_primary": "Hacer diagnóstico gratis",
 			"cta_secondary": "Ver tour del producto",
 			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
-			}
+			},
+			"stats": [
+				{
+					"value": "9 fugas",
+					"label": "Por análisis prom."
+				},
+				{
+					"value": "Cantidad exacta",
+					"label": "En cada fuga"
+				},
+				{
+					"value": "4 pasos",
+					"label": "Por edición"
+				}
+			]
 		},
 		"hero_lp": {
 			"banner": {

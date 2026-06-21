@@ -77,24 +77,6 @@
 			"subtitle_before_bold": "We show you ",
 			"subtitle_bold": "where the money escapes, how much, and what you do to stop it",
 			"subtitle_after_bold": ".",
-			"pills": [
-				{
-					"impact": "Leads not converting?",
-					"solution": "We show you why"
-				},
-				{
-					"impact": "Ad spend not returning?",
-					"solution": "We reveal the leak"
-				},
-				{
-					"impact": "Nice site, no sales?",
-					"solution": "We find the bottleneck"
-				},
-				{
-					"impact": "Deciding in the dark?",
-					"solution": "Impact in dollars"
-				}
-			],
 			"cta_primary": "Run free diagnostic",
 			"cta_secondary": "Watch product tour",
 			"cta_micro": "",
@@ -104,7 +86,21 @@
 			},
 			"shell": {
 				"_deprecated": "moved to product_tour"
-			}
+			},
+			"stats": [
+				{
+					"value": "9 leaks",
+					"label": "Per-analysis avg."
+				},
+				{
+					"value": "Exact amount",
+					"label": "In each leak"
+				},
+				{
+					"value": "4 steps",
+					"label": "Per edition"
+				}
+			]
 		},
 		"logo_strip": {
 			"headline": "Trusted by companies, brands, and growth specialists."

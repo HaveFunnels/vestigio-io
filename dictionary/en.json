@@ -818,7 +818,7 @@
 		},
 		"sticky_cta": {
 			"hook": "See where your revenue is leaking.",
-			"cta": "Run analysis",
+			"cta": "Show me now",
 			"dismiss": "Close"
 		},
 		"pricing_cadence": {

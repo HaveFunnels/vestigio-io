@@ -212,7 +212,7 @@
 						]
 					},
 					{
-						"label": "Buyers acionados",
+						"label": "Times com próximos passos",
 						"value": "3",
 						"delta": "Marketing · Eng · Diretoria",
 						"tone": "neutral"
@@ -535,7 +535,7 @@
 						"tone": "neutral"
 					},
 					{
-						"label": "Buyers acionados",
+						"label": "Times com próximos passos",
 						"value": "3",
 						"tone": "neutral"
 					}

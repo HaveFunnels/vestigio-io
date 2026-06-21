@@ -205,7 +205,7 @@
 						]
 					},
 					{
-						"label": "Käufer angesprochen",
+						"label": "Teams mit nächsten Schritten",
 						"value": "3",
 						"delta": "Marketing · Entw. · Leitung",
 						"tone": "neutral"
@@ -528,7 +528,7 @@
 						"tone": "neutral"
 					},
 					{
-						"label": "Käufer angesprochen",
+						"label": "Teams mit nächsten Schritten",
 						"value": "3",
 						"tone": "neutral"
 					}

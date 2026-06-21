@@ -205,7 +205,7 @@
 						]
 					},
 					{
-						"label": "Buyers activados",
+						"label": "Equipos con próximos pasos",
 						"value": "3",
 						"delta": "Marketing · Desarrollo · Liderazgo",
 						"tone": "neutral"
@@ -528,7 +528,7 @@
 						"tone": "neutral"
 					},
 					{
-						"label": "Buyers activados",
+						"label": "Equipos con próximos pasos",
 						"value": "3",
 						"tone": "neutral"
 					}

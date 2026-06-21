@@ -212,7 +212,7 @@
 						]
 					},
 					{
-						"label": "Buyers engaged",
+						"label": "Teams with next steps",
 						"value": "3",
 						"delta": "Marketing · Eng · Leadership",
 						"tone": "neutral"
@@ -535,7 +535,7 @@
 						"tone": "neutral"
 					},
 					{
-						"label": "Buyers engaged",
+						"label": "Teams with next steps",
 						"value": "3",
 						"tone": "neutral"
 					}

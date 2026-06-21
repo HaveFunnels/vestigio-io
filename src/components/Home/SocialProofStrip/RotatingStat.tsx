@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SlotText } from "slot-text/react";
+import "slot-text/style.css";
 
-// RotatingStat — alterna entre N stats inline numa frase, com fade+blur
-// curtinho a cada troca. Usado no SocialProofStrip pra rotar ângulos da
-// mesma claim de perda. NÃO usa slot-text porque, em prosa, o roll
-// char-by-char vira ruído visual e o font-mono que ele força colide
-// com a fonte do parágrafo. SlotText permanece pra números curtos
-// (findingCounter, total impact da MiniCalc).
+// RotatingStat — rotates between N inline stats in a sentence with a
+// per-character slot-roll animation. Used in SocialProofStrip to cycle
+// angles of the same loss claim.
+//
+// Implementation note: slot-text/style.css positions char cells but
+// does NOT force a font (verified — only display/overflow/flex rules).
+// The pill className wraps SlotText, so the rolling characters inherit
+// the parent font (Satoshi here) instead of slot-text default.
+//
+// `skipUnchanged: true` lets sequential strings that happen to share
+// chars not re-animate every cell — useful for strings like "9 findings"
+// → "10 findings" but mostly a no-op when strings are unrelated.
 
 interface RotatingStatProps {
 	items: string[];
@@ -35,25 +43,17 @@ export default function RotatingStat({
 	if (!items || items.length === 0) return null;
 
 	return (
-		<>
-			<style>{`
-				@keyframes rotating-stat-in {
-					0%   { opacity: 0; filter: blur(3px); transform: translateY(-3px); }
-					60%  { opacity: 1; filter: blur(0); transform: translateY(0); }
-					100% { opacity: 1; filter: blur(0); transform: translateY(0); }
-				}
-				@media (prefers-reduced-motion: reduce) {
-					.rotating-stat-anim { animation: none !important; }
-				}
-			`}</style>
-			<span
-				key={index}
-				className={`rotating-stat-anim ${className || ""}`}
-				style={{ animation: "rotating-stat-in 360ms cubic-bezier(0.22, 1, 0.36, 1)" }}
-				aria-label={items[index]}
-			>
-				{items[index]}
-			</span>
-		</>
+		<span className={className} aria-label={items[index]}>
+			<SlotText
+				text={items[index]}
+				options={{
+					direction: "up",
+					stagger: 25,
+					duration: 320,
+					bounce: 0.2,
+					skipUnchanged: true,
+				}}
+			/>
+		</span>
 	);
 }

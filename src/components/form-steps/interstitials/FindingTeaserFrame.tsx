@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRightIcon, WarningIcon } from "@phosphor-icons/react/dist/ssr";
+import { WarningIcon } from "@phosphor-icons/react/dist/ssr";
+import { ShinyButton } from "@/components/ui/shiny-button";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import type { FindingTeaserInterstitialProps } from "@/types/interstitial";
 
@@ -111,26 +112,22 @@ export default function FindingTeaserFrame({
 
 			<AnimatePresence>
 				{ready && (
-					<motion.button
+					<motion.div
 						initial={{ opacity: 0, y: 8 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0 }}
 						transition={{ duration: 0.35 }}
-						onClick={onContinue}
-						className="mx-auto flex items-center gap-2 rounded-2xl bg-emerald-100 px-6 py-3.5 text-[15px] font-semibold text-zinc-900 transition-colors hover:bg-emerald-200 dark:bg-emerald-500/20 dark:text-content dark:hover:bg-emerald-500/30"
+						className="mx-auto"
 					>
-						{continueLabel}
-						<ArrowRightIcon size={14} weight="bold" className="text-emerald-600 dark:text-emerald-400" />
-					</motion.button>
+						<ShinyButton onClick={onContinue}>{continueLabel}</ShinyButton>
+					</motion.div>
 				)}
 			</AnimatePresence>
 
 			{!ready && (
-				<div className="mx-auto flex items-center gap-2 text-[11px] text-content-faint">
-					<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-					<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 [animation-delay:200ms]" />
-					<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 [animation-delay:400ms]" />
-				</div>
+				/* Shimmer-skeleton placeholder — replaces 3-dot pulse loop.
+				   Skeleton-over-spinner per standing rule. */
+				<div className="mx-auto h-[46px] w-[180px] animate-pulse rounded-2xl bg-white/[0.04]" aria-hidden />
 			)}
 		</motion.div>
 	);

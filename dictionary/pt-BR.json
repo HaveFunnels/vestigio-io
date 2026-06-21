@@ -820,6 +820,11 @@
 			"hook": "Veja onde sua receita está vazando.",
 			"cta": "Rodar análise",
 			"dismiss": "Fechar"
+		},
+		"pricing_cadence": {
+			"eyebrow": "POR QUE MENSAL",
+			"statement": "Decisão > alerta.",
+			"body": "Vestigio é uma cadência, não um stream de notificação. Os findings aparecem em tempo real, mas o Plano fecha o ciclo. O que move o R$ é clareza pra decidir, não mais um sino tocando."
 		}
 	},
 	"footer": {

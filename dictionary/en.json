@@ -820,6 +820,11 @@
 			"hook": "See where your revenue is leaking.",
 			"cta": "Run analysis",
 			"dismiss": "Close"
+		},
+		"pricing_cadence": {
+			"eyebrow": "WHY MONTHLY",
+			"statement": "Decision > alert.",
+			"body": "Vestigio is a cadence, not a notification stream. Findings appear in real time, but the Plan closes the cycle. What moves money is clarity to decide, not another bell ringing."
 		}
 	},
 	"footer": {

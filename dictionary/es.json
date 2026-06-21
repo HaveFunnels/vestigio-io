@@ -813,6 +813,11 @@
 			"hook": "Mira dónde tus ingresos se fugan.",
 			"cta": "Hacer análisis",
 			"dismiss": "Cerrar"
+		},
+		"pricing_cadence": {
+			"eyebrow": "POR QUÉ MENSUAL",
+			"statement": "Decisión > alerta.",
+			"body": "Vestigio es una cadencia, no un stream de notificación. Los findings aparecen en tiempo real, pero el Plan cierra el ciclo. Lo que mueve el dinero es claridad para decidir, no otra campana sonando."
 		}
 	},
 	"footer": {

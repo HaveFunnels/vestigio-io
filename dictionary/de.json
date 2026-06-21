@@ -812,6 +812,11 @@
 			"hook": "Sehen Sie, wo Ihr Umsatz leckt.",
 			"cta": "Analyse starten",
 			"dismiss": "Schließen"
+		},
+		"pricing_cadence": {
+			"eyebrow": "WARUM MONATLICH",
+			"statement": "Entscheidung > Alarm.",
+			"body": "Vestigio ist eine Kadenz, kein Benachrichtigungsstrom. Findings erscheinen in Echtzeit, aber der Plan schließt den Zyklus. Was den Umsatz bewegt, ist Klarheit zur Entscheidung — nicht noch eine Glocke, die läutet."
 		}
 	},
 	"footer": {

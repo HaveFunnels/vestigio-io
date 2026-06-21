@@ -12,6 +12,7 @@ import SocialProof from "@/components/shared/SocialProof";
 import ROICalculator from "@/components/shared/ROICalculator";
 import PricingFAQ from "@/components/shared/PricingFAQ";
 import FinalCTA from "@/components/shared/FinalCTA";
+import CadenceFrame from "./CadenceFrame";
 
 const HomePricing = () => {
   const [cycle, setCycle] = useState<BillingCycle>("annually");
@@ -53,6 +54,10 @@ const HomePricing = () => {
         subheading={t("subheading")}
         annualPricingEnabled={annualReady}
       />
+      {/* Cadence objection-handler — sits between tiers and social proof
+          to address "why monthly, not real-time?" before the social-proof
+          row reinforces the choice via others. */}
+      <CadenceFrame />
       <SocialProof />
       {/* ROI calculator and the bottom Final CTA both default to the
           paywall-aware signup URL (see their own files). No override

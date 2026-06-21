@@ -141,16 +141,16 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 				    as the single most positioning-dense line available).
 				    The old emerald gradient is dropped (color-on-text is the
 				    template move; the typography carries identity now). */}
-				{/* Scale reduced 2026-06-21 per frontend-design audit: at the
-				    previous xl text-[4.25rem] (68px), the first line "Tem
-				    dinheiro vazando na sua operação." (40 chars in Fraunces)
-				    didn't fit in the max-w-[1000px] container and forced
-				    "operação." into an orphan line. Editorial publications
-				    (Atlantic feature openers, FT Weekend ledes) size around
-				    50-60px for similar-length headlines; 3.5rem (56px) lands
-				    in that range without sacrificing weight. lg + sm scales
-				    were also brought down for cascade consistency. */}
-				<h1 className='mb-5 font-serif text-[2rem] font-medium leading-[1.1] tracking-tight text-zinc-100 sm:mb-6 sm:text-[2.5rem] lg:text-[3.25rem] xl:text-[3.5rem]'>
+				{/* Scale reduced 2026-06-21 per frontend-design audit (orphan
+				    word at xl). text-balance added for mobile/tablet
+				    viewports where the long pain-hook clause necessarily
+				    wraps — balance distributes the wrap into roughly equal
+				    lines instead of letting "operação." or "quanto." orphan
+				    on its own. On desktop (lg+) the type already fits one
+				    line per part so balance is a no-op there, which is the
+				    right behavior (editorial publications control desktop
+				    headlines with sizing, not balance). */}
+				<h1 className='mb-5 font-serif text-[1.875rem] font-medium leading-[1.15] tracking-tight text-balance text-zinc-100 sm:mb-6 sm:text-[2.5rem] lg:text-[3.25rem] xl:text-[3.5rem]'>
 					{t("headline_part1") && <span className='block'>{t("headline_part1")}</span>}
 					{t("headline_part2") && <span className='block'>{t("headline_part2")}</span>}
 					{t("headline_part3") && (

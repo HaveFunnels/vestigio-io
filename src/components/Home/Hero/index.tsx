@@ -141,7 +141,16 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 				    as the single most positioning-dense line available).
 				    The old emerald gradient is dropped (color-on-text is the
 				    template move; the typography carries identity now). */}
-				<h1 className='mb-5 font-serif text-[2rem] font-medium leading-[1.1] tracking-tight text-zinc-100 sm:mb-6 sm:text-[2.75rem] lg:text-[3.75rem] xl:text-[4.25rem]'>
+				{/* Scale reduced 2026-06-21 per frontend-design audit: at the
+				    previous xl text-[4.25rem] (68px), the first line "Tem
+				    dinheiro vazando na sua operação." (40 chars in Fraunces)
+				    didn't fit in the max-w-[1000px] container and forced
+				    "operação." into an orphan line. Editorial publications
+				    (Atlantic feature openers, FT Weekend ledes) size around
+				    50-60px for similar-length headlines; 3.5rem (56px) lands
+				    in that range without sacrificing weight. lg + sm scales
+				    were also brought down for cascade consistency. */}
+				<h1 className='mb-5 font-serif text-[2rem] font-medium leading-[1.1] tracking-tight text-zinc-100 sm:mb-6 sm:text-[2.5rem] lg:text-[3.25rem] xl:text-[3.5rem]'>
 					{t("headline_part1") && <span className='block'>{t("headline_part1")}</span>}
 					{t("headline_part2") && <span className='block'>{t("headline_part2")}</span>}
 					{t("headline_part3") && (

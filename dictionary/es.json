@@ -346,10 +346,10 @@
 			]
 		},
 		"cta": {
-			"title": "Tu próximo Plan te espera.",
-			"subtitle": "Empieza por el análisis gratuito. Recibe tu primer Plan de Estrategia aún este ciclo.",
+			"title": "El dinero se está yendo ahora.",
+			"subtitle": "Cada día sin visibilidad es ingreso que no recuperas.",
 			"primary": "Hacer Diagnóstico Gratis",
-			"micro": "Primer análisis en 60 segundos. Plan de Estrategia al inicio del mes."
+			"micro": "Podrías estar mirando tu primer diagnóstico en 60 segundos."
 		},
 		"video_testimonials": {
 			"title_before": "Descubrieron",
@@ -806,8 +806,8 @@
 			"f_social_proof_missing": "Prueba social ausente en puntos clave de decisión"
 		},
 		"pricing_heading": {
-			"heading": "Un Plan de Estrategia por mes.",
-			"subheading": "Análisis continuo, Próximos pasos priorizados, exportación en PDF y enlace compartible. Cadencia mensual. Garantía 4×."
+			"heading": "Mira exactamente lo que estás perdiendo todos los meses.",
+			"subheading": "Recibe un Plan de Estrategia que te dice qué hacer. Análisis continuo, exportación en PDF y enlace compartible. Garantía 4×."
 		},
 		"sticky_cta": {
 			"hook": "Mira dónde tus ingresos se fugan.",

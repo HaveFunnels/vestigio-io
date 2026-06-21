@@ -346,10 +346,10 @@
 			]
 		},
 		"cta": {
-			"title": "Ihr nächster Plan wartet.",
-			"subtitle": "Beginnen Sie mit der kostenlosen Analyse. Erhalten Sie Ihren ersten Strategieplan noch in diesem Zyklus.",
+			"title": "Das Geld geht gerade verloren.",
+			"subtitle": "Jeder Tag ohne Sichtbarkeit ist Umsatz, den Sie nicht zurückbekommen.",
 			"primary": "Kostenlose Diagnose starten",
-			"micro": "Erste Analyse in 60 Sekunden. Strategieplan zu Monatsbeginn."
+			"micro": "Sie könnten Ihre erste Diagnose in 60 Sekunden sehen."
 		},
 		"video_testimonials": {
 			"title_before": "Sie entdeckten,",
@@ -805,8 +805,8 @@
 			"f_social_proof_missing": "Social Proof fehlt an wichtigen Entscheidungspunkten"
 		},
 		"pricing_heading": {
-			"heading": "Ein Strategieplan pro Monat.",
-			"subheading": "Kontinuierliche Analyse, priorisierte Nächste Schritte, PDF-Export und teilbarer Link. Monatlicher Zyklus. 4×-Garantie."
+			"heading": "Sehen Sie genau, was Sie jeden Monat verlieren.",
+			"subheading": "Erhalten Sie einen Strategieplan, der Ihnen sagt, was zu tun ist. Kontinuierliche Analyse, PDF-Export und teilbarer Link. 4×-Garantie."
 		},
 		"sticky_cta": {
 			"hook": "Sehen Sie, wo Ihr Umsatz leckt.",

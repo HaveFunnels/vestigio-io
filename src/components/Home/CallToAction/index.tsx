@@ -17,11 +17,13 @@ const CallToAction = async ({
 				<div className='absolute left-1/2 top-1/2 h-[220px] w-[340px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-emerald-900/20 blur-[80px] sm:h-[300px] sm:w-[500px] sm:blur-[100px]' />
 
 				<div className='relative'>
-					{/* Fraunces medium italic — the new copy ("Seu próximo
-					    Plano te espera") is an editorial brand promise pivot,
-					    not a hard-sell exhortation. Serif italic reads as a
-					    quiet closing line before the final CTA. */}
-					<h2 className='mb-4 font-serif text-[1.75rem] font-medium italic leading-[1.15] tracking-tight text-zinc-100 sm:mb-5 sm:text-3xl lg:text-4xl xl:text-5xl'>
+					{/* Sans bold — final CTA copy ("O dinheiro está saindo
+					    agora.") is urgency/loss-frame, not editorial brand
+					    promise. Imperative needs the punch of bold sans,
+					    not the elegance of serif italic. Restored 2026-06-21
+					    after the "anxiety = conversion driver" feedback
+					    rule landed. */}
+					<h2 className='mb-4 text-[1.75rem] font-bold leading-[1.15] tracking-tight text-zinc-100 sm:mb-5 sm:text-3xl lg:text-4xl xl:text-5xl'>
 						{t("title")}
 					</h2>
 

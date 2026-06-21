@@ -353,10 +353,10 @@
 			]
 		},
 		"cta": {
-			"title": "Your next Plan is waiting.",
-			"subtitle": "Start with the free analysis. Receive your first Strategy Plan within this cycle.",
+			"title": "The money is leaving right now.",
+			"subtitle": "Every day without visibility is revenue you do not get back.",
 			"primary": "Run Free Diagnostic",
-			"micro": "First analysis in 60 seconds. Strategy Plan at the start of the month."
+			"micro": "You could be looking at your first diagnostic in 60 seconds."
 		},
 		"video_testimonials": {
 			"title_before": "They discovered",
@@ -813,8 +813,8 @@
 			"f_social_proof_missing": "Social proof missing from key decision points"
 		},
 		"pricing_heading": {
-			"heading": "One Strategy Plan per month.",
-			"subheading": "Continuous analysis, prioritized Next steps, PDF export, and a shareable link. Monthly cadence. 4× Guarantee."
+			"heading": "See exactly what you are losing every month.",
+			"subheading": "Get a Strategy Plan that tells you what to do. Continuous analysis, PDF export, and shareable link. 4× Guarantee."
 		},
 		"sticky_cta": {
 			"hook": "See where your revenue is leaking.",

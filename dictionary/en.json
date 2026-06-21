@@ -284,17 +284,24 @@
 					},
 					{
 						"n": "02",
-						"title": "Fix the cross-domain redirect at checkout — it's dispersing qualified buyers",
-						"impact": "$6k–11k/mo",
-						"buyer": "Engineering",
+						"title": "Cut the lead form from 7 fields to 3 — abandonment drops by half",
+						"impact": "$4k–7k/mo",
+						"buyer": "Eng",
 						"dot": "bg-sky-400"
 					},
 					{
 						"n": "03",
-						"title": "Surface the return policy above the fold on the home page — missing as objection-handler",
-						"impact": "$0.4k–1.2k/mo",
+						"title": "Move the primary CTA above the fold on mobile — 64% of visitors don't see it",
+						"impact": "$2k–4k/mo",
 						"buyer": "Leadership",
 						"dot": "bg-amber-400"
+					},
+					{
+						"n": "04",
+						"title": "Discuss each step with Vestigio AI: how to tackle it and verify when done.",
+						"impact": "",
+						"buyer": "Vestigio AI",
+						"dot": "bg-emerald-400"
 					}
 				],
 				"impact_label": "impact/mo",
@@ -546,14 +553,14 @@
 					},
 					{
 						"n": "02",
-						"title": "Fix the cross-domain redirect at checkout",
-						"impact": "$6k–11k/mo",
+						"title": "Cut the lead form from 7 fields to 3",
+						"impact": "$4k–7k/mo",
 						"buyer": "Eng"
 					},
 					{
 						"n": "03",
-						"title": "Surface the return policy above the fold",
-						"impact": "$0.4k–1.2k/mo",
+						"title": "Move the primary CTA above the fold on mobile",
+						"impact": "$2k–4k/mo",
 						"buyer": "Leadership"
 					}
 				]

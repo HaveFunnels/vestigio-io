@@ -284,17 +284,24 @@
 					},
 					{
 						"n": "02",
-						"title": "Corrigir redirect cross-domain no checkout — está dispersando compradores qualificados",
-						"impact": "R$ 30k–57k/mês",
-						"buyer": "Desenvolvedores",
+						"title": "Reduzir o formulário de captura de 7 pra 3 campos — abandono cai pela metade",
+						"impact": "R$ 18k–35k/mês",
+						"buyer": "Eng",
 						"dot": "bg-sky-400"
 					},
 					{
 						"n": "03",
-						"title": "Calibrar política de devolução acima da dobra na home — falta como objection-handler",
-						"impact": "R$ 2k–6k/mês",
+						"title": "Mover o CTA principal pra acima da dobra no mobile — 64% dos visitantes não vê",
+						"impact": "R$ 8k–20k/mês",
 						"buyer": "Diretoria",
 						"dot": "bg-amber-400"
+					},
+					{
+						"n": "04",
+						"title": "Discutir cada passo com Vestigio AI: como atacar e verificar quando estiver feito.",
+						"impact": "",
+						"buyer": "Vestigio AI",
+						"dot": "bg-emerald-400"
 					}
 				],
 				"impact_label": "impacto/mês",
@@ -546,14 +553,14 @@
 					},
 					{
 						"n": "02",
-						"title": "Corrigir redirect cross-domain no checkout",
-						"impact": "R$ 30k–57k/mês",
+						"title": "Reduzir o formulário de captura de 7 pra 3 campos",
+						"impact": "R$ 18k–35k/mês",
 						"buyer": "Eng"
 					},
 					{
 						"n": "03",
-						"title": "Calibrar política de devolução above-the-fold",
-						"impact": "R$ 2k–6k/mês",
+						"title": "Mover CTA principal pra acima da dobra no mobile",
+						"impact": "R$ 8k–20k/mês",
 						"buyer": "Diretoria"
 					}
 				]

@@ -277,17 +277,24 @@
 					},
 					{
 						"n": "02",
-						"title": "Domainübergreifenden Checkout-Redirect korrigieren — vertreibt qualifizierte Käufer",
-						"impact": "5k–10k €/Mon",
-						"buyer": "Entwicklung",
+						"title": "Lead-Formular von 7 auf 3 Felder reduzieren — Abbruch halbiert sich",
+						"impact": "4k–7k €/Mon",
+						"buyer": "Entw.",
 						"dot": "bg-sky-400"
 					},
 					{
 						"n": "03",
-						"title": "Rückgaberichtlinie above the fold auf Startseite platzieren — fehlt als Einwandbehandler",
-						"impact": "300–1k €/Mon",
-						"buyer": "Geschäftsführung",
+						"title": "Haupt-CTA auf mobile above-the-fold platzieren — 64% der Besucher sehen ihn nicht",
+						"impact": "2k–4k €/Mon",
+						"buyer": "Leitung",
 						"dot": "bg-amber-400"
+					},
+					{
+						"n": "04",
+						"title": "Jeden Schritt mit Vestigio AI besprechen: wie angehen und bei Fertigstellung verifizieren.",
+						"impact": "",
+						"buyer": "Vestigio AI",
+						"dot": "bg-emerald-400"
 					}
 				],
 				"impact_label": "Wirkung/Mon",
@@ -539,14 +546,14 @@
 					},
 					{
 						"n": "02",
-						"title": "Domainübergreifenden Checkout-Redirect korrigieren",
-						"impact": "5k–10k €/Mon",
+						"title": "Lead-Formular von 7 auf 3 Felder reduzieren",
+						"impact": "4k–7k €/Mon",
 						"buyer": "Entw."
 					},
 					{
 						"n": "03",
-						"title": "Rückgaberichtlinie above the fold platzieren",
-						"impact": "300–1k €/Mon",
+						"title": "Haupt-CTA auf mobile above-the-fold platzieren",
+						"impact": "2k–4k €/Mon",
 						"buyer": "Leitung"
 					}
 				]

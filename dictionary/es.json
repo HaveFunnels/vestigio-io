@@ -277,17 +277,24 @@
 					},
 					{
 						"n": "02",
-						"title": "Corregir redirect cross-domain en checkout — está dispersando compradores calificados",
-						"impact": "$6k–11k/mes",
+						"title": "Reducir el formulario de captura de 7 a 3 campos — el abandono cae a la mitad",
+						"impact": "$4k–7k/mes",
 						"buyer": "Desarrollo",
 						"dot": "bg-sky-400"
 					},
 					{
 						"n": "03",
-						"title": "Surfacear política de devolución sobre la dobla en la home — falta como objection-handler",
-						"impact": "$0.4k–1.2k/mes",
+						"title": "Mover el CTA principal sobre la dobla en mobile — 64% de los visitantes no lo ve",
+						"impact": "$2k–4k/mes",
 						"buyer": "Liderazgo",
 						"dot": "bg-amber-400"
+					},
+					{
+						"n": "04",
+						"title": "Discutir cada paso con Vestigio AI: cómo atacarlo y verificar cuando esté listo.",
+						"impact": "",
+						"buyer": "Vestigio AI",
+						"dot": "bg-emerald-400"
 					}
 				],
 				"impact_label": "impacto/mes",
@@ -539,14 +546,14 @@
 					},
 					{
 						"n": "02",
-						"title": "Corregir redirect cross-domain en checkout",
-						"impact": "$6k–11k/mes",
+						"title": "Reducir el formulario de captura de 7 a 3 campos",
+						"impact": "$4k–7k/mes",
 						"buyer": "Desarrollo"
 					},
 					{
 						"n": "03",
-						"title": "Surfacear política de devolución sobre la dobla",
-						"impact": "$0.4k–1.2k/mes",
+						"title": "Mover el CTA principal sobre la dobla en mobile",
+						"impact": "$2k–4k/mes",
 						"buyer": "Liderazgo"
 					}
 				]

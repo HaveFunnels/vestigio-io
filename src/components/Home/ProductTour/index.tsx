@@ -313,7 +313,10 @@ function StepNextSteps({ primaryCtaHref }: { primaryCtaHref: string }) {
 				{t("step3.heading")}
 			</h2>
 
-			{/* Numbered action list — big serif numerals */}
+			{/* Numbered action list — big serif numerals. Step items with
+			    a falsy impact field (ongoing actions like "discuss with
+			    Vestigio AI") render WITHOUT the right-side R$ block, since
+			    no leak recovery applies — the title carries the action. */}
 			<div className="flex-1 space-y-2.5">
 				{steps.map((s, i) => (
 					<div key={i} className="relative flex items-start gap-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5">
@@ -329,12 +332,14 @@ function StepNextSteps({ primaryCtaHref }: { primaryCtaHref: string }) {
 								<span className="text-[9px] uppercase tracking-[0.14em] text-zinc-500 sm:text-[10px]">{s.buyer}</span>
 							</div>
 						</div>
-						<div className="shrink-0 text-right">
-							<div className="font-mono text-[12px] font-semibold tabular-nums text-emerald-400 sm:text-[14px]">
-								{s.impact}
+						{s.impact && (
+							<div className="shrink-0 text-right">
+								<div className="font-mono text-[12px] font-semibold tabular-nums text-emerald-400 sm:text-[14px]">
+									{s.impact}
+								</div>
+								<div className="text-[9px] text-zinc-500">{t("step3.impact_label")}</div>
 							</div>
-							<div className="text-[9px] text-zinc-500">{t("step3.impact_label")}</div>
-						</div>
+						)}
 					</div>
 				))}
 			</div>

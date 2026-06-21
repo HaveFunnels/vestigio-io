@@ -210,7 +210,13 @@
 						"delta": "Marketing · Desarrollo · Liderazgo",
 						"tone": "neutral"
 					}
-				]
+				],
+				"competitors_label": "COMPETIDORES MONITOREADOS",
+				"competitors_count": "7",
+				"competitors_body": "2 cambiaron copy, headers o precio esta semana",
+				"impersonators_label": "CLONES DE TU MARCA",
+				"impersonators_count": "2",
+				"impersonators_body": "1 dominio sospechoso registrado en los últimos 7 días"
 			},
 			"step2": {
 				"heading": "Lo que tu análisis reveló este mes",

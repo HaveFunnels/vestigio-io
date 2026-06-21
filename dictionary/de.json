@@ -210,7 +210,13 @@
 						"delta": "Marketing · Entw. · Leitung",
 						"tone": "neutral"
 					}
-				]
+				],
+				"competitors_label": "ÜBERWACHTE WETTBEWERBER",
+				"competitors_count": "7",
+				"competitors_body": "2 änderten Text, Header oder Preise diese Woche",
+				"impersonators_label": "KLONE IHRER MARKE",
+				"impersonators_count": "2",
+				"impersonators_body": "1 verdächtige Domain in den letzten 7 Tagen registriert"
 			},
 			"step2": {
 				"heading": "Was Ihre Analyse diesen Monat enthüllte",

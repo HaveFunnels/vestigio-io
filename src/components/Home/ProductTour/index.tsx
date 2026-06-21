@@ -186,6 +186,40 @@ function StepThesisAndMetrics() {
 					</div>
 				))}
 			</div>
+
+			{/* Competitor radar + brand impersonators strip — pulls from
+			    competitorJson + impersonatorsJson on the real Plano.
+			    Brand-only safe: no domain names shown, only counts +
+			    summary. Clones use rose accent to signal threat tone
+			    (matches anxiety-frame guidance for pre-signup surfaces). */}
+			<div className="mt-3 grid grid-cols-1 gap-2.5 sm:mt-4 sm:grid-cols-2 sm:gap-3">
+				<div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.02] p-3 sm:p-3.5">
+					<div className="min-w-0 pr-2">
+						<div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-zinc-500 sm:text-[10px]">
+							{t("step1.competitors_label")}
+						</div>
+						<div className="mt-1 text-[11px] leading-snug text-zinc-300 sm:text-[12px]">
+							{t("step1.competitors_body")}
+						</div>
+					</div>
+					<div className="shrink-0 font-mono text-[20px] font-semibold tabular-nums text-zinc-100 sm:text-[24px]">
+						{t("step1.competitors_count")}
+					</div>
+				</div>
+				<div className="flex items-center justify-between rounded-xl border border-rose-400/20 bg-rose-400/[0.04] p-3 sm:p-3.5">
+					<div className="min-w-0 pr-2">
+						<div className="text-[9px] font-semibold uppercase tracking-[0.14em] text-rose-400/80 sm:text-[10px]">
+							{t("step1.impersonators_label")}
+						</div>
+						<div className="mt-1 text-[11px] leading-snug text-zinc-300 sm:text-[12px]">
+							{t("step1.impersonators_body")}
+						</div>
+					</div>
+					<div className="shrink-0 font-mono text-[20px] font-semibold tabular-nums text-rose-400 sm:text-[24px]">
+						{t("step1.impersonators_count")}
+					</div>
+				</div>
+			</div>
 		</div>
 	);
 }

@@ -217,7 +217,13 @@
 						"delta": "Marketing · Eng · Diretoria",
 						"tone": "neutral"
 					}
-				]
+				],
+				"competitors_label": "CONCORRENTES MONITORADOS",
+				"competitors_count": "7",
+				"competitors_body": "2 mexeram em copy, headers ou preço esta semana",
+				"impersonators_label": "CLONES DA SUA MARCA",
+				"impersonators_count": "2",
+				"impersonators_body": "1 domínio suspeito registrado nos últimos 7 dias"
 			},
 			"step2": {
 				"heading": "O que sua análise revelou este mês",

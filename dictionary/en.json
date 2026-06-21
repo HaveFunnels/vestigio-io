@@ -217,7 +217,13 @@
 						"delta": "Marketing · Eng · Leadership",
 						"tone": "neutral"
 					}
-				]
+				],
+				"competitors_label": "COMPETITORS MONITORED",
+				"competitors_count": "7",
+				"competitors_body": "2 changed copy, headers or pricing this week",
+				"impersonators_label": "CLONES OF YOUR BRAND",
+				"impersonators_count": "2",
+				"impersonators_body": "1 suspicious domain registered in the last 7 days"
 			},
 			"step2": {
 				"heading": "What your analysis revealed this month",

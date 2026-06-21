@@ -39,7 +39,7 @@ This file is the single source of truth. When in doubt, grep this file.
 | **Descobertas** | Lexicon drift vs `Findings`. Inconsistent within site reads as typo. | Findings |
 | **Fila de ações** / **Action Queue** | Implies always-on triage product Vestigio no longer is | Próximos passos / Plano |
 | **Investigation** / **Investigação** | Investigation chat is a ProductTour mockup, not the real product | Análise / Vestigio (without modifier) |
-| **Vestigio AI** (as product name) | Implies conversational dashboard | Vestigio (no modifier) |
+| **Vestigio AI** (as overall product positioning) | Implies the product IS the chat/dashboard. The product is the monthly Plano de Estratégia; AI is the MCP chat feature inside it. | Use "Vestigio" for product. Use "Vestigio AI" ONLY when referring specifically to the MCP chat feature (a real, existing feature where users ask questions about Meta/Google/Stripe data). |
 | **Dashboard** | "Não é dashboard" was the OLD positioning vs current "Plano editorial" | (avoid framing, name the artifact instead) |
 | **Rodar análise** | Wrong verb — you don't "rodar" a Plano. Acceptable in CTA context (see Diagnóstico note above). | "Receber sua análise" / "Começar sua análise" — OR keep "Rodar diagnóstico" per user preference for top-of-funnel CTA |
 

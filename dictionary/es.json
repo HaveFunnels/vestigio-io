@@ -821,7 +821,7 @@
 		}
 	},
 	"footer": {
-		"tagline": "La capa de inteligencia que audita, monitorea y optimiza tu plataforma SaaS.",
+		"tagline": "Recibe un Plan de Estrategia por mes mostrando dónde tu facturación se fuga y qué hacer.",
 		"social": {
 			"twitter": "Twitter",
 			"github": "GitHub"
@@ -854,7 +854,7 @@
 	},
 	"signInPage": {
 		"title": "Bienvenido de vuelta.",
-		"subtitle": "Inicia sesión en tu motor de decisiones.",
+		"subtitle": "Entra a tu análisis.",
 		"socialSignIn": "Iniciar sesión con",
 		"or": "o",
 		"magicLink": "Enlace Mágico",
@@ -2799,8 +2799,8 @@
 			"body": "Reanudando ahora — una auditoría de recuperación se está ejecutando sobre tu sitio. Verás los hallazgos actualizados en breve."
 		},
 		"first_audit": {
-			"title": "Ejecutando tu primera auditoría",
-			"title_complete": "Auditoría completada",
+			"title": "Ejecutando tu primer análisis",
+			"title_complete": "Análisis concluido",
 			"pages_one": "1 página descubierta",
 			"pages_other": "{count} páginas descubiertas",
 			"findings_one": "1 hallazgo",
@@ -2811,7 +2811,7 @@
 			"analyzing": "Analizando {domain}",
 			"analyzing_generic": "Analizando tu dominio",
 			"dismiss": "Ocultar",
-			"subtitle_eta": "Primer informe en ~60 segundos. Construimos tu Pulse mientras tanto.",
+			"subtitle_eta": "Primer reporte en ~60 segundos. Tu cuenta se va preparando mientras tanto.",
 			"trust_line": "Solo leemos páginas públicas. Tus datos son tuyos.",
 			"per_month_short": "/mes",
 			"healing_stuck_generic": "Recuperando el paso actual…",
@@ -9488,16 +9488,16 @@
 				"method_lines": {
 					"analytics_tools": "GA/Mixpanel/Amplitude muestran qué pasó. Vestigio muestra el porqué — en dinero.",
 					"session_replay": "Session replay muestra cómo se movió el visitante. Vestigio muestra cuánto te costó y qué hacer.",
-					"agency_consultant": "Tu agencia entrega un informe al mes. Vestigio entrega uno actualizado todos los días — automático.",
+					"agency_consultant": "Tu agencia entrega un reporte de planilla una vez al mes. Vestigio entrega un Plan de Estrategia escrito una vez al mes, firmado, con el monto exacto en dólares por paso.",
 					"team_judgment": "La intuición del equipo es rápida. Vestigio es rápida y tiene números reales debajo de cada decisión.",
 					"spreadsheets": "Las hojas tardan horas. Vestigio corre en 60 segundos y se actualiza sola.",
 					"nothing": "Antes era a ciegas. Ahora es narrativa, cola priorizada y montos en dinero."
 				},
 				"bullets": {
 					"plan": "Análisis corriendo 24/7 — Plan de Estrategia siempre vivo + snapshot mensual de evolución",
-					"queue": "Cola de acciones ranqueada por el $ que cada una recupera",
+					"queue": "Próximos pasos priorizados por los dólares que cada uno recupera",
 					"ai": "Vestigio AI lee Meta, Google y Stripe — pregunta cualquier cosa sobre ingresos",
-					"continuous": "Monitoreo continuo: alerta directa cuando aparece una fuga nueva",
+					"continuous": "Alerta directo cuando aparece una nueva fuga en tu sitio",
 					"history": "Histórico mes a mes de lo que cambió y cuánto recuperó",
 					"map": "Mapa de causa raíz: hallazgo → embudo → impacto en $"
 				},

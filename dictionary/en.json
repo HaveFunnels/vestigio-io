@@ -828,7 +828,7 @@
 		}
 	},
 	"footer": {
-		"tagline": "The intelligence layer that audits, monitors, and optimizes your SaaS platform.",
+		"tagline": "Get a Strategy Plan once a month showing where your revenue leaks and what to do.",
 		"social": {
 			"twitter": "Twitter",
 			"github": "GitHub"
@@ -861,7 +861,7 @@
 	},
 	"signInPage": {
 		"title": "Welcome back.",
-		"subtitle": "Sign in to your decision engine.",
+		"subtitle": "Sign in to your analysis.",
 		"socialSignIn": "Sign in with",
 		"or": "or",
 		"magicLink": "Magic Link",
@@ -2940,8 +2940,8 @@
 			"body": "Resuming now — a catch-up audit is running against your site. You'll see updated findings shortly."
 		},
 		"first_audit": {
-			"title": "Running your first audit",
-			"title_complete": "Audit complete",
+			"title": "Running your first analysis",
+			"title_complete": "Analysis complete",
 			"pages_one": "1 page discovered",
 			"pages_other": "{count} pages discovered",
 			"findings_one": "1 finding",
@@ -2953,7 +2953,7 @@
 			"analyzing_generic": "Analyzing your domain",
 			"starting": "Starting analysis...",
 			"dismiss": "Dismiss",
-			"subtitle_eta": "First report in ~60 seconds. We're building your Pulse in the meantime.",
+			"subtitle_eta": "First report in ~60 seconds. Your account is getting ready in the meantime.",
 			"trust_line": "We read public pages only. Your data stays yours.",
 			"per_month_short": "/mo",
 			"healing_stuck_generic": "Recovering the current step…",
@@ -9716,7 +9716,7 @@
 				"headline": "{org} is losing money right now.",
 				"headline_l1": "Stop the bleeding.",
 				"headline_l2": "Your full Analysis starts in 60s.",
-				"guarantee_title": "4x guarantee or your money back",
+				"guarantee_title": "4× guarantee or your money back",
 				"guarantee_desc": "Recover at least 4x what you paid within 90 days. If not, we refund every cent. No questions asked.",
 				"you_told_us": "You told us",
 				"generic_close": "There {count, plural, one {is # critical leak} other {are # critical leaks}} waiting for the first move.",
@@ -9738,16 +9738,16 @@
 				"method_lines": {
 					"analytics_tools": "GA/Mixpanel/Amplitude show what happened. Vestigio shows why — in dollars.",
 					"session_replay": "Session replay shows how a visitor moved. Vestigio shows how much it cost you and what to do.",
-					"agency_consultant": "Your agency ships a report once a month. Vestigio ships an updated one every day — automatically.",
+					"agency_consultant": "Your agency hands you a spreadsheet report once a month. Vestigio hands you a written Strategy Plan once a month, signed, with the exact dollar amount per step.",
 					"team_judgment": "Team intuition is fast. Vestigio is fast AND has real numbers under every decision.",
 					"spreadsheets": "Spreadsheets take hours. Vestigio runs in 60 seconds and updates itself.",
 					"nothing": "Before, it was guesswork. Now it's narrative, ranked queue, and dollar amounts."
 				},
 				"bullets": {
 					"plan": "Analysis runs 24/7 — Strategy Plan stays live + monthly evolution snapshot",
-					"queue": "Action queue ranked by the $ each one is worth",
+					"queue": "Next steps prioritized by the dollars each one recovers",
 					"ai": "Vestigio AI reads Meta, Google and Stripe — ask any revenue question",
-					"continuous": "Continuous monitoring: direct alert when a new leak appears",
+					"continuous": "Direct alert when a new leak appears on your site",
 					"history": "Month-over-month history of what changed and how much it recovered",
 					"map": "Root-cause map: finding → funnel → $ impact"
 				},

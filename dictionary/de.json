@@ -820,7 +820,7 @@
 		}
 	},
 	"footer": {
-		"tagline": "Die Intelligence-Schicht, die Ihre SaaS-Plattform auditiert, überwacht und optimiert.",
+		"tagline": "Erhalten Sie einen Strategieplan pro Monat, der zeigt, wo Ihr Umsatz leckt und was zu tun ist.",
 		"social": {
 			"twitter": "Twitter",
 			"github": "GitHub"
@@ -853,7 +853,7 @@
 	},
 	"signInPage": {
 		"title": "Willkommen zurück.",
-		"subtitle": "Melden Sie sich bei Ihrer Entscheidungsmaschine an.",
+		"subtitle": "Melden Sie sich bei Ihrer Analyse an.",
 		"socialSignIn": "Anmelden mit",
 		"or": "oder",
 		"magicLink": "Magic Link",
@@ -3078,8 +3078,8 @@
 			"body": "Wird jetzt fortgesetzt — ein Nachhol-Audit läuft gegen deinen Shop. Aktualisierte Befunde erscheinen in Kürze."
 		},
 		"first_audit": {
-			"title": "Dein erstes Audit wird durchgefuehrt",
-			"title_complete": "Audit abgeschlossen",
+			"title": "Ihre erste Analyse wird ausgeführt",
+			"title_complete": "Analyse abgeschlossen",
 			"pages_one": "1 Seite entdeckt",
 			"pages_other": "{count} Seiten entdeckt",
 			"findings_one": "1 Befund",
@@ -3090,7 +3090,7 @@
 			"analyzing": "{domain} wird analysiert",
 			"analyzing_generic": "Ihre Domain wird analysiert",
 			"dismiss": "Ausblenden",
-			"subtitle_eta": "Erster Bericht in ~60 Sekunden. Wir bauen Ihren Pulse in der Zwischenzeit auf.",
+			"subtitle_eta": "Erster Bericht in ~60 Sekunden. Ihr Konto wird in der Zwischenzeit vorbereitet.",
 			"trust_line": "Wir lesen nur öffentliche Seiten. Ihre Daten bleiben bei Ihnen.",
 			"per_month_short": "/Mo",
 			"healing_stuck_generic": "Aktuellen Schritt wird wiederhergestellt…",
@@ -8007,16 +8007,16 @@
 				"method_lines": {
 					"analytics_tools": "GA/Mixpanel/Amplitude zeigen, was passiert ist. Vestigio zeigt das Warum — in Euro.",
 					"session_replay": "Session Replay zeigt, wie sich ein Besucher bewegte. Vestigio zeigt, wie viel es Sie kostete und was zu tun ist.",
-					"agency_consultant": "Ihre Agentur liefert einmal im Monat einen Bericht. Vestigio liefert täglich einen aktualisierten — automatisch.",
+					"agency_consultant": "Ihre Agentur liefert einen Tabellenbericht einmal im Monat. Vestigio liefert einen geschriebenen Strategieplan einmal im Monat, signiert, mit dem genauen Euro-Betrag pro Schritt.",
 					"team_judgment": "Team-Intuition ist schnell. Vestigio ist schnell UND hat echte Zahlen unter jeder Entscheidung.",
 					"spreadsheets": "Tabellen brauchen Stunden. Vestigio läuft in 60 Sekunden und aktualisiert sich selbst.",
 					"nothing": "Vorher Blindflug. Jetzt Erzählung, priorisierte Liste und Eurobeträge."
 				},
 				"bullets": {
 					"plan": "Analyse läuft 24/7 — Strategieplan bleibt lebendig + monatlicher Evolutions-Snapshot",
-					"queue": "Aktionsliste nach € sortiert, die jede einzelne zurückholt",
+					"queue": "Nächste Schritte priorisiert nach den Euro, die jeder zurückholt",
 					"ai": "Vestigio AI liest Meta, Google und Stripe — fragen Sie alles zum Umsatz",
-					"continuous": "Kontinuierliche Überwachung: direkte Warnung bei neuen Lecks",
+					"continuous": "Direkter Alarm, wenn ein neues Leck auf Ihrer Website auftaucht",
 					"history": "Monat-für-Monat-Historie: was sich geändert hat und wie viel zurückkam",
 					"map": "Ursache-Karte: Befund → Funnel → € Wirkung"
 				},

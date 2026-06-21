@@ -828,7 +828,7 @@
 		}
 	},
 	"footer": {
-		"tagline": "A camada de inteligência que audita, monitora e otimiza a sua plataforma SaaS.",
+		"tagline": "Receba um Plano de Estratégia por mês mostrando onde sua receita vaza e o que fazer.",
 		"social": {
 			"twitter": "Twitter",
 			"github": "GitHub"
@@ -861,7 +861,7 @@
 	},
 	"signInPage": {
 		"title": "Bem-vindo de volta.",
-		"subtitle": "Entre no seu motor de decisão.",
+		"subtitle": "Entre na sua análise.",
 		"socialSignIn": "Entrar com",
 		"or": "ou",
 		"magicLink": "Link Mágico",
@@ -3024,8 +3024,8 @@
 			"body": "Retomando agora — uma auditoria de recuperação está rodando no seu site. Os findings atualizados aparecem em instantes."
 		},
 		"first_audit": {
-			"title": "Executando sua primeira auditoria",
-			"title_complete": "Auditoria concluída",
+			"title": "Executando sua primeira análise",
+			"title_complete": "Análise concluída",
 			"pages_one": "1 página descoberta",
 			"pages_other": "{count} páginas descobertas",
 			"findings_one": "1 finding",
@@ -3037,7 +3037,7 @@
 			"analyzing_generic": "Analisando seu domínio",
 			"starting": "Iniciando análise...",
 			"dismiss": "Esconder",
-			"subtitle_eta": "Primeiro relatório em ~60 segundos. Construímos seu Pulse enquanto isso.",
+			"subtitle_eta": "Primeiro relatório em ~60 segundos. Sua conta vai ficando pronta enquanto isso.",
 			"trust_line": "Lemos só páginas públicas. Seus dados ficam com você.",
 			"per_month_short": "/mês",
 			"healing_stuck_generic": "Recuperando a etapa atual…",
@@ -7597,7 +7597,7 @@
 				"headline": "{org} está perdendo dinheiro agora.",
 				"headline_l1": "Pare de sangrar receita.",
 				"headline_l2": "A Análise completa começa em 60s.",
-				"guarantee_title": "Garantia 4x ou seu dinheiro de volta",
+				"guarantee_title": "Garantia 4× ou seu dinheiro de volta",
 				"guarantee_desc": "Recupere pelo menos 4x o valor pago em 90 dias. Se não, devolvemos seu dinheiro inteiro. Sem perguntas.",
 				"you_told_us": "Você nos disse que",
 				"generic_close": "Há {count, plural, one {# vazamento crítico} other {# vazamentos críticos}} esperando a primeira ação.",
@@ -7619,16 +7619,16 @@
 				"method_lines": {
 					"analytics_tools": "GA/Mixpanel/Amplitude mostram o que aconteceu. A Vestigio mostra o porquê — em reais.",
 					"session_replay": "Session replay mostra como o visitante se mexeu. A Vestigio mostra quanto isso te custou e o que fazer.",
-					"agency_consultant": "Sua agência entrega um relatório por mês. A Vestigio entrega o relatório atualizado todo dia — automaticamente.",
+					"agency_consultant": "Sua agência entrega um relatório por mês com planilha. A Vestigio entrega um Plano de Estratégia por mês escrito, assinado, com R$ exato em cada passo.",
 					"team_judgment": "Palpite do time é rápido. A Vestigio é rápida e tem números reais por trás de cada decisão.",
 					"spreadsheets": "Planilha demora horas. A Vestigio leva 60 segundos e atualiza sozinha.",
 					"nothing": "Antes era no escuro. Agora é com narrativa, fila priorizada e valores em reais."
 				},
 				"bullets": {
 					"plan": "Análise rodando 24/7, com Plano de Estratégia sempre vivo + snapshot mensal de evolução",
-					"queue": "Fila de ações ranqueada pelo R$ que cada uma recupera",
+					"queue": "Próximos passos priorizados pelo R$ que cada um recupera",
 					"ai": "Vestigio AI lê Meta, Google e Stripe — pergunta qualquer coisa de receita",
-					"continuous": "Monitoramento contínuo: alerta direto quando vazamento novo surge",
+					"continuous": "Alerta direto quando vazamento novo aparece no seu site",
 					"history": "Histórico mês-a-mês do que mudou e o quanto recuperou",
 					"map": "Mapa de causa-raiz: achado → funil → impacto em R$"
 				},

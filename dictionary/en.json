@@ -74,9 +74,9 @@
 			"headline_brush_word": "",
 			"subtitle": "We show you where the money escapes, how much, and what you do to stop it.",
 			"subtitle_line1": "",
-			"subtitle_before_bold": "",
-			"subtitle_bold": "",
-			"subtitle_after_bold": "",
+			"subtitle_before_bold": "We show you ",
+			"subtitle_bold": "where the money escapes, how much, and what you do to stop it",
+			"subtitle_after_bold": ".",
 			"pills": [
 				{
 					"impact": "Leads not converting?",

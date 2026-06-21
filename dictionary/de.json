@@ -74,9 +74,9 @@
 			"headline_brush_word": "",
 			"subtitle": "Wir zeigen, wo das Geld entkommt, wie viel, und was Sie tun, um es zu stoppen.",
 			"subtitle_line1": "",
-			"subtitle_before_bold": "",
-			"subtitle_bold": "",
-			"subtitle_after_bold": "",
+			"subtitle_before_bold": "Wir zeigen, ",
+			"subtitle_bold": "wo das Geld entkommt, wie viel, und was Sie tun, um es zu stoppen",
+			"subtitle_after_bold": ".",
 			"pills": [
 				{
 					"impact": "Leads konvertieren nicht?",

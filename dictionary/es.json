@@ -74,9 +74,9 @@
 			"headline_brush_word": "",
 			"subtitle": "Te mostramos dónde se fuga el dinero, cuánto, y qué haces para pararlo.",
 			"subtitle_line1": "",
-			"subtitle_before_bold": "",
-			"subtitle_bold": "",
-			"subtitle_after_bold": "",
+			"subtitle_before_bold": "Te mostramos ",
+			"subtitle_bold": "dónde se fuga el dinero, cuánto, y qué haces para pararlo",
+			"subtitle_after_bold": ".",
 			"pills": [
 				{
 					"impact": "Leads no convierten?",

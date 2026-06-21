@@ -160,12 +160,20 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 					)}
 				</h1>
 
-				<p className='mx-auto mb-8 w-full max-w-[680px] text-base leading-relaxed text-zinc-400 sm:mb-10 sm:text-lg'>
+				{/* Subtitle polishes per frontend-design audit:
+				    - Width tightened: max-w-[680px] → max-w-[560px]
+				    - Spacing increased: mb-8/mb-10 → mb-10/mb-12
+				    - Color lifted: text-zinc-400 → text-zinc-300
+				    - Emphasis via Fraunces serif italic on the key clause
+				      ("onde…parar") — echoes the H1 typography signature
+				      and creates an editorial micro-moment inside the
+				      otherwise sans paragraph. */}
+				<p className='mx-auto mb-10 w-full max-w-[560px] text-base leading-relaxed text-zinc-300 sm:mb-12 sm:text-lg'>
 					{t("subtitle_before_bold") ? (
 						<>
 							{t("subtitle_line1") && <><span>{t("subtitle_line1")}</span><br className='sm:hidden' />{" "}</>}
 							{t("subtitle_before_bold")}
-							<strong className='font-semibold text-zinc-300'>{t("subtitle_bold")}</strong>
+							<em className='font-serif italic text-zinc-200'>{t("subtitle_bold")}</em>
 							{t("subtitle_after_bold")}
 						</>
 					) : (

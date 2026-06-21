@@ -74,9 +74,9 @@
 			"headline_brush_word": "",
 			"subtitle": "Mostramos onde o dinheiro escapa, quanto, e o que você faz pra parar.",
 			"subtitle_line1": "",
-			"subtitle_before_bold": "",
-			"subtitle_bold": "",
-			"subtitle_after_bold": "",
+			"subtitle_before_bold": "Mostramos ",
+			"subtitle_bold": "onde o dinheiro escapa, quanto, e o que você faz pra parar",
+			"subtitle_after_bold": ".",
 			"pills": [
 				{
 					"impact": "Leads não convertem?",

@@ -329,8 +329,21 @@ export default function LpAuditPage() {
 							</div>
 						)}
 						<TextInputStep
-							title="Qual site devemos analisar?"
-							subtitle="Só analisamos páginas públicas. Nenhum acesso ao seu código ou dados."
+							// Visitors who hit /audit fresh see the trust copy
+							// ("only public pages, no code/data access") — that's
+							// the right onboarding for cold traffic. Visitors who
+							// arrive after running the MiniCalc (signal:
+							// prefilledFromStorage is true because the calc
+							// stashed vestigio_onboard_domain) already trust us
+							// + know we look at public surfaces; for them, the
+							// frame is "we ran the surface pass — now go deeper",
+							// not "let me introduce ourselves". Same step, two
+							// audiences, two framings.
+							title={f.prefilledFromStorage ? "Vamos a fundo." : "Qual site devemos analisar?"}
+							subtitle={f.prefilledFromStorage
+								? "A pré-análise mostrou o que está na superfície. Aqui vamos mais a fundo."
+								: "Só analisamos páginas públicas. Nenhum acesso ao seu código ou dados."
+							}
 							inputType="url"
 							value={f.form.domain}
 							onChange={(v) => {

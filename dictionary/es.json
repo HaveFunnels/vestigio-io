@@ -47,7 +47,7 @@
 			}
 		},
 		"social_proof_strip": {
-			"before_highlight": "En el primer análisis de una operación como la tuya, en promedio ",
+			"before_highlight": "Empresas de tu tamaño tienen ",
 			"highlight": "9 findings críticos",
 			"rotating_highlights": [
 				"9 findings críticos",
@@ -55,7 +55,7 @@
 				"27% a 43% de la facturación en riesgo",
 				"12s extras en el checkout"
 			],
-			"after_highlight": ". Que nadie estaba viendo."
+			"after_highlight": " al mes. Nadie lo ve."
 		},
 		"demo_surface": {
 			"listen": "Escuchar",
@@ -72,7 +72,7 @@
 			"headline_part3": "",
 			"headline_gradient_parts": "",
 			"headline_brush_word": "",
-			"subtitle": "Un Plan de Estrategia que muestra dónde se fuga el dinero, cuánto, y qué corregir primero.",
+			"subtitle": "Te mostramos dónde se fuga el dinero, cuánto, y qué haces para pararlo.",
 			"subtitle_line1": "",
 			"subtitle_before_bold": "",
 			"subtitle_bold": "",
@@ -148,9 +148,9 @@
 			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Hacer diagnóstico gratis",
 			"step_indicator": [
-				"Tesis",
-				"Lectura",
-				"Próximos pasos"
+				"El problema",
+				"La lectura",
+				"Qué hacer"
 			],
 			"step1": {
 				"breadcrumb_brand": "Vestigio",
@@ -490,14 +490,14 @@
 			"title": "Cuatro movimientos por ciclo",
 			"subtitle": "Cada Plan de Estrategia mensual abre con la Tesis, muestra Dónde estás, propone los Próximos pasos y cierra con Continuidad — la memoria de lo que cambió desde el último ciclo.",
 			"tese": {
-				"eyebrow": "TESIS DEL MES",
+				"eyebrow": "Cuál es el problema de este mes",
 				"dateline": "Edición más reciente",
 				"attribution": "Vestigio · análisis del ciclo",
 				"sample": "El tema dominante este ciclo es copy desalineado: los títulos describen el producto sin comunicar la ganancia del comprador."
 			},
 			"onde_voce_esta": {
-				"eyebrow": "DÓNDE ESTÁS",
-				"description": "Cuatro métricas actualizadas cada ciclo, con histórico de 6 meses.",
+				"eyebrow": "Dónde estás perdiendo",
+				"description": "",
 				"tiles": [
 					{
 						"label": "Recuperado este ciclo",
@@ -522,8 +522,8 @@
 				]
 			},
 			"proximos_passos": {
-				"eyebrow": "PRÓXIMOS PASOS",
-				"description": "Decisiones priorizadas, con el impacto en dólares y el buyer responsable.",
+				"eyebrow": "Qué hacer primero",
+				"description": "",
 				"items": [
 					{
 						"n": "01",
@@ -546,8 +546,8 @@
 				]
 			},
 			"continuidade": {
-				"eyebrow": "CONTINUIDAD",
-				"description": "Lo que cambió desde el último ciclo — el análisis tiene memoria.",
+				"eyebrow": "Qué cambió",
+				"description": "",
 				"pairs": [
 					{
 						"label": "Findings críticos",
@@ -725,17 +725,17 @@
 			"tagline": "Hecho para quienes se niegan a escalar a ciegas.",
 			"quick_start_title": "Listo en 60 segundos",
 			"quick_start_desc": "Pega tu URL. Sin código, sin tag, sin onboarding.",
-			"visibility_title": "15.000 señales por ciclo",
-			"visibility_desc": "Desde headers de seguridad hasta copy del checkout. Nada se escapa.",
+			"visibility_title": "Revisamos 15.000 señales en tu sitio",
+			"visibility_desc": "",
 			"roi_title": "Garantía 4X",
 			"roi_subtitle": "Si Vestigio no encuentra 4× el valor de tu plan en pérdidas mensuales, devolvemos el 100%.",
 			"pulse_title": "Tesis del mes",
 			"pulse_desc": "Cada análisis abre con una tesis — la lectura central del ciclo, en dólares, con próximos pasos.",
 			"pulse_cta": "Ver un ejemplo",
-			"monitoring_title": "Regresiones en horas, no días",
-			"monitoring_desc": "Cada cambio en el sitio auditado antes de que el cliente lo note.",
-			"integrations_title": "Funciona con tu stack",
-			"integrations_desc": "Shopify, WooCommerce, Stripe, GA, Meta Ads. Sin desarrollador."
+			"monitoring_title": "Errores encontrados en horas",
+			"monitoring_desc": "",
+			"integrations_title": "Funciona con cualquier sitio",
+			"integrations_desc": ""
 		},
 		"mini_calculator": {
 			"title": "Mira dónde tus ingresos se fugan.",
@@ -810,7 +810,7 @@
 			"subheading": "Recibe un Plan de Estrategia que te dice qué hacer. Análisis continuo, exportación en PDF y enlace compartible. Garantía 4×."
 		},
 		"sticky_cta": {
-			"hook": "Mira dónde tus ingresos se fugan.",
+			"hook": "Mira dónde tu facturación se fuga.",
 			"cta": "Quiero saber ahora",
 			"dismiss": "Cerrar"
 		},

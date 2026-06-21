@@ -47,7 +47,7 @@
 			}
 		},
 		"social_proof_strip": {
-			"before_highlight": "On the first analysis of an operation like yours, on average ",
+			"before_highlight": "Companies your size have ",
 			"highlight": "9 critical findings",
 			"rotating_highlights": [
 				"9 critical findings",
@@ -55,7 +55,7 @@
 				"27% to 43% of revenue at risk",
 				"12s of extra checkout latency"
 			],
-			"after_highlight": ". That nobody was seeing."
+			"after_highlight": " a month. Nobody sees it."
 		},
 		"demo_surface": {
 			"listen": "Listen",
@@ -72,7 +72,7 @@
 			"headline_part3": "",
 			"headline_gradient_parts": "",
 			"headline_brush_word": "",
-			"subtitle": "A Strategy Plan that shows where the money escapes, how much, and what to fix first.",
+			"subtitle": "We show you where the money escapes, how much, and what you do to stop it.",
 			"subtitle_line1": "",
 			"subtitle_before_bold": "",
 			"subtitle_bold": "",
@@ -155,9 +155,9 @@
 			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Run free diagnostic",
 			"step_indicator": [
-				"Thesis",
-				"Reading",
-				"Next steps"
+				"The problem",
+				"The reading",
+				"What to do"
 			],
 			"step1": {
 				"breadcrumb_brand": "Vestigio",
@@ -497,14 +497,14 @@
 			"title": "Four moves per cycle",
 			"subtitle": "Each monthly Strategy Plan opens with the Thesis, shows Where you are, proposes the Next steps, and closes with Continuity — the memory of what changed since last cycle.",
 			"tese": {
-				"eyebrow": "THESIS OF THE MONTH",
+				"eyebrow": "What is the problem this month",
 				"dateline": "Latest issue",
 				"attribution": "Vestigio · cycle analysis",
 				"sample": "The dominant theme this cycle is misaligned copy: headlines describe the product without communicating the buyer's gain."
 			},
 			"onde_voce_esta": {
-				"eyebrow": "WHERE YOU ARE",
-				"description": "Four metrics refreshed every cycle, with 6-month history.",
+				"eyebrow": "Where you are losing",
+				"description": "",
 				"tiles": [
 					{
 						"label": "Recovered this cycle",
@@ -529,8 +529,8 @@
 				]
 			},
 			"proximos_passos": {
-				"eyebrow": "NEXT STEPS",
-				"description": "Prioritized decisions, with the dollar impact and the responsible buyer.",
+				"eyebrow": "What to do first",
+				"description": "",
 				"items": [
 					{
 						"n": "01",
@@ -553,8 +553,8 @@
 				]
 			},
 			"continuidade": {
-				"eyebrow": "CONTINUITY",
-				"description": "What changed since the last cycle — the analysis has memory.",
+				"eyebrow": "What changed",
+				"description": "",
 				"pairs": [
 					{
 						"label": "Critical findings",
@@ -732,17 +732,17 @@
 			"tagline": "Built for those who refuse to scale in the dark.",
 			"quick_start_title": "Ready in 60 seconds",
 			"quick_start_desc": "Paste your URL. No code, no tag, no onboarding.",
-			"visibility_title": "15,000 signals per cycle",
-			"visibility_desc": "From security headers to checkout copy. Nothing slips through.",
+			"visibility_title": "We check 15,000 signals on your site",
+			"visibility_desc": "",
 			"roi_title": "4X Guarantee",
 			"roi_subtitle": "If Vestigio doesn't find 4× your plan's value in monthly losses, we refund 100%.",
 			"pulse_title": "Thesis of the month",
 			"pulse_desc": "Every analysis opens with a thesis — the central read of the cycle, in dollars, with next steps.",
 			"pulse_cta": "See an example",
-			"monitoring_title": "Regressions in hours, not days",
-			"monitoring_desc": "Every site change audited before your customer notices.",
-			"integrations_title": "Plays with your stack",
-			"integrations_desc": "Shopify, WooCommerce, Stripe, GA, Meta Ads. No dev required."
+			"monitoring_title": "Errors caught in hours",
+			"monitoring_desc": "",
+			"integrations_title": "Works with any site",
+			"integrations_desc": ""
 		},
 		"mini_calculator": {
 			"title": "See where your revenue is leaking.",
@@ -817,7 +817,7 @@
 			"subheading": "Get a Strategy Plan that tells you what to do. Continuous analysis, PDF export, and shareable link. 4× Guarantee."
 		},
 		"sticky_cta": {
-			"hook": "See where your revenue is leaking.",
+			"hook": "See where your sales are leaking.",
 			"cta": "Show me now",
 			"dismiss": "Close"
 		},

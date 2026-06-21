@@ -81,7 +81,11 @@ const Features = async () => {
 				    divides them — newspaper feature signature. */}
 				<article className="mb-12 grid grid-cols-1 gap-6 border-y border-edge py-10 sm:mb-16 sm:py-12 md:grid-cols-12 md:gap-0 md:py-14 lg:py-16">
 					<aside className="md:col-span-3 md:pr-6">
-						<div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-content-faint">
+						{/* Buyer-speak section heading — was tiny-uppercase
+						    label "TESE DO MÊS"; replaced with Fraunces serif
+						    sentence "Qual é o problema deste mês" matching
+						    the supporting columns' heading style. */}
+						<div className="font-serif text-[16px] font-medium leading-snug text-zinc-100 sm:text-[18px]">
 							{t("tese.eyebrow")}
 						</div>
 						<div className="mt-2 font-mono text-[11px] text-content-muted">
@@ -114,12 +118,14 @@ const Features = async () => {
 				<div className="grid grid-cols-1 gap-y-10 md:grid-cols-3 md:gap-y-0">
 					{/* Onde você está — 2 hero metrics at editorial scale */}
 					<section className="md:px-6 md:py-2 lg:px-8">
-						<h3 className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
+						{/* Buyer-speak section heading — was tiny-uppercase
+						    label; replaced with Fraunces serif sentence so
+						    the buyer-question reads as a section heading
+						    (e.g. "Onde você tá perdendo") not a label.
+						    Description dropped — heading is the message. */}
+						<h3 className="mb-6 font-serif text-[18px] font-medium leading-snug text-zinc-100 sm:text-[20px]">
 							{t("onde_voce_esta.eyebrow")}
 						</h3>
-						<p className="mb-6 text-[13px] leading-relaxed text-content-muted">
-							{t("onde_voce_esta.description")}
-						</p>
 						<div className="flex flex-col gap-5">
 							{tiles.slice(0, 2).map((m, i) => (
 								<div key={i}>
@@ -140,12 +146,9 @@ const Features = async () => {
 
 					{/* Próximos passos — numbered actions as compact prose lines */}
 					<section className="md:border-l md:border-edge md:px-6 md:py-2 lg:px-8">
-						<h3 className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
+						<h3 className="mb-6 font-serif text-[18px] font-medium leading-snug text-zinc-100 sm:text-[20px]">
 							{t("proximos_passos.eyebrow")}
 						</h3>
-						<p className="mb-6 text-[13px] leading-relaxed text-content-muted">
-							{t("proximos_passos.description")}
-						</p>
 						<ol className="flex flex-col gap-5">
 							{nextSteps.map((s, i) => (
 								<li key={i} className="flex items-start gap-3">
@@ -169,12 +172,9 @@ const Features = async () => {
 
 					{/* Continuidade — delta pairs as prose ("X → Y, +Z") */}
 					<section className="md:border-l md:border-edge md:px-6 md:py-2 lg:px-8">
-						<h3 className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
+						<h3 className="mb-6 font-serif text-[18px] font-medium leading-snug text-zinc-100 sm:text-[20px]">
 							{t("continuidade.eyebrow")}
 						</h3>
-						<p className="mb-6 text-[13px] leading-relaxed text-content-muted">
-							{t("continuidade.description")}
-						</p>
 						<dl className="flex flex-col gap-5">
 							{pairs.map((p, i) => (
 								<div key={i}>

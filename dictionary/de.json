@@ -47,7 +47,7 @@
 			}
 		},
 		"social_proof_strip": {
-			"before_highlight": "Bei der ersten Analyse eines Betriebs wie Ihrem identifiziert Vestigio im Schnitt ",
+			"before_highlight": "Unternehmen Ihrer Größe haben ",
 			"highlight": "9 kritische Findings",
 			"rotating_highlights": [
 				"9 kritische Findings",
@@ -55,7 +55,7 @@
 				"27% bis 43% des Umsatzes gefährdet",
 				"12s zusätzliche Checkout-Latenz"
 			],
-			"after_highlight": ". Die niemand sah."
+			"after_highlight": " pro Monat. Niemand sieht es."
 		},
 		"demo_surface": {
 			"listen": "Anhören",
@@ -72,7 +72,7 @@
 			"headline_part3": "",
 			"headline_gradient_parts": "",
 			"headline_brush_word": "",
-			"subtitle": "Ein Strategieplan, der zeigt, wo das Geld entkommt, wie viel, und was zuerst zu beheben ist.",
+			"subtitle": "Wir zeigen, wo das Geld entkommt, wie viel, und was Sie tun, um es zu stoppen.",
 			"subtitle_line1": "",
 			"subtitle_before_bold": "",
 			"subtitle_bold": "",
@@ -148,9 +148,9 @@
 			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Kostenlose Diagnose starten",
 			"step_indicator": [
-				"These",
-				"Lesung",
-				"Nächste Schritte"
+				"Das Problem",
+				"Die Lesung",
+				"Was zu tun"
 			],
 			"step1": {
 				"breadcrumb_brand": "Vestigio",
@@ -490,14 +490,14 @@
 			"title": "Vier Bewegungen pro Zyklus",
 			"subtitle": "Jeder monatliche Strategieplan beginnt mit der These, zeigt Wo Sie stehen, schlägt die Nächsten Schritte vor und schließt mit der Kontinuität — der Erinnerung daran, was sich seit dem letzten Zyklus geändert hat.",
 			"tese": {
-				"eyebrow": "DIE THESE DES MONATS",
+				"eyebrow": "Was ist das Problem dieses Monats",
 				"dateline": "Letzte Ausgabe",
 				"attribution": "Vestigio · Zyklusanalyse",
 				"sample": "Das dominante Thema dieses Zyklus ist unausgerichteter Text: Überschriften beschreiben das Produkt, ohne den Käufernutzen zu kommunizieren."
 			},
 			"onde_voce_esta": {
-				"eyebrow": "WO SIE STEHEN",
-				"description": "Vier Metriken jeden Zyklus aktualisiert, mit 6-Monats-Historie.",
+				"eyebrow": "Wo Sie verlieren",
+				"description": "",
 				"tiles": [
 					{
 						"label": "Erholt diesen Zyklus",
@@ -522,8 +522,8 @@
 				]
 			},
 			"proximos_passos": {
-				"eyebrow": "NÄCHSTE SCHRITTE",
-				"description": "Priorisierte Entscheidungen, mit Euro-Wirkung und verantwortlichem Käufer.",
+				"eyebrow": "Was zuerst zu tun",
+				"description": "",
 				"items": [
 					{
 						"n": "01",
@@ -546,8 +546,8 @@
 				]
 			},
 			"continuidade": {
-				"eyebrow": "KONTINUITÄT",
-				"description": "Was sich seit dem letzten Zyklus geändert hat — die Analyse hat Erinnerung.",
+				"eyebrow": "Was sich änderte",
+				"description": "",
 				"pairs": [
 					{
 						"label": "Kritische Findings",
@@ -725,16 +725,16 @@
 			"tagline": "Gemacht für alle, die sich weigern, im Dunkeln zu skalieren.",
 			"quick_start_title": "Quick Start",
 			"quick_start_desc": "Starten Sie in Sekunden, nur mit Ihrer Domain.",
-			"visibility_title": "Volle Sichtbarkeit",
-			"visibility_desc": "Über 15.000 Signale automatisch analysiert.",
+			"visibility_title": "Wir prüfen 15.000 Signale auf Ihrer Website",
+			"visibility_desc": "",
 			"roi_subtitle": "Sie können buchstäblich nicht verlieren.",
 			"pulse_title": "These des Monats",
 			"pulse_desc": "Jede Analyse beginnt mit einer These — die zentrale Lesart des Zyklus, in Euro, mit nächsten Schritten.",
 			"pulse_cta": "Beispiel ansehen",
-			"monitoring_title": "Kontinuierliches Monitoring",
-			"monitoring_desc": "Automatische Audit-Zyklen.",
-			"integrations_title": "Integrationen",
-			"integrations_desc": "Shopify, Stripe, GA und mehr."
+			"monitoring_title": "Fehler in Stunden gefunden",
+			"monitoring_desc": "",
+			"integrations_title": "Funktioniert mit jeder Website",
+			"integrations_desc": ""
 		},
 		"mini_calculator": {
 			"title": "Sehen Sie, wo Ihre Umsätze lecken.",

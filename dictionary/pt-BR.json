@@ -47,7 +47,7 @@
 			}
 		},
 		"social_proof_strip": {
-			"before_highlight": "Na primeira análise de uma operação como a sua, em média ",
+			"before_highlight": "Empresas do seu tamanho têm ",
 			"highlight": "9 findings críticos",
 			"rotating_highlights": [
 				"9 findings críticos",
@@ -55,7 +55,7 @@
 				"27% a 43% do faturamento em risco",
 				"12s extras no checkout"
 			],
-			"after_highlight": ". Que ninguém estava vendo."
+			"after_highlight": " por mês. Ninguém vê."
 		},
 		"demo_surface": {
 			"listen": "Ouvir",
@@ -72,7 +72,7 @@
 			"headline_part3": "",
 			"headline_gradient_parts": "",
 			"headline_brush_word": "",
-			"subtitle": "Um Plano de Estratégia que mostra onde o dinheiro escapa, quanto, e o que fazer primeiro.",
+			"subtitle": "Mostramos onde o dinheiro escapa, quanto, e o que você faz pra parar.",
 			"subtitle_line1": "",
 			"subtitle_before_bold": "",
 			"subtitle_bold": "",
@@ -155,9 +155,9 @@
 			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Rodar diagnóstico gratuito",
 			"step_indicator": [
-				"Tese",
-				"Leitura",
-				"Próximos passos"
+				"O problema",
+				"A análise",
+				"O que fazer"
 			],
 			"step1": {
 				"breadcrumb_brand": "Vestigio",
@@ -497,14 +497,14 @@
 			"title": "Quatro movimentos por ciclo",
 			"subtitle": "Cada Plano de Estratégia mensal abre com a Tese, mostra Onde você está, propõe os Próximos passos e fecha com Continuidade — a memória do que mudou desde o último ciclo.",
 			"tese": {
-				"eyebrow": "TESE DO MÊS",
+				"eyebrow": "Qual é o problema deste mês",
 				"dateline": "Edição mais recente",
 				"attribution": "Vestigio · análise do ciclo",
 				"sample": "O tema dominante deste ciclo é copy desalinhado: títulos descrevem o produto sem comunicar o ganho do comprador."
 			},
 			"onde_voce_esta": {
-				"eyebrow": "ONDE VOCÊ ESTÁ",
-				"description": "Quatro métricas atualizadas todo ciclo, com 6 meses de histórico.",
+				"eyebrow": "Onde você tá perdendo",
+				"description": "",
 				"tiles": [
 					{
 						"label": "Recuperado este ciclo",
@@ -529,8 +529,8 @@
 				]
 			},
 			"proximos_passos": {
-				"eyebrow": "PRÓXIMOS PASSOS",
-				"description": "Decisões priorizadas, com R$ ao lado e o buyer responsável.",
+				"eyebrow": "O que fazer primeiro",
+				"description": "",
 				"items": [
 					{
 						"n": "01",
@@ -553,8 +553,8 @@
 				]
 			},
 			"continuidade": {
-				"eyebrow": "CONTINUIDADE",
-				"description": "O que mudou desde o último ciclo — a análise tem memória.",
+				"eyebrow": "O que mudou",
+				"description": "",
 				"pairs": [
 					{
 						"label": "Findings críticos",
@@ -732,17 +732,17 @@
 			"tagline": "Feito pra quem não aceita escalar no escuro.",
 			"quick_start_title": "Pronto em 60 segundos",
 			"quick_start_desc": "Cola a URL. Sem código, sem tag, sem onboarding.",
-			"visibility_title": "15 mil sinais por ciclo",
-			"visibility_desc": "De headers de segurança a copy de checkout. Nada escapa.",
+			"visibility_title": "Olhamos 15 mil sinais no seu site",
+			"visibility_desc": "",
 			"roi_title": "Garantia 4X",
 			"roi_subtitle": "Se a Vestigio não achar 4× o valor do plano em perdas mensais, devolvemos 100%.",
 			"pulse_title": "Tese do mês",
 			"pulse_desc": "Cada análise abre com uma tese — a leitura central do ciclo, em R$, com próximos passos.",
 			"pulse_cta": "Veja um exemplo",
-			"monitoring_title": "Regressões em horas, não dias",
-			"monitoring_desc": "Toda mudança no site auditada antes do cliente perceber.",
-			"integrations_title": "Funciona com seu stack",
-			"integrations_desc": "Shopify, WooCommerce, Stripe, GA, Meta Ads. Sem desenvolvedor."
+			"monitoring_title": "Erros encontrados em horas",
+			"monitoring_desc": "",
+			"integrations_title": "Funciona com qualquer site",
+			"integrations_desc": ""
 		},
 		"mini_calculator": {
 			"title": "Veja onde sua receita está vazando.",
@@ -817,7 +817,7 @@
 			"subheading": "Receba um Plano de Estratégia que te diz o que fazer. Análise contínua, exportação em PDF e link compartilhável. Garantia 4×."
 		},
 		"sticky_cta": {
-			"hook": "Veja onde sua receita está vazando.",
+			"hook": "Veja onde seu faturamento está vazando.",
 			"cta": "Quero saber agora",
 			"dismiss": "Fechar"
 		},

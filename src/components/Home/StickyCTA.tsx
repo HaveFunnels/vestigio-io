@@ -93,11 +93,18 @@ export default function StickyCTA({ primaryCtaHref = "/audit" }: StickyCTAProps)
 
 				{/* Primary CTA — wrapped ShinyButton with sticky-tight padding
 				    so the bar stays compact. data-vtg-cta tags it for the
-				    delegated funnel telemetry. */}
+				    delegated funnel telemetry.
+				    On mobile the hook line is hidden, so without
+				    `max-sm:flex-1` the button would only take its content
+				    width (~100px) and leave a 190px gap on the right — the
+				    bar reads as glued-to-the-left and "off-center". Mobile
+				    grows the button to fill all available space between
+				    container padding and the dismiss X — bigger tap target
+				    + visually balanced. */}
 				<ShinyButton
 					href={primaryCtaHref}
 					data-vtg-cta="sticky-cta"
-					className="!min-h-0 !w-auto shrink-0 !rounded-xl !px-3.5 !py-2 !text-[11px] sm:!px-4 sm:!text-xs"
+					className="!min-h-0 !rounded-xl !px-3.5 !py-2 !text-[11px] max-sm:flex-1 sm:shrink-0 sm:!w-auto sm:!px-4 sm:!text-xs"
 				>
 					{t("cta")}
 				</ShinyButton>

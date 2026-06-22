@@ -84,55 +84,85 @@ export default function StickyCTA({ primaryCtaHref = "/audit" }: StickyCTAProps)
 			}`}
 			aria-hidden={!visible}
 		>
-			{/* Mobile layout: hook line on top (wraps if needed), then a
-			    row with [button(flex-1)] [dismiss X]. Stacks vertically so
-			    the loss-frame hook ("Veja onde sua receita está vazando.")
-			    is actually present — without it the mobile sticky was just
-			    a context-less button.
-			    Desktop layout: single row with [hook(flex-1, truncate)]
-			    [button(content-sized)] [dismiss X] — unchanged from before. */}
-			<div className="pointer-events-auto rounded-2xl border border-edge bg-surface-card/95 px-3 py-2.5 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-md sm:flex sm:items-center sm:gap-3 sm:px-4 sm:py-3">
+			{/* Mobile layout (per /frontend-design verdict 2026-06-22):
+			    follows the iOS-banner / card-dismiss convention — body
+			    holds the hook + full-width primary CTA, dismiss X floats
+			    to the top-right corner of the card as meta-chrome.
+
+			      ┌──────────────────────────── [X] ┐
+			      │ Veja onde seu faturamento vaza. │  hook (left, natural read)
+			      │ [    Quero saber agora      ]   │  CTA fills width, text centered
+			      └─────────────────────────────────┘
+
+			    Why X at the corner instead of inline next to the CTA:
+			    (1) [button][tiny X] inline reads as a broken visual
+			    rhythm (~10:1 width ratio); (2) inline X crowds the CTA
+			    tap zone (accidental-dismiss risk on thumb mis-aim);
+			    (3) top-right corner IS the mobile pattern for dismissible
+			    cards (Twitter, iOS push banners, etc).
+
+			    Desktop layout unchanged: sm:flex restores the single row,
+			    sm:static returns the X to the inline position next to the
+			    button, and !w-auto sm:shrink-0 reverts the CTA to
+			    content-sized so it sits naturally beside the truncated
+			    hook line. */}
+			<div className="pointer-events-auto relative rounded-2xl border border-edge bg-surface-card/95 px-3 py-2.5 pr-9 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-md sm:flex sm:items-center sm:gap-3 sm:px-4 sm:py-3 sm:pr-4">
 				{/* Hook line — quiet reminder, not a second-headline. On
 				    mobile sits on its own line and may wrap (no truncate);
-				    on sm+ it goes inline + truncates if needed. */}
+				    on sm+ it goes inline + truncates if needed.
+				    Stays LEFT-aligned on mobile: centering would lose the
+				    scan rhythm and read as a slogan, not a quiet reminder. */}
 				<p className="mb-2 text-[12px] leading-snug text-content-secondary sm:mb-0 sm:flex-1 sm:truncate sm:text-[13px]">
 					{t("hook")}
 				</p>
 
-				{/* Button + dismiss row — flex on mobile to put X to the
-				    right of the (full-width) button. On desktop the outer
-				    sm:flex makes these direct flex siblings of the hook
-				    above, so the visual order [hook | button | X] still
-				    holds. */}
-				<div className="flex items-center gap-2 sm:gap-3">
-					{/* Primary CTA — wrapped ShinyButton with sticky-tight
-					    padding so the bar stays compact. data-vtg-cta tags
-					    it for the delegated funnel telemetry. On mobile
-					    `flex-1` makes the button fill all available space
-					    between container padding and the dismiss X (bigger
-					    tap target + visually balanced). On sm+ it reverts
-					    to content-sized so it sits next to the truncated
-					    hook line. */}
-					<ShinyButton
-						href={primaryCtaHref}
-						data-vtg-cta="sticky-cta"
-						className="!min-h-0 !rounded-xl !px-3.5 !py-2 !text-[11px] max-sm:flex-1 sm:shrink-0 sm:!w-auto sm:!px-4 sm:!text-xs"
-					>
-						{t("cta")}
-					</ShinyButton>
+				{/* Primary CTA — wrapped ShinyButton with sticky-tight
+				    padding so the bar stays compact. data-vtg-cta tags it
+				    for the delegated funnel telemetry.
 
-					{/* Dismiss — small, quiet. Aria label for accessibility. */}
-					<button
-						type="button"
-						onClick={handleDismiss}
-						className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-content-faint transition-colors hover:bg-white/[0.06] hover:text-content"
-						aria-label={t("dismiss")}
-					>
-						<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3 w-3">
-							<path d="M3 3l8 8M11 3l-8 8" strokeLinecap="round" />
-						</svg>
-					</button>
-				</div>
+				    Mobile: !w-full makes the button span the whole card
+				    body (big tap target, the entire bottom row is the
+				    primary action). !text-center centers the label
+				    "Quero saber agora" inside it — without this override
+				    .shiny-cta defaults to text-align: left, which on a
+				    289px+ wide button looks like the text "fell out" of
+				    the center.
+
+				    Desktop: sm:!w-auto + sm:shrink-0 revert to
+				    content-sized so the button sits next to the
+				    truncated hook line in the row. */}
+				{/* !block is load-bearing: .shiny-cta renders as <a> which
+				    defaults to display: inline, and inline elements
+				    ignore `width: 100%`. Without !block the !w-full has
+				    no effect and the button falls back to content-width
+				    (~100px), then sits at the left of the card. Block
+				    + !w-full + !text-center gets the intended full-width
+				    centered-label CTA on mobile. Desktop is unaffected
+				    because sm:!w-auto reverts to content-sized inside the
+				    sm:flex row. */}
+				<ShinyButton
+					href={primaryCtaHref}
+					data-vtg-cta="sticky-cta"
+					className="!block !min-h-0 !w-full !rounded-xl !px-3.5 !py-2 !text-center !text-[11px] sm:!w-auto sm:shrink-0 sm:!px-4 sm:!text-xs"
+				>
+					{t("cta")}
+				</ShinyButton>
+
+				{/* Dismiss X — absolute top-right corner on mobile (card
+				    meta-chrome, out of the CTA tap zone), inline on
+				    desktop where it sits next to the button at the end of
+				    the row. The sm:static + sm:right-auto sm:top-auto
+				    trio fully resets the absolute positioning at >=640px. */}
+				<button
+					type="button"
+					onClick={handleDismiss}
+					className="absolute right-2 top-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-content-faint transition-colors hover:bg-white/[0.06] hover:text-content sm:static sm:right-auto sm:top-auto"
+					aria-label={t("dismiss")}
+				>
+					<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3 w-3">
+						<path d="M3 3l8 8M11 3l-8 8" strokeLinecap="round" />
+					</svg>
+				</button>
 			</div>
 		</div>
 	);

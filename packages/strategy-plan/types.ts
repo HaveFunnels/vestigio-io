@@ -34,6 +34,10 @@ export interface GenerateContext {
 	    primeiro plano"). False when at least one earlier plan was
 	    generated, regardless of its status. */
 	isFirstPlan?: boolean;
+	/** PV.3 — reconciled BusinessContext (perceived vertical + surfaces).
+	    LLM sections read this to make their wording vertical-aware. A 'none'
+	    context (no perception) → sections fall back to generic phrasing. */
+	businessContext?: import("../perception/business-context").BusinessContext;
 }
 
 export interface HeroMetricsOutput {

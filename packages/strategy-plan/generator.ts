@@ -23,6 +23,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { GenerateContext, PlanGeneratorOutput } from "./types";
+import { getBusinessContext } from "../perception/business-context";
 import { generateHeroMetrics } from "./sections/hero-metrics";
 import { generateBuyerSegments } from "./sections/buyer-segments";
 import { generateMemoryRollups } from "./sections/memory-rollups";
@@ -142,6 +143,11 @@ async function buildContext(
 		},
 	});
 
+	// PV.3 — reconciled perception, threaded to the LLM sections (thesis,
+	// narrative, next-steps) so their wording can be vertical-aware. Never
+	// throws (returns a 'none' context on miss) → behaviour-preserving.
+	const businessContext = await getBusinessContext(env.id);
+
 	return {
 		ctx: {
 			environmentId: env.id,
@@ -152,6 +158,7 @@ async function buildContext(
 			monthEnd,
 			translations,
 			isFirstPlan: olderPlanCount === 0,
+			businessContext,
 		},
 		organizationId: env.organization?.id ?? null,
 	};

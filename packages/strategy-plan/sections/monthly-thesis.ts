@@ -35,6 +35,7 @@ interface ThesisInputs {
 	newCriticalCount: number;
 	regressionCount: number;
 	chronicCount: number;
+	vertical: string | null;
 }
 
 async function gatherInputs(
@@ -130,6 +131,7 @@ async function gatherInputs(
 		newCriticalCount: newCritical,
 		regressionCount: regression,
 		chronicCount: chronic,
+		vertical: ctx.businessContext?.vertical ?? null,
 	};
 }
 
@@ -257,6 +259,7 @@ Total: 25-44 palavras. Mais curto sempre vence.
 		lines.push(`- Pack dominante: ${i.dominantPack.replace(/_pack$/, "").replace(/_/g, " ")} (${Math.round(i.dominantPackShare * 100)}% dos pontos abertos)`);
 	}
 	if (i.dominantSurface) lines.push(`- Surface mais concentrada: ${i.dominantSurface}`);
+	if (i.vertical) lines.push(`- Tipo de negócio: ${i.vertical} (use linguagem de funil natural pra este tipo de negócio, ex.: agendamento, assinatura, pedido ou checkout conforme o caso)`);
 	if (i.topFindingTitle) {
 		lines.push(`- Maior buraco individual: ${i.topFindingTitle} (R$ ${i.topFindingImpact.toLocaleString("pt-BR")}/mês)`);
 	}

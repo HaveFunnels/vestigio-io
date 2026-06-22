@@ -159,9 +159,9 @@ Pré-requisitos pra ativar:
 
 A track "Always-on revenue protection" foi proposta como Won't em uma rodada, mas mantida no roadmap. Reavaliar se ficar 60 dias sem início de execução pós-PMF.
 
-## Track (preliminar): Cobertura multi-vertical via camada de percepção
+## Track: Cobertura multi-vertical via camada de percepção
 
-> **Preliminar** — precisa de discovery de execução antes de detalhar passos (PV.x). Sem timeline. Gated pós-PMF havefunnels.
+> Discovery de execução feito (2026-06-22) — PV.0–PV.6 abaixo. Gated pós-PMF havefunnels; sem timeline comprometida.
 
 **Tese**: o gargalo de ir além de e-commerce **não é a biblioteca de findings** — os trilhos `inference_key → projection → pack → seção` já são agnósticos a vertical (keys de food/fashion já fluem). É a **percepção**: o motor não sabe (a) que indústria é o negócio, nem (b) pra que serve cada página. Classificação de *modelo* existe mas é rasa e ecom-shaped ([classification/engine.ts](packages/classification/engine.ts)); classificação de *indústria* + propósito semântico de superfície não existem (`/agendar`→"demo", `PageType` sem Booking/ServiceListing, enum `BusinessModel` achata `services`→Hybrid em [enums.ts](packages/domain/enums.ts)). Percepção é upstream e gateia tanto findings novos quanto vocabulário.
 
@@ -173,9 +173,37 @@ A track "Always-on revenue protection" foi proposta como Won't em uma rodada, ma
 - **Punhado de detectores verticais** só pras verticais em venda (agendamento travado, convênio não informado). Não 319×N.
 - Vocabulário/tom por vertical: no máximo reescritor LLM pós-fato ancorado no texto do catálogo, pós-PMF. Não é o investimento.
 
-**Sonda barata (1º passo de execução)**: provar em UMA vertical adjacente — services/leadgen, que já tem meio caminho ([vertical-inference.ts](packages/inference/vertical-inference.ts), scenarios services→leadgen). Estender `BusinessModel` pra armazenar services + entendimento semântico de superfícies de agendamento/serviço. Se a tese não segura aqui, não segura em 15.
+**Execução (discovery 2026-06-22)** — mecânica derisada: o passe de percepção é o mesmo formato do framework-lens (Haiku sobre `page_content` → JSON estruturado → persistido → pre-populado, cold-cycle). Reusa **verbatim** `callModel` + token ledger + circuit-breaker de custo por org ([client.ts](apps/mcp/llm/client.ts)), e `sanitizeForPrompt` + guard `<page_data>` + `parseAuditResponse` ([framework-audit.ts](packages/copy-analysis/framework-audit.ts)). Custo: ~30 páginas × ~500 tokens ≈ **$0,012/ciclo** — fração de 1% do cap mensal ($50 max). Plug-point: nova enrichment pass em [runner.ts](workers/ingestion/enrichment/runner.ts), pós-crawl, antes de signals/inference; emite evidence `BusinessClassification` → `extractSignals` → packs. Sem blocker técnico.
 
-**Próximo passo antes de detalhar**: discovery de execução — manter o passe de percepção determinístico o suficiente pro padrão anti-slop, custo LLM por env, e a ontologia de verticais/superfícies.
+**Princípio anti-slop (inegociável)**: o LLM só emite LABELS numa ontologia FECHADA (`vertical` + `surface.purpose` + confidence), **nunca escreve finding**. Detectores seguem determinísticos. LLM percebe, engine conclui. Fallback pro classificador heurístico Bayesiano que já existe ([classification/engine.ts](packages/classification/engine.ts)) quando confidence baixa ou parse falha.
+
+**3 decisões (forks reais, não plumbing):**
+- **Loop de timing**: percepção roda pós-crawl, então informa *detecção* neste ciclo mas *priorização de crawl* só no próximo. Default: cold crawleia genérico → percebe vertical → warm crawleia as superfícies certas (eventually-consistent).
+- **Representabilidade + reconciliação**: enum `BusinessModel` (4 valores) não armazena services/clínica — colapsa em hybrid→ecommerce ([enums.ts](packages/domain/enums.ts), [classification/engine.ts](packages/classification/engine.ts) `mapOnboardingModel`). Prereq: campo `PerceivedVertical`. Regra: percepção sobrepõe onboarding acima de confidence T; onboarding vira prior/fallback.
+- **Escopo da ontologia**: começar PEQUENA (services/leadgen + superfícies de agendamento/serviço), validar, expandir. Não desenhar 50 verticais no especulativo.
+
+**Checar ANTES de construir**: `surfaceInventoryPass` + `semanticEnrichmentPass` já estão no registry de enrichment e podem já emitir parte de surface-purpose (risco de coleta-sem-consumo). Auditar overlap antes de criar passe paralela.
+
+### PV.0 — Representabilidade + reconciliação (S, ~2-3d)
+Campo `PerceivedVertical` (Environment) + taxonomia fechada de `surface.purpose`. Regra de precedência percepção vs onboarding.
+
+### PV.1 — Auditar passes semânticas existentes (S, ~1-2d)
+O que `surfaceInventoryPass`/`semanticEnrichmentPass`/slot LLM do page-classifier já produzem vs coletam-sem-consumir. Evitar infra duplicada.
+
+### PV.2 — Passe de percepção (M, ~4-6d)
+Enrichment pass `perception-classifier` copiando o template framework-lens. Haiku sobre `page_content`, JSON ontologia-fechada, guard + parse hardening + fail-closed pro heurístico. Emite evidence `BusinessClassification`.
+
+### PV.3 — Seam de consumo (M, ~4-6d)
+`extractBusinessClassificationSignals` → signals `vertical.detected` / `surface.purpose:*`. Converter `vertical-inference.ts` de if-blocks → registry keyed por vertical percebida; dispatch lê percepção primeiro, não `onboarding_business_model`.
+
+### PV.4 — Ancorar findings universais na superfície (M, ~3-5d)
+Label de superfície no título vem do purpose percebido ("na sua página de agendamento") em vez de URL/assunção ecommerce. Mesmo detector, relevante por vertical, sem catálogo novo.
+
+### PV.5 — Loop de priorização de crawl (M, ~5-7d)
+Vertical percebida alimenta a seleção de critical-paths/scenarios do PRÓXIMO ciclo ([scenarios.ts](workers/ingestion/enrichment/scenarios.ts) switch → registry).
+
+### PV.6 — Sonda services/leadgen + calibração (M, ~5-7d)
+Estender enum pra armazenar services, ontologia de superfícies de agendamento/serviço ([vertical-inference.ts](packages/inference/vertical-inference.ts) já tem inferências services dormentes), calibrar FP do classificador (havefunnels-only, padrão A.2). **Gate**: provar que UMA vertical adjacente aprofunda retenção antes de expandir a ontologia.
 
 ## Expansão futura (4 categorias validadas, post-PMF)
 

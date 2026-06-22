@@ -93,6 +93,58 @@ describe('Page Classifier', () => {
     expect(result.classificationConfidence).toBeGreaterThanOrEqual(50);
   });
 
+  it('classifies via enrichment_type mapping when product_page_quality enrichment is present', () => {
+    // Regression: the typeMapping key must match the real producer enrichment_type
+    // ('product_page_quality' per signals/engine.ts), not the stale 'product_description_quality'.
+    const evidence = [{
+      evidence_type: 'content_enrichment',
+      payload: {
+        source_url: 'https://example.com/x9k2',
+        enrichment_type: 'product_page_quality',
+        results: { quality_score: 70 },
+      },
+    }] as any[];
+
+    const result = classifyPage(makeCtx({
+      url: 'https://example.com/x9k2',
+      path: '/x9k2',
+      title: null,
+      h1: null,
+      bodyWordCount: 150,
+      existingPageType: 'other',
+    }), evidence);
+
+    expect(result.classifiedPageType).toBe('product');
+    expect(
+      result.classificationSignals.some(
+        (s) => s.source === 'llm_enrichment_type' && s.vote === 'product',
+      ),
+    ).toBe(true);
+  });
+
+  it('classifies via enrichment_type mapping when onboarding_copy enrichment is present', () => {
+    // Regression: real producer emits 'onboarding_copy', not the stale 'onboarding_copy_quality'.
+    const evidence = [{
+      evidence_type: 'content_enrichment',
+      payload: {
+        source_url: 'https://example.com/q7w2',
+        enrichment_type: 'onboarding_copy',
+        results: { onboarding_quality_score: 60 },
+      },
+    }] as any[];
+
+    const result = classifyPage(makeCtx({
+      url: 'https://example.com/q7w2',
+      path: '/q7w2',
+      title: null,
+      h1: null,
+      bodyWordCount: 150,
+      existingPageType: 'other',
+    }), evidence);
+
+    expect(result.classifiedPageType).toBe('onboarding');
+  });
+
   it('business model context boosts SaaS-specific classification', () => {
     const result = classifyPage(makeCtx({
       url: 'https://example.com/trial',

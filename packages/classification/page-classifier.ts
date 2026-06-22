@@ -170,7 +170,7 @@ function classifyByLLM(evidence: Evidence[], pageUrl: string): ClassificationVot
     if (!payload || payload.source_url !== pageUrl) continue;
 
     // Check for explicit page type in enrichment results
-    if (payload.enrichment_type === 'page_purpose_validation' || payload.enrichment_type === 'above_fold_density') {
+    if (payload.enrichment_type === 'page_purpose_validation') {
       const results = payload.results as Record<string, unknown> | undefined;
       if (results?.detected_page_type) {
         const llmType = mapLLMTypeToSurface(results.detected_page_type as string);
@@ -185,8 +185,8 @@ function classifyByLLM(evidence: Evidence[], pageUrl: string): ClassificationVot
       'homepage_hero': 'homepage',
       'pricing_psychology': 'pricing',
       'checkout_trust': 'checkout',
-      'product_description_quality': 'product',
-      'onboarding_copy_quality': 'onboarding',
+      'product_page_quality': 'product',
+      'onboarding_copy': 'onboarding',
     };
     if (payload.source_url === pageUrl && typeMapping[payload.enrichment_type]) {
       return { source: 'llm_enrichment_type', vote: typeMapping[payload.enrichment_type], confidence: 75, weight: 0.3 };

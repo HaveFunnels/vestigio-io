@@ -31,6 +31,7 @@ import {
 	writeContentEnrichmentCache,
 } from "./content-cache";
 import { prisma } from "../../../src/libs/prismaDb";
+import { getBusinessContext } from "../../../packages/perception/business-context";
 
 // ──────────────────────────────────────────────
 // Surface Inventory enricher — Wave 26
@@ -98,6 +99,31 @@ async function loadIndustry(envId: string): Promise<string | null> {
 		return row?.industry ?? null;
 	} catch {
 		return null;
+	}
+}
+
+// PV.3 — map the perceived vertical taxonomy onto the surface-inventory
+// CustomerType. Returns null for verticals with no clean mapping (incl. the
+// onboarding 'hybrid'/'content'), so the caller falls back to the keyword
+// resolver — behaviour-preserving when perception is absent or onboarding-sourced.
+function mapVerticalToCustomerType(vertical: string | null): CustomerType | null {
+	switch (vertical) {
+		case "ecommerce":
+			return "ecommerce";
+		case "saas":
+			return "saas";
+		case "services":
+		case "lead_gen":
+		case "professional":
+			return "service";
+		case "local_service":
+		case "food":
+		case "health":
+			return "local_business";
+		case "education":
+			return "infoproduct";
+		default:
+			return null;
 	}
 }
 
@@ -417,7 +443,12 @@ export const surfaceInventoryPass: EnrichmentPass = {
 				);
 			}
 			const industry = await loadIndustry(envId);
-			const customerType = resolveCustomerType(ctx.business_model, industry);
+			// PV.3 — prefer the perceived vertical (reconciled) when it maps to a
+			// known customer type; fall back to the onboarding-model keyword resolver.
+			const perceived = await getBusinessContext(envId);
+			const customerType =
+				mapVerticalToCustomerType(perceived.vertical) ??
+				resolveCustomerType(ctx.business_model, industry);
 
 			// Build by-type map locally — ctx.evidence is the live array.
 			const byType = new Map<EvidenceType, Evidence[]>();

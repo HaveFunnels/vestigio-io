@@ -159,6 +159,24 @@ Pré-requisitos pra ativar:
 
 A track "Always-on revenue protection" foi proposta como Won't em uma rodada, mas mantida no roadmap. Reavaliar se ficar 60 dias sem início de execução pós-PMF.
 
+## Track (preliminar): Cobertura multi-vertical via camada de percepção
+
+> **Preliminar** — precisa de discovery de execução antes de detalhar passos (PV.x). Sem timeline. Gated pós-PMF havefunnels.
+
+**Tese**: o gargalo de ir além de e-commerce **não é a biblioteca de findings** — os trilhos `inference_key → projection → pack → seção` já são agnósticos a vertical (keys de food/fashion já fluem). É a **percepção**: o motor não sabe (a) que indústria é o negócio, nem (b) pra que serve cada página. Classificação de *modelo* existe mas é rasa e ecom-shaped ([classification/engine.ts](packages/classification/engine.ts)); classificação de *indústria* + propósito semântico de superfície não existem (`/agendar`→"demo", `PageType` sem Booking/ServiceListing, enum `BusinessModel` achata `services`→Hybrid em [enums.ts](packages/domain/enums.ts)). Percepção é upstream e gateia tanto findings novos quanto vocabulário.
+
+> Correção de camada: o "finding" (observação) vive nas inference packs (cause/effect/reasoning) + mapas `INFERENCE_TITLES`/`INFERENCE_CAUSES` em [projections/engine.ts](packages/projections/engine.ts); o remediation-catalog é só o *como remediar*. Ambos estáticos por key.
+
+**Direção (NÃO construir biblioteca de findings por vertical):**
+- **Percepção primeiro** — passe LLM sobre evidência crawleada → `BusinessContext { vertical, surfaces:[{url, purpose}] }` em ontologia fechada. Pré-requisito de tudo; o ativo difícil de copiar.
+- **Ancorar findings universais na percepção** — "CTA enterrado *na página de agendamento*" vs "no checkout". Mesmo detector, relevante por vertical, sem catálogo novo.
+- **Punhado de detectores verticais** só pras verticais em venda (agendamento travado, convênio não informado). Não 319×N.
+- Vocabulário/tom por vertical: no máximo reescritor LLM pós-fato ancorado no texto do catálogo, pós-PMF. Não é o investimento.
+
+**Sonda barata (1º passo de execução)**: provar em UMA vertical adjacente — services/leadgen, que já tem meio caminho ([vertical-inference.ts](packages/inference/vertical-inference.ts), scenarios services→leadgen). Estender `BusinessModel` pra armazenar services + entendimento semântico de superfícies de agendamento/serviço. Se a tese não segura aqui, não segura em 15.
+
+**Próximo passo antes de detalhar**: discovery de execução — manter o passe de percepção determinístico o suficiente pro padrão anti-slop, custo LLM por env, e a ontologia de verticais/superfícies.
+
 ## Expansão futura (4 categorias validadas, post-PMF)
 
 Não comprometidas com timeline. Cada uma demanda discovery próprio.

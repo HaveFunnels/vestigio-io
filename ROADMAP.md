@@ -187,11 +187,11 @@ A track "Always-on revenue protection" foi proposta como Won't em uma rodada, ma
 ### PV.0 — Representabilidade + reconciliação (S, ~2-3d)
 Campo `PerceivedVertical` (Environment) + taxonomia fechada de `surface.purpose`. Regra de precedência percepção vs onboarding.
 
-### PV.1 — Auditar passes semânticas existentes (S, ~1-2d)
-O que `surfaceInventoryPass`/`semanticEnrichmentPass`/slot LLM do page-classifier já produzem vs coletam-sem-consumir. Evitar infra duplicada.
+### PV.1 — Auditar passes semânticas existentes ✅ (auditado 2026-06-22)
+**Resultado**: `surfaceInventoryPass` + `semanticEnrichmentPass` estão VIVAS — 22 `enrichment_type` (ContentEnrichment) produzidos E consumidos por `extractCopyEnrichmentSignals`/`extractCompetitiveSurfaceSignals` → signals → findings → UI. Sem coleta-sem-consumo aqui. `surface_inventory` já emite label de negócio coarse (`customer_type`: saas/ecommerce/infoproduct), mas só pra seleção de categoria competitiva. **Dead-branches reais (localizados no page-classifier, baratos, só afinam o type ecommerce — NÃO são progresso de vertical):** classifier lê `above_fold_density.detected_page_type` (campo que a pass nunca seta), `pricing_psychology` fora do `typeMapping`, nomes stale (`product_description_quality` vs `product_page_quality`; `onboarding_copy_quality` vs `onboarding_copy`), e `page_purpose_validation` só emite em mismatch (~5% das páginas → slot LLM do classifier quase inerte). Fix ~5-10 linhas, separado. `classifiedPageType` em si está VIVO (PageInventoryItem → funnel/form/gap inferences + /api/inventory + EcosystemSection UI).
 
 ### PV.2 — Passe de percepção (M, ~4-6d)
-Enrichment pass `perception-classifier` copiando o template framework-lens. Haiku sobre `page_content`, JSON ontologia-fechada, guard + parse hardening + fail-closed pro heurístico. Emite evidence `BusinessClassification`.
+**NÃO é infra nova** (PV.1 provou): é o **23º `ContentEnrichment`** num padrão com 22 consumidores vivos. Enrichment pass `perception-classifier` copiando o template framework-lens (Haiku sobre `page_content`, JSON ontologia-fechada, guard + parse hardening + fail-closed pro heurístico). Emite `ContentEnrichment{ enrichment_type:'business_perception', vertical, surfaces:[{url,purpose,confidence}] }`, consumido por novo extractor espelhando `extractCopyEnrichmentSignals`. **Guarda anti-drift**: definir `enrichment_type` + payload num único lugar autoritativo — o drift de strings entre producer/consumer foi exatamente o que matou os branches em PV.1. Dobrar no débito "eleger pageType autoritativo".
 
 ### PV.3 — Seam de consumo (M, ~4-6d)
 `extractBusinessClassificationSignals` → signals `vertical.detected` / `surface.purpose:*`. Converter `vertical-inference.ts` de if-blocks → registry keyed por vertical percebida; dispatch lê percepção primeiro, não `onboarding_business_model`.

@@ -265,7 +265,7 @@
 						"tone": "emerald"
 					}
 				],
-				"narrative_lead": "A cobertura de política na página inicial está **calibrada** e segurando receita. O tema dominante deste ciclo é **copy desalinhado** — onde a leitura do comprador rompe com a leitura do site.",
+				"narrative_lead": "A cobertura de política na página inicial está **calibrada** e segurando faturamento. O tema dominante deste ciclo é **copy desalinhado** — onde a leitura do comprador rompe com a leitura do site.",
 				"narrative_detail": "Títulos descreviam o produto sem comunicar o ganho do comprador. No checkout, um **redirect cross-domain** dispersou compradores qualificados antes da conversão. Ambos já resolvidos — **R$ ~67k recuperados** neste mês."
 			},
 			"step3": {
@@ -322,7 +322,7 @@
 				{
 					"persona": "O Head de Growth",
 					"question": "Implementamos mudanças semana passada. Quebrou alguma coisa?",
-					"answer": "A Vestigio compara antes e depois, automaticamente. Regressões aparecem ranqueadas por **impacto em receita**."
+					"answer": "A Vestigio compara antes e depois, automaticamente. Regressões aparecem ranqueadas por **impacto em faturamento**."
 				},
 				{
 					"persona": "O CTO",
@@ -363,7 +363,7 @@
 		},
 		"cta": {
 			"title": "O dinheiro está saindo agora.",
-			"subtitle": "Cada dia sem visibilidade é receita que você não recupera.",
+			"subtitle": "Cada dia sem visibilidade é faturamento que você não recupera.",
 			"primary": "Rodar Diagnóstico Gratuito",
 			"micro": "Você pode estar olhando seu primeiro diagnóstico em 60 segundos."
 		},
@@ -406,7 +406,7 @@
 				{
 					"industry": "Moda & Vestuário",
 					"stat1_value": "2.8x",
-					"stat1_label": "Crescimento de Receita",
+					"stat1_label": "Crescimento de Faturamento",
 					"stat2_value": "12K",
 					"stat2_label": "Novos Clientes",
 					"stat3_value": "4.7%",
@@ -433,7 +433,7 @@
 				{
 					"industry": "Eletrônicos & Tech",
 					"stat1_value": "27%",
-					"stat1_label": "Receita Recuperada",
+					"stat1_label": "Faturamento Recuperado",
 					"stat2_value": "42K",
 					"stat2_label": "Disputas Ganhas",
 					"stat3_value": "94%",
@@ -754,7 +754,7 @@
 			"integrations_desc": ""
 		},
 		"mini_calculator": {
-			"title": "Veja onde sua receita está vazando.",
+			"title": "Veja onde seu faturamento está vazando.",
 			"subtitle": "Análise gratuita do seu domínio. Resultado em segundos, sem cadastro.",
 			"currency_symbol": "R$",
 			"url_placeholder": "Cole a URL do seu site aqui...",
@@ -837,7 +837,7 @@
 		}
 	},
 	"footer": {
-		"tagline": "Receba um Plano de Estratégia por mês mostrando onde sua receita vaza e o que fazer.",
+		"tagline": "Receba um Plano de Estratégia por mês mostrando onde seu faturamento vaza e o que fazer.",
 		"social": {
 			"twitter": "Twitter",
 			"github": "GitHub"
@@ -893,7 +893,7 @@
 		},
 		"hero": {
 			"eyebrow": "Primeiro diagnóstico médio",
-			"stat_description": "Vazamento médio de receita encontrado no primeiro diagnóstico Vestigio."
+			"stat_description": "Vazamento médio de faturamento encontrado no primeiro diagnóstico Vestigio."
 		}
 	},
 	"signUpPage": {
@@ -928,7 +928,7 @@
 		},
 		"hero": {
 			"eyebrow": "Primeiro diagnóstico médio",
-			"stat_description": "Vazamento médio de receita encontrado no primeiro diagnóstico Vestigio.",
+			"stat_description": "Vazamento médio de faturamento encontrado no primeiro diagnóstico Vestigio.",
 			"testimonial_1": "A Vestigio encontrou R$23k/mês em vazamentos que não sabíamos que existiam.",
 			"testimonial_2": "Eu não fazia ideia de quanto dinheiro meu checkout estava perdendo.",
 			"testimonial_3": "Testei num e-commerce e encontrei 12 vazamentos críticos em 60 segundos."
@@ -7570,7 +7570,7 @@
 			"score_opportunities": "Oportunidades de conversão detectadas",
 			"score_problems": "Problemas significativos encontrados",
 			"score_critical": "Vazamentos críticos detectados",
-			"score_desc_ok": "Sua landing funciona, mas está vazando receita em pontos específicos.",
+			"score_desc_ok": "Sua landing funciona, mas está vazando faturamento em pontos específicos.",
 			"score_desc_bad": "Sua landing tem problemas que estão custando dinheiro todos os dias.",
 			"exposure_label": "Exposição mensal estimada",
 			"exposure_text": "Problemas estão te custando ~{amount}/mês",
@@ -7604,7 +7604,7 @@
 			"cta_final": {
 				"eyebrow": "Próximo passo",
 				"headline": "{org} está perdendo dinheiro agora.",
-				"headline_l1": "Pare de sangrar receita.",
+				"headline_l1": "Pare de sangrar faturamento.",
 				"headline_l2": "A Análise completa começa em 60s.",
 				"guarantee_title": "Garantia 4× ou seu dinheiro de volta",
 				"guarantee_desc": "Recupere pelo menos 4x o valor pago em 90 dias. Se não, devolvemos seu dinheiro inteiro. Sem perguntas.",
@@ -7636,7 +7636,7 @@
 				"bullets": {
 					"plan": "Análise rodando 24/7, com Plano de Estratégia sempre vivo + snapshot mensal de evolução",
 					"queue": "Próximos passos priorizados pelo R$ que cada um recupera",
-					"ai": "Vestigio AI lê Meta, Google e Stripe — pergunta qualquer coisa de receita",
+					"ai": "Vestigio AI lê Meta, Google e Stripe — pergunta qualquer coisa de faturamento",
 					"continuous": "Alerta direto quando vazamento novo aparece no seu site",
 					"history": "Histórico mês-a-mês do que mudou e o quanto recuperou",
 					"map": "Mapa de causa-raiz: achado → funil → impacto em R$"
@@ -7697,7 +7697,7 @@
 				"title": "Quatro lentes sobre a mesma Análise",
 				"subtitle": "4 workspaces",
 				"revenue": {
-					"title": "Inteligência de Receita",
+					"title": "Inteligência de Faturamento",
 					"count": "Checkout, estrutura da página e mobile"
 				},
 				"trust": {

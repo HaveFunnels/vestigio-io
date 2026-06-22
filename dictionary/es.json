@@ -496,8 +496,8 @@
 		},
 		"features_bento": {
 			"eyebrow": "ESTRUCTURA DEL PLAN",
-			"title": "Cuatro movimientos por ciclo",
-			"subtitle": "Cada Plan de Estrategia mensual abre con la Tesis, muestra Dónde estás, propone los Próximos pasos y cierra con Continuidad — la memoria de lo que cambió desde el último ciclo.",
+			"title": "Cuatro secciones por edición",
+			"subtitle": "Cada edición mensual trae la Tesis, Dónde estás, los Próximos pasos, y la Continuidad — lo que cambió desde la edición anterior.",
 			"tese": {
 				"eyebrow": "Cuál es el problema de este mes",
 				"dateline": "Edición más reciente",
@@ -573,7 +573,7 @@
 						"deltaTone": "win"
 					},
 					{
-						"label": "Buyers activados",
+						"label": "Equipos con pasos",
 						"before": "2",
 						"after": "3",
 						"delta": "+1 equipo",

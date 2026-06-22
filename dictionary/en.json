@@ -503,8 +503,8 @@
 		},
 		"features_bento": {
 			"eyebrow": "PLAN STRUCTURE",
-			"title": "Four moves per cycle",
-			"subtitle": "Each monthly Strategy Plan opens with the Thesis, shows Where you are, proposes the Next steps, and closes with Continuity — the memory of what changed since last cycle.",
+			"title": "Four sections per edition",
+			"subtitle": "Each monthly edition brings the Thesis, Where you are, the Next steps, and the Continuity — what changed since the previous edition.",
 			"tese": {
 				"eyebrow": "What is the problem this month",
 				"dateline": "Latest issue",
@@ -580,7 +580,7 @@
 						"deltaTone": "win"
 					},
 					{
-						"label": "Buyers engaged",
+						"label": "Teams with steps",
 						"before": "2",
 						"after": "3",
 						"delta": "+1 team",

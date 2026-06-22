@@ -496,8 +496,8 @@
 		},
 		"features_bento": {
 			"eyebrow": "PLAN-STRUKTUR",
-			"title": "Vier Bewegungen pro Zyklus",
-			"subtitle": "Jeder monatliche Strategieplan beginnt mit der These, zeigt Wo Sie stehen, schlägt die Nächsten Schritte vor und schließt mit der Kontinuität — der Erinnerung daran, was sich seit dem letzten Zyklus geändert hat.",
+			"title": "Vier Abschnitte pro Ausgabe",
+			"subtitle": "Jede monatliche Ausgabe enthält die These, Wo Sie stehen, die Nächsten Schritte und die Kontinuität — was sich seit der letzten Ausgabe geändert hat.",
 			"tese": {
 				"eyebrow": "Was ist das Problem dieses Monats",
 				"dateline": "Letzte Ausgabe",
@@ -573,7 +573,7 @@
 						"deltaTone": "win"
 					},
 					{
-						"label": "Käufer angesprochen",
+						"label": "Teams mit Schritten",
 						"before": "2",
 						"after": "3",
 						"delta": "+1 Team",

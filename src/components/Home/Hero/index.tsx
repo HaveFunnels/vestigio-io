@@ -196,14 +196,35 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 				    Features and ProductTour. Zinc-100 numbers + small
 				    uppercase labels — no color accents (loss-frame
 				    already lives in the H1; the strip stays neutral so
-				    the data carries on its own). */}
+				    the data carries on its own).
+
+				    Mobile vertical-alignment fix (2026-06-22):
+				    At the original 16px value + 9px label sizes on
+				    mobile, longer values ("Exact amount" / "9 vazamentos")
+				    wrapped to 2 lines in their 92px content column while
+				    shorter ones ("R$ exato" / "4 passos") stayed at 1
+				    line — pushing the label below to different vertical
+				    positions across columns. Labels themselves also wrap
+				    inconsistently (some 1 line, some 2). Three changes:
+
+				    1. Mobile padding px-2 → px-1.5 (more content area).
+				    2. Mobile value font 16px → 12px + whitespace-nowrap,
+				       so all 3 values stay on a single line (the typical
+				       Portuguese widths fit at 12px JetBrains Mono in the
+				       ~100px column).
+				    3. Mobile label font 9px → 8px + min-h-[20px] on the
+				       label container so labels that wrap to 2 lines and
+				       labels that fit 1 line both reserve the same
+				       vertical space. items-start anchors them all at
+				       the top of that reserved area, so the start-of-text
+				       baseline matches across all 3 columns. */}
 				<dl className="mx-auto mb-8 grid max-w-[560px] grid-cols-3 divide-x divide-edge sm:mb-10 sm:max-w-[600px]">
 					{stats.map((s, i) => (
-						<div key={i} className="flex flex-col items-center px-2 text-center sm:px-3">
-							<dt className="font-mono text-[16px] font-semibold tabular-nums leading-none text-zinc-100 sm:text-[20px] lg:text-[22px]">
+						<div key={i} className="flex flex-col items-center px-1.5 text-center sm:px-3">
+							<dt className="whitespace-nowrap font-mono text-[12px] font-semibold tabular-nums leading-none text-zinc-100 sm:whitespace-normal sm:text-[20px] lg:text-[22px]">
 								{s.value}
 							</dt>
-							<dd className="mt-2 text-[9px] font-medium uppercase tracking-[0.12em] leading-tight text-content-faint sm:text-[10px] sm:tracking-[0.14em]">
+							<dd className="mt-2 flex min-h-[20px] items-start justify-center text-[8px] font-medium uppercase leading-tight tracking-[0.08em] text-content-faint sm:min-h-0 sm:items-center sm:text-[10px] sm:tracking-[0.14em]">
 								{s.label}
 							</dd>
 						</div>

@@ -17,6 +17,7 @@ import { competitorDeepFetchPass } from "./competitor-deep-fetch";
 import { serpObservationPass } from "./serp-observation";
 import { surfaceInventoryPass } from "./surface-inventory";
 import { customerVoicePass } from "./customer-voice";
+import { perceptionClassifierPass } from "./perception-classifier";
 
 // ──────────────────────────────────────────────
 // Enrichment Runner
@@ -44,6 +45,10 @@ const PASS_REGISTRY: EnrichmentPass[] = [
   subdomainDiscoveryPass,
   emailDeliverabilityPass, // Wave 23.1. Pure DNS, ~200ms, no deps
   selectiveHeadlessPass,
+  // PV.2. LLM perceives business vertical + per-surface purpose from crawled
+  // pages (full-mode, freshness-gated to ~weekly). Produce-only: nothing
+  // consumes its evidence and the cached perceivedVertical is unread until PV.3.
+  perceptionClassifierPass,
   katanaDiscoveryPass,
   nucleiScanPass,
   brandIntelScanPass,

@@ -814,7 +814,9 @@ export interface ContentEnrichmentPayload {
     | 'page_purpose_validation'
     | 'structured_data_validation'
     // Wave 26 — Competitive Lens: surface inventory
-    | 'surface_inventory';
+    | 'surface_inventory'
+    // PV.2 — perception layer: business vertical + per-surface purpose
+    | 'business_perception';
   source_evidence_key: string;
   source_url: string;
   scores: { clarity_score: number; readability_grade: string };

@@ -195,8 +195,14 @@ Campo `PerceivedVertical` (Environment) + taxonomia fechada de `surface.purpose`
 
 **Shipped (a9f1ccce)** — `workers/ingestion/enrichment/perception-classifier.ts` registrada (full-mode). Núcleo puro em `packages/perception/` (prompt+parser, 10 testes; fail-closed em vertical fora da ontologia / JSON ruim). Dois desvios por restrição real: (1) `EnrichmentContext` não expõe cold/warm/hot → **freshness-gate** (re-percebe se `perceivedVerticalUpdatedAt` null ou >7d) em vez de cold-only; (2) a pass escreve o cache `Environment.perceivedVertical` direto (confidence ≥ 0.6 = `PERCEPTION_CACHE_FLOOR`), sem tocar `run-cycle.ts`. **Produce-only**: nada consome a evidence e o cache é unread até PV.3 → behaviour-preserving (observável sem mudar finding). Typecheck do repo limpo.
 
-### PV.3 — Seam de consumo (M, ~4-6d)
-`extractBusinessClassificationSignals` → signals `vertical.detected` / `surface.purpose:*`. Converter `vertical-inference.ts` de if-blocks → registry keyed por vertical percebida; dispatch lê percepção primeiro, não `onboarding_business_model`.
+### PV.2.1 — Persistência iterativa + accessor `BusinessContext` (M, ~3-5d)
+PV.2 hoje re-percebe o site inteiro a cada 7d. Tornar **incremental**: purpose por-URL persistido em `PageInventoryItem` (ao lado de `classifiedPageType` — **unifica o débito "eleger pageType autoritativo"**), **content-hash gated** (`hashContentInput`/`readContentEnrichmentCache`, padrão surface-inventory) → só página nova/alterada vai pro LLM; o resto acumula. Vertical de env re-julgada só quando o conjunto de superfícies muda. Expor `getBusinessContext(envId)` → `{ vertical, confidence, surfaces:[{url,purpose,confidence}] }` lendo Environment + PageInventoryItem. **A vertical retornada é a RECONCILIADA** (`resolveEffectiveVertical` do PV.0), não a percebida crua — senão uma percepção de baixa confiança envenena a tese do plano e o chat. Uma fonte de verdade pros 3 consumidores abaixo.
+
+### PV.3 — Consumo (3 superfícies, todas leem `getBusinessContext`) (L, ~8-12d)
+A percepção alimenta tudo que hoje assume e-commerce.
+- **3a — Findings/detecção**: `extractBusinessClassificationSignals` → signals `vertical.detected`/`surface.purpose:*`; reconciliação no chokepoint run-cycle.ts:562/1917; `vertical-inference.ts` if-blocks → registry keyed pela vertical reconciliada (dispatch deixa de ler `onboarding_business_model` cru). Findings ancorados na superfície percebida (subsume PV.4).
+- **3b — Plano (tese + narrativa)**: injeta `BusinessContext` nos prompts do `packages/strategy-plan/generator.ts` — `thesisOfMonth`, `generateNarrativeWhatHappened` (Sonnet), `generateNextSteps` (Haiku) → tese e priorização vertical-aware.
+- **3c — MCP chat**: injeta `BusinessContext` no contexto do copilot (`apps/mcp`) — system context ou tool `get_business_context` — pro chat raciocinar sabendo a vertical + propósito das páginas.
 
 ### PV.4 — Ancorar findings universais na superfície (M, ~3-5d)
 Label de superfície no título vem do purpose percebido ("na sua página de agendamento") em vez de URL/assunção ecommerce. Mesmo detector, relevante por vertical, sem catálogo novo.

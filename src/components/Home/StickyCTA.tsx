@@ -84,42 +84,55 @@ export default function StickyCTA({ primaryCtaHref = "/audit" }: StickyCTAProps)
 			}`}
 			aria-hidden={!visible}
 		>
-			<div className="pointer-events-auto flex items-center gap-2 rounded-2xl border border-edge bg-surface-card/95 px-3 py-2.5 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-md sm:gap-3 sm:px-4 sm:py-3">
-				{/* Hook line — quiet reminder, not a second-headline. Mobile
-				    truncates if needed; on sm+ shows in full. */}
-				<p className="hidden flex-1 truncate text-[12px] text-content-secondary sm:block sm:text-[13px]">
+			{/* Mobile layout: hook line on top (wraps if needed), then a
+			    row with [button(flex-1)] [dismiss X]. Stacks vertically so
+			    the loss-frame hook ("Veja onde sua receita está vazando.")
+			    is actually present — without it the mobile sticky was just
+			    a context-less button.
+			    Desktop layout: single row with [hook(flex-1, truncate)]
+			    [button(content-sized)] [dismiss X] — unchanged from before. */}
+			<div className="pointer-events-auto rounded-2xl border border-edge bg-surface-card/95 px-3 py-2.5 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-md sm:flex sm:items-center sm:gap-3 sm:px-4 sm:py-3">
+				{/* Hook line — quiet reminder, not a second-headline. On
+				    mobile sits on its own line and may wrap (no truncate);
+				    on sm+ it goes inline + truncates if needed. */}
+				<p className="mb-2 text-[12px] leading-snug text-content-secondary sm:mb-0 sm:flex-1 sm:truncate sm:text-[13px]">
 					{t("hook")}
 				</p>
 
-				{/* Primary CTA — wrapped ShinyButton with sticky-tight padding
-				    so the bar stays compact. data-vtg-cta tags it for the
-				    delegated funnel telemetry.
-				    On mobile the hook line is hidden, so without
-				    `max-sm:flex-1` the button would only take its content
-				    width (~100px) and leave a 190px gap on the right — the
-				    bar reads as glued-to-the-left and "off-center". Mobile
-				    grows the button to fill all available space between
-				    container padding and the dismiss X — bigger tap target
-				    + visually balanced. */}
-				<ShinyButton
-					href={primaryCtaHref}
-					data-vtg-cta="sticky-cta"
-					className="!min-h-0 !rounded-xl !px-3.5 !py-2 !text-[11px] max-sm:flex-1 sm:shrink-0 sm:!w-auto sm:!px-4 sm:!text-xs"
-				>
-					{t("cta")}
-				</ShinyButton>
+				{/* Button + dismiss row — flex on mobile to put X to the
+				    right of the (full-width) button. On desktop the outer
+				    sm:flex makes these direct flex siblings of the hook
+				    above, so the visual order [hook | button | X] still
+				    holds. */}
+				<div className="flex items-center gap-2 sm:gap-3">
+					{/* Primary CTA — wrapped ShinyButton with sticky-tight
+					    padding so the bar stays compact. data-vtg-cta tags
+					    it for the delegated funnel telemetry. On mobile
+					    `flex-1` makes the button fill all available space
+					    between container padding and the dismiss X (bigger
+					    tap target + visually balanced). On sm+ it reverts
+					    to content-sized so it sits next to the truncated
+					    hook line. */}
+					<ShinyButton
+						href={primaryCtaHref}
+						data-vtg-cta="sticky-cta"
+						className="!min-h-0 !rounded-xl !px-3.5 !py-2 !text-[11px] max-sm:flex-1 sm:shrink-0 sm:!w-auto sm:!px-4 sm:!text-xs"
+					>
+						{t("cta")}
+					</ShinyButton>
 
-				{/* Dismiss — small, quiet. Aria label for accessibility. */}
-				<button
-					type="button"
-					onClick={handleDismiss}
-					className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-content-faint transition-colors hover:bg-white/[0.06] hover:text-content"
-					aria-label={t("dismiss")}
-				>
-					<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3 w-3">
-						<path d="M3 3l8 8M11 3l-8 8" strokeLinecap="round" />
-					</svg>
-				</button>
+					{/* Dismiss — small, quiet. Aria label for accessibility. */}
+					<button
+						type="button"
+						onClick={handleDismiss}
+						className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-content-faint transition-colors hover:bg-white/[0.06] hover:text-content"
+						aria-label={t("dismiss")}
+					>
+						<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-3 w-3">
+							<path d="M3 3l8 8M11 3l-8 8" strokeLinecap="round" />
+						</svg>
+					</button>
+				</div>
 			</div>
 		</div>
 	);

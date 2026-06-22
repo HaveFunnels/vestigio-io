@@ -23,6 +23,11 @@ import { buildFailedResult } from "./types";
 import { callModel, isLlmEnabled } from "../../../apps/mcp/llm/client";
 import { buildEnrichmentLlmContext } from "./llm-context";
 import { prisma } from "../../../src/libs/prismaDb";
+import {
+	hashContentInput,
+	readContentEnrichmentCache,
+	writeContentEnrichmentCache,
+} from "./content-cache";
 
 // ──────────────────────────────────────────────
 // Perception classifier — PV.2 (multi-vertical coverage track)
@@ -47,7 +52,8 @@ import { prisma } from "../../../src/libs/prismaDb";
 // ──────────────────────────────────────────────
 
 const PASS_NAME = "perception_classifier";
-const FRESH_MS = 7 * 24 * 60 * 60 * 1000;
+const MIN_PAGES = 3;
+const CACHE_LOCALE = "en";
 
 function envIdFromRef(environmentRef: string): string | null {
 	const idx = environmentRef.indexOf(":");
@@ -96,18 +102,6 @@ export const perceptionClassifierPass: EnrichmentPass = {
 				return buildFailedResult(PASS_NAME, "cannot derive environmentId", Date.now() - start, 1);
 			}
 
-			// Freshness gate — re-perceive at most ~weekly. Vertical doesn't
-			// change cycle-to-cycle, so this bounds cost without a cold-only flag.
-			const existing = await prisma.environment
-				.findUnique({ where: { id: envId }, select: { perceivedVerticalUpdatedAt: true } })
-				.catch(() => null);
-			if (
-				existing?.perceivedVerticalUpdatedAt &&
-				Date.now() - existing.perceivedVerticalUpdatedAt.getTime() < FRESH_MS
-			) {
-				return completed("perception fresh (<7d), skipped", [], start);
-			}
-
 			// Gather crawled pages (title / h1 / snippet) — the LLM judges the
 			// vertical from the whole site, so one aggregate call over all pages.
 			const pages: PageForPerception[] = [];
@@ -129,8 +123,32 @@ export const perceptionClassifierPass: EnrichmentPass = {
 					snippet: p.body_text_snippet ?? null,
 				});
 			}
-			if (pages.length === 0) {
-				return completed("no page_content evidence to perceive from", [], start);
+			if (pages.length < MIN_PAGES) {
+				// Don't perceive (and risk overwriting a good perception) off a thin crawl.
+				return completed(
+					`too few pages to perceive (${pages.length} < ${MIN_PAGES})`,
+					[],
+					start,
+				);
+			}
+
+			// Content-hash gate — don't re-run the LLM over the same pages. Hash is
+			// order-independent over (url|title|h1|snippet) of every page; unchanged
+			// content → cache hit → skip (Environment already reflects last result).
+			const setHash = hashContentInput(
+				pages
+					.map((p) => `${p.url}|${p.title ?? ""}|${p.h1 ?? ""}|${p.snippet ?? ""}`)
+					.sort()
+					.join("\n"),
+			);
+			const cached = await readContentEnrichmentCache(
+				envId,
+				"business_perception",
+				setHash,
+				CACHE_LOCALE,
+			);
+			if (cached) {
+				return completed("content unchanged since last perception, skipped", [], start);
 			}
 
 			const { system, user } = buildPerceptionPrompt(pages);
@@ -212,6 +230,7 @@ export const perceptionClassifierPass: EnrichmentPass = {
 							perceivedVertical: perception.vertical,
 							perceivedVerticalConfidence: perception.vertical_confidence,
 							perceivedVerticalUpdatedAt: now,
+							perceivedSurfacesJson: perception.surfaces as unknown as object,
 						},
 					})
 					.catch((err: unknown) => {
@@ -221,6 +240,18 @@ export const perceptionClassifierPass: EnrichmentPass = {
 						);
 					});
 			}
+
+			// Remember this content's perception so an unchanged page set on a
+			// later cycle hits the gate above instead of re-paying for the LLM.
+			// Always cache (even below floor) — re-running won't change the result.
+			writeContentEnrichmentCache(
+				envId,
+				"business_perception",
+				setHash,
+				CACHE_LOCALE,
+				{ perception },
+				{ modelId: "haiku_4_5", pageUrl: ctx.landing_url },
+			).catch(() => {});
 
 			return completed(
 				`perceived vertical=${perception.vertical} conf=${perception.vertical_confidence}`,

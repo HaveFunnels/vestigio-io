@@ -349,6 +349,11 @@ model Environment {
   perceivedVertical           String?
   perceivedVerticalConfidence Float?
   perceivedVerticalUpdatedAt  DateTime?
+  // PV.2.1 — per-surface perceived purpose, cached as [{url,purpose,confidence}].
+  // Written by the perception pass alongside perceivedVertical; read by
+  // getBusinessContext() to feed findings/plan/MCP and the "O que analisamos"
+  // surface list. Unread until PV.3 — behaviour-preserving.
+  perceivedSurfacesJson       Json?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 

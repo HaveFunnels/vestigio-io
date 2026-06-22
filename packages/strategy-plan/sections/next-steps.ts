@@ -373,6 +373,7 @@ function buildPrompt(
 	envDomain: string,
 	monthLabel: string,
 	translations: import("../types").GenerateContext["translations"],
+	vertical: string | null,
 ): { system: string; user: string } {
 	// E2 — voice differs between the main move (order=1) and supporting
 	// moves (order>=2). Main move sounds like the strategic lead;
@@ -434,6 +435,7 @@ Regras:
 		);
 	}
 	if (action.surface) lines.push(`- Surface afetada: ${action.surface}`);
+	if (vertical) lines.push(`- Tipo de negócio: ${vertical} (use linguagem de funil natural pra este tipo de negócio)`);
 	if (friendlyFindings.length > 0) {
 		lines.push(`- Findings que disparam essa ação: ${friendlyFindings.join("; ")}`);
 	}
@@ -493,7 +495,7 @@ export async function generateNextSteps(
 			const catalog =
 				REMEDIATION_CATALOG[primaryKey] ?? getDynamicRemediation(primaryKey);
 
-			const { system, user } = buildPrompt(action, order, ctx.envDomain, month, ctx.translations);
+			const { system, user } = buildPrompt(action, order, ctx.envDomain, month, ctx.translations, ctx.businessContext?.vertical ?? null);
 			const reasoning = await callForText({
 				model: "haiku_4_5",
 				systemPrompt: system,

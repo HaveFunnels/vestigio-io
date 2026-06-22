@@ -34,6 +34,7 @@ interface NarrativeInputs {
 	regressionCount: number;
 	monthLabelPt: string;
 	envDomain: string;
+	vertical: string | null;
 	// T8 — additional inputs so the LLM can write a thesis-shaped
 	// narrative instead of a stats blurb. Without these the narrative
 	// could only describe what changed; now it can name the dominant
@@ -193,6 +194,7 @@ async function gatherInputs(
 
 	return {
 		resolvedCount: resolved.length,
+		vertical: ctx.businessContext?.vertical ?? null,
 		resolvedCapturedTotal: Math.round(capturedTotal),
 		resolvedSampleTitles: resolved
 			.slice(0, 3)
@@ -413,6 +415,7 @@ Regras estritas:
 		data.push(`- Página mais concentrada: ${humanizeSurfaceCustomerFacing(i.dominantSurface)} (${pct}% dos vazamentos abertos)`);
 	}
 	data.push(`- Problemas recorrentes (3+ ciclos): ${i.chronicCount}`);
+	if (i.vertical) data.push(`- Tipo de negócio: ${i.vertical} (escreva o funil com linguagem natural a este tipo de negócio)`);
 	data.push("");
 	data.push(`# O que está em jogo`);
 	data.push(`- Perda potencial total: R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês`);

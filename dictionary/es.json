@@ -460,9 +460,9 @@
 					"errores en el log"
 				],
 				"one": "hueco creciendo a fin de mes.",
-				"aside": "El comprador solo cerró la pestaña. Tu panel solo dice \"**sesión finalizada**.\""
+				"aside": "Tu panel dice \"**todo bien**\". Tu fin de mes dice otra cosa."
 			},
-			"closing": "Puedes seguir escalando sin ver esto. O puedes verlo."
+			"closing": "Puedes seguir escalando sin ver esto. O puedes dejar de perder."
 		},
 		"features_section": {
 			"title": "Lanza tu Startup SaaS en Días",

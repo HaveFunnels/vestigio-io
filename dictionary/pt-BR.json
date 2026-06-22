@@ -467,9 +467,9 @@
 					"erros no log"
 				],
 				"one": "buraco crescendo no fim do mês.",
-				"aside": "O comprador só fechou a aba. Seu painel só diz \"**sessão encerrada**.\""
+				"aside": "Seu painel diz \"**tudo certo**\". Seu fim de mês diz outra coisa."
 			},
-			"closing": "Você pode continuar escalando sem ver isso. Ou pode enxergar."
+			"closing": "Você pode continuar escalando sem ver isso. Ou pode parar de perder."
 		},
 		"features_section": {
 			"title": "Lance sua Startup SaaS em Dias",

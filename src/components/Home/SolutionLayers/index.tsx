@@ -114,7 +114,7 @@ const SolutionLayers = async () => {
 				<div className="mx-auto max-w-[360px]">
 					<dl className="space-y-3">
 						{(t.raw("silencio.zeros") as string[]).map((label, i) => (
-							<div key={i} className="flex items-baseline gap-5">
+							<div key={i} className="flex items-center gap-5">
 								<dt className="font-serif text-[36px] font-medium leading-none tabular-nums text-content-faint sm:text-[44px]">
 									0
 								</dt>
@@ -124,7 +124,7 @@ const SolutionLayers = async () => {
 							</div>
 						))}
 						<div className="!mt-5 h-px w-full bg-content-faint/25" />
-						<div className="!mt-5 flex items-baseline gap-5">
+						<div className="!mt-5 flex items-center gap-5">
 							<dt className="font-serif text-[36px] font-medium leading-none tabular-nums text-rose-300/90 sm:text-[44px]">
 								1
 							</dt>

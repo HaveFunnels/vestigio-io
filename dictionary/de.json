@@ -460,9 +460,9 @@
 					"Fehler im Log"
 				],
 				"one": "Loch, das am Monatsende wächst.",
-				"aside": "Der Käufer hat einfach den Tab geschlossen. Ihr Dashboard sagt nur \"**Sitzung beendet**.\""
+				"aside": "Ihr Dashboard sagt \"**alles in Ordnung**\". Ihr Monatsende sagt etwas anderes."
 			},
-			"closing": "Sie können weiter skalieren, ohne das zu sehen. Oder Sie können hinschauen."
+			"closing": "Sie können weiter skalieren, ohne das zu sehen. Oder Sie können aufhören zu verlieren."
 		},
 		"features_section": {
 			"title": "SaaS-Startup in Tagen starten",

@@ -467,9 +467,9 @@
 					"errors in the log"
 				],
 				"one": "hole growing at the end of the month.",
-				"aside": "The buyer just closed the tab. Your dashboard only says \"**session ended**.\""
+				"aside": "Your dashboard says \"**all green**\". Your end-of-month says otherwise."
 			},
-			"closing": "You can keep scaling without seeing this. Or you can see it."
+			"closing": "You can keep scaling without seeing this. Or you can stop losing."
 		},
 		"features_section": {
 			"title": "Launch SaaS Startup in Days",

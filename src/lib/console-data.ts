@@ -473,6 +473,9 @@ export interface InventorySurface {
   page_type: string;
   /** Multi-signal classified type (null if not yet classified). */
   classified_page_type: string | null;
+  /** PV.3 — perceived surface purpose from getBusinessContext (null when
+   *  perception hasn't run or this URL wasn't matched). Display-only. */
+  perceived_purpose?: string | null;
   /** 0-100 agreement ratio between classification signals. */
   classification_confidence: number | null;
   /** Per-signal votes ([{source, vote, weight}, ...]); empty array if not classified. */
@@ -637,6 +640,13 @@ export async function loadInventoryForEnv(envId: string): Promise<DataState<Inve
       }
     }
 
+    // PV.3 — perceived purpose per surface (display-only). Best-effort join on
+    // normalized URL; misses render no label (degrade-safe).
+    const { getBusinessContext } = await import('../../packages/perception/business-context');
+    const perceivedByUrl = new Map(
+      (await getBusinessContext(envId)).surfaces.map((s) => [s.url, s.purpose]),
+    );
+
     const surfaces: InventorySurface[] = items.map((item) => {
       let host = '';
       try {
@@ -653,6 +663,7 @@ export async function loadInventoryForEnv(envId: string): Promise<DataState<Inve
         host,
         page_type: effectiveType,
         classified_page_type: item.classifiedPageType ?? null,
+        perceived_purpose: perceivedByUrl.get(item.normalizedUrl) ?? null,
         classification_confidence: item.classificationConfidence ?? null,
         classification_signals: (() => {
           if (!item.classificationSignals) return [];

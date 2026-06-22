@@ -452,6 +452,19 @@ function SurfaceDrawer({
 								</div>
 							)}
 
+							{/* PV.3 — perceived surface purpose (display-only, degrade-safe).
+							    TODO i18n: literal pt-BR label for now (havefunnels locale). */}
+							{surface.perceived_purpose && (
+								<div>
+									<div className='mb-1 text-[10px] font-medium uppercase tracking-wider text-content-faint'>
+										Propósito detectado
+									</div>
+									<div className='text-sm text-content-secondary'>
+										{surface.perceived_purpose}
+									</div>
+								</div>
+							)}
+
 							{/* Type & Tier */}
 							<div className='grid grid-cols-2 gap-4'>
 								<div>

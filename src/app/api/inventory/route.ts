@@ -190,6 +190,11 @@ export const GET = withErrorTracking(async function GET(request: Request) {
     }
   }
 
+  const { getBusinessContext } = await import("../../../../packages/perception/business-context");
+  const perceivedByUrl = new Map(
+    (await getBusinessContext(environment.id)).surfaces.map((s) => [s.url, s.purpose]),
+  );
+
   const surfaces = items.map((item) => {
     let host = "";
     try {
@@ -210,6 +215,7 @@ export const GET = withErrorTracking(async function GET(request: Request) {
       host,
       page_type: effectiveType,
       classified_page_type: item.classifiedPageType ?? null,
+      perceived_purpose: perceivedByUrl.get(item.normalizedUrl) ?? null,
       classification_confidence: item.classificationConfidence ?? null,
       // Parsed signal votes for the drawer's transparency block. We
       // tolerate empty/legacy values (pre-multi-signal rows store "[]"

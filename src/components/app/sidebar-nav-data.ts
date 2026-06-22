@@ -34,15 +34,22 @@ export interface NavItem {
 }
 
 // Wave 22.8 IA reform (June 2026, multi-skill audit) — sidenav reduces
-// to 3 primary items: Plano, Workspaces, Actions. Findings exits the
+// to 3 primary items: Plano, Actions, Workspaces. Findings exits the
 // nav and stays accessible via drawer drill-downs in the Plan. Pulse
 // is killed (its check-in role moves into a Plan-header badge). Library
 // is folded into a "mês anterior" dropdown inside the Plan header.
 //
 // Result: 3 primary, no overflow. Cleanest mental model possible:
-//   - Plano       = decision (the home; default landing)
+//   - Plano       = decision   (the home; default landing)
+//   - Actions     = execution  (operational queue — what to do now)
 //   - Workspaces  = configuration (what Vestigio looks at)
-//   - Actions     = execution (operational queue)
+//
+// Ordering rationale: the daily-use frequency descends down the rail.
+// Plano is the monthly anchor (always visited), Actions is the
+// week-to-week execution surface, Workspaces is touched only when the
+// customer adds/edits monitored areas. Putting Actions above Workspaces
+// matches that frequency and the natural read order (decide → do →
+// adjust setup).
 //
 // The plan item's href uses a "current" sentinel that AppSidebar
 // rewrites to the actual YYYY-MM at render time — keeps this file
@@ -58,6 +65,12 @@ export const productNav: NavItem[] = [
 		dividerAfter: true,
 	},
 	{
+		id: "actions",
+		href: "/app/actions",
+		labelKey: "actions",
+		icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z",
+	},
+	{
 		id: "workspaces",
 		href: "/app/workspaces",
 		labelKey: "workspaces",
@@ -65,12 +78,6 @@ export const productNav: NavItem[] = [
 		// distinct from the document (Plan) and lightning bolt (Actions)
 		// icons used by the other primaries.
 		icon: "M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75",
-	},
-	{
-		id: "actions",
-		href: "/app/actions",
-		labelKey: "actions",
-		icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z",
 	},
 ];
 

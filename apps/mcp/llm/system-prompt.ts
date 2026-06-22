@@ -140,6 +140,12 @@ export function buildSystemPrompt(orgContext: OrgContext): string {
     orgContext.competitor_domains && orgContext.competitor_domains.length > 0
       ? `Tracked competitors: ${orgContext.competitor_domains.slice(0, 10).join(', ')}`
       : null,
+    orgContext.perceived_vertical
+      ? `Detected vertical: ${orgContext.perceived_vertical}${orgContext.perceived_vertical_confidence ? ` (${Math.round(orgContext.perceived_vertical_confidence * 100)}% confidence)` : ''}`
+      : null,
+    orgContext.perceived_surfaces && orgContext.perceived_surfaces.length > 0
+      ? `Surfaces: ${orgContext.perceived_surfaces.slice(0, 12).map((s) => `${s.url} (${s.purpose})`).join(', ')}`
+      : null,
     `Plan: ${orgContext.plan}`,
     orgContext.monthly_revenue ? `Monthly revenue: $${orgContext.monthly_revenue.toLocaleString()}` : null,
     `Evidence freshness: ${orgContext.freshness_state}`,
@@ -169,6 +175,12 @@ export function buildCacheableSystemPrompt(orgContext: OrgContext): Array<{ type
       : null,
     orgContext.competitor_domains && orgContext.competitor_domains.length > 0
       ? `Tracked competitors: ${orgContext.competitor_domains.slice(0, 10).join(', ')}`
+      : null,
+    orgContext.perceived_vertical
+      ? `Detected vertical: ${orgContext.perceived_vertical}${orgContext.perceived_vertical_confidence ? ` (${Math.round(orgContext.perceived_vertical_confidence * 100)}% confidence)` : ''}`
+      : null,
+    orgContext.perceived_surfaces && orgContext.perceived_surfaces.length > 0
+      ? `Surfaces: ${orgContext.perceived_surfaces.slice(0, 12).map((s) => `${s.url} (${s.purpose})`).join(', ')}`
       : null,
     `Plan: ${orgContext.plan}`,
     orgContext.monthly_revenue ? `Monthly revenue: $${orgContext.monthly_revenue.toLocaleString()}` : null,

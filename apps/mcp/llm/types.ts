@@ -117,6 +117,13 @@ export interface OrgContext {
    *  ("How does X compare vs <competitor>?") without the user having
    *  to re-type the peer set every conversation. Apex domains only. */
   competitor_domains?: string[];
+  /** PV.3 — reconciled perceived vertical (set only when perception overrode
+   *  the onboarding model) + the purpose of each discovered surface. Lets the
+   *  copilot reason grounded in the vertical instead of re-inferring it from
+   *  the domain, and speak about surfaces by role ("your booking page"). */
+  perceived_vertical?: string | null;
+  perceived_vertical_confidence?: number | null;
+  perceived_surfaces?: { url: string; purpose: string }[];
 }
 
 export interface AttachedFile {

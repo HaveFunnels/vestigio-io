@@ -18,6 +18,7 @@ import { createEmptySession } from "../../../../apps/mcp/session";
 import { safeIncrementMcpUsage } from "../../../../apps/platform/billing-safety";
 import { getConversationStore } from "../../../../apps/platform/conversation-store";
 import type { PlanKey } from "../../../../packages/plans";
+import { getBusinessContext } from "../../../../packages/perception/business-context";
 
 // ──────────────────────────────────────────────
 // Chat API — POST /api/chat
@@ -306,6 +307,21 @@ export async function POST(request: Request) {
     if (fingerprint) {
       llmOrgContext.industry = fingerprint.industry;
       llmOrgContext.detected_platforms = fingerprint.detectedPlatforms;
+    }
+    // PV.3 — reconciled perception (vertical + surface purposes). Surface the
+    // perceived vertical only when it actually overrode onboarding (source=
+    // 'perceived'); otherwise business_model already reflects the prior. The
+    // surface list lets the copilot speak about pages by role.
+    const bizContext = await getBusinessContext(envId);
+    if (bizContext.vertical_source === "perceived" && bizContext.vertical) {
+      llmOrgContext.perceived_vertical = bizContext.vertical;
+      llmOrgContext.perceived_vertical_confidence = bizContext.vertical_confidence;
+    }
+    if (bizContext.surfaces.length > 0) {
+      llmOrgContext.perceived_surfaces = bizContext.surfaces.map((s) => ({
+        url: s.url,
+        purpose: s.purpose,
+      }));
     }
     // Wave 24 — surface curated competitor domains so the model can
     // reason about positioning without the user re-typing peers.

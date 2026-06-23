@@ -231,6 +231,7 @@ export const perceptionClassifierPass: EnrichmentPass = {
 							perceivedVerticalConfidence: perception.vertical_confidence,
 							perceivedVerticalUpdatedAt: now,
 							perceivedSurfacesJson: perception.surfaces as unknown as object,
+							perceivedContentFlagsJson: perception.contentFlags as unknown as object,
 						},
 					})
 					.catch((err: unknown) => {

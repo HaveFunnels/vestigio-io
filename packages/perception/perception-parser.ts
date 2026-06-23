@@ -16,8 +16,10 @@
 import {
   isPerceivedVertical,
   isSurfacePurpose,
+  isContentFlag,
   type PerceivedVertical,
   type SurfacePurpose,
+  type ContentFlag,
 } from '../domain';
 
 export interface PerceivedSurface {
@@ -26,11 +28,20 @@ export interface PerceivedSurface {
   confidence: number; // 0-1
 }
 
+/** Tri-state content flag (PV.8): present:true = confirmed present, present:false =
+ *  confirmed absent, omitted entirely = unknown. */
+export interface PerceivedContentFlag {
+  flag: ContentFlag;
+  present: boolean;
+  confidence: number; // 0-1
+}
+
 export interface BusinessPerception {
   vertical: PerceivedVertical;
   vertical_confidence: number; // 0-1
   reasoning: string;
   surfaces: PerceivedSurface[];
+  contentFlags: PerceivedContentFlag[];
 }
 
 /**
@@ -94,10 +105,27 @@ export function parsePerceptionResponse(
     surfaces.push({ url, purpose, confidence: clamp01(row.confidence) });
   }
 
+  // Content flags (PV.8) — same closed-set / fail-closed discipline as surfaces:
+  // drop out-of-ontology flag names, dedupe, clamp confidence. A flag the LLM
+  // omits stays unknown (absent from the list), which the detector reads as "fall
+  // back to corpus regex" — never as a confirmed absence.
+  const flagsRaw = Array.isArray(obj.content_flags) ? obj.content_flags : [];
+  const contentFlags: PerceivedContentFlag[] = [];
+  const seenFlags = new Set<string>();
+  for (const f of flagsRaw) {
+    if (!f || typeof f !== 'object') continue;
+    const row = f as Record<string, unknown>;
+    const flag = String(row.flag ?? '').trim();
+    if (!isContentFlag(flag) || seenFlags.has(flag)) continue; // drop out-of-ontology / dupe
+    seenFlags.add(flag);
+    contentFlags.push({ flag, present: row.present === true, confidence: clamp01(row.confidence) });
+  }
+
   return {
     vertical,
     vertical_confidence: clamp01(obj.vertical_confidence),
     reasoning: typeof obj.reasoning === 'string' ? obj.reasoning.slice(0, 500) : '',
     surfaces,
+    contentFlags,
   };
 }

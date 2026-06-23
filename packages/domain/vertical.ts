@@ -109,6 +109,30 @@ export function isSurfacePurpose(p: string | null | undefined): p is SurfacePurp
   return p != null && (SURFACE_PURPOSES as readonly string[]).includes(p);
 }
 
+/**
+ * Closed taxonomy of perception CONTENT FLAGS (PV.8).
+ *
+ * Site-level boolean attributes the perception pass judges SEMANTICALLY (an LLM
+ * that READ the pages), for the content-attribute detectors that have no surface
+ * PURPOSE to gate on — a guarantee badge, a credential number, a reply-time SLA
+ * are not page roles. Each flag is 1:1 with one such detector. The pass emits a
+ * tri-state per flag: present:true / present:false / omitted (= unknown). Closed
+ * set, anti-slop — extend deliberately, never at runtime.
+ */
+export const CONTENT_FLAGS = [
+  'has_guarantee', // money-back / refund / satisfaction guarantee visible
+  'shows_credentials', // professional registration / license / certification shown
+  'shows_curriculum', // course modules / syllabus / "what you'll learn" shown
+  'promises_response_time', // a reply-time / availability SLA on a contact surface
+  'has_immediate_contact', // phone / WhatsApp / click-to-call — an instant channel
+] as const;
+
+export type ContentFlag = (typeof CONTENT_FLAGS)[number];
+
+export function isContentFlag(f: string | null | undefined): f is ContentFlag {
+  return f != null && (CONTENT_FLAGS as readonly string[]).includes(f);
+}
+
 // ── Reconciliation: perceived vs onboarding ──
 
 /**

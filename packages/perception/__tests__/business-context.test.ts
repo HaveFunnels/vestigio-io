@@ -1,4 +1,4 @@
-import { buildBusinessContext, coerceSurfaces } from '../business-context';
+import { buildBusinessContext, coerceSurfaces, coerceContentFlags } from '../business-context';
 
 describe('buildBusinessContext', () => {
   it('returns onboarding when perception is absent', () => {
@@ -51,6 +51,27 @@ describe('buildBusinessContext', () => {
     expect(ctx.vertical).toBeNull();
     expect(ctx.vertical_source).toBe('none');
   });
+
+  it('coerces and exposes content flags (PV.8)', () => {
+    const ctx = buildBusinessContext({
+      onboardingModel: 'infoproduct',
+      perceivedVertical: null,
+      perceivedVerticalConfidence: null,
+      perceivedSurfaces: null,
+      perceivedContentFlags: [{ flag: 'has_guarantee', present: true, confidence: 0.9 }],
+    });
+    expect(ctx.contentFlags).toEqual([{ flag: 'has_guarantee', present: true, confidence: 0.9 }]);
+  });
+
+  it('defaults content flags to [] when omitted', () => {
+    const ctx = buildBusinessContext({
+      onboardingModel: 'saas',
+      perceivedVertical: null,
+      perceivedVerticalConfidence: null,
+      perceivedSurfaces: null,
+    });
+    expect(ctx.contentFlags).toEqual([]);
+  });
 });
 
 describe('coerceSurfaces', () => {
@@ -75,5 +96,31 @@ describe('coerceSurfaces', () => {
   it('clamps surface confidence', () => {
     const surfaces = coerceSurfaces([{ url: 'https://x/', purpose: 'homepage', confidence: 9 }]);
     expect(surfaces[0].confidence).toBe(1);
+  });
+});
+
+describe('coerceContentFlags', () => {
+  it('keeps in-ontology flags, drops the rest, dedups by flag', () => {
+    const flags = coerceContentFlags([
+      { flag: 'has_guarantee', present: true, confidence: 0.9 },
+      { flag: 'bogus_flag', present: true, confidence: 0.9 }, // out of ontology
+      { flag: 'has_guarantee', present: false, confidence: 0.2 }, // dup flag
+      { flag: 'has_immediate_contact', present: false, confidence: 0.8 },
+      'garbage',
+    ]);
+    expect(flags).toHaveLength(2);
+    expect(flags[0]).toEqual({ flag: 'has_guarantee', present: true, confidence: 0.9 });
+    expect(flags[1].present).toBe(false);
+  });
+
+  it('returns [] for non-array input', () => {
+    expect(coerceContentFlags(null)).toEqual([]);
+    expect(coerceContentFlags('x')).toEqual([]);
+  });
+
+  it('clamps flag confidence and defaults present to false', () => {
+    const flags = coerceContentFlags([{ flag: 'has_guarantee', confidence: 9 }]);
+    expect(flags[0].confidence).toBe(1);
+    expect(flags[0].present).toBe(false);
   });
 });

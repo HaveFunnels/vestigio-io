@@ -12,11 +12,25 @@
 // the package barrel (index.ts stays pure). Consumers import it directly.
 // ──────────────────────────────────────────────
 
-import { resolveEffectiveVertical, isSurfacePurpose, type SurfacePurpose } from '../domain';
+import {
+  resolveEffectiveVertical,
+  isSurfacePurpose,
+  isContentFlag,
+  type SurfacePurpose,
+  type ContentFlag,
+} from '../domain';
 
 export interface BusinessContextSurface {
   url: string;
   purpose: SurfacePurpose;
+  confidence: number; // 0-1
+}
+
+/** Tri-state content flag (PV.8) — present:true confirmed, present:false confirmed
+ *  absent, missing = unknown. Read by perceivedFlag() in the detectors. */
+export interface BusinessContextContentFlag {
+  flag: ContentFlag;
+  present: boolean;
   confidence: number; // 0-1
 }
 
@@ -27,6 +41,7 @@ export interface BusinessContext {
   /** Confidence of the perceived vertical when it won; null otherwise. */
   vertical_confidence: number | null;
   surfaces: BusinessContextSurface[];
+  contentFlags: BusinessContextContentFlag[];
 }
 
 function clamp01(n: unknown): number {
@@ -52,12 +67,29 @@ export function coerceSurfaces(raw: unknown): BusinessContextSurface[] {
   return out;
 }
 
+/** Validate + normalize the persisted content-flags JSON into typed flags. */
+export function coerceContentFlags(raw: unknown): BusinessContextContentFlag[] {
+  if (!Array.isArray(raw)) return [];
+  const out: BusinessContextContentFlag[] = [];
+  const seen = new Set<string>();
+  for (const f of raw) {
+    if (!f || typeof f !== 'object') continue;
+    const row = f as Record<string, unknown>;
+    const flag = String(row.flag ?? '').trim();
+    if (!isContentFlag(flag) || seen.has(flag)) continue; // drop out-of-ontology / dupe
+    seen.add(flag);
+    out.push({ flag, present: row.present === true, confidence: clamp01(row.confidence) });
+  }
+  return out;
+}
+
 /** Pure reconciliation — testable without the DB. */
 export function buildBusinessContext(input: {
   onboardingModel: string | null;
   perceivedVertical: string | null;
   perceivedVerticalConfidence: number | null;
   perceivedSurfaces: unknown;
+  perceivedContentFlags?: unknown;
 }): BusinessContext {
   const eff = resolveEffectiveVertical({
     onboarding: input.onboardingModel,
@@ -69,6 +101,7 @@ export function buildBusinessContext(input: {
     vertical_source: eff.source,
     vertical_confidence: eff.source === 'perceived' ? input.perceivedVerticalConfidence : null,
     surfaces: coerceSurfaces(input.perceivedSurfaces),
+    contentFlags: coerceContentFlags(input.perceivedContentFlags),
   };
 }
 
@@ -85,7 +118,7 @@ export async function getBusinessContext(envId: string): Promise<BusinessContext
       () => ({ prisma: null as unknown as typeof import('../../src/libs/prismaDb').prisma }),
     );
     if (!prisma) {
-      return { vertical: null, vertical_source: 'none', vertical_confidence: null, surfaces: [] };
+      return { vertical: null, vertical_source: 'none', vertical_confidence: null, surfaces: [], contentFlags: [] };
     }
     const env = await prisma.environment.findUnique({
       where: { id: envId },
@@ -94,10 +127,11 @@ export async function getBusinessContext(envId: string): Promise<BusinessContext
         perceivedVertical: true,
         perceivedVerticalConfidence: true,
         perceivedSurfacesJson: true,
+        perceivedContentFlagsJson: true,
       },
     });
     if (!env) {
-      return { vertical: null, vertical_source: 'none', vertical_confidence: null, surfaces: [] };
+      return { vertical: null, vertical_source: 'none', vertical_confidence: null, surfaces: [], contentFlags: [] };
     }
     const profile = await prisma.businessProfile.findUnique({
       where: { organizationId: env.organizationId },
@@ -108,12 +142,13 @@ export async function getBusinessContext(envId: string): Promise<BusinessContext
       perceivedVertical: env.perceivedVertical,
       perceivedVerticalConfidence: env.perceivedVerticalConfidence,
       perceivedSurfaces: env.perceivedSurfacesJson,
+      perceivedContentFlags: env.perceivedContentFlagsJson,
     });
   } catch (err) {
     console.warn(
       `[business-context] read failed for env=${envId}:`,
       err instanceof Error ? err.message : err,
     );
-    return { vertical: null, vertical_source: 'none', vertical_confidence: null, surfaces: [] };
+    return { vertical: null, vertical_source: 'none', vertical_confidence: null, surfaces: [], contentFlags: [] };
   }
 }

@@ -354,6 +354,11 @@ model Environment {
   // getBusinessContext() to feed findings/plan/MCP and the "O que analisamos"
   // surface list. Unread until PV.3 — behaviour-preserving.
   perceivedSurfacesJson       Json?
+  // PV.8 — site-level content flags [{flag,present,confidence}] judged by the
+  // perception pass; read by getBusinessContext() to gate content-attribute
+  // detectors (guarantee/credentials/curriculum/response-time/contact) language-
+  // agnostically. Additive nullable — behaviour-preserving.
+  perceivedContentFlagsJson   Json?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 

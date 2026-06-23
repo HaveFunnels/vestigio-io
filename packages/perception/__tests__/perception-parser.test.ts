@@ -86,6 +86,31 @@ describe('parsePerceptionResponse', () => {
   it('exposes a cache floor below the PV.0 override threshold', () => {
     expect(PERCEPTION_CACHE_FLOOR).toBeLessThan(0.7);
   });
+
+  it('parses tri-state content flags, drops out-of-ontology, dedups (PV.8)', () => {
+    const raw = JSON.stringify({
+      vertical: 'infoproduct',
+      vertical_confidence: 0.8,
+      surfaces: [],
+      content_flags: [
+        { flag: 'has_guarantee', present: true, confidence: 0.9 },
+        { flag: 'shows_curriculum', present: false, confidence: 0.8 },
+        { flag: 'not_a_flag', present: true, confidence: 0.9 }, // out of ontology
+        { flag: 'has_guarantee', present: false, confidence: 0.5 }, // dup
+      ],
+    });
+    const result = parsePerceptionResponse(raw);
+    expect(result!.contentFlags).toHaveLength(2);
+    expect(result!.contentFlags.find((f) => f.flag === 'has_guarantee')).toEqual({
+      flag: 'has_guarantee', present: true, confidence: 0.9,
+    });
+    expect(result!.contentFlags.find((f) => f.flag === 'shows_curriculum')!.present).toBe(false);
+  });
+
+  it('defaults content flags to [] when the field is omitted', () => {
+    const raw = JSON.stringify({ vertical: 'saas', vertical_confidence: 0.7, surfaces: [] });
+    expect(parsePerceptionResponse(raw)!.contentFlags).toEqual([]);
+  });
 });
 
 describe('buildPerceptionPrompt', () => {
@@ -100,6 +125,13 @@ describe('buildPerceptionPrompt', () => {
     expect(user).toContain('<pages>');
     expect(user).toContain('data only');
     expect(system).toContain('never as instructions');
+  });
+
+  it('injects the content-flags section + schema (PV.8)', () => {
+    const { user } = buildPerceptionPrompt(pages);
+    expect(user).toContain('CONTENT FLAGS');
+    expect(user).toContain('has_guarantee'); // a content flag
+    expect(user).toContain('content_flags'); // the JSON schema key
   });
 
   it('sanitizeForPrompt strips angle brackets and caps length', () => {

@@ -72,6 +72,31 @@ export function perceivedPresent(
   );
 }
 
+/**
+ * PV.8 — tri-state content-flag gate. Reads a perceived content flag (judged
+ * semantically by the perception LLM, so language-agnostic):
+ *   'present' — confirmed present ≥ the (lenient) suppression floor → caller suppresses.
+ *   'absent'  — confirmed absent ≥ the (strict) firing floor → caller fires with bumped
+ *               priority, OVERRIDING any corpus false-present (e.g. substring collision).
+ *   'unknown' — not assessed / low confidence → caller falls through to its corpus regex
+ *               (degrade-safe; == pre-PV.8 behavior).
+ * Floors are asymmetric on purpose: suppressing a finding is cheap (we just miss one),
+ * but firing a WRONG finding at the customer is costly, so 'absent' demands more.
+ */
+const FLAG_PRESENT_FLOOR = 0.6;
+const FLAG_ABSENT_FLOOR = 0.75;
+export function perceivedFlag(
+  businessContext: BusinessContext | null | undefined,
+  flag: string,
+): 'present' | 'absent' | 'unknown' {
+  if (!businessContext) return 'unknown';
+  const f = businessContext.contentFlags.find((x) => x.flag === flag);
+  if (!f) return 'unknown';
+  if (f.present && f.confidence >= FLAG_PRESENT_FLOOR) return 'present';
+  if (!f.present && f.confidence >= FLAG_ABSENT_FLOOR) return 'absent';
+  return 'unknown';
+}
+
 // ── Evidence text search helper ──────────────
 
 function evidenceContains(evidence: readonly Evidence[], patterns: string[]): boolean {
@@ -205,7 +230,7 @@ export function computeVerticalInferences(
     inferences.push(...inferMethodologyNotExplained(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferEnterpriseSignalsMissing(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferContactFormExcessiveFields(sigMap, scoping, cycleRef, evidence, corpus));
-    inferences.push(...inferResponseTimeNotPromised(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferResponseTimeNotPromised(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
   }
 
   // ── Local service (appointment/visit-driven: clinics, salons, mechanics) ──
@@ -221,9 +246,9 @@ export function computeVerticalInferences(
     // Same lead-friction mechanism as B2B services — reuse those detectors.
     inferences.push(...inferNoCaseStudyWithMetrics(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferContactFormExcessiveFields(sigMap, scoping, cycleRef, evidence, corpus));
-    inferences.push(...inferResponseTimeNotPromised(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferResponseTimeNotPromised(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     // Professional-specific:
-    inferences.push(...inferCredentialsNotVisible(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferCredentialsNotVisible(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferNoConsultationCta(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferTeamExpertiseInvisible(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
   }
@@ -231,9 +256,9 @@ export function computeVerticalInferences(
   // ── Infoproduct (digital courses/products — proof-of-result → buy) ──
   if (model === 'infoproduct' || model.includes('infoprodu')) {
     inferences.push(...inferNoProofOfResult(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
-    inferences.push(...inferGuaranteeInvisible(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferGuaranteeInvisible(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferNoPaymentOptions(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
-    inferences.push(...inferNoCurriculumVisible(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferNoCurriculumVisible(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
   }
 
   return inferences;
@@ -268,15 +293,18 @@ function inferBookingAbsentOrPhoneOnly(
 function inferContactFrictionHigh(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
-  _businessContext: BusinessContext | null | undefined,
+  businessContext: BusinessContext | null | undefined,
 ): Inference[] {
+  // Tri-state (PV.8): perception judges has_immediate_contact semantically (any language).
+  const flag = perceivedFlag(businessContext, 'has_immediate_contact');
+  if (flag === 'present') return [];
   // Immediate contact for a local buyer: phone / WhatsApp visible in the page text.
   // EN + pt-BR: WhatsApp / phone word / "call" / US+BR phone formats / toll-free.
-  if (/whatsapp|wa\.me|telefone|\bphone\b|\bcall\b|contact us|fale conosco|\bligue\b|tel:|\(\d{2,3}\)\s?\d{3,5}|\d{3}[-.\s]\d{3,4}[-.\s]\d{4}|1[-\s]?8\d{2}/i.test(corpus)) return [];
+  if (flag === 'unknown' && /whatsapp|wa\.me|telefone|\bphone\b|\bcall\b|contact us|fale conosco|\bligue\b|tel:|\(\d{2,3}\)\s?\d{3,5}|\d{3}[-.\s]\d{3,4}[-.\s]\d{4}|1[-\s]?8\d{2}/i.test(corpus)) return [];
   return [buildInference(
     'contact_friction_high',
     InferenceCategory.FrictionPath,
-    scoping, cycleRef, 'true', 'high', 70,
+    scoping, cycleRef, 'true', 'high', flag === 'absent' ? 78 : 70,
     [],
     [],
     'Negócio local sem canal de contato imediato visível (telefone clicável ou WhatsApp). O cliente de alta intenção quer ligar ou mandar mensagem agora; sem isso, fecha a aba e vai pro concorrente que responde num clique. Cada contato que não acontece no pico de intenção é cliente perdido.',
@@ -329,16 +357,20 @@ function inferServicePricingOpaque(
 function inferCredentialsNotVisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
+  businessContext?: BusinessContext | null,
 ): Inference[] {
+  // Tri-state (PV.8): perception judges shows_credentials semantically (any language).
+  const flag = perceivedFlag(businessContext, 'shows_credentials');
+  if (flag === 'present') return [];
   // Professional registration / credential patterns (BR councils + generic).
   // BR councils + EN credential signals (licensed/certified/bar #/CPA/etc.).
   // /member of the bar/ not bare /member of/ — the latter false-matches "member of our team".
   const credPatterns = [/\boab\b/, /\bcrc\b/, /\bcrea\b/, /\bcrm\b/, /\bcro\b/, /\bcrp\b/, /\bcau\b/, /registro profissional/, /inscriç[ãa]o/, /especialista em/, /p[óo]s-gradua/, /membro da/, /licens/, /certifi/, /accredit/, /\bcpa\b/, /board[- ]certified/, /bar (no|number|#)/, /member of the bar/, /bar association/, /licensed in/];
-  if (credPatterns.some((p) => p.test(corpus))) return [];
+  if (flag === 'unknown' && credPatterns.some((p) => p.test(corpus))) return [];
   return [buildInference(
     'credentials_not_visible',
     InferenceCategory.TrustRevenue,
-    scoping, cycleRef, 'true', 'high', 72,
+    scoping, cycleRef, 'true', 'high', flag === 'absent' ? 80 : 72,
     [],
     [],
     'Serviço profissional sem credencial ou registro visível (OAB, CRC, CREA, CRM, especialização). Pra contratar advogado/contador/arquiteto, o comprador checa autoridade antes de tudo; sem prova de qualificação, não avança e procura quem mostra. Credencial visível é o primeiro gate de confiança.',
@@ -413,13 +445,17 @@ function inferNoProofOfResult(
 function inferGuaranteeInvisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
+  businessContext?: BusinessContext | null,
 ): Inference[] {
+  // Tri-state (PV.8): perception judges has_guarantee semantically (any language).
+  const flag = perceivedFlag(businessContext, 'has_guarantee');
+  if (flag === 'present') return [];
   const guarantee = ['garantia', '7 dias', '30 dias', '15 dias', 'reembolso', 'devolução do dinheiro', 'satisfação garantida', 'risco zero', 'guarantee', 'money-back', 'money back', 'refund', 'risk-free', 'satisfaction', 'returned', 'return within', 'day return', 'days back'];
-  if (guarantee.some((p) => corpus.includes(p))) return [];
+  if (flag === 'unknown' && guarantee.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'guarantee_invisible',
     InferenceCategory.ExpectationAlignment,
-    scoping, cycleRef, 'true', 'high', 72,
+    scoping, cycleRef, 'true', 'high', flag === 'absent' ? 80 : 72,
     [],
     [],
     'Sem garantia visível (7/30 dias, reembolso). No digital o comprador não testa antes; a garantia tira o risco da decisão e é um dos maiores alavancadores de conversão de infoproduto. Sem ela, a objeção "e se não funcionar?" mata a compra no checkout.',
@@ -448,15 +484,20 @@ function inferNoPaymentOptions(
 function inferNoCurriculumVisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
+  businessContext?: BusinessContext | null,
 ): Inference[] {
+  // Tri-state (PV.8): perception judges shows_curriculum semantically (any language). A
+  // confirmed 'absent' overrides corpus false-presents like 'ementa' ⊂ "implementation".
+  const flag = perceivedFlag(businessContext, 'shows_curriculum');
+  if (flag === 'present') return [];
   // ' ementa' (leading space) + 'grade curricular' avoid substring collisions: bare 'ementa' ⊂
   // "implementation" and bare 'grade' ⊂ "upgrade" silenced this on any EN page using those words.
   const curr = ['módulo', 'modulo', 'aula', 'o que você vai aprender', ' ementa', 'currículo do curso', 'conteúdo do curso', 'grade curricular', 'module', 'lesson', 'curriculum', "what you'll learn", 'what you will learn', 'syllabus', 'course content', 'chapters', 'lectures'];
-  if (curr.some((p) => corpus.includes(p))) return [];
+  if (flag === 'unknown' && curr.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'no_curriculum_visible',
     InferenceCategory.ConversionClarity,
-    scoping, cycleRef, 'true', 'medium', 66,
+    scoping, cycleRef, 'true', 'medium', flag === 'absent' ? 74 : 66,
     [],
     [],
     'Sem o conteúdo do curso visível (módulos, aulas, "o que você vai aprender"). O comprador precisa ver o que recebe antes de pagar; sem ementa, não consegue justificar o valor e adia. Listar os módulos e a transformação por módulo destrava a decisão.',
@@ -1284,7 +1325,11 @@ function inferContactFormExcessiveFields(
 function inferResponseTimeNotPromised(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string,
+  businessContext?: BusinessContext | null,
 ): Inference[] {
+  // Tri-state (PV.8): perception judges promises_response_time semantically (any language).
+  const flag = perceivedFlag(businessContext, 'promises_response_time');
+  if (flag === 'present') return [];
   const responseTimePatterns = [
     'respondemos em', 'we respond within', 'tempo de resposta', 'response time',
     'até 24h', 'within 24h', 'retorno em', 'sla de atendimento',
@@ -1294,19 +1339,21 @@ function inferResponseTimeNotPromised(
     '24/7', '24h', '24 horas', 'online 24 horas', 'available 24', 'disponível 24',
     'atendimento 24', 'always available', 'round the clock',
   ];
-  if (responseTimePatterns.some(p => corpus.includes(p))) return [];
+  if (flag === 'unknown' && responseTimePatterns.some(p => corpus.includes(p))) return [];
 
-  // Only relevant if there's a contact surface
-  const hasContactSurface = corpus.includes('contato') || corpus.includes('contact') ||
-    corpus.includes('fale conosco') || corpus.includes('get in touch');
-  if (!hasContactSurface) return [];
+  // Relevance gate, only when perception is unsure: a response-time gap matters only on a contact surface.
+  if (flag === 'unknown') {
+    const hasContactSurface = corpus.includes('contato') || corpus.includes('contact') ||
+      corpus.includes('fale conosco') || corpus.includes('get in touch');
+    if (!hasContactSurface) return [];
+  }
 
   const pageContent = getPageContentEvidence(evidence);
 
   return [buildInference(
     'response_time_not_promised',
     InferenceCategory.ExpectationAlignment,
-    scoping, cycleRef, 'true', 'medium', 68,
+    scoping, cycleRef, 'true', 'medium', flag === 'absent' ? 76 : 68,
     [],
     pageContent.slice(0, 2).map(e => makeRef('evidence', e.id)),
     'Sem SLA de tempo de resposta prometido, o lead qualificado não sabe quando terá retorno. E vai procurar o concorrente que promete "resposta em até 2h". A ansiedade pós-envio de formulário é onde se perde o deal.',

@@ -242,6 +242,30 @@ Converte "percepção certa" em "findings novos" pras verticais sem detector. A 
 - **food** (aprofundar): ⬜ no_online_ordering, min_order_unclear.
 Cada ⬜ = repetição do padrão provado (detector + surface + título pt-BR + pack + catálogo). Ordem por mercado BR: professional → infoproduct → real_estate → financial_services.
 
+### PV.7 — Inversão perception-first + calibração bilíngue ✅ (shipped 2026-06-22)
+Os detectores PV.6 gateavam por **corpus-regex pt-BR** → falso-positivavam sistematicamente fora do pt-BR. Calibrado contra **10 sites reais** (US/BR/ES × local_service/professional/infoproduct) achados por **busca neutra** (negócio+cidade, nunca a palavra-sinal — buscar pela keyword é circular e esconde o bug).
+
+**Bilíngue (`503c9901`/`f945b6b3`)**: 10 listas de padrão EN+PT, currency-agnostic, soltas. Corrigidos falso-positivos (contact perdia "Call 1-800", pricing perdia "$59", response-time perdia "24/7", case-study perdia "$90M verdict") + falso-**negativos** por colisão de substring (`ementa`⊂"implementation", `grade`⊂"upgrade" silenciavam `no_curriculum` em toda página EN; `member of`⊂"member of our team").
+
+**Inversão (`d17493e9`)**: `perceivedPresent(ctx, ...purposes)` (floor 0.6) é o gate **primário**, antes do regex. Purpose é rótulo semântico language-agnostic → site em qualquer idioma cujo surface a perception viu nunca chega no regex enviesado. **7 detectores** invertidos (signal = page purpose): service_pricing→`pricing`, booking→`booking`/`availability`, no_case_study→`case_study`, no_consultation→`booking`/`intake_form`/`contact`, team→`team`/`about`, no_proof→`testimonials`/`case_study`, no_payment→`checkout`/`cart`. `businessContext` passou a fluir pro dispatch professional+infoproduct (antes não recebiam). Wired ponta-a-ponta (run-cycle:1922→recompute:860→detectores), degrade-safe. 9 asserts + zero regressão + typecheck limpo. Mata as classes **idioma + colisão + cegueira página-vs-site** via perception.
+
+### PV.8 — Content flags da perception (M, ~3-5d incl. migration)
+**Fecha a fronteira que PV.7 deixou.** 5 detectores são **atributo de conteúdo**, não papel de página — sem `purpose` pra ancorar, ficaram corpus-only (idioma-enviesados): `guarantee_invisible`, `credentials_not_visible`, `no_curriculum_visible`, `response_time_not_promised`, `contact_friction_high`. Fix durável: a passe de perception (que já LÊ as páginas) emite **content flags** site-level, e os 5 gateiam por flag (language-agnostic) em vez de regex.
+
+**Taxonomia fechada (5 flags, 1:1 com os detectores)** em [vertical.ts](packages/domain/vertical.ts) ao lado de `SURFACE_PURPOSES`: `has_guarantee`, `shows_credentials`, `shows_curriculum`, `promises_response_time`, `has_immediate_contact` + guard `isContentFlag`. Anti-slop: conjunto fechado, estender deliberadamente.
+
+**Camadas (cada uma espelha um padrão PV.2/PV.2.1 vivo):**
+1. **Prompt** [perception-prompt.ts](packages/perception/perception-prompt.ts): seção CONTENT FLAGS + `content_flags:[{flag,confidence}]` no schema JSON. Instrução semântica language-agnostic ("a página promete reembolso em QUALQUER idioma?"), mesmo guard anti-injection, site-level (não por-página). **Mesma call Haiku** → custo marginal ≈ 0 (alinha always-on cost analysis).
+2. **Parser** [perception-parser.ts:97](packages/perception/perception-parser.ts#L97): `BusinessPerception` ganha `contentFlags`; loop de validação espelhando `surfaces` (drop fora-de-ontologia, clamp confidence, fail-closed).
+3. **Schema** [schema.prisma:356](prisma/schema.prisma#L356): coluna aditiva nullable `perceivedContentFlagsJson Json?`. Migration aditiva → `migrate deploy` (NUNCA `migrate dev`); cuidado com o ledger (histórico P3009 → `migrate resolve --applied` se houver drift). Única parte delicada (DB de prod).
+4. **Classifier write** [perception-classifier.ts:233](workers/ingestion/enrichment/perception-classifier.ts#L233): grava no mesmo `.update`, sob o **mesmo content-hash gate** (não re-roda se as páginas não mudaram).
+5. **BusinessContext** [business-context.ts](packages/perception/business-context.ts): `contentFlags` no tipo + `coerceContentFlags`; `getBusinessContext` seleciona a coluna nova. Degrade-safe (ausente → []).
+6. **Consumo** [vertical-inference.ts](packages/inference/vertical-inference.ts): `perceivedFlag(ctx, flag)` (espelha `perceivedPresent`); gateia os 5 perception-first → regex fallback. `contact_friction` já recebe `businessContext`; passar aos outros 4 (`guarantee`, `credentials`, `no_curriculum`, `response_time`) no dispatch + signature.
+
+**Decisão de design — v1 = present-only**: a perception só CONFIRMA presença (`has_guarantee:true` → suprime). Ausência → cai no regex (degrade-safe, espelha PV.7). Já fecha o gap de idioma (o bug dos 5 era falso-positivo: regex perdia a garantia EN → firava errado). **Tri-state** (perception confirmar ABSENCE → firar com mais confiança que o regex) é polish futuro (PV.8.1), não bias-fix — não bloquear nisso.
+
+**Calibração (fecha o loop, mesma metodologia)**: re-rodar o harness contra os sites reais + casos de flag (ex.: Castle Dental `has_immediate_contact` via "Call 1-800"; ganho real é ES/DE onde o regex falha). **Não surfacear no "O que analisamos"** — flags são input de precisão, não bloco de UI.
+
 ## Expansão futura (4 categorias validadas, post-PMF)
 
 Não comprometidas com timeline. Cada uma demanda discovery próprio.

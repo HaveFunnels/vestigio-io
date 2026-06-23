@@ -199,6 +199,14 @@ export function computeVerticalInferences(
     inferences.push(...inferTeamExpertiseInvisible(sigMap, scoping, cycleRef, evidence, corpus));
   }
 
+  // ── Infoproduct (digital courses/products — proof-of-result → buy) ──
+  if (model === 'infoproduct' || model.includes('infoprodu')) {
+    inferences.push(...inferNoProofOfResult(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferGuaranteeInvisible(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferNoPaymentOptions(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferNoCurriculumVisible(sigMap, scoping, cycleRef, evidence, corpus));
+  }
+
   return inferences;
 }
 
@@ -329,6 +337,74 @@ function inferTeamExpertiseInvisible(
     [],
     [],
     'Quem está por trás do serviço não aparece (equipe, sócios, experiência). Serviço profissional se compra pela pessoa; sem rosto, nome e trajetória, falta a autoridade que destrava a confiança. Uma página de equipe com experiência concreta aumenta a taxa de contato.',
+  )];
+}
+
+// ═══════════════════════════════════════════════
+// INFOPRODUCT (digital courses/products — proof-of-result → buy)
+// ═══════════════════════════════════════════════
+
+function inferNoProofOfResult(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  const proof = ['resultado', 'transformaç', 'antes e depois', 'alunos que', 'depoiment', 'case de sucesso', 'já ajud', 'faturou', 'conquist'];
+  if (proof.some((p) => corpus.includes(p))) return [];
+  return [buildInference(
+    'no_proof_of_result',
+    InferenceCategory.TrustRevenue,
+    scoping, cycleRef, 'true', 'high', 74,
+    [],
+    [],
+    'Curso/produto digital sem prova de resultado ou transformação (depoimentos com números, antes-e-depois, casos de aluno). É o gate #1 do infoproduto: o comprador paga pela promessa de mudança; sem evidência de que funciona pra outros, duvida e não compra. Prova concreta separa quem vende de quem só descreve.',
+  )];
+}
+
+function inferGuaranteeInvisible(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  const guarantee = ['garantia', '7 dias', '30 dias', 'reembolso', 'devolução do dinheiro', 'satisfação garantida', 'risco zero'];
+  if (guarantee.some((p) => corpus.includes(p))) return [];
+  return [buildInference(
+    'guarantee_invisible',
+    InferenceCategory.ExpectationAlignment,
+    scoping, cycleRef, 'true', 'high', 72,
+    [],
+    [],
+    'Sem garantia visível (7/30 dias, reembolso). No digital o comprador não testa antes; a garantia tira o risco da decisão e é um dos maiores alavancadores de conversão de infoproduto. Sem ela, a objeção "e se não funcionar?" mata a compra no checkout.',
+  )];
+}
+
+function inferNoPaymentOptions(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  const pay = ['parcel', '12x', '10x', 'à vista', 'pix', 'boleto', 'cartão', 'cartao'];
+  if (pay.some((p) => corpus.includes(p))) return [];
+  return [buildInference(
+    'no_payment_options',
+    InferenceCategory.ConversionFlow,
+    scoping, cycleRef, 'true', 'high', 70,
+    [],
+    [],
+    'Sem opção de parcelamento ou meios de pagamento visíveis (parcelado, Pix, boleto, cartão). No Brasil o parcelamento é decisivo no ticket de infoproduto; sem mostrar "em até 12x", o comprador trava no preço cheio e abandona. Mostrar o valor da parcela reduz a barreira de entrada.',
+  )];
+}
+
+function inferNoCurriculumVisible(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  const curr = ['módulo', 'modulo', 'aula', 'o que você vai aprender', 'ementa', 'currículo do curso', 'conteúdo do curso', 'grade'];
+  if (curr.some((p) => corpus.includes(p))) return [];
+  return [buildInference(
+    'no_curriculum_visible',
+    InferenceCategory.ConversionClarity,
+    scoping, cycleRef, 'true', 'medium', 66,
+    [],
+    [],
+    'Sem o conteúdo do curso visível (módulos, aulas, "o que você vai aprender"). O comprador precisa ver o que recebe antes de pagar; sem ementa, não consegue justificar o valor e adia. Listar os módulos e a transformação por módulo destrava a decisão.',
   )];
 }
 

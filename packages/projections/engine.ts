@@ -300,6 +300,11 @@ const INFERENCE_SURFACES: Record<string, string> = {
   credentials_not_visible: '/, /sobre',
   no_consultation_cta: '/, /contato',
   team_expertise_invisible: '/, /sobre, /equipe',
+  // Vertical-specific findings — Infoproduct (digital course/product)
+  no_proof_of_result: '/, /curso',
+  guarantee_invisible: '/, /checkout',
+  no_payment_options: '/, /checkout',
+  no_curriculum_visible: '/, /curso',
   // Vertical-specific findings — Health/Beauty
   ingredients_not_listed: '/product, /shop',
   no_clinical_endorsement: '/product, /shop',
@@ -384,6 +389,10 @@ export const INFERENCE_TITLES: Record<string, string> = {
   credentials_not_visible: 'Sem credencial visível: o comprador não confia o suficiente pra contratar',
   no_consultation_cta: 'Sem caminho claro pra iniciar: o interessado sai sem virar lead',
   team_expertise_invisible: 'Quem faz o trabalho não aparece: falta a autoridade que fecha',
+  no_proof_of_result: 'Sem prova de resultado: a promessa não convence',
+  guarantee_invisible: 'Sem garantia: a objeção "e se não funcionar?" mata a compra',
+  no_payment_options: 'Sem parcelamento visível: o preço cheio trava o comprador',
+  no_curriculum_visible: 'Sem o conteúdo do curso visível: o comprador não justifica o valor',
   // ── Scale Readiness ─────────────────────────────
   trust_boundary_crossed: 'Buyers get sent to a different domain at checkout',
   policy_gap: 'Your store has no visible refund or privacy policy',

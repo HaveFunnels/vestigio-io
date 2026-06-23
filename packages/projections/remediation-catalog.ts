@@ -3098,6 +3098,58 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 20,
 	},
 
+	no_proof_of_result: {
+		remediation_steps: [
+			'Adicione depoimentos de alunos com resultado concreto e número ("faturou R$X", "passou no concurso", "perdeu X kg").',
+			'Mostre antes-e-depois ou casos de sucesso reais, com nome/foto quando possível.',
+			'Coloque a prova mais forte acima da dobra, antes do preço.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir a página de vendas e verificar a presença de prova de resultado (depoimento com número, antes-e-depois, case).',
+		verification_eta_seconds: 20,
+	},
+
+	guarantee_invisible: {
+		remediation_steps: [
+			'Ofereça e exiba uma garantia clara (7 ou 30 dias, satisfação ou dinheiro de volta) perto do botão de compra.',
+			'Explique como pedir o reembolso em uma frase simples.',
+			'Use um selo de garantia visível no checkout.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir a página e verificar a presença de garantia/reembolso próximo ao CTA de compra.',
+		verification_eta_seconds: 15,
+	},
+
+	no_payment_options: {
+		remediation_steps: [
+			'Mostre o parcelamento ("em até 12x de R$X") junto do preço, não só o valor cheio.',
+			'Exiba os meios aceitos (cartão, Pix, boleto) antes do checkout.',
+			'Destaque a parcela em vez do valor total na chamada principal.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir a página e verificar a presença de parcelamento ou meios de pagamento visíveis.',
+		verification_eta_seconds: 15,
+	},
+
+	no_curriculum_visible: {
+		remediation_steps: [
+			'Liste os módulos/aulas do curso com o que o aluno aprende em cada um.',
+			'Conecte cada módulo a uma transformação concreta ("ao fim do módulo X, você consegue Y").',
+			'Coloque a grade antes do preço, pra justificar o valor.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir a página e verificar a presença do conteúdo/grade do curso.',
+		verification_eta_seconds: 20,
+	},
+
 	size_guide_missing: {
 		remediation_steps: [
 			'Crie uma tabela de medidas com busto, cintura, quadril e comprimento para cada categoria de produto.',

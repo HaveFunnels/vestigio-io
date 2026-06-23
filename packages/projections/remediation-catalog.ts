@@ -3059,6 +3059,45 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 15,
 	},
 
+	credentials_not_visible: {
+		remediation_steps: [
+			'Mostre o registro profissional (OAB, CRC, CREA, CRM…) e especializações no topo da home e na página "Sobre".',
+			'Adicione foto, nome e formação de cada profissional responsável.',
+			'Inclua selos de associações/conselhos e certificações relevantes.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o site e verificar a presença de registro profissional ou credencial visível.',
+		verification_eta_seconds: 15,
+	},
+
+	no_consultation_cta: {
+		remediation_steps: [
+			'Adicione um CTA único e claro ("Agende uma consulta", "Solicite uma proposta") visível no topo de toda página.',
+			'Leve esse CTA pra um caminho curto (formulário mínimo ou WhatsApp), não pra um e-mail genérico.',
+			'Repita o CTA ao final de cada página de serviço.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o site e verificar a presença de um CTA claro de consulta/proposta acessível a partir da home.',
+		verification_eta_seconds: 15,
+	},
+
+	team_expertise_invisible: {
+		remediation_steps: [
+			'Crie uma página de equipe com foto, nome, formação e experiência de cada profissional.',
+			'Destaque casos ou áreas de atuação concretas por pessoa.',
+			'Linke a página de equipe no menu principal.',
+		],
+		estimated_effort_hours: 5,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o site e verificar a presença de uma página de equipe com profissionais identificados.',
+		verification_eta_seconds: 20,
+	},
+
 	size_guide_missing: {
 		remediation_steps: [
 			'Crie uma tabela de medidas com busto, cintura, quadril e comprimento para cada categoria de produto.',

@@ -296,6 +296,10 @@ const INFERENCE_SURFACES: Record<string, string> = {
   contact_friction_high: '/, /contato',
   booking_intake_excessive: '/agendar, /contato',
   service_pricing_opaque: '/, /servicos',
+  // Vertical-specific findings — Professional (credential-driven)
+  credentials_not_visible: '/, /sobre',
+  no_consultation_cta: '/, /contato',
+  team_expertise_invisible: '/, /sobre, /equipe',
   // Vertical-specific findings — Health/Beauty
   ingredients_not_listed: '/product, /shop',
   no_clinical_endorsement: '/product, /shop',
@@ -377,6 +381,9 @@ export const INFERENCE_TITLES: Record<string, string> = {
   contact_friction_high: 'Sem contato imediato: o cliente local não acha como te chamar',
   booking_intake_excessive: 'Formulário de agendamento pede campos demais',
   service_pricing_opaque: 'Nenhum sinal de preço: o cliente assume caro e desiste',
+  credentials_not_visible: 'Sem credencial visível: o comprador não confia o suficiente pra contratar',
+  no_consultation_cta: 'Sem caminho claro pra iniciar: o interessado sai sem virar lead',
+  team_expertise_invisible: 'Quem faz o trabalho não aparece: falta a autoridade que fecha',
   // ── Scale Readiness ─────────────────────────────
   trust_boundary_crossed: 'Buyers get sent to a different domain at checkout',
   policy_gap: 'Your store has no visible refund or privacy policy',

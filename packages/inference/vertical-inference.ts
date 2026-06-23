@@ -187,6 +187,18 @@ export function computeVerticalInferences(
     inferences.push(...inferServicePricingOpaque(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
   }
 
+  // ── Professional (credential/portfolio-driven: lawyers, accountants, architects) ──
+  if (model === 'professional') {
+    // Same lead-friction mechanism as B2B services — reuse those detectors.
+    inferences.push(...inferNoCaseStudyWithMetrics(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferContactFormExcessiveFields(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferResponseTimeNotPromised(sigMap, scoping, cycleRef, evidence, corpus));
+    // Professional-specific:
+    inferences.push(...inferCredentialsNotVisible(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferNoConsultationCta(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferTeamExpertiseInvisible(sigMap, scoping, cycleRef, evidence, corpus));
+  }
+
   return inferences;
 }
 
@@ -264,6 +276,59 @@ function inferServicePricingOpaque(
     [],
     [],
     'Nenhum sinal de preço ou faixa de valor no site. O cliente local compara antes de marcar; sem âncora ("a partir de R$X", "primeira avaliação gratuita"), assume caro ou desiste de perguntar. Mostrar ao menos uma faixa ou um ponto de entrada reduz o atrito de "quanto custa?".',
+  )];
+}
+
+// ═══════════════════════════════════════════════
+// PROFESSIONAL (credential/portfolio-driven: lawyers, accountants, architects)
+// ═══════════════════════════════════════════════
+
+function inferCredentialsNotVisible(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  // Professional registration / credential patterns (BR councils + generic).
+  const credPatterns = [/\boab\b/, /\bcrc\b/, /\bcrea\b/, /\bcrm\b/, /\bcro\b/, /\bcrp\b/, /\bcau\b/, /registro profissional/, /inscriç[ãa]o/, /especialista em/, /p[óo]s-gradua/, /membro da/];
+  if (credPatterns.some((p) => p.test(corpus))) return [];
+  return [buildInference(
+    'credentials_not_visible',
+    InferenceCategory.TrustRevenue,
+    scoping, cycleRef, 'true', 'high', 72,
+    [],
+    [],
+    'Serviço profissional sem credencial ou registro visível (OAB, CRC, CREA, CRM, especialização). Pra contratar advogado/contador/arquiteto, o comprador checa autoridade antes de tudo; sem prova de qualificação, não avança e procura quem mostra. Credencial visível é o primeiro gate de confiança.',
+  )];
+}
+
+function inferNoConsultationCta(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  const ctaPatterns = ['agend', 'consulta', 'solicit', 'orçament', 'proposta', 'fale com', 'marque', 'avaliação', 'consultoria gratuita'];
+  if (ctaPatterns.some((p) => corpus.includes(p))) return [];
+  return [buildInference(
+    'no_consultation_cta',
+    InferenceCategory.ConversionClarity,
+    scoping, cycleRef, 'true', 'high', 70,
+    [],
+    [],
+    'Sem chamada clara pro próximo passo (agendar consulta, solicitar proposta, falar com especialista). O comprador de serviço profissional precisa de um caminho óbvio pra iniciar; sem CTA de consulta, lê e sai sem virar lead. Um botão único e claro converte interesse em conversa.',
+  )];
+}
+
+function inferTeamExpertiseInvisible(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  const teamPatterns = ['equipe', 'quem somos', 'sobre n', 'sócios', 'socios', 'fundador', 'nossa história', 'especialistas', 'profissionais'];
+  if (teamPatterns.some((p) => corpus.includes(p))) return [];
+  return [buildInference(
+    'team_expertise_invisible',
+    InferenceCategory.TrustRevenue,
+    scoping, cycleRef, 'true', 'medium', 64,
+    [],
+    [],
+    'Quem está por trás do serviço não aparece (equipe, sócios, experiência). Serviço profissional se compra pela pessoa; sem rosto, nome e trajetória, falta a autoridade que destrava a confiança. Uma página de equipe com experiência concreta aumenta a taxa de contato.',
   )];
 }
 

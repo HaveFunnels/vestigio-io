@@ -268,6 +268,11 @@ Os detectores PV.6 gateavam por **corpus-regex pt-BR** → falso-positivavam sis
 
 **Shipped (9606b1ed)** — 5 flags (`has_guarantee`/`shows_credentials`/`shows_curriculum`/`promises_response_time`/`has_immediate_contact`), 8 camadas espelhando PV.2/PV.2.1, migration `20260622140000` migrate-deployed em prod (coluna verificada via `db execute`). 25/25 testes unit (8 novos) + 6/6 harness tri-state + typecheck do repo limpo. Wired end-to-end (getBusinessContext → recompute:860 → 5 detectores), degrade-safe. **Dormente até a havefunnels rodar um ciclo full do PV.2** (a perception precisa popular `perceivedContentFlagsJson`). Calibração contra sites reais com flags fica pra quando houver dado perceived em prod.
 
+### PV.9 — Calibração ecommerce/saas + lacunas de biblioteca ✅ (shipped 2026-06-23)
+Calibração dos detectores ecommerce/saas contra sites reais (invoicely/contaazul/amaro). Já eram bilíngues — o bug era **detector de texto checando elemento VISUAL**: `product_images_insufficient`/`no_product_screenshot_visible` checavam o texto por "gallery"/"dashboard", mas a engine **não vê imagem** → falso-positivo sistêmico (Conta Azul renderiza o dashboard no hero, texto nunca diz). Fix (`c5a4743a`): parser passa `image_count` + `has_product_visual` (regex em `<img>` alt/src) → PageContent payload → detectores estruturais (degrade-safe). + fixes de padrão (`418ff367`): `size_guide` não suprime mais com 'tamanho' (seletor → falso-negativo), `free_trial` pega "for free"/"it's free", `integration` usa stem 'integra'.
+
+**Auditoria da biblioteca (250+ findings)** — early-funnel de ecommerce descoberto apesar da cobertura pesada de checkout/trust/friction. 3 findings novos (`2b86501b`, stack completa cada): `shipping_cost_revealed_late` (abandono #1, ~48% Baymard), `guest_checkout_absent` (~24%, fira só com sinal de account-wall), `demand_capture_absent` (os ~97% não-compradores; ecommerce + infoproduct). Verificado 8/8 + 9/9 + 6/6, typecheck limpo. **Lição**: a engine só vê TEXTO — finding visual exige sinal estrutural do parser no payload, ou pertence ao mini-audit (que parseia `<img>`).
+
 ## Expansão futura (4 categorias validadas, post-PMF)
 
 Não comprometidas com timeline. Cada uma demanda discovery próprio.

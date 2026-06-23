@@ -121,7 +121,16 @@ function mapVerticalToCustomerType(vertical: string | null): CustomerType | null
 		case "health":
 			return "local_business";
 		case "education":
+		case "infoproduct":
 			return "infoproduct";
+		case "real_estate":
+		case "travel":
+		case "home_services":
+			return "local_business";
+		case "marketplace":
+			return "ecommerce";
+		case "financial_services":
+			return "service";
 		default:
 			return null;
 	}

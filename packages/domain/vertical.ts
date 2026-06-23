@@ -38,9 +38,16 @@ export const PERCEIVED_VERTICALS = [
   'local_service', // clinics, salons, mechanics, trades — appointment-driven
   'professional', // lawyers, accountants, architects — credential/portfolio-driven
   'food', // restaurants, delivery
-  'health', // health & beauty
+  'health', // health & BEAUTY PRODUCTS (cosmetics, supplements, pharmacy). A clinic/dentist = local_service.
   'education', // courses, schools
   'content', // media, publishers
+  // PV.6 — broader coverage (each a distinct money mechanism)
+  'infoproduct', // digital courses/products (infoprodutores) — proof-of-result → buy, no shipping
+  'real_estate', // imobiliárias — listing browse → visit/lead, high ticket
+  'marketplace', // two-sided (supply + demand liquidity, not one seller's checkout)
+  'travel', // hotels / pousadas / tourism — date-availability → reservation
+  'financial_services', // insurance / credit / accounting — trust + regulation → high-consideration lead
+  'home_services', // contractors / plumbers / electricians — quote-driven (not slot-booking)
 ] as const;
 
 export type PerceivedVertical = (typeof PERCEIVED_VERTICALS)[number];
@@ -88,6 +95,11 @@ export const SURFACE_PURPOSES = [
   'intake_form', // qualification / quote / lead intake
   'menu', // restaurant menu / catalog of offerings
   'location', // address / hours / map
+  // PV.6 — broader-vertical surfaces
+  'listing', // property / marketplace listing page
+  'property_detail', // single property/item detail
+  'availability', // date-availability / reservation (travel)
+  'quote_simulation', // insurance / credit / reform quote or simulation
   'other',
 ] as const;
 

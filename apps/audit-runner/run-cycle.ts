@@ -1916,6 +1916,10 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				is_production: env.isProduction,
 				onboarding_business_model: businessProfile?.businessModel ?? null,
 				onboarding_conversion_model: businessProfile?.conversionModel ?? null,
+				// PV.3 — reconciled perception (vertical + surfaces) for the
+				// vertical-inference dispatch. Dynamic import keeps the engine
+				// package boundary clean; getBusinessContext never throws.
+				business_context: await import("../../packages/perception/business-context").then((m) => m.getBusinessContext(env.id)),
 				previous_snapshot: previousSnapshot,
 				suppression_rules: suppressionRules.length > 0 ? suppressionRules : undefined,
 				translations,

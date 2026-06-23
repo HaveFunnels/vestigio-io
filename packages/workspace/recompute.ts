@@ -167,6 +167,11 @@ export interface MultiPackInput {
   onboarding_business_model?: string | null;
   /** Onboarding-declared conversion model (prior) */
   onboarding_conversion_model?: string | null;
+  /** PV.3 — reconciled BusinessContext (perceived vertical + surfaces). When
+   *  present, vertical-aware logic (vertical-inference dispatch) uses it instead
+   *  of the onboarding prior. Set by the async caller via getBusinessContext;
+   *  null → falls back to onboarding (behaviour-preserving). */
+  business_context?: import('../perception/business-context').BusinessContext | null;
 
   // Phase 26: Systemic integration inputs
   /** Active suppression rules to apply to decisions */
@@ -846,7 +851,10 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
     signals,
     scoping,
     cycle_ref,
-    input.onboarding_business_model || null,
+    // PV.3 — dispatch on the reconciled perceived vertical when available,
+    // else the onboarding prior. So a perceived clinic gets clinic findings
+    // even if onboarding said something else.
+    input.business_context?.vertical ?? input.onboarding_business_model ?? null,
     evidence,
   );
 

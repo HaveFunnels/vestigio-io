@@ -221,7 +221,8 @@ function inferBookingAbsentOrPhoneOnly(
 ): Inference[] {
   // Online booking present (a perceived booking surface OR a booking widget) → no gap.
   if (surfacesByPurpose(businessContext, 'booking').length > 0) return [];
-  const bookingWidget = ['calendly', 'acuity', 'simplybook', 'agendor', 'agendamento online', 'agende online', 'book now', 'schedule online'];
+  // EN + pt-BR, loose ('agend' catches agende/agendar/agendamento). Avoid bare 'book' (→ facebook).
+  const bookingWidget = ['calendly', 'acuity', 'simplybook', 'agendor', 'agend', 'marque sua', 'marcar consulta', 'book now', 'book an appointment', 'book appointment', 'schedule', 'request appointment', 'make an appointment'];
   if (bookingWidget.some((p) => corpus.includes(p))) return [];
 
   return [buildInference(
@@ -240,7 +241,8 @@ function inferContactFrictionHigh(
   _businessContext: BusinessContext | null | undefined,
 ): Inference[] {
   // Immediate contact for a local buyer: phone / WhatsApp visible in the page text.
-  if (/whatsapp|wa\.me|telefone|\bligue\b|fale conosco|\(\d{2}\)\s?\d{4,5}/i.test(corpus)) return [];
+  // EN + pt-BR: WhatsApp / phone word / "call" / US+BR phone formats / toll-free.
+  if (/whatsapp|wa\.me|telefone|\bphone\b|\bcall\b|contact us|fale conosco|\bligue\b|tel:|\(\d{2,3}\)\s?\d{3,5}|\d{3}[-.\s]\d{3,4}[-.\s]\d{4}|1[-\s]?8\d{2}/i.test(corpus)) return [];
   return [buildInference(
     'contact_friction_high',
     InferenceCategory.FrictionPath,
@@ -276,7 +278,8 @@ function inferServicePricingOpaque(
   _evidence: readonly Evidence[], corpus: string,
   _businessContext: BusinessContext | null | undefined,
 ): Inference[] {
-  if (/r\$|a partir de|preç|tabela|investimento/i.test(corpus)) return [];
+  // Currency-agnostic: R$, $, € + EN/pt-BR price words.
+  if (/r\$|\$\s?\d|€\s?\d|a partir de|starting at|from \$|\bpreç|pricing|\bprice\b|tabela|investiment/i.test(corpus)) return [];
   return [buildInference(
     'service_pricing_opaque',
     InferenceCategory.ConversionFlow,
@@ -296,7 +299,8 @@ function inferCredentialsNotVisible(
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
   // Professional registration / credential patterns (BR councils + generic).
-  const credPatterns = [/\boab\b/, /\bcrc\b/, /\bcrea\b/, /\bcrm\b/, /\bcro\b/, /\bcrp\b/, /\bcau\b/, /registro profissional/, /inscriç[ãa]o/, /especialista em/, /p[óo]s-gradua/, /membro da/];
+  // BR councils + EN credential signals (licensed/certified/bar #/CPA/etc.).
+  const credPatterns = [/\boab\b/, /\bcrc\b/, /\bcrea\b/, /\bcrm\b/, /\bcro\b/, /\bcrp\b/, /\bcau\b/, /registro profissional/, /inscriç[ãa]o/, /especialista em/, /p[óo]s-gradua/, /membro da/, /licens/, /certifi/, /accredit/, /\bcpa\b/, /board[- ]certified/, /bar (no|number|#)/, /member of/];
   if (credPatterns.some((p) => p.test(corpus))) return [];
   return [buildInference(
     'credentials_not_visible',
@@ -312,7 +316,7 @@ function inferNoConsultationCta(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const ctaPatterns = ['agend', 'consulta', 'solicit', 'orçament', 'proposta', 'fale com', 'marque', 'avaliação', 'consultoria gratuita'];
+  const ctaPatterns = ['agend', 'consulta', 'solicit', 'orçament', 'proposta', 'fale com', 'marque', 'avaliação', 'book a', 'book an', 'schedule', 'consultation', 'request a', 'get a quote', 'get started', 'contact us', 'free consult', 'talk to us'];
   if (ctaPatterns.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'no_consultation_cta',
@@ -328,7 +332,7 @@ function inferTeamExpertiseInvisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const teamPatterns = ['equipe', 'quem somos', 'sobre n', 'sócios', 'socios', 'fundador', 'nossa história', 'especialistas', 'profissionais'];
+  const teamPatterns = ['equipe', 'quem somos', 'sobre n', 'sócios', 'socios', 'fundador', 'nossa história', 'especialistas', 'profissionais', 'our team', 'about us', 'meet the', 'our story', 'partners', 'founder', 'attorneys', 'our staff', 'who we are'];
   if (teamPatterns.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'team_expertise_invisible',
@@ -348,7 +352,7 @@ function inferNoProofOfResult(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const proof = ['resultado', 'transformaç', 'antes e depois', 'alunos que', 'depoiment', 'case de sucesso', 'já ajud', 'faturou', 'conquist'];
+  const proof = ['resultado', 'transformaç', 'antes e depois', 'alunos que', 'depoiment', 'case de sucesso', 'já ajud', 'faturou', 'conquist', 'result', 'transformation', 'before and after', 'students', 'testimonial', 'review', 'case study', 'success stor', 'helped', 'rating', 'stars', 'trustpilot'];
   if (proof.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'no_proof_of_result',
@@ -364,7 +368,7 @@ function inferGuaranteeInvisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const guarantee = ['garantia', '7 dias', '30 dias', 'reembolso', 'devolução do dinheiro', 'satisfação garantida', 'risco zero'];
+  const guarantee = ['garantia', '7 dias', '30 dias', '15 dias', 'reembolso', 'devolução do dinheiro', 'satisfação garantida', 'risco zero', 'guarantee', 'money-back', 'money back', 'refund', 'risk-free', 'satisfaction', 'returned', 'return within', 'day return', 'days back'];
   if (guarantee.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'guarantee_invisible',
@@ -380,7 +384,7 @@ function inferNoPaymentOptions(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const pay = ['parcel', '12x', '10x', 'à vista', 'pix', 'boleto', 'cartão', 'cartao'];
+  const pay = ['parcel', '12x', '10x', 'à vista', 'pix', 'boleto', 'cartão', 'cartao', 'installment', 'payment plan', 'monthly', 'per month', '/mo', 'pay in', 'financing', 'paypal', 'klarna', 'afterpay'];
   if (pay.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'no_payment_options',
@@ -396,7 +400,7 @@ function inferNoCurriculumVisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const curr = ['módulo', 'modulo', 'aula', 'o que você vai aprender', 'ementa', 'currículo do curso', 'conteúdo do curso', 'grade'];
+  const curr = ['módulo', 'modulo', 'aula', 'o que você vai aprender', 'ementa', 'currículo do curso', 'conteúdo do curso', 'grade', 'module', 'lesson', 'curriculum', "what you'll learn", 'what you will learn', 'syllabus', 'course content', 'chapters', 'lectures'];
   if (curr.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'no_curriculum_visible',

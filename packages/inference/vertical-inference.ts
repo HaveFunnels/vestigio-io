@@ -278,8 +278,8 @@ function inferServicePricingOpaque(
   _evidence: readonly Evidence[], corpus: string,
   _businessContext: BusinessContext | null | undefined,
 ): Inference[] {
-  // Currency-agnostic: R$, $, € + EN/pt-BR price words.
-  if (/r\$|\$\s?\d|€\s?\d|a partir de|starting at|from \$|\bpreç|pricing|\bprice\b|tabela|investiment/i.test(corpus)) return [];
+  // Currency-agnostic: R$, $, € (leading OR trailing "90€") + EN/pt-BR price words.
+  if (/r\$|\$\s?\d|€\s?\d|\d\s?€|a partir de|starting at|from \$|\bpreç|pricing|\bprice\b|tabela|investiment/i.test(corpus)) return [];
   return [buildInference(
     'service_pricing_opaque',
     InferenceCategory.ConversionFlow,
@@ -300,7 +300,8 @@ function inferCredentialsNotVisible(
 ): Inference[] {
   // Professional registration / credential patterns (BR councils + generic).
   // BR councils + EN credential signals (licensed/certified/bar #/CPA/etc.).
-  const credPatterns = [/\boab\b/, /\bcrc\b/, /\bcrea\b/, /\bcrm\b/, /\bcro\b/, /\bcrp\b/, /\bcau\b/, /registro profissional/, /inscriç[ãa]o/, /especialista em/, /p[óo]s-gradua/, /membro da/, /licens/, /certifi/, /accredit/, /\bcpa\b/, /board[- ]certified/, /bar (no|number|#)/, /member of/];
+  // /member of the bar/ not bare /member of/ — the latter false-matches "member of our team".
+  const credPatterns = [/\boab\b/, /\bcrc\b/, /\bcrea\b/, /\bcrm\b/, /\bcro\b/, /\bcrp\b/, /\bcau\b/, /registro profissional/, /inscriç[ãa]o/, /especialista em/, /p[óo]s-gradua/, /membro da/, /licens/, /certifi/, /accredit/, /\bcpa\b/, /board[- ]certified/, /bar (no|number|#)/, /member of the bar/, /bar association/, /licensed in/];
   if (credPatterns.some((p) => p.test(corpus))) return [];
   return [buildInference(
     'credentials_not_visible',
@@ -316,7 +317,8 @@ function inferNoConsultationCta(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const ctaPatterns = ['agend', 'consulta', 'solicit', 'orçament', 'proposta', 'fale com', 'marque', 'avaliação', 'book a', 'book an', 'schedule', 'consultation', 'request a', 'get a quote', 'get started', 'contact us', 'free consult', 'talk to us'];
+  // 'fale'/'falar' loose so "Fale agora com" / "Falar com um advogado" match (not just literal "fale com").
+  const ctaPatterns = ['agend', 'consulta', 'solicit', 'orçament', 'proposta', 'fale', 'falar', 'marque', 'avaliação', 'book a', 'book an', 'schedule', 'consultation', 'request a', 'get a quote', 'get started', 'contact us', 'free consult', 'talk to us'];
   if (ctaPatterns.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'no_consultation_cta',
@@ -332,7 +334,9 @@ function inferTeamExpertiseInvisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const teamPatterns = ['equipe', 'quem somos', 'sobre n', 'sócios', 'socios', 'fundador', 'nossa história', 'especialistas', 'profissionais', 'our team', 'about us', 'meet the', 'our story', 'partners', 'founder', 'attorneys', 'our staff', 'who we are'];
+  // Firm framing + SOLO-practitioner framing (a solo lawyer/accountant shows expertise as an
+  // individual bio / years in practice, not "our team" — calibrated vs advogadatrabalhistabh).
+  const teamPatterns = ['equipe', 'quem somos', 'sobre n', 'sócios', 'socios', 'fundador', 'nossa história', 'especialistas', 'profissionais', 'our team', 'about us', 'meet the', 'our story', 'partners', 'founder', 'attorneys', 'our staff', 'who we are', 'sobre mim', 'about me', 'minha trajet', 'minha história', 'atuante', 'anos de atuação', 'anos de experiência', 'years of experience', 'our founder', 'meet dr'];
   if (teamPatterns.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'team_expertise_invisible',
@@ -352,7 +356,8 @@ function inferNoProofOfResult(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const proof = ['resultado', 'transformaç', 'antes e depois', 'alunos que', 'depoiment', 'case de sucesso', 'já ajud', 'faturou', 'conquist', 'result', 'transformation', 'before and after', 'students', 'testimonial', 'review', 'case study', 'success stor', 'helped', 'rating', 'stars', 'trustpilot'];
+  // ' review' / ' rating' (leading space) avoid 'review'⊂"preview" and 'rating'⊂"operating"/"integrating".
+  const proof = ['resultado', 'transformaç', 'antes e depois', 'alunos que', 'depoiment', 'case de sucesso', 'já ajud', 'faturou', 'conquist', 'result', 'transformation', 'before and after', 'students', 'testimonial', ' review', 'case study', 'success stor', 'helped', ' rating', 'stars', 'trustpilot'];
   if (proof.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'no_proof_of_result',
@@ -400,7 +405,9 @@ function inferNoCurriculumVisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const curr = ['módulo', 'modulo', 'aula', 'o que você vai aprender', 'ementa', 'currículo do curso', 'conteúdo do curso', 'grade', 'module', 'lesson', 'curriculum', "what you'll learn", 'what you will learn', 'syllabus', 'course content', 'chapters', 'lectures'];
+  // ' ementa' (leading space) + 'grade curricular' avoid substring collisions: bare 'ementa' ⊂
+  // "implementation" and bare 'grade' ⊂ "upgrade" silenced this on any EN page using those words.
+  const curr = ['módulo', 'modulo', 'aula', 'o que você vai aprender', ' ementa', 'currículo do curso', 'conteúdo do curso', 'grade curricular', 'module', 'lesson', 'curriculum', "what you'll learn", 'what you will learn', 'syllabus', 'course content', 'chapters', 'lectures'];
   if (curr.some((p) => corpus.includes(p))) return [];
   return [buildInference(
     'no_curriculum_visible',
@@ -1115,6 +1122,9 @@ function inferNoCaseStudyWithMetrics(
     'roi', 'resultado', 'result', 'cliente alcançou', 'client achieved',
     'aumento de', 'increase of', 'redução de', 'reduction of',
     '% de melhoria', '% improvement', 'retorno sobre investimento',
+    // outcome idioms (legal/litigation express results as verdicts/settlements — calibrated vs zehllaw)
+    'verdict', 'settlement', 'recovered', 'awarded', 'jury award',
+    'causas ganhas', 'indeniza', 'milhões recuperados', 'million recovered',
   ];
   if (caseStudyPatterns.some(p => corpus.includes(p))) return [];
 
@@ -1233,6 +1243,9 @@ function inferResponseTimeNotPromised(
     'até 24h', 'within 24h', 'retorno em', 'sla de atendimento',
     'prazo de resposta', 'business hours', 'horário comercial',
     'em até', 'no máximo', 'within minutes', 'em minutos',
+    // availability idioms real firms actually use (calibrated vs zehllaw / advogadatrabalhistabh)
+    '24/7', '24h', '24 horas', 'online 24 horas', 'available 24', 'disponível 24',
+    'atendimento 24', 'always available', 'round the clock',
   ];
   if (responseTimePatterns.some(p => corpus.includes(p))) return [];
 

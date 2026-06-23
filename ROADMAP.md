@@ -249,7 +249,7 @@ Os detectores PV.6 gateavam por **corpus-regex pt-BR** → falso-positivavam sis
 
 **Inversão (`d17493e9`)**: `perceivedPresent(ctx, ...purposes)` (floor 0.6) é o gate **primário**, antes do regex. Purpose é rótulo semântico language-agnostic → site em qualquer idioma cujo surface a perception viu nunca chega no regex enviesado. **7 detectores** invertidos (signal = page purpose): service_pricing→`pricing`, booking→`booking`/`availability`, no_case_study→`case_study`, no_consultation→`booking`/`intake_form`/`contact`, team→`team`/`about`, no_proof→`testimonials`/`case_study`, no_payment→`checkout`/`cart`. `businessContext` passou a fluir pro dispatch professional+infoproduct (antes não recebiam). Wired ponta-a-ponta (run-cycle:1922→recompute:860→detectores), degrade-safe. 9 asserts + zero regressão + typecheck limpo. Mata as classes **idioma + colisão + cegueira página-vs-site** via perception.
 
-### PV.8 — Content flags da perception (M, ~3-5d incl. migration)
+### PV.8 — Content flags da perception ✅ (shipped 9606b1ed, 2026-06-22)
 **Fecha a fronteira que PV.7 deixou.** 5 detectores são **atributo de conteúdo**, não papel de página — sem `purpose` pra ancorar, ficaram corpus-only (idioma-enviesados): `guarantee_invisible`, `credentials_not_visible`, `no_curriculum_visible`, `response_time_not_promised`, `contact_friction_high`. Fix durável: a passe de perception (que já LÊ as páginas) emite **content flags** site-level, e os 5 gateiam por flag (language-agnostic) em vez de regex.
 
 **Taxonomia fechada (5 flags, 1:1 com os detectores)** em [vertical.ts](packages/domain/vertical.ts) ao lado de `SURFACE_PURPOSES`: `has_guarantee`, `shows_credentials`, `shows_curriculum`, `promises_response_time`, `has_immediate_contact` + guard `isContentFlag`. Anti-slop: conjunto fechado, estender deliberadamente.
@@ -262,9 +262,11 @@ Os detectores PV.6 gateavam por **corpus-regex pt-BR** → falso-positivavam sis
 5. **BusinessContext** [business-context.ts](packages/perception/business-context.ts): `contentFlags` no tipo + `coerceContentFlags`; `getBusinessContext` seleciona a coluna nova. Degrade-safe (ausente → []).
 6. **Consumo** [vertical-inference.ts](packages/inference/vertical-inference.ts): `perceivedFlag(ctx, flag)` (espelha `perceivedPresent`); gateia os 5 perception-first → regex fallback. `contact_friction` já recebe `businessContext`; passar aos outros 4 (`guarantee`, `credentials`, `no_curriculum`, `response_time`) no dispatch + signature.
 
-**Decisão de design — v1 = present-only**: a perception só CONFIRMA presença (`has_guarantee:true` → suprime). Ausência → cai no regex (degrade-safe, espelha PV.7). Já fecha o gap de idioma (o bug dos 5 era falso-positivo: regex perdia a garantia EN → firava errado). **Tri-state** (perception confirmar ABSENCE → firar com mais confiança que o regex) é polish futuro (PV.8.1), não bias-fix — não bloquear nisso.
+**Decisão de design — FULL tri-state (shipped, não o present-only escopado)**: perception autoritativa nos DOIS sentidos via `perceivedFlag()` (espelha `perceivedPresent`). present (≥0.6) → suprime; **absent (≥0.75) → fira com prioridade +8, SOBREPONDO falso-presente do regex** (mata a classe de colisão de substring `ementa`⊂"implementation" de vez, não só os casos remendados à mão); unknown → regex fallback (degrade-safe). Floors **assimétricos**: suprimir é barato (perde-se um finding), firar finding errado no cliente é caro → absent exige mais confiança que present.
 
-**Calibração (fecha o loop, mesma metodologia)**: re-rodar o harness contra os sites reais + casos de flag (ex.: Castle Dental `has_immediate_contact` via "Call 1-800"; ganho real é ES/DE onde o regex falha). **Não surfacear no "O que analisamos"** — flags são input de precisão, não bloco de UI.
+**Não surfacear no "O que analisamos"** — flags são input de precisão dos detectores, não bloco de UI.
+
+**Shipped (9606b1ed)** — 5 flags (`has_guarantee`/`shows_credentials`/`shows_curriculum`/`promises_response_time`/`has_immediate_contact`), 8 camadas espelhando PV.2/PV.2.1, migration `20260622140000` migrate-deployed em prod (coluna verificada via `db execute`). 25/25 testes unit (8 novos) + 6/6 harness tri-state + typecheck do repo limpo. Wired end-to-end (getBusinessContext → recompute:860 → 5 detectores), degrade-safe. **Dormente até a havefunnels rodar um ciclo full do PV.2** (a perception precisa popular `perceivedContentFlagsJson`). Calibração contra sites reais com flags fica pra quando houver dado perceived em prod.
 
 ## Expansão futura (4 categorias validadas, post-PMF)
 

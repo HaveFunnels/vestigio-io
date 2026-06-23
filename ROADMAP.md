@@ -214,8 +214,20 @@ Label de superfície no título vem do purpose percebido ("na sua página de age
 ### PV.5 — Loop de priorização de crawl (M, ~5-7d)
 Vertical percebida alimenta a seleção de critical-paths/scenarios do PRÓXIMO ciclo ([scenarios.ts](workers/ingestion/enrichment/scenarios.ts) switch → registry).
 
-### PV.6 — Sonda services/leadgen + calibração (M, ~5-7d)
-Estender enum pra armazenar services, ontologia de superfícies de agendamento/serviço ([vertical-inference.ts](packages/inference/vertical-inference.ts) já tem inferências services dormentes), calibrar FP do classificador (havefunnels-only, padrão A.2). **Gate**: provar que UMA vertical adjacente aprofunda retenção antes de expandir a ontologia.
+### PV.6 — Detectores de vertical (`local_service` / `professional`) (L)
+Converte "percepção certa" em "findings novos" pras verticais sem detector. A percepção (PV.2) já entrega a vertical + os purposes; faltam os detectores.
+
+**Keystone (destrava tudo)**: passar `business_context.surfaces` pra `computeVerticalInferences` ([vertical-inference.ts:92](packages/inference/vertical-inference.ts#L92) hoje recebe só a string da vertical). Aí o detector acha "a página de agendamento/serviços" pelo *purpose percebido*, não por regex de URL.
+
+**Fase 1 — construíveis HOJE (evidência já existe):** `local_service`: `booking_absent_or_phone_only` (script widget), `contact_friction_high` (sinal de contato), `booking_form_excessive` (FormPayload field count), `mobile_booking_broken` (MobileVerificationResult). `professional` (= extensão do branch `services`): `credentials_not_visible` (corpus OAB/CRC/CREA + trust_signals), `no_consultation_cta` (CopyElements CTA) + reuse de `no_case_study_with_metrics`/`contact_form_excessive_fields`. Cada finding = inference fn (template `inferContactFormExcessiveFields`) + key (codegen) + catálogo pt-BR + título/cause/effect + pack mapping.
+
+**Fase 2 — precisa coleta upstream:** endereço/horário (`AddressPayload` novo OU estender StructuredData LocalBusiness, hoje só `schema_type`) → `location_hours_absent`; review count/nota (estender `OffSiteReconPayload`, hoje só presença) → `local_reviews_absent`.
+
+**2 bloqueios pré-requisito (decisão do fundador):**
+1. **Modelo de $** — sem transação visível (não é ecommerce), "R$X perdido no agendamento" exige valor-da-consulta × volume. Opções: input de onboarding (ticket médio / valor de cliente) | severidade sem $ (fere doutrina) | default de indústria (número inventado). **Sem isso, findings dessas verticais não ficam on-thesis.**
+2. **Calibração** — havefunnels é saas, sem dogfood. Precisa de 1 site real de clínica + 1 de advogado pra calibrar FP, senão thresholds chutados.
+
+**Sequência**: keystone → `local_service` Fase 1 (~4 findings) → resolver modelo de $ → calibrar contra 1 site real → expandir `professional` + Fase 2.
 
 ## Expansão futura (4 categorias validadas, post-PMF)
 

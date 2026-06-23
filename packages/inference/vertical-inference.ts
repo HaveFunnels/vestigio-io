@@ -186,6 +186,9 @@ export function computeVerticalInferences(
     inferences.push(...inferNoUrgencyIndicators(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferCrossSellAbsent(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferReturnPolicyNotOnProduct(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferShippingCostRevealedLate(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferGuestCheckoutAbsent(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferDemandCaptureAbsent(sigMap, scoping, cycleRef, evidence, corpus));
   }
 
   // ── SaaS ────────────────────────────────────
@@ -259,6 +262,7 @@ export function computeVerticalInferences(
     inferences.push(...inferGuaranteeInvisible(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferNoPaymentOptions(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferNoCurriculumVisible(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
+    inferences.push(...inferDemandCaptureAbsent(sigMap, scoping, cycleRef, evidence, corpus));
   }
 
   return inferences;
@@ -653,6 +657,87 @@ function inferReturnPolicyNotOnProduct(
     [],
     [...policyPages.slice(0, 1), ...productPages.slice(0, 1)].map(e => makeRef('evidence', e.id)),
     'A política de devolução existe mas fica escondida no rodapé. 67% dos compradores verificam condições de troca ANTES de comprar. Sem essa informação na página do produto, a dúvida vira abandono.',
+  )];
+}
+
+// ── Early-funnel ecommerce leaks (Baymard-documented abandonment drivers, calibrated
+//    vs real stores). Bilingual EN+pt-BR. Each is a content-flag candidate for a future
+//    perception wave (shows_shipping_cost / offers_guest_checkout / has_demand_capture). ──
+
+function inferShippingCostRevealedLate(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  // Shipping transparency BEFORE checkout: a free-shipping promise/threshold, or a calculator.
+  const shippingClear = [
+    'free shipping', 'free delivery', 'frete grátis', 'frete gratis', 'entrega grátis',
+    'envio grátis', 'free shipping over', 'frete grátis acima', 'frete grátis a partir',
+    'calcular frete', 'calculate shipping', 'shipping calculator', 'estimate shipping',
+    'shipping from', 'frete a partir', 'valor do frete', 'custo de frete', 'shipping cost',
+    'free shipping on', 'ganhe frete',
+  ];
+  if (shippingClear.some((p) => corpus.includes(p))) return [];
+  const pageContent = getPageContentEvidence(evidence);
+  return [buildInference(
+    'shipping_cost_revealed_late',
+    InferenceCategory.ConversionFlow,
+    scoping, cycleRef, 'true', 'high', 76,
+    [],
+    pageContent.slice(0, 2).map((e) => makeRef('evidence', e.id)),
+    'Nenhum sinal de frete antes do checkout (sem "frete grátis acima de R$X", faixa de frete ou cálculo na página do produto/carrinho). Custo extra inesperado no checkout é o MAIOR motivo de abandono de carrinho (~48%): o comprador monta o pedido, vê o frete só no fim e desiste. Mostrar o frete — ou o limite pra frete grátis — antes do último passo remove a surpresa que mata a venda.',
+  )];
+}
+
+function inferGuestCheckoutAbsent(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  // Fire ONLY with a positive account-WALL signal AND no guest-checkout signal — a wrong
+  // "no guest checkout" is costly, so demand evidence of the wall rather than guessing.
+  const guestSignals = [
+    'guest checkout', 'continue as guest', 'checkout as guest', 'check out as guest',
+    'comprar sem cadastro', 'sem cadastro', 'comprar como convidado', 'finalizar sem conta',
+    'without an account', 'no account needed', 'sem criar conta', 'compra rápida', 'sem login',
+  ];
+  if (guestSignals.some((p) => corpus.includes(p))) return [];
+  const accountWall = [
+    'create an account to', 'crie uma conta para', 'cadastro obrigatório', 'login to checkout',
+    'faça login para', 'sign in to checkout', 'cadastre-se para comprar', 'login required',
+    'é necessário criar conta', 'crie sua conta para continuar', 'entre para finalizar',
+  ];
+  if (!accountWall.some((p) => corpus.includes(p))) return [];
+  const pageContent = getPageContentEvidence(evidence);
+  return [buildInference(
+    'guest_checkout_absent',
+    InferenceCategory.FrictionPath,
+    scoping, cycleRef, 'true', 'high', 74,
+    [],
+    pageContent.slice(0, 2).map((e) => makeRef('evidence', e.id)),
+    'O checkout exige criar conta antes de comprar, sem opção de compra como convidado. Cadastro obrigatório é um dos maiores motivos de abandono (~24%): quem compra pela primeira vez não quer criar conta só pra comprar uma vez. Oferecer "comprar como convidado" (pedindo só o e-mail) recupera a fatia que trava na parede de cadastro.',
+  )];
+}
+
+function inferDemandCaptureAbsent(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  evidence: readonly Evidence[], corpus: string,
+): Inference[] {
+  // Any capture path for the ~97% who don't buy on the first visit. EN + pt-BR.
+  const captureSignals = [
+    'newsletter', 'subscribe', 'inscreva-se', 'cadastre seu e-mail', 'cadastre seu email',
+    'receba ofertas', 'receba novidades', 'sign up for', 'join our', 'assine e ganhe',
+    'avise-me', 'notify me', 'back in stock', 'aviso de disponibilidade', 'me avise',
+    'lista de espera', 'waitlist', 'desconto no primeiro', 'first order', 'first purchase',
+    'cupom de', 'entre para a lista', 'fique por dentro', 'email signup', 'get 10%',
+  ];
+  if (captureSignals.some((p) => corpus.includes(p))) return [];
+  const pageContent = getPageContentEvidence(evidence);
+  return [buildInference(
+    'demand_capture_absent',
+    InferenceCategory.RevenuePath,
+    scoping, cycleRef, 'true', 'medium', 68,
+    [],
+    pageContent.slice(0, 2).map((e) => makeRef('evidence', e.id)),
+    'Não há nenhum mecanismo de captura de contato (newsletter, cupom de primeira compra, aviso de reposição) pra quem não compra na primeira visita. ~97% dos visitantes saem sem comprar; sem capturar o e-mail, essa demanda — que você já pagou pra trazer — some pra sempre. Um cupom de boas-vindas por e-mail ou "avise-me quando voltar" transforma parte desses 97% em receita futura.',
   )];
 }
 

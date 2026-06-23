@@ -3216,6 +3216,45 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 20,
 	},
 
+	shipping_cost_revealed_late: {
+		remediation_steps: [
+			'Exiba "Frete grátis acima de R$X" no topo do site e na página do produto, não só no checkout.',
+			'Adicione cálculo de frete por CEP na própria página do produto e no carrinho.',
+			'Mostre o custo de frete no carrinho antes do checkout, nunca só na última etapa.',
+		],
+		estimated_effort_hours: 6,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir produto/carrinho e verificar faixa de frete grátis, cálculo de frete ou custo de envio antes do checkout.',
+		verification_eta_seconds: 20,
+	},
+
+	guest_checkout_absent: {
+		remediation_steps: [
+			'Adicione "Comprar como convidado" no início do checkout, exigindo apenas o e-mail.',
+			'Remova a obrigatoriedade de criar conta/senha antes de concluir a compra.',
+			'Ofereça criar conta DEPOIS da compra (com a senha pré-preenchida), não antes.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o checkout e verificar se há compra como convidado sem cadastro obrigatório.',
+		verification_eta_seconds: 25,
+	},
+
+	demand_capture_absent: {
+		remediation_steps: [
+			'Adicione um cupom de boas-vindas (ex.: 10% no primeiro pedido) em troca do e-mail.',
+			'Inclua "Avise-me quando voltar" em produtos esgotados pra capturar a demanda reprimida.',
+			'Coloque captura de newsletter no rodapé e na saída (exit-intent) das páginas de produto.',
+		],
+		estimated_effort_hours: 5,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o site e verificar captura de e-mail (newsletter, cupom, aviso de reposição) para não-compradores.',
+		verification_eta_seconds: 20,
+	},
+
 	// ─────────────────────────────────────────────
 	// Vertical-Specific: SaaS
 	// ─────────────────────────────────────────────

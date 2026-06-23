@@ -279,6 +279,9 @@ const INFERENCE_SURFACES: Record<string, string> = {
   no_urgency_indicators: '/product, /shop',
   cross_sell_absent: '/product, /shop',
   return_policy_not_on_product: '/product, /shop',
+  shipping_cost_revealed_late: '/product, /cart, /checkout',
+  guest_checkout_absent: '/checkout, /cart',
+  demand_capture_absent: '/, /product',
   // Vertical-specific findings — SaaS
   no_free_trial_offered: '/, /pricing',
   integration_ecosystem_invisible: '/, /pricing',
@@ -601,6 +604,9 @@ export const INFERENCE_TITLES: Record<string, string> = {
   no_urgency_indicators: 'Nothing tells buyers they should act now',
   cross_sell_absent: "You're leaving money on the table after each sale",
   return_policy_not_on_product: "Buyers can't find return rules where they decide to buy",
+  shipping_cost_revealed_late: 'Shipping cost only shows up at checkout, surprising buyers into leaving',
+  guest_checkout_absent: 'Buyers are forced to create an account before they can purchase',
+  demand_capture_absent: "Visitors who don't buy leave with no way to bring them back",
   // SaaS
   no_free_trial_offered: "Buyers can't try before they commit money",
   integration_ecosystem_invisible: "Buyers don't know if your product fits their workflow",

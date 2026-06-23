@@ -179,7 +179,36 @@ export function computeVerticalInferences(
     inferences.push(...inferResponseTimeNotPromised(sigMap, scoping, cycleRef, evidence, corpus));
   }
 
+  // ── Local service (appointment/visit-driven: clinics, salons, mechanics) ──
+  if (model === 'local_service' || model.includes('local')) {
+    inferences.push(...inferBookingAbsentOrPhoneOnly(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
+  }
+
   return inferences;
+}
+
+// ═══════════════════════════════════════════════
+// LOCAL SERVICE (appointment/visit-driven: clinics, salons, mechanics, etc.)
+// ═══════════════════════════════════════════════
+
+function inferBookingAbsentOrPhoneOnly(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+  businessContext: BusinessContext | null | undefined,
+): Inference[] {
+  // Online booking present (a perceived booking surface OR a booking widget) → no gap.
+  if (surfacesByPurpose(businessContext, 'booking').length > 0) return [];
+  const bookingWidget = ['calendly', 'acuity', 'simplybook', 'agendor', 'agendamento online', 'agende online', 'book now', 'schedule online'];
+  if (bookingWidget.some((p) => corpus.includes(p))) return [];
+
+  return [buildInference(
+    'booking_absent_or_phone_only',
+    InferenceCategory.ConversionFlow,
+    scoping, cycleRef, 'true', 'high', 72,
+    [],
+    [],
+    'Negócio de agendamento sem caminho de marcação online: o cliente é forçado a ligar ou mandar mensagem. Quem busca fora do horário, ou está com pressa, desiste e vai pro concorrente que deixa marcar em dois cliques. Cada agendamento dependente de telefone é receita que vaza no momento de maior intenção.',
+  )];
 }
 
 // ═══════════════════════════════════════════════

@@ -320,6 +320,7 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   multilingual_conversion_leak: 'revenue_integrity',
   // Vertical-specific findings
   size_guide_missing: 'vertical_specific',
+  booking_absent_or_phone_only: 'vertical_specific',
   product_images_insufficient: 'vertical_specific',
   no_urgency_indicators: 'vertical_specific',
   cross_sell_absent: 'vertical_specific',

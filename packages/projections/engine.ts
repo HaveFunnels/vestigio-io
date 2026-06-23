@@ -291,6 +291,8 @@ const INFERENCE_SURFACES: Record<string, string> = {
   delivery_area_unclear: '/menu, /cardapio',
   delivery_time_not_shown: '/menu, /cardapio',
   allergen_info_missing: '/menu, /cardapio',
+  // Vertical-specific findings — Local service (appointment-driven)
+  booking_absent_or_phone_only: '/agendar, /agendamento',
   // Vertical-specific findings — Health/Beauty
   ingredients_not_listed: '/product, /shop',
   no_clinical_endorsement: '/product, /shop',
@@ -367,6 +369,8 @@ const INFERENCE_SURFACES: Record<string, string> = {
 // Human-readable titles for inference findings
 // Phase 30: Every title rewritten for commercial sharpness
 export const INFERENCE_TITLES: Record<string, string> = {
+  // ── Vertical: Local service ─────────────────────
+  booking_absent_or_phone_only: 'Sem agendamento online: quem não liga, desiste',
   // ── Scale Readiness ─────────────────────────────
   trust_boundary_crossed: 'Buyers get sent to a different domain at checkout',
   policy_gap: 'Your store has no visible refund or privacy policy',

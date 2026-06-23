@@ -3007,6 +3007,19 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 	// Vertical-Specific: Fashion/E-commerce
 	// ─────────────────────────────────────────────
 
+	booking_absent_or_phone_only: {
+		remediation_steps: [
+			'Adicione um caminho de agendamento online claro (Calendly, Acuity, SimplyBook ou o do seu sistema) com botão "Agendar" visível no topo de toda página.',
+			'Mostre os horários disponíveis em tempo real; não force o cliente a pedir e esperar resposta.',
+			'Mantenha telefone/WhatsApp como alternativa, nunca como único caminho.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o site e verificar se existe um caminho de agendamento online (widget ou página) acessível a partir da home.',
+		verification_eta_seconds: 20,
+	},
+
 	size_guide_missing: {
 		remediation_steps: [
 			'Crie uma tabela de medidas com busto, cintura, quadril e comprimento para cada categoria de produto.',

@@ -21,6 +21,10 @@ export interface ParsedPage {
   inline_scripts: string[];
   structured_data: ParsedStructuredData[];
   body_word_count: number;
+  // PV.9 — structural image signals for the visual detectors (text corpus can't see <img>):
+  // total <img> count + whether any image's alt/src reads as a product/screenshot visual.
+  image_count: number;
+  has_product_visual: boolean;
   body_text_snippet: string | null;
   // Wave 18a — heading structure (h1/h2/h3 in document order) gives the
   // engine + Framework Lens a way to understand page hierarchy without
@@ -166,6 +170,14 @@ export function parsePage(html: string, pageUrl: string): ParsedPage {
   const bodyText = extractBodyText(html);
   const wordCount = bodyText ? bodyText.split(/\s+/).filter(w => w.length > 0).length : 0;
 
+  // PV.9 — structural image signals (the visual detectors can't see <img> from the text corpus).
+  const imgTags = html.match(/<img\b[^>]*>/gi) || [];
+  const hasProductVisual = imgTags.some((tag) => {
+    const alt = (tag.match(/alt=["']([^"']*)["']/i)?.[1] || '').toLowerCase();
+    const src = (tag.match(/src=["']([^"']*)["']/i)?.[1] || '').toLowerCase();
+    return /screenshot|mockup|preview|dashboard|product|produto|hero|app[-_ ]?screen|\btela\b|interface|in[-_ ]?use|em uso/.test(`${alt} ${src}`);
+  });
+
   return {
     url: pageUrl,
     host: pageHost,
@@ -183,6 +195,8 @@ export function parsePage(html: string, pageUrl: string): ParsedPage {
     inline_scripts: extractInlineScripts(html),
     structured_data: extractStructuredData(html),
     body_word_count: wordCount,
+    image_count: imgTags.length,
+    has_product_visual: hasProductVisual,
     body_text_snippet: bodyText ? bodyText.slice(0, 2000) : null,
     headings: extractHeadings(html),
     hreflang_alternates: extractHreflang(html, pageUrl),

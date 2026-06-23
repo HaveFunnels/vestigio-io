@@ -120,6 +120,9 @@ export interface PageContentPayload {
   // (no h1 above the fold), "social proof absent" (no h2 mentions
   // customers), etc.
   headings: Array<{ level: 1 | 2 | 3; text: string }>;
+  // PV.9 — structural image signals (optional: absent on pre-PV.9 evidence rows).
+  image_count?: number;
+  has_product_visual?: boolean;
 }
 
 export interface RedirectPayload {

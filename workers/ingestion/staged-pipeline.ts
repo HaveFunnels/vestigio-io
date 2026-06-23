@@ -1169,6 +1169,8 @@ function addPageContentEvidence(evidence: Evidence[], parsed: ParsedPage, finalU
     // reflect the hydrated content, not the empty SPA shell.
     body_text_snippet: parsed.body_text_snippet,
     headings: parsed.headings,
+    image_count: parsed.image_count,
+    has_product_visual: parsed.has_product_visual,
   } as PageContentPayload));
 }
 

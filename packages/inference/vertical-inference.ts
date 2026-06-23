@@ -539,26 +539,27 @@ function inferSizeGuideMissing(
 
 function inferProductImagesInsufficient(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
-  evidence: readonly Evidence[], corpus: string,
+  evidence: readonly Evidence[], _corpus: string,
 ): Inference[] {
-  const copyEls = getCopyElements(evidence);
-  const productPages = evidence.filter(e =>
-    e.evidence_type === EvidenceType.PageContent &&
+  // PV.9 — structural: count real <img> on product pages (parser image_count), never the TEXT
+  // for "gallery"/"zoom" (a rich PDP rarely says those words; the old text check false-fired).
+  const productPages = getPageContentEvidence(evidence).filter((e) =>
     ((e.payload as { url?: string }).url ?? '').match(/\/product|\/produto|\/item/i),
   );
-
   if (productPages.length === 0) return [];
-
-  // Heuristic: product pages without "gallery", "zoom", "foto" in nearby evidence
-  const imagePatterns = ['gallery', 'galeria', 'zoom', 'lightbox', 'carousel', 'carrossel'];
-  if (imagePatterns.some(p => corpus.includes(p))) return [];
+  // Fire only where the count exists AND is thin (< 3). Missing count (pre-PV.9) → don't guess.
+  const thin = productPages.filter((e) => {
+    const n = (e.payload as { image_count?: number }).image_count;
+    return typeof n === 'number' && n < 3;
+  });
+  if (thin.length === 0) return [];
 
   return [buildInference(
     'product_images_insufficient',
     InferenceCategory.ConversionFlow,
     scoping, cycleRef, 'true', 'high', 72,
     [],
-    productPages.slice(0, 3).map(e => makeRef('evidence', e.id)),
+    thin.slice(0, 3).map((e) => makeRef('evidence', e.id)),
     'Produtos com menos de 3 fotos vendem 40% menos. O comprador não consegue avaliar textura, caimento ou detalhe e abandona antes de arriscar.',
   )];
 }
@@ -850,37 +851,28 @@ function inferAnnualDiscountNotHighlighted(
 
 function inferNoProductScreenshotVisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
-  evidence: readonly Evidence[], corpus: string,
+  evidence: readonly Evidence[], _corpus: string,
 ): Inference[] {
-  const screenshotPatterns = [
-    'screenshot', 'product screenshot', 'app screenshot', 'interface',
-    'dashboard', 'captura de tela', 'print', 'preview', 'demo',
-    'plataforma', 'platform view',
-  ];
-  // Focus on homepage/hero context
-  const copyEls = getCopyElements(evidence);
-  const homeCopy = copyEls.filter(e => {
-    const p = e.payload as { page_type?: string };
-    return p.page_type === 'homepage' || p.page_type === 'landing_page';
+  // PV.9 — structural: does the homepage/landing actually render a product-like image
+  // (parser has_product_visual via <img> alt/src), not whether the TEXT says "dashboard"?
+  // (Conta Azul shows its dashboard image with no such word → the old text check false-fired.)
+  const homeOrLanding = getPageContentEvidence(evidence).filter((e) => {
+    const url = (e.payload as { url?: string }).url ?? '';
+    try { const p = new URL(url).pathname; return p === '/' || /\/(lp|landing|home)\b/i.test(p); }
+    catch { return false; }
   });
-
-  if (homeCopy.length === 0) return [];
-
-  // Check above-fold text for product visual references
-  const aboveFold = homeCopy
-    .map(e => ((e.payload as { above_fold_text?: string }).above_fold_text ?? '').toLowerCase())
-    .join(' ');
-
-  if (screenshotPatterns.some(p => aboveFold.includes(p))) return [];
-  // If generic corpus has these it may be elsewhere — still flag hero
-  if (screenshotPatterns.some(p => corpus.includes(p)) && aboveFold.length > 100) return [];
+  if (homeOrLanding.length === 0) return [];
+  // Suppress if any home/landing renders a product visual. Require the structural signal to
+  // exist (image data present) before firing — missing (pre-PV.9) → don't guess (degrade-safe).
+  if (homeOrLanding.some((e) => (e.payload as { has_product_visual?: boolean }).has_product_visual === true)) return [];
+  if (!homeOrLanding.some((e) => typeof (e.payload as { image_count?: number }).image_count === 'number')) return [];
 
   return [buildInference(
     'no_product_screenshot_visible',
     InferenceCategory.ConversionClarity,
     scoping, cycleRef, 'true', 'high', 75,
     [],
-    homeCopy.slice(0, 2).map(e => makeRef('evidence', e.id)),
+    homeOrLanding.slice(0, 2).map((e) => makeRef('evidence', e.id)),
     'A hero da página não mostra o produto em uso. Visitantes B2B precisam "ver antes de experimentar". Sem screenshot real, a proposta de valor fica abstrata e a taxa de cadastro cai 30-50%.',
   )];
 }

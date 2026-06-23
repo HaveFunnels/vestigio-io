@@ -229,6 +229,19 @@ Converte "percepção certa" em "findings novos" pras verticais sem detector. A 
 
 **Sequência**: keystone → `local_service` Fase 1 (~4 findings) → resolver modelo de $ → calibrar contra 1 site real → expandir `professional` + Fase 2.
 
+**Shipped**: keystone (`8fe5cf99`) · `local_service` 4 detectores (`1b8c3bde`/`3830beda`) · breadth +6 buckets (`586e0b60`: infoproduct, real_estate, marketplace, travel, financial_services, home_services + 4 surfaces).
+
+**Backlog de findings (passagem de aprofundamento — ⬜ construível hoje, ◐ precisa upstream):**
+- **professional** (próximo, 0 detectores): ⬜ credentials_not_visible (OAB/CRC/CREA), no_consultation_cta, service_scope_vague, team_expertise_invisible + reuse services (no_case_study, contact_form_excessive, response_time).
+- **infoproduct** (maior mercado BR): ⬜ no_proof_of_result, guarantee_invisible, testimonials_generic, no_payment_options (parcelamento), no_curriculum_visible, price_anchor_missing.
+- **real_estate**: ⬜ listing_no_filters, no_property_details, contact_per_listing_absent · ◐ listing_photos_insufficient, no_financing_info.
+- **financial_services**: ⬜ regulation_trust_absent (SUSEP/BACEN), no_simulation_tool, jargon_heavy, no_social_proof.
+- **home_services**: ⬜ no_quote_path, service_area_unclear, contact_friction · ◐ portfolio_absent.
+- **travel**: ⬜ pricing_per_date_absent, no_booking_path · ◐ no_availability_calendar, photos_insufficient.
+- **local_service** (aprofundar): ⬜ local_proof_absent, no_service_menu, no_cancellation_policy · ◐ location_hours_unclear.
+- **food** (aprofundar): ⬜ no_online_ordering, min_order_unclear.
+Cada ⬜ = repetição do padrão provado (detector + surface + título pt-BR + pack + catálogo). Ordem por mercado BR: professional → infoproduct → real_estate → financial_services.
+
 ## Expansão futura (4 categorias validadas, post-PMF)
 
 Não comprometidas com timeline. Cada uma demanda discovery próprio.

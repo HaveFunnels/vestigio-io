@@ -43,6 +43,35 @@ export function surfacesByPurpose(
     .map((s) => s.url);
 }
 
+/**
+ * PV.7 inversion keystone — the PERCEPTION-FIRST gate.
+ *
+ * True when the perception layer labeled a crawled surface with any of
+ * `purposes` at/above the confidence floor. Perception emits a language-agnostic
+ * semantic purpose (an LLM that READ the page), so this is the PRIMARY
+ * "signal present" check: a detector consults it BEFORE its corpus regex, so a
+ * US/ES/any-language site whose pricing/booking/team surface perception already
+ * saw never reaches the pt-BR-biased heuristic. The regex stays only as the
+ * SECONDARY fallback for when perception is absent or didn't label that purpose.
+ * Null/absent perception → false → caller falls through (degrade-safe).
+ *
+ * Only signals that ARE a page purpose can be gated here (pricing, booking, team,
+ * case_study, …). Content attributes that aren't a page role (guarantee badge,
+ * credential number, response-time SLA) have no purpose to key on and stay
+ * corpus-only until perception emits content flags.
+ */
+const PERCEPTION_GATE_FLOOR = 0.6;
+export function perceivedPresent(
+  businessContext: BusinessContext | null | undefined,
+  ...purposes: string[]
+): boolean {
+  if (!businessContext) return false;
+  const want = new Set(purposes);
+  return businessContext.surfaces.some(
+    (s) => want.has(s.purpose) && s.confidence >= PERCEPTION_GATE_FLOOR,
+  );
+}
+
 // ── Evidence text search helper ──────────────
 
 function evidenceContains(evidence: readonly Evidence[], patterns: string[]): boolean {
@@ -172,7 +201,7 @@ export function computeVerticalInferences(
 
   // ── B2B Services ────────────────────────────
   if (model === 'services' || model.includes('services') || model.includes('form')) {
-    inferences.push(...inferNoCaseStudyWithMetrics(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferNoCaseStudyWithMetrics(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferMethodologyNotExplained(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferEnterpriseSignalsMissing(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferContactFormExcessiveFields(sigMap, scoping, cycleRef, evidence, corpus));
@@ -190,20 +219,20 @@ export function computeVerticalInferences(
   // ── Professional (credential/portfolio-driven: lawyers, accountants, architects) ──
   if (model === 'professional') {
     // Same lead-friction mechanism as B2B services — reuse those detectors.
-    inferences.push(...inferNoCaseStudyWithMetrics(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferNoCaseStudyWithMetrics(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferContactFormExcessiveFields(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferResponseTimeNotPromised(sigMap, scoping, cycleRef, evidence, corpus));
     // Professional-specific:
     inferences.push(...inferCredentialsNotVisible(sigMap, scoping, cycleRef, evidence, corpus));
-    inferences.push(...inferNoConsultationCta(sigMap, scoping, cycleRef, evidence, corpus));
-    inferences.push(...inferTeamExpertiseInvisible(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferNoConsultationCta(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
+    inferences.push(...inferTeamExpertiseInvisible(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
   }
 
   // ── Infoproduct (digital courses/products — proof-of-result → buy) ──
   if (model === 'infoproduct' || model.includes('infoprodu')) {
-    inferences.push(...inferNoProofOfResult(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferNoProofOfResult(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferGuaranteeInvisible(sigMap, scoping, cycleRef, evidence, corpus));
-    inferences.push(...inferNoPaymentOptions(sigMap, scoping, cycleRef, evidence, corpus));
+    inferences.push(...inferNoPaymentOptions(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
     inferences.push(...inferNoCurriculumVisible(sigMap, scoping, cycleRef, evidence, corpus));
   }
 
@@ -219,8 +248,9 @@ function inferBookingAbsentOrPhoneOnly(
   _evidence: readonly Evidence[], corpus: string,
   businessContext: BusinessContext | null | undefined,
 ): Inference[] {
-  // Online booking present (a perceived booking surface OR a booking widget) → no gap.
-  if (surfacesByPurpose(businessContext, 'booking').length > 0) return [];
+  // Perception-first (PV.7): a perceived booking/availability surface = booking exists
+  // (language-agnostic). The corpus widget list below is the fallback.
+  if (perceivedPresent(businessContext, 'booking', 'availability', 'quote_simulation')) return [];
   // EN + pt-BR, loose ('agend' catches agende/agendar/agendamento). Avoid bare 'book' (→ facebook).
   const bookingWidget = ['calendly', 'acuity', 'simplybook', 'agendor', 'agend', 'marque sua', 'marcar consulta', 'book now', 'book an appointment', 'book appointment', 'schedule', 'request appointment', 'make an appointment'];
   if (bookingWidget.some((p) => corpus.includes(p))) return [];
@@ -276,9 +306,11 @@ function inferBookingIntakeExcessive(
 function inferServicePricingOpaque(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
-  _businessContext: BusinessContext | null | undefined,
+  businessContext: BusinessContext | null | undefined,
 ): Inference[] {
-  // Currency-agnostic: R$, $, € (leading OR trailing "90€") + EN/pt-BR price words.
+  // Perception-first (PV.7): a perceived pricing surface = pricing visible (language-agnostic).
+  if (perceivedPresent(businessContext, 'pricing')) return [];
+  // Currency-agnostic fallback: R$, $, € (leading OR trailing "90€") + EN/pt-BR price words.
   if (/r\$|\$\s?\d|€\s?\d|\d\s?€|a partir de|starting at|from \$|\bpreç|pricing|\bprice\b|tabela|investiment/i.test(corpus)) return [];
   return [buildInference(
     'service_pricing_opaque',
@@ -316,7 +348,10 @@ function inferCredentialsNotVisible(
 function inferNoConsultationCta(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
+  businessContext?: BusinessContext | null,
 ): Inference[] {
+  // Perception-first (PV.7): a perceived booking/intake/contact surface = a consultation path exists.
+  if (perceivedPresent(businessContext, 'booking', 'intake_form', 'contact')) return [];
   // 'fale'/'falar' loose so "Fale agora com" / "Falar com um advogado" match (not just literal "fale com").
   const ctaPatterns = ['agend', 'consulta', 'solicit', 'orçament', 'proposta', 'fale', 'falar', 'marque', 'avaliação', 'book a', 'book an', 'schedule', 'consultation', 'request a', 'get a quote', 'get started', 'contact us', 'free consult', 'talk to us'];
   if (ctaPatterns.some((p) => corpus.includes(p))) return [];
@@ -333,7 +368,10 @@ function inferNoConsultationCta(
 function inferTeamExpertiseInvisible(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
+  businessContext?: BusinessContext | null,
 ): Inference[] {
+  // Perception-first (PV.7): a perceived team/about surface = the people behind the service are shown.
+  if (perceivedPresent(businessContext, 'team', 'about')) return [];
   // Firm framing + SOLO-practitioner framing (a solo lawyer/accountant shows expertise as an
   // individual bio / years in practice, not "our team" — calibrated vs advogadatrabalhistabh).
   const teamPatterns = ['equipe', 'quem somos', 'sobre n', 'sócios', 'socios', 'fundador', 'nossa história', 'especialistas', 'profissionais', 'our team', 'about us', 'meet the', 'our story', 'partners', 'founder', 'attorneys', 'our staff', 'who we are', 'sobre mim', 'about me', 'minha trajet', 'minha história', 'atuante', 'anos de atuação', 'anos de experiência', 'years of experience', 'our founder', 'meet dr'];
@@ -355,7 +393,10 @@ function inferTeamExpertiseInvisible(
 function inferNoProofOfResult(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
+  businessContext?: BusinessContext | null,
 ): Inference[] {
+  // Perception-first (PV.7): a perceived testimonials/case-study surface = proof exists (language-agnostic).
+  if (perceivedPresent(businessContext, 'testimonials', 'case_study')) return [];
   // ' review' / ' rating' (leading space) avoid 'review'⊂"preview" and 'rating'⊂"operating"/"integrating".
   const proof = ['resultado', 'transformaç', 'antes e depois', 'alunos que', 'depoiment', 'case de sucesso', 'já ajud', 'faturou', 'conquist', 'result', 'transformation', 'before and after', 'students', 'testimonial', ' review', 'case study', 'success stor', 'helped', ' rating', 'stars', 'trustpilot'];
   if (proof.some((p) => corpus.includes(p))) return [];
@@ -388,7 +429,10 @@ function inferGuaranteeInvisible(
 function inferNoPaymentOptions(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   _evidence: readonly Evidence[], corpus: string,
+  businessContext?: BusinessContext | null,
 ): Inference[] {
+  // Perception-first (PV.7): a perceived checkout/cart surface = payment exists (language-agnostic).
+  if (perceivedPresent(businessContext, 'checkout', 'cart')) return [];
   const pay = ['parcel', '12x', '10x', 'à vista', 'pix', 'boleto', 'cartão', 'cartao', 'installment', 'payment plan', 'monthly', 'per month', '/mo', 'pay in', 'financing', 'paypal', 'klarna', 'afterpay'];
   if (pay.some((p) => corpus.includes(p))) return [];
   return [buildInference(
@@ -1116,7 +1160,10 @@ function inferNoSampleContent(
 function inferNoCaseStudyWithMetrics(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string,
+  businessContext?: BusinessContext | null,
 ): Inference[] {
+  // Perception-first (PV.7): a perceived case-study surface = results shown (language-agnostic).
+  if (perceivedPresent(businessContext, 'case_study')) return [];
   const caseStudyPatterns = [
     'case study', 'caso de sucesso', 'case de sucesso', 'estudo de caso',
     'roi', 'resultado', 'result', 'cliente alcançou', 'client achieved',

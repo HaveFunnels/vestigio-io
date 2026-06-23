@@ -9,6 +9,7 @@ import {
   IdGenerator,
   makeRef,
 } from '../domain';
+import type { BusinessContext } from '../perception/business-context';
 
 // ──────────────────────────────────────────────
 // Vertical Inference Engine
@@ -26,6 +27,21 @@ import {
 // ──────────────────────────────────────────────
 
 const ids = new IdGenerator('vert_inf');
+
+/** PV.6 keystone — find crawled URLs whose perceived purpose matches one of
+ *  `purposes`. Lets vertical detectors locate "the booking surface" /
+ *  "the services page" by perceived purpose instead of brittle URL regex.
+ *  Returns [] when perception is absent (detector simply doesn't fire). */
+export function surfacesByPurpose(
+  businessContext: BusinessContext | null | undefined,
+  ...purposes: string[]
+): string[] {
+  if (!businessContext) return [];
+  const want = new Set(purposes);
+  return businessContext.surfaces
+    .filter((s) => want.has(s.purpose))
+    .map((s) => s.url);
+}
 
 // ── Evidence text search helper ──────────────
 
@@ -95,6 +111,10 @@ export function computeVerticalInferences(
   cycleRef: string,
   businessModel: string | null,
   evidence: readonly Evidence[],
+  // PV.6 keystone — perceived surfaces, so detectors find the booking/services
+  // surface by purpose (via surfacesByPurpose) instead of URL regex. Optional;
+  // null → surface-dependent detectors don't fire (degrade-safe).
+  businessContext?: BusinessContext | null,
 ): Inference[] {
   if (!businessModel) return [];
 

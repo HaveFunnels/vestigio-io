@@ -856,6 +856,8 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
     // even if onboarding said something else.
     input.business_context?.vertical ?? input.onboarding_business_model ?? null,
     evidence,
+    // PV.6 keystone — perceived surfaces for purpose-based detector targeting.
+    input.business_context,
   );
 
   // If vertical inferences fired, produce a decision for them

@@ -182,6 +182,9 @@ export function computeVerticalInferences(
   // ── Local service (appointment/visit-driven: clinics, salons, mechanics) ──
   if (model === 'local_service' || model.includes('local')) {
     inferences.push(...inferBookingAbsentOrPhoneOnly(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
+    inferences.push(...inferContactFrictionHigh(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
+    inferences.push(...inferBookingIntakeExcessive(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
+    inferences.push(...inferServicePricingOpaque(sigMap, scoping, cycleRef, evidence, corpus, businessContext));
   }
 
   return inferences;
@@ -208,6 +211,59 @@ function inferBookingAbsentOrPhoneOnly(
     [],
     [],
     'Negócio de agendamento sem caminho de marcação online: o cliente é forçado a ligar ou mandar mensagem. Quem busca fora do horário, ou está com pressa, desiste e vai pro concorrente que deixa marcar em dois cliques. Cada agendamento dependente de telefone é receita que vaza no momento de maior intenção.',
+  )];
+}
+
+function inferContactFrictionHigh(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+  _businessContext: BusinessContext | null | undefined,
+): Inference[] {
+  // Immediate contact for a local buyer: phone / WhatsApp visible in the page text.
+  if (/whatsapp|wa\.me|telefone|\bligue\b|fale conosco|\(\d{2}\)\s?\d{4,5}/i.test(corpus)) return [];
+  return [buildInference(
+    'contact_friction_high',
+    InferenceCategory.FrictionPath,
+    scoping, cycleRef, 'true', 'high', 70,
+    [],
+    [],
+    'Negócio local sem canal de contato imediato visível (telefone clicável ou WhatsApp). O cliente de alta intenção quer ligar ou mandar mensagem agora; sem isso, fecha a aba e vai pro concorrente que responde num clique. Cada contato que não acontece no pico de intenção é cliente perdido.',
+  )];
+}
+
+function inferBookingIntakeExcessive(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  evidence: readonly Evidence[], _corpus: string,
+  _businessContext: BusinessContext | null | undefined,
+): Inference[] {
+  const excessive = getFormEvidence(evidence).filter((e) => {
+    const p = e.payload as { field_names?: string[] };
+    return (p.field_names?.length ?? 0) >= 6;
+  });
+  if (excessive.length === 0) return [];
+  return [buildInference(
+    'booking_intake_excessive',
+    InferenceCategory.FrictionPath,
+    scoping, cycleRef, 'true', 'high', 76,
+    [],
+    excessive.slice(0, 2).map((e) => makeRef('evidence', e.id)),
+    'O formulário de agendamento/contato pede campos demais (6+). Cada campo extra depois do 3º derruba a conclusão; num agendamento o cliente só quer marcar, não fazer cadastro. Peça o mínimo (nome + telefone/horário) e colete o resto na consulta.',
+  )];
+}
+
+function inferServicePricingOpaque(
+  _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
+  _evidence: readonly Evidence[], corpus: string,
+  _businessContext: BusinessContext | null | undefined,
+): Inference[] {
+  if (/r\$|a partir de|preç|tabela|investimento/i.test(corpus)) return [];
+  return [buildInference(
+    'service_pricing_opaque',
+    InferenceCategory.ConversionFlow,
+    scoping, cycleRef, 'true', 'medium', 66,
+    [],
+    [],
+    'Nenhum sinal de preço ou faixa de valor no site. O cliente local compara antes de marcar; sem âncora ("a partir de R$X", "primeira avaliação gratuita"), assume caro ou desiste de perguntar. Mostrar ao menos uma faixa ou um ponto de entrada reduz o atrito de "quanto custa?".',
   )];
 }
 

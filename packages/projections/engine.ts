@@ -293,6 +293,9 @@ const INFERENCE_SURFACES: Record<string, string> = {
   allergen_info_missing: '/menu, /cardapio',
   // Vertical-specific findings — Local service (appointment-driven)
   booking_absent_or_phone_only: '/agendar, /agendamento',
+  contact_friction_high: '/, /contato',
+  booking_intake_excessive: '/agendar, /contato',
+  service_pricing_opaque: '/, /servicos',
   // Vertical-specific findings — Health/Beauty
   ingredients_not_listed: '/product, /shop',
   no_clinical_endorsement: '/product, /shop',
@@ -371,6 +374,9 @@ const INFERENCE_SURFACES: Record<string, string> = {
 export const INFERENCE_TITLES: Record<string, string> = {
   // ── Vertical: Local service ─────────────────────
   booking_absent_or_phone_only: 'Sem agendamento online: quem não liga, desiste',
+  contact_friction_high: 'Sem contato imediato: o cliente local não acha como te chamar',
+  booking_intake_excessive: 'Formulário de agendamento pede campos demais',
+  service_pricing_opaque: 'Nenhum sinal de preço: o cliente assume caro e desiste',
   // ── Scale Readiness ─────────────────────────────
   trust_boundary_crossed: 'Buyers get sent to a different domain at checkout',
   policy_gap: 'Your store has no visible refund or privacy policy',

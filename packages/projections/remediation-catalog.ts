@@ -3020,6 +3020,45 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 20,
 	},
 
+	contact_friction_high: {
+		remediation_steps: [
+			'Coloque telefone clicável (tel:) e botão de WhatsApp fixos no topo e no rodapé de toda página.',
+			'Use um botão flutuante de WhatsApp no mobile.',
+			'Mostre o horário de atendimento ao lado do contato pra alinhar a expectativa de resposta.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o site e verificar a presença de telefone clicável ou WhatsApp acessível a partir da home.',
+		verification_eta_seconds: 15,
+	},
+
+	booking_intake_excessive: {
+		remediation_steps: [
+			'Reduza o formulário de agendamento ao mínimo: nome + telefone (ou horário desejado).',
+			'Mova campos secundários (motivo, convênio, observações) pra depois do agendamento confirmado.',
+			'Cada campo removido antes da conversão aumenta a taxa de conclusão.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o formulário de agendamento e contar os campos obrigatórios antes da conversão.',
+		verification_eta_seconds: 20,
+	},
+
+	service_pricing_opaque: {
+		remediation_steps: [
+			'Adicione ao menos uma âncora de preço: "a partir de R$X", uma faixa, ou "primeira avaliação gratuita".',
+			'Se o valor varia, explique o que define o preço e dê um ponto de partida.',
+			'Um sinal de preço reduz o atrito de "quanto custa?" e qualifica o lead antes do contato.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o site e verificar a presença de algum sinal de preço ou faixa de valor.',
+		verification_eta_seconds: 15,
+	},
+
 	size_guide_missing: {
 		remediation_steps: [
 			'Crie uma tabela de medidas com busto, cintura, quadril e comprimento para cada categoria de produto.',

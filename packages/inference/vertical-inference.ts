@@ -512,7 +512,9 @@ function inferSizeGuideMissing(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
-  const sizePatterns = ['guia de medidas', 'size guide', 'size chart', 'tabela de medidas', 'medidas', 'tamanho'];
+  // GUIDE-specific only. Bare 'tamanho'/'medidas' were a false-NEGATIVE: every size SELECTOR
+  // ("Tamanho: PP/M/G") suppressed the finding even when no actual guide existed (calibrated vs amaro.com).
+  const sizePatterns = ['guia de medidas', 'size guide', 'size chart', 'sizing guide', 'tabela de medidas', 'guia de tamanhos', 'tabela de tamanhos', 'fit guide', 'size & fit'];
   if (sizePatterns.some(p => corpus.includes(p))) return [];
 
   const productPages = evidence.filter(e =>
@@ -666,6 +668,8 @@ function inferNoFreeTrialOffered(
     'free trial', 'trial gratuito', 'teste grátis', 'teste gratuito',
     'freemium', 'free plan', 'plano gratuito', 'start free', 'começar grátis',
     'demo', 'self-serve', 'try for free', 'experimentar',
+    // looser free-tier idioms (calibrated vs invoicely: "Start using ... for free" / "It's free!")
+    'for free', "it's free", 'grátis', 'gratis', 'gratuito', 'no credit card', 'sign up free', 'get started free',
   ];
   if (trialPatterns.some(p => corpus.includes(p))) return [];
 
@@ -691,7 +695,9 @@ function inferIntegrationEcosystemInvisible(
   evidence: readonly Evidence[], corpus: string,
 ): Inference[] {
   const integrationPatterns = [
-    'integração', 'integration', 'integrations', 'integrações', 'connect',
+    // stems 'integra'/'integrat' catch integra/integração/integrações/integrate/integrates
+    // (calibrated vs contaazul: "se integra com diversas plataformas" missed by the full words).
+    'integra', 'integrat', 'connect',
     'zapier', 'slack', 'hubspot', 'salesforce', 'google analytics',
     'api', 'webhook', 'marketplace', 'app store', 'plugins',
   ];

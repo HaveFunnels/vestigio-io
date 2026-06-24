@@ -42,20 +42,18 @@ export interface CohortAggregate {
 	urlsScanned: number;
 	urlsSucceeded: number;
 	urlsFailed: number;
-	prevalence: {
-		countdownTimer: number;
-		fakeScarcity: number;
-		viewingCounter: number;
-		cookieBanner: number;
-		chatWidget: number;
-		autoplayVideo: number;
-		visibleH1: number;
-		pixMention: number;
-		whatsappContact: number;
-	};
-	averages: {
-		aboveFoldCtaCount: number;
-		totalFormFields: number;
-	};
+	/** Prevalence keys are vertical-specific — ecommerce/D2C tracks
+	 *  countdownTimer/fakeScarcity/pix/whatsapp; saas-b2b tracks
+	 *  pricingPageLink/freeTrialOffered/customerLogos/etc. Typed as
+	 *  Record<string, number> at the cohort-aggregate level so the
+	 *  peer-prevalence gate can read any registered cohort by key
+	 *  without per-vertical type plumbing. The seeding scripts know
+	 *  their own keyset; the gate doesn't care which subset is
+	 *  registered for which vertical. */
+	prevalence: Record<string, number>;
+	/** Numeric averages tracked by the scan — same loose typing
+	 *  rationale as prevalence. Optional (saas-b2b cohort doesn't
+	 *  publish averages today). */
+	averages?: Record<string, number>;
 	sites: SiteSignals[];
 }

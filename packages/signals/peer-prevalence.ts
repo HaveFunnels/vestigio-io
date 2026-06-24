@@ -40,14 +40,27 @@
 // ──────────────────────────────────────────────
 
 import { COHORT_ECOMMERCE_2026_06 } from "../../src/data/vestigio-index/cohorts/ecommerce-2026-06";
+import { COHORT_SAAS_B2B_2026_06 } from "../../src/data/vestigio-index/cohorts/saas-b2b-2026-06";
 import type { CohortAggregate } from "../../src/data/vestigio-index/cohort-types";
 
-/** All persisted cohorts, keyed by `<vertical>:<locale>`. Today
- *  only ecommerce/pt-BR is filled. New cohort files (saas-b2b,
- *  cursos, agencias) get added as the seeding script runs against
- *  each vertical. */
+/** All persisted cohorts, keyed by `<vertical>:<locale>`. The two
+ *  registered today (ecommerce and saas-b2b) carry different
+ *  prevalence schemas — the ecommerce cohort's PatternKey type
+ *  reflects D2C signals (countdownTimer, viewingCounter, etc.) and
+ *  the saas-b2b cohort's prevalence map reflects SaaS signals
+ *  (pricingPageLink, freeTrialOffered, integrationsPage, etc.).
+ *  The CohortAggregate union below treats `prevalence` as a flat
+ *  Record<string, number> so the gate can read any registered key
+ *  without per-vertical type plumbing. Add new cohort files
+ *  (cursos, agencias) the same way as scans land. */
 const PEER_COHORTS: Record<string, CohortAggregate> = {
 	"ecommerce:pt-BR": COHORT_ECOMMERCE_2026_06,
+	// The saas-b2b cohort file emits its own SaasB2bCohortAggregate
+	// type today (the seeding script wrote it before cohort-types
+	// loosened to Record<string, number> for prevalence). Shape-
+	// compatible — the structural overlap satisfies CohortAggregate
+	// — so the cast is safe.
+	"saas-b2b:pt-BR": COHORT_SAAS_B2B_2026_06 as unknown as CohortAggregate,
 };
 
 /** Pattern keys we track on the cohort. Mirrors the field names in

@@ -286,6 +286,8 @@ const INFERENCE_SURFACES: Record<string, string> = {
   pix_discount_not_visible: '/, /product, /cart, /checkout',
   whatsapp_attribution_missing: '/',
   whatsapp_personal_number_no_sla: '/',
+  installment_not_visible: '/, /product, /cart, /checkout',
+  whatsapp_buried_in_footer: '/',
   // Vertical-specific findings — SaaS
   no_free_trial_offered: '/, /pricing',
   integration_ecosystem_invisible: '/, /pricing',
@@ -615,6 +617,8 @@ export const INFERENCE_TITLES: Record<string, string> = {
   pix_discount_not_visible: 'PIX accepted but no discount surfaced — buyer learns only at checkout',
   whatsapp_attribution_missing: 'WhatsApp links carry no UTM — WA-driven revenue invisible in analytics',
   whatsapp_personal_number_no_sla: 'WhatsApp uses a personal cell pattern — no Business API SLA / catalog / templates',
+  installment_not_visible: 'Site does not advertise installments — BR buyers default-expect "12x sem juros"',
+  whatsapp_buried_in_footer: 'WhatsApp link only in footer — no floating button or above-fold CTA',
   // SaaS
   no_free_trial_offered: "Buyers can't try before they commit money",
   integration_ecosystem_invisible: "Buyers don't know if your product fits their workflow",

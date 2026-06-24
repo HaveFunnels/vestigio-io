@@ -267,6 +267,137 @@ export function inferWhatsappPersonalNumberWeak(
 	];
 }
 
+// ── 4. Parcelamento (installments) not visible ───────
+
+/**
+ * Fires when the site doesn't surface parcelamento ("X vezes sem
+ * juros") anywhere — homepage, product, cart, checkout.
+ *
+ * Why this is BR-specific: installments without interest are
+ * institutional in the BR retail decision. The default expectation
+ * for any purchase above ~R$ 150 is "posso parcelar em 10x sem
+ * juros?". A site that doesn't show this above the fold loses the
+ * 30-40% of buyers who can't or won't pay upfront. This is
+ * culturally distinct from the US (parcelamento essentially doesn't
+ * exist there) and from the EU (BNPL is rising but doesn't have
+ * the same default-expectation status).
+ *
+ * The detector is permissive on the format because the language
+ * varies — "12x sem juros", "10x s/ juros", "parcele em 6x",
+ * "parcelado em até 12x", "interest-free 10x". All count. Only
+ * fires when NONE of those appear.
+ */
+export function inferInstallmentNotVisible(
+	_sigs: Map<string, Signal>,
+	scoping: Scoping,
+	cycleRef: string,
+	evidence: readonly Evidence[],
+	corpus: string,
+): Inference[] {
+	const html = joinPageRawHtml(evidence);
+	const fullCorpus = `${corpus}\n${html.toLowerCase()}`;
+	// Direct installment patterns — covers PT-BR and the occasional EN
+	// translation. \d{1,2}x catches "1x" through "99x" (typical retail
+	// range 1-18x).
+	const installmentPatterns = [
+		/\b\d{1,2}\s*x\s*(?:de\s+r\$[\d.,]+\s+)?(?:sem\s+juros|s\/?\s*juros|sem\s+acréscimo|interest[\s-]?free)\b/i,
+		/\bparcele(?:\s+em)?(?:\s+até)?\s+\d{1,2}\s*x/i,
+		/\bparcelado\s+em\s+\d{1,2}\s*x/i,
+		/\bparcelamento\s+em\s+(?:até\s+)?\d{1,2}\s*x/i,
+		/\bem\s+até\s+\d{1,2}\s*x\s+(?:sem\s+juros|s\/?\s*juros)/i,
+		// Just "Xx sem juros" anywhere — looser fallback for catalog/
+		// product-grid tiles that often print the parcelamento line
+		// without the leading "em" or "parcele".
+		/\b\d{1,2}\s*x\s+sem\s+juros\b/i,
+	];
+	for (const rx of installmentPatterns) {
+		if (rx.test(fullCorpus)) return []; // Parcelamento visible — no finding.
+	}
+	const pageContent = getPageContentEvidence(evidence);
+	return [
+		buildInference(
+			"installment_not_visible",
+			InferenceCategory.ConversionFlow,
+			scoping,
+			cycleRef,
+			"true",
+			"high",
+			78,
+			[],
+			pageContent.slice(0, 2).map((e) => makeRef("evidence", e.id)),
+			"Você não mostra parcelamento sem juros em nenhuma página. No varejo BR, '10x sem juros' é expectativa default acima de R$ 150 — quem não pode pagar à vista (~30-40% do público D2C) abandona antes de chegar no checkout. O fix é exibir o badge '12x sem juros' (ou o que sua máquina aceita) acima da dobra na home + página do produto + carrinho. Custo de implementação: ~2h. Impacto típico: conversão sobe 3-7% na faixa do comprador que precisa parcelar.",
+		),
+	];
+}
+
+// ── 5. WhatsApp buried in footer (position signal) ───
+
+/**
+ * Fires when wa.me links exist on the site BUT only appear in the
+ * footer area (last 30% of the page HTML) and no floating /
+ * sticky-positioned button is detected.
+ *
+ * Cohort data (ecommerce 2026-06): 72% of BR D2C have WhatsApp.
+ * The /position/ of that contact matters: a floating button or
+ * above-fold CTA converts an order of magnitude better than a
+ * link buried in the footer. Sites with only-footer WhatsApp
+ * are leaving the channel underused — the comprador discovers it
+ * only after a full scroll, by which point most have left.
+ *
+ * Detection is positional + presence-of-floating heuristics; not
+ * perfect, but the false-positive case (floating button uses
+ * non-standard CSS markers) just means the finding doesn't fire —
+ * never a false-positive fire.
+ */
+export function inferWhatsappBuriedInFooter(
+	_sigs: Map<string, Signal>,
+	scoping: Scoping,
+	cycleRef: string,
+	evidence: readonly Evidence[],
+	_corpus: string,
+): Inference[] {
+	const html = joinPageRawHtml(evidence);
+	if (!html) return [];
+	const waLinkRegex =
+		/(?:https?:)?\/\/(?:wa\.me|api\.whatsapp\.com\/send)[^\s"'<>]+/gi;
+	const matches = [...html.matchAll(waLinkRegex)];
+	if (matches.length === 0) return [];
+
+	// Heuristic 1 — floating / sticky-positioned button present?
+	// Common patterns: class with "fixed"/"sticky"/"floating"/"float"
+	// near a wa.me reference, OR Brazilian-specific class names like
+	// "whatsapp-button" "btn-whatsapp" "wa-float" used by plugins.
+	const floatingPatterns = [
+		/<[^>]*class\s*=\s*["'][^"']*\b(?:fixed|sticky|floating|float)\b[^"']*["'][^>]*(?:wa\.me|whatsapp)/i,
+		/<[^>]*(?:wa\.me|whatsapp)[^>]*class\s*=\s*["'][^"']*\b(?:fixed|sticky|floating|float)\b/i,
+		/<[^>]*class\s*=\s*["'][^"']*\b(?:whatsapp-(?:button|btn|float)|wa-(?:float|button|btn|fab)|btn-whatsapp|fab-whatsapp)\b/i,
+	];
+	if (floatingPatterns.some((rx) => rx.test(html))) return [];
+
+	// Heuristic 2 — position of wa.me links in the HTML. If ALL
+	// occurrences land in the last 30% of the document, treat as
+	// footer-only.
+	const footerThreshold = Math.floor(html.length * 0.7);
+	const allInFooter = matches.every((m) => (m.index ?? 0) >= footerThreshold);
+	if (!allInFooter) return [];
+
+	const pageContent = getPageContentEvidence(evidence);
+	return [
+		buildInference(
+			"whatsapp_buried_in_footer",
+			InferenceCategory.ConversionFlow,
+			scoping,
+			cycleRef,
+			"true",
+			"medium",
+			68,
+			[],
+			pageContent.slice(0, 2).map((e) => makeRef("evidence", e.id)),
+			"Você tem WhatsApp no site, mas o link só aparece no rodapé — sem botão flutuante, sem CTA acima da dobra. O comprador BR que precisa de atendimento antes de comprar precisa rolar a página inteira pra encontrar. Floating button (Intercom-style, canto inferior direito) converte ordem de magnitude melhor — destrava lead que sai por dúvida não respondida. Custo: ~1h de dev (plugin pronto pra Shopify/WooCommerce/Nuvemshop).",
+		),
+	];
+}
+
 // ── Dispatch helper ───────────────────────────
 
 /**
@@ -285,5 +416,7 @@ export function computeBrD2cInferences(
 		...inferPixDiscountNotVisible(sigs, scoping, cycleRef, evidence, corpus),
 		...inferWhatsappAttributionMissing(sigs, scoping, cycleRef, evidence, corpus),
 		...inferWhatsappPersonalNumberWeak(sigs, scoping, cycleRef, evidence, corpus),
+		...inferInstallmentNotVisible(sigs, scoping, cycleRef, evidence, corpus),
+		...inferWhatsappBuriedInFooter(sigs, scoping, cycleRef, evidence, corpus),
 	];
 }

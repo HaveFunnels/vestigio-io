@@ -3230,6 +3230,32 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 30,
 	},
 
+	installment_not_visible: {
+		remediation_steps: [
+			'Mostre "12x sem juros" (ou o número máximo que sua máquina aceita) como badge acima da dobra na home e na página do produto.',
+			'No produto, exiba a parcela calculada: "12x de R$ 8,33 sem juros" — comprador entende o esforço financeiro real instantaneamente.',
+			'Se você ainda não oferece parcelamento sem juros, negocie com sua adquirente (Cielo, Stone, Rede, PagSeguro) — a taxa adicional vale a margem que recupera no público que precisa parcelar.',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir home + produto e verificar presença de mensagem "Xx sem juros" ou equivalente acima da dobra.',
+		verification_eta_seconds: 15,
+	},
+
+	whatsapp_buried_in_footer: {
+		remediation_steps: [
+			'Adicione um floating button WhatsApp (canto inferior direito, padrão da indústria) — plugins prontos pra Shopify, Nuvemshop, WooCommerce.',
+			'Configure o botão pra abrir a conversa com mensagem pré-preenchida contextual ("Olá, vim do site, queria saber sobre o produto X").',
+			'Se já tem o link no header/footer, mantenha — o floating não substitui, complementa pra contextos de scroll.',
+		],
+		estimated_effort_hours: 1,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir a home e verificar presença de botão WhatsApp em posição fixa/sticky acima da dobra ou flutuante.',
+		verification_eta_seconds: 15,
+	},
+
 	cross_sell_absent: {
 		remediation_steps: [
 			'Adicione uma seção "Completa o Look" ou "Compre Junto" na página do produto abaixo da descrição.',

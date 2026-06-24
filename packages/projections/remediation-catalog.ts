@@ -3295,6 +3295,58 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 20,
 	},
 
+	customer_proof_minimal: {
+		remediation_steps: [
+			'Negocie display rights com 3-5 dos seus clientes ativos — mesmo logo grayscale + nome resolve. Cliente reluta? Ofereça desconto no próximo ciclo em troca.',
+			'Escreva 1-2 case studies curtos (1 página) com cliente real: contexto, problema, métricas antes/depois, quote do operador. Não precisa ser viral — precisa ser específico.',
+			'Se ainda não está no G2/Capterra, peça avaliações pra 10 clientes mais happy. Reviews em plataforma neutra são mais críveis que depoimentos no próprio site.',
+		],
+		estimated_effort_hours: 16,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir home + pricing e verificar presença de logo wall, link de case studies, OU badge G2/Capterra.',
+		verification_eta_seconds: 20,
+	},
+
+	signup_no_card_claim_missing: {
+		remediation_steps: [
+			'Adicione a claim "Sem cartão de crédito" abaixo do botão de signup principal. Pode ser bem pequeno (text-xs), mas visível.',
+			'Repita no botão da página de pricing e no formulário de signup propriamente dito.',
+			'Se você EXIGE cartão pra trial, considere remover esse passo. CAC sobe um pouco (mais signups que viram trial e não convertem) mas top-of-funnel destrava 10-20% mais signups — geralmente compensa.',
+		],
+		estimated_effort_hours: 1,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir home + signup + pricing e verificar presença de claim "sem cartão" ou "no credit card required".',
+		verification_eta_seconds: 15,
+	},
+
+	security_compliance_signal_absent: {
+		remediation_steps: [
+			'Adicione uma linha sobre conformidade LGPD acima da dobra ou no footer ("Conformidade LGPD" / "Auditoria SOC 2 em andamento" se aplicável).',
+			'Crie uma página /trust ou /security com: status de compliance atual, link pra política de privacidade, contato de DPO, certificações em andamento.',
+			'Se você tem SOC 2 / ISO 27001 reais, exiba os badges oficiais. Se não tem mas planeja, comunique transparentemente o roadmap ("SOC 2 Type II previsto pra Q4").',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir home + pricing + /trust e verificar presença de markers de compliance (SOC 2, ISO 27001, LGPD, PCI, central de confiança).',
+		verification_eta_seconds: 20,
+	},
+
+	pricing_usd_only_for_br_site: {
+		remediation_steps: [
+			'Adicione preço em R$ ao lado do USD na página de pricing — taxa de conversão fixa que você atualiza trimestralmente.',
+			'OU implemente um toggle BRL/USD pra deixar o comprador escolher a moeda de exibição.',
+			'Se preço é USD por escolha estratégica (target enterprise / LatAm wider), publique ambos com nota explicativa ("Cobrado em USD; conversão BRL ilustrativa, varia conforme câmbio").',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir /pricing e verificar presença de pricing em R$ além do $.',
+		verification_eta_seconds: 15,
+	},
+
 	cross_sell_absent: {
 		remediation_steps: [
 			'Adicione uma seção "Completa o Look" ou "Compre Junto" na página do produto abaixo da descrição.',

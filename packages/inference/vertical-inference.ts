@@ -12,6 +12,7 @@ import {
 import type { BusinessContext } from '../perception/business-context';
 import { shouldSuppressMissingPattern } from '../signals/peer-prevalence';
 import { computeBrD2cInferences } from './br-d2c-inferences';
+import { computeBrSaasB2bInferences } from './br-saas-b2b-inferences';
 
 // ──────────────────────────────────────────────
 // Vertical Inference Engine
@@ -222,6 +223,15 @@ export function computeVerticalInferences(
     inferences.push(...inferChangelogStaleOrMissing(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferAnnualDiscountNotHighlighted(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferNoProductScreenshotVisible(sigMap, scoping, cycleRef, evidence, corpus));
+
+    // Wave 27 BR-specific SaaS B2B detectors (2026-06-24). Same
+    // gating pattern as the BR D2C block — only fire when the
+    // env's locale is pt-BR AND we have a BR-saas peer cohort
+    // registered (saas-b2b:pt-BR in peer-prevalence.ts). For
+    // non-BR SaaS orgs the gate is a no-op.
+    if (envLocale === 'pt-BR') {
+      inferences.push(...computeBrSaasB2bInferences(sigMap, scoping, cycleRef, evidence, corpus));
+    }
   }
 
   // ── Food/Restaurant ─────────────────────────

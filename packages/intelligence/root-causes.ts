@@ -348,6 +348,15 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   customer_photos_absent_in_reviews:   { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
   mobile_sticky_cta_absent:            { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
 
+  // Wave 27 (2026-06-24) — BR SaaS B2B-specific findings backed by
+  // the saas-b2b-2026-06 cohort. Bucketed under the existing SaaS
+  // evaluation-friction root cause; the BR market-fit is encoded in
+  // the detector gate, not in a new root_cause_key.
+  customer_proof_minimal:              { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  signup_no_card_claim_missing:        { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  security_compliance_signal_absent:   { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  pricing_usd_only_for_br_site:        { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+
   // Vertical-specific findings — SaaS
   no_free_trial_offered:               { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
   integration_ecosystem_invisible:     { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },

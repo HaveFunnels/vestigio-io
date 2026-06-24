@@ -345,6 +345,11 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   reviews_low_specificity: 'vertical_specific',
   customer_photos_absent_in_reviews: 'vertical_specific',
   mobile_sticky_cta_absent: 'vertical_specific',
+  // Wave 27 BR SaaS B2B
+  customer_proof_minimal: 'vertical_specific',
+  signup_no_card_claim_missing: 'vertical_specific',
+  security_compliance_signal_absent: 'vertical_specific',
+  pricing_usd_only_for_br_site: 'vertical_specific',
   guest_checkout_absent: 'vertical_specific',
   demand_capture_absent: 'vertical_specific',
   no_free_trial_offered: 'vertical_specific',

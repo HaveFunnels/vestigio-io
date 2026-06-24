@@ -291,6 +291,11 @@ const INFERENCE_SURFACES: Record<string, string> = {
   reviews_low_specificity: '/product',
   customer_photos_absent_in_reviews: '/product',
   mobile_sticky_cta_absent: '/, /product',
+  // Wave 27 BR SaaS B2B
+  customer_proof_minimal: '/, /customers, /pricing',
+  signup_no_card_claim_missing: '/, /signup, /pricing',
+  security_compliance_signal_absent: '/, /pricing, /trust',
+  pricing_usd_only_for_br_site: '/pricing',
   // Vertical-specific findings — SaaS
   no_free_trial_offered: '/, /pricing',
   integration_ecosystem_invisible: '/, /pricing',
@@ -625,6 +630,11 @@ export const INFERENCE_TITLES: Record<string, string> = {
   reviews_low_specificity: 'Reviews exist but average <12 words — generic praise does not move conversion',
   customer_photos_absent_in_reviews: 'Review widget shows no customer photos — UGC beats stock for trust',
   mobile_sticky_cta_absent: 'No sticky/fixed bottom CTA — mobile buyers lose the buy button on scroll',
+  // Wave 27 BR SaaS B2B
+  customer_proof_minimal: 'No customer logos, no case studies, no G2 badge — zero external trust signals',
+  signup_no_card_claim_missing: 'Trial offered but "no credit card required" not stated — buyers assume card needed',
+  security_compliance_signal_absent: 'No SOC 2 / ISO 27001 / LGPD / PCI markers — B2B procurement hits friction',
+  pricing_usd_only_for_br_site: 'PT-BR site with USD-only pricing — buyer must mentally convert mid-funnel',
   // SaaS
   no_free_trial_offered: "Buyers can't try before they commit money",
   integration_ecosystem_invisible: "Buyers don't know if your product fits their workflow",

@@ -16,22 +16,22 @@
 // not in a DB.
 // ──────────────────────────────────────────────
 
+/** Base shape required of every site result in a cohort scan.
+ *  Beyond these 4 fields, each per-vertical scan adds its own
+ *  signals via index-signature extension — ecommerce tracks
+ *  countdown/scarcity/pix/whatsapp, saas-b2b tracks pricing/trial/
+ *  integration patterns, infoprodutos tracks Hotmart/Eduzz/VSL/
+ *  garantia/lote/bonus. Keeping the base loose lets the cohort
+ *  registry hold all three without per-vertical types. */
 export interface SiteSignals {
 	url: string;
 	status: "ok" | "fetch_error" | "timeout";
 	statusCode?: number;
 	fetchError?: string;
-	hasCountdownTimer: boolean;
-	hasFakeScarcity: boolean;
-	hasViewingCounter: boolean;
-	hasCookieBanner: boolean;
-	hasChatWidget: boolean;
-	hasAutoplayVideo: boolean;
-	hasH1: boolean;
-	hasPixMention: boolean;
-	hasWhatsappContact: boolean;
-	aboveFoldCtaCount: number;
-	totalFormFields: number;
+	// Per-vertical signal flags + counts. Boolean for presence checks,
+	// number for counts/sizes, string optionally for the rare textual
+	// extracted snippet.
+	[signal: string]: boolean | number | string | undefined;
 }
 
 export interface CohortAggregate {

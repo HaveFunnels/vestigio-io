@@ -150,6 +150,60 @@ function Block({ block, essayVertical }: { block: IndexEssayBlock; essayVertical
 			);
 		case "hook":
 			return <InlineHook vertical={essayVertical} />;
+		case "divider":
+			// Pure visual rhythm — hairline gap between major sections.
+			// Use sparingly (every 2-3 paragraphs is overkill); reserve
+			// for hard chapter breaks the reader should feel.
+			return (
+				<div className="my-12 flex items-center justify-center sm:my-16" aria-hidden>
+					<div className="h-px w-16 bg-content-faint/30" />
+				</div>
+			);
+		case "stat_callout":
+			// Inline data anchor — big Fraunces numeral + small label,
+			// with optional 1-line context below. Set apart from the
+			// surrounding prose by a hairline rule and slight indent.
+			return (
+				<div className="my-10 flex flex-col items-start gap-2 border-l-2 border-content-faint/30 pl-5 sm:my-12">
+					<div className="font-serif text-[44px] font-medium leading-none tracking-tight text-zinc-100 sm:text-[56px]">
+						{block.value}
+					</div>
+					<div className="text-[11px] font-medium uppercase tracking-[0.16em] text-content-faint sm:text-[12px]">
+						{block.label}
+					</div>
+					{block.context && (
+						<p className="mt-2 max-w-[480px] text-[14px] leading-relaxed text-content-secondary sm:text-[15px]">
+							{block.context}
+						</p>
+					)}
+				</div>
+			);
+		case "numbered_tiles":
+			// Enumerated tiles for structured points — replaces a wall
+			// of paragraphs when the content is a list of distinct
+			// observations. Each tile has a Fraunces numeral marker +
+			// title + optional body.
+			return (
+				<ol className="my-8 flex flex-col gap-6 sm:my-10 sm:gap-8">
+					{block.items.map((item, i) => (
+						<li key={i} className="flex items-start gap-5">
+							<span className="shrink-0 font-serif text-[28px] font-medium leading-none tabular-nums text-content-secondary sm:text-[32px]">
+								{item.n}
+							</span>
+							<div className="min-w-0 flex-1">
+								<div className="font-serif text-[17px] font-medium leading-snug text-zinc-100 sm:text-[19px]">
+									{item.title}
+								</div>
+								{item.body && (
+									<p className="mt-2 text-[15px] leading-relaxed text-content-secondary sm:text-[16px]">
+										{item.body}
+									</p>
+								)}
+							</div>
+						</li>
+					))}
+				</ol>
+			);
 	}
 }
 
@@ -266,6 +320,28 @@ export default async function VestigioIndexEssay({
 							{essay.tese}
 						</p>
 					</div>
+
+					{/* Stats strip — 3-4 punch-line numbers below the
+					    tese. Per editorial decision 2026-06-24, we
+					    deliberately don't surface 'X sites analisados'
+					    here (the cohort is small and the framing
+					    weakens the claim). The sample-size disclosure
+					    lives in the footer; this strip is reader-eye
+					    anchoring with the data that matters. */}
+					{essay.stats && essay.stats.length > 0 && (
+						<dl className="mt-10 grid grid-cols-1 gap-y-6 border-y border-edge py-8 sm:grid-cols-3 sm:gap-y-0 sm:gap-x-8 sm:py-10">
+							{essay.stats.map((stat, i) => (
+								<div key={i}>
+									<dt className="font-serif text-[36px] font-medium leading-none tracking-tight text-zinc-100 sm:text-[44px]">
+										{stat.value}
+									</dt>
+									<dd className="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-content-faint sm:text-[12px]">
+										{stat.label}
+									</dd>
+								</div>
+							))}
+						</dl>
+					)}
 				</header>
 
 				{/* Body */}

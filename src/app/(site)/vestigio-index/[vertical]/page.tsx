@@ -33,19 +33,24 @@ interface RouteParams {
 
 const KNOWN_VERTICAL_LABELS: Record<VerticalSlug, { label: string; tagline: string }> = {
 	ecommerce: {
-		label: "Ecommerce / D2C",
+		label: "Ecommerce",
 		tagline:
-			"Análise editorial mensal do que move (e do que freia) lojas D2C brasileiras.",
+			"Análise editorial mensal de lojas online brasileiras — onde a receita escapa entre os canais.",
 	},
 	"saas-b2b": {
 		label: "SaaS B2B",
 		tagline:
-			"Análise editorial mensal de SaaS B2B brasileiro — onde a receita escapa entre o trial e a renovação.",
+			"Análise editorial mensal de SaaS B2B brasileiro — onde a receita escapa entre o teste e a renovação.",
+	},
+	infoprodutos: {
+		label: "Infoprodutos",
+		tagline:
+			"Análise editorial mensal de infoprodutos brasileiros — homepage, funil, e o buraco entre os dois.",
 	},
 	cursos: {
-		label: "Cursos / Infoprodutos",
+		label: "Cursos",
 		tagline:
-			"Análise editorial mensal de infoprodutos brasileiros — checkout, retenção, e o que separa o curso que vende do que estagna.",
+			"Análise editorial mensal do mercado de cursos brasileiro — matrícula, retenção, conclusão.",
 	},
 	agencias: {
 		label: "Agências",
@@ -55,7 +60,13 @@ const KNOWN_VERTICAL_LABELS: Record<VerticalSlug, { label: string; tagline: stri
 };
 
 function isVerticalSlug(s: string): s is VerticalSlug {
-	return s === "ecommerce" || s === "saas-b2b" || s === "cursos" || s === "agencias";
+	return (
+		s === "ecommerce" ||
+		s === "saas-b2b" ||
+		s === "infoprodutos" ||
+		s === "cursos" ||
+		s === "agencias"
+	);
 }
 
 export async function generateStaticParams(): Promise<RouteParams[]> {

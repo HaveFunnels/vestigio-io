@@ -41,6 +41,7 @@
 
 import { COHORT_ECOMMERCE_2026_06 } from "../../src/data/vestigio-index/cohorts/ecommerce-2026-06";
 import { COHORT_SAAS_B2B_2026_06 } from "../../src/data/vestigio-index/cohorts/saas-b2b-2026-06";
+import { COHORT_INFOPRODUTOS_2026_06 } from "../../src/data/vestigio-index/cohorts/infoprodutos-2026-06";
 import type { CohortAggregate } from "../../src/data/vestigio-index/cohort-types";
 
 /** All persisted cohorts, keyed by `<vertical>:<locale>`. The two
@@ -61,6 +62,7 @@ const PEER_COHORTS: Record<string, CohortAggregate> = {
 	// compatible — the structural overlap satisfies CohortAggregate
 	// — so the cast is safe.
 	"saas-b2b:pt-BR": COHORT_SAAS_B2B_2026_06 as unknown as CohortAggregate,
+	"infoprodutos:pt-BR": COHORT_INFOPRODUTOS_2026_06,
 };
 
 /** Pattern keys we track on the cohort. Mirrors the field names in

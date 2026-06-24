@@ -31,9 +31,10 @@ interface RouteParams {
 }
 
 const VERTICAL_LABEL: Record<string, string> = {
-	ecommerce: "Ecommerce / D2C",
+	ecommerce: "Ecommerce",
 	"saas-b2b": "SaaS B2B",
-	cursos: "Cursos / Infoprodutos",
+	infoprodutos: "Infoprodutos",
+	cursos: "Cursos",
 	agencias: "Agências",
 };
 

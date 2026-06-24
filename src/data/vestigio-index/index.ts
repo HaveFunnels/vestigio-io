@@ -12,10 +12,12 @@
 import type { IndexEssay, VerticalSlug } from "./types";
 import { ESSAY_ECOMMERCE_2026_06_PILARES } from "./ecommerce-2026-06-dois-pilares";
 import { ESSAY_SAAS_B2B_2026_06_MATEMATICA } from "./saas-b2b-2026-06-sales-led-por-matematica";
+import { ESSAY_INFOPRODUTOS_2026_06_MARCA_VS_FUNIL } from "./infoprodutos-2026-06-marca-vs-funil";
 
 const ALL_ESSAYS: IndexEssay[] = [
 	ESSAY_ECOMMERCE_2026_06_PILARES,
 	ESSAY_SAAS_B2B_2026_06_MATEMATICA,
+	ESSAY_INFOPRODUTOS_2026_06_MARCA_VS_FUNIL,
 ];
 
 /** Sorted newest-first (by publishedAt desc, then editionNumber

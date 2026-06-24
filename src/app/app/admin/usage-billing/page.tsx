@@ -648,6 +648,64 @@ export default function AdminUsageBillingPage() {
             </div>
           </div>
 
+          {/* Spend by purpose — added 2026-06-24 cost audit. The
+              org table above answers "who is paying"; this answers
+              "what surface costs the most". Pair it with the cache
+              hit rate column to verify prompt caching is firing
+              after the 2026-06-24 client.ts change. Cells with
+              cache share = 0% on system prompts < 1024 tokens
+              (Sonnet) / < 2048 tokens (Haiku) are expected — the
+              Anthropic API rejects cache_control below those
+              minimums, so we pass through without caching. The
+              `cache hint` cell flags it explicitly so the admin
+              isn't tempted to chase a non-bug. */}
+          {tokenData?.purposes?.length > 0 && (
+            <div className="rounded-lg border border-edge bg-surface-card">
+              <div className="border-b border-edge px-5 py-4">
+                <h2 className="text-sm font-semibold text-content">Spend by purpose</h2>
+                <p className="mt-1 text-xs text-content-muted">
+                  Per-surface breakdown. Cache share &gt; 30% means prompt caching is working on that purpose; 0% on small prompts is expected (below Anthropic's min cacheable size).
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-edge">
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Purpose</th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Calls</th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Input</th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Output</th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Cache read</th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Cache share</th>
+                      <th className="px-5 py-3 text-xs font-medium uppercase tracking-wider text-content-muted">Cost</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-edge">
+                    {tokenData.purposes.map((p: any) => {
+                      const shareLabel = `${(p.cacheReadShare * 100).toFixed(0)}%`;
+                      const shareTone = p.cacheReadShare >= 0.3
+                        ? "text-emerald-400"
+                        : p.cacheReadShare > 0
+                          ? "text-amber-400"
+                          : "text-content-muted";
+                      return (
+                        <tr key={p.purpose} className="hover:bg-surface-card-hover">
+                          <td className="px-5 py-3 font-mono text-[12px] text-content">{p.purpose}</td>
+                          <td className="px-5 py-3 font-mono text-content-secondary">{p.callCount}</td>
+                          <td className="px-5 py-3 font-mono text-content-secondary">{formatTokens(p.totalInputTokens)}</td>
+                          <td className="px-5 py-3 font-mono text-content-secondary">{formatTokens(p.totalOutputTokens)}</td>
+                          <td className="px-5 py-3 font-mono text-content-secondary">{formatTokens(p.totalCacheReadTokens)}</td>
+                          <td className={`px-5 py-3 font-mono tabular-nums ${shareTone}`}>{shareLabel}</td>
+                          <td className="px-5 py-3 font-mono font-semibold tabular-nums text-content">{cents(p.totalCostCents)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {!tokenData && !loading && (
             <div className="rounded-lg border border-dashed border-edge px-6 py-12 text-center">
               <p className="text-sm text-content-faint">{t("no_token_data")}</p>

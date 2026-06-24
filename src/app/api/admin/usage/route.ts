@@ -80,7 +80,7 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
     }
   }
 
-  // Token costs view — LLM cost per org
+  // Token costs view — LLM cost per org + per purpose breakdown
   if (view === "token_costs") {
     const period = searchParams.get("period") || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
     try {
@@ -117,7 +117,66 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
         billableOrgCount: billable.length,
       };
 
-      return NextResponse.json({ period, totals, organizations: enriched });
+      // Cross-org aggregation by purpose — the durable visibility we
+      // were missing in the 2026-06-24 cost audit. Lets admin spot
+      // which surface drives cost without drilling into a single org.
+      // Also computes cache hit rate per purpose so post-deploy you
+      // can verify the 2026-06-24 prompt caching change is firing
+      // (cache_read_tokens > 0 on warm purposes).
+      const byPurpose: Record<string, {
+        purpose: string;
+        callCount: number;
+        totalCostCents: number;
+        totalInputTokens: number;
+        totalOutputTokens: number;
+        totalCacheReadTokens: number;
+        totalCacheCreateTokens: number;
+        cacheReadShare: number;
+      }> = {};
+      // Pull raw entries once for the period — needed for cache
+      // fields not aggregated in OrgTokenAggregate.
+      const { startDate, endDate } = (() => {
+        const [y, m] = period.split("-").map(Number);
+        return {
+          startDate: new Date(Date.UTC(y, m - 1, 1)),
+          endDate: new Date(Date.UTC(y, m, 1)),
+        };
+      })();
+      const rawEntries = await prisma.tokenCostLedger.findMany({
+        where: { createdAt: { gte: startDate, lt: endDate } },
+        select: { purpose: true, inputTokens: true, outputTokens: true, cacheReadInputTokens: true, cacheCreationInputTokens: true, costCents: true },
+      });
+      for (const e of rawEntries) {
+        if (!byPurpose[e.purpose]) {
+          byPurpose[e.purpose] = {
+            purpose: e.purpose,
+            callCount: 0,
+            totalCostCents: 0,
+            totalInputTokens: 0,
+            totalOutputTokens: 0,
+            totalCacheReadTokens: 0,
+            totalCacheCreateTokens: 0,
+            cacheReadShare: 0,
+          };
+        }
+        const bp = byPurpose[e.purpose];
+        bp.callCount += 1;
+        bp.totalCostCents += e.costCents;
+        bp.totalInputTokens += e.inputTokens;
+        bp.totalOutputTokens += e.outputTokens;
+        bp.totalCacheReadTokens += e.cacheReadInputTokens;
+        bp.totalCacheCreateTokens += e.cacheCreationInputTokens;
+      }
+      // Compute cache-read share (% of input tokens served from cache)
+      // for each purpose — when caching is working this approaches 1.0
+      // on warm purposes (system prompt > min cacheable size).
+      for (const bp of Object.values(byPurpose)) {
+        const denom = bp.totalInputTokens + bp.totalCacheReadTokens + bp.totalCacheCreateTokens;
+        bp.cacheReadShare = denom > 0 ? bp.totalCacheReadTokens / denom : 0;
+      }
+      const purposes = Object.values(byPurpose).sort((a, b) => b.totalCostCents - a.totalCostCents);
+
+      return NextResponse.json({ period, totals, organizations: enriched, purposes });
     } catch {
       return NextResponse.json({ message: "Failed to fetch token costs" }, { status: 500 });
     }

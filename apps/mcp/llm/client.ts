@@ -132,7 +132,7 @@ export async function callModel(
     messages,
     max_tokens: options.max_tokens,
     temperature: options.temperature ?? 0.3,
-    ...(options.system ? { system: options.system as any } : {}),
+    ...(options.system ? { system: maybeWithCacheControl(options.system, modelId) as any } : {}),
     ...(options.tools?.length ? { tools: options.tools } : {}),
   };
 
@@ -212,6 +212,47 @@ export async function callModel(
   );
 }
 
+// ── Prompt caching ───────────────────────────
+
+/**
+ * Wrap the system prompt in a single TextBlock with
+ * `cache_control: { type: "ephemeral" }` when it's long enough to be
+ * worth caching. Cache writes cost 1.25× input price (one-time);
+ * cache reads cost 0.1× input price (90% discount). The break-even is
+ * ~2 reads from the same warm cache. Our system prompts are static
+ * across the 5-minute ephemeral TTL window on the cycle paths
+ * (semantic_enrichment, framework_lens, domain_fingerprint) — every
+ * cell in the same cycle reuses the same prompt, so the cache hit
+ * rate is effectively 100% past the first call.
+ *
+ * Anthropic minimum cache size (June 2026):
+ *   - Haiku family: 2048 tokens (~7000 chars at ~3.5 chars/token)
+ *   - Sonnet/Opus family: 1024 tokens (~3500 chars)
+ *
+ * Below the minimum, the API rejects cache_control with a 400. The
+ * char-based threshold below is conservative — even a slightly
+ * under-tokenized prompt clears it. For prompts under threshold we
+ * pass the original string unchanged (no caching, no cost overhead).
+ *
+ * Callers do nothing — they keep passing `options.system` as a
+ * string. The wrapping is purely an internal optimization.
+ */
+function maybeWithCacheControl(
+  system: string | Anthropic.MessageCreateParams['system'],
+  modelId: ModelId,
+): string | Anthropic.TextBlockParam[] | Anthropic.MessageCreateParams['system'] {
+  // Caller already passed array form — assume they shaped cache_control
+  // themselves. Pass through unchanged.
+  if (typeof system !== 'string') return system;
+  const minChars = modelId.startsWith('haiku') ? 7000 : 3500;
+  if (system.length < minChars) return system;
+  return [{
+    type: 'text' as const,
+    text: system,
+    cache_control: { type: 'ephemeral' as const },
+  }];
+}
+
 // ── Ledger ───────────────────────────────────
 
 function recordLedgerEntryAsync(
@@ -286,7 +327,7 @@ export async function callModelStreaming(
     max_tokens: options.max_tokens,
     temperature: options.temperature ?? 0.3,
     stream: true as any,
-    ...(options.system ? { system: options.system as any } : {}),
+    ...(options.system ? { system: maybeWithCacheControl(options.system, modelId) as any } : {}),
     ...(options.tools?.length ? { tools: options.tools } : {}),
   };
 

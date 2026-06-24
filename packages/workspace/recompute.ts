@@ -173,6 +173,14 @@ export interface MultiPackInput {
    *  null → falls back to onboarding (behaviour-preserving). */
   business_context?: import('../perception/business-context').BusinessContext | null;
 
+  /** Wave 27 (2026-06-24) — environment locale ('en' | 'pt-BR' | 'es' | 'de').
+   *  Pairs with business_context.vertical to look up the peer-prevalence
+   *  cohort (packages/signals/peer-prevalence.ts) that gates "missing pattern"
+   *  inferences for non-US/EU markets. Null → no gating; the inference
+   *  layer behaves as before (degrade-safe). Populated from Environment.locale
+   *  at the cycle invocation point (run-cycle.ts). */
+  env_locale?: string | null;
+
   // Phase 26: Systemic integration inputs
   /** Active suppression rules to apply to decisions */
   suppression_rules?: SuppressionRule[];
@@ -846,7 +854,8 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
 
   yield "behavioral_packs"; // ── phase boundary: 7 behavioral decisions
 
-  // Vertical-specific inferences (gated by businessModel)
+  // Vertical-specific inferences (gated by businessModel + peer-prevalence
+  // cohort when env_locale is known — see packages/signals/peer-prevalence.ts).
   const verticalInferences = computeVerticalInferences(
     signals,
     scoping,
@@ -858,6 +867,8 @@ function* recomputeAllGen(input: MultiPackInput): Generator<string, MultiPackRes
     evidence,
     // PV.6 keystone — perceived surfaces for purpose-based detector targeting.
     input.business_context,
+    // Wave 27 (2026-06-24) — env locale plumbing for peer-prevalence gating.
+    input.env_locale ?? null,
   );
 
   // If vertical inferences fired, produce a decision for them

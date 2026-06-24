@@ -10,6 +10,7 @@ import {
   makeRef,
 } from '../domain';
 import type { BusinessContext } from '../perception/business-context';
+import { shouldSuppressMissingPattern } from '../signals/peer-prevalence';
 
 // ──────────────────────────────────────────────
 // Vertical Inference Engine
@@ -169,6 +170,13 @@ export function computeVerticalInferences(
   // surface by purpose (via surfacesByPurpose) instead of URL regex. Optional;
   // null → surface-dependent detectors don't fire (degrade-safe).
   businessContext?: BusinessContext | null,
+  // Wave 27 (2026-06-24) — env locale for peer-prevalence gating. When the
+  // env's locale matches a registered cohort (today: pt-BR), specific
+  // "missing pattern" detectors check peer prevalence before firing —
+  // suppresses noise like "no urgency cues" on BR D2C where the cohort
+  // shows only 11% of peers use countdowns. Null → no gating
+  // (behaviour-preserving).
+  envLocale?: string | null,
 ): Inference[] {
   if (!businessModel) return [];
 
@@ -183,7 +191,12 @@ export function computeVerticalInferences(
   if (model.includes('ecommerce')) {
     inferences.push(...inferSizeGuideMissing(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferProductImagesInsufficient(sigMap, scoping, cycleRef, evidence, corpus));
-    inferences.push(...inferNoUrgencyIndicators(sigMap, scoping, cycleRef, evidence, corpus));
+    // inferNoUrgencyIndicators is now gated by peer-prevalence: in
+    // markets/verticals where the cohort shows <40% of peers use
+    // countdowns (BR D2C is at 11%), absence is market norm and the
+    // finding gets suppressed before firing. envLocale + perceived
+    // vertical drive the lookup.
+    inferences.push(...inferNoUrgencyIndicators(sigMap, scoping, cycleRef, evidence, corpus, businessContext?.vertical ?? model, envLocale ?? null));
     inferences.push(...inferCrossSellAbsent(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferReturnPolicyNotOnProduct(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferShippingCostRevealedLate(sigMap, scoping, cycleRef, evidence, corpus));
@@ -567,7 +580,28 @@ function inferProductImagesInsufficient(
 function inferNoUrgencyIndicators(
   _sigs: Map<string, Signal>, scoping: Scoping, cycleRef: string,
   evidence: readonly Evidence[], corpus: string,
+  vertical: string | null,
+  locale: string | null,
 ): Inference[] {
+  // Wave 27 peer-prevalence gate — for markets where the cohort
+  // shows countdowns/urgency cues are RARE (BR D2C is at 11%
+  // per src/data/vestigio-index/cohorts/ecommerce-2026-06.ts), the
+  // absence of the pattern is market norm, not finding. Firing
+  // "you're missing urgency cues" on a BR D2C founder when 89% of
+  // peers also don't use them is noise displacing real findings.
+  //
+  // The gate is degrade-safe: when no cohort data exists for the
+  // (vertical, locale), the inference fires as before. Today only
+  // ecommerce:pt-BR is registered.
+  const gate = shouldSuppressMissingPattern('no_urgency_indicators', vertical, locale);
+  if (gate.suppress) {
+    // Soft logging — visible in worker logs without polluting
+    // customer-facing surfaces. Helpful when an admin asks "why
+    // didn't no_urgency fire on this BR ecom site?".
+    console.log(`[vertical-inference] suppressed no_urgency_indicators: ${gate.reason}`);
+    return [];
+  }
+
   const urgencyPatterns = [
     'estoque', 'últimas unidades', 'poucas unidades', 'limited', 'stock',
     'últimos', 'esgotando', 'restam', 'countdown', 'timer', 'oferta termina',

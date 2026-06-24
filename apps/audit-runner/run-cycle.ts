@@ -1920,6 +1920,15 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				// vertical-inference dispatch. Dynamic import keeps the engine
 				// package boundary clean; getBusinessContext never throws.
 				business_context: await import("../../packages/perception/business-context").then((m) => m.getBusinessContext(env.id)),
+				// Wave 27 (2026-06-24) — env locale plumbing. Pairs with the
+				// reconciled vertical above to look up the peer-prevalence
+				// cohort (packages/signals/peer-prevalence.ts) that gates
+				// "missing pattern" inferences for non-US/EU markets — e.g.
+				// suppresses no_urgency_indicators on BR D2C where peer
+				// cohort prevalence of countdowns is 11% (absence = norm).
+				// Sourced from Organization.locale — same path used by the
+				// translations + currency resolution above (search 'orgLocale').
+				env_locale: ((cycle.organization as any).locale as string | null) ?? null,
 				previous_snapshot: previousSnapshot,
 				suppression_rules: suppressionRules.length > 0 ? suppressionRules : undefined,
 				translations,

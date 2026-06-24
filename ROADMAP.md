@@ -273,6 +273,16 @@ Calibração dos detectores ecommerce/saas contra sites reais (invoicely/contaaz
 
 **Auditoria da biblioteca (250+ findings)** — early-funnel de ecommerce descoberto apesar da cobertura pesada de checkout/trust/friction. 3 findings novos (`2b86501b`, stack completa cada): `shipping_cost_revealed_late` (abandono #1, ~48% Baymard), `guest_checkout_absent` (~24%, fira só com sinal de account-wall), `demand_capture_absent` (os ~97% não-compradores; ecommerce + infoproduct). Verificado 8/8 + 9/9 + 6/6, typecheck limpo. **Lição**: a engine só vê TEXTO — finding visual exige sinal estrutural do parser no payload, ou pertence ao mini-audit (que parseia `<img>`).
 
+### PV.9b — Prova visual no Plano ✅ (shipped 50be7f7e, 2026-06-24)
+O #1 gap sentido (customer-research, [[project_plano_wow_gaps]]): "me mostre, não me conte" — finding em texto vs a página quebrada real do cliente. A matéria-prima NÃO existia (screenshots da verification são efêmeros/simulados, sem link a finding) → construído **captura → store → link → render** ponta a ponta, reusando **R2 (Cloudflare, já configurado em upload.ts) + playwright**, sem infra nova.
+- `SurfaceScreenshot` (env/cycleRef/normalizedUrl/path/r2Key) + migration `20260624120000` em prod (verificada).
+- `src/libs/r2-screenshots.ts`: upload worker-side + presigned GET; `r2Configured()` → no-op degrade-safe.
+- `workers/verification/screenshot-capture.ts`: pós-ciclo, JPEG do viewport das top superfícies onde os findings clusterizam (PageInventoryItem por findingCount/criticality, home sempre), upload R2, upsert. Reusa o chromium-pool quente. Best-effort por superfície; nunca falha o ciclo.
+- run-cycle chama após o denorm de findingCount (counts frescos).
+- API do plano resolve next-step → surface → SurfaceScreenshot (match path-token, tolerante ao label estático multi-valor) → presigned → `screenshotUrl`.
+- UI: NextSteps renderiza o thumbnail enquadrado acima do "Por que primeiro".
+Degrade-safe em tudo: sem R2 / sem screenshot / evidence pré-PV.9b → `screenshotUrl` null e Plano text-only como antes. Typecheck limpo + matching 6/6. **Benchmark público (#2 wow) adiado até o Vestigio Index.**
+
 ## Expansão futura (4 categorias validadas, post-PMF)
 
 Não comprometidas com timeline. Cada uma demanda discovery próprio.

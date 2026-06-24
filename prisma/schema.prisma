@@ -382,6 +382,7 @@ model Environment {
   strategyPlans          MonthlyStrategyPlan[]
   competitorDomains      CompetitorDomain[]
   networkSurfaces        NetworkSurface[]
+  surfaceScreenshots     SurfaceScreenshot[]
 
   // Wave 22 — one domain per org. The previous schema allowed
   // duplicate (orgId, domain) rows, which would let a user create
@@ -1523,6 +1524,26 @@ model Website {
 
   @@unique([environmentRef, domain])
   @@index([environmentRef])
+}
+
+/// PV.9b — viewport screenshots of real crawled surfaces, stored in R2 and
+/// surfaced in the Plano top findings ("here is your page, the problem is here").
+/// Keyed by (environmentId, cycleRef, normalizedUrl); upserted per capture pass.
+model SurfaceScreenshot {
+  id            String   @id @default(cuid())
+  environmentId String
+  cycleRef      String
+  normalizedUrl String
+  path          String
+  r2Key         String
+  width         Int?
+  height        Int?
+  capturedAt    DateTime @default(now())
+
+  environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([environmentId, cycleRef, normalizedUrl])
+  @@index([environmentId, cycleRef])
 }
 
 model PageInventoryItem {

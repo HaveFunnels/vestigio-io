@@ -2213,6 +2213,22 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				console.warn(`[audit-runner ${cycleId}] findingCount denorm failed:`, err);
 			}
 
+			// PV.9b - capture viewport screenshots of the top crawled surfaces
+			// (where findings cluster) + upload to R2, so the Plano can show the
+			// customer THEIR page next to the finding instead of a text-only
+			// description. Best-effort: no-ops without R2, never blocks the cycle.
+			try {
+				const { captureTopSurfaceScreenshots } = await import(
+					"../../workers/verification/screenshot-capture"
+				);
+				const shot = await captureTopSurfaceScreenshots(prisma, env.id, cycleRefStr);
+				if (shot.captured > 0) {
+					console.log(`[audit-runner ${cycleId}] surface screenshots: ${shot.captured} captured`);
+				}
+			} catch (err) {
+				console.warn(`[audit-runner ${cycleId}] surface screenshot capture failed:`, err instanceof Error ? err.message : err);
+			}
+
 			// Wave 15.3 — denormalize sessionCount30d via single GROUP BY on
 			// RawBehavioralEvent, then bulk update. Same idea: replace the
 			// per-request scan in /api/inventory with one query at audit

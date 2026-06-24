@@ -529,6 +529,50 @@ export async function GET(request: Request, { params }: RouteParams) {
 		editedAt: c.editedAt?.toISOString() ?? null,
 	}));
 
+	// PV.9b - resolve a captured screenshot per next-step: match the step's surface
+	// path to a SurfaceScreenshot (latest per path), presign matched keys so the UI
+	// shows the customer's ACTUAL page next to the finding. Degrade-safe: no rows /
+	// no R2 -> screenshotUrl stays null and the UI renders text-only as before.
+	const normPath = (p: string) => { const x = String(p || "").trim(); return x.length > 1 ? x.replace(/\/+$/, "") : (x || "/"); };
+	const screenshotKeyByPath = new Map<string, string>();
+	try {
+		const shots = await prisma.surfaceScreenshot.findMany({
+			where: { environmentId: plan.environmentId },
+			orderBy: { capturedAt: "desc" },
+			select: { path: true, r2Key: true },
+		});
+		for (const sh of shots) {
+			const pp = normPath(sh.path);
+			if (!screenshotKeyByPath.has(pp)) screenshotKeyByPath.set(pp, sh.r2Key);
+		}
+	} catch { /* no screenshots yet - text-only Plano */ }
+	function screenshotKeyForStep(keys: string[]): string | null {
+		for (const { surface } of affectedSurfacesForStep(keys)) {
+			for (const tok of String(surface).split(/[,\s]+/)) {
+				if (!tok.startsWith("/")) continue;
+				const k = screenshotKeyByPath.get(normPath(tok));
+				if (k) return k;
+			}
+		}
+		return null;
+	}
+	const matchedKeyByStepId = new Map<string, string>();
+	for (const s of plan.nextSteps) {
+		const k = screenshotKeyForStep(((s as any).linkedFindingRefsJson as string[]) ?? []);
+		if (k) matchedKeyByStepId.set(s.id, k);
+	}
+	const screenshotUrlByKey = new Map<string, string>();
+	if (matchedKeyByStepId.size > 0) {
+		try {
+			const { r2Configured, getScreenshotUrl } = await import("@/libs/r2-screenshots");
+			if (r2Configured()) {
+				const distinct = Array.from(new Set(matchedKeyByStepId.values()));
+				await Promise.all(distinct.map(async (k) => {
+					try { screenshotUrlByKey.set(k, await getScreenshotUrl(k)); } catch { /* skip */ }
+				}));
+			}
+		} catch { /* R2 helper unavailable - text-only */ }
+	}
 	const hero = plan.heroMetricsJson as any;
 	const buyerSegments = plan.buyerSegmentsJson as any;
 	const memoryRollups = plan.memoryRollupsJson as any;
@@ -670,6 +714,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 				assigneeName: null,
 				dueAt: s.dueAt?.toISOString() ?? null,
 				commentsCount: commentsByStepId.get(s.id) ?? 0,
+				screenshotUrl: screenshotUrlByKey.get(matchedKeyByStepId.get(s.id) ?? "") ?? null,
 			};
 		}),
 	});

@@ -545,6 +545,21 @@ function StepCard({
 					)}
 				</div>
 
+				{/* PV.9b - visual proof: the customer's ACTUAL page next to the finding. */}
+				{step.screenshotUrl && (
+					<figure className="mb-5 overflow-hidden rounded-xl border border-edge bg-surface-inset">
+						{/* eslint-disable-next-line @next/next/no-img-element */}
+						<img
+							src={step.screenshotUrl}
+							alt={`Captura de ${step.affectedSurfaces?.[0]?.surface ?? "sua página"}`}
+							loading="lazy"
+							className="block max-h-[260px] w-full object-cover object-top"
+						/>
+						<figcaption className="border-t border-edge px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+							Sua página{step.affectedSurfaces?.[0]?.surface ? ` · ${step.affectedSurfaces[0].surface}` : ""}
+						</figcaption>
+					</figure>
+				)}
 				{/* Reasoning */}
 				<div className="mb-6 font-serif text-[15px] leading-[1.65] text-content-secondary">
 					<div className="mb-2 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">

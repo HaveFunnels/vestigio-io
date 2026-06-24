@@ -2,7 +2,18 @@
 // LLM Pipeline Types
 //
 // All types for the 3-layer Claude pipeline:
-//   Input Guard (Haiku) → Core (Sonnet/Opus) → Output Classifier (Haiku)
+//   Input Guard (Haiku) → Core (Haiku default, Opus on `ultra`) → Output Classifier (Haiku)
+//
+// Default tier moved from Sonnet → Haiku on 2026-06-24 after a cost
+// audit revealed zero chat usage (3 conversations total since April,
+// all in April) while the default chat model was still Sonnet 4.6.
+// All cycle pipelines (semantic_enrichment, framework_lens,
+// domain_fingerprint, strategy_plan) already explicitly request
+// Haiku, so this change only affects the chat surface — and chat
+// gains an explicit opt-up to Opus via `ultra` tier when a customer
+// actually needs the reasoning ceiling. Sonnet 4.6 is no longer the
+// default. If a future product moment requires Sonnet, add it back
+// as a third tier instead of promoting it back to default.
 // ──────────────────────────────────────────────
 
 import type { McpSessionContext } from '../types';
@@ -18,7 +29,7 @@ export type ModelId = 'haiku_4_5' | 'sonnet_4_6' | 'opus_4_6';
 
 /** Maps user-facing tier to Anthropic model ID */
 export const MODEL_MAP: Record<ModelTier, string> = {
-  default: 'claude-sonnet-4-6',
+  default: 'claude-haiku-4-5-20251001',
   ultra: 'claude-opus-4-6',
 };
 
@@ -31,13 +42,15 @@ export const MODEL_API_MAP: Record<ModelId, string> = {
 
 /** Maps tier to internal model ID */
 export const TIER_TO_MODEL: Record<ModelTier, ModelId> = {
-  default: 'sonnet_4_6',
+  default: 'haiku_4_5',
   ultra: 'opus_4_6',
 };
 
-/** MCP query cost per tier */
+/** MCP query cost per tier. Haiku is cheap enough to count as 0
+ *  against the per-session cap so chat-only usage doesn't burn the
+ *  session budget for free-tier explorers. Opus stays expensive. */
 export const TIER_QUERY_COST: Record<ModelTier, number> = {
-  default: 1,
+  default: 0,
   ultra: 3,
 };
 

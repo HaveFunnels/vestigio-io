@@ -10,10 +10,10 @@
 // ──────────────────────────────────────────────
 
 import type { IndexEssay, VerticalSlug } from "./types";
-import { ESSAY_ECOMMERCE_2026_06_PIX } from "./ecommerce-2026-06-pix-salvou-checkout";
+import { ESSAY_ECOMMERCE_2026_06_PILARES } from "./ecommerce-2026-06-dois-pilares";
 
 const ALL_ESSAYS: IndexEssay[] = [
-	ESSAY_ECOMMERCE_2026_06_PIX,
+	ESSAY_ECOMMERCE_2026_06_PILARES,
 ];
 
 /** Sorted newest-first (by publishedAt desc). The landing page

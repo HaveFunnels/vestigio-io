@@ -82,6 +82,23 @@ export const perceptionClassifierPass: EnrichmentPass = {
 	label: "Percebendo o tipo de negócio",
 
 	shouldRun(ctx: EnrichmentContext): ShouldRunDecision {
+		// 2026-06-24 cost audit: this pass is PRODUCE-ONLY (see header
+		// comment) — its output is not read by any downstream consumer
+		// until PV.3 wires resolveEffectiveVertical at the run-cycle
+		// chokepoint. Until PV.3 ships, every run is pure dead spend
+		// (~1 Haiku call/env/week with zero feature impact).
+		//
+		// Gated on VESTIGIO_PERCEPTION_PV3_WIRED. Default OFF — the pass
+		// is disabled until the consumer side ships and a developer
+		// explicitly flips the flag. When PV.3 lands, set the env var to
+		// 'true' in Railway. Code path is otherwise untouched so re-
+		// enabling is a single env flip, not a revert.
+		if (process.env.VESTIGIO_PERCEPTION_PV3_WIRED !== "true") {
+			return {
+				run: false,
+				reason: "Skipped: PV.3 consumer not wired yet — see VESTIGIO_PERCEPTION_PV3_WIRED env",
+			};
+		}
 		if (ctx.mode !== "full") {
 			return { run: false, reason: `Skipped: full-mode only (mode=${ctx.mode})` };
 		}

@@ -3256,6 +3256,45 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 15,
 	},
 
+	reviews_low_specificity: {
+		remediation_steps: [
+			'Reconfigure o prompt pós-compra do seu widget (TrustVox/Yourviews/Judge.me) pra pedir detalhes específicos: "qual tamanho você comprou?", "como ficou em você?", "vale a pena vs o que você esperava?".',
+			'Se possível, ofereça incentivo pra reviews ricas (10% off próxima compra pra avaliações com 50+ palavras + foto).',
+			'Curate manualmente: dê destaque às 5 melhores reviews ricas do produto bestseller no topo do widget. Modela o que vem depois.',
+		],
+		estimated_effort_hours: 4,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir páginas de produto e medir comprimento médio das reviews extraídas do HTML. Threshold é 12+ palavras médio.',
+		verification_eta_seconds: 25,
+	},
+
+	customer_photos_absent_in_reviews: {
+		remediation_steps: [
+			'Ative upload de fotos no widget de reviews (TrustVox/Yourviews/Loox/Judge.me suportam todos).',
+			'Inclua "envie foto com seu produto" no prompt pós-compra — taxa de envio sobe quando explicitamente pedido.',
+			'Cure as 5-10 melhores fotos de cliente por produto bestseller pra aparecerem em destaque no topo do widget. Não precisa ser viral — bem-iluminado e contextual já move conversão.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir páginas de produto e contar imagens nos containers de review. Threshold: 1+ foto de cliente por produto.',
+		verification_eta_seconds: 20,
+	},
+
+	mobile_sticky_cta_absent: {
+		remediation_steps: [
+			'Adicione sticky add-to-cart no rodapé do viewport mobile. Plugins prontos: Shopify (Sticky Add to Cart Booster), Nuvemshop (botão flutuante), WooCommerce (YITH Sticky Add to Cart), Magento (módulos Mageplaza).',
+			'O sticky deve mostrar nome do produto + preço + botão CTA grande. Em produtos com variantes, deve refletir a seleção atual.',
+			'Verifique em viewport mobile (< 768px) que o sticky não obstrui conteúdo crítico (use shadow leve em vez de border sólida).',
+		],
+		estimated_effort_hours: 2,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir páginas de produto e verificar presença de elemento com position:fixed/sticky + bottom positioning contendo CTA de compra.',
+		verification_eta_seconds: 20,
+	},
+
 	cross_sell_absent: {
 		remediation_steps: [
 			'Adicione uma seção "Completa o Look" ou "Compre Junto" na página do produto abaixo da descrição.',

@@ -288,6 +288,9 @@ const INFERENCE_SURFACES: Record<string, string> = {
   whatsapp_personal_number_no_sla: '/',
   installment_not_visible: '/, /product, /cart, /checkout',
   whatsapp_buried_in_footer: '/',
+  reviews_low_specificity: '/product',
+  customer_photos_absent_in_reviews: '/product',
+  mobile_sticky_cta_absent: '/, /product',
   // Vertical-specific findings — SaaS
   no_free_trial_offered: '/, /pricing',
   integration_ecosystem_invisible: '/, /pricing',
@@ -619,6 +622,9 @@ export const INFERENCE_TITLES: Record<string, string> = {
   whatsapp_personal_number_no_sla: 'WhatsApp uses a personal cell pattern — no Business API SLA / catalog / templates',
   installment_not_visible: 'Site does not advertise installments — BR buyers default-expect "12x sem juros"',
   whatsapp_buried_in_footer: 'WhatsApp link only in footer — no floating button or above-fold CTA',
+  reviews_low_specificity: 'Reviews exist but average <12 words — generic praise does not move conversion',
+  customer_photos_absent_in_reviews: 'Review widget shows no customer photos — UGC beats stock for trust',
+  mobile_sticky_cta_absent: 'No sticky/fixed bottom CTA — mobile buyers lose the buy button on scroll',
   // SaaS
   no_free_trial_offered: "Buyers can't try before they commit money",
   integration_ecosystem_invisible: "Buyers don't know if your product fits their workflow",

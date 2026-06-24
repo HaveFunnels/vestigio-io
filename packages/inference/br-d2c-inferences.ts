@@ -62,6 +62,10 @@ function joinPageBodies(evidence: readonly Evidence[]): string {
 	return parts.join("\n").toLowerCase();
 }
 
+function stripTagsLocal(s: string): string {
+	return s.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function joinPageRawHtml(evidence: readonly Evidence[]): string {
 	// Some signals (WhatsApp wa.me links, UTM params, button class
 	// markers) live in raw HTML rather than extracted text. When the
@@ -398,6 +402,211 @@ export function inferWhatsappBuriedInFooter(
 	];
 }
 
+// ── 6. Reviews present but low specificity ─────
+
+/**
+ * Fires when a review widget is present on the site but the
+ * server-rendered review text averages < 12 words per review.
+ * Short reviews ("Amei!", "Produto bom", "5 estrelas sem palavras")
+ * are social proof on paper but don't move conversion — specific
+ * reviews ("Sou tamanho M, o caimento ficou solto na cintura, devolvi
+ * e troquei pelo P") move it 2-3x more.
+ *
+ * Detection strategy is conservative — only fires when:
+ *   1. A known review widget signature is present (TrustVox,
+ *      Yourviews, Judge.me, Stamped, native rating markers)
+ *   2. Review text IS extractable from the static HTML (the widget
+ *      SSRs at least a snippet); skip when widget is purely
+ *      JS-loaded async — we can't measure what we can't see, and
+ *      a false-positive "your reviews are bad" is worse than a
+ *      missed finding
+ *   3. The average snippet length across detected reviews is below
+ *      the threshold
+ *
+ * Confidence is 62 (medium) because we sample whatever the static
+ * HTML exposes, which underestimates total reviews. We surface the
+ * pattern for the founder to verify rather than declare it
+ * definitive.
+ */
+export function inferReviewsLowSpecificity(
+	_sigs: Map<string, Signal>,
+	scoping: Scoping,
+	cycleRef: string,
+	evidence: readonly Evidence[],
+	_corpus: string,
+): Inference[] {
+	const html = joinPageRawHtml(evidence);
+	if (!html) return [];
+	const widgetSignatures =
+		/(trustvox|yourviews|judge\.me|judgeme|stamped\.io|reviewsdotio|loox|okendo|reviewbit|opinew|riberry|reclameaqui)/i;
+	if (!widgetSignatures.test(html)) return [];
+	// Try to extract review snippets — common containers + microdata.
+	// We deliberately read a small window per match to avoid pulling
+	// in unrelated copy (nav text, etc).
+	const reviewSnippets: string[] = [];
+	// Schema.org microdata Review.
+	for (const m of html.matchAll(
+		/<[^>]+itemtype\s*=\s*["'][^"']*Review["'][^>]*>([\s\S]{0,800}?)<\/[^>]+>/gi,
+	)) {
+		reviewSnippets.push(m[1]);
+	}
+	// Class-based containers: class*=review, class*=avaliacao,
+	// class*=comment, class*=testimonial.
+	for (const m of html.matchAll(
+		/<[^>]+class\s*=\s*["'][^"']*\b(?:review[\w-]*|avaliacao|comentario|testimonial)\b[^"']*["'][^>]*>([\s\S]{0,500}?)<\/[^>]+>/gi,
+	)) {
+		reviewSnippets.push(m[1]);
+	}
+	if (reviewSnippets.length < 3) return []; // Not enough sample to judge.
+	const words = reviewSnippets.map((snippet) =>
+		stripTagsLocal(snippet)
+			.split(/\s+/)
+			.filter((w) => w.length > 1).length,
+	);
+	const avg = words.reduce((acc, n) => acc + n, 0) / words.length;
+	if (avg >= 12) return []; // Reviews are specific enough.
+	const pageContent = getPageContentEvidence(evidence);
+	return [
+		buildInference(
+			"reviews_low_specificity",
+			InferenceCategory.ConversionFlow,
+			scoping,
+			cycleRef,
+			"true",
+			"medium",
+			62,
+			[],
+			pageContent.slice(0, 2).map((e) => makeRef("evidence", e.id)),
+			`Você tem widget de reviews instalado mas a média das avaliações é ~${Math.round(avg)} palavras por review. Reviews curtas ("Amei!", "5 estrelas") são prova social no papel mas não movem conversão — comprador BR responde a especificidade ("sou tamanho M, manga ficou 2cm maior"), não a contagem. Configure prompts pós-compra que pedem detalhes específicos (tamanho, uso, comparação) — TrustVox/Yourviews/Judge.me têm templates. Eleva tempo de leitura na página de produto e tira dúvidas que hoje viram abandono.`,
+		),
+	];
+}
+
+// ── 7. Customer photos absent from reviews ─────
+
+/**
+ * Fires when a review widget is present but no customer-uploaded
+ * images appear in the review containers. UGC photos crush stock
+ * photos for trust signal — comprador BR confia em "essa pessoa
+ * comprou e mostrou o produto" muito mais que na foto profissional
+ * do catálogo.
+ *
+ * Detection: widget signature + look for <img> tags inside review
+ * containers. If zero images found, fire (with the caveat that
+ * dynamically-loaded photos won't be visible to a static scan —
+ * confidence is intentionally low).
+ */
+export function inferCustomerPhotosAbsentInReviews(
+	_sigs: Map<string, Signal>,
+	scoping: Scoping,
+	cycleRef: string,
+	evidence: readonly Evidence[],
+	_corpus: string,
+): Inference[] {
+	const html = joinPageRawHtml(evidence);
+	if (!html) return [];
+	const widgetSignatures =
+		/(trustvox|yourviews|judge\.me|judgeme|stamped\.io|reviewsdotio|loox|okendo|reviewbit|opinew)/i;
+	if (!widgetSignatures.test(html)) return [];
+	// Look for <img> within review-shaped containers.
+	const reviewBlocks: string[] = [];
+	for (const m of html.matchAll(
+		/<[^>]+class\s*=\s*["'][^"']*\b(?:review[\w-]*|avaliacao|testimonial|customer-photo|user-image)\b[^"']*["'][^>]*>([\s\S]{0,2000}?)<\/[^>]+>/gi,
+	)) {
+		reviewBlocks.push(m[1]);
+	}
+	for (const m of html.matchAll(
+		/<[^>]+itemtype\s*=\s*["'][^"']*Review["'][^>]*>([\s\S]{0,2000}?)<\/[^>]+>/gi,
+	)) {
+		reviewBlocks.push(m[1]);
+	}
+	if (reviewBlocks.length < 3) return [];
+	const totalImgs = reviewBlocks.reduce(
+		(acc, block) => acc + (block.match(/<img\b/gi) || []).length,
+		0,
+	);
+	// Allow up to 1 image per block for avatar/icon — we want
+	// content photos. Threshold: zero genuine content imgs.
+	const contentImgsApprox = totalImgs - reviewBlocks.length;
+	if (contentImgsApprox > 0) return [];
+	const pageContent = getPageContentEvidence(evidence);
+	return [
+		buildInference(
+			"customer_photos_absent_in_reviews",
+			InferenceCategory.ConversionFlow,
+			scoping,
+			cycleRef,
+			"true",
+			"medium",
+			58,
+			[],
+			pageContent.slice(0, 2).map((e) => makeRef("evidence", e.id)),
+			"Seu widget de reviews não exibe fotos de cliente — só texto e estrelas. Foto de comprador real ('Marina usando o produto') vence foto profissional do catálogo em trust signal por margem grande. No checkout BR, é frequentemente a foto-de-cliente que destrava a decisão final de quem está em dúvida sobre cor/tamanho/uso. Configure o prompt pós-compra pra pedir foto (TrustVox/Yourviews/Loox suportam). Não precisa ser viral — 3-5 fotos por produto bestseller já move conversão mensurável.",
+		),
+	];
+}
+
+// ── 8. Mobile sticky CTA absent ─────────────────
+
+/**
+ * Fires when no sticky/fixed-positioned CTA element is detected on
+ * the page. BR commerce is >75% mobile, and a mobile shopper who
+ * scrolls past the fold loses the primary CTA — without a sticky
+ * variant pinned to the bottom of the viewport, returning to the
+ * CTA requires scrolling back up (friction that abandons).
+ *
+ * Detection is heuristic — looks for the CSS class patterns
+ * commonly used for sticky/fixed bottom CTAs (Tailwind 'fixed
+ * bottom-', Bootstrap 'sticky-bottom', custom 'mobile-sticky-cta',
+ * Nuvemshop / Shopify plugin patterns). Absence of all signals
+ * fires the finding.
+ *
+ * False-positive risk: a site that uses inline styles or non-
+ * standard CSS for its sticky CTA would trip the detector. Mitigated
+ * by checking multiple pattern families AND requiring the page to
+ * be a commercial surface (homepage, product, pricing) — the
+ * dispatch already gates on ecommerce vertical so the surface mix
+ * is correct.
+ */
+export function inferMobileStickyCtaAbsent(
+	_sigs: Map<string, Signal>,
+	scoping: Scoping,
+	cycleRef: string,
+	evidence: readonly Evidence[],
+	_corpus: string,
+): Inference[] {
+	const html = joinPageRawHtml(evidence);
+	if (!html) return [];
+	const stickyCtaPatterns = [
+		// Tailwind-style: 'fixed bottom-' near button/anchor with
+		// commercial verbs.
+		/<[^>]*class\s*=\s*["'][^"']*\b(?:fixed|sticky)\b[^"']*\bbottom-[^"']*["'][^>]*>[\s\S]{0,300}?(?:comprar|adicionar|buy|checkout|finalizar|carrinho|cart)/i,
+		// Plugin-named: mobile-sticky-cta, sticky-buy-button, fab-buy.
+		/<[^>]*class\s*=\s*["'][^"']*\b(?:mobile-sticky|sticky-(?:cta|buy|add|checkout)|fab-(?:buy|cta)|bottom-sticky)\b/i,
+		// Bootstrap-ish: sticky-bottom / fixed-bottom near CTA.
+		/<[^>]*class\s*=\s*["'][^"']*\b(?:sticky-bottom|fixed-bottom)\b[^"']*["'][^>]*>[\s\S]{0,400}?(?:<button|<a[^>]+href)/i,
+		// Explicit position style — defensive, catches inline-styled
+		// sticky buttons.
+		/<[^>]*style\s*=\s*["'][^"']*position:\s*(?:fixed|sticky)[^"']*bottom:[^"']*["'][^>]*>[\s\S]{0,300}?(?:comprar|adicionar|buy|checkout|finalizar)/i,
+	];
+	if (stickyCtaPatterns.some((rx) => rx.test(html))) return [];
+	const pageContent = getPageContentEvidence(evidence);
+	return [
+		buildInference(
+			"mobile_sticky_cta_absent",
+			InferenceCategory.ConversionFlow,
+			scoping,
+			cycleRef,
+			"true",
+			"high",
+			70,
+			[],
+			pageContent.slice(0, 2).map((e) => makeRef("evidence", e.id)),
+			"Seu site não tem CTA sticky no bottom — o comprador mobile (~75% do tráfego BR D2C) que scrolla além da dobra perde o botão de compra de vista. Pra voltar, precisa scrollar tudo de novo, e a maioria não faz. Sticky button mobile fixo no rodapé do viewport ('Comprar — R\\$ X') é o padrão da indústria desde 2018 — plugins prontos pra Shopify (Sticky Add to Cart), Nuvemshop (botão flutuante), WooCommerce (YITH Sticky Add to Cart). Custo: 30min-1h.",
+		),
+	];
+}
+
 // ── Dispatch helper ───────────────────────────
 
 /**
@@ -418,5 +627,8 @@ export function computeBrD2cInferences(
 		...inferWhatsappPersonalNumberWeak(sigs, scoping, cycleRef, evidence, corpus),
 		...inferInstallmentNotVisible(sigs, scoping, cycleRef, evidence, corpus),
 		...inferWhatsappBuriedInFooter(sigs, scoping, cycleRef, evidence, corpus),
+		...inferReviewsLowSpecificity(sigs, scoping, cycleRef, evidence, corpus),
+		...inferCustomerPhotosAbsentInReviews(sigs, scoping, cycleRef, evidence, corpus),
+		...inferMobileStickyCtaAbsent(sigs, scoping, cycleRef, evidence, corpus),
 	];
 }

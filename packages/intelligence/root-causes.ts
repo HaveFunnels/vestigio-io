@@ -344,6 +344,9 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   whatsapp_personal_number_no_sla:     { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
   installment_not_visible:             { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
   whatsapp_buried_in_footer:           { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  reviews_low_specificity:             { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  customer_photos_absent_in_reviews:   { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+  mobile_sticky_cta_absent:            { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
 
   // Vertical-specific findings — SaaS
   no_free_trial_offered:               { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },

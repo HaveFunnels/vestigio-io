@@ -11,17 +11,23 @@
 
 import type { IndexEssay, VerticalSlug } from "./types";
 import { ESSAY_ECOMMERCE_2026_06_PILARES } from "./ecommerce-2026-06-dois-pilares";
+import { ESSAY_SAAS_B2B_2026_06_MATEMATICA } from "./saas-b2b-2026-06-sales-led-por-matematica";
 
 const ALL_ESSAYS: IndexEssay[] = [
 	ESSAY_ECOMMERCE_2026_06_PILARES,
+	ESSAY_SAAS_B2B_2026_06_MATEMATICA,
 ];
 
-/** Sorted newest-first (by publishedAt desc). The landing page
- *  shows latest editions first, and the per-vertical archive page
- *  reads the same order. */
-const ESSAYS_NEWEST_FIRST = [...ALL_ESSAYS].sort(
-	(a, b) => b.publishedAt.localeCompare(a.publishedAt),
-);
+/** Sorted newest-first (by publishedAt desc, then editionNumber
+ *  desc as tiebreaker). The editionNumber tiebreaker matters when
+ *  two essays land on the same date — landing page surfaces the
+ *  highest-numbered edition first, which matches the editor's
+ *  ordering intent. */
+const ESSAYS_NEWEST_FIRST = [...ALL_ESSAYS].sort((a, b) => {
+	const dateCmp = b.publishedAt.localeCompare(a.publishedAt);
+	if (dateCmp !== 0) return dateCmp;
+	return b.editionNumber - a.editionNumber;
+});
 
 export function listAllEssays(): IndexEssay[] {
 	return ESSAYS_NEWEST_FIRST;

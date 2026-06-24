@@ -333,6 +333,16 @@ export const INFERENCE_TO_ROOT_CAUSE: Record<string, {
   cross_sell_absent:                   { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
   return_policy_not_on_product:        { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
 
+  // Wave 27 (2026-06-24) — BR D2C-specific findings backed by the
+  // ecommerce-2026-06 cohort. Bucketed under
+  // vertical_fashion_purchase_barriers because they share the same
+  // remediation channel (the founder's vertical surface) — the BR
+  // market-fit is encoded in the detector gate, not in a new
+  // root_cause_key.
+  pix_discount_not_visible:            { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  whatsapp_attribution_missing:        { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
+  whatsapp_personal_number_no_sla:     { root_cause_key: 'vertical_fashion_purchase_barriers', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss', 'trust_erosion'] },
+
   // Vertical-specific findings — SaaS
   no_free_trial_offered:               { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },
   integration_ecosystem_invisible:     { root_cause_key: 'vertical_saas_evaluation_friction', category: 'vertical_purchase_barrier', impact_types: ['revenue_loss'] },

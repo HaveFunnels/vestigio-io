@@ -11,6 +11,7 @@ import {
 } from '../domain';
 import type { BusinessContext } from '../perception/business-context';
 import { shouldSuppressMissingPattern } from '../signals/peer-prevalence';
+import { computeBrD2cInferences } from './br-d2c-inferences';
 
 // ──────────────────────────────────────────────
 // Vertical Inference Engine
@@ -198,6 +199,16 @@ export function computeVerticalInferences(
     // vertical drive the lookup.
     inferences.push(...inferNoUrgencyIndicators(sigMap, scoping, cycleRef, evidence, corpus, businessContext?.vertical ?? model, envLocale ?? null));
     inferences.push(...inferCrossSellAbsent(sigMap, scoping, cycleRef, evidence, corpus));
+
+    // Wave 27 BR-specific D2C detectors (2026-06-24). Gated on
+    // envLocale='pt-BR' — the cohort dataset only covers BR
+    // ecommerce today, and these heuristics (PIX discount
+    // visibility, WhatsApp UTM tracking, WhatsApp Business vs
+    // personal number) are infrastructure-specific to the BR market.
+    // For non-BR ecommerce orgs the gate is a no-op.
+    if (envLocale === 'pt-BR') {
+      inferences.push(...computeBrD2cInferences(sigMap, scoping, cycleRef, evidence, corpus));
+    }
     inferences.push(...inferReturnPolicyNotOnProduct(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferShippingCostRevealedLate(sigMap, scoping, cycleRef, evidence, corpus));
     inferences.push(...inferGuestCheckoutAbsent(sigMap, scoping, cycleRef, evidence, corpus));
@@ -1478,8 +1489,13 @@ function inferResponseTimeNotPromised(
 }
 
 // ── Internal builder ─────────────────────────
+//
+// 2026-06-24: now exported so adjacent inference modules (the new
+// packages/inference/br-d2c-inferences.ts) can build the same shape
+// without re-implementing the helper or holding their own
+// IdGenerator instance.
 
-function buildInference(
+export function buildInference(
   key: string,
   category: InferenceCategory,
   scoping: Scoping,

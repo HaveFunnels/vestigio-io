@@ -3190,6 +3190,46 @@ export const REMEDIATION_CATALOG: Record<string, CatalogEntry> = {
 		verification_eta_seconds: 20,
 	},
 
+	// Wave 27 (2026-06-24) — BR D2C remediations.
+	pix_discount_not_visible: {
+		remediation_steps: [
+			'Coloque um badge "X% off no PIX" acima da dobra na home e na página do produto. Use o desconto que já daria via cartão menos a fee — tipicamente 5-10%.',
+			'Repita o callout no carrinho e no checkout pra reforçar a decisão antes do final.',
+			'Se você ainda não cobra diferente pra PIX vs cartão, considere: PIX te economiza 2-3% de gateway; converter parte disso em desconto sinaliza vantagem ao comprador e melhora conversão na faixa que pagaria PIX de qualquer jeito.',
+		],
+		estimated_effort_hours: 3,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir home + produto + carrinho e verificar presença de mensagem "PIX X% off" ou equivalente acima da dobra.',
+		verification_eta_seconds: 20,
+	},
+
+	whatsapp_attribution_missing: {
+		remediation_steps: [
+			'Adicione ?utm_source=site&utm_medium=whatsapp&utm_campaign=<contexto> em todo link wa.me do site.',
+			'No clique do botão WhatsApp, dispare um evento analytics (GA4 ou Meta Pixel) com a página de origem como propriedade.',
+			'Crie um segmento "leads via WhatsApp" no GA4 e cruze com receita atribuída — em 2 semanas você terá a % real de receita via WA, e poderá decidir budget de canal com base em dado, não em chute.',
+		],
+		estimated_effort_hours: 1,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir as páginas e verificar se os links wa.me carregam utm_source ou parâmetros de origem equivalentes.',
+		verification_eta_seconds: 15,
+	},
+
+	whatsapp_personal_number_no_sla: {
+		remediation_steps: [
+			'Registre o número no WhatsApp Business API (gratuito até 1k conversas/mês via BSP tipo Take Blip, Twilio, ou diretamente pela Meta).',
+			'Após migrar, configure: mensagem de boas-vindas automática (instantânea), template de "fora do horário" e catálogo de produtos vinculado pra envio rápido de fichas.',
+			'Aproveite o Business API pra integrar com Meta Ads Click-to-WhatsApp e mensurar conversão fim-a-fim — destrava budget defensável em paid social.',
+		],
+		estimated_effort_hours: 8,
+		verification_strategy: 'http_static',
+		verification_notes:
+			'Vamos reabrir o site e verificar se o número WhatsApp está registrado no Business API (indicadores: catálogo no chat, templates, link wa.me com selo de verificação).',
+		verification_eta_seconds: 30,
+	},
+
 	cross_sell_absent: {
 		remediation_steps: [
 			'Adicione uma seção "Completa o Look" ou "Compre Junto" na página do produto abaixo da descrição.',

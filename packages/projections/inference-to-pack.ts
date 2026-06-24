@@ -336,6 +336,10 @@ export const INFERENCE_TO_PACK: Record<string, string> = {
   cross_sell_absent: 'vertical_specific',
   return_policy_not_on_product: 'vertical_specific',
   shipping_cost_revealed_late: 'vertical_specific',
+  // Wave 27 BR D2C
+  pix_discount_not_visible: 'vertical_specific',
+  whatsapp_attribution_missing: 'vertical_specific',
+  whatsapp_personal_number_no_sla: 'vertical_specific',
   guest_checkout_absent: 'vertical_specific',
   demand_capture_absent: 'vertical_specific',
   no_free_trial_offered: 'vertical_specific',

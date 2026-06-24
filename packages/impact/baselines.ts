@@ -1943,6 +1943,42 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
     low: { min: 0.01, max: 0.03 },
     base_metric: 'revenue',
   },
+  // Wave 27 (2026-06-24) — BR D2C-specific baselines. Conservative
+  // ranges; will be tightened once we have multi-customer telemetry
+  // post-PMF.
+  pix_discount_not_visible: {
+    inference_key: 'pix_discount_not_visible',
+    impact_category: 'conversion_loss',
+    cause: 'PIX accepted but no discount surfaced as a decision-stage incentive',
+    effect: 'BR buyers who would pay PIX of any way are not nudged at decision stage. A typical 5-10% PIX discount above the fold lifts conversion in the PIX-eligible cohort by 4-7 points; sites that pocket the gateway savings without exposing the discount leave this lever idle.',
+    high: { min: 0.04, max: 0.08 },
+    medium: { min: 0.02, max: 0.04 },
+    low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  whatsapp_attribution_missing: {
+    inference_key: 'whatsapp_attribution_missing',
+    // traffic_waste = closest fit (channel mix decisions degraded
+    // because attribution is broken; not a direct conversion loss
+    // but ads/marketing spend allocated blind).
+    impact_category: 'traffic_waste',
+    cause: 'wa.me links carry no UTM — WhatsApp-driven revenue invisible in analytics',
+    effect: 'Channel-mix decisions become guesswork because WA-attributed revenue collapses into "direct" or "organic" in the analytics. Founders over- or under-invest in WA proportional to which way their gut leans; the data does not exist to correct.',
+    high: { min: 0.03, max: 0.06 },
+    medium: { min: 0.02, max: 0.03 },
+    low: { min: 0.01, max: 0.02 },
+    base_metric: 'revenue',
+  },
+  whatsapp_personal_number_no_sla: {
+    inference_key: 'whatsapp_personal_number_no_sla',
+    impact_category: 'conversion_loss',
+    cause: 'WhatsApp uses a personal cell pattern instead of WhatsApp Business API',
+    effect: 'Off-hour leads have no SLA, no read-receipts, no auto-reply templates. Lead arrives at 23h, owner sees it next morning — by then 30-40% have moved on. Business API ($0 up to 1k conversations/month) restores SLA + unlocks catalog/templates/broadcast.',
+    high: { min: 0.02, max: 0.05 },
+    medium: { min: 0.01, max: 0.02 },
+    low: { min: 0.005, max: 0.01 },
+    base_metric: 'revenue',
+  },
   cross_sell_absent: {
     inference_key: 'cross_sell_absent',
     impact_category: 'revenue_loss',

@@ -282,6 +282,10 @@ const INFERENCE_SURFACES: Record<string, string> = {
   shipping_cost_revealed_late: '/product, /cart, /checkout',
   guest_checkout_absent: '/checkout, /cart',
   demand_capture_absent: '/, /product',
+  // Wave 27 BR D2C
+  pix_discount_not_visible: '/, /product, /cart, /checkout',
+  whatsapp_attribution_missing: '/',
+  whatsapp_personal_number_no_sla: '/',
   // Vertical-specific findings — SaaS
   no_free_trial_offered: '/, /pricing',
   integration_ecosystem_invisible: '/, /pricing',
@@ -607,6 +611,10 @@ export const INFERENCE_TITLES: Record<string, string> = {
   shipping_cost_revealed_late: 'Shipping cost only shows up at checkout, surprising buyers into leaving',
   guest_checkout_absent: 'Buyers are forced to create an account before they can purchase',
   demand_capture_absent: "Visitors who don't buy leave with no way to bring them back",
+  // Wave 27 BR D2C
+  pix_discount_not_visible: 'PIX accepted but no discount surfaced — buyer learns only at checkout',
+  whatsapp_attribution_missing: 'WhatsApp links carry no UTM — WA-driven revenue invisible in analytics',
+  whatsapp_personal_number_no_sla: 'WhatsApp uses a personal cell pattern — no Business API SLA / catalog / templates',
   // SaaS
   no_free_trial_offered: "Buyers can't try before they commit money",
   integration_ecosystem_invisible: "Buyers don't know if your product fits their workflow",

@@ -291,18 +291,43 @@ async function mainLoop(): Promise<void> {
 	// Symptom: TokenCostLedger shows only ~9 entries while CopyFrameworkAudit
 	// shows 460+ rows (discovered 2026-06-10). Same applies to UsageStore,
 	// SaaS access store, MCP persistence store.
+	//
+	// 2026-06-24 hardening: a follow-up cost audit on the same symptom
+	// found a 5× undercount still occurring (849 CopyFrameworkAudit rows
+	// vs 169 TokenCostLedger entries with purpose='framework_lens.cold_cycle'
+	// in June). That implies vestigioStartup was failing intermittently
+	// (transient Redis/DB hiccup, env var race) and the previous behaviour
+	// silently logged + continued, leaving the in-memory ledger active so
+	// every subsequent LLM call evaporated until the next process restart.
+	//
+	// New behaviour in production: startup failure is FATAL. The worker
+	// exits with code 1 and Railway's ON_FAILURE restart policy
+	// (10 retries per railway.worker.json) brings it back. Better to
+	// take a minute of downtime than spend hours of LLM credit with no
+	// telemetry. Dev/test still logs-and-continues to keep local
+	// iteration friction-free.
 	try {
 		const { vestigioStartup } = await import("../platform/startup");
+		const { isProduction } = await import("../platform/env-validation");
 		const result = vestigioStartup(prisma);
 		if (!result.success) {
 			rootLog.error("vestigioStartup failed in worker", {
 				checks: result.checks.filter((c) => !c.passed),
 			});
+			if (isProduction()) {
+				rootLog.error("FATAL: refusing to start worker with broken store binding in production — exiting for Railway restart");
+				process.exit(1);
+			}
 		}
 	} catch (err) {
 		rootLog.error("vestigioStartup threw in worker", {
 			err: err instanceof Error ? err.message : String(err),
 		});
+		const { isProduction } = await import("../platform/env-validation");
+		if (isProduction()) {
+			rootLog.error("FATAL: vestigioStartup threw in production — exiting for Railway restart");
+			process.exit(1);
+		}
 	}
 
 	rootLog.info("worker-loop starting", {

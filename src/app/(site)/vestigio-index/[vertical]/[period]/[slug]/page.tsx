@@ -228,13 +228,20 @@ export default async function VestigioIndexEssay({
 			/>
 
 			<div className="relative mx-auto w-full max-w-[720px] px-5 sm:px-8">
-				{/* Crumbs */}
+				{/* Crumbs — vertical label is a link to the vertical
+				    archive so a reader who lands on this essay can
+				    browse the rest of the vertical in one click. */}
 				<nav className="mb-10 text-[12px] text-content-faint">
 					<Link href="/vestigio-index" className="hover:text-zinc-100">
 						Vestigio Index
 					</Link>
 					<span className="mx-2">/</span>
-					<span>{essay.verticalLabel}</span>
+					<Link
+						href={`/vestigio-index/${essay.vertical}`}
+						className="hover:text-zinc-100"
+					>
+						{essay.verticalLabel}
+					</Link>
 				</nav>
 
 				{/* Masthead */}

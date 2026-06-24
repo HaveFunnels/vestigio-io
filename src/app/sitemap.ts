@@ -63,20 +63,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 		// Sanity not configured — skip blog post URLs
 	}
 
-	// Vestigio Index — public editorial analysis. Landing + every
-	// published essay gets a sitemap entry so Google can discover
-	// them without depending on internal nav alone. Priority bumped
-	// to 0.8 (matches /pricing) because Index pages are the primary
-	// organic-discovery surface for the marketing site.
+	// Vestigio Index — public editorial analysis. Landing +
+	// vertical archives + every published essay get sitemap entries
+	// so Google can discover them without depending on internal nav
+	// alone. Priority bumped to 0.8 (matches /pricing) because Index
+	// pages are the primary organic-discovery surface for the
+	// marketing site.
 	try {
-		const { listAllEssays } = await import("@/data/vestigio-index");
+		const { listAllEssays, listActiveVerticals } = await import("@/data/vestigio-index");
 		const essays = listAllEssays();
+		const verticals = listActiveVerticals();
 		routes.push({
 			url: `${siteUrl}/vestigio-index`,
 			lastModified,
 			changeFrequency: "weekly",
 			priority: 0.8,
 		});
+		for (const v of verticals) {
+			routes.push({
+				url: `${siteUrl}/vestigio-index/${v.slug}`,
+				lastModified,
+				changeFrequency: "monthly",
+				priority: 0.7,
+			});
+		}
 		for (const e of essays) {
 			routes.push({
 				url: `${siteUrl}/vestigio-index/${e.vertical}/${e.period}/${e.slug}`,

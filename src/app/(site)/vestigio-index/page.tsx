@@ -106,7 +106,9 @@ export default function VestigioIndexLanding() {
 					</section>
 				)}
 
-				{/* All editions by vertical */}
+				{/* All editions by vertical. Each vertical title links to
+				    its archive page so a reader who wants to browse just
+				    Ecommerce (or just SaaS B2B) has a one-click path. */}
 				<section>
 					<div className="mb-4 flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.22em] text-content-faint">
 						<div className="h-px w-8 bg-content-faint/40" />
@@ -117,9 +119,15 @@ export default function VestigioIndexLanding() {
 							const verticalEssays = essays.filter((e) => e.vertical === v.slug);
 							return (
 								<div key={v.slug}>
-									<h3 className="mb-4 font-serif text-[18px] font-medium text-zinc-100 sm:text-[20px]">
+									<Link
+										href={`/vestigio-index/${v.slug}`}
+										className="group mb-4 inline-flex items-baseline gap-2 font-serif text-[18px] font-medium text-zinc-100 transition-colors hover:text-white sm:text-[20px]"
+									>
 										{v.label}
-									</h3>
+										<span className="text-[11px] font-normal text-content-faint transition-colors group-hover:text-emerald-400" aria-hidden>
+											→
+										</span>
+									</Link>
 									<ul className="flex flex-col gap-3">
 										{verticalEssays.map((e) => (
 											<li key={e.slug}>

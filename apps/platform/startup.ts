@@ -49,7 +49,16 @@ export function vestigioStartup(prisma?: any): StartupResult {
   });
 
   if (!envResult.valid && isProduction()) {
+    // Print the actual list of missing vars BEFORE returning. The
+    // previous version printed only 'missing env vars' which left
+    // ops blind in Railway logs — the only signal was the
+    // subsequent process.exit(1) from instrumentation.ts:50, which
+    // looks like a generic crash. With this we get a labelled
+    // checklist that names every missing var and its description.
     console.error('✖ Startup aborted: missing env vars');
+    for (const item of envResult.missing) {
+      console.error(`  ✖ ${item}`);
+    }
     return { success: false, environment: env, checks };
   }
 

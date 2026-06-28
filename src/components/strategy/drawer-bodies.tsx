@@ -238,7 +238,8 @@ export function FindingListBody({
 }: FindingListProps) {
 	const mcp = useMcpData();
 	const { currency } = mcp;
-	const all = mcp.findings.status === "ready" ? mcp.findings.data : [];
+	const findingsReady = mcp.findings.status === "ready";
+	const all = findingsReady ? mcp.findings.data : [];
 	// Match by id OR inference_key. The plan generator now stores
 	// inferenceKey strings (stable across cycles) instead of DB UUIDs,
 	// but legacy plans still carry projection ids like
@@ -254,6 +255,25 @@ export function FindingListBody({
 		// Sort by impact descending so the highest-leverage card lands at
 		// the top.
 		.sort((a, b) => (b.impact?.midpoint ?? 0) - (a.impact?.midpoint ?? 0));
+
+	// MCP findings still loading from the layout / refresh in flight.
+	// Show a shimmer instead of jumping straight to "Problemas
+	// indisponíveis" — the empty-state copy reads as "this problem was
+	// resolved" but the actual cause is "we haven't checked yet". The
+	// plan page's router.refresh() on mount typically resolves within
+	// one streaming round-trip; this skeleton bridges that window.
+	if (!findingsReady && findingIds.length > 0) {
+		return (
+			<ul className="space-y-3" aria-busy="true" aria-live="polite">
+				{[0, 1, 2].slice(0, Math.min(findingIds.length, 3)).map((i) => (
+					<li
+						key={i}
+						className="h-24 w-full animate-pulse rounded-2xl bg-surface-card"
+					/>
+				))}
+			</ul>
+		);
+	}
 
 	if (matched.length === 0) {
 		return (
@@ -348,6 +368,24 @@ function FindingCard({
 	const linkedActions = finding.action_refs ?? [];
 	const remediationPreview = (finding.remediation_steps ?? []).slice(0, 3);
 
+	// Header-level deep link, in addition to the "Abrir ficha completa"
+	// button inside the expanded body. The tester reported wanting any
+	// finding in the plan to be one click away from the detail page;
+	// requiring expand-then-scroll-then-click was friction.
+	const detailUrl = (() => {
+		const base = `/app/findings/${finding.id}`;
+		if (!month || !parentCtx) return base;
+		const back = buildFindingBackUrl({
+			month,
+			ctx: parentCtx,
+			expand: finding.inference_key,
+		});
+		const params = new URLSearchParams();
+		params.set("back", back);
+		if (returnLabel) params.set("backLabel", returnLabel);
+		return `${base}?${params.toString()}`;
+	})();
+
 	return (
 		<motion.li
 			initial={{ opacity: 0, y: 8 }}
@@ -364,49 +402,62 @@ function FindingCard({
 					onOpenChange?.(next);
 				}}
 			>
-				{/* Header — always shown, uniform height across cards. */}
-				<Collapsible.Trigger asChild>
-					<button
-						type="button"
-						className="grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 p-4 text-left transition-colors hover:bg-surface-card-hover/40"
-					>
-						<span
-							className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-								SEVERITY_DOT[finding.severity] ?? SEVERITY_DOT.low
-							}`}
-							aria-label={finding.severity}
-						/>
-						<div className="min-w-0">
-							<h3 className="truncate text-[14px] font-semibold leading-snug text-content">
-								{title}
-							</h3>
-							<div className="mt-0.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 text-[11px] text-content-muted">
-								<span className="capitalize">
-									{SEVERITY_LABEL[finding.severity] ?? finding.severity}
-								</span>
-								{finding.surface && (
-									<>
-										<span className="text-content-faint">·</span>
-										<span className="truncate text-[10.5px]">
-											{humanizeSurfaceLabel(finding.surface)}
-										</span>
-									</>
-								)}
-								{impactLabel && (
-									<>
-										<span className="text-content-faint">·</span>
-										<span className={`font-mono tabular-nums ${impactTone}`}>
-											{impactLabel}/mês
-										</span>
-									</>
-								)}
+				{/* Header — split into [expand trigger] + [detail link]
+				    so the customer can either drill in-place (expand) or
+				    jump straight to the canonical /app/findings/[id]
+				    detail page without first expanding. */}
+				<div className="flex items-stretch">
+					<Collapsible.Trigger asChild>
+						<button
+							type="button"
+							className="grid flex-1 grid-cols-[auto_1fr_auto] items-center gap-3 p-4 text-left transition-colors hover:bg-surface-card-hover/40"
+						>
+							<span
+								className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+									SEVERITY_DOT[finding.severity] ?? SEVERITY_DOT.low
+								}`}
+								aria-label={finding.severity}
+							/>
+							<div className="min-w-0">
+								<h3 className="truncate text-[14px] font-semibold leading-snug text-content">
+									{title}
+								</h3>
+								<div className="mt-0.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5 text-[11px] text-content-muted">
+									<span className="capitalize">
+										{SEVERITY_LABEL[finding.severity] ?? finding.severity}
+									</span>
+									{finding.surface && (
+										<>
+											<span className="text-content-faint">·</span>
+											<span className="truncate text-[10.5px]">
+												{humanizeSurfaceLabel(finding.surface)}
+											</span>
+										</>
+									)}
+									{impactLabel && (
+										<>
+											<span className="text-content-faint">·</span>
+											<span className={`font-mono tabular-nums ${impactTone}`}>
+												{impactLabel}/mês
+											</span>
+										</>
+									)}
+								</div>
 							</div>
-						</div>
-						<ChevronDown
-							className={`h-4 w-4 shrink-0 text-content-muted transition-transform ${open ? "rotate-180" : ""}`}
-						/>
-					</button>
-				</Collapsible.Trigger>
+							<ChevronDown
+								className={`h-4 w-4 shrink-0 text-content-muted transition-transform ${open ? "rotate-180" : ""}`}
+							/>
+						</button>
+					</Collapsible.Trigger>
+					<Link
+						href={detailUrl}
+						aria-label="Abrir ficha completa do problema"
+						title="Abrir ficha completa"
+						className="flex shrink-0 items-center border-l border-edge px-3 text-content-muted transition-colors hover:bg-surface-card-hover/40 hover:text-content focus-visible:bg-surface-card-hover/40 focus-visible:text-content focus-visible:outline-none"
+					>
+						<ExternalLink className="h-3.5 w-3.5" />
+					</Link>
+				</div>
 
 				{/* Expanded — rich detail. Mirrors /app/findings drawer
 				    structure so the customer doesn't lose context jumping
@@ -520,23 +571,7 @@ function FindingCard({
 													: ""}
 										</div>
 										<Link
-											href={(() => {
-												// Build the deep link with a back URL embedded so
-												// the finding-detail page can render a breadcrumb
-												// returning to the exact prior plan state (drawer
-												// reopened + this card pre-expanded).
-												const base = `/app/findings/${finding.id}`;
-												if (!month || !parentCtx) return base;
-												const back = buildFindingBackUrl({
-													month,
-													ctx: parentCtx,
-													expand: finding.inference_key,
-												});
-												const params = new URLSearchParams();
-												params.set("back", back);
-												if (returnLabel) params.set("backLabel", returnLabel);
-												return `${base}?${params.toString()}`;
-											})()}
+											href={detailUrl}
 											className="inline-flex items-center gap-1 text-[12px] font-medium text-content-secondary underline-offset-4 transition-colors hover:text-content hover:underline"
 										>
 											Abrir ficha completa

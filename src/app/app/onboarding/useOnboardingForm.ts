@@ -669,7 +669,18 @@ export default function useOnboardingForm() {
 				const cycleQuery = data.cycle?.id
 					? `?cycle=${encodeURIComponent(data.cycle.id)}`
 					: "";
-				router.replace(`${target}${cycleQuery}`);
+				// Hard navigation instead of router.replace. The /app/onboarding
+				// gate in middleware.ts reads `hasOrganization` / `hasActivatedEnv`
+				// from the JWT cookie. updateSession() refreshes the React-side
+				// session but the freshly-set cookie may not be applied to the
+				// browser jar before router.replace fires the next request,
+				// which then sees the OLD claims, bounces back to /app/onboarding,
+				// and flashes the revenue step. window.location.assign forces a
+				// full reload — slightly worse UX but the cookie roundtrip is
+				// guaranteed to apply before middleware reads it. This path runs
+				// once per customer, so the soft-vs-hard nav difference is
+				// invisible to anyone.
+				window.location.assign(`${target}${cycleQuery}`);
 			} catch {
 				setError(t("errors.network_error"));
 			} finally {

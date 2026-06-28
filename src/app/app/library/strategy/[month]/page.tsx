@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import StrategyPlanPanel from "@/components/strategy/StrategyPlanPanel";
 import PlanPageSkeleton from "@/components/strategy/PlanPageSkeleton";
@@ -61,8 +61,26 @@ export default function StrategyPlanPage() {
 	const month = params?.month;
 	const envId = getEnvironmentId();
 	const { track } = useTrack();
+	const router = useRouter();
 
 	const [state, setState] = useState<FetchState>({ status: "loading" });
+
+	// RSC cache invalidation: the parent /app layout pre-loads MCP
+	// findings server-side from AuditCycle.projectionsCache. When the
+	// user navigates here from elsewhere in /app via <Link>, the
+	// previously-rendered RSC payload is reused from the Router Cache,
+	// so MCP findings can be stale relative to a plan generated AFTER
+	// that cached render. The drawer's id-match then misses and the
+	// step opens to "Problemas indisponíveis" — a hard reload "fixes"
+	// it because reload reruns the layout. router.refresh() forces an
+	// RSC re-fetch on mount, costing one extra streaming render per
+	// plan visit in exchange for guaranteed-fresh finding projections.
+	const refreshedRef = useRef(false);
+	useEffect(() => {
+		if (refreshedRef.current) return;
+		refreshedRef.current = true;
+		router.refresh();
+	}, [router]);
 
 	// Phase 3.5 — telemetry for the Pulse-vs-Plan home decision.
 	// Fires once per mount; consumes the first-surface sentinel so the

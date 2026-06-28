@@ -119,6 +119,13 @@ export default function DataSourcesPage() {
 	const [hasPassword, setHasPassword] = useState(false);
 	const [lastVerified, setLastVerified] = useState<string | null>(null);
 	const [lastFailure, setLastFailure] = useState<string | null>(null);
+	// Business-model gate for SaaS-only banners (Setup Required, Verification
+	// Failed, Awaiting MFA). null while loading; "ecommerce"|"lead_gen"|
+	// "saas"|"hybrid" once /api/organization resolves. Non-SaaS customers
+	// previously saw "SaaS Setup Required" warnings even though they have
+	// no SaaS surface to authenticate — pure confusion, no signal.
+	const [businessModel, setBusinessModel] = useState<string | null>(null);
+	const showsSaasBanners = businessModel === "saas" || businessModel === "hybrid";
 	const [saving, setSaving] = useState(false);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -164,6 +171,29 @@ export default function DataSourcesPage() {
 			setLoading(false);
 		}
 	}, [environmentId]);
+
+	// Auto-expand a card when deep-linked via ?expand=<id>. Used by
+	// the Workspaces "Fontes de dados" summary so clicking a specific
+	// integration card lands the user *on* that card open, instead of
+	// dropping them on the index where they have to find and click it
+	// a second time.
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const params = new URLSearchParams(window.location.search);
+		const expand = params.get("expand");
+		if (expand) {
+			setExpandedCard(expand);
+			// Strip the param so back-nav doesn't re-trigger and so the
+			// URL after first paint reflects the actual state.
+			params.delete("expand");
+			const qs = params.toString();
+			window.history.replaceState(
+				{},
+				"",
+				window.location.pathname + (qs ? `?${qs}` : ""),
+			);
+		}
+	}, []);
 
 	// Handle OAuth callback URL params (Meta Ads / Google Ads)
 	useEffect(() => {
@@ -211,10 +241,20 @@ export default function DataSourcesPage() {
 			setMetaAdsLastSync(new Date().toISOString());
 			setGoogleAdsStatus("verified");
 			setGoogleAdsLastSync(new Date().toISOString());
+			setBusinessModel("saas"); // demo env shows everything
 			setLoading(false);
 			return;
 		}
 		fetchConfig();
+		// Fire-and-forget businessModel fetch — the SaaS banners need to know
+		// whether to render at all. Silent failure leaves the gate false, which
+		// hides the (potentially confusing) banner rather than mis-showing it.
+		fetch("/api/organization")
+			.then((res) => (res.ok ? res.json() : null))
+			.then((body) => {
+				if (body?.businessModel) setBusinessModel(body.businessModel);
+			})
+			.catch(() => { /* leave gate false — hide banner is safer than mis-show */ });
 	}, [fetchConfig, isDemo]);
 
 	const updateSaas = (field: keyof SaasFormData, value: any) => {
@@ -770,8 +810,10 @@ export default function DataSourcesPage() {
 				</div>
 			)}
 
-			{/* SaaS Setup Required Banner */}
-			{saasStatus === "not_configured" && (
+			{/* SaaS Setup Required Banner — only when the org actually has
+			    a SaaS surface (ecommerce / lead_gen orgs would see this and
+			    think Vestigio is broken). */}
+			{showsSaasBanners && saasStatus === "not_configured" && (
 				<div className="mb-4 flex items-start gap-3 rounded-[10px] border border-yellow-800 bg-yellow-950 px-[18px] py-3.5">
 					<svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
@@ -786,7 +828,7 @@ export default function DataSourcesPage() {
 			)}
 
 			{/* Verification Failed Banner */}
-			{saasStatus === "failed" && lastFailure && (
+			{showsSaasBanners && saasStatus === "failed" && lastFailure && (
 				<div className="mb-4 flex items-start gap-3 rounded-[10px] border border-red-900 bg-red-950/20 px-[18px] py-3.5">
 					<svg className="mt-0.5 h-5 w-5 shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
@@ -801,7 +843,7 @@ export default function DataSourcesPage() {
 			)}
 
 			{/* MFA Awaiting Banner */}
-			{saasStatus === "awaiting_manual_mfa" && (
+			{showsSaasBanners && saasStatus === "awaiting_manual_mfa" && (
 				<div className="mb-4 flex items-start gap-3 rounded-[10px] border border-yellow-800 bg-yellow-950 px-[18px] py-3.5">
 					<svg className="mt-0.5 h-5 w-5 shrink-0 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
 						<path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
@@ -869,6 +911,29 @@ export default function DataSourcesPage() {
 											</button>
 										</div>
 									</Field>
+									{/* Verification ETA — tester reported "configurei o pixel,
+									    nada aconteceu". The snippet copy gives no signal about
+									    what to expect next, so the silence reads as broken.
+									    Below: the timeline customers should actually see. */}
+									<div className="mt-4 rounded-lg border border-edge bg-surface-inset/40 p-3.5">
+										<div className="mb-1.5 flex items-center gap-2">
+											<span className="relative inline-flex h-1.5 w-1.5">
+												<span className="absolute inset-0 animate-ping rounded-full bg-amber-400/60" />
+												<span className="relative block h-1.5 w-1.5 rounded-full bg-amber-400" />
+											</span>
+											<span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-300">
+												Aguardando primeira batida
+											</span>
+										</div>
+										<p className="text-[12px] leading-relaxed text-content-muted">
+											Depois que o snippet entrar em produção, a primeira
+											sessão chega em <span className="font-semibold text-content-secondary">segundos</span>.
+											A camada behavioral (heatmap de jornada, sinais de
+											atrito, drop-off por superfície) começa a aparecer no
+											próximo ciclo de auditoria — <span className="font-semibold text-content-secondary">a cada 6 horas</span>.
+											Se em 24h o status continuar como "a configurar", verifique se o snippet está carregando em todas as páginas (View Source → procure por <code className="rounded bg-surface-inset px-1 font-mono text-[11px]">vestigio.js</code>).
+										</p>
+									</div>
 								</div>
 							</div>
 						)}

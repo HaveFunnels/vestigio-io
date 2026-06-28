@@ -248,7 +248,7 @@ export default function DataSourcesSection({ envId }: Props) {
 									</span>
 									{meta.configurable && (
 										<Link
-											href="/app/settings/data-sources"
+											href={`/app/settings/data-sources?expand=${encodeURIComponent(s.id)}`}
 											className="inline-flex items-center gap-1 rounded-md border border-edge bg-surface-inset/60 px-2.5 py-1 text-[11px] font-medium text-content-secondary transition-colors hover:border-edge-focus hover:text-content"
 										>
 											{status === "verified" || status === "configured" ? "Gerir" : "Conectar"}
@@ -260,6 +260,21 @@ export default function DataSourcesSection({ envId }: Props) {
 						);
 					})}
 				</ul>
+
+				{/* "Ver todas" — tester feedback: clicar num card específico
+				    e cair na pág geral (sem destaque pro card escolhido) era
+				    confuso. Agora cada card deep-linka direto pro próprio
+				    card expandido, e este botão é o caminho genérico para
+				    quem só quer abrir a tela inteira de fontes. */}
+				<div className="mt-4 border-t border-edge/40 pt-4 text-center">
+					<Link
+						href="/app/settings/data-sources"
+						className="inline-flex items-center gap-1.5 text-[12px] font-medium text-content-secondary transition-colors hover:text-content"
+					>
+						Ver todas as fontes de dados
+						<ArrowRight className="h-3 w-3" />
+					</Link>
+				</div>
 			</div>
 		</motion.section>
 	);

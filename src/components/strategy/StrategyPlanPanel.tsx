@@ -218,6 +218,42 @@ function StickyHeader({
 			data-vsgp-sticky-header
 			className="sticky top-0 z-30 border-b border-edge bg-surface/85 backdrop-blur-md"
 		>
+			{/* Export-in-progress banner: visible inline status above the
+			    sticky header row so the customer can't miss it. The bouncing
+			    dots inside the 32×32 export icon button (visible elsewhere)
+			    are too subtle on first-time use — customers clicked, saw
+			    nothing happen, and clicked again or gave up. This banner
+			    explicitly names the action + the expected wait window so
+			    the silence-after-click reads as "in progress" instead of
+			    "broken". Auto-removes the moment exporting flips back to
+			    false (either success download or error toast). */}
+			{exporting && (
+				<div
+					role="status"
+					aria-live="polite"
+					className="border-b border-emerald-500/20 bg-emerald-500/[0.06]"
+				>
+					<div className="mx-auto flex max-w-[1100px] items-center gap-2.5 px-4 py-2 sm:px-6">
+						<span className="relative inline-flex h-1.5 w-1.5">
+							<span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
+							<span className="relative block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+						</span>
+						<span className="text-[12px] font-medium text-emerald-200/90 sm:text-[12.5px]">
+							Gerando PDF do plano
+						</span>
+						<span className="hidden text-[11.5px] text-emerald-300/60 sm:inline">
+							· renderiza o plano inteiro no formato impresso — costuma levar 20–40 segundos
+						</span>
+					</div>
+					{/* Calm shimmer bar — skeleton-over-spinner per house rule.
+					    Indeterminate progress (we don't know exact %), so a
+					    horizontal pulse band carries the "still working"
+					    signal without an AI-labor checklist or spinner. */}
+					<div className="h-px bg-emerald-500/30">
+						<div className="h-full w-1/3 animate-pulse bg-emerald-400/70" />
+					</div>
+				</div>
+			)}
 			{/* Desktop: 1-row layout. Mobile: 2 rows — Resumo/Completo
 			    gets first-row priority (most-used control on phone), and
 			    the publish-timestamp + secondary actions wrap below. */}

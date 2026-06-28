@@ -88,6 +88,25 @@ function isMarketingDomain(host: string): boolean {
 	return h === MARKETING_DOMAIN || h === `www.${MARKETING_DOMAIN}`;
 }
 
+function isLoopbackHost(host: string): boolean {
+	const h = normalizeHost(host);
+	return h === "127.0.0.1" || h === "localhost";
+}
+
+// Cheap structural check — full HMAC verification happens downstream
+// at the API route. Middleware just needs enough confidence that this
+// is a legitimate PDF-export self-request to let the page shell through
+// (without it, withAuth redirects puppeteer to /auth/signin and the
+// captured PDF is a blank black login page).
+function isWellFormedExportToken(token: string | null): boolean {
+	if (!token) return false;
+	const parts = token.split(".");
+	if (parts.length !== 2) return false;
+	const expiresAt = parseInt(parts[0], 10);
+	if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
+	return /^[0-9a-f]+$/i.test(parts[1]);
+}
+
 function appUrl(path: string, req: NextRequestWithAuth): URL {
 	// In production, redirect to app.vestigio.io
 	// In dev / Railway preview, use the current host
@@ -258,6 +277,24 @@ export default withAuth(
 
 				// Studio — let through to middleware function (it checks ADMIN)
 				if (pathname.startsWith("/studio")) return true;
+
+				// PDF-export self-request: puppeteer hits 127.0.0.1 with
+				// ?print=true&export_token=<wellformed> to render the plan
+				// page for capture. The page itself fetches the API with
+				// the same token; the API does the actual HMAC validation.
+				// Middleware only confirms the request *looks* like a
+				// legitimate export-loopback and lets the page shell through
+				// — otherwise withAuth redirects to /auth/signin and the
+				// captured PDF is the dark login page (visible to customers
+				// as "black cover, empty file").
+				if (
+					pathname.startsWith("/app/library/strategy/") &&
+					req.nextUrl?.searchParams.get("print") === "true" &&
+					isWellFormedExportToken(req.nextUrl?.searchParams.get("export_token") ?? null) &&
+					isLoopbackHost(req.headers.get("host") || "")
+				) {
+					return true;
+				}
 
 				// App domain root — allow through so middleware function can handle redirect
 				if (pathname === "/" || pathname === "") return true;

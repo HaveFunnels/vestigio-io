@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 // ──────────────────────────────────────────────
 // Bundle B — Ecosystem awareness
@@ -181,13 +182,14 @@ function CriticalSurfacesBanner({ surfaces }: { surfaces: CriticalSurface[] }) {
 			</div>
 			<div className="space-y-2">
 				{visible.map((s) => (
-					<div
+					<Link
 						key={s.id}
-						className="rounded-xl border border-rose-500/30 bg-rose-950/30 px-3 py-2"
+						href={`/app/findings?surface=${encodeURIComponent(s.path)}`}
+						className="group block rounded-xl border border-rose-500/30 bg-rose-950/30 px-3 py-2 transition-colors hover:border-rose-400/60 hover:bg-rose-950/50 focus-visible:border-rose-400 focus-visible:outline-none"
 					>
 						<div className="flex items-center justify-between gap-3">
 							<div className="min-w-0 flex-1">
-								<div className="truncate font-mono text-[12px] text-rose-100">
+								<div className="truncate font-mono text-[12px] text-rose-100 group-hover:text-white">
 									{s.path}
 								</div>
 								<div className="mt-0.5 text-[11px] text-rose-300/80">
@@ -195,7 +197,7 @@ function CriticalSurfacesBanner({ surfaces }: { surfaces: CriticalSurface[] }) {
 									{s.tier === "primary" && " · superfície primária"}
 								</div>
 							</div>
-							<div className="shrink-0 text-right">
+							<div className="flex shrink-0 items-center gap-2 text-right">
 								{s.status_code !== null && s.status_code >= 400 && (
 									<span className="rounded-md border border-rose-500/40 bg-rose-500/10 px-2 py-0.5 font-mono text-[11px] font-semibold text-rose-200">
 										HTTP {s.status_code}
@@ -206,9 +208,19 @@ function CriticalSurfacesBanner({ surfaces }: { surfaces: CriticalSurface[] }) {
 										sem resposta
 									</span>
 								)}
+								<svg
+									className="h-3 w-3 shrink-0 text-rose-300/60 transition-transform group-hover:translate-x-0.5 group-hover:text-rose-200"
+									viewBox="0 0 12 12"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth={1.6}
+									aria-hidden
+								>
+									<path strokeLinecap="round" strokeLinejoin="round" d="M5 3l3 3-3 3" />
+								</svg>
 							</div>
 						</div>
-					</div>
+					</Link>
 				))}
 				{surfaces.length > 3 && !expanded && (
 					<button

@@ -1,7 +1,7 @@
 // ──────────────────────────────────────────────
 // GENERATED FILE — do not edit by hand.
 //
-// Source: packages/inference/packs/*.ts (177 unique inference keys).
+// Source: packages/inference/packs/*.ts (189 unique inference keys).
 // Regenerate: npm run codegen:inference-keys
 // Check: npm run check:invariants
 //
@@ -35,10 +35,14 @@ export const InferenceKey = {
   AuthSurfaceInsecure: 'auth_surface_insecure',
   /** From packs/wave-4-extensions.ts */
   BehavioralMicroPatternCascade: 'behavioral_micro_pattern_cascade',
+  /** From packs/email-deliverability.ts */
+  BimiUnconfigured: 'bimi_unconfigured',
   /** From packs/discoverability.ts */
   BrandInconsistentAcrossSurfaces: 'brand_inconsistent_across_surfaces',
   /** From packs/brand-integrity.ts */
   BrandPresenceDilutedAcrossVariants: 'brand_presence_diluted_across_variants',
+  /** From packs/competitive-lens.ts */
+  BrandSerpEncroachment: 'brand_serp_encroachment',
   /** From packs/brand-integrity.ts */
   BrandTrafficExposedToDeceptiveSurfaces: 'brand_traffic_exposed_to_deceptive_surfaces',
   /** From packs/security-posture.ts */
@@ -101,6 +105,8 @@ export const InferenceKey = {
   ConversionFlowFragmented: 'conversion_flow_fragmented',
   /** From packs/copy-alignment.ts */
   CopyCrossPageInconsistent: 'copy_cross_page_inconsistent',
+  /** From packs/competitive-lens.ts */
+  CopyMirrorDetected: 'copy_mirror_detected',
   /** From packs/copy-alignment.ts */
   CopyStaleReferences: 'copy_stale_references',
   /** From packs/security-posture.ts */
@@ -117,6 +123,8 @@ export const InferenceKey = {
   CtaViewedNotEngaged: 'cta_viewed_not_engaged',
   /** From packs/behavioral.ts */
   CtaVisibleButBehaviorallyDead: 'cta_visible_but_behaviorally_dead',
+  /** From packs/competitive-lens.ts */
+  CustomerVoiceDelta: 'customer_voice_delta',
   /** From packs/brand-integrity.ts */
   CustomersExposedToPhishingSurfaces: 'customers_exposed_to_phishing_surfaces',
   /** From packs/commerce-context.ts */
@@ -127,6 +135,12 @@ export const InferenceKey = {
   DiscountAbusePattern: 'discount_abuse_pattern',
   /** From packs/chargeback-resilience.ts */
   DisputeRiskElevated: 'dispute_risk_elevated',
+  /** From packs/email-deliverability.ts */
+  DkimSelectorMissing: 'dkim_selector_missing',
+  /** From packs/email-deliverability.ts */
+  DmarcPolicyWeak: 'dmarc_policy_weak',
+  /** From packs/email-deliverability.ts */
+  DmarcRecordAbsent: 'dmarc_record_absent',
   /** From packs/deep-discovery.ts */
   DynamicRouteWeakControl: 'dynamic_route_weak_control',
   /** From packs/channel-integrity.ts */
@@ -307,6 +321,8 @@ export const InferenceKey = {
   SensitiveInputPerceivedRiskDropoff: 'sensitive_input_perceived_risk_dropoff',
   /** From packs/copy-alignment.ts */
   SeoConversionConflict: 'seo_conversion_conflict',
+  /** From packs/competitive-lens.ts */
+  SerpOverlapDetected: 'serp_overlap_detected',
   /** From packs/commerce-context.ts */
   SinglePaymentGatewayRisk: 'single_payment_gateway_risk',
   /** From packs/discoverability.ts */
@@ -317,6 +333,10 @@ export const InferenceKey = {
   SocialProofGeneric: 'social_proof_generic',
   /** From packs/copy-alignment.ts */
   SocialProofIneffective: 'social_proof_ineffective',
+  /** From packs/email-deliverability.ts */
+  SpfIncludesTooBroad: 'spf_includes_too_broad',
+  /** From packs/email-deliverability.ts */
+  SpfRecordAbsent: 'spf_record_absent',
   /** From packs/wave-4-extensions.ts */
   StructuredDataMismatch: 'structured_data_mismatch',
   /** From packs/monetization-extensions.ts */
@@ -331,6 +351,8 @@ export const InferenceKey = {
   SupportReassuranceTooLate: 'support_reassurance_too_late',
   /** From packs/chargeback-resilience.ts */
   SupportUnreachable: 'support_unreachable',
+  /** From packs/competitive-lens.ts */
+  SurfaceGapDetected: 'surface_gap_detected',
   /** From packs/behavioral.ts */
   SurfaceOscillationBeforeDropoff: 'surface_oscillation_before_dropoff',
   /** From packs/brand-integrity.ts */
@@ -349,6 +371,8 @@ export const InferenceKey = {
   TrustBoundaryCrossed: 'trust_boundary_crossed',
   /** From packs/revenue-integrity.ts */
   TrustBreakInCheckout: 'trust_break_in_checkout',
+  /** From packs/competitive-lens.ts */
+  TrustPostureLag: 'trust_posture_lag',
   /** From packs/evidence-derived.ts */
   TrustSurfaceTooThin: 'trust_surface_too_thin',
   /** From packs/network-analysis.ts */

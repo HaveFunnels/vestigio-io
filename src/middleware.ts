@@ -1,5 +1,6 @@
 import { withAuth, NextRequestWithAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { verifyExportTokenEdge } from "@/libs/strategy-export-token-edge";
 
 // ──────────────────────────────────────────────
 // Unified Middleware
@@ -86,25 +87,6 @@ function isAppDomain(host: string): boolean {
 function isMarketingDomain(host: string): boolean {
 	const h = normalizeHost(host);
 	return h === MARKETING_DOMAIN || h === `www.${MARKETING_DOMAIN}`;
-}
-
-function isLoopbackHost(host: string): boolean {
-	const h = normalizeHost(host);
-	return h === "127.0.0.1" || h === "localhost";
-}
-
-// Cheap structural check — full HMAC verification happens downstream
-// at the API route. Middleware just needs enough confidence that this
-// is a legitimate PDF-export self-request to let the page shell through
-// (without it, withAuth redirects puppeteer to /auth/signin and the
-// captured PDF is a blank black login page).
-function isWellFormedExportToken(token: string | null): boolean {
-	if (!token) return false;
-	const parts = token.split(".");
-	if (parts.length !== 2) return false;
-	const expiresAt = parseInt(parts[0], 10);
-	if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return false;
-	return /^[0-9a-f]+$/i.test(parts[1]);
 }
 
 function appUrl(path: string, req: NextRequestWithAuth): URL {
@@ -258,7 +240,7 @@ export default withAuth(
 	{
 		secret: process.env.SECRET,
 		callbacks: {
-			authorized: (params) => {
+			authorized: async (params) => {
 				const { req } = params;
 				const { token } = params;
 				const pathname = req.nextUrl?.pathname;
@@ -278,22 +260,27 @@ export default withAuth(
 				// Studio — let through to middleware function (it checks ADMIN)
 				if (pathname.startsWith("/studio")) return true;
 
-				// PDF-export self-request: puppeteer hits 127.0.0.1 with
-				// ?print=true&export_token=<wellformed> to render the plan
-				// page for capture. The page itself fetches the API with
-				// the same token; the API does the actual HMAC validation.
-				// Middleware only confirms the request *looks* like a
-				// legitimate export-loopback and lets the page shell through
-				// — otherwise withAuth redirects to /auth/signin and the
-				// captured PDF is the dark login page (visible to customers
-				// as "black cover, empty file").
+				// PDF-export self-request: puppeteer (no session cookie)
+				// hits /app/library/strategy/[month]?print=true&export_token=<sig>
+				// to render the plan for capture. Without this gate withAuth
+				// redirects the cookie-less request to /auth/signin and the
+				// captured PDF is a black login page.
+				//
+				// Security: HMAC-verified end-to-end against NEXTAUTH_SECRET
+				// via crypto.subtle.verify (constant-time). The token's 90s
+				// TTL bounds blast radius. No trust placed in Host or any
+				// other spoofable request header — anyone holding a valid
+				// signed token may render the page, which is the same trust
+				// model the downstream API uses.
 				if (
 					pathname.startsWith("/app/library/strategy/") &&
-					req.nextUrl?.searchParams.get("print") === "true" &&
-					isWellFormedExportToken(req.nextUrl?.searchParams.get("export_token") ?? null) &&
-					isLoopbackHost(req.headers.get("host") || "")
+					req.nextUrl?.searchParams.get("print") === "true"
 				) {
-					return true;
+					const exportToken = req.nextUrl.searchParams.get("export_token");
+					if (exportToken) {
+						const verified = await verifyExportTokenEdge(exportToken);
+						if (verified) return true;
+					}
 				}
 
 				// App domain root — allow through so middleware function can handle redirect

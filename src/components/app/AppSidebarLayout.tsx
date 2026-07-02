@@ -124,6 +124,56 @@ function ThemeToggle() {
 	);
 }
 
+// ── Env switch skeleton ──
+// Layout-true placeholder that replaces the current page content while
+// the router is re-fetching data for a different environment. Renders
+// a generic shape (page header + card row) that matches the majority
+// of /app/* console surfaces (actions, findings, workspaces, library
+// entry, inventory), so the swap-to-real feels like the content is
+// materializing in place instead of the prior env's cards flashing
+// through. Named lifecycle: EnvironmentSwitcher.handleSwitch flips
+// switchingTo on, the RSC re-render completes with the target envId,
+// the layout's useEffect clears switchingTo, and the real children
+// re-mount.
+function EnvSwitchSkeleton({ targetDomain }: { targetDomain: string }) {
+	return (
+		<div className="p-4 sm:p-6" aria-busy="true" aria-live="polite">
+			{/* Status banner — narrates what's happening so the empty
+			    skeleton doesn't read as "site broken". */}
+			<div className="mb-6 flex items-center gap-2.5 rounded-lg border border-edge bg-surface-card/40 px-3 py-2 text-[12px]">
+				<span className="relative inline-flex h-1.5 w-1.5">
+					<span className="absolute inset-0 animate-ping rounded-full bg-emerald-400/60" />
+					<span className="relative block h-1.5 w-1.5 rounded-full bg-emerald-400" />
+				</span>
+				<span className="font-medium text-content-secondary">
+					Carregando <span className="font-semibold text-content">{targetDomain}</span>
+				</span>
+			</div>
+			{/* Page-header block */}
+			<div className="mb-6 space-y-2">
+				<div className="h-6 w-56 animate-pulse rounded-md bg-surface-card" />
+				<div className="h-3 w-96 max-w-full animate-pulse rounded-md bg-surface-card" />
+			</div>
+			{/* Filter strip */}
+			<div className="mb-4 flex flex-wrap gap-2">
+				<div className="h-8 w-32 animate-pulse rounded-md bg-surface-card" />
+				<div className="h-8 w-28 animate-pulse rounded-md bg-surface-card" />
+				<div className="h-8 w-24 animate-pulse rounded-md bg-surface-card" />
+				<div className="ml-auto h-8 w-20 animate-pulse rounded-md bg-surface-card" />
+			</div>
+			{/* Card stack */}
+			<div className="space-y-3">
+				{Array.from({ length: 6 }).map((_, i) => (
+					<div
+						key={i}
+						className="h-24 w-full animate-pulse rounded-2xl bg-surface-card"
+					/>
+				))}
+			</div>
+		</div>
+	);
+}
+
 // ── Page fade wrapper ──
 function PageFade({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname();
@@ -371,7 +421,15 @@ function UserMenu() {
 }
 
 // ── Environment Switcher ──
-function EnvironmentSwitcher({ orgCtx, plan }: { orgCtx: OrgCtx; plan: string }) {
+function EnvironmentSwitcher({
+	orgCtx,
+	plan,
+	onSwitchStart,
+}: {
+	orgCtx: OrgCtx;
+	plan: string;
+	onSwitchStart?: (targetEnvId: string) => void;
+}) {
 	const router = useRouter();
 	const [open, setOpen] = useState(false);
 	const ref = useRef<HTMLDivElement>(null);
@@ -391,6 +449,10 @@ function EnvironmentSwitcher({ orgCtx, plan }: { orgCtx: OrgCtx; plan: string })
 	function handleSwitch(envId: string) {
 		setOpen(false);
 		if (envId === orgCtx.envId) return;
+		// Signal to the shell that a switch is in flight — the main
+		// content area swaps the current env's cards for a layout-true
+		// skeleton until the RSC re-render lands on the target env.
+		onSwitchStart?.(envId);
 		// Soft switch — cookie + router.refresh() re-bootstraps the org
 		// context (MCP, dashboard, sidebar) through Next's server-component
 		// re-fetch without a full page reload. The previous
@@ -528,6 +590,23 @@ export default function AppSidebarLayout({
 	}, [orgCtx.envId]);
 	const pausedBannerT = useTranslations("console.paused_banner");
 
+	// Env-switch skeleton. When the user picks a different env from the
+	// EnvironmentSwitcher, we need to hide the current env's data until
+	// the new env's server-side context (MCP + inventory + plan) has
+	// streamed down through the RSC re-render. Without this, /app/actions
+	// / /app/findings / /app/library etc keep rendering the prior env's
+	// cards for ~1-2s while router.refresh() finishes — visually reads
+	// as cross-env data leaking into the new tenant view even though it's
+	// just the intermediate paint. switchingTo holds the target envId
+	// while in-flight; the useEffect below clears it once orgCtx.envId
+	// prop actually flips to the target (server rendered the new env).
+	const [switchingTo, setSwitchingTo] = useState<string | null>(null);
+	useEffect(() => {
+		if (switchingTo && switchingTo === orgCtx.envId) {
+			setSwitchingTo(null);
+		}
+	}, [switchingTo, orgCtx.envId]);
+
 	// ── Onboarding: full-screen focused experience, no shell chrome ──
 	if (isOnboarding) {
 		return (
@@ -599,7 +678,11 @@ export default function AppSidebarLayout({
 						{/* Org name + environment switcher */}
 						{!isAdmin && (
 							<>
-								<EnvironmentSwitcher orgCtx={orgCtx} plan={plan} />
+								<EnvironmentSwitcher
+									orgCtx={orgCtx}
+									plan={plan}
+									onSwitchStart={(targetEnvId) => setSwitchingTo(targetEnvId)}
+								/>
 								<AuditStatusBadge />
 							</>
 						)}
@@ -667,7 +750,16 @@ export default function AppSidebarLayout({
 						</div>
 					)}
 					<PageFade>
-						{children}
+						{switchingTo ? (
+							<EnvSwitchSkeleton
+								targetDomain={
+									orgCtx.environments.find((e) => e.id === switchingTo)?.domain ??
+									"…"
+								}
+							/>
+						) : (
+							children
+						)}
 					</PageFade>
 				</div>
 			</div>

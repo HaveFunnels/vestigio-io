@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import StrategyPlanDialog from "@/components/strategy/StrategyPlanDialog";
 import ActionCard from "@/components/actions/ActionCard";
-import { MOCK_PLAN_HAVEFUNNELS_2026_06 } from "@/components/strategy/mock-data";
 import { useTranslations, useLocale } from "next-intl";
 import { formatDate } from "@/lib/format-date";
 import { useTrack } from "@/hooks/useProductTrack";
@@ -352,29 +351,6 @@ function ActionsContent({
 	const [surfaceKindFilter, setSurfaceKindFilter] = useState<
 		"all" | "public" | "authenticated" | "mixed"
 	>("all");
-
-	// Wave 22.6 — Strategy Plan dialog state. URL is synced via ?plan=
-	// so the panel survives refresh + supports deep links. Mount-effect
-	// hydrates from URL; toggle writes back via router.replace (no
-	// history pollution from drawer open/close). Reuses the `router`
-	// and `searchParams` already declared above for this component.
-	const [planOpen, setPlanOpen] = useState(false);
-	useEffect(() => {
-		if (searchParams?.get("plan")) setPlanOpen(true);
-		// mount-only: subsequent URL changes flow through handlePlanOpenChange
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
-	const handlePlanOpenChange = useCallback(
-		(open: boolean) => {
-			setPlanOpen(open);
-			const params = new URLSearchParams(searchParams?.toString() ?? "");
-			if (open) params.set("plan", "2026-06");
-			else params.delete("plan");
-			const qs = params.toString();
-			router.replace(`/app/actions${qs ? `?${qs}` : ""}`, { scroll: false });
-		},
-		[router, searchParams],
-	);
 
 	// Fetch persisted UserActions once on mount. These come from the
 	// chat Verify flow (POST /api/actions/from-finding) and aren't
@@ -974,44 +950,51 @@ function ActionsContent({
 
 	return (
 		<>
-			{/* Wave 22.6 — Strategy Plan strip. High-visibility entry
-			    into the current month's plan. Opens StrategyPlanPanel
-			    as a full-screen Dialog (per design spec §11.6) so the
-			    operator keeps their /app/actions queue state and can
-			    close back to the same row they were on. URL state
-			    (?plan=2026-06) survives refresh + supports deep-links. */}
-			<button
-				type='button'
-				onClick={() => handlePlanOpenChange(true)}
-				className='group mb-4 flex w-full items-center justify-between gap-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 text-left transition-all hover:border-edge-focus hover:from-surface-card-hover'
-			>
-				<div className='flex items-center gap-4'>
-					<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset font-serif text-[16px] font-semibold text-content'>
-						6
-					</div>
-					<div>
-						<div className='mb-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint'>
-							Vestigio Pulse · Plano de Estratégia
+			{/* Strategy Plan strip — entry into the current month's plan.
+			    Was previously a Dialog hardcoded to MOCK_PLAN_HAVEFUNNELS,
+			    which leaked havefunnels demo data into every other
+			    tenant's console. Now a plain Link into /app/library/
+			    strategy/<currentMonth> — that page loads the plan per
+			    envId from the DB and enforces org-membership check, so
+			    the leak is closed at the source. Real actions count +
+			    real total impact replace the hardcoded copy. */}
+			{(() => {
+				const now = new Date();
+				const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+				const totalImpact = actions.reduce((s, a) => s + (a.impact?.midpoint ?? 0), 0);
+				const actionsCopy =
+					actions.length === 0
+						? "Nenhuma ação priorizada este mês"
+						: actions.length === 1
+							? "1 próximo passo identificado"
+							: `${actions.length} próximos passos identificados`;
+				const impactCopy = totalImpact > 0
+					? ` · ${currSym} ${(totalImpact / 1000).toFixed(1).replace(".", ",")}k em foco`
+					: "";
+				return (
+					<Link
+						href={`/app/library/strategy/${currentMonth}`}
+						className='group mb-4 flex w-full items-center justify-between gap-4 rounded-xl border border-edge bg-gradient-to-r from-surface-card via-surface-card to-accent-subtle-bg px-5 py-4 text-left transition-all hover:border-edge-focus hover:from-surface-card-hover'
+					>
+						<div className='flex items-center gap-4'>
+							<div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset font-serif text-[16px] font-semibold text-content'>
+								6
+							</div>
+							<div>
+								<div className='mb-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint'>
+									Plano de Estratégia
+								</div>
+								<div className='text-[14px] font-medium text-content'>
+									{actionsCopy}{impactCopy}
+								</div>
+							</div>
 						</div>
-						<div className='text-[14px] font-medium text-content'>
-							Junho 2026 · 5 próximos passos identificados · R$ 5,7k em foco
-						</div>
-					</div>
-				</div>
-				<span className='shrink-0 rounded-md border border-edge bg-surface px-3 py-1.5 text-[12px] font-medium text-content transition-colors group-hover:border-edge-focus'>
-					Abrir Plano →
-				</span>
-			</button>
-
-			{/* Full-screen Dialog overlay — mounted once at the page
-			    level so the same instance is reused across user
-			    open/close cycles (cheaper than remount + nicer
-			    animations on Radix). */}
-			<StrategyPlanDialog
-				open={planOpen}
-				onOpenChange={handlePlanOpenChange}
-				plan={MOCK_PLAN_HAVEFUNNELS_2026_06}
-			/>
+						<span className='shrink-0 rounded-md border border-edge bg-surface px-3 py-1.5 text-[12px] font-medium text-content transition-colors group-hover:border-edge-focus'>
+							Abrir Plano →
+						</span>
+					</Link>
+				);
+			})()}
 
 			{/* Summary Cards */}
 			<div className='mb-6'>

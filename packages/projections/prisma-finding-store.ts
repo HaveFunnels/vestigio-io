@@ -568,18 +568,48 @@ export class PrismaFindingStore {
 	// ── Pruning ──
 
 	/**
-	 * Delete all findings for cycles older than the retention cap.
+	 * Delete finding rows from all-but-the-most-recent `keepCount`
+	 * cycles that actually persisted findings for this environment.
+	 *
+	 * Why the "actually persisted findings" qualifier matters:
+	 * `targeted` cycles (probe-triggered single-URL rescans) intentionally
+	 * emit zero cross-pack findings — their persistence call returns
+	 * attempted=0, so no Finding rows exist for them. Under the old
+	 * "keep N most-recent cycles by date" rule, an env whose scheduler
+	 * cadence produced N or more targeted cycles between full-engine
+	 * cycles saw every finding row from the big cycles wiped out on
+	 * the next targeted cycle's prune step. The Finding table ended up
+	 * at 0 rows even though the projectionsCache on the older big
+	 * cycles still carried the real data.
+	 *
+	 * Diagnosed on casamontelle (2026-07-02): 577 targeted cycles
+	 * dominating the recent history vs 31 full/warm/cold/hot cycles.
+	 * Every full-engine cycle's finding rows were being pruned within
+	 * ~10 minutes of write by the two-most-recent-targeted rule.
+	 *
 	 * Cascading FK from AuditCycle deletes findings automatically when
-	 * the cycle row is deleted, so this is only needed if you want to
-	 * prune findings independently of the cycle.
+	 * the cycle row itself is deleted; this method is only for pruning
+	 * findings independently of the cycle row.
 	 */
 	async pruneOlderThan(environmentId: string, keepCount: number): Promise<number> {
-		const cycles = await this.prisma.auditCycle.findMany({
-			where: { environmentId, status: "complete" },
-			orderBy: { createdAt: "desc" },
+		// Which cycles actually own Finding rows for this env?
+		const cyclesWithFindings = await this.prisma.finding.groupBy({
+			by: ['cycleId'],
+			where: { environmentId },
+			_count: { _all: true },
+		});
+		if (cyclesWithFindings.length === 0) return 0;
+		const cycleIdsWithFindings = cyclesWithFindings.map((g: { cycleId: string }) => g.cycleId);
+		// Of those, keep the N most recent by cycle creation time. Any
+		// cycles ABOVE that cap get their finding rows deleted.
+		const cyclesToKeep = await this.prisma.auditCycle.findMany({
+			where: { environmentId, status: 'complete', id: { in: cycleIdsWithFindings } },
+			orderBy: { createdAt: 'desc' },
+			take: keepCount,
 			select: { id: true },
 		});
-		const toPrune = cycles.slice(keepCount).map((c: any) => c.id);
+		const keepIds = new Set(cyclesToKeep.map((c: { id: string }) => c.id));
+		const toPrune = cycleIdsWithFindings.filter((id: string) => !keepIds.has(id));
 		if (toPrune.length === 0) return 0;
 		const result = await this.prisma.finding.deleteMany({
 			where: { cycleId: { in: toPrune } },

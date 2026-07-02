@@ -98,13 +98,41 @@ export interface CachedProjections {
 export async function loadProjectionsCacheForEnv(envId: string): Promise<CachedProjections | null> {
   try {
     const { prisma } = await import('@/libs/prismaDb');
-    const row = await prisma.auditCycle.findFirst({
-      // Prisma JSON null filter: a null projectionsCache yields a missing
-      // value in the row, so we filter at the application layer below.
+    // Wave 22.9 — prefer the last cycle with real findings, not just the
+    // newest cycle overall. `targeted` cycles (probe-triggered single-URL
+    // rescans) intentionally compute a narrow projection scoped to one
+    // URL, so their cache often has findings=[] / actions=[]. Under the
+    // previous "latest cycle wins" rule, a customer whose latest scan was
+    // targeted saw /findings and /actions rendered as empty even though a
+    // full/warm/cold/hot cycle from hours earlier still had 24+ findings.
+    // We fan out to the recent completed cycles and pick the first whose
+    // cache actually carries findings. Falls back to the newest cycle if
+    // every scan in the window came back empty (true first-audit-ever, or
+    // an env whose engine legitimately has nothing to say). The window
+    // caps at 20 because the audit-scheduler emits at most ~4 cycles/hour
+    // across all cycle types, so 20 covers a comfortable 4-6 hour window
+    // without pulling megabytes of JSON blobs.
+    const rows = await prisma.auditCycle.findMany({
       where: { environmentId: envId, status: 'complete' },
       orderBy: { completedAt: 'desc' },
+      take: 20,
       select: { id: true, projectionsCache: true },
     });
+    if (rows.length === 0) return null;
+    // First non-empty cache wins. "Empty" = findings array literally
+    // empty (length === 0). We don't check actions because a cycle with
+    // findings but no actions is still meaningful data.
+    let row: (typeof rows)[number] | undefined;
+    for (const r of rows) {
+      if (!r.projectionsCache) continue;
+      const cache = r.projectionsCache as unknown as CachedProjections;
+      const hasFindings = Array.isArray(cache.findings) && cache.findings.length > 0;
+      if (hasFindings) { row = r; break; }
+    }
+    // Fallback: no cycle in the window has findings — serve whatever the
+    // newest cycle stored, even if empty. Downstream renders the "empty"
+    // state which is still the honest signal.
+    if (!row) row = rows.find((r) => r.projectionsCache !== null);
     if (!row?.projectionsCache) return null;
     const cached = row.projectionsCache as unknown as CachedProjections;
 

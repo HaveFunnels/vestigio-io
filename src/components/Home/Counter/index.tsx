@@ -86,7 +86,7 @@ const Counter = () => {
 							</div>
 
 							<div className='relative text-center'>
-								<span className='font-serif text-[4rem] font-medium leading-none tracking-tight text-emerald-400 sm:text-[5.5rem] lg:text-[6.5rem]'>
+								<span className='text-[4rem] font-bold leading-none tracking-tighter text-emerald-400 tabular-nums sm:text-[5.5rem] lg:text-[6.5rem]'>
 									4×
 								</span>
 								<h3 className='mt-3 text-base font-semibold text-content sm:text-lg'>{t("roi_title")}</h3>
@@ -115,12 +115,12 @@ const Counter = () => {
 								<div className='absolute h-[260px] w-[260px] rounded-full border border-dashed border-white/[0.04]' />
 								<div className='absolute h-[180px] w-[180px] rounded-full border border-dashed border-white/[0.06]' />
 								<div className='absolute h-[100px] w-[100px] rounded-full border border-dashed border-white/[0.08]' />
-								<div className='absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 font-serif text-[7rem] leading-none text-white/15 select-none'>“</div>
+								<div className='absolute left-1/2 top-[35%] -translate-x-1/2 -translate-y-1/2 text-[7rem] font-bold leading-none text-white/15 select-none'>“</div>
 							</div>
 
 							<div className='relative mt-auto pt-32 text-center'>
 								<p className='mb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint'>{t("pulse_title")}</p>
-								<p className='mx-auto max-w-[280px] font-serif text-base italic leading-snug text-content-secondary sm:text-lg'>{t("pulse_desc")}</p>
+								<p className='mx-auto max-w-[280px] text-base font-medium leading-snug text-content-secondary sm:text-lg'>{t("pulse_desc")}</p>
 								<span className='mt-3 inline-flex items-center gap-1 text-xs font-medium text-emerald-400/70 transition-colors group-hover:text-emerald-300'>
 									{t("pulse_cta")}
 									<svg className='h-3 w-3 transition-transform group-hover:translate-x-0.5' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth='2'>

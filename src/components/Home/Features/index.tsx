@@ -85,7 +85,7 @@ const Features = async () => {
 						    label "TESE DO MÊS"; replaced with Fraunces serif
 						    sentence "Qual é o problema deste mês" matching
 						    the supporting columns' heading style. */}
-						<div className="font-serif text-[16px] font-medium leading-snug text-zinc-100 sm:text-[18px]">
+						<div className="text-[16px] font-semibold leading-snug tracking-tight text-zinc-100 sm:text-[18px]">
 							{t("tese.eyebrow")}
 						</div>
 						<div className="mt-2 font-mono text-[11px] text-content-muted">
@@ -98,7 +98,7 @@ const Features = async () => {
 					</aside>
 
 					<div className="md:col-span-9 md:border-l md:border-edge md:pl-8 lg:pl-12">
-						<p className="font-serif text-[22px] italic leading-[1.35] text-zinc-100 sm:text-[28px] lg:text-[32px]">
+						<p className="text-[22px] font-semibold leading-[1.3] tracking-tight text-zinc-100 sm:text-[28px] lg:text-[32px]">
 							{t("tese.sample")}
 						</p>
 						{/* Mobile-only attribution (when stacked, the desktop
@@ -123,7 +123,7 @@ const Features = async () => {
 						    the buyer-question reads as a section heading
 						    (e.g. "Onde você tá perdendo") not a label.
 						    Description dropped — heading is the message. */}
-						<h3 className="mb-6 font-serif text-[18px] font-medium leading-snug text-zinc-100 sm:text-[20px]">
+						<h3 className="mb-6 text-[18px] font-semibold leading-snug tracking-tight text-zinc-100 sm:text-[20px]">
 							{t("onde_voce_esta.eyebrow")}
 						</h3>
 						<div className="flex flex-col gap-5">
@@ -146,13 +146,13 @@ const Features = async () => {
 
 					{/* Próximos passos — numbered actions as compact prose lines */}
 					<section className="md:border-l md:border-edge md:px-6 md:py-2 lg:px-8">
-						<h3 className="mb-6 font-serif text-[18px] font-medium leading-snug text-zinc-100 sm:text-[20px]">
+						<h3 className="mb-6 text-[18px] font-semibold leading-snug tracking-tight text-zinc-100 sm:text-[20px]">
 							{t("proximos_passos.eyebrow")}
 						</h3>
 						<ol className="flex flex-col gap-5">
 							{nextSteps.map((s, i) => (
 								<li key={i} className="flex items-start gap-3">
-									<span className="font-serif text-[24px] font-medium leading-none tabular-nums text-content-secondary sm:text-[26px]">
+									<span className="text-[24px] font-bold leading-none tabular-nums tracking-tighter text-content-secondary sm:text-[26px]">
 										{s.n}
 									</span>
 									<div className="min-w-0 flex-1">
@@ -172,7 +172,7 @@ const Features = async () => {
 
 					{/* Continuidade — delta pairs as prose ("X → Y, +Z") */}
 					<section className="md:border-l md:border-edge md:px-6 md:py-2 lg:px-8">
-						<h3 className="mb-6 font-serif text-[18px] font-medium leading-snug text-zinc-100 sm:text-[20px]">
+						<h3 className="mb-6 text-[18px] font-semibold leading-snug tracking-tight text-zinc-100 sm:text-[20px]">
 							{t("continuidade.eyebrow")}
 						</h3>
 						<dl className="flex flex-col gap-5">

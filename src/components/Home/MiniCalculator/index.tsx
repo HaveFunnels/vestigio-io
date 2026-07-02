@@ -389,7 +389,7 @@ const MiniCalculator = ({ primaryCtaHref = "/audit" }: MiniCalculatorProps = {})
 						{/* ───────────── INPUT STATE ───────────── */}
 						{state === "input" && (
 							<div className="text-center">
-								<h2 className="mb-4 font-serif text-[1.75rem] font-medium leading-[1.15] tracking-tight text-zinc-100 sm:text-3xl lg:text-4xl xl:text-5xl">
+								<h2 className="mb-4 text-[1.75rem] font-semibold leading-[1.1] tracking-tight text-zinc-100 sm:text-3xl lg:text-4xl xl:text-5xl">
 									{t("title")}
 								</h2>
 								<p className="mx-auto mb-8 max-w-[540px] text-sm text-content-muted sm:mb-10 sm:text-base">
@@ -579,7 +579,7 @@ const MiniCalculator = ({ primaryCtaHref = "/audit" }: MiniCalculatorProps = {})
 									<p className="mb-2 font-mono text-[10px] uppercase tracking-[0.18em] text-content-faint">
 										{t("scan_complete")}
 									</p>
-									<h2 className="font-serif text-[1.5rem] font-medium tracking-tight text-zinc-100 sm:text-[1.75rem] lg:text-3xl">
+									<h2 className="text-[1.5rem] font-semibold tracking-tight text-zinc-100 sm:text-[1.75rem] lg:text-3xl">
 										{t("results_for")}{" "}
 										<span className="break-all font-mono text-emerald-400">{domain}</span>
 									</h2>
@@ -632,7 +632,7 @@ const MiniCalculator = ({ primaryCtaHref = "/audit" }: MiniCalculatorProps = {})
 								</div>
 
 								<div className="text-center">
-									<p className="mb-6 font-serif text-[15px] italic leading-relaxed text-content-secondary sm:text-base">
+									<p className="mb-6 text-[15px] font-medium leading-relaxed text-content-secondary sm:text-base">
 										{t("cta_question")}
 									</p>
 									<div className="mb-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center sm:gap-4">

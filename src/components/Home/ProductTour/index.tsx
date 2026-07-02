@@ -136,22 +136,22 @@ function StepThesisAndMetrics() {
 
 			{/* Masthead — Fraunces serif, the defining "this is a Plano" moment */}
 			<div className="mb-5 sm:mb-6">
-				<h2 className="font-serif text-[24px] font-medium tracking-tight text-zinc-100 sm:text-[32px] lg:text-[36px]">
+				<h2 className="text-[24px] font-semibold tracking-tight text-zinc-100 sm:text-[32px] lg:text-[36px]">
 					{t("step1.masthead_title")}
 				</h2>
-				<p className="mt-1 font-serif text-[15px] italic text-zinc-400 sm:text-[18px]">
+				<p className="mt-1 text-[15px] font-medium text-zinc-400 sm:text-[18px]">
 					{t("step1.masthead_subtitle")}
 				</p>
 			</div>
 
 			{/* Thesis pull-quote — mirrors MonthlyThesis section */}
 			<div className="relative mb-5 overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 sm:mb-6 sm:p-6">
-				<div aria-hidden className="pointer-events-none absolute -left-1 -top-3 select-none font-serif text-[70px] leading-none text-white/15 sm:-left-2 sm:-top-4 sm:text-[90px]">“</div>
+				<div aria-hidden className="pointer-events-none absolute -left-1 -top-3 select-none text-[70px] font-bold leading-none text-white/15 sm:-left-2 sm:-top-4 sm:text-[90px]">“</div>
 				<div className="relative">
 					<div className="mb-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-zinc-500 sm:text-[10px]">
 						{t("step1.tese_eyebrow")}
 					</div>
-					<p className="font-serif text-[14px] italic leading-[1.45] text-zinc-300 sm:text-[16px] lg:text-[18px]">
+					<p className="text-[14px] font-medium leading-[1.45] text-zinc-200 sm:text-[16px] lg:text-[18px]">
 						{renderBold(t("step1.tese_body"))}
 					</p>
 					<div className="mt-4 flex items-center gap-2 text-[10px] text-zinc-500">
@@ -236,7 +236,7 @@ function StepBuyersAndNarrative() {
 		<div className="flex h-full flex-col">
 			{/* Section heading — serif H2 matches BuyerSegments authenticated style */}
 			<div className="mb-3 flex flex-col items-start gap-1 sm:mb-4 sm:flex-row sm:items-baseline sm:justify-between">
-				<h2 className="font-serif text-[18px] font-medium tracking-tight text-zinc-100 sm:text-[22px]">
+				<h2 className="text-[18px] font-semibold tracking-tight text-zinc-100 sm:text-[22px]">
 					{t("step2.heading")}
 				</h2>
 				<div className="text-[10px] text-zinc-500 sm:text-[11px]">{t("step2.subheading")}</div>
@@ -286,12 +286,12 @@ function StepBuyersAndNarrative() {
 				</div>
 
 				{/* Lead paragraph — primary serif body */}
-				<p className="font-serif text-[15px] leading-[1.55] text-zinc-200 sm:text-[17px] lg:text-[18px]">
+				<p className="text-[15px] font-normal leading-[1.55] text-zinc-200 sm:text-[17px] lg:text-[18px]">
 					{renderBold(t("step2.narrative_lead"))}
 				</p>
 
 				{/* Detail paragraph — slightly smaller, slightly fainter */}
-				<p className="mt-3 font-serif text-[14px] leading-[1.55] text-zinc-400 sm:text-[15px] lg:text-[16px]">
+				<p className="mt-3 text-[14px] font-normal leading-[1.55] text-zinc-400 sm:text-[15px] lg:text-[16px]">
 					{renderBold(t("step2.narrative_detail"))}
 				</p>
 			</div>
@@ -309,7 +309,7 @@ function StepNextSteps({ primaryCtaHref }: { primaryCtaHref: string }) {
 
 	return (
 		<div className="flex h-full flex-col">
-			<h2 className="mb-4 font-serif text-[18px] font-medium tracking-tight text-zinc-100 sm:text-[22px]">
+			<h2 className="mb-4 text-[18px] font-semibold tracking-tight text-zinc-100 sm:text-[22px]">
 				{t("step3.heading")}
 			</h2>
 
@@ -320,7 +320,7 @@ function StepNextSteps({ primaryCtaHref }: { primaryCtaHref: string }) {
 			<div className="flex-1 space-y-2.5">
 				{steps.map((s, i) => (
 					<div key={i} className="relative flex items-start gap-4 rounded-xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5">
-						<div className="font-serif text-[32px] font-medium leading-none tabular-nums text-zinc-100 sm:text-[40px]">
+						<div className="text-[32px] font-bold leading-none tabular-nums tracking-tighter text-zinc-100 sm:text-[40px]">
 							{s.n}
 						</div>
 						<div className="min-w-0 flex-1">
@@ -389,7 +389,7 @@ function StepIndicator({ current, labels, onSelect }: { current: Step; labels: s
 					}`}
 					aria-current={current === i}
 				>
-					<span className={`flex h-5 w-5 items-center justify-center rounded-full font-serif text-[11px] font-medium transition-colors ${
+					<span className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] font-semibold tabular-nums transition-colors ${
 						current === i ? "bg-emerald-500/15 text-emerald-300" : "bg-white/[0.04] text-zinc-500 group-hover:text-zinc-400"
 					}`}>
 						{i + 1}

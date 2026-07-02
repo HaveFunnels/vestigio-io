@@ -26,7 +26,7 @@ export default function CadenceFrame() {
 				<div className="mb-4 text-[10px] font-semibold uppercase tracking-[0.22em] text-content-faint">
 					{t("eyebrow")}
 				</div>
-				<p className="font-serif text-[20px] italic leading-[1.4] text-zinc-100 sm:text-[24px] lg:text-[28px]">
+				<p className="text-[20px] font-semibold leading-[1.3] tracking-tight text-zinc-100 sm:text-[24px] lg:text-[28px]">
 					{t("statement")}
 				</p>
 				<p className="mx-auto mt-5 max-w-[520px] text-[14px] leading-relaxed text-content-muted sm:text-[15px]">

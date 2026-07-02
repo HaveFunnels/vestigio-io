@@ -157,7 +157,7 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 				    line per part so balance is a no-op there, which is the
 				    right behavior (editorial publications control desktop
 				    headlines with sizing, not balance). */}
-				<h1 className='mb-5 font-serif text-[1.875rem] font-medium leading-[1.15] tracking-tight text-balance text-zinc-100 sm:mb-6 sm:text-[2.5rem] lg:text-[3.25rem] xl:text-[3.5rem]'>
+				<h1 className='mb-5 text-[1.875rem] font-semibold leading-[1.1] tracking-tight text-balance text-zinc-100 sm:mb-6 sm:text-[2.5rem] lg:text-[3.25rem] xl:text-[3.5rem]'>
 					{t("headline_part1") && <span className='block'>{t("headline_part1")}</span>}
 					{t("headline_part2") && <span className='block'>{t("headline_part2")}</span>}
 					{t("headline_part3") && (
@@ -180,7 +180,7 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 						<>
 							{t("subtitle_line1") && <><span>{t("subtitle_line1")}</span><br className='sm:hidden' />{" "}</>}
 							{t("subtitle_before_bold")}
-							<em className='font-serif italic text-zinc-200'>{t("subtitle_bold")}</em>
+							<em className='font-semibold not-italic text-zinc-100'>{t("subtitle_bold")}</em>
 							{t("subtitle_after_bold")}
 						</>
 					) : (

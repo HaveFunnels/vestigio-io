@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
+import { AUTH_BASE } from "@/libs/cross-domain-auth";
 import { ShieldCheck, Check } from "lucide-react";
 import logoLight from "@/../public/images/logo/logo-light.png";
 
@@ -539,7 +540,7 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 			{/* Already-have-account */}
 			<div className="mx-auto mt-12 max-w-3xl text-center text-[12px] text-content-muted">
 				Já tem conta?{" "}
-				<Link href="/auth/signin" className="font-semibold text-content underline-offset-2 hover:underline">
+				<Link href={`${AUTH_BASE}/auth/signin`} className="font-semibold text-content underline-offset-2 hover:underline">
 					Entrar
 				</Link>
 			</div>

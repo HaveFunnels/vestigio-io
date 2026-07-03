@@ -10,6 +10,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Account from "./Account";
 import { menuData } from "./menuData";
+import { AUTH_BASE } from "@/libs/cross-domain-auth";
 
 /**
  * Header — site marketing header with TWO visual states (was three
@@ -227,7 +228,7 @@ const Header = () => {
 						) : (
 							<>
 								<Link
-									href='/auth/signin'
+									href={`${AUTH_BASE}/auth/signin`}
 									className={`whitespace-nowrap rounded-[0.5rem] text-center text-sm font-medium text-gray-300 transition-all duration-300 hover:text-white ${
 										compact ? "px-3 py-1" : "px-4 py-2"
 									}`}
@@ -236,7 +237,7 @@ const Header = () => {
 								</Link>
 
 								<Link
-									href='/auth/signup?callbackUrl=/activate'
+									href={`${AUTH_BASE}/auth/signup?callbackUrl=/activate`}
 									className={`whitespace-nowrap rounded-full border border-white/20 bg-white text-center text-sm font-medium text-black transition-all duration-300 hover:bg-zinc-100 ${
 										compact ? "px-4 py-1.5" : "px-5 py-2"
 									}`}

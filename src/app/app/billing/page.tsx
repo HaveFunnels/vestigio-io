@@ -201,17 +201,26 @@ export default function BillingPage() {
   // ──────────────────────────────────────────────
 
   const handleChangePlan = useCallback(
-    async (newPaddlePriceId: string) => {
+    async (
+      planKey: "vestigio" | "pro" | "max",
+      cadence: "monthly" | "annual",
+    ) => {
       if (!billing?.subscriptionId) return;
 
       setActionLoading(true);
       try {
+        // planKey + cadence only — server resolves the current Paddle
+        // priceId. Passing a raw priceId lets a client submit a legacy
+        // or promo id that still maps to a paid tier, billed at the
+        // cheaper legacy amount. See resolvePriceIdForPlan for the
+        // full rationale (P1.5).
         const res = await fetch("/api/paddle/change-plan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             subscriptionId: billing.subscriptionId,
-            priceId: newPaddlePriceId,
+            planKey,
+            cadence,
           }),
         });
 
@@ -327,17 +336,26 @@ export default function BillingPage() {
       }
 
       // Paddle branch (legacy users)
-      const targetPriceId =
-        billingCycle === "annually" && targetPlan.paddleAnnualPriceId
-          ? targetPlan.paddleAnnualPriceId
-          : targetPlan.paddlePriceId;
-      if (!targetPriceId) {
-        toast.error(t("errors.plan_unavailable"));
-        return;
-      }
+      const paddleCadence: "monthly" | "annual" =
+        billingCycle === "annually" ? "annual" : "monthly";
+      // Existing-subscription change path: server resolves the priceId
+      // by (planKey, cadence). The new-checkout path (openPaddleCheckout)
+      // still needs a concrete priceId since Paddle.Checkout.open()
+      // takes it directly — no server intake to resolve through.
+      // resolvePlanFromPriceId in the webhook still whitelists incoming
+      // priceIds against the current plan catalog so a manipulated
+      // Paddle Checkout URL can't grant a mis-mapped tier.
       if (billing?.subscriptionId) {
-        handleChangePlan(targetPriceId);
+        handleChangePlan(planId as "vestigio" | "pro" | "max", paddleCadence);
       } else {
+        const targetPriceId =
+          paddleCadence === "annual" && targetPlan.paddleAnnualPriceId
+            ? targetPlan.paddleAnnualPriceId
+            : targetPlan.paddlePriceId;
+        if (!targetPriceId) {
+          toast.error(t("errors.plan_unavailable"));
+          return;
+        }
         openPaddleCheckout(targetPriceId);
       }
     },

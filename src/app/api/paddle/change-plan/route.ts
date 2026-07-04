@@ -1,5 +1,6 @@
 import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { resolvePriceIdForPlan } from "@/libs/plan-config";
 import axios from "axios";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -22,13 +23,23 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 		);
 	}
 
-	const { subscriptionId, priceId } = res.data;
+	const { subscriptionId, planKey, cadence } = res.data;
 
 	// Verify the subscription belongs to the authenticated user
 	if (session.user.subscriptionId !== subscriptionId) {
 		return NextResponse.json(
 			{ message: "Forbidden: subscription does not belong to this user" },
 			{ status: 403 }
+		);
+	}
+
+	// Server-side price resolution — do NOT accept priceId from client.
+	// See resolvePriceIdForPlan for the rationale.
+	const priceId = await resolvePriceIdForPlan(planKey, cadence, "paddle");
+	if (!priceId) {
+		return NextResponse.json(
+			{ message: `No Paddle ${cadence} priceId configured for plan ${planKey}` },
+			{ status: 400 },
 		);
 	}
 

@@ -703,6 +703,8 @@ export default function useOnboardingForm() {
 				.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
 				.join(" ");
 		try {
+			// planKey + cadence intake — server resolves the current Paddle
+			// price via resolvePriceIdForPlan. See P1.5 rationale.
 			const response = await fetch("/api/onboard", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -716,7 +718,8 @@ export default function useOnboardingForm() {
 					primaryConcern: form.primaryConcern || null,
 					currentOptimizationMethod: form.currentOptimizationMethod || null,
 					whyNow: form.whyNow || null,
-					priceId: selectedPlan.paddlePriceId,
+					planKey: selectedPlan.key,
+					cadence: "monthly",
 					paymentProvider: "paddle",
 					targetIndustry: form.industryVertical || null,
 					ownershipConfirmed: form.ownershipConfirmed,

@@ -6,6 +6,7 @@ import Stripe from "stripe";
 import { z } from "zod";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { checkRateLimit } from "@/libs/limiter";
+import { resolvePriceIdForPlan, type PaymentProviderKey } from "@/libs/plan-config";
 
 // ──────────────────────────────────────────────
 // Onboarding API — creates org + starts checkout
@@ -71,7 +72,13 @@ const onboardSchema = z.object({
     ])
     .optional()
     .nullable(),
-  priceId: z.string(),
+  // planKey + cadence + paymentProvider are the ONLY billing levers
+  // a client controls. The provider-specific priceId is resolved
+  // server-side via resolvePriceIdForPlan so a caller can't pass a
+  // legacy/promo priceId that still maps to a paid tier via the
+  // resolvePlanFromPriceId path at webhook time (plan tampering).
+  planKey: z.enum(["vestigio", "pro", "max"]),
+  cadence: z.enum(["monthly", "annual"]).default("monthly"),
   paymentProvider: z.enum(["stripe", "paddle"]).optional().default("stripe"),
   // Industry vertical captured in the onboarding "Industry" step. Mirrors
   // the /api/environments/activate shape so the BusinessProfile row carries
@@ -117,7 +124,8 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     monthlyRevenue,
     averageOrderValue,
     conversionModel,
-    priceId,
+    planKey,
+    cadence,
     paymentProvider,
     targetIndustry,
     ownershipConfirmed,
@@ -126,6 +134,21 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     saasAuthMethod,
     saasMfaMode,
   } = res.data;
+
+  // Server-side price resolution.
+  const priceId = await resolvePriceIdForPlan(
+    planKey,
+    cadence,
+    paymentProvider as PaymentProviderKey,
+  );
+  if (!priceId) {
+    return NextResponse.json(
+      {
+        message: `No ${paymentProvider} ${cadence} priceId configured for plan ${planKey}`,
+      },
+      { status: 400 },
+    );
+  }
 
   // Normalize domain
   const normalizedDomain = domain.replace(/^https?:\/\//, "").replace(/\/+$/, "");

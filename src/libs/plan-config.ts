@@ -219,6 +219,63 @@ export async function getPlanByKey(key: string): Promise<PlanConfig | undefined>
   return plans.find((p) => p.key === key);
 }
 
+/**
+ * FORWARD lookup: (planKey, cadence, provider) → canonical priceId.
+ *
+ * Server-side authoritative resolution — callers MUST use this instead
+ * of accepting a raw priceId from client bodies. The raw-priceId intake
+ * pattern let attackers hit /api/paddle/change-plan or /api/onboard with
+ * legacy or promo priceIds (e.g. an old $0.99 Starter launch price that
+ * was never removed from Paddle's price catalog) that still mapped to
+ * a "max" tier via resolvePlanFromPriceId, resulting in bill-at-$0.99
+ * → grant-max plan tampering. Every intake surface now takes a plan
+ * key (from the fixed enum "vestigio"|"pro"|"max") plus a cadence and
+ * we resolve to the priceId currently configured for that (plan,
+ * cadence, provider) tuple.
+ *
+ * Returns null when the plan config is missing or the requested
+ * provider/cadence combination hasn't been configured — callers
+ * should surface a 400 rather than fall back to any priceId.
+ */
+export type Cadence = "monthly" | "annual";
+export type PaymentProviderKey = "stripe" | "paddle" | "lemon_squeezy" | "mercadopago";
+
+export async function resolvePriceIdForPlan(
+  planKey: string,
+  cadence: Cadence,
+  provider: PaymentProviderKey,
+): Promise<string | null> {
+  const plan = await getPlanByKey(planKey);
+  if (!plan) return null;
+  switch (provider) {
+    case "stripe": {
+      // Stripe carries a single priceId in the config; cadence
+      // splits (annual vs monthly) were never rolled out for Stripe
+      // before the migration to Paddle+MP. If a caller requests
+      // annual Stripe pricing they get null — that's a schema
+      // mismatch, not a fallback opportunity.
+      return cadence === "monthly" && plan.priceId ? plan.priceId : null;
+    }
+    case "paddle": {
+      const id =
+        cadence === "annual" ? plan.paddleAnnualPriceId : plan.paddlePriceId;
+      return id || null;
+    }
+    case "lemon_squeezy": {
+      return cadence === "monthly" && plan.lemonSqueezyPriceId
+        ? plan.lemonSqueezyPriceId
+        : null;
+    }
+    case "mercadopago": {
+      const id =
+        cadence === "annual"
+          ? plan.mpAnnualPreapprovalPlanId
+          : plan.mpPreapprovalPlanId;
+      return id || null;
+    }
+  }
+}
+
 /** Invalidate cached config (call after admin saves) */
 export function invalidatePlanCache() {
   cached = null;

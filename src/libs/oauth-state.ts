@@ -42,7 +42,7 @@ function b64urlDecode(input: string): string {
 export interface OAuthStatePayload {
 	environmentId: string;
 	userId: string;
-	provider: "meta_ads" | "google_ads" | "stripe" | "shopify";
+	provider: "meta_ads" | "google_ads" | "stripe" | "shopify" | "nuvemshop";
 	timestamp: number;
 	nonce: string;
 }
@@ -50,7 +50,7 @@ export interface OAuthStatePayload {
 export function encodeOAuthState(
 	environmentId: string,
 	userId: string,
-	provider: "meta_ads" | "google_ads" | "stripe" | "shopify",
+	provider: "meta_ads" | "google_ads" | "stripe" | "shopify" | "nuvemshop",
 ): string {
 	const payload: OAuthStatePayload = {
 		environmentId,

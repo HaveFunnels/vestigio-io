@@ -3,23 +3,29 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { encryptConfig } from "@/libs/integration-crypto";
+import { decodeOAuthState } from "@/libs/oauth-state";
 
 // ──────────────────────────────────────────────
 // Nuvemshop OAuth Callback
 //
 // Flow:
-// 1. User clicks "Install" → Nuvemshop auth page
-// 2. After authorization, Nuvemshop redirects here with ?code=XXX
-// 3. We exchange the code for access_token + user_id (store_id)
-// 4. We persist the credentials and redirect to Data Sources
+// 1. User clicks "Install" on /app/settings/data-sources — that hits
+//    /api/integrations/nuvemshop/authorize, which mints an HMAC state
+//    (envId + userId + provider + timestamp + nonce) and redirects
+//    to Nuvemshop.
+// 2. Nuvemshop redirects back here with ?code=XXX&state=YYY.
+// 3. Verify state signature → verify state matches current session →
+//    exchange code for token → persist under state.environmentId.
 //
-// The redirect comes from Nuvemshop but it's a browser GET,
-// so the session cookie IS present. However, request.url may
-// resolve to an internal address (0.0.0.0), so we use SITE_URL
-// for all redirects.
+// The prior implementation had NO state parameter. Any store owner
+// who installed the app got their access_token persisted into the
+// browsing session's first environment (`environments[0]`), even
+// if the install was triggered by a different account, and even if
+// the target env belonged to another user. CSRF-injectable and
+// cross-tenant. Both classes now closed by the state binding.
 // ──────────────────────────────────────────────
 
-const NUVEMSHOP_APP_ID = process.env.NUVEMSHOP_APP_ID || "29656";
+const NUVEMSHOP_APP_ID = process.env.NUVEMSHOP_APP_ID || "";
 const NUVEMSHOP_CLIENT_SECRET = process.env.NUVEMSHOP_CLIENT_SECRET || "";
 const TOKEN_ENDPOINT = "https://www.tiendanube.com/apps/authorize/token";
 
@@ -34,14 +40,45 @@ function redirect(path: string): NextResponse {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
+  const state = searchParams.get("state");
 
   if (!code) {
     return redirect("/app/settings/data-sources?nuvemshop_error=missing_code");
   }
+  if (!state) {
+    return redirect("/app/settings/data-sources?nuvemshop_error=missing_state");
+  }
+  if (!NUVEMSHOP_APP_ID || !NUVEMSHOP_CLIENT_SECRET) {
+    return redirect("/app/settings/data-sources?nuvemshop_error=nuvemshop_not_configured");
+  }
 
-  // Step 1: Exchange the authorization code for an access token.
-  // We do this FIRST before the session check because the code
-  // expires in 5 minutes — don't waste time on auth failures.
+  // Step 0: Verify signed state BEFORE anything else. Rejecting an
+  // unsigned or expired state costs zero — no vendor API calls, no
+  // DB writes.
+  const decoded = decodeOAuthState(state);
+  if (!decoded.ok) {
+    return redirect(
+      `/app/settings/data-sources?nuvemshop_error=${encodeURIComponent("state:" + decoded.error)}`,
+    );
+  }
+  if (decoded.payload.provider !== "nuvemshop") {
+    return redirect("/app/settings/data-sources?nuvemshop_error=state_provider_mismatch");
+  }
+
+  // Step 1: Session must match the user who initiated /authorize.
+  // Prior code fetched session AFTER the token exchange and then
+  // picked `environments[0]` — the state binding replaces both:
+  // env is authoritative from the state, user identity is
+  // authoritative from the session (verified equal to state.userId).
+  const session = await getServerSession(authOptions);
+  const sessionUserId = (session?.user as { id?: string } | undefined)?.id;
+  if (!sessionUserId || sessionUserId !== decoded.payload.userId) {
+    return redirect("/app/settings/data-sources?nuvemshop_error=state_session_mismatch");
+  }
+
+  const environmentId = decoded.payload.environmentId;
+
+  // Step 2: Exchange the authorization code for an access token.
   let accessToken: string;
   let storeId: string;
 
@@ -59,7 +96,10 @@ export async function GET(request: Request) {
     });
 
     if (!tokenRes.ok) {
-      const errBody = await tokenRes.text().catch(() => "");
+      // Bound the error body — Nuvemshop occasionally echoes the
+      // OAuth `code` back in its error output; truncating limits
+      // the token-code exposure in logs. See M10 H6.
+      const errBody = (await tokenRes.text().catch(() => "")).slice(0, 200);
       console.error(`[nuvemshop-callback] Token exchange failed: ${tokenRes.status} ${errBody}`);
       return redirect("/app/settings/data-sources?nuvemshop_error=token_exchange_failed");
     }
@@ -76,25 +116,9 @@ export async function GET(request: Request) {
     return redirect("/app/settings/data-sources?nuvemshop_error=token_exchange_failed");
   }
 
-  // Step 2: Check user session.
-  // The OAuth redirect is a browser GET, so the session cookie should be present.
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    // F2: Session missing — do NOT proceed with credential saving.
-    // Redirect to sign-in so the user can authenticate first.
-    console.warn(
-      `[nuvemshop-callback] No session found. Token was exchanged successfully ` +
-      `(store_id=${storeId}) but user is not authenticated. ` +
-      `Redirecting to sign-in. The user must re-initiate the OAuth flow after logging in.`,
-    );
-    return redirect("/signin?callbackUrl=/app/settings/data-sources&nuvemshop_error=session_required");
-  }
-
-  const userId = (session.user as any).id;
-
-  // Step 3: Find the user's environment and persist credentials.
+  // Step 3: Persist credentials against the env from state.
   try {
-    await saveNuvemshopCredentials(storeId, accessToken, userId);
+    await saveNuvemshopCredentials(environmentId, storeId, accessToken);
     return redirect("/app/settings/data-sources?nuvemshop_connected=true");
   } catch (err: any) {
     console.error(`[nuvemshop-callback] Error saving credentials:`, err);
@@ -103,22 +127,15 @@ export async function GET(request: Request) {
 }
 
 async function saveNuvemshopCredentials(
+  environmentId: string,
   storeId: string,
   accessToken: string,
-  userId: string,
 ): Promise<void> {
-  // Find the environment to attach to — scoped to the user's org only
-  const membership = await prisma.membership.findFirst({
-    where: { userId },
-    include: { organization: { include: { environments: { take: 1 } } } },
-  });
-  const environmentId = membership?.organization?.environments?.[0]?.id;
-
-  if (!environmentId) {
-    throw new Error("No environment found to attach Nuvemshop credentials");
-  }
-
-  // Encrypt and persist
+  // Encrypt and persist. environmentId comes from the HMAC-verified
+  // state payload — the prior "membership.environments[0]" heuristic
+  // is gone, so multi-env orgs no longer land the token in the wrong
+  // env just because the requesting user happened to belong to more
+  // than one environment.
   const encryptedConfig = encryptConfig({
     store_id: storeId,
     access_token: accessToken,

@@ -1,10 +1,32 @@
 import * as https from 'https';
 import * as http from 'http';
 import { URL } from 'url';
+import { isUrlSafeForFetch } from '../../packages/url-normalize/ssrf';
 
 // ──────────────────────────────────────────────
-// HTTP Client — basic fetch for ingestion
-// No external dependencies. Node built-ins only.
+// HTTP Client — SSRF-guarded fetch for ingestion.
+//
+// This client is the shared outbound HTTP path for the audit-runner
+// crawler and every enrichment worker downstream (15+ passes). It
+// therefore has two attacker-adjacent inputs:
+//
+//   1. The domain a customer (or /audit form submitter) hands us.
+//   2. The Location header a fetched page returns during a redirect
+//      chain, which — under an attacker-controlled site — points
+//      wherever they want.
+//
+// Both are checked through isUrlSafeForFetch (from packages/
+// url-normalize/ssrf.ts) before every hop, which pre-resolves DNS
+// and rejects any hostname whose A/AAAA record lands on RFC1918,
+// loopback, link-local (IMDS 169.254.169.254), CGNAT, multicast,
+// or IPv6 ULA/link-local. Redirect follows re-check on every hop
+// so a 200-to-public → 302-to-private chain is blocked at the
+// second step, not just the first.
+//
+// Body size is capped (MAX_BODY_BYTES) so a customer-controlled
+// upstream can't fill the crawler container's memory with a
+// gigabyte of garbage; requests over the cap abort with
+// `body_too_large`.
 // ──────────────────────────────────────────────
 
 export interface HttpResponse {
@@ -27,8 +49,25 @@ export interface RedirectEntry {
 
 const MAX_REDIRECTS = 10;
 const TIMEOUT_MS = 15000;
+const MAX_BODY_BYTES = 5 * 1024 * 1024; // 5 MiB — page bodies vary widely; audit-runner has never legitimately needed more than a few hundred KB
 const USER_AGENT =
   'Mozilla/5.0 (compatible; VestigioBot/1.0; +https://vestigio.io)';
+
+export class HttpFetchError extends Error {
+  constructor(
+    message: string,
+    public readonly reason:
+      | 'ssrf_blocked'
+      | 'body_too_large'
+      | 'too_many_redirects'
+      | 'timeout'
+      | 'network',
+    public readonly detail?: string,
+  ) {
+    super(message);
+    this.name = 'HttpFetchError';
+  }
+}
 
 export async function httpFetch(
   targetUrl: string,
@@ -40,6 +79,27 @@ export async function httpFetch(
   let attempts = 0;
 
   while (attempts < maxRedirects) {
+    // Re-check on every hop, including the initial one — an attacker-
+    // controlled origin can 302-redirect from a public host to a
+    // private one and we'd have no defense if we only checked the
+    // first URL. TOCTOU vs DNS rebinding is still theoretically open
+    // (the address resolved here isn't guaranteed to be the address
+    // the fetch below dials); we accept that residual risk since the
+    // Node http/https module doesn't expose the resolver hook needed
+    // to close it end-to-end. For that stricter guarantee the caller
+    // should use the connect-time-lookup pattern in
+    // workers/ingestion/enrichment/competitor-fetch.ts. This layer
+    // still stops the overwhelmingly common attack path (submit-time
+    // hostname that resolves to a private IP) at negligible cost.
+    const safety = await isUrlSafeForFetch(currentUrl);
+    if (!safety.safe) {
+      throw new HttpFetchError(
+        `SSRF-blocked URL ${currentUrl}: ${safety.reason}`,
+        'ssrf_blocked',
+        safety.reason,
+      );
+    }
+
     const result = await singleFetch(currentUrl);
 
     if (result.status_code >= 300 && result.status_code < 400 && result.headers['location']) {
@@ -72,7 +132,10 @@ export async function httpFetch(
     };
   }
 
-  throw new Error(`Too many redirects (>${maxRedirects}) for ${targetUrl}`);
+  throw new HttpFetchError(
+    `Too many redirects (>${maxRedirects}) for ${targetUrl}`,
+    'too_many_redirects',
+  );
 }
 
 function singleFetch(
@@ -106,8 +169,26 @@ function singleFetch(
         }
 
         const chunks: Buffer[] = [];
-        res.on('data', (chunk: Buffer) => chunks.push(chunk));
+        let receivedBytes = 0;
+        let aborted = false;
+        res.on('data', (chunk: Buffer) => {
+          if (aborted) return;
+          receivedBytes += chunk.length;
+          if (receivedBytes > MAX_BODY_BYTES) {
+            aborted = true;
+            res.destroy();
+            reject(
+              new HttpFetchError(
+                `Response body exceeded ${MAX_BODY_BYTES} bytes for ${url}`,
+                'body_too_large',
+              ),
+            );
+            return;
+          }
+          chunks.push(chunk);
+        });
         res.on('end', () => {
+          if (aborted) return;
           resolve({
             status_code: res.statusCode || 0,
             headers,
@@ -121,7 +202,7 @@ function singleFetch(
     req.on('error', reject);
     req.on('timeout', () => {
       req.destroy();
-      reject(new Error(`Timeout fetching ${url}`));
+      reject(new HttpFetchError(`Timeout fetching ${url}`, 'timeout'));
     });
   });
 }

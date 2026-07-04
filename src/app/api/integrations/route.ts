@@ -374,6 +374,19 @@ export const DELETE = withErrorTracking(async function DELETE(request: Request) 
     return NextResponse.json({ message: "Integration not found" }, { status: 404 });
   }
 
+  // Best-effort vendor-side revoke BEFORE clearing local state. If
+  // this fails we still complete the local disconnect (the operator
+  // clicked "disconnect" and expects the button to work), but log
+  // the residual "still valid at vendor" state so ops can retry.
+  // See src/libs/integration-revoke.ts for per-provider mechanics.
+  const { revokeAtProvider } = await import("@/libs/integration-revoke");
+  const revoke = await revokeAtProvider(provider, existing.config || "");
+  if (!revoke.ok) {
+    console.warn(
+      `[integrations/disconnect] provider revoke failed provider=${provider} env=${environmentId} reason=${revoke.reason ?? "unknown"} attempted=${revoke.attempted}`,
+    );
+  }
+
   await prisma.integrationConnection.update({
     where: { id: existing.id },
     data: {
@@ -383,5 +396,8 @@ export const DELETE = withErrorTracking(async function DELETE(request: Request) 
     },
   });
 
-  return NextResponse.json({ message: "Integration disconnected" });
+  return NextResponse.json({
+    message: "Integration disconnected",
+    vendorRevoke: revoke,
+  });
 }, { endpoint: "/api/integrations", method: "DELETE" });

@@ -170,6 +170,19 @@ export async function GET(request: Request) {
 		});
 	}
 
+	// Scope validation — Google returns the granted scope string on
+	// token exchange (space-separated). Reject if the required
+	// adwords scope is missing so a partial-consent grant doesn't
+	// get persisted and then silently fail every subsequent poll.
+	// See M9 H3 — a downgrade attack can strip scopes; storing the
+	// downgraded token as "connected" is worse than refusing.
+	const grantedScopes = (exchange.data.scope ?? "").split(/\s+/).filter(Boolean);
+	if (!grantedScopes.includes("https://www.googleapis.com/auth/adwords")) {
+		return redirectResult({
+			google_ads_error: "insufficient_scope:adwords_missing",
+		});
+	}
+
 	const { access_token, refresh_token } = exchange.data;
 
 	const customers = await listAccessibleCustomers(access_token!);

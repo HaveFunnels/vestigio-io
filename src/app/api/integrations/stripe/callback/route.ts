@@ -109,6 +109,17 @@ export async function GET(request: Request) {
 		return redirectResult({ stripe_error: "missing_token_or_account_id" });
 	}
 
+	// Scope validation — Stripe returns `scope` on token exchange
+	// ("read_only" | "read_write"). Reject grants that don't cover
+	// the requested read_only baseline so a downgrade-attack that
+	// stripped the scope entirely doesn't get stored as "connected".
+	// M9 H3.
+	if (tokenData.scope !== "read_only" && tokenData.scope !== "read_write") {
+		return redirectResult({
+			stripe_error: `insufficient_scope:${tokenData.scope ?? "none"}`,
+		});
+	}
+
 	// Persist encrypted credentials.
 	const encryptedConfig = encryptConfig({
 		access_token: tokenData.access_token,

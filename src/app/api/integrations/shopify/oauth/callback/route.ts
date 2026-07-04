@@ -118,6 +118,20 @@ export async function GET(request: Request) {
 		if (!accessToken) {
 			return redirect("/app/settings/data-sources?shopify_error=invalid_token_response");
 		}
+
+		// Scope validation — Shopify returns granted scopes as a comma-
+		// separated string on token exchange. Reject if the required
+		// read_orders + read_customers are not both present so a
+		// partial-consent grant isn't persisted as "connected". See
+		// M9 H3.
+		const grantedScopes = scope.split(",").map((s) => s.trim()).filter(Boolean);
+		const requiredScopes = ["read_orders", "read_customers"];
+		const missingScope = requiredScopes.find((s) => !grantedScopes.includes(s));
+		if (missingScope) {
+			return redirect(
+				`/app/settings/data-sources?shopify_error=insufficient_scope:${encodeURIComponent(missingScope)}_missing`,
+			);
+		}
 	} catch (err) {
 		console.error("[shopify-oauth-callback] token exchange error:", err);
 		return redirect("/app/settings/data-sources?shopify_error=token_exchange_failed");

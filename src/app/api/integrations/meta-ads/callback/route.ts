@@ -145,6 +145,35 @@ export async function GET(request: Request) {
 	}
 	const metaUserId = me.data.id;
 
+	// Scope validation — Meta's OAuth token exchange doesn't echo
+	// the granted scopes back on /oauth/access_token, so we hit
+	// /me/permissions with the freshly-minted token. Reject if the
+	// requested scopes (ads_read + business_management) are not
+	// both present with status="granted" — a partial-consent grant
+	// would otherwise be persisted and silently fail every poll.
+	// M9 H3.
+	interface PermissionsResponse {
+		data?: Array<{ permission: string; status: string }>;
+	}
+	const permsRes = await graphGet<PermissionsResponse>(
+		`/me/permissions?access_token=${encodeURIComponent(accessToken)}`,
+	);
+	if (!permsRes.ok) {
+		return redirectResult({ meta_ads_error: `permissions_fetch_failed:${permsRes.error ?? "unknown"}` });
+	}
+	const granted = new Set(
+		(permsRes.data?.data ?? [])
+			.filter((p) => p.status === "granted")
+			.map((p) => p.permission),
+	);
+	const requiredScopes = ["ads_read", "business_management"];
+	const missingScope = requiredScopes.find((s) => !granted.has(s));
+	if (missingScope) {
+		return redirectResult({
+			meta_ads_error: `insufficient_scope:${missingScope}_missing`,
+		});
+	}
+
 	// Step 4: list the user's ad accounts. Pick the first active one as
 	// the default; user can re-run the flow or configure multiple later.
 	const accountsRes = await graphGet<AdAccountsResponse>(

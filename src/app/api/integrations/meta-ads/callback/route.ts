@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { encryptConfig } from "@/libs/integration-crypto";
 import { decodeOAuthState } from "@/libs/oauth-state";
@@ -95,6 +97,21 @@ export async function GET(request: Request) {
 	if (stateResult.payload.provider !== "meta_ads") {
 		return redirectResult({ meta_ads_error: "state_provider_mismatch" });
 	}
+
+	// Session-binding check: the browser completing this callback MUST
+	// be the same user that initiated the /authorize flow (whose id was
+	// signed into the state). Without this, an attacker could mint a
+	// state for their own environmentId, phish a victim into completing
+	// the provider's consent screen, and the victim's provider token
+	// would land in the attacker's env. HMAC alone doesn't protect
+	// against this — the state signature is valid, but bound to the
+	// wrong session.
+	const session = await getServerSession(authOptions);
+	const sessionUserId = (session?.user as { id?: string } | undefined)?.id;
+	if (!sessionUserId || sessionUserId !== stateResult.payload.userId) {
+		return redirectResult({ meta_ads_error: "state_session_mismatch" });
+	}
+
 	const { environmentId } = stateResult.payload;
 
 	const redirectUri = `${getBaseUrl()}/api/integrations/meta-ads/callback`;

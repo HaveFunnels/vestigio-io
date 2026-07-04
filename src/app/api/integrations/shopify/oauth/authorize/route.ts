@@ -93,7 +93,7 @@ export async function GET(request: Request) {
 	// Carry environmentId AND shop in state — shop is also returned by
 	// Shopify on the callback, but signing it here lets us tie the
 	// authorization to the user/env that initiated the flow.
-	const state = encodeOAuthState(environmentId, "shopify");
+	const state = encodeOAuthState(environmentId, userId, "shopify");
 	const redirectUri = `${getBaseUrl()}/api/integrations/shopify/oauth/callback`;
 
 	const params = new URLSearchParams({

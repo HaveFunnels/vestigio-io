@@ -41,6 +41,7 @@ function b64urlDecode(input: string): string {
 
 export interface OAuthStatePayload {
 	environmentId: string;
+	userId: string;
 	provider: "meta_ads" | "google_ads" | "stripe" | "shopify";
 	timestamp: number;
 	nonce: string;
@@ -48,10 +49,12 @@ export interface OAuthStatePayload {
 
 export function encodeOAuthState(
 	environmentId: string,
+	userId: string,
 	provider: "meta_ads" | "google_ads" | "stripe" | "shopify",
 ): string {
 	const payload: OAuthStatePayload = {
 		environmentId,
+		userId,
 		provider,
 		timestamp: Date.now(),
 		nonce: crypto.randomBytes(8).toString("hex"),
@@ -105,7 +108,15 @@ export function decodeOAuthState(
 		return { ok: false, error: "state payload unparseable" };
 	}
 
-	if (!payload.environmentId || !payload.provider) {
+	if (!payload.environmentId || !payload.provider || !payload.userId) {
+		// userId absence signals a legacy pre-2026-07 state token minted
+		// before session binding was added. Rejecting these forces the
+		// user to restart the OAuth flow — safer than accepting an
+		// unbound token that could have been minted by an attacker for
+		// their own environmentId and then completed by a phished
+		// victim, resulting in the victim's provider token being stored
+		// under the attacker's env (the exact vulnerability this field
+		// was added to close).
 		return { ok: false, error: "state payload missing fields" };
 	}
 	if (Date.now() - payload.timestamp > MAX_AGE_MS) {

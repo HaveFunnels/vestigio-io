@@ -69,7 +69,7 @@ export async function GET(request: Request) {
 		return redirectToError("access_denied");
 	}
 
-	const state = encodeOAuthState(environmentId, "meta_ads");
+	const state = encodeOAuthState(environmentId, userId, "meta_ads");
 	const redirectUri = `${getBaseUrl()}/api/integrations/meta-ads/callback`;
 
 	const params = new URLSearchParams({

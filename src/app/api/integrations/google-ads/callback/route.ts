@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { encryptConfig } from "@/libs/integration-crypto";
 import { decodeOAuthState } from "@/libs/oauth-state";
@@ -144,6 +146,17 @@ export async function GET(request: Request) {
 	if (stateResult.payload.provider !== "google_ads") {
 		return redirectResult({ google_ads_error: "state_provider_mismatch" });
 	}
+
+	// Session-binding check — see meta-ads/callback for the rationale.
+	// Without this, an attacker-minted state can be completed by a
+	// phished victim, landing the victim's Google Ads token in the
+	// attacker's env.
+	const session = await getServerSession(authOptions);
+	const sessionUserId = (session?.user as { id?: string } | undefined)?.id;
+	if (!sessionUserId || sessionUserId !== stateResult.payload.userId) {
+		return redirectResult({ google_ads_error: "state_session_mismatch" });
+	}
+
 	const { environmentId } = stateResult.payload;
 
 	const redirectUri = `${getBaseUrl()}/api/integrations/google-ads/callback`;

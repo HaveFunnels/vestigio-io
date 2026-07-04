@@ -67,7 +67,7 @@ export async function GET(request: Request) {
 		return redirectToError("access_denied");
 	}
 
-	const state = encodeOAuthState(environmentId, "google_ads");
+	const state = encodeOAuthState(environmentId, userId, "google_ads");
 	const redirectUri = `${getBaseUrl()}/api/integrations/google-ads/callback`;
 
 	const params = new URLSearchParams({

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { encryptConfig } from "@/libs/integration-crypto";
 import { decodeOAuthState } from "@/libs/oauth-state";
@@ -62,6 +64,14 @@ export async function GET(request: Request) {
 	if (stateResult.payload.provider !== "stripe") {
 		return redirectResult({ stripe_error: "state_provider_mismatch" });
 	}
+
+	// Session-binding check — see meta-ads/callback for the rationale.
+	const session = await getServerSession(authOptions);
+	const sessionUserId = (session?.user as { id?: string } | undefined)?.id;
+	if (!sessionUserId || sessionUserId !== stateResult.payload.userId) {
+		return redirectResult({ stripe_error: "state_session_mismatch" });
+	}
+
 	const { environmentId } = stateResult.payload;
 
 	// Exchange authorization code for access token.

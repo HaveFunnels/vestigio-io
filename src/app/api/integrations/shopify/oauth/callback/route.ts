@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { encryptConfig } from "@/libs/integration-crypto";
 import { decodeOAuthState } from "@/libs/oauth-state";
@@ -72,6 +74,14 @@ export async function GET(request: Request) {
 	if (decoded.payload.provider !== "shopify") {
 		return redirect("/app/settings/data-sources?shopify_error=state_provider_mismatch");
 	}
+
+	// Session-binding check — see meta-ads/callback for the rationale.
+	const session = await getServerSession(authOptions);
+	const sessionUserId = (session?.user as { id?: string } | undefined)?.id;
+	if (!sessionUserId || sessionUserId !== decoded.payload.userId) {
+		return redirect("/app/settings/data-sources?shopify_error=state_session_mismatch");
+	}
+
 	const environmentId = decoded.payload.environmentId;
 
 	if (!code) {

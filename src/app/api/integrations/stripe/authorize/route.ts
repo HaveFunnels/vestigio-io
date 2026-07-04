@@ -67,7 +67,7 @@ export async function GET(request: Request) {
 		return redirectToError("access_denied");
 	}
 
-	const state = encodeOAuthState(environmentId, "stripe");
+	const state = encodeOAuthState(environmentId, userId, "stripe");
 	const redirectUri = `${getBaseUrl()}/api/integrations/stripe/callback`;
 
 	const params = new URLSearchParams({

@@ -44,7 +44,6 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const domain = searchParams.get("domain");
-  const environmentId = searchParams.get("environment_id") || "default";
   const businessModel = searchParams.get("business_model") || null;
   const conversionModel = searchParams.get("conversion_model") || null;
   const lastEventId = request.headers.get("Last-Event-ID") || searchParams.get("last_event_id");
@@ -68,6 +67,20 @@ export async function GET(request: Request) {
   if (!env) {
     return new Response('Unauthorized', { status: 403 });
   }
+
+  // Every downstream identifier is env.id — the DB-resolved id whose
+  // membership was just verified. Prior code accepted an
+  // `environment_id` query-string param and passed it verbatim into
+  // enqueueJob, environment_ref, workspace/env-scoped MCP bootstrap,
+  // and snapshot store — creating a cross-tenant write path: attacker
+  // submits their own domain but the victim's env id, domain check
+  // passes because the domain lookup is authenticated, then the
+  // pipeline writes CycleSnapshot rows / poisons the MCP singleton
+  // scope for the victim's env. Locking every reference to env.id
+  // closes the vector without any client-side change (clients that
+  // send environment_id have it silently ignored — env.id is now
+  // authoritative).
+  const environmentId = env.id;
 
   const encoder = new TextEncoder();
   const cacheKey = `${user.id}:${env.id}`;

@@ -157,6 +157,12 @@ export async function POST(request: Request, { params }: RouteParams) {
 		// IntersectionObserver sees the entire document on first paint.
 		// Without this, sections below the fold render with opacity:0
 		// in the captured PDF (default headless viewport is ~720px).
+		// PDF export navigates the browser to http://127.0.0.1:PORT/app/
+		// library/strategy/... — that IS the internal render surface, so
+		// the default SSRF filter on withBrowserContext (which rejects
+		// loopback/private IPs by design) has to be bypassed for this
+		// path. Every OTHER caller inherits the filter, so the audit-
+		// runner still can't SSRF via Chromium.
 		const pdf = await withBrowserContext(
 			{ viewport: { width: 794, height: 20000 } },
 			async (ctx: any) => {
@@ -199,7 +205,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 				margin: { top: "0", bottom: "0", left: "0", right: "0" },
 			});
 			return buffer;
-		});
+		}, { allowPrivateAddresses: true });
 
 		// Locale-aware filename. Falls back to English "plan" when
 		// the plan's locale is missing or unrecognized.

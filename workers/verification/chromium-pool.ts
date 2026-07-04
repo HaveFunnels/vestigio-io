@@ -153,14 +153,68 @@ async function releasePoolEntry(entry: PoolEntry): Promise<void> {
  *
  * Honours the same `CHROMIUM_POOL_SIZE` concurrency limit as the
  * legacy `acquireBrowserSlot` — callers don't need both.
+ *
+ * ## SSRF filtering
+ *
+ * By default every request the browser makes is DNS-checked against
+ * isUrlSafeForFetch — the same private-IP / IMDS / link-local /
+ * loopback rejection used by the Node fetch path. Blocks the
+ * attack described in M7 H1: a customer configures their env
+ * domain to point at 169.254.169.254 (or Railway-internal) and
+ * the audit-runner's Playwright pipeline fetches it, then
+ * screenshots the internal response back into their Plano's
+ * evidence — cross-tenant read of internal HTTP surfaces.
+ *
+ * PDF export is the only known legitimate consumer that navigates
+ * to loopback (its target is 127.0.0.1:PORT for the print-mode
+ * strategy plan render). It passes `allowPrivateAddresses: true`
+ * to opt out. Every other caller should leave the default in
+ * place.
+ *
+ * The DNS check uses Node's built-in resolver cache; typical
+ * pages reuse hostnames heavily so overhead is bounded to (unique
+ * hosts × lookup time) rather than requests × lookup time.
  */
+export interface BrowserContextOptions {
+	allowPrivateAddresses?: boolean;
+}
+
 export async function withBrowserContext<T>(
 	contextOptions: Parameters<Browser["newContext"]>[0],
 	callback: (context: BrowserContext) => Promise<T>,
+	options: BrowserContextOptions = {},
 ): Promise<T> {
 	const entry = await acquirePoolEntry();
 	entry.inUseContexts += 1;
 	const context = await entry.browser.newContext(contextOptions);
+
+	if (!options.allowPrivateAddresses) {
+		// Lazy-import so this file doesn't pull the SSRF package into
+		// contexts that would otherwise never load it (test envs, cold
+		// imports from unrelated tools).
+		const { isUrlSafeForFetch } = await import(
+			"../../packages/url-normalize/ssrf"
+		);
+		await context.route("**/*", async (route, request) => {
+			try {
+				const safety = await isUrlSafeForFetch(request.url());
+				if (!safety.safe) {
+					// `blockedbyclient` shows up as the request status in
+					// Playwright's tracing so a failing screenshot is
+					// self-explanatory in logs.
+					await route.abort("blockedbyclient");
+					return;
+				}
+				await route.continue();
+			} catch {
+				// SSRF check itself blew up (malformed URL, DNS lookup
+				// exception); fail-closed — safer to drop the request
+				// than let a checker error open the vector.
+				await route.abort("failed").catch(() => {});
+			}
+		});
+	}
+
 	try {
 		return await callback(context);
 	} finally {

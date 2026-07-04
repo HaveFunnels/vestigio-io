@@ -295,6 +295,30 @@ async function attemptLogin(
       userAgent: 'Vestigio-AuthVerification/1.0',
       ignoreHTTPSErrors: true,
     });
+
+    // SSRF filter — same policy as withBrowserContext but applied
+    // here because this path bypasses the pool wrapper (M7 medium
+    // "authenticated-runtime bypasses the pool"). The customer-supplied
+    // SaaS `login_url` is the attacker input; without this guard a
+    // customer could point it at 127.0.0.1 or a Railway-internal
+    // service and the auth verifier would return their internal
+    // page's DOM as evidence.
+    const { isUrlSafeForFetch } = await import(
+      "../../packages/url-normalize/ssrf"
+    );
+    await context.route("**/*", async (route, request) => {
+      try {
+        const safety = await isUrlSafeForFetch(request.url());
+        if (!safety.safe) {
+          await route.abort("blockedbyclient");
+          return;
+        }
+        await route.continue();
+      } catch {
+        await route.abort("failed").catch(() => {});
+      }
+    });
+
     const page = await context.newPage();
 
     page.on('console', (msg: any) => {

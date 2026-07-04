@@ -35,9 +35,14 @@ const PriceItem = ({ plan, isBilling }: Props) => {
 						subscriptionId: data.subscriptionId,
 					},
 				});
-				console.log("Updated session");
-			} catch (error) {
-				console.error("Couldn't update session");
+			} catch {
+				// Silent — the caller reads updated session on the next
+				// render; a failed refresh just means the visible state
+				// lags one navigation. Prior code printed to the browser
+				// console, which on every pricing page render dumped
+				// email / name / priceId / subscriptionId into
+				// devtools (M10 H4 — cheap PII exfil surface for any
+				// browser extension or shared-machine viewer).
 			}
 		};
 
@@ -58,8 +63,14 @@ const PriceItem = ({ plan, isBilling }: Props) => {
 			if (response.data.checkoutUrl) {
 				window.open(response.data.checkoutUrl, "_blank");
 			}
-		} catch (error: any) {
-			console.error(error.message);
+		} catch {
+			// Silent — the axios failure paths already surface via
+			// toast.error above when the checkout URL is unavailable.
+			// The prior console.error dumped the caught error's
+			// message straight to the browser console; for a subscribe
+			// endpoint that error is often a serialized backend body
+			// that could contain the caller's own email / subscription
+			// state (M10 H4 class).
 		}
 	};
 

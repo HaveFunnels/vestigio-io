@@ -15,6 +15,11 @@ async function captureRawBody(req: NextRequest) {
 	return await req.text();
 }
 
+// Paddle signs ts in seconds. Reject webhooks outside ±5min from now
+// so a captured event can't be replayed after a restart wiped the
+// dedupe cache — same rationale as MP_TIMESTAMP_SKEW_MS in mp-api.ts.
+const PADDLE_TIMESTAMP_SKEW_MS = 5 * 60 * 1000;
+
 const verifyPaddleSignature = (
 	paddleSignature: string,
 	rawBody: string
@@ -26,6 +31,12 @@ const verifyPaddleSignature = (
 		const [tsPart, h1Part] = paddleSignature.split(";");
 		const ts = tsPart.split("=")[1];
 		const receivedH1 = h1Part.split("=")[1];
+
+		// Freshness — reject stale or future-dated timestamps.
+		const tsMs = Number(ts) * 1000;
+		if (!Number.isFinite(tsMs)) return false;
+		if (Math.abs(Date.now() - tsMs) > PADDLE_TIMESTAMP_SKEW_MS) return false;
+
 		const signedPayload = `${ts}:${rawBody}`;
 		const hmac = createHmac("sha256", key).update(signedPayload).digest("hex");
 		// SEC-06 fix: timing-safe comparison prevents timing oracle attacks
@@ -94,9 +105,14 @@ async function findUserOrg(userId: string) {
 }
 
 // Idempotency tracker — in-memory dedup for webhook event IDs.
-// Prevents replay attacks and double-processing from Paddle retries.
-// Entries auto-pruned after 1h. For multi-instance deploys, move to Redis.
-const processedWebhookIds = new Map<string, number>();
+// Idempotency now backed by the WebhookEvent Prisma table (see P1.4).
+// The in-memory Map that lived here previously survived only until the
+// container restarted or the request landed on a different Railway
+// replica — a captured signed webhook could replay indefinitely after
+// any restart and flip a paying customer's plan back with each hit.
+// A `UNIQUE(source, externalId)` violation on insert is the signal
+// that this webhook has been seen before; we respond 200 and skip
+// the side effects.
 
 // Helper: log webhook event for debugging
 function logEvent(eventType: string, detail: string) {
@@ -132,19 +148,26 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 		const eventId = body.event_id || body.notification_id || "";
 		const data = body.data;
 
-		// Idempotency: reject replayed webhooks
-		if (eventId && processedWebhookIds.has(eventId)) {
-			return NextResponse.json({ message: "Already processed" }, { status: 200 });
-		}
-		if (eventId) {
-			processedWebhookIds.set(eventId, Date.now());
-			// Prune old entries (keep last 1h)
-			if (processedWebhookIds.size > 1000) {
-				const cutoff = Date.now() - 3600_000;
-				for (const [k, v] of processedWebhookIds) {
-					if (v < cutoff) processedWebhookIds.delete(k);
-				}
+		// DB-backed idempotency. Insert with UNIQUE(source, externalId);
+		// a unique-constraint failure means the event was already
+		// processed — respond 200 without re-running side effects.
+		// Falls back to a synthetic key when Paddle omits both event_id
+		// and notification_id (rare but the older webhook shape can).
+		const idempotencyKey =
+			eventId || `${eventType}:${body?.data?.id ?? "unknown"}:${body?.occurred_at ?? ""}`;
+		try {
+			await prisma.webhookEvent.create({
+				data: { source: "paddle", externalId: idempotencyKey },
+			});
+		} catch (err: any) {
+			// P2002 = Prisma unique constraint violation. Any other error
+			// (DB down, etc.) — bubble up so Paddle retries; better a
+			// retry than a silent no-op that leaves the plan-flip
+			// unapplied.
+			if (err?.code === "P2002") {
+				return NextResponse.json({ message: "Already processed" }, { status: 200 });
 			}
+			throw err;
 		}
 
 		logEvent(eventType, JSON.stringify(data).slice(0, 200));

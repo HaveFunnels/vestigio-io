@@ -438,6 +438,15 @@ export interface MpWebhookHeaders {
 	requestId: string | null;
 }
 
+/// Maximum permitted skew between the vendor-signed timestamp and the
+/// current wall clock. MP tsen in seconds. 5 minutes is the standard
+/// vendor-recommended replay window: long enough that legitimate
+/// clock skew + network delay doesn't cause spurious rejections;
+/// short enough that a captured signed webhook can't be replayed
+/// after a container restart (previously the in-memory dedupe forgot
+/// it) to trigger another 30-day plan extension via authorized_payment.
+const MP_TIMESTAMP_SKEW_MS = 5 * 60 * 1000;
+
 export function verifyMpWebhookSignature(
 	headers: MpWebhookHeaders,
 	dataId: string,
@@ -455,6 +464,15 @@ export function verifyMpWebhookSignature(
 	const ts = parts.ts;
 	const v1 = parts.v1;
 	if (!ts || !v1) return false;
+
+	// Timestamp freshness check. MP signs `ts` in seconds. Reject
+	// anything outside ±5min from now; this blocks replay of an
+	// old signed webhook after any container restart wiped the
+	// in-memory dedupe. Also blocks future-dated timestamps in case
+	// the vendor ever ships a clock bug.
+	const tsMs = Number(ts) * 1000;
+	if (!Number.isFinite(tsMs)) return false;
+	if (Math.abs(Date.now() - tsMs) > MP_TIMESTAMP_SKEW_MS) return false;
 
 	const manifest = `id:${dataId};request-id:${headers.requestId};ts:${ts};`;
 	const expected = crypto.createHmac("sha256", secret).update(manifest).digest("hex");

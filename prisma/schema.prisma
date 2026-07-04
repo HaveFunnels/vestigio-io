@@ -2683,3 +2683,35 @@ model NetworkSurface {
   @@index([environmentId, lastSeenCycleRef])
   @@index([environmentId, role])
 }
+
+/// Idempotency ledger for vendor webhooks (Paddle, Mercado Pago, and any
+/// future signed-event source). The (source, externalId) pair is the
+/// vendor-issued event/notification id and must be unique — a duplicate
+/// insert on this constraint is the signal that the current POST is a
+/// replay of an already-processed event, and the handler must respond
+/// 200 without re-running side effects. Replaces the in-memory Map that
+/// preceded this table: multi-replica deploys, container restarts, and
+/// timing races between concurrent workers all made the in-memory
+/// version leaky, allowing an attacker with a captured signed webhook
+/// to replay it after any restart for another 30-day plan extension
+/// (MP) or plan re-flip (Paddle).
+///
+/// See M5 H1 / H2 for the exploit. Rows are pruned by the 30-day
+/// retention cron (webhook idempotency memory beyond that window is
+/// pointless — the vendor's own signature TTL is much shorter).
+model WebhookEvent {
+  id         String   @id @default(cuid())
+  /// Vendor identifier: "paddle" | "mercadopago" | future providers.
+  /// Kept as a plain string rather than an enum so adding a provider
+  /// doesn't require a schema migration.
+  source     String
+  /// Vendor-supplied unique id for THIS event (Paddle: event_id /
+  /// notification_id; MP: id / notification_id). When the vendor omits
+  /// a proper unique id we fall back to a stable synthetic in the
+  /// handler.
+  externalId String
+  receivedAt DateTime @default(now())
+
+  @@unique([source, externalId])
+  @@index([source, receivedAt])
+}

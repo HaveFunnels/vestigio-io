@@ -33,21 +33,23 @@ import { resolvePlanFromPriceId } from "@/libs/plan-config";
 //   preapproval:<userId>:<planKey>:<nonce>      → preapproval bootstrap
 // ──────────────────────────────────────────────
 
-// Idempotency cache. Single-process; for multi-instance deploys move
-// to Redis (same caveat as paddle webhook).
-const processedEventIds = new Map<string, number>();
-
-function dedupe(eventKey: string): boolean {
+/// DB-backed idempotency check. Attempts to insert (source="mercadopago",
+/// externalId=eventKey) into WebhookEvent; a unique-constraint violation
+/// means we've seen this event before. Returns true on duplicate so the
+/// caller can respond 200 without side effects. Failures OTHER than the
+/// dup constraint bubble up so MP retries — better a retry than a
+/// silently-dropped authorized_payment.
+async function dedupeWebhookEvent(eventKey: string): Promise<boolean> {
 	if (!eventKey) return false;
-	if (processedEventIds.has(eventKey)) return true;
-	processedEventIds.set(eventKey, Date.now());
-	if (processedEventIds.size > 2000) {
-		const cutoff = Date.now() - 3600_000;
-		for (const [k, v] of processedEventIds) {
-			if (v < cutoff) processedEventIds.delete(k);
-		}
+	try {
+		await prisma.webhookEvent.create({
+			data: { source: "mercadopago", externalId: eventKey },
+		});
+		return false;
+	} catch (err: any) {
+		if (err?.code === "P2002") return true;
+		throw err;
 	}
-	return false;
 }
 
 function log(event: string, detail: string) {
@@ -799,7 +801,7 @@ export const POST = withErrorTracking(
 			payload?.id?.toString() ||
 			payload?.notification_id?.toString() ||
 			`${payload?.type ?? payload?.topic ?? "unknown"}:${dataId}:${payload?.action ?? ""}`;
-		if (dedupe(eventKey)) {
+		if (await dedupeWebhookEvent(eventKey)) {
 			return NextResponse.json({ message: "Already processed" }, { status: 200 });
 		}
 

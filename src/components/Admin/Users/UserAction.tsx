@@ -52,14 +52,28 @@ export default function UserAction({ user }: any) {
 	const handleLogin = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 
-		const adminPassword = prompt(`Enter your admin password to login as ${user?.email}.\n\nYou will be signed out of your admin session.`);
-		if (!adminPassword) return;
+		if (!confirm(`Sign in as ${user?.email}?\n\nYou will be signed out of your admin session.`)) {
+			return;
+		}
+
+		// Mint a short-lived HMAC impersonation token via the admin-
+		// gated endpoint. That endpoint's requireAdmin() gate is the
+		// real auth check; the prior password prompt was a UX
+		// affordance the CredentialsProvider never actually verified.
+		const mintRes = await fetch("/api/admin/impersonate", {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ userId: user?.id }),
+		});
+		const mintData = await mintRes.json();
+		if (!mintRes.ok || !mintData.token) {
+			toast.error(mintData.message ?? "Could not start impersonation");
+			return;
+		}
 
 		const result = await signIn("impersonate", {
 			redirect: false,
-			adminEmail: session?.user?.email,
-			adminPassword,
-			userEmail: user?.email,
+			token: mintData.token,
 		});
 
 		if (result?.error) {

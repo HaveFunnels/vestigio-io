@@ -63,6 +63,77 @@ export function verifyRestoreToken(token: string, adminEmail: string): boolean {
 	}
 }
 
+// ──────────────────────────────────────────────
+// Impersonation token — server-issued proof that a verified ADMIN
+// requested to impersonate a specific user.
+//
+// Previously the impersonate CredentialsProvider gated only on
+// "does the submitted adminEmail belong to a User with role=ADMIN
+// in the DB". It NEVER verified the browser making the request was
+// currently signed in as that admin — so anyone who knew any staff
+// admin email could POST /api/auth/callback/impersonate directly
+// with `adminEmail=<known>&userEmail=<victim>` and receive a
+// session as the victim (or as another ADMIN, if they picked one
+// for userEmail). Full auth bypass.
+//
+// New pattern mirrors restore-admin: the ADMIN-gated
+// /api/admin/impersonate route mints an HMAC token bound to
+// (adminUserId, targetUserId, expiresAt). The impersonate
+// CredentialsProvider now accepts ONLY that token and re-derives
+// both users' identities from the token payload — never trusting
+// caller-supplied emails.
+//
+// Token format: <adminUserId>.<targetUserId>.<expiresAtMs>.<sigHex>
+// sig = HMAC-SHA256(NEXTAUTH_SECRET, adminUserId + "." + targetUserId + "." + expiresAtMs)
+//
+// 60-second TTL: matches restore-admin. Enough time for the client
+// to receive the token and complete signIn(); short enough that
+// leaked tokens don't buy a real attack window.
+// ──────────────────────────────────────────────
+
+const IMPERSONATION_TOKEN_TTL_MS = 60 * 1000;
+
+export function signImpersonationToken(adminUserId: string, targetUserId: string): string {
+	const expiresAt = Date.now() + IMPERSONATION_TOKEN_TTL_MS;
+	const payload = `${adminUserId}.${targetUserId}.${expiresAt}`;
+	const sig = crypto
+		.createHmac("sha256", getRestoreSecret())
+		.update(payload)
+		.digest("hex");
+	return `${adminUserId}.${targetUserId}.${expiresAt}.${sig}`;
+}
+
+export interface ImpersonationTokenPayload {
+	adminUserId: string;
+	targetUserId: string;
+}
+
+export function verifyImpersonationToken(token: string): ImpersonationTokenPayload | null {
+	const parts = token.split(".");
+	if (parts.length !== 4) return null;
+	const [adminUserId, targetUserId, expiresAtStr, sigHex] = parts;
+	if (!adminUserId || !targetUserId) return null;
+	const expiresAt = parseInt(expiresAtStr, 10);
+	if (!Number.isFinite(expiresAt) || expiresAt < Date.now()) return null;
+	const expected = crypto
+		.createHmac("sha256", getRestoreSecret())
+		.update(`${adminUserId}.${targetUserId}.${expiresAt}`)
+		.digest("hex");
+	try {
+		if (
+			!crypto.timingSafeEqual(
+				Buffer.from(sigHex, "hex"),
+				Buffer.from(expected, "hex"),
+			)
+		) {
+			return null;
+		}
+	} catch {
+		return null;
+	}
+	return { adminUserId, targetUserId };
+}
+
 declare module "next-auth" {
 	interface Session extends DefaultSession {
 		user: User & DefaultSession["user"];
@@ -264,39 +335,47 @@ export const authOptions: NextAuthOptions = {
 			name: "impersonate",
 			id: "impersonate",
 			credentials: {
-				adminEmail: { label: "Admin Email", type: "text" },
-				userEmail: { label: "User Email", type: "text" },
+				// Single credential: an HMAC-signed short-lived token minted
+				// by /api/admin/impersonate AFTER a requireAdmin() gate on
+				// the current server session. Previously this provider
+				// accepted (adminEmail, userEmail) directly and gated only
+				// on "does adminEmail exist as ADMIN in DB" — anyone who
+				// knew any staff admin email could POST /api/auth/callback/
+				// impersonate directly and mint any user's session,
+				// including another ADMIN's. See signImpersonationToken /
+				// verifyImpersonationToken for the token contract.
+				token: { label: "Impersonation Token", type: "text" },
 			},
 
 			async authorize(credentials) {
-				if (!credentials?.adminEmail || !credentials?.userEmail) {
-					throw new Error("Admin email and target user email are required");
+				if (!credentials?.token) {
+					throw new Error("Impersonation token is required");
 				}
 
-				// Verify the caller is actually an admin — this is the
-				// security gate. The admin session was already authenticated
-				// via their normal login, and the /api/admin/impersonate
-				// endpoint also checks ADMIN role + logs to audit trail.
-				const admin = await prisma.user.findUnique({
-					where: { email: credentials.adminEmail.toLowerCase() },
-				});
+				const payload = verifyImpersonationToken(credentials.token);
+				if (!payload) {
+					throw new Error("Invalid or expired impersonation token");
+				}
 
+				// Both admin and target loaded fresh from DB — the token
+				// only carries their ids. This guarantees the DB row's
+				// current `role` gates the flow (a demoted admin whose
+				// token was minted before demotion won't work).
+				const [admin, user] = await Promise.all([
+					prisma.user.findUnique({ where: { id: payload.adminUserId } }),
+					prisma.user.findUnique({ where: { id: payload.targetUserId } }),
+				]);
 				if (!admin || admin.role !== "ADMIN") {
-					throw new Error("Access denied");
+					throw new Error("Admin no longer valid");
 				}
-
-				const user = await prisma.user.findUnique({
-					where: { email: credentials.userEmail.toLowerCase() },
-				});
-
 				if (!user) {
 					throw new Error("Target user not found");
 				}
 
-				// Carry the admin's identity onto the user we return so the
-				// JWT callback can persist it. That way "exit impersonation"
-				// can restore the admin's session without a full sign-out +
-				// re-login (which kicks the admin out of the platform).
+				// Carry the admin's identity onto the returned user so the
+				// JWT callback can persist it under `originalAdminId` /
+				// `originalAdminEmail` — the exit-impersonation flow
+				// depends on that pair to mint a restore token.
 				return {
 					...user,
 					originalAdminId: admin.id,

@@ -259,16 +259,14 @@ export default function AdminOrganizationsPage() {
         return;
       }
 
-      const adminEmail = session?.user?.email;
-      if (!adminEmail) {
-        alert(t("could_not_determine_admin"));
+      if (!data.token) {
+        alert(t("impersonation_failed"));
         return;
       }
 
       const result = await signIn("impersonate", {
         redirect: false,
-        adminEmail,
-        userEmail: data.email,
+        token: data.token,
       });
 
       if (result?.error) {

@@ -177,22 +177,30 @@ export default function AdminCreateOrganizationPage() {
 
   async function handleImpersonate() {
     if (!createdOrg) return;
-    const adminPassword = prompt(
-      `Enter your admin password to sign in as owner of "${createdOrg.name}".\n\nYou will be signed out of your admin session.`,
-    );
-    if (!adminPassword) return;
+    if (!confirm(`Sign in as owner of "${createdOrg.name}"?\n\nYou will be signed out of your admin session.`)) {
+      return;
+    }
 
-    const adminEmail = session?.user?.email;
-    if (!adminEmail) {
-      alert("Could not determine admin email");
+    // Mint an impersonation token via the admin-gated endpoint. The
+    // requireAdmin() gate on that route is the auth check; the
+    // password prompt this component used to show was a UX affordance
+    // — the CredentialsProvider never actually verified it. Replaced
+    // with a confirm() so the "you will be signed out" warning still
+    // fires without pretending a password re-check is happening.
+    const mintRes = await fetch("/api/admin/impersonate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ organizationId: createdOrg.id }),
+    });
+    const mintData = await mintRes.json();
+    if (!mintRes.ok || !mintData.token) {
+      alert(`Impersonation failed: ${mintData.message ?? "no token"}`);
       return;
     }
 
     const result = await signIn("impersonate", {
       redirect: false,
-      adminEmail,
-      adminPassword,
-      userEmail: createdOrg.ownerEmail,
+      token: mintData.token,
     });
 
     if (result?.error) {

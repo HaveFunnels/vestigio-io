@@ -32,25 +32,21 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 		return new NextResponse("Email already exists", { status: 409 });
 	}
 
-	const adminEmails = process.env.ADMIN_EMAILS?.split(",") || [];
-
-	// Function to check if an email is in the list of admin emails
-	function isAdminEmail(email: string) {
-		return adminEmails.includes(email);
-	}
-
 	const hashedPassword = await bcrypt.hash(password, 10);
 
+	// Every self-service registration lands as USER. ADMIN promotion is
+	// staff-only, done via the admin console with requireAdmin() DB-check.
+	// The prior code auto-promoted to ADMIN when the submitted email
+	// matched ADMIN_EMAILS — a race where any unclaimed listed email
+	// (new hire added to env before signup) could be won by an
+	// unauthenticated attacker: no email verification, no session gate,
+	// no audit trail. Removed entirely.
 	const newUser = {
 		name,
 		email,
 		password: hashedPassword,
 		role: "USER",
 	};
-
-	if (isAdminEmail(email)) {
-		newUser.role = "ADMIN";
-	}
 
 	try {
 		const user = await prisma.user.create({

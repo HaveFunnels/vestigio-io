@@ -140,21 +140,73 @@ declare module "next-auth" {
 	}
 }
 
-// ── Account lockout: track failed attempts ──
-const failedAttempts: Record<string, { count: number; lockedUntil: number }> = {};
+// ──────────────────────────────────────────────
+// Account lockout — Redis-backed with in-memory fallback.
+//
+// Prior version was a single-process in-memory Record. Any container
+// restart wiped the counters, and multi-replica Railway deploys
+// naturally split traffic across processes with independent state.
+// An attacker could keep the failed-attempt counter perpetually below
+// threshold by rotating restarts / target replicas — effectively
+// unlimited brute force at the credential-verify path.
+//
+// Redis-backed layout (single-replica-safe, restart-safe):
+//   INCR   authlock:count:<email>         → attempt counter
+//   EXPIRE authlock:count:<email> 900s    → resets after 15 min quiet
+//   SET    authlock:until:<email> 1       → set when count crosses threshold
+//   EXPIRE authlock:until:<email> 900s    → auto-clears after lockout window
+//   EXISTS authlock:until:<email>         → checkLockout()
+//   DEL    authlock:count:<email> + until → clear on success
+//
+// safeRedisCall returns null when Redis is unreachable — the in-memory
+// Map below still runs as a degraded fallback so a Redis outage
+// doesn't turn the auth surface into "no lockout at all" (worst
+// possible failure mode). During normal operation Redis is
+// authoritative; the in-memory map only fills in when it can't.
+// ──────────────────────────────────────────────
+
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+const LOCKOUT_DURATION_SEC = 15 * 60;
+const failedAttempts: Record<string, { count: number; lockedUntil: number }> = {};
 
-function checkLockout(email: string): boolean {
+function lockKey(email: string): { count: string; until: string } {
+	return {
+		count: `authlock:count:${email}`,
+		until: `authlock:until:${email}`,
+	};
+}
+
+async function checkLockout(email: string): Promise<boolean> {
+	const { safeRedisCall } = await import("./redis");
+	const keys = lockKey(email);
+	const redisAnswer = await safeRedisCall(async (client) => {
+		const flag = await client.exists(keys.until);
+		return flag === 1;
+	});
+	if (redisAnswer !== null) return redisAnswer;
+	// Redis unavailable — degrade to per-process memory.
 	const entry = failedAttempts[email];
 	if (!entry) return false;
 	if (entry.lockedUntil > Date.now()) return true;
-	// Lockout expired — reset
 	delete failedAttempts[email];
 	return false;
 }
 
-function recordFailedAttempt(email: string): void {
+async function recordFailedAttempt(email: string): Promise<void> {
+	const { safeRedisCall } = await import("./redis");
+	const keys = lockKey(email);
+	const redisAnswer = await safeRedisCall(async (client) => {
+		const count = await client.incr(keys.count);
+		if (count === 1) {
+			await client.expire(keys.count, LOCKOUT_DURATION_SEC);
+		}
+		if (count >= MAX_FAILED_ATTEMPTS) {
+			await client.set(keys.until, "1", "EX", LOCKOUT_DURATION_SEC);
+		}
+		return true;
+	});
+	if (redisAnswer !== null) return;
 	const entry = failedAttempts[email] || { count: 0, lockedUntil: 0 };
 	entry.count += 1;
 	if (entry.count >= MAX_FAILED_ATTEMPTS) {
@@ -163,7 +215,14 @@ function recordFailedAttempt(email: string): void {
 	failedAttempts[email] = entry;
 }
 
-function clearFailedAttempts(email: string): void {
+async function clearFailedAttempts(email: string): Promise<void> {
+	const { safeRedisCall } = await import("./redis");
+	const keys = lockKey(email);
+	const redisAnswer = await safeRedisCall(async (client) => {
+		await client.del(keys.count, keys.until);
+		return true;
+	});
+	if (redisAnswer !== null) return;
 	delete failedAttempts[email];
 }
 
@@ -296,7 +355,7 @@ export const authOptions: NextAuthOptions = {
 				const email = credentials.email.toLowerCase();
 
 				// Check account lockout
-				if (checkLockout(email)) {
+				if (await checkLockout(email)) {
 					throw new Error("Account temporarily locked. Try again in 15 minutes.");
 				}
 
@@ -306,7 +365,7 @@ export const authOptions: NextAuthOptions = {
 
 				// User not found — same error as wrong password (prevent enumeration)
 				if (!user || !user.password) {
-					recordFailedAttempt(email);
+					await recordFailedAttempt(email);
 					throw new Error(INVALID_CREDENTIALS);
 				}
 
@@ -316,12 +375,12 @@ export const authOptions: NextAuthOptions = {
 				);
 
 				if (!passwordMatch) {
-					recordFailedAttempt(email);
+					await recordFailedAttempt(email);
 					throw new Error(INVALID_CREDENTIALS);
 				}
 
 				// Successful login — clear failed attempts
-				clearFailedAttempts(email);
+				await clearFailedAttempts(email);
 				// Carry the "remember me" choice onto the user object so the
 				// JWT callback can set the right per-session expiry. The
 				// `_remember` key is local to this hand-off and is not

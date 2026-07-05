@@ -70,12 +70,39 @@ let totalBrowsers = 0;
 // long-running Chromium processes (history pages, leftover render data).
 const MAX_USES_PER_BROWSER = Number(process.env.CHROMIUM_MAX_USES || "200");
 
+// Chromium sandbox handling. On Linux, Chromium's setuid or user-
+// namespace sandbox refuses to start when the parent process runs as
+// UID 0 (root) — the current shipping default because the Docker
+// image ships without a USER directive. Setting `--no-sandbox` is the
+// standard workaround for that constraint. It has a real security
+// cost: a renderer exploit in Chromium then lands directly on the
+// host container without a syscall boundary, giving arbitrary access
+// to the Next.js process's env vars (NEXTAUTH_SECRET, Stripe key, DB
+// creds, R2 keys, Anthropic key). See M7 H2.
+//
+// Toggle for the migration path: set CHROMIUM_ENABLE_SANDBOX=1 in the
+// runtime env once the container runs as a non-root user. Recommended
+// Dockerfile change (deferred to a separate ops PR because it also
+// touches PLAYWRIGHT_BROWSERS_PATH permissions and needs staging
+// validation):
+//
+//   RUN groupadd -r vestigio && useradd -r -g vestigio -u 1001 vestigio
+//   RUN mkdir -p /app/.cache && chown -R vestigio:vestigio /app
+//   ENV PLAYWRIGHT_BROWSERS_PATH=/app/.cache/ms-playwright
+//   USER vestigio
+//
+// Until that lands and CHROMIUM_ENABLE_SANDBOX=1 is set, --no-sandbox
+// remains the default so we don't regress today. Ops can flip the
+// env var to opt in per environment (dev/staging first).
+const SANDBOX_ENABLED = process.env.CHROMIUM_ENABLE_SANDBOX === "1";
 const LAUNCH_OPTIONS: LaunchOptions = {
 	headless: true,
-	// Disabling /dev/shm helps with low-RAM Docker containers (Railway,
-	// Render small instances). Without it Chromium tries to use 64MB of
-	// /dev/shm by default and crashes when it can't.
-	args: ["--disable-dev-shm-usage", "--no-sandbox"],
+	// --disable-dev-shm-usage helps with low-RAM Docker containers
+	// (Railway, Render small instances). Without it Chromium tries to
+	// use 64MB of /dev/shm by default and crashes when it can't.
+	args: SANDBOX_ENABLED
+		? ["--disable-dev-shm-usage"]
+		: ["--disable-dev-shm-usage", "--no-sandbox"],
 };
 
 async function spawnBrowser(): Promise<PoolEntry> {

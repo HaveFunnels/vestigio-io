@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { requireAdmin } from "@/libs/require-admin";
 
 // ──────────────────────────────────────────────
 // Suppression Rules — Vestigio-internal admin tool (NOT customer-facing)
@@ -72,10 +71,8 @@ function serializeRule(r: {
 
 export const GET = withErrorTracking(
 	async function GET(req: NextRequest) {
-		const session = await getServerSession(authOptions);
-		if (!session?.user || (session.user as any).role !== "ADMIN") {
-			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-		}
+		const gate = await requireAdmin();
+		if (gate.denied) return gate.denied;
 
 		const organizationId = req.nextUrl.searchParams.get("organizationId");
 		const environmentId = req.nextUrl.searchParams.get("environmentId");
@@ -131,11 +128,9 @@ export const GET = withErrorTracking(
 
 export const POST = withErrorTracking(
 	async function POST(request: Request) {
-		const session = await getServerSession(authOptions);
-		const userId = (session?.user as any)?.id;
-		if (!session?.user || (session.user as any).role !== "ADMIN" || !userId) {
-			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-		}
+		const gate = await requireAdmin();
+		if (gate.denied) return gate.denied;
+		const userId = gate.admin.userId;
 
 		let body: CreateBody;
 		try {

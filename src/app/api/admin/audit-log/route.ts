@@ -1,6 +1,5 @@
-import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -14,10 +13,8 @@ import { NextRequest, NextResponse } from "next/server";
  *   targetType — filter by targetType
  */
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const url = req.nextUrl;
   const limit = Math.min(Number(url.searchParams.get("limit")) || 50, 200);

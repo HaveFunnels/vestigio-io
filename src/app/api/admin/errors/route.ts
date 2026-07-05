@@ -1,7 +1,6 @@
-import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -9,11 +8,8 @@ import { NextRequest, NextResponse } from "next/server";
  * Query params: severity, resolved, endpoint, limit, offset
  */
 export const GET = withErrorTracking(async function GET(req: NextRequest) {
-	const session = await getServerSession(authOptions);
-
-	if (!session?.user || (session.user as any).role !== "ADMIN") {
-		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	const searchParams = req.nextUrl.searchParams;
 	const severity = searchParams.get("severity");
@@ -76,11 +72,8 @@ export const GET = withErrorTracking(async function GET(req: NextRequest) {
  * Body: { ids: string[] }
  */
 export const PATCH = withErrorTracking(async function PATCH(req: Request) {
-	const session = await getServerSession(authOptions);
-
-	if (!session?.user || (session.user as any).role !== "ADMIN") {
-		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	try {
 		const body = await req.json();
@@ -112,11 +105,8 @@ export const PATCH = withErrorTracking(async function PATCH(req: Request) {
  * Query param: olderThanDays (default 14)
  */
 export const DELETE = withErrorTracking(async function DELETE(req: NextRequest) {
-	const session = await getServerSession(authOptions);
-
-	if (!session?.user || (session.user as any).role !== "ADMIN") {
-		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	const days = parseInt(req.nextUrl.searchParams.get("olderThanDays") || "14");
 	const cutoff = new Date();

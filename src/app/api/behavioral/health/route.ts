@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { isAuthorized } from "@/libs/isAuthorized";
+import { requireAdmin } from "@/libs/require-admin";
 import { ingestCounters, bufferSize } from "@/libs/ingest-buffer";
 
 // ──────────────────────────────────────────────
@@ -12,10 +12,8 @@ import { ingestCounters, bufferSize } from "@/libs/ingest-buffer";
 export const runtime = "nodejs";
 
 export async function GET() {
-	const user = await isAuthorized();
-	if (!user || (user as any).role !== "ADMIN") {
-		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	return NextResponse.json({
 		buffer_size: bufferSize(),

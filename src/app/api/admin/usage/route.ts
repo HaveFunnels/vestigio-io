@@ -1,7 +1,6 @@
-import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { getPlanLimits, type PlanKey } from "../../../../../packages/plans";
 import { getOrgUsageStats, estimateDailyCost, computePlanUnitEconomics } from "../../../../../apps/platform/billing-safety";
@@ -16,11 +15,8 @@ import { getPricingForModel, getModelDisplayName, type LlmModel } from "../../..
  * Query params: date (YYYY-MM-DD), view (summary | unit_economics | log | mcp_observability | plan_config)
  */
 export const GET = withErrorTracking(async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const searchParams = req.nextUrl.searchParams;
   const view = searchParams.get("view") || "summary";

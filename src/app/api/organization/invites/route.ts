@@ -6,6 +6,7 @@ import { withErrorTracking } from "@/libs/error-tracker";
 import { getPlanByKey } from "@/libs/plan-config";
 import { sendBrevoEmail } from "@/libs/brevo";
 import { renderBrandedEmail } from "@/libs/notifications";
+import { maskEmail } from "@/libs/log-mask";
 import { z } from "zod";
 import crypto from "node:crypto";
 
@@ -140,7 +141,7 @@ export const POST = withErrorTracking(async function POST(request: Request) {
   });
 
   if (!emailResult.ok) {
-    console.error(`[org-invites] Failed to send invite email to ${email}: ${emailResult.error}`);
+    console.error(`[org-invites] Failed to send invite email to ${maskEmail(email)}: ${String(emailResult.error).slice(0, 200)}`);
     // The invite record was created, but email delivery failed.
     // Return 201 with a warning so the UI can inform the user.
     return NextResponse.json(

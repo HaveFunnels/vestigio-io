@@ -220,7 +220,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 
 		const tDone = Date.now();
 		console.log(
-			`[strategy/export] env=${env.domain} month=${month} ` +
+			`[strategy/export] env=${env.id} month=${month} ` +
 			`pool_wait_ms=${tPoolAcquired - tStart} ` +
 			`render_ms=${tDone - tPoolAcquired} ` +
 			`total_ms=${tDone - tStart} ` +
@@ -240,7 +240,7 @@ export async function POST(request: Request, { params }: RouteParams) {
 		return response;
 	} catch (err) {
 		const msg = err instanceof Error ? err.message : String(err);
-		console.error(`[api/library/strategy/export] env=${env.domain} month=${month} failed:`, msg);
+		console.error(`[api/library/strategy/export] env=${env.id} month=${month} failed:`, msg);
 		return NextResponse.json(
 			{ ok: false, error: msg.slice(0, 500) },
 			{ status: 500 },

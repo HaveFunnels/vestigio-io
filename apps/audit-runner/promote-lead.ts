@@ -1,5 +1,6 @@
 import { prisma } from "@/libs/prismaDb";
 import { sendActivationEmail } from "@/libs/notification-triggers";
+import { maskEmail } from "@/libs/log-mask";
 import { randomBytes } from "node:crypto";
 
 // ──────────────────────────────────────────────
@@ -144,7 +145,7 @@ export async function promoteLeadToOrg(
 				// visit /activate/:token and pick Google/GitHub/password.
 			},
 		});
-		console.log(`[promote-lead] created pending user ${user.id} (${email})`);
+		console.log(`[promote-lead] created pending user ${user.id} (${maskEmail(email)})`);
 	} else {
 		activationSkipReason = "existing_user";
 		const patch: Record<string, unknown> = {};
@@ -161,7 +162,7 @@ export async function promoteLeadToOrg(
 			});
 		}
 		console.log(
-			`[promote-lead] reusing existing user ${user.id} (${email}) — skipping activation`,
+			`[promote-lead] reusing existing user ${user.id} (${maskEmail(email)}) — skipping activation`,
 		);
 	}
 
@@ -289,7 +290,7 @@ export async function promoteLeadToOrg(
 	if (activationToken && !activationSkipReason) {
 		try {
 			await sendActivationEmail(email, activationToken, normalizedDomain);
-			console.log(`[promote-lead] activation email sent to ${email}`);
+			console.log(`[promote-lead] activation email sent to ${maskEmail(email)}`);
 		} catch (err) {
 			console.error(`[promote-lead] activation email send failed:`, err);
 		}
@@ -300,7 +301,7 @@ export async function promoteLeadToOrg(
 		try {
 			const { sendNewWorkspaceNotification } = await import("@/libs/notification-triggers");
 			await sendNewWorkspaceNotification(email, normalizedDomain, txResult.org.name);
-			console.log(`[promote-lead] new workspace notification sent to ${email}`);
+			console.log(`[promote-lead] new workspace notification sent to ${maskEmail(email)}`);
 		} catch (err) {
 			// Non-fatal — the user can still sign in and see the workspace
 			console.warn(`[promote-lead] new workspace notification failed:`, err);

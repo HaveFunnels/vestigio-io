@@ -130,8 +130,12 @@ export async function runProspectScan(scanId: string): Promise<RunProspectScanRe
 			},
 		});
 
+		// M10 H1: don't dump the prospect domain into stdout on every
+		// completion — Railway log readers can then enumerate the
+		// sales/outreach pipeline. scanId is enough to correlate with
+		// the ProspectScan row for anyone with DB access.
 		console.log(
-			`[prospect-scan ${scanId}] complete — ${normalized}, ${pagesScanned} pages, ${findings.visible.length} findings, ${durationMs}ms`,
+			`[prospect-scan ${scanId}] complete — ${pagesScanned} pages, ${findings.visible.length} findings, ${durationMs}ms`,
 		);
 
 		return { scanId, status: "complete", pagesScanned, durationMs };

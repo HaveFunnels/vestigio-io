@@ -169,8 +169,22 @@ export async function pollMetaAdsData(
 			const appSecret = process.env.META_ADS_APP_SECRET || process.env.META_APP_SECRET || "";
 			if (appId && appSecret) {
 				try {
-					const refreshUrl = `${GRAPH_BASE}/oauth/access_token?grant_type=fb_exchange_token&client_id=${encodeURIComponent(appId)}&client_secret=${encodeURIComponent(appSecret)}&fb_exchange_token=${encodeURIComponent(credentials.access_token)}`;
-					const refreshRes = await fetch(refreshUrl, { signal: AbortSignal.timeout(10_000) });
+					// POST the app secret in the body — never in the URL
+					// query string, which every proxy along the outbound
+					// path (Railway egress, Cloudflare, Meta CDN) logs
+					// verbatim. Body stays inside the TLS payload only.
+					const refreshBody_form = new URLSearchParams({
+						grant_type: "fb_exchange_token",
+						client_id: appId,
+						client_secret: appSecret,
+						fb_exchange_token: credentials.access_token,
+					});
+					const refreshRes = await fetch(`${GRAPH_BASE}/oauth/access_token`, {
+						method: "POST",
+						headers: { "Content-Type": "application/x-www-form-urlencoded" },
+						body: refreshBody_form.toString(),
+						signal: AbortSignal.timeout(10_000),
+					});
 					const refreshBody = await refreshRes.json().catch(() => ({})) as any;
 					if (refreshRes.ok && refreshBody.access_token) {
 						activeToken = refreshBody.access_token;

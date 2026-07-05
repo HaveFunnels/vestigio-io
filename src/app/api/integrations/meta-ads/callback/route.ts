@@ -72,6 +72,38 @@ async function graphGet<T>(
 	}
 }
 
+/// POST variant used for /oauth/access_token calls where the app
+/// secret must NOT be in the URL query string. Meta accepts the
+/// same parameters as form-encoded body per their OAuth 2.0 spec.
+/// Every proxy / CDN / access log along the outbound path (Railway
+/// egress → Meta) captures URL query strings verbatim; moving
+/// META_APP_SECRET to the body means it appears only in the
+/// TLS-encrypted request payload, not in any breadcrumb log.
+async function graphPost<T>(
+	path: string,
+	body: Record<string, string>,
+	timeoutMs = 15_000,
+): Promise<{ ok: boolean; data?: T; error?: string; status: number }> {
+	try {
+		const form = new URLSearchParams(body);
+		const res = await fetch(`${GRAPH_BASE}${path}`, {
+			method: "POST",
+			headers: { "Content-Type": "application/x-www-form-urlencoded" },
+			body: form.toString(),
+			signal: AbortSignal.timeout(timeoutMs),
+		});
+		const text = await res.text();
+		let respBody: any = {};
+		try { respBody = text ? JSON.parse(text) : {}; } catch { /* ignore */ }
+		if (!res.ok) {
+			return { ok: false, error: respBody?.error?.message || `HTTP ${res.status}`, status: res.status };
+		}
+		return { ok: true, data: respBody as T, status: res.status };
+	} catch (err) {
+		return { ok: false, error: err instanceof Error ? err.message : String(err), status: 0 };
+	}
+}
+
 export async function GET(request: Request) {
 	const { searchParams } = new URL(request.url);
 	const code = searchParams.get("code");
@@ -116,19 +148,26 @@ export async function GET(request: Request) {
 
 	const redirectUri = `${getBaseUrl()}/api/integrations/meta-ads/callback`;
 
-	// Step 1: exchange code → short-lived token.
-	const codeExchange = await graphGet<TokenResponse>(
-		`/oauth/access_token?client_id=${encodeURIComponent(META_APP_ID)}&client_secret=${encodeURIComponent(META_APP_SECRET)}&redirect_uri=${encodeURIComponent(redirectUri)}&code=${encodeURIComponent(code)}`,
-	);
+	// Step 1: exchange code → short-lived token. POST so the app
+	// secret stays out of URL query logs. See graphPost comment.
+	const codeExchange = await graphPost<TokenResponse>("/oauth/access_token", {
+		client_id: META_APP_ID,
+		client_secret: META_APP_SECRET,
+		redirect_uri: redirectUri,
+		code,
+	});
 	if (!codeExchange.ok || !codeExchange.data?.access_token) {
 		return redirectResult({ meta_ads_error: `code_exchange_failed:${codeExchange.error ?? "unknown"}` });
 	}
 	const shortToken = codeExchange.data.access_token;
 
-	// Step 2: upgrade to long-lived (~60d) token.
-	const longLived = await graphGet<TokenResponse>(
-		`/oauth/access_token?grant_type=fb_exchange_token&client_id=${encodeURIComponent(META_APP_ID)}&client_secret=${encodeURIComponent(META_APP_SECRET)}&fb_exchange_token=${encodeURIComponent(shortToken)}`,
-	);
+	// Step 2: upgrade to long-lived (~60d) token — POST same way.
+	const longLived = await graphPost<TokenResponse>("/oauth/access_token", {
+		grant_type: "fb_exchange_token",
+		client_id: META_APP_ID,
+		client_secret: META_APP_SECRET,
+		fb_exchange_token: shortToken,
+	});
 	const accessToken = longLived.data?.access_token || shortToken;
 	const isShortLived = !longLived.data?.access_token;
 	// If long-lived upgrade worked, use its reported expiry; otherwise mark as short-lived (1h).

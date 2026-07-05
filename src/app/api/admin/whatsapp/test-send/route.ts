@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { z } from "zod";
 import {
 	isMetaWhatsAppConfigured,
@@ -38,10 +37,8 @@ const schema = z.object({
 );
 
 export async function POST(req: Request) {
-	const session = await getServerSession(authOptions);
-	if (!session?.user || (session.user as any).role !== "ADMIN") {
-		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	if (!isMetaWhatsAppConfigured()) {
 		return NextResponse.json(
@@ -84,7 +81,7 @@ export async function POST(req: Request) {
 		try {
 			await prisma.notificationLog.create({
 				data: {
-					userId: (session.user as any).id,
+					userId: gate.admin.userId,
 					channel: "whatsapp",
 					event: "system",
 					recipient: data.to,
@@ -109,7 +106,7 @@ export async function POST(req: Request) {
 	try {
 		await prisma.notificationLog.create({
 			data: {
-				userId: (session.user as any).id,
+				userId: gate.admin.userId,
 				channel: "whatsapp",
 				event: "system",
 				recipient: data.to,

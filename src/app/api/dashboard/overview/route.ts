@@ -32,7 +32,7 @@ import { loadCaptionTranslations } from "@/lib/dashboard/load-caption-translatio
 // ──────────────────────────────────────────────
 
 export const GET = withErrorTracking(
-	async function GET() {
+	async function GET(req: Request) {
 		const user = await isAuthorized();
 		if (!user) {
 			return NextResponse.json({ message: "Unauthorized" }, { status: 401 });

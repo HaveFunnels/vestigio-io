@@ -1,10 +1,9 @@
-import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { getIp } from "@/libs/get-ip";
 import { PROVIDER_CONFIG_KEY, getDefaultProvider } from "@/libs/payment-provider";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -24,19 +23,9 @@ const providerSchema = z.object({
 	provider: z.enum(["mercadopago", "paddle"]),
 });
 
-async function requireAdmin() {
-	const session = await getServerSession(authOptions);
-	if (!session?.user || (session.user as any).role !== "ADMIN") {
-		return null;
-	}
-	return session.user;
-}
-
 export const GET = withErrorTracking(async function GET() {
-	const admin = await requireAdmin();
-	if (!admin) {
-		return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	const row = await prisma.platformConfig.findUnique({
 		where: { configKey: PROVIDER_CONFIG_KEY },
@@ -54,10 +43,8 @@ export const GET = withErrorTracking(async function GET() {
 });
 
 export const POST = withErrorTracking(async function POST(req: Request) {
-	const admin = await requireAdmin();
-	if (!admin) {
-		return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	const body = await req.json().catch(() => ({}));
 	const parsed = providerSchema.safeParse(body);
@@ -75,8 +62,8 @@ export const POST = withErrorTracking(async function POST(req: Request) {
 	});
 
 	await logAuditEvent({
-		actorId: (admin as any).id,
-		actorEmail: (admin as any).email ?? "",
+		actorId: gate.admin.userId,
+		actorEmail: gate.admin.email ?? "",
 		action: "admin.payment_provider.update",
 		metadata: { provider: parsed.data.provider },
 		ipAddress: (await getIp()) ?? undefined,

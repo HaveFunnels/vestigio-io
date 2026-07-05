@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { prisma } from "@/libs/prismaDb";
 import { generateAndPersistPlan } from "../../../../../../packages/strategy-plan";
 
@@ -19,10 +18,8 @@ import { generateAndPersistPlan } from "../../../../../../packages/strategy-plan
 // ──────────────────────────────────────────────
 
 export async function POST(request: Request) {
-	const session = await getServerSession(authOptions);
-	if (!session?.user || (session.user as any).role !== "ADMIN") {
-		return NextResponse.json({ message: "Admin only" }, { status: 403 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	let body: any;
 	try {

@@ -43,6 +43,7 @@ import { prisma } from "@/libs/prismaDb";
 export interface AdminGateContext {
 	userId: string;
 	email: string | null;
+	name: string | null;
 }
 
 export type AdminGateResult =
@@ -65,7 +66,7 @@ export async function requireAdmin(): Promise<AdminGateResult> {
 	try {
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
-			select: { role: true, email: true },
+			select: { role: true, email: true, name: true },
 		});
 		if (!user || user.role !== "ADMIN") {
 			console.warn(
@@ -73,7 +74,7 @@ export async function requireAdmin(): Promise<AdminGateResult> {
 			);
 			return { denied: NextResponse.json({ message: "Unauthorized" }, { status: 401 }) };
 		}
-		return { admin: { userId, email: user.email } };
+		return { admin: { userId, email: user.email, name: user.name } };
 	} catch (err) {
 		// Fail-closed: deny on DB outage instead of granting access
 		// based on the cached JWT alone.

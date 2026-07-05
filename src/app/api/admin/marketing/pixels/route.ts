@@ -1,7 +1,6 @@
-import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -12,10 +11,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export const GET = withErrorTracking(
   async function GET() {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin();
+    if (gate.denied) return gate.denied;
 
     try {
       const pixels = await prisma.trackingPixel.findMany({
@@ -35,10 +32,8 @@ export const GET = withErrorTracking(
 
 export const POST = withErrorTracking(
   async function POST(req: NextRequest) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin();
+    if (gate.denied) return gate.denied;
 
     try {
       const body = await req.json();
@@ -88,10 +83,8 @@ export const POST = withErrorTracking(
 
 export const DELETE = withErrorTracking(
   async function DELETE(req: NextRequest) {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-    }
+    const gate = await requireAdmin();
+    if (gate.denied) return gate.denied;
 
     try {
       const { searchParams } = new URL(req.url);

@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
 import { withErrorTracking } from "@/libs/error-tracker";
+import { requireAdmin } from "@/libs/require-admin";
 
 // ──────────────────────────────────────────────
 // Suppression Rules — single-rule ops (admin-only)
@@ -56,10 +55,8 @@ export const PATCH = withErrorTracking(
 		request: Request,
 		{ params }: { params: Promise<{ id: string }> },
 	) {
-		const session = await getServerSession(authOptions);
-		if (!session?.user || (session.user as any).role !== "ADMIN") {
-			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-		}
+		const gate = await requireAdmin();
+		if (gate.denied) return gate.denied;
 
 		const { id: ruleId } = await params;
 		if (!ruleId) {
@@ -164,10 +161,8 @@ export const DELETE = withErrorTracking(
 		_request: Request,
 		{ params }: { params: Promise<{ id: string }> },
 	) {
-		const session = await getServerSession(authOptions);
-		if (!session?.user || (session.user as any).role !== "ADMIN") {
-			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-		}
+		const gate = await requireAdmin();
+		if (gate.denied) return gate.denied;
 
 		const { id: ruleId } = await params;
 		if (!ruleId) {

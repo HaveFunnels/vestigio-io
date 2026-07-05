@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
+import { requireAdmin } from "@/libs/require-admin";
 
 // ──────────────────────────────────────────────
 // Chat Feedback API — POST (submit) + GET (admin list)
@@ -74,10 +75,8 @@ export async function POST(request: Request) {
 
 /** GET — Admin-only: list feedback with pagination */
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const { searchParams } = new URL(request.url);
   const rating = searchParams.get("rating") || undefined;

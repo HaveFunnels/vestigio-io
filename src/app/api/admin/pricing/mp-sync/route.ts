@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 
-import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
 import {
@@ -10,6 +8,7 @@ import {
 	type PlanConfig,
 } from "@/libs/plan-config";
 import { createPreapprovalPlan, isMpConfigured } from "@/libs/mp-api";
+import { requireAdmin } from "@/libs/require-admin";
 
 // ──────────────────────────────────────────────
 // POST /api/admin/pricing/mp-sync
@@ -33,16 +32,10 @@ const BRL_DEFAULTS: Record<string, number> = {
 	max: 39900,
 };
 
-async function requireAdmin() {
-	const session = await getServerSession(authOptions);
-	if (!session?.user || (session.user as any).role !== "ADMIN") return null;
-	return session.user;
-}
-
 export const POST = withErrorTracking(
 	async function POST(req: Request) {
-		const admin = await requireAdmin();
-		if (!admin) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+		const gate = await requireAdmin();
+		if (gate.denied) return gate.denied;
 		if (!isMpConfigured()) {
 			return NextResponse.json({ message: "MP_ACCESS_TOKEN not configured" }, { status: 400 });
 		}

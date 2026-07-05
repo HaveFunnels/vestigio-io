@@ -1,6 +1,5 @@
-import { authOptions } from "@/libs/auth";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextRequest, NextResponse } from "next/server";
 
 // ──────────────────────────────────────────────
@@ -72,11 +71,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const { id: ticketId } = await params;
 
@@ -126,11 +122,8 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const { id: ticketId } = await params;
 
@@ -160,9 +153,9 @@ export async function POST(
 
     const sanitizedContent = sanitizeHtml(content);
 
-    const adminId = (session.user as any).id as string;
-    const adminName = session.user.name || "Staff";
-    const adminEmail = session.user.email || "";
+    const adminId = gate.admin.userId;
+    const adminName = gate.admin.name || "Staff";
+    const adminEmail = gate.admin.email || "";
 
     // Create reply and update ticket's updatedAt in a transaction
     const [reply] = await prisma.$transaction([

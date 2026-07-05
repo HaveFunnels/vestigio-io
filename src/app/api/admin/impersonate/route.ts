@@ -37,7 +37,7 @@ export const POST = withErrorTracking(async function POST(request: Request) {
   // Resolve target user by one of two inputs:
   //  - organizationId → the org's owner (used by /app/admin/organizations)
   //  - userId → the specific user (used by /app/admin/manage-users UserAction)
-  let targetUser: { id: string; email: string; name: string | null } | null = null;
+  let targetUser: { id: string; email: string; name: string | null };
   let auditTargetType: "organization" | "user" = "organization";
   let auditTargetId = organizationId ?? userId ?? "unknown";
 
@@ -60,7 +60,7 @@ export const POST = withErrorTracking(async function POST(request: Request) {
     if (!user?.email) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
-    targetUser = user;
+    targetUser = { id: user.id, email: user.email, name: user.name };
     auditTargetType = "user";
     auditTargetId = userId;
   } else {

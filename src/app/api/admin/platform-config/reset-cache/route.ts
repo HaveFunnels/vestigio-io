@@ -1,6 +1,5 @@
-import { authOptions } from "@/libs/auth";
 import { invalidatePlanCache } from "@/libs/plan-config";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextResponse } from "next/server";
 
 // ──────────────────────────────────────────────
@@ -13,10 +12,8 @@ import { NextResponse } from "next/server";
 
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    const gate = await requireAdmin();
+    if (gate.denied) return gate.denied;
 
     invalidatePlanCache();
 

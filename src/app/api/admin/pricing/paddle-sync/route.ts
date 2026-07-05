@@ -1,4 +1,3 @@
-import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import {
   isPaddleConfigured,
@@ -7,7 +6,7 @@ import {
 } from "@/libs/paddle-api";
 import { annualPriceCentsFromMonthly } from "@/libs/plan-config";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextResponse } from "next/server";
 
 // ──────────────────────────────────────────────
@@ -19,19 +18,9 @@ import { NextResponse } from "next/server";
 
 const CONFIG_KEY_PLANS = "plan_configs";
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return null;
-  }
-  return session.user;
-}
-
 export const POST = withErrorTracking(async function POST() {
-  const admin = await requireAdmin();
-  if (!admin) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   if (!isPaddleConfigured()) {
     return NextResponse.json(

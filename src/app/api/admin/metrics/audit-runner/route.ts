@@ -1,7 +1,6 @@
-import { authOptions } from "@/libs/auth";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextResponse } from "next/server";
 
 // ──────────────────────────────────────────────
@@ -32,10 +31,8 @@ function currentPeriod(): string {
 
 export const GET = withErrorTracking(
 	async function GET() {
-		const session = await getServerSession(authOptions);
-		if (!session?.user || (session.user as any).role !== "ADMIN") {
-			return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-		}
+		const gate = await requireAdmin();
+		if (gate.denied) return gate.denied;
 
 		const period = currentPeriod();
 		const last24hCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);

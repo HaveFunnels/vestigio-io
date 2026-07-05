@@ -1,10 +1,9 @@
-import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { getIp } from "@/libs/get-ip";
 import { notifyUser } from "@/libs/notifications";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextRequest, NextResponse } from "next/server";
 
 const BATCH_SIZE = 50;
@@ -18,11 +17,8 @@ export const POST = withErrorTracking(async function POST(
   req: NextRequest,
   { params }: { params: { id: string } },
 ) {
-  const session = await getServerSession(authOptions);
-
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const { id } = params;
 
@@ -141,8 +137,8 @@ export const POST = withErrorTracking(async function POST(
     // Audit log
     const ip = await getIp();
     logAuditEvent({
-      actorId: (session.user as any).id,
-      actorEmail: (session.user as any).email ?? "unknown",
+      actorId: gate.admin.userId,
+      actorEmail: gate.admin.email ?? "unknown",
       action: "newsletter.send",
       targetType: "newsletter",
       targetId: updated.id,

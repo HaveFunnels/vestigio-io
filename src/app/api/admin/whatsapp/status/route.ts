@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/libs/auth";
+import { requireAdmin } from "@/libs/require-admin";
 import {
 	getPhoneNumberInfo,
 	isMetaWhatsAppConfigured,
@@ -16,10 +15,8 @@ import {
 // ──────────────────────────────────────────────
 
 export async function GET() {
-	const session = await getServerSession(authOptions);
-	if (!session?.user || (session.user as any).role !== "ADMIN") {
-		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-	}
+	const gate = await requireAdmin();
+	if (gate.denied) return gate.denied;
 
 	const configured = isMetaWhatsAppConfigured();
 

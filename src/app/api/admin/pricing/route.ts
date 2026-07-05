@@ -1,4 +1,3 @@
-import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { getIp } from "@/libs/get-ip";
@@ -8,7 +7,7 @@ import {
   createPrice,
 } from "@/libs/paddle-api";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -64,14 +63,6 @@ const saveSchema = z.object({
   }),
 });
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return null;
-  }
-  return session.user;
-}
-
 // Default plans (used when no DB config exists yet)
 const DEFAULT_PLANS = [
   { key: "vestigio", label: "Vestigio", priceId: "", paddleProductId: "", paddlePriceId: "", paddleAnnualPriceId: "", lemonSqueezyPriceId: "", monthlyPriceCents: 9900, monthlyPriceCentsBrl: 4900, maxMcpCalls: 50, continuousAudits: false, creditsEnabled: false, maxEnvironments: 1, maxMembers: 1 },
@@ -82,10 +73,8 @@ const DEFAULT_PLANS = [
 const DEFAULT_CREDITS = { baseCostPerCall: 0.05, markupMultiplier: 2.0 };
 
 export const GET = withErrorTracking(async function GET() {
-  const admin = await requireAdmin();
-  if (!admin) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const [plansRow, creditsRow] = await Promise.all([
     prisma.platformConfig.findUnique({ where: { configKey: CONFIG_KEY_PLANS } }),
@@ -99,10 +88,8 @@ export const GET = withErrorTracking(async function GET() {
 }, { endpoint: "/api/admin/pricing", method: "GET" });
 
 export const POST = withErrorTracking(async function POST(request: Request) {
-  const admin = await requireAdmin();
-  if (!admin) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const payload = await request.json();
   const res = saveSchema.safeParse(payload);
@@ -196,8 +183,8 @@ export const POST = withErrorTracking(async function POST(request: Request) {
   // Audit log
   const ip = await getIp();
   logAuditEvent({
-    actorId: (admin as any).id,
-    actorEmail: (admin as any).email ?? "unknown",
+    actorId: gate.admin.userId,
+    actorEmail: gate.admin.email ?? "unknown",
     action: "pricing.update",
     targetType: "config",
     targetName: "pricing",

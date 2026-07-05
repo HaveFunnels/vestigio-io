@@ -1,8 +1,7 @@
-import { authOptions } from "@/libs/auth";
 import { logAuditEvent } from "@/libs/audit-log";
 import { getIp } from "@/libs/get-ip";
 import { prisma } from "@/libs/prismaDb";
-import { getServerSession } from "next-auth";
+import { requireAdmin } from "@/libs/require-admin";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -23,19 +22,9 @@ const ruleSchema = z.object({
   enabled: z.boolean().default(true),
 });
 
-async function requireAdmin() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user as any).role !== "ADMIN") {
-    return null;
-  }
-  return session.user;
-}
-
 export async function GET() {
-  const admin = await requireAdmin();
-  if (!admin) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const rules = await prisma.alertRule.findMany({
     orderBy: { createdAt: "desc" },
@@ -51,10 +40,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const admin = await requireAdmin();
-  if (!admin) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const body = await req.json();
   const parsed = ruleSchema.safeParse(body);
@@ -87,8 +74,8 @@ export async function POST(req: NextRequest) {
   // options existed but no code path emitted them.
   const ip = await getIp();
   logAuditEvent({
-    actorId: (admin as any).id,
-    actorEmail: (admin as any).email ?? "unknown",
+    actorId: gate.admin.userId,
+    actorEmail: gate.admin.email ?? "unknown",
     action: id ? "alert.update" : "alert.create",
     targetType: "alert_rule",
     targetId: rule.id,
@@ -101,10 +88,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const admin = await requireAdmin();
-  if (!admin) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const gate = await requireAdmin();
+  if (gate.denied) return gate.denied;
 
   const { id } = await req.json();
   if (!id) {
@@ -118,8 +103,8 @@ export async function DELETE(req: NextRequest) {
 
   const ip = await getIp();
   logAuditEvent({
-    actorId: (admin as any).id,
-    actorEmail: (admin as any).email ?? "unknown",
+    actorId: gate.admin.userId,
+    actorEmail: gate.admin.email ?? "unknown",
     action: "alert.delete",
     targetType: "alert_rule",
     targetId: deleted.id,

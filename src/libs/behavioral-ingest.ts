@@ -181,7 +181,23 @@ export function isOriginAllowed(
   const origin = headers.get("origin");
   const referer = headers.get("referer");
   const raw = origin || referer;
-  if (!raw) return true;
+
+  // Fail CLOSED when both Origin and Referer are absent. The prior
+  // fail-open branch (return true here) let non-browser POSTs
+  // inject fake pixel events into any known envId — the JS
+  // snippet exposes the envId publicly (it's baked into the
+  // <script data-env=...> attribute), so an attacker just needed
+  // to POST /api/behavioral/ingest with a JSON payload and no
+  // browser-set headers to poison any tenant's session /
+  // attribution data (M2 H5).
+  //
+  // Legitimate browser XHR always sets Origin on cross-origin
+  // POSTs and same-origin POSTs (Origin is set on every POST
+  // per the Fetch spec regardless of same/cross-origin). A
+  // customer's page loading the pixel from a legit origin will
+  // always have Origin populated; rejecting the empty case
+  // costs no legitimate traffic.
+  if (!raw) return false;
 
   try {
     const hostname = new URL(raw).hostname;
@@ -189,7 +205,8 @@ export function isOriginAllowed(
     const envNormalized = envDomain.replace(/^www\./, "").replace(/^https?:\/\//, "");
     return normalized === envNormalized || normalized.endsWith(`.${envNormalized}`);
   } catch {
-    return true;
+    // Malformed Origin/Referer — reject rather than trust.
+    return false;
   }
 }
 

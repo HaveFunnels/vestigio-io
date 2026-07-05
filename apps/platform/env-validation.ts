@@ -58,6 +58,22 @@ export function validateEnv(env: Record<string, string | undefined> = process.en
     for (const v of PRODUCTION_REQUIRED_VARS) {
       if (!env[v.key]) missing.push(`[PRODUCTION] ${v.key} — ${v.description}`);
     }
+    // VESTIGIO_SECRET_KEY protects every stored OAuth token (Meta,
+    // Google, Stripe, Shopify, Nuvemshop) via AES-256-GCM. sha256()
+    // silently stretches whatever raw value is set into a 32-byte
+    // key, which means a weak passphrase ("changeme") ends up as
+    // sha256("changeme") — offline brute-forceable from any DB
+    // dump. Every OTHER platform HMAC key has a length gate
+    // (SECRET: <32 chars fail-fast, LEAD_FORM_SECRET: <16 throw);
+    // the highest-value key in the system was the only one without
+    // one. Enforce >=32 to force `openssl rand -hex 32` — the
+    // documented mint pattern in .env.example.
+    const secretKey = env.VESTIGIO_SECRET_KEY;
+    if (secretKey && secretKey.length < 32) {
+      missing.push(
+        `[PRODUCTION] VESTIGIO_SECRET_KEY too short (${secretKey.length} chars, minimum 32) — regenerate with: openssl rand -hex 32`,
+      );
+    }
   }
 
   // Recommended (warnings only)

@@ -52,15 +52,17 @@ export const GET = withErrorTracking(
 			return NextResponse.json({ chains: buildMockCrossSignals(), currency: resolvedCurrency });
 		}
 
-		const environment = await prisma.environment.findFirst({
-			where: { organizationId: membership.organizationId },
-			orderBy: [{ isProduction: "desc" }, { createdAt: "asc" }],
-			select: { id: true },
-		});
-
-		if (!environment) {
+		// M2 H4 — read active_env cookie via next/headers (route
+		// handler has no Request in scope).
+		const { cookies } = await import("next/headers");
+		const cookieStore = await cookies();
+		const activeEnv = cookieStore.get("active_env")?.value ?? null;
+		const { resolveEnvId } = await import("@/libs/resolve-env");
+		const envId = await resolveEnvId({ userId: user.id, activeEnv });
+		if (!envId) {
 			return NextResponse.json({ chains: [], journey: [], currency: resolvedCurrency });
 		}
+		const environment = { id: envId };
 
 		// Wave 18h — also return the journey-ordered view so the
 		// panorama page can render the funnel-sequence section

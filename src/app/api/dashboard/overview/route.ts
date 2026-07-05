@@ -71,11 +71,17 @@ export const GET = withErrorTracking(
 			resolvedCurrency = currencyFromLocale(owner?.locale);
 		}
 
-		const environment = await prisma.environment.findFirst({
-			where: { organizationId: membership.organizationId },
-			orderBy: [{ isProduction: "desc" }, { createdAt: "asc" }],
-			select: { id: true },
+		// Route the query through resolveEnvId so multi-env orgs get
+		// the env the user actually has selected in the sidebar, not
+		// "first env by createdAt". M2 H4 was tested against exactly
+		// this route — havefunnels/casamontelle customers were seeing
+		// the other env's overview.
+		const { resolveEnvId } = await import("@/libs/resolve-env");
+		const envId = await resolveEnvId({
+			userId: user.id,
+			cookieHeader: req.headers.get("cookie"),
 		});
+		const environment = envId ? { id: envId } : null;
 
 		// Load locale-aware caption translations so dashboard text renders
 		// in the user's language instead of hardcoded English. DB locale

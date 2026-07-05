@@ -89,15 +89,13 @@ export async function GET(request: Request) {
   try {
     const { prisma } = await import("@/libs/prismaDb");
 
-    // Get the production environment (prefer isProduction, fallback to newest)
-    const env = await prisma.environment.findFirst({
-      where: { organizationId: orgCtx.orgId },
-      orderBy: [{ isProduction: "desc" }, { createdAt: "desc" }],
-    });
-
-    if (!env) {
+    // Use the org context's envId (already respects active_env cookie
+    // via resolveOrgContext). Prior code did an independent
+    // environment.findFirst that ignored the cookie — M2 H4.
+    if (!orgCtx.envId) {
       return NextResponse.json({ map: null });
     }
+    const env = { id: orgCtx.envId };
 
     // Fetch page inventory (including multi-signal classification fields)
     const pages = await prisma.pageInventoryItem.findMany({

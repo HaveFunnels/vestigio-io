@@ -32,14 +32,16 @@ export const GET = withErrorTracking(
 			return NextResponse.json({ message: "No organization" }, { status: 404 });
 		}
 
-		const environment = await prisma.environment.findFirst({
-			where: { organizationId: membership.organizationId },
-			orderBy: [{ isProduction: "desc" }, { createdAt: "asc" }],
-			select: { id: true },
+		// M2 H4 — respect the active_env cookie for multi-env orgs.
+		const { resolveEnvId } = await import("@/libs/resolve-env");
+		const envId = await resolveEnvId({
+			userId: user.id,
+			cookieHeader: request.headers.get("cookie"),
 		});
-		if (!environment) {
+		if (!envId) {
 			return NextResponse.json({ message: "No environment" }, { status: 404 });
 		}
+		const environment = { id: envId };
 
 		// Parse query params
 		const url = new URL(request.url);

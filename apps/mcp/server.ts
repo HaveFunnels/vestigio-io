@@ -123,10 +123,21 @@ export class McpServer {
       this.scope.environment_ref &&
       this.scope.environment_ref !== scope.environment_ref
     ) {
-      console.warn(
-        `[mcp-server] cross-tenant context swap detected ` +
-        `(previous env=${this.scope.environment_ref} → new env=${scope.environment_ref}). ` +
-        `If this fires under steady load, harden the singleton with per-request isolation.`,
+      // FAIL HARD on cross-tenant swap. The prior console.warn +
+      // "overwrite anyway" behavior meant a concurrent RSC render
+      // for org B, arriving mid-flight of an in-progress query for
+      // org A, could rewrite the singleton scope; the outstanding
+      // A-query would then serialize B's data into its response.
+      // Layouts and API routes that call loadContext are all in
+      // async try/catch — throwing here surfaces as an "engine
+      // unavailable" error state on the affected request, which
+      // the app already renders as loading/skeleton rather than
+      // partial content. A brief failure beats a silent cross-
+      // tenant leak. M2 H2.
+      throw new Error(
+        `[mcp-server] cross-tenant context swap refused ` +
+        `(previous env=${this.scope.environment_ref} → attempted env=${scope.environment_ref}). ` +
+        `The MCP singleton is per-process; concurrent loadContext calls from different orgs must not race.`,
       );
     }
 

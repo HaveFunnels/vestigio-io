@@ -41,27 +41,16 @@ export const GET = withErrorTracking(async function GET(request: Request) {
     return NextResponse.json({ message: "No organization found" }, { status: 404 });
   }
 
-  // Respect active_env cookie so users with multiple envs see the right one
-  const cookieStore = await import("next/headers").then((m) => m.cookies());
-  const activeEnvId = cookieStore.get("active_env")?.value;
-
-  let environment = activeEnvId
-    ? await prisma.environment.findFirst({
-        where: { id: activeEnvId, organizationId: membership.organizationId },
-        select: { id: true },
-      })
-    : null;
-  if (!environment) {
-    environment = await prisma.environment.findFirst({
-      where: { organizationId: membership.organizationId },
-      orderBy: [{ isProduction: "desc" }, { createdAt: "asc" }],
-      select: { id: true },
-    });
-  }
-
-  if (!environment) {
+  // Consolidated env resolution via the shared helper.
+  const { cookies } = await import("next/headers");
+  const cookieStore = await cookies();
+  const activeEnv = cookieStore.get("active_env")?.value ?? null;
+  const { resolveEnvId } = await import("@/libs/resolve-env");
+  const envId = await resolveEnvId({ userId: user.id, activeEnv });
+  if (!envId) {
     return NextResponse.json({ message: "No environment found" }, { status: 404 });
   }
+  const environment = { id: envId };
 
   const latestCycle = await prisma.auditCycle.findFirst({
     where: { environmentId: environment.id },

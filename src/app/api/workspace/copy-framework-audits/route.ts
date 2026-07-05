@@ -55,36 +55,19 @@ export const GET = withErrorTracking(
 			return NextResponse.json({ message: "pageUrl required" }, { status: 400 });
 		}
 
-		// Resolve env via active_env cookie (same priority as other workspace
-		// endpoints). Falls back to the org's first env if no cookie set.
-		const cookieStore = await import("next/headers").then((m) => m.cookies());
-		const activeEnvId = cookieStore.get("active_env")?.value;
-
-		const membership = await prisma.membership.findFirst({
-			where: { userId },
-			select: { organizationId: true },
-			orderBy: { createdAt: "desc" },
-		});
-		if (!membership) {
+		// Env resolution via the shared helper. This route ALREADY read
+		// active_env correctly; migrating to resolveEnvId is for
+		// consistency so no future edit reintroduces a divergent
+		// pattern.
+		const { cookies } = await import("next/headers");
+		const cookieStore = await cookies();
+		const activeEnv = cookieStore.get("active_env")?.value ?? null;
+		const { resolveEnvId } = await import("@/libs/resolve-env");
+		const envId = await resolveEnvId({ userId, activeEnv });
+		if (!envId) {
 			return NextResponse.json({ frameworks: {}, fallback: true });
 		}
-
-		let environment = activeEnvId
-			? await prisma.environment.findFirst({
-					where: { id: activeEnvId, organizationId: membership.organizationId },
-					select: { id: true },
-				})
-			: null;
-		if (!environment) {
-			environment = await prisma.environment.findFirst({
-				where: { organizationId: membership.organizationId },
-				orderBy: [{ isProduction: "desc" }, { createdAt: "asc" }],
-				select: { id: true },
-			});
-		}
-		if (!environment) {
-			return NextResponse.json({ frameworks: {}, fallback: true });
-		}
+		const environment = { id: envId };
 
 		const latestCycle = await prisma.auditCycle.findFirst({
 			where: { environmentId: environment.id, status: "complete" },

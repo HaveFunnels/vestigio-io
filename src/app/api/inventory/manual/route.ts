@@ -65,21 +65,15 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 		);
 	}
 
-	const cookieStore = await import("next/headers").then((m) => m.cookies());
-	const activeEnvId = cookieStore.get("active_env")?.value;
-	const environment = activeEnvId
-		? await prisma.environment.findFirst({
-				where: { id: activeEnvId, organizationId: membership.organizationId },
-				select: { id: true },
-		  })
-		: await prisma.environment.findFirst({
-				where: { organizationId: membership.organizationId },
-				orderBy: [{ isProduction: "desc" }, { createdAt: "asc" }],
-				select: { id: true },
-		  });
-	if (!environment) {
+	const { cookies } = await import("next/headers");
+	const cookieStore = await cookies();
+	const activeEnv = cookieStore.get("active_env")?.value ?? null;
+	const { resolveEnvId } = await import("@/libs/resolve-env");
+	const envId = await resolveEnvId({ userId: user.id, activeEnv });
+	if (!envId) {
 		return NextResponse.json({ message: "No environment" }, { status: 404 });
 	}
+	const environment = { id: envId };
 
 	const website = await prisma.website.findFirst({
 		where: { environmentRef: environment.id },

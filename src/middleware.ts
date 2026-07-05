@@ -41,13 +41,17 @@ const MARKETING_DOMAIN = process.env.NEXT_PUBLIC_MARKETING_DOMAIN || "vestigio.i
  *     "token exists" → /app shows logged-out state → client redirects
  *     to /auth/signin → repeat).
  *
- * Legacy tokens without sessionExpiresAt are treated as valid so
- * existing logins from before commit 3481594 don't break.
+ * Wave 18e — tokens without sessionExpiresAt (issued before commit
+ * 3481594, 2026-05-14) are now rejected. The cookie ceiling is 30d,
+ * so any pre-3481594 JWT is already past its cookie expiry at the
+ * transport layer. Keeping the legacy fallback allowed a hypothetical
+ * attacker with an unexpired 30d cookie captured pre-rollout to keep
+ * bypassing the per-login TTL indefinitely. Fail-closed here.
  */
 function hasValidSession(token: unknown): boolean {
 	if (!token || typeof token !== "object") return false;
 	const expiresAt = (token as { sessionExpiresAt?: number | null }).sessionExpiresAt;
-	if (typeof expiresAt !== "number") return true; // legacy / not set
+	if (typeof expiresAt !== "number") return false;
 	return Date.now() < expiresAt;
 }
 

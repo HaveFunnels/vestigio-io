@@ -2,6 +2,7 @@ import axios, { AxiosError } from "axios";
 import { NextRequest, NextResponse } from "next/server";
 import { newsletterPayloadSchema } from "./schema";
 import { checkRateLimit } from "@/libs/limiter";
+import { verifyTurnstile } from "@/libs/turnstile";
 
 // Tight per-IP rate limit on this public POST. The endpoint proxies
 // arbitrary caller-supplied email into Mailchimp's subscribe API — the
@@ -28,6 +29,20 @@ export async function POST(req: NextRequest) {
 		return NextResponse.json(
 			{ message: "Invalid Payload", errors: res.error.flatten().fieldErrors },
 			{ status: 400 }
+		);
+	}
+
+	// Wave 18e P3.2 — Cloudflare Turnstile. Fail-open when
+	// TURNSTILE_SECRET_KEY is unset (dev + staged rollout), enforces
+	// once the secret is present. The client widget must post the
+	// token as `turnstileToken` alongside the newsletter form.
+	const turnstile = await verifyTurnstile(
+		(payload as { turnstileToken?: string })?.turnstileToken,
+	);
+	if (!turnstile.ok) {
+		return NextResponse.json(
+			{ message: "Captcha verification failed", reason: turnstile.reason },
+			{ status: 400 },
 		);
 	}
 

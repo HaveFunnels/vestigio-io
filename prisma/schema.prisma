@@ -1911,6 +1911,15 @@ model AuditLog {
   metadata   String?  @db.Text // JSON extra context
   ipAddress  String?
   createdAt  DateTime @default(now())
+  // Wave 18e — tamper-evidence chain. `prevHash` references the
+  // previous row's `hash` (SHA-256 over the canonical row payload).
+  // Verifying the chain catches retroactive edits or deletions of
+  // individual rows — an attacker who alters row N can't recompute
+  // hashes for N+1..last without their own private state; the
+  // downstream chain no longer verifies. See src/libs/audit-log.ts
+  // for the canonicalization + verifier.
+  prevHash   String?
+  hash       String?
 
   @@index([actorId, createdAt])
   @@index([action, createdAt])

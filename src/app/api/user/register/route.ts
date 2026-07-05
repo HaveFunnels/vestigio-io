@@ -2,6 +2,7 @@ import { evaluateAlerts } from "@/libs/alert-evaluator";
 import { withErrorTracking } from "@/libs/error-tracker";
 import { checkRateLimit } from "@/libs/limiter";
 import { prisma } from "@/libs/prismaDb";
+import { verifyTurnstile } from "@/libs/turnstile";
 import { excludeFields } from "@/utils/exclude-fields";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
@@ -19,6 +20,19 @@ export const POST = withErrorTracking(async function POST(request: Request) {
 		return NextResponse.json(
 			{ message: "Invalid Payload", errors: res.error.flatten().fieldErrors },
 			{ status: 400 }
+		);
+	}
+
+	// Wave 18e P3.2 — Turnstile. Fail-open when TURNSTILE_SECRET_KEY
+	// is unset (dev + staged rollout). Client widget must post the
+	// token as `turnstileToken` alongside the register payload.
+	const turnstile = await verifyTurnstile(
+		(body as { turnstileToken?: string })?.turnstileToken,
+	);
+	if (!turnstile.ok) {
+		return NextResponse.json(
+			{ message: "Captcha verification failed", reason: turnstile.reason },
+			{ status: 400 },
 		);
 	}
 

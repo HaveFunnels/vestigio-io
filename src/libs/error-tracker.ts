@@ -16,27 +16,92 @@ type ErrorContext = {
 
 /**
  * Sanitize request body by redacting sensitive fields before storage.
+ *
+ * The deny list covers three concentric rings:
+ *   1. Auth material (passwords, tokens, secrets, API keys) — never
+ *      loggable under any circumstances.
+ *   2. Direct PII (email, phone, cpf, cnpj, senha for pt-BR forms,
+ *      name-family fields) — LGPD-relevant, must be masked before
+ *      writing PlatformError rows because those rows are surfaced
+ *      to any staff member with admin console access.
+ *   3. Payment / device identifiers that vendors dispatch through
+ *      our webhook body (payerEmail, card_token_id, deviceSessionId,
+ *      Authorization header echoes) — sensitive-in-context; masking
+ *      is cheap and prevents accidental exposure via body-in-log
+ *      patterns that show up sporadically as we add integrations.
+ *
+ * The check is case-insensitive on the field name AND does a
+ * recursive walk through nested objects, so a token nested under
+ * `.data.subscription.access_token` is still caught. Arrays are
+ * traversed element-by-element.
+ *
+ * Prior version had only ring-1 keys and did a shallow check.
+ * M10 H5 flagged the concrete gap: any body-logging path that
+ * started passing customer email / MP payer_email / MP
+ * card_token_id would leak PII silently. Expanded here so the
+ * sanitizer is future-proof.
  */
-function sanitizeBody(body: Record<string, unknown> | undefined): string | null {
-	if (!body) return null;
-	const sensitive = [
+const REDACTED_FIELDS = new Set(
+	[
+		// ── ring 1 (auth material) ──
 		"password",
-		"currentPassword",
-		"newPassword",
+		"currentpassword",
+		"newpassword",
+		"senha",
+		"senhaatual",
 		"token",
-		"resetToken",
-		"apiKey",
+		"resettoken",
+		"apikey",
+		"api_key",
 		"secret",
+		"clientsecret",
+		"client_secret",
+		"authorization",
+		"cookie",
+		// ── ring 2 (direct PII) ──
+		"email",
+		"phone",
+		"telefone",
+		"cpf",
+		"cnpj",
+		"documento",
+		// ── ring 3 (payment / device identifiers) ──
+		"payeremail",
+		"payer_email",
+		"cardtokenid",
+		"card_token_id",
+		"devicesessionid",
+		"device_session_id",
+		"cardnumber",
 		"credit_card",
+		"cvc",
+		"cvv",
 		"ssn",
-	];
-	const sanitized = { ...body };
-	for (const key of sensitive) {
-		if (key in sanitized) {
-			sanitized[key] = "[REDACTED]";
+	].map((s) => s.toLowerCase()),
+);
+
+function sanitizeValue(value: unknown): unknown {
+	if (value === null || value === undefined) return value;
+	if (Array.isArray(value)) return value.map(sanitizeValue);
+	if (typeof value === "object") return sanitizeObject(value as Record<string, unknown>);
+	return value;
+}
+
+function sanitizeObject(obj: Record<string, unknown>): Record<string, unknown> {
+	const out: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(obj)) {
+		if (REDACTED_FIELDS.has(key.toLowerCase())) {
+			out[key] = "[REDACTED]";
+		} else {
+			out[key] = sanitizeValue(value);
 		}
 	}
-	return JSON.stringify(sanitized);
+	return out;
+}
+
+function sanitizeBody(body: Record<string, unknown> | undefined): string | null {
+	if (!body) return null;
+	return JSON.stringify(sanitizeObject(body));
 }
 
 /**

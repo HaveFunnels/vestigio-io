@@ -2,10 +2,16 @@
 // Payment Provider Resolver
 //
 // Single point that decides which gateway owns a given user/checkout.
-// Default is `mercadopago` (BRL-only, single market). Admin can
-// override via PlatformConfig.payment_provider (see /app/admin/
-// pricing) — useful for switching the LP funnel + new-user signup
-// to Paddle temporarily without flipping env vars.
+// Default is `paddle` (multi-market, card-first). Admin can override
+// via PlatformConfig.payment_provider (see /app/admin/pricing) —
+// useful for A/B'ing MP against Paddle on the BR funnel without
+// flipping env vars.
+//
+// History: through 2026-06 the default was mercadopago (BRL-only push
+// after MP wedge testing). 2026-07 flip back to Paddle because MP
+// sandbox never got preapproval+card_token working reliably and the
+// prod card flow shipped fragile signals for the initial billing
+// telemetry. Existing MP subscribers stay on MP via resolveUserProvider.
 //
 // Two distinct concerns this helper separates:
 //
@@ -16,13 +22,15 @@
 //   2. "Which provider OWNS this user's CURRENT subscription?" →
 //      resolveUserProvider() — derived from User.paymentProvider, set
 //      only by webhooks. Existing Paddle subscribers see Paddle
-//      management UI; new MP users see MP UI. No forced migration.
+//      management UI; existing MP subscribers see MP UI. No forced
+//      migration.
 //
-// The two can disagree (e.g. an existing Paddle user whose next
-// checkout would be MP), which is exactly why they're separate
-// functions and why we never let UI code conflate the two.
+// The two can disagree (e.g. an existing MP user whose next checkout
+// would be Paddle), which is exactly why they're separate functions
+// and why we never let UI code conflate the two.
 // ──────────────────────────────────────────────
 
+import { isPaddleConfigured } from "@/libs/paddle-api";
 import { isMpConfigured } from "@/libs/mp-api";
 import { prisma } from "@/libs/prismaDb";
 
@@ -33,8 +41,8 @@ export const PROVIDER_CONFIG_KEY = "payment_provider";
 /**
  * Provider for a brand-new checkout. Resolution order:
  *   1. PlatformConfig.payment_provider (admin override, if set)
- *   2. Default → "mercadopago" if MP env is configured
- *   3. Fallback → "paddle" (dev environments without MP creds)
+ *   2. Default → "paddle" if PADDLE_API_KEY is configured
+ *   3. Fallback → "mercadopago" (BR-only test environments)
  *
  * Async because step 1 hits the DB. Cache-safe to call per-request;
  * the single PlatformConfig row read is cheap and the value rarely
@@ -47,6 +55,7 @@ export async function getActiveProvider(): Promise<PaymentProvider> {
 	if (override?.value === "mercadopago" || override?.value === "paddle") {
 		return override.value;
 	}
+	if (isPaddleConfigured()) return "paddle";
 	if (isMpConfigured()) return "mercadopago";
 	return "paddle";
 }
@@ -57,6 +66,7 @@ export async function getActiveProvider(): Promise<PaymentProvider> {
  * need the admin override must use `getActiveProvider()`.
  */
 export function getDefaultProvider(): PaymentProvider {
+	if (isPaddleConfigured()) return "paddle";
 	if (isMpConfigured()) return "mercadopago";
 	return "paddle";
 }

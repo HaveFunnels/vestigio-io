@@ -22,8 +22,8 @@ export interface PlanConfig {
   /**
    * Paddle annual price ID. Optional — when present, the billing page's
    * Annual cycle uses this priceId at checkout. Auto-provisioned by
-   * /api/admin/pricing/paddle-sync (annualPriceCents = monthly × 10
-   * = ~17% off, see ANNUAL_DISCOUNT_MULTIPLIER below).
+   * /api/admin/pricing/paddle-sync (annualPriceCents = monthly × 9.6
+   * = 20% off, see ANNUAL_DISCOUNT_MULTIPLIER below).
    */
   paddleAnnualPriceId?: string;
   lemonSqueezyPriceId?: string;
@@ -48,13 +48,18 @@ export interface PlanConfig {
 }
 
 /**
- * How much the annual price discounts the monthly price. 10 = 10 months
- * of monthly billing for the year (~17% off), matching the "Save 20%"
- * badge the pricing card has historically displayed. Kept here so the
- * derivation is consistent across the admin paddle-sync and any
- * UI that wants to show the discount.
+ * How much the annual price discounts the monthly price. 9.6 = 9.6
+ * months of monthly billing for the year (= 20% off vs. paying
+ * monthly for 12 months). Matches the "Save 20%" badge shown on the
+ * pricing card. Kept here so the derivation is consistent across the
+ * admin paddle-sync, mp-sync, and any UI that displays the discount.
+ *
+ * Historical note: through 2026-07 this was 10 (~17% off) because
+ * the pricing card overpromised — badge said 20 but math said 17.
+ * Aligned to 20% at Luis's request when the payment provider flipped
+ * back to Paddle.
  */
-export const ANNUAL_DISCOUNT_MULTIPLIER = 10;
+export const ANNUAL_DISCOUNT_MULTIPLIER = 9.6;
 
 export function annualPriceCentsFromMonthly(monthlyCents: number): number {
   return Math.round(monthlyCents * ANNUAL_DISCOUNT_MULTIPLIER);

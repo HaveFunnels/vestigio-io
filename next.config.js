@@ -57,7 +57,7 @@ const nextConfig = {
 		'@prisma/instrumentation',
 		'@grpc/grpc-js',
 	],
-	webpack: (config, { isServer }) => {
+	webpack: (config, { isServer, webpack }) => {
 		if (!isServer) {
 			config.resolve.fallback = {
 				...config.resolve.fallback,
@@ -76,6 +76,23 @@ const nextConfig = {
 				'playwright': false,
 				'playwright-core': false,
 			};
+
+			// Wave 18e — `node:*` scheme imports (e.g. `node:dns/promises`
+			// from packages/url-normalize/ssrf.ts) bypass `resolve.fallback`
+			// entirely because webpack treats `node:` as a URI scheme, not
+			// a module id. Server-only modules (workers/ingestion/*,
+			// apps/mcp/bootstrap) that transitively use them leak into the
+			// client bundle via dynamic-import chains through /app/maps →
+			// console-data. Rewrite every `node:*` request to a shim that
+			// exports {} so the chain resolves without pulling anything
+			// meaningful. Server bundle is unaffected (this guard is
+			// inside `!isServer`).
+			config.plugins.push(
+				new webpack.NormalModuleReplacementPlugin(
+					/^node:/,
+					require.resolve('./scripts/webpack-node-scheme-shim.js'),
+				),
+			);
 		}
 		return config;
 	},

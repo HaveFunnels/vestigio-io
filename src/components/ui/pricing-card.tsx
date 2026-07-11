@@ -205,7 +205,7 @@ export default function PricingComponent({
 								: "-translate-y-1 opacity-0"
 						)}
 					>
-						Save {annualDiscountPercent}%
+						{annualDiscountPercent}% off
 					</span>
 				</div>
 			)}
@@ -215,7 +215,7 @@ export default function PricingComponent({
 				{plans.map((plan) => {
 					const price =
 						billingCycle === "monthly" ? plan.priceMonthly : plan.priceAnnually;
-					const suffix = billingCycle === "monthly" ? "/mo" : "/yr";
+					const suffix = billingCycle === "monthly" ? "/mês" : "/ano";
 
 					return (
 						<div
@@ -239,14 +239,14 @@ export default function PricingComponent({
 							{/* Popular badge */}
 							{plan.isPopular && (
 								<span className='absolute -top-3 left-6 rounded-full border border-emerald-400/40 bg-emerald-500 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white shadow-[0_4px_16px_-4px_rgba(16,185,129,0.6)]'>
-									Most Popular
+									Mais escolhido
 								</span>
 							)}
 
 							{/* Current plan badge */}
 							{plan.isCurrent && (
 								<span className='absolute -top-3 right-6 rounded-full border border-white/20 bg-white/[0.06] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-300'>
-									Current Plan
+									Plano atual
 								</span>
 							)}
 
@@ -276,7 +276,7 @@ export default function PricingComponent({
 											: "h-0 opacity-0"
 									)}
 								>
-									{currencySymbol}{plan.priceMonthly}/mo
+									{currencySymbol}{plan.priceMonthly}/mês
 								</p>
 							</div>
 
@@ -293,13 +293,13 @@ export default function PricingComponent({
 											: "border border-white/15 bg-white/[0.04] text-white hover:border-white/25 hover:bg-white/[0.08]"
 								)}
 							>
-								{plan.isCurrent ? "Current Plan" : plan.buttonLabel}
+								{plan.isCurrent ? "Plano atual" : plan.buttonLabel}
 							</button>
 
 							{/* Features */}
 							<div className='relative mt-6 border-t border-white/10 pt-5'>
 								<p className='mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500'>
-									What&apos;s included
+									O que entra
 								</p>
 								<ul>
 									{plan.features.map((f) => (
@@ -312,17 +312,24 @@ export default function PricingComponent({
 				})}
 			</div>
 
+			{/* Legend — loss-frame anchor under the grid. Declarative
+			    rhythm to match Fraunces editorial cadence used elsewhere
+			    on the homepage. */}
+			<p className='mx-auto mt-8 max-w-[1170px] px-4 text-center font-mono text-[11px] uppercase tracking-[0.14em] text-zinc-500 sm:px-8 xl:px-0'>
+				Um Plano por mês. Um vazamento identificado paga o Starter.
+			</p>
+
 			{/* Comparison Table (desktop) */}
 			<div className='mx-auto mt-16 hidden max-w-[1170px] px-4 sm:px-8 md:block xl:px-0'>
 				<h3 className='mb-6 text-center text-xl font-bold text-white'>
-					Detailed Feature Comparison
+					Comparação completa
 				</h3>
 				<div className='overflow-hidden rounded-xl border border-zinc-800'>
 					<table className='w-full'>
 						<thead>
 							<tr className='border-b border-zinc-800 bg-zinc-900/50'>
 								<th className='px-6 py-4 text-left text-sm font-semibold text-zinc-400'>
-									Feature
+									Item
 								</th>
 								{plans.map((plan) => (
 									<th
@@ -395,15 +402,15 @@ export interface PublicPlanConfig {
 }
 
 const PLAN_DESCRIPTIONS: Record<string, string> = {
-	vestigio: "Essential intelligence for small teams getting started.",
-	pro: "Full analysis suite for growing businesses that need an edge.",
-	max: "Unlimited scale with dedicated support for large organizations.",
+	vestigio: "1 domínio, análise contínua, 1 Plano de Estratégia por mês.",
+	pro: "Análise mais funda, benchmark do seu setor, conversa sobre o Plano.",
+	max: "3 Lens, histórico entre meses, ativação com o time.",
 };
 
 const PLAN_CTA: Record<string, string> = {
-	vestigio: "Começar agora",
+	vestigio: "Começar",
 	pro: "Escolher Pro",
-	max: "Começar agora",
+	max: "Começar",
 };
 
 /** Derive feature list from admin-configured plan features, or fall back to legacy logic */
@@ -426,55 +433,66 @@ function buildFeatures(
 
 	const envLabel =
 		plan.maxEnvironments >= 100
-			? "Unlimited environments"
-			: `${plan.maxEnvironments} environment${plan.maxEnvironments > 1 ? "s" : ""}`;
+			? "Domínios ilimitados"
+			: `${plan.maxEnvironments} domínio${plan.maxEnvironments > 1 ? "s" : ""}`;
 	const memberLabel =
 		plan.maxMembers >= 100
-			? "Unlimited team members"
-			: `Up to ${plan.maxMembers} team member${plan.maxMembers > 1 ? "s" : ""}`;
+			? "Lugares ilimitados"
+			: `${plan.maxMembers} lugar${plan.maxMembers > 1 ? "es" : ""} na conta`;
 
 	return [
 		{ name: envLabel, isIncluded: true },
 		{ name: memberLabel, isIncluded: true },
 		{
-			name: plan.continuousAudits
-				? "Daily audit cycles"
-				: "Weekly audit cycles",
+			name: "Análise contínua",
 			isIncluded: true,
-			tooltip: "How often Vestigio runs a full analysis of your site",
+			tooltip: "Findings em tempo real, sempre que o engine detecta um vazamento",
 		},
 		{
-			name: isTop
-				? "Full analysis suite"
-				: isMid
-					? "Advanced findings & actions"
-					: "Core findings & actions",
+			name: "1 Plano de Estratégia por mês",
 			isIncluded: true,
-			tooltip: "Number and depth of issues detected and prioritized actions generated",
+			tooltip: "Documento editorial assinado ao fim do ciclo mensal — o wow do Vestigio",
+		},
+		{ name: "Framework Lens", isIncluded: true, tooltip: "Lente que traduz o site em framework de decisão do buyer" },
+		{
+			name: "Buyer Trust Lens",
+			isIncluded: isMid || isTop,
+			tooltip: "Lente que analisa sinais de confiança do buyer no funil",
 		},
 		{
-			name:
-				tierIndex === 0
-					? "Vestigio Pulse AI"
-					: tierIndex === 1
-						? "5x Vestigio Pulse AI"
-						: "20x Vestigio Pulse AI",
-			isIncluded: true,
-			tooltip: "AI-powered interactions per month with Vestigio Pulse about your data",
+			name: "Lens comportamental",
+			isIncluded: isTop,
+			tooltip: "Lente que lê padrões de comportamento do buyer no site",
 		},
 		{
-			name: isTop
-				? "Dedicated account manager"
-				: isMid
-					? "Priority support"
-					: "Email support",
+			name: "R$/finding (ROI por achado)",
+			isIncluded: isMid || isTop,
+			tooltip: "Cada finding com o impacto financeiro estimado no Plano",
+		},
+		{
+			name: "Benchmark vs Vestigio Index",
+			isIncluded: isMid || isTop,
+			tooltip: "Comparação com o seu setor + porte no índice público Vestigio",
+		},
+		{
+			name: "Conversar com o Plano",
+			isIncluded: isMid || isTop,
+			tooltip: "Chat ancorado no Plano do mês — pergunte, investigue, edite",
+		},
+		{
+			name: "Histórico e comparação entre meses",
+			isIncluded: isTop,
+			tooltip: "Compare o Plano deste mês com meses anteriores",
+		},
+		{
+			name: "Ativação com o time Vestigio",
+			isIncluded: isTop,
+			tooltip: "Onboarding assistido: leitura conjunta do primeiro Plano",
+		},
+		{
+			name: isMid || isTop ? "Suporte prioritário" : "Suporte por email",
 			isIncluded: true,
 		},
-		{ name: "AI Chat assistant", isIncluded: isMid || isTop, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
-		{ name: "Revenue integrity maps", isIncluded: isMid || isTop, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
-		{ name: "Custom integrations", isIncluded: isMid || isTop, tooltip: "Connect Shopify, Stripe, and ad platforms for real revenue data" },
-		{ name: "SSO / SAML", isIncluded: isTop, tooltip: "Single sign-on for enterprise identity providers" },
-		{ name: "SLA guarantee", isIncluded: isTop, tooltip: "Contractual uptime and response time commitments" },
 	];
 }
 
@@ -552,6 +570,24 @@ export function usePricingPlans() {
 
 // --- Static fallback (used only if API is unavailable) ---
 
+// Shared feature-name catalog. Every plan lists the same names in
+// the same order so the desktop comparison table renders a clean
+// grid (each row = one feature, each column = one plan, ✓ or ✗).
+// Scalar limits (domains, seats) get their own row per plan since
+// the UI has no "value-per-tier" slot — accepted trade-off.
+const TOOLTIPS = {
+	continua: "Findings em tempo real, sempre que o engine detecta um vazamento",
+	plano: "Documento editorial assinado ao fim do ciclo mensal — o wow do Vestigio",
+	frameworkLens: "Lente que traduz o site em framework de decisão do buyer",
+	buyerTrust: "Lente que analisa sinais de confiança do buyer no funil",
+	comportamental: "Lente que lê padrões de comportamento do buyer no site",
+	rsPerFinding: "Cada finding com o impacto financeiro estimado no Plano",
+	benchmark: "Comparação com o seu setor + porte no índice público Vestigio",
+	conversar: "Chat ancorado no Plano do mês — pergunte, investigue, edite",
+	historico: "Compare o Plano deste mês com meses anteriores",
+	ativacao: "Onboarding assistido: leitura conjunta do primeiro Plano",
+} as const;
+
 export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 	{
 		id: "vestigio",
@@ -560,19 +596,22 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 		priceMonthly: 99,
 		priceAnnually: 950,
 		isPopular: false,
-		buttonLabel: "Começar agora",
+		buttonLabel: PLAN_CTA.vestigio,
 		features: [
-			{ name: "1 environment", isIncluded: true },
-			{ name: "Up to 1 team member", isIncluded: true },
-			{ name: "Weekly audit cycles", isIncluded: true, tooltip: "How often Vestigio runs a full analysis of your site" },
-			{ name: "Core findings & actions", isIncluded: true, tooltip: "Number and depth of issues detected and prioritized actions generated" },
-			{ name: "Vestigio Pulse AI", isIncluded: true, tooltip: "AI-powered interactions per month with Vestigio Pulse about your data" },
-			{ name: "Email support", isIncluded: true },
-			{ name: "AI Chat assistant", isIncluded: false, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
-			{ name: "Revenue integrity maps", isIncluded: false, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
-			{ name: "Custom integrations", isIncluded: false, tooltip: "Connect Shopify, Stripe, and ad platforms for real revenue data" },
-			{ name: "SSO / SAML", isIncluded: false, tooltip: "Single sign-on for enterprise identity providers" },
-			{ name: "SLA guarantee", isIncluded: false, tooltip: "Contractual uptime and response time commitments" },
+			{ name: "1 domínio", isIncluded: true },
+			{ name: "1 lugar na conta", isIncluded: true },
+			{ name: "Análise contínua", isIncluded: true, tooltip: TOOLTIPS.continua },
+			{ name: "1 Plano de Estratégia por mês", isIncluded: true, tooltip: TOOLTIPS.plano },
+			{ name: "Exportação PDF + link de compartilhamento", isIncluded: true },
+			{ name: "Framework Lens", isIncluded: true, tooltip: TOOLTIPS.frameworkLens },
+			{ name: "Buyer Trust Lens", isIncluded: false, tooltip: TOOLTIPS.buyerTrust },
+			{ name: "Lens comportamental", isIncluded: false, tooltip: TOOLTIPS.comportamental },
+			{ name: "R$/finding (ROI por achado)", isIncluded: false, tooltip: TOOLTIPS.rsPerFinding },
+			{ name: "Benchmark vs Vestigio Index", isIncluded: false, tooltip: TOOLTIPS.benchmark },
+			{ name: "Conversar com o Plano", isIncluded: false, tooltip: TOOLTIPS.conversar },
+			{ name: "Histórico e comparação entre meses", isIncluded: false, tooltip: TOOLTIPS.historico },
+			{ name: "Ativação com o time Vestigio", isIncluded: false, tooltip: TOOLTIPS.ativacao },
+			{ name: "Suporte por email", isIncluded: true },
 		],
 	},
 	{
@@ -582,19 +621,22 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 		priceMonthly: 199,
 		priceAnnually: 1910,
 		isPopular: true,
-		buttonLabel: "Escolher Pro",
+		buttonLabel: PLAN_CTA.pro,
 		features: [
-			{ name: "3 environments", isIncluded: true },
-			{ name: "Up to 3 team members", isIncluded: true },
-			{ name: "Daily audit cycles", isIncluded: true, tooltip: "How often Vestigio runs a full analysis of your site" },
-			{ name: "Advanced findings & actions", isIncluded: true, tooltip: "Number and depth of issues detected and prioritized actions generated" },
-			{ name: "5x Vestigio Pulse AI", isIncluded: true, tooltip: "AI-powered interactions per month with Vestigio Pulse about your data" },
-			{ name: "Priority support", isIncluded: true },
-			{ name: "AI Chat assistant", isIncluded: true, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
-			{ name: "Revenue integrity maps", isIncluded: true, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
-			{ name: "Custom integrations", isIncluded: true, tooltip: "Connect Shopify, Stripe, and ad platforms for real revenue data" },
-			{ name: "SSO / SAML", isIncluded: false, tooltip: "Single sign-on for enterprise identity providers" },
-			{ name: "SLA guarantee", isIncluded: false, tooltip: "Contractual uptime and response time commitments" },
+			{ name: "3 domínios", isIncluded: true },
+			{ name: "3 lugares na conta", isIncluded: true },
+			{ name: "Análise contínua", isIncluded: true, tooltip: TOOLTIPS.continua },
+			{ name: "1 Plano de Estratégia por mês", isIncluded: true, tooltip: TOOLTIPS.plano },
+			{ name: "Exportação PDF + link de compartilhamento", isIncluded: true },
+			{ name: "Framework Lens", isIncluded: true, tooltip: TOOLTIPS.frameworkLens },
+			{ name: "Buyer Trust Lens", isIncluded: true, tooltip: TOOLTIPS.buyerTrust },
+			{ name: "Lens comportamental", isIncluded: false, tooltip: TOOLTIPS.comportamental },
+			{ name: "R$/finding (ROI por achado)", isIncluded: true, tooltip: TOOLTIPS.rsPerFinding },
+			{ name: "Benchmark vs Vestigio Index", isIncluded: true, tooltip: TOOLTIPS.benchmark },
+			{ name: "Conversar com o Plano", isIncluded: true, tooltip: TOOLTIPS.conversar },
+			{ name: "Histórico e comparação entre meses", isIncluded: false, tooltip: TOOLTIPS.historico },
+			{ name: "Ativação com o time Vestigio", isIncluded: false, tooltip: TOOLTIPS.ativacao },
+			{ name: "Suporte prioritário", isIncluded: true },
 		],
 	},
 	{
@@ -604,19 +646,22 @@ export const FALLBACK_PLANS: [PriceTier, PriceTier, PriceTier] = [
 		priceMonthly: 399,
 		priceAnnually: 3830,
 		isPopular: false,
-		buttonLabel: "Começar agora",
+		buttonLabel: PLAN_CTA.max,
 		features: [
-			{ name: "10 environments", isIncluded: true },
-			{ name: "Up to 10 team members", isIncluded: true },
-			{ name: "Daily audit cycles", isIncluded: true, tooltip: "How often Vestigio runs a full analysis of your site" },
-			{ name: "Full analysis suite", isIncluded: true, tooltip: "Number and depth of issues detected and prioritized actions generated" },
-			{ name: "20x Vestigio Pulse AI", isIncluded: true, tooltip: "AI-powered interactions per month with Vestigio Pulse about your data" },
-			{ name: "Dedicated account manager", isIncluded: true },
-			{ name: "AI Chat assistant", isIncluded: true, tooltip: "Ask questions, investigate findings, and get recommendations in natural language" },
-			{ name: "Revenue integrity maps", isIncluded: true, tooltip: "Visual map showing how revenue flows through your site and where it leaks" },
-			{ name: "Custom integrations", isIncluded: true, tooltip: "Connect Shopify, Stripe, and ad platforms for real revenue data" },
-			{ name: "SSO / SAML", isIncluded: true, tooltip: "Single sign-on for enterprise identity providers" },
-			{ name: "SLA guarantee", isIncluded: true, tooltip: "Contractual uptime and response time commitments" },
+			{ name: "10 domínios", isIncluded: true },
+			{ name: "10 lugares na conta", isIncluded: true },
+			{ name: "Análise contínua", isIncluded: true, tooltip: TOOLTIPS.continua },
+			{ name: "1 Plano de Estratégia por mês", isIncluded: true, tooltip: TOOLTIPS.plano },
+			{ name: "Exportação PDF + link de compartilhamento", isIncluded: true },
+			{ name: "Framework Lens", isIncluded: true, tooltip: TOOLTIPS.frameworkLens },
+			{ name: "Buyer Trust Lens", isIncluded: true, tooltip: TOOLTIPS.buyerTrust },
+			{ name: "Lens comportamental", isIncluded: true, tooltip: TOOLTIPS.comportamental },
+			{ name: "R$/finding (ROI por achado)", isIncluded: true, tooltip: TOOLTIPS.rsPerFinding },
+			{ name: "Benchmark vs Vestigio Index", isIncluded: true, tooltip: TOOLTIPS.benchmark },
+			{ name: "Conversar com o Plano", isIncluded: true, tooltip: TOOLTIPS.conversar },
+			{ name: "Histórico e comparação entre meses", isIncluded: true, tooltip: TOOLTIPS.historico },
+			{ name: "Ativação com o time Vestigio", isIncluded: true, tooltip: TOOLTIPS.ativacao },
+			{ name: "Suporte prioritário", isIncluded: true },
 		],
 	},
 ];

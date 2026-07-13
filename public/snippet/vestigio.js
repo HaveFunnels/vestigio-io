@@ -1,5 +1,11 @@
 /**
- * Vestigio Behavioral Intelligence Snippet v2.0
+ * Vestigio Behavioral Intelligence Snippet v2.1
+ *
+ * v2.1 (2026-07-13): fix — endpoint now derives from the pixel's own
+ * script src origin instead of resolving against window.location. The
+ * previous relative URL sent POST /api/behavioral/ingest to the CUSTOMER's
+ * domain (404 loop + spammy console errors + zero telemetry reaching
+ * Vestigio). See init() below.
  *
  * Lightweight first-party behavioral intelligence.
  * Captures semantic signals — NOT session replay or raw telemetry.
@@ -121,8 +127,26 @@
 
     checkInitialConsent(script);
 
+    // Derive ingest origin from the pixel's own <script src>. Without
+    // this, `fetch('/api/behavioral/ingest')` resolves against
+    // window.location.origin (the CUSTOMER's site) and 404s on every
+    // send — spammy console errors on their live shop, plus zero
+    // events actually reaching Vestigio. Reading script.src gives us
+    // the Vestigio host the pixel was loaded from, so the endpoint
+    // stays correct across dev/staging/prod without hardcoding.
     var customEndpoint = script.getAttribute('data-endpoint');
-    if (customEndpoint) ENDPOINT = customEndpoint;
+    if (customEndpoint) {
+      ENDPOINT = customEndpoint;
+    } else {
+      try {
+        var scriptOrigin = new URL(script.src, window.location.href).origin;
+        ENDPOINT = scriptOrigin + ENDPOINT;
+      } catch (e) {
+        // Malformed script src — fall back to production host so at
+        // least the pixel keeps working for the primary deployment.
+        ENDPOINT = 'https://app.vestigio.io' + ENDPOINT;
+      }
+    }
 
     sessionId = getOrCreateSession();
     attribution = captureAttribution();

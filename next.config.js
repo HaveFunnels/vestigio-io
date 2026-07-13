@@ -205,6 +205,18 @@ const nextConfig = {
 					},
 				],
 			},
+			// Behavioral snippet — short TTL so hot fixes reach every
+			// customer within minutes. Cross-origin CORS so the pixel
+			// loads cleanly from customer domains (Access-Control-Allow-
+			// Origin: * because there's no credentialed request here —
+			// the ingest endpoint uses first-party envId, not cookies).
+			{
+				source: "/snippet/:file*",
+				headers: [
+					{ key: "Cache-Control", value: "public, max-age=300, must-revalidate" },
+					{ key: "Access-Control-Allow-Origin", value: "*" },
+				],
+			},
 		];
 	},
 	// Preserve external links + ads pointing at the old funnel path.

@@ -152,9 +152,23 @@ function titleFromAction(
 	// (havefunnels: order 1 and 2 both rendered as "Cta Clarity Weak
 	// On Commercial em /"). For compound decisionKeys, use the chain
 	// identifier itself — it's distinct by design.
+	//
+	// Bug fix 2026-07-13 — compound IDs bake the surface into the tail
+	// (see packages/composites/compound-findings.ts: `compound_${type}_${surface.replace(/[^a-z0-9]/gi, "_")}`).
+	// For surface="/checkout" that produces `compound_trust_hesitation__checkout`.
+	// The old code stripped the prefix and only trailing underscores,
+	// leaving the surface-encoded tail in `ref` so the fallback humanize
+	// emitted "Trust Hesitation  Checkout" (double space) AND then the
+	// locative pass appended " no checkout" — surface appeared twice on
+	// screen. Fix: split ref on the double-underscore delimiter and
+	// keep only the semantic prefix. Then the locative appends cleanly
+	// via humanizeSurface(action.surface) exactly once.
 	const isCompound = action.decisionKey.startsWith("compound_");
 	const ref = isCompound
-		? action.decisionKey.replace(/^compound_/, "").replace(/_+$/, "")
+		? action.decisionKey
+			.replace(/^compound_/, "")
+			.split("__")[0]
+			.replace(/_+$/, "")
 		: (action.inferenceKeys[0] ?? action.decisionKey);
 
 	// Sprint 3 — consult engine translations so the title surfaces in
@@ -168,7 +182,9 @@ function titleFromAction(
 			?? null)
 		: resolveInferenceTitle(ref, translations);
 	const friendly = translated
-		?? ref.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+		// Collapse runs of underscores/whitespace so pathological IDs
+		// don't emit double spaces after humanize.
+		?? ref.replace(/_+/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (c) => c.toUpperCase());
 
 	const locative = humanizeSurface(action.surface, locale);
 	return `${friendly}${locative}`;
@@ -508,7 +524,28 @@ export async function generateNextSteps(
 				fallbackText: fallbackReasoning(action, order),
 			});
 
-			return { action, order, primaryKey, catalog, reasoning };
+			// Bug fix 2026-07-13 — the system prompt tells the model to
+			// write the "POR QUE PRIMEIRO" section without headings, but
+			// Haiku often complies with the section-title framing by
+			// prefixing a `# POR QUE PRIMEIRO` markdown H1. That renders
+			// on top of the hardcoded "Por que primeiro" eyebrow label
+			// in the UI (src/components/strategy/sections/NextSteps.tsx),
+			// so the customer reads the same header twice. Strip any
+			// leading heading pattern (with or without the exact section
+			// name) before persisting so the drift can't survive an LLM
+			// wave.
+			const cleanedText = reasoning.text
+				.replace(/^\s*#+\s*POR QUE PRIMEIRO\s*\n+/i, "")
+				.replace(/^\s*#+\s+[^\n]*\n+/, "")
+				.trimStart();
+
+			return {
+				action,
+				order,
+				primaryKey,
+				catalog,
+				reasoning: { ...reasoning, text: cleanedText },
+			};
 		}),
 	);
 

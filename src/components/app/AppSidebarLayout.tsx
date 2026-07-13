@@ -459,6 +459,25 @@ function EnvironmentSwitcher({
 		// `window.location.reload()` blanked the screen and reset every
 		// in-page state (open menus, draft inputs, scroll position).
 		document.cookie = `active_env=${envId};path=/;max-age=${60 * 60 * 24 * 365}`;
+
+		// Bug fix 2026-07-13 — some client pages (notably the Plano
+		// viewer at /app/library/strategy/[month]) read env from the URL
+		// query first, then fall back to the cookie. The sidebar links
+		// this page with `?env=<id>` so the API call doesn't 403 on
+		// stale cookies. But after a switch, that captured query kept
+		// serving the previous env's plan even though the cookie had
+		// moved on — customer switched from havefunnels to casamontelle
+		// and still saw the havefunnels plan. Rewrite the query in place
+		// so the fetch effect (deps: [month, envId]) re-fires against
+		// the new env.
+		if (typeof window !== "undefined") {
+			const url = new URL(window.location.href);
+			if (url.searchParams.get("env")) {
+				url.searchParams.set("env", envId);
+				router.replace(url.pathname + url.search + url.hash, { scroll: false });
+				return;
+			}
+		}
 		router.refresh();
 	}
 

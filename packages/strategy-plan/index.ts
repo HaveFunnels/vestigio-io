@@ -19,6 +19,12 @@ export {
 
 export { resolvePlanAccess, type PlanAccess } from "./rbac";
 
+export {
+	decideAutoRegen,
+	maybeAutoRegenPlan,
+	type AutoRegenDecision,
+} from "./auto-regen";
+
 export type {
 	GenerateContext,
 	HeroMetricsOutput,

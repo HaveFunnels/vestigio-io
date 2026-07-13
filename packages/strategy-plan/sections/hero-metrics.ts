@@ -114,7 +114,14 @@ async function aggregateMonth(
 				environmentId,
 				impactMidpoint: { gte: 5000 },
 				polarity: { in: ["negative", "neutral"] },
-				status: { in: ["created", "confirmed"] },
+				// Wave 22.9 — include "regressed". A finding that was
+				// resolved and came back is currently OPEN and financially
+				// exposed. Excluding it treated a real critical as if it
+				// had been fixed. Confirmed 2026-07-13 on casamontelle
+				// where 40/42 open findings had transitioned to regressed
+				// through hourly cycles and the plan hero read "0 críticos"
+				// while findings table showed 40 open issues.
+				status: { in: ["created", "confirmed", "regressed"] },
 				statusChangedAt: { lt: end },
 			},
 		}),
@@ -136,7 +143,11 @@ async function aggregateMonth(
 			where: {
 				environmentId,
 				polarity: { in: ["negative", "neutral"] },
-				status: { in: ["created", "confirmed"] },
+				// Wave 22.9 — include "regressed" (see critical-count
+				// comment above). Findings that regressed are open,
+				// currently draining revenue, and must show up in the
+				// hero exposure tile alongside created + confirmed.
+				status: { in: ["created", "confirmed", "regressed"] },
 				statusChangedAt: { lt: end },
 			},
 			_sum: { impactMidpoint: true, impactMin: true, impactMax: true },

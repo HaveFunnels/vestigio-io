@@ -2702,6 +2702,35 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			console.warn(`[audit-runner ${cycleId}] usage meter write failed:`, err);
 		}
 
+		// Wave 22.9 — auto-regen Monthly Strategy Plan when a completed
+		// cycle materially moves the exposureMid vs the persisted plan's
+		// heroMetricsJson. Casa Montelle's July plan was generated on
+		// day-1 with 0 findings; 42 findings arrived on day-13 and the
+		// plan's hero read "R$ 0 vazando agora" while the findings table
+		// showed R$ 45k open — a stale-snapshot problem the day-1 cron +
+		// weekly refresh couldn't catch. The decideAutoRegen policy
+		// gates on cooldown (6h) + divergence threshold (20%) so a burst
+		// of cycles can't thrash the LLM bill. Fire-and-forget: any
+		// failure here logs but never poisons the cycle result.
+		try {
+			const { maybeAutoRegenPlan } = await import("../../packages/strategy-plan");
+			const result = await maybeAutoRegenPlan(prisma, {
+				environmentId: env.id,
+				organizationId: cycle.organizationId,
+			});
+			if (result.triggered && result.planId) {
+				console.log(
+					`[audit-runner ${cycleId}] auto-regen plan triggered — planId=${result.planId} divergence=${(result.decision.divergenceRatio ?? 0).toFixed(2)}`,
+				);
+			} else if (result.triggered && result.error) {
+				console.warn(
+					`[audit-runner ${cycleId}] auto-regen plan failed: ${result.error}`,
+				);
+			}
+		} catch (err) {
+			console.warn(`[audit-runner ${cycleId}] auto-regen hook failed:`, err);
+		}
+
 		return { cycleId, status: "complete", pagesDiscovered, evidenceCount, durationMs };
 	} catch (err) {
 		const errorMsg = err instanceof Error ? err.message : String(err);

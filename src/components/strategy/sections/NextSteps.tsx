@@ -116,6 +116,27 @@ interface StepCardProps {
 	envId: string;
 	month: string;
 	planId: string;
+	/**
+	 * Wave 22.9 · Bloco 1 — total number of steps in the plan, so the
+	 * eyebrow label can name the step's ROLE in the sequence rather
+	 * than hardcoding "Por que primeiro" on all of them. Tester
+	 * flagged: "todos os findings mostram 'Por que primeiro', sendo que
+	 * só um pode ser o primeiro."
+	 */
+	totalSteps: number;
+}
+
+// Position-aware eyebrow labels per the page-cro council seat. Each
+// step names its ROLE in the sequence (compounding dependency, quick
+// win, cycle-trap) instead of the universal "Por que primeiro" lie.
+// Last-step gets a distinct label regardless of index so plans with
+// 3 or 4 steps still land the closing tension.
+function eyebrowForPosition(order: number, totalSteps: number): string {
+	if (order === 1) return "Por que este movimento primeiro";
+	if (order === totalSteps) return "Por que este não pode esperar o próximo mês";
+	if (order === 2) return "Por que este vem depois";
+	if (order === 3) return "Por que este entra agora";
+	return "Por que este fecha o ciclo";
 }
 
 // ──────────────────────────────────────────────
@@ -265,6 +286,7 @@ function StepCard({
 	envId,
 	month,
 	planId,
+	totalSteps,
 }: StepCardProps) {
 	// Phase 3.1 — inline edit. status / title / dueAt are now
 	// server-persisted via PATCH on every change. Local state mirrors
@@ -560,10 +582,10 @@ function StepCard({
 						</figcaption>
 					</figure>
 				)}
-				{/* Reasoning */}
+				{/* Reasoning — eyebrow varies per position (Wave 22.9 · Bloco 1). */}
 				<div className="mb-6 font-serif text-[15px] leading-[1.65] text-content-secondary">
 					<div className="mb-2 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-						Por que primeiro
+						{eyebrowForPosition(step.order, totalSteps)}
 					</div>
 					{paragraphs.map((para, i) => (
 						<p key={i} className={i > 0 ? "mt-3" : ""}>
@@ -1291,6 +1313,7 @@ export default function NextSteps({
 		envId,
 		month,
 		planId,
+		totalSteps: steps.length,
 	});
 
 	const supportingTotal = supportingVisible.length + supportingHidden.length;

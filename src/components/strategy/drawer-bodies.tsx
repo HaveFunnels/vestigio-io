@@ -443,6 +443,20 @@ function FindingCard({
 										</>
 									)}
 								</div>
+								{/* Wave 22.9 · Bloco 1.4 — 1-line description on
+								    the collapsed card. Tester flagged: "os
+								    findings não tem explicação ou descrição,
+								    somente título." rootCause is the shortest
+								    buyer-facing sentence the engine emits per
+								    finding. Truncated with line-clamp so long
+								    root causes still fit the header shell. Only
+								    shows when collapsed — the expanded body
+								    already carries the full detail. */}
+								{!open && rootCause && (
+									<p className="mt-1.5 line-clamp-2 text-left text-[12px] font-normal leading-snug text-content-secondary">
+										{rootCause}
+									</p>
+								)}
 							</div>
 							<ChevronDown
 								className={`h-4 w-4 shrink-0 text-content-muted transition-transform ${open ? "rotate-180" : ""}`}

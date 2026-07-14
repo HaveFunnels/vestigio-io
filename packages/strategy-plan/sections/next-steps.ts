@@ -26,6 +26,7 @@ import {
 	getDynamicRemediation,
 } from "../../projections/remediation-catalog";
 import { resolveInferenceTitle } from "../title-resolver";
+import { voiceRulesFor } from "../voice-rules";
 
 interface ActionRow {
 	id: string;
@@ -138,31 +139,108 @@ function humanizeSurface(surface: string | null, locale: string): string {
 	return ` em ${surface}`;
 }
 
+// Wave 22.9 · Bloco 1 — anti-pattern refusal + alias-suffix fallback.
+//
+// Council on 2026-07-13 flagged that engine keys like
+// `compound_trust_hesitation__checkout` were falling through the
+// dictionary lookup and getting mechanically humanized into
+// "Trust Hesitation Checkout no checkout" — snake_case fossil +
+// surface echo. Copywriting seat's rule: refuse before render.
+//
+// This helper walks a chain of key variants against the translations
+// dictionary. The engine's compound IDs strip surface/suffix tokens
+// (my Wave 22.9 · P#3A fix), leaving stems like `trust_hesitation`
+// that don't match `trust_hesitation_revenue` in the dict. Try the
+// canonical suffixes (`_revenue`, `_chain`, `_risk`, `_compound`,
+// `_missing_policies`) so operator-friendly translations get found
+// even when the compound_type names diverge from the IDs.
+const COMPOUND_ALIAS_SUFFIXES = [
+	"", // exact
+	"_revenue",
+	"_chain",
+	"_risk",
+	"_compound",
+	"_missing_policies",
+	"_gap",
+];
+
+function resolveCompoundTitle(
+	ref: string,
+	translations: import("../types").GenerateContext["translations"],
+): string | null {
+	for (const suffix of COMPOUND_ALIAS_SUFFIXES) {
+		const key = `${ref}${suffix}`;
+		const hit =
+			translations?.compound_type_titles?.[key] ??
+			translations?.root_cause_titles?.[key] ??
+			translations?.inference_titles?.[key];
+		if (hit) return hit;
+	}
+	return null;
+}
+
+// Anti-pattern refusal per copywriting seat's rules — before ANY
+// engine key gets rendered as a title, three shapes must be caught:
+//   1. Snake_case fossil — raw engine tokens survived humanize
+//      ("Trust Hesitation", "Compound Trust", "Chargeback Compound")
+//   2. Path leak — literal URL path in the title ("em /policies")
+//   3. Surface echo — same surface word twice ("Checkout no checkout")
+// When any triggers, the title falls back to a generic customer-safe
+// label instead of shipping the malformed string.
+const FOSSIL_TOKENS = ["Compound", "Chargeback Compound", "Hesitation Revenue"];
+const PATH_LITERAL_RE = /\bem \/[a-z][a-z0-9_/-]*/i;
+
+function refuseAntiPatterns(title: string, action: ActionRow, locale: string): string {
+	// (1) Snake_case fossil — raw uppercase engine tokens in the title
+	for (const token of FOSSIL_TOKENS) {
+		if (title.includes(token)) return safeGenericTitle(action, locale);
+	}
+	// (2) Path literal — "em /policies" leaked from missing surface humanize
+	if (PATH_LITERAL_RE.test(title)) {
+		return title.replace(PATH_LITERAL_RE, "").trim();
+	}
+	// (3) Surface echo — same word appears at the tail as both stem
+	// and locative ("Checkout no checkout"). Detect via case-insensitive
+	// substring duplication near the join.
+	const lower = title.toLowerCase();
+	const echoPairs: Array<[string, string]> = [
+		["checkout", "no checkout"],
+		["carrinho", "no carrinho"],
+		["home", "na home"],
+		["página inicial", "na página inicial"],
+		["página de produto", "na página de produto"],
+	];
+	for (const [stem, locative] of echoPairs) {
+		if (lower.includes(stem) && lower.endsWith(locative)) {
+			return title.slice(0, title.length - locative.length).trim();
+		}
+	}
+	return title;
+}
+
+function safeGenericTitle(action: ActionRow, locale: string): string {
+	const locative = humanizeSurface(action.surface, locale).trim();
+	if (locale === "pt-BR") {
+		return locative ? `Vazamento identificado ${locative}` : "Vazamento identificado";
+	}
+	return locative ? `Revenue leak ${locative}` : "Revenue leak";
+}
+
 function titleFromAction(
 	action: ActionRow,
 	translations: import("../types").GenerateContext["translations"],
 	locale: string,
 ): string {
-	// Compound chains often share the FIRST triggering inference (e.g.
-	// both `compound_copy_pricing_confusion__` and
-	// `compound_copy_conversion_paralysis__` begin with
-	// `cta_clarity_weak_on_commercial`) yet are semantically distinct
-	// chains. Using inferenceKeys[0] as the title source collapsed two
-	// different chains into the same human label in the plan UI
-	// (havefunnels: order 1 and 2 both rendered as "Cta Clarity Weak
-	// On Commercial em /"). For compound decisionKeys, use the chain
-	// identifier itself — it's distinct by design.
+	// Compound chains often share the FIRST triggering inference so
+	// using inferenceKeys[0] collapses semantically-distinct chains
+	// into the same title. For compound IDs we use the stripped
+	// semantic prefix (before the surface tail `__`), then try alias
+	// suffixes against the dict to find the operator-facing title.
 	//
-	// Bug fix 2026-07-13 — compound IDs bake the surface into the tail
-	// (see packages/composites/compound-findings.ts: `compound_${type}_${surface.replace(/[^a-z0-9]/gi, "_")}`).
-	// For surface="/checkout" that produces `compound_trust_hesitation__checkout`.
-	// The old code stripped the prefix and only trailing underscores,
-	// leaving the surface-encoded tail in `ref` so the fallback humanize
-	// emitted "Trust Hesitation  Checkout" (double space) AND then the
-	// locative pass appended " no checkout" — surface appeared twice on
-	// screen. Fix: split ref on the double-underscore delimiter and
-	// keep only the semantic prefix. Then the locative appends cleanly
-	// via humanizeSurface(action.surface) exactly once.
+	// Bug fix 2026-07-13 (Wave 22.9 · Bloco 1) — earlier fix split on
+	// `__` but the stripped stem (e.g. `trust_hesitation`) didn't
+	// match `trust_hesitation_revenue` in the dict. resolveCompoundTitle
+	// walks alias-suffix variants to hit the intended entry.
 	const isCompound = action.decisionKey.startsWith("compound_");
 	const ref = isCompound
 		? action.decisionKey
@@ -171,23 +249,22 @@ function titleFromAction(
 			.replace(/_+$/, "")
 		: (action.inferenceKeys[0] ?? action.decisionKey);
 
-	// Sprint 3 — consult engine translations so the title surfaces in
-	// the owner's locale. Compound chains live in compound_type_titles;
-	// regular inference keys flow through resolveInferenceTitle which
-	// covers inference_titles + dynamic_titles (incl. parameterised
-	// funnel keys like funnel_dead_end_page) + root_cause_titles.
 	const translated = isCompound
-		? (translations?.compound_type_titles?.[ref]
-			?? translations?.root_cause_titles?.[ref]
-			?? null)
+		? resolveCompoundTitle(ref, translations)
 		: resolveInferenceTitle(ref, translations);
 	const friendly = translated
 		// Collapse runs of underscores/whitespace so pathological IDs
 		// don't emit double spaces after humanize.
 		?? ref.replace(/_+/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (c) => c.toUpperCase());
 
-	const locative = humanizeSurface(action.surface, locale);
-	return `${friendly}${locative}`;
+	// Council rule: compound findings drop the surface locative
+	// entirely — the pattern is systemic (spans pages), so a locative
+	// implying one page misrepresents the finding. Non-compound
+	// findings still append the humanized surface.
+	const locative = isCompound ? "" : humanizeSurface(action.surface, locale);
+	const raw = `${friendly}${locative}`;
+
+	return refuseAntiPatterns(raw, action, locale);
 }
 
 /** Customer-facing humanize for the surface used inside a procedure
@@ -383,54 +460,120 @@ async function pickTopActions(
 	return out;
 }
 
+// Wave 22.9 · Bloco 3 — per-position angle codes. Council converged
+// (page-cro + senior-prompt seats) on a 5-angle taxonomy so each
+// supporting step defends its position with a DISTINCT reason rather
+// than echoing "movimento de apoio, mesma sprint, compõe com Passo 1".
+//
+// Angle → role assignment:
+//   1 → central_lever         The primary move; the alavanca.
+//   2 → compounding_dependency  Same root cause as Passo 1, different bleed point.
+//   3 → different_surface     Distinct axis / surface Passo 1 doesn't touch.
+//   4 → quick_win             Smallest execution cost; visible payoff in days.
+//   5 → cycle_trap            Not the biggest bleed, but keeps the recovered
+//                              money inside the funnel next month.
+// If a plan has fewer than 5 steps, angle=cycle_trap always applies
+// to the last step so the closing tension lands.
+type StepAngle = "central_lever" | "compounding_dependency" | "different_surface" | "quick_win" | "cycle_trap";
+
+function angleFor(order: number, totalSteps: number): StepAngle {
+	if (order === 1) return "central_lever";
+	if (order === totalSteps) return "cycle_trap";
+	if (order === 2) return "compounding_dependency";
+	if (order === 3) return "different_surface";
+	return "quick_win";
+}
+
+interface PrimaryStepContext {
+	title: string;
+	mechanismSummary: string;
+}
+
+// Wave 22.9 · Bloco 3 — synthesize a 1-liner "mechanism summary" for
+// Passo 1 so Passos 2-5 can compose or contrast against it in the
+// prompt without a sequential barrier. Uses the top inference key +
+// surface + humanized. Falls back to a generic phrase when nothing
+// resolves.
+function buildMechanismSummary(
+	action: ActionRow,
+	translations: import("../types").GenerateContext["translations"],
+): string {
+	const primaryKey = action.inferenceKeys[0] ?? action.decisionKey;
+	const humanized = resolveInferenceTitle(primaryKey, translations) ??
+		primaryKey.replace(/_+/g, " ").replace(/\s+/g, " ").trim();
+	const impact = action.impactMidpoint
+		? `R$ ${Math.round(action.impactMidpoint).toLocaleString("pt-BR")}/mês`
+		: "vazamento aberto";
+	return `${humanized} · ${impact}`;
+}
+
 function buildPrompt(
 	action: ActionRow,
 	order: number,
+	totalSteps: number,
 	envDomain: string,
 	monthLabel: string,
 	translations: import("../types").GenerateContext["translations"],
 	vertical: string | null,
+	locale: string,
+	primary: PrimaryStepContext | null,
 ): { system: string; user: string } {
-	// E2 — voice differs between the main move (order=1) and supporting
-	// moves (order>=2). Main move sounds like the strategic lead;
-	// supporting moves sound auxiliary. Without the difference the 5
-	// steps still read as equally important even after the UI restructure.
-	//
-	// Reta-final: "aposta" gambling metaphor dropped — Vestigio claims
-	// with data, doesn't bet. Now "movimento principal / alavanca
-	// central". Voice rules also forbid "exposição" — use "perda
-	// potencial" or "vazamento" instead.
-	const roleLine =
-		order === 1
-			? `Este é o MOVIMENTO PRINCIPAL do mês. A alavanca central que o resto do plano sustenta.`
-			: `Este é um MOVIMENTO DE APOIO (posição ${order}). Entra depois que o movimento principal estiver em andamento.`;
-	const voiceLine =
-		order === 1
-			? `Tom: lead confiante. "Essa é a alavanca principal porque...". Sem hedge. Termine sinalizando que o restante do plano se desdobra a partir disso.`
-			: `Tom: complementar. "Depois do movimento principal, esse entra porque...". Não compete com o passo 1 em peso. Explicita por que NÃO é principal.`;
+	const rules = voiceRulesFor(locale);
+	const angle = angleFor(order, totalSteps);
 
-	const system = `Você é Vestigio, escrevendo a seção "POR QUE PRIMEIRO" do passo ${order} do Plano de Estratégia mensal para ${envDomain}.
+	// Council rewrote role + voice lines per angle so each supporting
+	// step has an INTRINSIC reason to exist. The "movimento de apoio"
+	// framing is dropped entirely — it seeded the boilerplate.
+	const roleLine =
+		angle === "central_lever"
+			? `Este é a alavanca central do mês. O resto do plano se desdobra a partir daqui.`
+			: angle === "compounding_dependency"
+				? `Este passo é a CONTINUAÇÃO MECÂNICA do Passo 1: mesma causa raiz, outro ponto onde o dinheiro sangra. Consertar o Passo 1 sem consertar este deixa a metade do vazamento aberta.`
+				: angle === "different_surface"
+					? `Este passo atinge uma superfície DISTINTA do Passo 1. Não é apoio, é um vazamento independente no mesmo mês. Pode rodar em paralelo em outro time sem conflito.`
+					: angle === "quick_win"
+						? `Este passo tem o MENOR custo de execução dos cinco. Justifique pelo retorno em HORAS, não por severidade.`
+						: `Este passo consolida o que os anteriores recuperam. Não é o maior vazamento hoje, é o que faz o dinheiro ficar dentro do funil no mês seguinte.`;
+
+	const voiceLine =
+		angle === "central_lever"
+			? `Tom: lead confiante. Sem hedge. Termine sinalizando que o restante do plano se desdobra daqui.`
+			: angle === "compounding_dependency"
+				? `Tom: composição causal. Explique a mecânica compartilhada com o Passo 1 (mesma causa, outro ponto). Nunca diga "movimento de apoio". Nunca diga "em paralelo".`
+				: angle === "different_surface"
+					? `Tom: eixo independente. Nomeie a superfície e o comportamento que ali quebra. Zero referência ao Passo 1.`
+					: angle === "quick_win"
+						? `Tom: destravamento rápido. Fale em horas, não em severidade. Zero "movimento de apoio".`
+						: `Tom: contenção preventiva. Fale em "vira o vazamento de daqui X semanas se ignorado". Não fale em "apoio".`;
+
+	// Council seat: primer the model with Passo 1's title + mechanism
+	// so Passos 2+ can compose or contrast without echoing the label.
+	const primaryContext = order > 1 && primary
+		? `\n\nContexto (NÃO cite o título do Passo 1 pelo nome, apenas use a mecânica):\n  Mecânica do Passo 1: ${primary.mechanismSummary}\n`
+		: "";
+
+	const system = `Você é Vestigio, escrevendo a razão do passo ${order} do Plano de Estratégia mensal para ${envDomain}.
 
 ${roleLine}
+${primaryContext}
+Responda em ${rules.language_name}. Cada frase em ${rules.language_name}.
 
-Vocabulário CUSTOMER-FACING obrigatório:
-- "vazamento" / "perda potencial" / "receita em risco", NÃO "exposição"
-- "página" / "página inicial" / "checkout", NÃO "surface" nem "\`/\`" literal
-- "movimento principal" / "alavanca", NÃO "aposta" (Vestigio AFIRMA com base em dado)
+Vocabulário OBRIGATÓRIO: ${rules.vocab_positive}
+Vocabulário PROIBIDO (não use, não parafraseie): ${rules.vocab_banned.join(", ")}
 
 Regras:
-1. Escreva 2 parágrafos curtos em português brasileiro, ~80-100 palavras no total.
-2. Use **negrito** para destacar números, severidades e nomes de componentes. Use \`código inline\` APENAS para nomes técnicos reais (caminhos de arquivo, props, classes CSS).
-3. NUNCA reproduza identificadores em snake_case, slugs internos, termos como "weak_cta", "trust_boundary_crossed", "compound_*", "priorityScore", "decisionKey" ou qualquer outro código do engine. Use sempre os nomes humanos fornecidos.
-4. NÃO use listas, NÃO use cabeçalhos.
-5. Primeiro parágrafo: por que esse passo é prioritário. Lidere com o **valor financeiro** ("R$ X.XXX/mês de vazamento") e o contexto da causa. Não com "severidade alta" abstrato.
-6. Segundo parágrafo: o que está em jogo se não fizer (impacto composto, dependência com outro passo, prazo). Termine indicando a ação concreta.
+1. Escreva 2 parágrafos curtos, ~80-100 palavras no total.
+2. Use **negrito** para destacar números, severidades e nomes de componentes. Use \`código inline\` APENAS para caminhos de arquivo, props, classes CSS reais.
+3. NUNCA reproduza identificadores em snake_case, slugs internos, termos como "weak_cta", "trust_boundary_crossed", "compound_*", "priorityScore", "decisionKey" ou qualquer código do engine. Use sempre os nomes humanos fornecidos.
+4. NÃO use listas, NÃO use cabeçalhos, NÃO use markdown H1/H2.
+5. Primeiro parágrafo: por que este vazamento merece a posição ${order} DESTE mês. Lidere com o **valor financeiro** ("R$ X.XXX/mês de vazamento") e a causa concreta. Não com "severidade alta" abstrato.
+6. Segundo parágrafo: o que está em jogo se não fizer, terminando na ação concreta na página nomeada.
 7. ${voiceLine}
-8. PROIBIDO escrever "Resolver esse item primeiro", "no topo da fila de prioridade", "porque ele aparece no topo" ou variantes. Cada passo tem uma justificativa única, não repita boilerplate de ranqueamento.
-9. PROIBIDO repetir a MESMA frase de fechamento que outros passos: nunca escreva variantes literais de "compõe com o passo 1", "mesmo time, padrão correlacionado", "movimento de apoio porque a remediação se compõe". Cada passo tem um motivo PRÓPRIO para estar nessa posição. Diga esse motivo, não um chavão.
-10. NÃO mencione "o engine", "a análise revelou", "foi capturado" ou outras passivas. Voz ativa, primeira pessoa do plural ("Vestigio observou", "Detectamos") quando precisar atribuir.
-11. PROIBIDO travessão (—) em qualquer parte do texto. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.
-12. PROIBIDO a palavra "exposição". Substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.`;
+8. Cada passo tem uma justificativa única — não repita chavões entre passos. Se este passo tem que citar o Passo 1, faça pela mecânica (mesma causa, outro ponto), nunca pela posição na fila.
+9. Voz ativa, primeira pessoa do plural ("Vestigio observou", "Detectamos") quando precisar atribuir.
+10. PROIBIDO travessão (—). Use ponto, vírgula, dois pontos, ou parênteses.
+11. PROIBIDO exclamação. PROIBIDO emoji. PROIBIDO link.
+12. Zero menção literal a "Passo 1", "Passo 2", "próximo passo", "primeiro/segundo/terceiro" — a UI mostra a numeração.`;
 
 	// Resolve inference keys to friendly names so the LLM has no
 	// raw snake_case to echo. Falls back to mechanical humanize when
@@ -502,8 +645,25 @@ export async function generateNextSteps(
 	const procHashByCatalog = new Map<string, number>(); // catalogKey -> first step.order using it
 	const stepLocatives: string[] = [];
 
-	// Fire LLM calls in parallel (they don't depend on each other), then
-	// stitch in the order-dependent dedupe pass.
+	// Wave 22.9 · Bloco 3 — pre-compute the primary step's mechanism
+	// summary so supporting steps (order >= 2) can compose or contrast
+	// with it via the prompt's `primary` context, without needing to
+	// wait for Passo 1's LLM call to finish. The summary is a synthetic
+	// 1-liner derived from Passo 1's top finding + surface — enough
+	// signal for the model to say "same root cause, different bleed
+	// point" or "different surface entirely" WITHOUT echoing the title.
+	const primaryContextForSupportingSteps: PrimaryStepContext | null = actions.length > 0
+		? {
+			title: titleFromAction(actions[0], ctx.translations, ctx.locale),
+			mechanismSummary: buildMechanismSummary(actions[0], ctx.translations),
+		}
+		: null;
+
+	const totalSteps = actions.length;
+	const rules = voiceRulesFor(ctx.locale);
+
+	// Fire LLM calls in parallel (Passos 2-5 receive Passo 1's context
+	// pre-computed, so no sequential barrier is needed).
 	const llmResults = await Promise.all(
 		actions.map(async (action, idx) => {
 			const order = idx + 1;
@@ -511,33 +671,59 @@ export async function generateNextSteps(
 			const catalog =
 				REMEDIATION_CATALOG[primaryKey] ?? getDynamicRemediation(primaryKey);
 
-			const { system, user } = buildPrompt(action, order, ctx.envDomain, month, ctx.translations, ctx.businessContext?.vertical ?? null);
-			const reasoning = await callForText({
-				model: "haiku_4_5",
-				systemPrompt: system,
-				userPrompt: user,
-				maxTokens: 400,
-				temperature: 0.35,
-				purpose: "strategy_plan.next_step_reasoning",
-				organizationId,
-				environmentId: ctx.environmentId,
-				fallbackText: fallbackReasoning(action, order),
-			});
+			const primary = order === 1 ? null : primaryContextForSupportingSteps;
+			const { system, user } = buildPrompt(
+				action,
+				order,
+				totalSteps,
+				ctx.envDomain,
+				month,
+				ctx.translations,
+				ctx.businessContext?.vertical ?? null,
+				ctx.locale,
+				primary,
+			);
+			// Wave 22.9 · Bloco 3.3 — verification-with-regen loop.
+			// Fire the initial call; if the output tripped any banned
+			// phrase from the locale's regex, re-fire once with slightly
+			// higher temperature to shake Haiku out of the same rut.
+			// Cost: worst-case 2x per step, only fires when Haiku
+			// smuggled a banned phrase. Empirically <5% of calls.
+			const emit = async (temperature: number) =>
+				callForText({
+					model: "haiku_4_5",
+					systemPrompt: system,
+					userPrompt: user,
+					maxTokens: 400,
+					temperature,
+					purpose: "strategy_plan.next_step_reasoning",
+					organizationId,
+					environmentId: ctx.environmentId,
+					fallbackText: fallbackReasoning(action, order),
+				});
+			let reasoning = await emit(0.35);
+			if (rules.banned_regex.test(reasoning.text)) {
+				reasoning = await emit(0.5);
+			}
+			// Reset the /g regex lastIndex since we tested twice above.
+			rules.banned_regex.lastIndex = 0;
 
 			// Bug fix 2026-07-13 — the system prompt tells the model to
-			// write the "POR QUE PRIMEIRO" section without headings, but
-			// Haiku often complies with the section-title framing by
-			// prefixing a `# POR QUE PRIMEIRO` markdown H1. That renders
-			// on top of the hardcoded "Por que primeiro" eyebrow label
-			// in the UI (src/components/strategy/sections/NextSteps.tsx),
-			// so the customer reads the same header twice. Strip any
-			// leading heading pattern (with or without the exact section
-			// name) before persisting so the drift can't survive an LLM
-			// wave.
+			// write the section without headings, but Haiku sometimes
+			// complies with the section-title framing by prefixing a
+			// `# ...` markdown H1. That renders on top of the position-
+			// aware eyebrow in the UI, so the customer reads the same
+			// header twice. Strip leading heading patterns AND scrub
+			// any banned phrase the model smuggled through as a
+			// belt-and-suspenders defense.
 			const cleanedText = reasoning.text
 				.replace(/^\s*#+\s*POR QUE PRIMEIRO\s*\n+/i, "")
 				.replace(/^\s*#+\s+[^\n]*\n+/, "")
+				.replace(rules.banned_regex, "")
+				.replace(/\s{2,}/g, " ")
 				.trimStart();
+			// Reset again after the .replace scrub.
+			rules.banned_regex.lastIndex = 0;
 
 			return {
 				action,

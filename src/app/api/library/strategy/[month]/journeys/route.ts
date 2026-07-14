@@ -41,14 +41,16 @@ export async function GET(request: Request, { params }: RouteParams) {
 	}
 
 	// IDOR check — mesmo padrão de /strategy/[month] + /analysis-stats.
+	// Wave 22.9 · Bloco 3 — org.locale is threaded through so the
+	// journey narrator system prompt speaks the right language (Onda 2
+	// hardcoded pt-BR, blocking en/es/de customers).
 	const env = await prisma.environment.findUnique({
 		where: { id: envId },
-		select: {
-			id: true,
-			organizationId: true,
+		include: {
 			organization: {
 				select: {
 					ownerId: true,
+					locale: true,
 					memberships: { select: { userId: true } },
 				},
 			},
@@ -97,6 +99,12 @@ export async function GET(request: Request, { params }: RouteParams) {
 
 	const journeys = await selectTopJourneys(envId, monthStart, monthEnd, 3);
 
+	// Locale for the narrator prompt — org.locale is the single source
+	// of truth per the Organization schema. Falls back to pt-BR when
+	// the org row somehow lacks a locale (very old records, shell org
+	// mid-onboarding).
+	const narratorLocale = env.organization?.locale ?? "pt-BR";
+
 	// Narração em paralelo. Cada chamada de LLM falha gracefully
 	// (template fallback), então Promise.all não rejeita.
 	const narratives: JourneyNarrative[] = await Promise.all(
@@ -105,6 +113,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 				organizationId: env.organizationId,
 				environmentId: env.id,
 				cycleId: undefined,
+				locale: narratorLocale,
 			}),
 		),
 	);

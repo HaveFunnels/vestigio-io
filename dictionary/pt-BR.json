@@ -2992,8 +2992,8 @@
 				"types": {
 					"security_revenue_chain": "Problema de segurança está quebrando seu rastreamento de receita",
 					"ad_promise_reality_behavior": "Seu anúncio promete algo que sua landing page não entrega",
-					"trust_hesitation_revenue": "Sinais de confiança ausentes estão causando abandono no checkout",
-					"post_purchase_chain": "Experiência pós-compra fraca está gerando chargebacks",
+					"trust_hesitation_revenue": "Comprador hesita na hora de pagar",
+					"post_purchase_chain": "Loja sem política de troca visível",
 					"brand_impersonation_revenue": "Imitação ativa da marca está erodindo a confiança"
 				}
 			},
@@ -5503,6 +5503,21 @@
 			"onboarding": "Onboarding"
 		},
 		"inference_titles": {
+			"trust_hesitation_revenue": "Comprador hesita na hora de pagar",
+			"trust_hesitation": "Comprador hesita na hora de pagar",
+			"security_chargeback_risk": "Risco de chargeback por sessão exposta",
+			"security_chargeback": "Risco de chargeback por sessão exposta",
+			"post_purchase_missing_policies": "Loja sem política de troca visível",
+			"post_purchase": "Loja sem política de troca visível",
+			"trust_signal_gap": "Falta prova social onde o comprador decide",
+			"trust_signal": "Falta prova social onde o comprador decide",
+			"weak_cta_on_commercial": "Botão de compra sem força na página que vende",
+			"cta_clarity_weak_on_commercial": "Botão de compra sem clareza na página que vende",
+			"pricing_confusion": "Preço confuso faz comprador voltar atrás",
+			"copy_pricing_confusion": "Preço confuso faz comprador voltar atrás",
+			"variant_selection_friction": "Comprador trava para escolher tamanho ou cor",
+			"mobile_cta_late_render": "Botão de comprar demora a aparecer no celular",
+			"handoff_drop_at_gateway": "Cliente some ao ir para o gateway de pagamento",
 			"trust_boundary_crossed": "Compradores são jogados pra outro domínio no checkout",
 			"policy_gap": "Políticas de proteção ao consumidor ausentes ou incompletas",
 			"checkout_integrity": "Seu checkout está se desfazendo em pontos que o comprador percebe",
@@ -6409,8 +6424,8 @@
 		"compound_type_titles": {
 			"security_revenue_chain": "Problema de segurança está quebrando seu rastreamento de receita",
 			"ad_promise_reality_behavior": "Seu anúncio promete algo que sua landing page não entrega",
-			"trust_hesitation_revenue": "Sinais de confiança ausentes estão causando abandono no checkout",
-			"post_purchase_chain": "Experiência pós-compra fraca está gerando chargebacks",
+			"trust_hesitation_revenue": "Comprador hesita na hora de pagar",
+			"post_purchase_chain": "Loja sem política de troca visível",
 			"brand_impersonation_revenue": "Imitação ativa da marca está erodindo a confiança",
 			"security_trust_double_exposure": "Fragilidade de segurança está erodindo a confiança do comprador em duas frentes",
 			"security_chargeback_compound": "Falhas de segurança estão criando exposição a chargebacks",

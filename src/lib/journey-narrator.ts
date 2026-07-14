@@ -1,6 +1,7 @@
 import { callModel, isLlmEnabled } from "../../apps/mcp/llm/client";
 import type { JourneyReplay, NormalizedTimelineEvent } from "@/lib/journey-replays";
 import { humanizePath, humanizePathSlot } from "@/lib/humanize-path";
+import { voiceRulesFor } from "../../packages/strategy-plan/voice-rules";
 
 // ──────────────────────────────────────────────
 // Wave 22.9 · Onda 2 — Journey narrator rewrite
@@ -84,23 +85,33 @@ const NARRATOR_TOOL = {
 	},
 };
 
-const SYSTEM_PROMPT = `Você é o analista sênior da Vestigio. Sua tarefa é diagnosticar uma jornada de comprador que abandonou a conversão.
+// Wave 22.9 · Bloco 3 — locale-aware system prompt. Threads
+// language_name + vocab_positive + vocab_banned from voice-rules.ts
+// so en/es/de plans stop getting a pt-BR-mandated Haiku prompt (Onda 2
+// bug: "Português brasileiro obrigatório" was hardcoded).
+function buildSystemPrompt(locale: string): string {
+	const rules = voiceRulesFor(locale);
+	return `You are the senior analyst at Vestigio. Your task: diagnose a buyer journey that abandoned conversion.
 
-Você fala como um consultor de e-commerce experiente, não como uma ferramenta de analytics. Sua voz:
-- Nomeia o que aconteceu em linguagem de operador da loja.
-- Faz hipóteses controladas com base na sequência de eventos observada.
-- Fecha com UMA aposta testável em UMA semana.
-- Português brasileiro. Português brasileiro obrigatório.
+Respond in ${rules.language_name}. Every sentence in ${rules.language_name} only.
 
-Regras DURAS:
-- PROIBIDO usar as palavras: "sinais indicam", "sinais sugerem", "sinais apontam", "friction", "oscilação", "desvio do caminho esperado".
-- PROIBIDO afirmar estado mental sem sinal ("não confiou na marca", "achou caro", "vai comprar do concorrente").
-- PROIBIDO inventar valores, produtos ou nomes que não estão nos dados.
-- PROIBIDO usar travessão (—) no texto.
-- PROIBIDO exclamação.
-- PROIBIDO markdown, emojis, links.
-- Sempre responda chamando a ferramenta render_journey_narrative.
+Voice:
+- Name what happened in the store operator's language, not in analytics-tool language.
+- Make controlled hypotheses grounded in the observed event sequence.
+- Close with ONE testable bet the operator can run this week.
+
+MANDATORY vocabulary: ${rules.vocab_positive}
+FORBIDDEN phrases (do not use, do not paraphrase): ${rules.vocab_banned.join(", ")}
+
+Additional hard rules:
+- FORBIDDEN to assert mental state without a supporting signal.
+- FORBIDDEN to invent values, product names, or events not present in the data.
+- FORBIDDEN em-dash (—).
+- FORBIDDEN exclamation.
+- FORBIDDEN markdown, emojis, links.
+- Always respond by calling render_journey_narrative.
 `;
+}
 
 /**
  * Compute confidence tier from the aggregated signal strength — this
@@ -148,6 +159,11 @@ export async function narrateJourney(
 		organizationId?: string;
 		environmentId?: string;
 		cycleId?: string;
+		/** Locale locked at plan generation time — threaded through so
+		 *  the LLM system prompt speaks the right language + bans the
+		 *  right per-locale boilerplate. Defaults to pt-BR to preserve
+		 *  behavior for the callers that haven't wired locale yet. */
+		locale?: string;
 	},
 ): Promise<JourneyNarrative> {
 	const tier = computeTier(journey);
@@ -156,6 +172,7 @@ export async function narrateJourney(
 	}
 
 	try {
+		const locale = context.locale ?? "pt-BR";
 		const userMessage = buildUserPrompt(journey, tier);
 		const result = await callModel(
 			"haiku_4_5",
@@ -163,7 +180,7 @@ export async function narrateJourney(
 			{
 				max_tokens: 600,
 				temperature: 0.2,
-				system: SYSTEM_PROMPT,
+				system: buildSystemPrompt(locale),
 				tools: [NARRATOR_TOOL as any],
 			},
 			{
@@ -189,14 +206,12 @@ export async function narrateJourney(
 			typeof input.comprador_provavelmente === "string" &&
 			typeof input.o_que_testar === "string"
 		) {
-			// Prompt-guard: strip any banned surface phrases that
-			// sneaked through despite the system prompt.
-			const clean = (s: string) =>
-				s
-					.replace(/sinais (?:indicam|sugerem|apontam)[^,.]*[,.]\s*/gi, "")
-					.replace(/^oscila[cç][aã]o entre p[aá]ginas[,.]?\s*/gi, "")
-					.replace(/friction/gi, "atrito")
-					.trim();
+			// Prompt-guard: strip any banned phrases the LLM smuggled in,
+			// using the locale's banned_regex so an en/es/de output
+			// doesn't get scrubbed for pt-BR strings that would never
+			// appear there.
+			const rules = voiceRulesFor(locale);
+			const clean = (s: string) => s.replace(rules.banned_regex, "").replace(/\s{2,}/g, " ").trim();
 			return {
 				tier: (input.tier as JourneyNarrative["tier"]) ?? tier,
 				padrao: clean(input.padrao),

@@ -13,8 +13,14 @@ import { authOptions } from "@/libs/auth";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 
+// Root layout's title template is "%s | Vestigio" — setting title
+// "Vestigio" here rendered as "Vestigio | Vestigio" on every app
+// shell page that didn't override. "Console" is the app-shell
+// fallback; sub-pages that want a sharper title should still set
+// their own (via metadata on server components or document.title
+// in client components — the plan page uses the latter).
 export const metadata = {
-	title: "Vestigio",
+	title: "Console",
 };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

@@ -65,6 +65,25 @@ export default function StrategyPlanPage() {
 
 	const [state, setState] = useState<FetchState>({ status: "loading" });
 
+	// Wave 22.9 — dynamic browser title for the plan page. The parent
+	// /app/layout sets title="Console" which the root template renders
+	// as "Console | Vestigio". For the plan page specifically we want
+	// "Plano de {mês} · Vestigio" so a browser-tab reader spots the
+	// month at a glance. document.title bypasses the root template
+	// (fully qualified string), which is fine because the plan is
+	// month-scoped and the template's brand suffix is baked in here.
+	useEffect(() => {
+		if (!month) return;
+		const [y, m] = month.split("-");
+		const monthNames: Record<string, string> = {
+			"01": "janeiro", "02": "fevereiro", "03": "março", "04": "abril",
+			"05": "maio", "06": "junho", "07": "julho", "08": "agosto",
+			"09": "setembro", "10": "outubro", "11": "novembro", "12": "dezembro",
+		};
+		const label = monthNames[m] ? `${monthNames[m]} ${y}` : month;
+		document.title = `Plano de ${label} · Vestigio`;
+	}, [month]);
+
 	// RSC cache invalidation: the parent /app layout pre-loads MCP
 	// findings server-side from AuditCycle.projectionsCache. When the
 	// user navigates here from elsewhere in /app via <Link>, the

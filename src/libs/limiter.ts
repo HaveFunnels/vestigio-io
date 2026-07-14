@@ -155,22 +155,34 @@ async function evaluate(
 export async function rateLimitByIp(limit = 5, windowMs = 60000) {
   const ip = await getIp();
 
-  // Wave 22.9 fix — fail-open when the request has no IP header
-  // (dev/localhost, misconfigured proxy, some Server-Action call
-  // shapes where cf-connecting-ip/x-real-ip/x-forwarded-for don't
-  // all propagate). The prior behavior threw "IP address not found"
-  // and downstream callers (Signin.tsx, Signup.tsx) catch-alled
-  // that into a misleading "Too many attempts" toast — user saw
-  // "Too many attempts" on their FIRST legitimate login. Mirrors
-  // the fail-open policy already in checkRateLimit() (P2.3 turn).
-  // Public routes still layer Turnstile / signature-verify for the
-  // no-IP case; this is the right level of the funnel to fail-open.
-  if (!ip) return;
+  // Wave 22.9 refinement — the previous revision flipped to a bare
+  // fail-open on missing IP so misconfigured proxies wouldn't show
+  // "Too many attempts" on legitimate first attempts. A background
+  // security review correctly flagged that as a bypass path: an
+  // attacker who found a way to strip cf-connecting-ip / x-real-ip
+  // / x-forwarded-for could hammer login without any throttle.
+  //
+  // Right shape: bucket ALL no-IP requests under one shared key so
+  // they collectively hit the limit rather than each bypassing
+  // individually. In dev (localhost, no proxy) all local requests
+  // share the same bucket — harmless because a single developer
+  // isn't self-DoSing. In prod behind Cloudflare + Railway, both
+  // proxies always set headers; if getIp() returns null for a real
+  // request the shared-bucket fallback caps the blast radius while
+  // ops fix the upstream misconfig.
+  //
+  // NB: for auth specifically, NextAuth's authorize() also runs
+  // checkLockout(email) which per-email locks after N failed
+  // password attempts. The IP rate limit is defense-in-depth
+  // against credential-stuffing across many emails from one IP,
+  // not the primary account-lockout mechanism.
+  const bucketKey = ip ?? "__no_ip_fallback__";
 
-  // Skip rate limiting for whitelisted IPs
-  if (WHITELIST_IPS.has(ip)) return;
+  // Skip rate limiting for whitelisted IPs (only when we know the
+  // caller's IP; the shared no-IP fallback doesn't honor whitelist).
+  if (ip && WHITELIST_IPS.has(ip)) return;
 
-  const { limited } = await evaluate(ip, limit, windowMs);
+  const { limited } = await evaluate(bucketKey, limit, windowMs);
   if (limited) {
     throw new Error("Rate limit exceeded");
   }

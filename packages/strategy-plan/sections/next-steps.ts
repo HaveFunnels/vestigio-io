@@ -364,17 +364,28 @@ async function pickTopActions(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
 ): Promise<ActionRow[]> {
-	// Dedupe at the SQL layer with `distinct: ["decisionKey"]`. Prisma
-	// returns the first row per distinct combination respecting orderBy,
-	// so the highest-priorityScore row per decisionKey wins. Then take 5.
+	// Wave 22.9 · Bloco 2 — revenue-proximity re-ranking.
 	//
-	// The previous implementation did `take: 12` followed by in-app
-	// dedupe. For envs where many actions share a decisionKey AND tie on
-	// priorityScore (e.g. 51 compound_copy_pricing_confusion__ rows all
-	// at 10688), the LIMIT 12 captured 12 copies of the same key and
-	// dedupe collapsed to a single next step. The plan then shipped with
-	// 1 step instead of up to 5. Confirmed against havefunnels — fix
-	// shifts dedupe into the query so the LIMIT counts unique keys.
+	// The old ordering (`orderBy: priorityScore desc, take: 5`) is a
+	// raw impactMidpoint sort in disguise — priorityScore inherits
+	// impactMidpoint at compute time and the tiebreak is impactMidpoint
+	// again. Result: SEO / discovery findings with a bigger MODELED
+	// R$ estimate outrank checkout-adjacent findings with smaller but
+	// AT-THE-MONEY R$. Casa Montelle's July plan led with "Páginas
+	// comerciais invisíveis para busca" (R$ 20k, 90-180 days to first
+	// attributable Real) over "Trust hesitation checkout" (R$ 17.5k,
+	// ships this sprint) — the product-strategist council seat flagged
+	// this as the algorithm treating fungible Reais that aren't.
+	//
+	// New shape:
+	//   1. Query 15 candidates instead of 5 so the re-ranker has room.
+	//   2. Re-score each candidate with revenueProximityScore().
+	//   3. Take top 5 by the new score.
+	//
+	// The DB-level orderBy stays as a coarse pre-filter (highest raw
+	// impact still bubbles to the candidate pool) but the final ranking
+	// happens in memory where funnel position + executability + confidence
+	// can weigh in.
 	const rows = await prisma.action.findMany({
 		where: {
 			environmentId: ctx.environmentId,
@@ -396,14 +407,10 @@ async function pickTopActions(
 		distinct: ["decisionKey"],
 		orderBy: [
 			{ priorityScore: "desc" },
-			// Tie-break for stable ordering when priorityScore matches —
-			// without this, ties yield undefined row order and the
-			// "first per decisionKey" semantic becomes non-deterministic
-			// across runs.
 			{ impactMidpoint: "desc" },
 			{ id: "asc" },
 		],
-		take: 5,
+		take: 15,
 	});
 
 	const out: ActionRow[] = [];
@@ -451,13 +458,138 @@ async function pickTopActions(
 		);
 	}
 
-	// Surface "we have only N steps because there were only N candidates"
-	// vs "we have only N steps because the engine produced one
-	// decisionKey overall" so future regressions are easy to debug.
+	// Wave 22.9 · Bloco 2 — revenue-proximity re-rank. Compute a new
+	// score per candidate and take the top 5. See scoreForRevenueProximity
+	// for the formula.
+	const scored = out.map((row) => ({
+		row,
+		score: scoreForRevenueProximity(row),
+	}));
+	scored.sort((a, b) => b.score.total - a.score.total);
+
+	// Council hard rule: within 30% impact of each other, funnel-position
+	// wins. Downstream (checkout) always beats upstream (SEO/home) pre-PMF.
+	// We enforce this AFTER the base sort so a near-tie between a
+	// checkout finding and an SEO finding always resolves in checkout's
+	// favor even if the score formula gave SEO a marginal edge.
+	scored.sort((a, b) => {
+		const impactA = a.row.impactMidpoint ?? 0;
+		const impactB = b.row.impactMidpoint ?? 0;
+		const withinThirtyPct =
+			Math.abs(impactA - impactB) / Math.max(impactA, impactB, 1) <= 0.3;
+		if (withinThirtyPct) {
+			const posDelta = b.score.funnelPosition - a.score.funnelPosition;
+			if (posDelta !== 0) return posDelta;
+		}
+		return b.score.total - a.score.total;
+	});
+	const top = scored.slice(0, 5).map((s) => s.row);
+
+	// Surface which candidates fell out of top-5 and why — helps ops
+	// debug the ranking algorithm when a plan surprises the customer.
 	console.log(
-		`[strategy-plan] pickTopActions env=${ctx.environmentId} returned=${out.length} keys=[${[...seen].slice(0, 5).join(",")}]`,
+		`[strategy-plan] pickTopActions env=${ctx.environmentId} candidates=${out.length} chose=${top.length} top=${scored
+			.slice(0, 5)
+			.map((s) => `${s.row.decisionKey.slice(0, 24)}=${s.score.total.toFixed(0)}`)
+			.join(",")}`,
 	);
-	return out;
+	return top;
+}
+
+// ──────────────────────────────────────────────
+// Wave 22.9 · Bloco 2 — Revenue-proximity ranking formula
+//
+// Product-strategist council seat's synthesis:
+//
+//   Score = impactMidpoint × confidence × distance_to_money × executability
+//
+// Distance-to-money = calendar days to first attributable Real, encoded
+// as a 0.35-1.0 multiplier. Checkout → deposits this month; SEO → 6
+// months to first click on new traffic. impactMidpoint alone treats
+// them as fungible Reais; they aren't.
+//
+// Executability = 1-sprint solo vs. needs content team vs. needs 3-month
+// indexing wait. 1-3 person Brazilian ecom team pre-PMF has ONE
+// execution budget per month.
+//
+// Confidence = severity as a proxy today (measured verificationMaturity
+// upgrades land in a later wave).
+//
+// Pre-PMF businessPhase gate is baked in — checkout/cart/PDP/policies
+// get a +30% multiplier via distance_to_money already; SEO/content/home
+// take the -30% naturally.
+// ──────────────────────────────────────────────
+
+interface RankScore {
+	total: number;
+	impactMid: number;
+	confidence: number;
+	distanceToMoney: number;
+	executability: number;
+	funnelPosition: number;
+	notes: string[];
+}
+
+function scoreForRevenueProximity(row: ActionRow): RankScore {
+	const impactMid = row.impactMidpoint ?? 0;
+	const confidence = confidenceFromSeverity(row.severity);
+	const distanceToMoney = distanceToMoneyFor(row.surface, row.decisionKey);
+	const executability = executabilityFor(row.category, row.surface, row.decisionKey);
+	// Funnel position 0-100 — used as a tiebreak signal for the
+	// within-30% rule. Higher = closer to money.
+	const funnelPosition = Math.round(distanceToMoney * 100);
+	const total = impactMid * confidence * distanceToMoney * executability;
+	return {
+		total,
+		impactMid,
+		confidence,
+		distanceToMoney,
+		executability,
+		funnelPosition,
+		notes: [],
+	};
+}
+
+function confidenceFromSeverity(severity: string): number {
+	switch (severity) {
+		case "critical": return 1.0;
+		case "high":     return 0.85;
+		case "medium":   return 0.65;
+		case "low":      return 0.4;
+		default:         return 0.5;
+	}
+}
+
+/** Distance-to-money multiplier per surface + decisionKey. Checkout
+ *  and cart get the top weight; SEO / discovery / home get the bottom.
+ *  Non-ecommerce surfaces fall through to a neutral default. */
+function distanceToMoneyFor(surface: string | null, decisionKey: string): number {
+	const key = (decisionKey ?? "").toLowerCase();
+	const surf = (surface ?? "").toLowerCase();
+	// Explicit money-adjacent decisionKey/surface patterns win first.
+	if (/checkout|payment|handoff|gateway/.test(key) || /\/checkout/.test(surf)) return 1.0;
+	if (/cart|carrinho|policies|policy|refund|return/.test(key) || /\/(cart|carrinho|policies)/.test(surf)) return 0.9;
+	if (/pricing|preco|precos|planos|variant|product/.test(key) || /\/(pricing|precos?|planos|produto|product)/.test(surf)) return 0.75;
+	if (/home|homepage|landing/.test(key) || surf === "/" || surf === "/home") return 0.55;
+	if (/discovery|seo|search|invisible|content|blog/.test(key) || /\/(blog|conteudo)/.test(surf)) return 0.35;
+	// Trust / brand-adjacent — checkout-neighbor by role even when the
+	// literal surface is broader.
+	if (/trust|chargeback|security_header|session_theft/.test(key)) return 0.85;
+	return 0.6;
+}
+
+/** Executability multiplier. Copy/dev changes deploy in 1 sprint;
+ *  content briefs take 3-6 weeks; SEO takes 3+ months of indexing.
+ *  1-3 person pre-PMF team pattern. */
+function executabilityFor(category: string, surface: string | null, decisionKey: string): number {
+	const key = (decisionKey ?? "").toLowerCase();
+	if (/seo|discovery|search|invisible|indexing/.test(key)) return 0.4;
+	if (/content|blog|editorial/.test(key)) return 0.6;
+	// Everything else (checkout copy, trust badges, form fixes, policy
+	// pages, cta swaps, security headers) → 1.0. These deploy in a
+	// single sprint solo.
+	void category; void surface;
+	return 1.0;
 }
 
 // Wave 22.9 · Bloco 3 — per-position angle codes. Council converged

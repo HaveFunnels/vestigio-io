@@ -16,6 +16,7 @@ import {
   BehavioralCohortPayload,
 } from './types';
 import { normalizeSurface, classifyPageType } from './surface-normalizer';
+import { classifyCtaLabel, classifyPath } from './ecommerce-semantics';
 
 // ──────────────────────────────────────────────
 // Session Aggregator
@@ -131,6 +132,23 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
   let formErrorCount = 0;
   let lastExitPage: string | undefined;
 
+  // ── Wave 22.9 · Fase 0 — Ecommerce-derived counters ──
+  // Populated unconditionally; caller decides whether to expose them
+  // via the vertical gate in ecommerce-semantics.shouldApplyEcommerceSemantics.
+  let cartAddCount = 0;
+  let variantToggleCount = 0;
+  let couponApplyCount = 0;
+  let shippingCalcCount = 0;
+  let policyVisitCount = 0;
+  let signupGateHit = false;
+  let shippingStepReached = false;
+  let paymentStepReached = false;
+  let cartOscillationCount = 0;
+  let pricingViewSeen = false;
+  let checkoutReachedAfterPricing = false;
+  let backtrackAfterCheckoutFromPricing = false;
+  let lastCartOrCheckoutSurface: "cart" | "checkout" | null = null;
+
   // The following event types are collected by vestigio.js but intentionally
   // not aggregated into SessionAggregate. They serve as raw evidence for
   // future analysis but don't currently feed into findings:
@@ -175,9 +193,32 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
         if (surface.page_type === 'checkout') {
           checkoutReached = true;
           if (!conversionStartTs) conversionStartTs = event.ts;
+          if (pricingViewSeen) checkoutReachedAfterPricing = true;
         }
         if (surface.page_type === 'thank_you') reachedThankYou = true;
         if (surface.page_type === 'pricing') pricingSeen = true;
+
+        // Wave 22.9 · Fase 0 — Ecommerce path signals
+        {
+          const ecomSignal = classifyPath(event.url);
+          if (ecomSignal === 'policy_visit') policyVisitCount++;
+          if (ecomSignal === 'signup_gate_hit') signupGateHit = true;
+          if (ecomSignal === 'shipping_step') shippingStepReached = true;
+          if (ecomSignal === 'payment_step') paymentStepReached = true;
+          if (ecomSignal === 'pricing_view') pricingViewSeen = true;
+          // cart/checkout oscillation — count backtracks between the
+          // cart step and checkout that fire the "cart_oscillation"
+          // signal. Uses lastCartOrCheckoutSurface as a rolling flag.
+          if (ecomSignal === 'cart_step') {
+            if (lastCartOrCheckoutSurface === 'checkout') {
+              cartOscillationCount++;
+              if (checkoutReachedAfterPricing) backtrackAfterCheckoutFromPricing = true;
+            }
+            lastCartOrCheckoutSurface = 'cart';
+          } else if (surface.page_type === 'checkout') {
+            lastCartOrCheckoutSurface = 'checkout';
+          }
+        }
 
         // Milestone progression
         const milestone = classifyMilestoneFromPageType(surface.page_type);
@@ -220,6 +261,15 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
         if (!firstCommercialActionTs) firstCommercialActionTs = event.ts;
         highestMilestone = advanceMilestone(highestMilestone, 'intent_expressed');
         if (!intentTs) intentTs = event.ts;
+        // Wave 22.9 · Fase 0 — Ecommerce label signals
+        {
+          const label = (event.data.label as string | undefined) ?? null;
+          const ecomSignal = classifyCtaLabel(label);
+          if (ecomSignal === 'cart_add') cartAddCount++;
+          else if (ecomSignal === 'variant_toggle') variantToggleCount++;
+          else if (ecomSignal === 'coupon_apply') couponApplyCount++;
+          else if (ecomSignal === 'shipping_calc') shippingCalcCount++;
+        }
         break;
       }
       case 'scroll_depth': {
@@ -383,6 +433,24 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
 
     form_errors: formErrorCount || undefined,
     last_exit_page: lastExitPage,
+
+    // Wave 22.9 · Fase 0 — Ecommerce-derived aggregates. `undefined`
+    // when the count is zero + not-hit so downstream (narrator prompt)
+    // can cheaply omit sections that don't apply, and non-ecommerce
+    // sessions look clean rather than carrying "cart_add_count: 0"
+    // noise everywhere.
+    cart_add_count: cartAddCount || undefined,
+    variant_toggle_count: variantToggleCount || undefined,
+    coupon_apply_count: couponApplyCount || undefined,
+    shipping_calc_count: shippingCalcCount || undefined,
+    policy_visit_count: policyVisitCount || undefined,
+    signup_gate_hit: signupGateHit || undefined,
+    shipping_step_reached: shippingStepReached || undefined,
+    payment_step_reached: paymentStepReached || undefined,
+    cart_oscillation_count: cartOscillationCount || undefined,
+    pricing_delta_backtrack:
+      (pricingViewSeen && checkoutReachedAfterPricing && backtrackAfterCheckoutFromPricing) ||
+      undefined,
   };
 }
 

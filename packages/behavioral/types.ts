@@ -285,6 +285,49 @@ export interface SessionAggregate {
   form_errors?: number;
   /** Last page URL before session exit — drop-off analysis */
   last_exit_page?: string;
+
+  // ── Wave 22.9 · Fase 0 — Ecommerce-derived aggregates ──
+  //
+  // Populated ONLY when the env's vertical is ecommerce (explicit
+  // perceivedVertical OR path-evidence auto-detect via
+  // packages/behavioral/ecommerce-semantics.ts::shouldApplyEcommerceSemantics).
+  // Non-ecommerce sessions leave these undefined so downstream
+  // narrators (SaaS/leadgen/etc.) don't gain ecommerce vocabulary
+  // they can't ground in the data.
+  //
+  // Each signal derives from cta_click.label (regex) OR page path
+  // (regex) — see ecommerce-semantics.ts::classifyCtaLabel/classifyPath.
+
+  /** Count of cta_clicks classified as cart_add (label matched
+   *  "Adicionar ao carrinho" / "Comprar agora" / etc). */
+  cart_add_count?: number;
+  /** Count of variant-selector clicks (label matched
+   *  "Tamanho" / "Cor" / etc). */
+  variant_toggle_count?: number;
+  /** Count of coupon-apply clicks. Combined with form_retry_count
+   *  gives the "coupon_retry_stuck" pattern. */
+  coupon_apply_count?: number;
+  /** Count of shipping-calculator clicks. */
+  shipping_calc_count?: number;
+  /** Count of page_enters into policy/trocas/devolução/faq/etc. */
+  policy_visit_count?: number;
+  /** True when the session hit a login/signup gate — used by the
+   *  "forced_signup_gate" pattern. */
+  signup_gate_hit?: boolean;
+  /** True when the session reached a shipping step page. */
+  shipping_step_reached?: boolean;
+  /** True when the session reached a payment step page. */
+  payment_step_reached?: boolean;
+  /** Number of backtracks from checkout back to cart step —
+   *  the "cart_oscillation" signal that surfaces revision anxiety. */
+  cart_oscillation_count?: number;
+  /**
+   * True when the session viewed pricing THEN reached checkout
+   * THEN backtracked to cart — a proxy for the "custo-surpresa no
+   * total" story the checkout-optimization council seat identified
+   * as the top ecom abandonment root cause.
+   */
+  pricing_delta_backtrack?: boolean;
 }
 
 export type JourneyType =

@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import SideDrawer from "@/components/console/SideDrawer";
+import { humanizePath } from "@/lib/humanize-path";
 
 // ──────────────────────────────────────────────
 // Bundle D — Journey Replays section
@@ -30,6 +31,19 @@ interface TimelineEvent {
 		| "exit";
 	label: string;
 	path: string | null;
+	// Wave 22.9 · Onda 1 — enriched context. Rendered on hover so
+	// the customer can drill from the summary label into the specific
+	// CTA text / near_cta / cluster range without leaving the card.
+	cta_label?: string;
+	ecommerce_signal?: string;
+	pause_ms?: number;
+	near_cta?: boolean;
+	scroll_depth_pct?: number;
+	scroll_depth_min_pct?: number;
+	render_delay_ms?: number;
+	from_path?: string;
+	cluster_count?: number;
+	cluster_span_seconds?: number;
 }
 
 interface Journey {
@@ -54,12 +68,34 @@ interface Journey {
 	estimated_lost_brl_cents: number;
 	timeline: TimelineEvent[];
 	session_hash: string;
+	// Wave 22.9 · Onda 2 — 4-block narrative + confidence tier.
+	// The old 3-block shape (headline/diagnosis/pattern_attribution)
+	// is defense-in-depth for cached plans — UI falls back if the
+	// legacy fields are all we have.
 	narrative: {
-		headline: string;
-		diagnosis: string;
-		pattern_attribution: string;
+		tier?: "padrao_claro" | "hipotese_consistente" | "sinal_isolado";
+		padrao?: string;
+		momento_critico?: string;
+		comprador_provavelmente?: string;
+		o_que_testar?: string;
+		// Legacy compat
+		headline?: string;
+		diagnosis?: string;
+		pattern_attribution?: string;
 	};
 }
+
+const TIER_HUMAN_LABEL: Record<NonNullable<Journey["narrative"]["tier"]>, string> = {
+	padrao_claro: "Padrão claro",
+	hipotese_consistente: "Hipótese consistente",
+	sinal_isolado: "Sinal isolado",
+};
+
+const TIER_CHIP_STYLE: Record<NonNullable<Journey["narrative"]["tier"]>, string> = {
+	padrao_claro: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+	hipotese_consistente: "border-sky-500/30 bg-sky-500/10 text-sky-300",
+	sinal_isolado: "border-content-faint/40 bg-content-faint/10 text-content-muted",
+};
 
 interface ApiResponse {
 	pixel_required: boolean;
@@ -74,17 +110,21 @@ interface Props {
 	month: string;
 }
 
-const KIND_STYLE: Record<TimelineEvent["kind"], { dot: string; icon: string }> = {
-	page_enter: { dot: "bg-sky-400", icon: "▼" },
-	page_dwell: { dot: "bg-content-faint", icon: "•" },
-	cta_click: { dot: "bg-emerald-400", icon: "●" },
-	form_focus: { dot: "bg-content-faint", icon: "●" },
-	form_error: { dot: "bg-amber-400", icon: "⚠" },
-	form_retry: { dot: "bg-amber-400", icon: "↻" },
-	scroll_milestone: { dot: "bg-content-faint", icon: "▾" },
-	hesitation: { dot: "bg-amber-400", icon: "⏸" },
-	backtrack: { dot: "bg-amber-400", icon: "↩" },
-	exit: { dot: "bg-rose-400", icon: "✕" },
+// Wave 22.9 · Onda 1 — dropped the emoji-adjacent `icon` field
+// (council flagged: unicode glyphs violate the "no emojis" brand
+// rule). Dot color alone carries the signal now — quiet events stay
+// muted, money-relevant events warm up (amber = friction, rose = exit).
+const KIND_DOT_STYLE: Record<TimelineEvent["kind"], string> = {
+	page_enter: "bg-sky-400/70",
+	page_dwell: "bg-content-faint",
+	cta_click: "bg-emerald-400",
+	form_focus: "bg-content-faint",
+	form_error: "bg-amber-400",
+	form_retry: "bg-amber-400",
+	scroll_milestone: "bg-content-faint",
+	hesitation: "bg-amber-400",
+	backtrack: "bg-amber-400",
+	exit: "bg-rose-400",
 };
 
 export default function JourneyReplays({ envId, month }: Props) {
@@ -156,6 +196,15 @@ export default function JourneyReplays({ envId, month }: Props) {
 function JourneyCard({ journey, currency }: { journey: Journey; currency: string }) {
 	const lostBrl = Math.round(journey.estimated_lost_brl_cents / 100);
 	const minutes = Math.round((journey.metrics.duration_ms / 60000) * 10) / 10;
+	// Wave 22.9 · Onda 1 — replaces the truncation-at-12 + "+N eventos"
+	// UI that broke the customer's analysis chain. Now the customer
+	// sees the FULL sequence on demand via a card-local expand toggle.
+	const INITIAL_VISIBLE = 12;
+	const [expanded, setExpanded] = useState(false);
+	const visible = expanded
+		? journey.timeline
+		: journey.timeline.slice(0, INITIAL_VISIBLE);
+	const hiddenCount = journey.timeline.length - INITIAL_VISIBLE;
 
 	return (
 		<div data-vsgp-card className="overflow-hidden rounded-2xl border border-edge bg-surface-card">
@@ -187,59 +236,204 @@ function JourneyCard({ journey, currency }: { journey: Journey; currency: string
 			<div className="grid grid-cols-1 sm:grid-cols-[1fr_1.2fr]">
 				{/* Timeline */}
 				<div className="relative border-b border-edge/40 p-5 sm:border-b-0 sm:border-r sm:p-6">
-					<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-						Linha do tempo
+					<div className="mb-3 flex items-baseline justify-between gap-2">
+						<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+							Linha do tempo
+						</div>
+						<div className="text-[10px] font-mono tabular-nums text-content-faint">
+							{journey.timeline.length} eventos
+						</div>
 					</div>
-					<div className="relative space-y-2 pl-3">
+					<div className="relative space-y-1 pl-3">
 						<div
 							className="pointer-events-none absolute bottom-1 left-[3px] top-1 w-px bg-edge/40"
 							aria-hidden
 						/>
-						{journey.timeline.slice(0, 12).map((ev, i) => {
-							const style = KIND_STYLE[ev.kind];
-							return (
-								<div key={i} className="relative">
-									<div
-										className={`absolute -left-3 top-1.5 h-1.5 w-1.5 rounded-full ${style.dot}`}
-										aria-hidden
-									/>
-									<div className="ml-2 flex items-baseline justify-between gap-2">
-										<div className="min-w-0 flex-1">
-											<div className="truncate text-[11.5px] leading-snug text-content-secondary">
-												{ev.label}
-											</div>
-										</div>
-										<div className="shrink-0 font-mono text-[10px] tabular-nums text-content-faint">
-											{formatTimestamp(ev.t_seconds)}
-										</div>
-									</div>
-								</div>
-							);
-						})}
-						{journey.timeline.length > 12 && (
-							<div className="ml-2 pt-1 text-[10px] text-content-faint">
-								+ {journey.timeline.length - 12} eventos
-							</div>
+						{visible.map((ev, i) => (
+							<TimelineRow key={i} ev={ev} />
+						))}
+						{hiddenCount > 0 && (
+							<button
+								type="button"
+								onClick={() => setExpanded((v) => !v)}
+								className="ml-1 mt-2 inline-flex items-center gap-1 text-[10.5px] font-medium text-content-muted underline-offset-2 hover:text-content hover:underline"
+							>
+								{expanded ? "Mostrar menos" : `Ver todos ${journey.timeline.length} eventos`}
+							</button>
 						)}
 					</div>
 				</div>
 
-				{/* Narrative */}
+				{/* Narrative — 4-block structure per Wave 22.9 · Onda 2.
+				    Legacy 3-block plans fall through to compatibility
+				    render at the bottom of this branch. */}
 				<div className="p-5 sm:p-6">
-					<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-						Diagnóstico Vestigio
+					<div className="mb-3 flex items-baseline justify-between gap-2">
+						<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+							Diagnóstico Vestigio
+						</div>
+						{journey.narrative.tier && (
+							<span
+								className={`rounded-full border px-2 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.14em] ${TIER_CHIP_STYLE[journey.narrative.tier]}`}
+							>
+								{TIER_HUMAN_LABEL[journey.narrative.tier]}
+							</span>
+						)}
 					</div>
-					<div className="space-y-3 text-[13px] leading-relaxed text-content-secondary">
-						<p className="font-medium text-content">{journey.narrative.headline}</p>
-						<p>{journey.narrative.diagnosis}</p>
-						<p className="text-[12px] text-content-muted">
-							{journey.narrative.pattern_attribution}
-						</p>
-					</div>
+					{journey.narrative.padrao ||
+					journey.narrative.momento_critico ||
+					journey.narrative.comprador_provavelmente ||
+					journey.narrative.o_que_testar ? (
+						<div className="space-y-4 text-[13px] leading-relaxed text-content-secondary">
+							{journey.narrative.padrao && (
+								<div>
+									<div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-faint">
+										Padrão
+									</div>
+									<p className="font-medium text-content">
+										{journey.narrative.padrao}
+									</p>
+								</div>
+							)}
+							{journey.narrative.momento_critico && (
+								<div>
+									<div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-faint">
+										Momento crítico
+									</div>
+									<p>{journey.narrative.momento_critico}</p>
+								</div>
+							)}
+							{journey.narrative.comprador_provavelmente && (
+								<div>
+									<div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-faint">
+										Este comprador provavelmente
+									</div>
+									<p>{journey.narrative.comprador_provavelmente}</p>
+								</div>
+							)}
+							{journey.narrative.o_que_testar && (
+								<div className="rounded-lg border border-edge/50 bg-surface-inset/40 px-3 py-2.5">
+									<div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-content-faint">
+										O que testar
+									</div>
+									<p className="text-[12.5px] text-content">
+										{journey.narrative.o_que_testar}
+									</p>
+								</div>
+							)}
+						</div>
+					) : (
+						// Legacy 3-block fallback — kept so cached plans
+						// generated pre-Onda 2 keep rendering. New plans
+						// always hit the branch above.
+						<div className="space-y-3 text-[13px] leading-relaxed text-content-secondary">
+							{journey.narrative.headline && (
+								<p className="font-medium text-content">
+									{journey.narrative.headline}
+								</p>
+							)}
+							{journey.narrative.diagnosis && (
+								<p>{journey.narrative.diagnosis}</p>
+							)}
+							{journey.narrative.pattern_attribution && (
+								<p className="text-[12px] text-content-muted">
+									{journey.narrative.pattern_attribution}
+								</p>
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
 	);
+}
+
+// ──────────────────────────────────────────────
+// TimelineRow — Wave 22.9 · Onda 1
+//
+// Progressive disclosure per row. Primary label always visible; a
+// secondary line with the enriched context (CTA text, pause duration,
+// near_cta, cluster range, backtrack from-path) reveals on hover
+// (desktop) or tap-toggle (mobile) via a grid-rows animation that
+// causes ZERO layout jump. No framer-motion per row — CSS handles it.
+// ──────────────────────────────────────────────
+
+function TimelineRow({ ev }: { ev: TimelineEvent }) {
+	const [open, setOpen] = useState(false);
+	const dot = KIND_DOT_STYLE[ev.kind];
+	const meta = buildSecondaryMeta(ev);
+	const hasMeta = meta.length > 0;
+
+	return (
+		<div
+			className="group relative cursor-default select-none"
+			data-open={open ? "" : undefined}
+			onClick={() => hasMeta && setOpen((v) => !v)}
+		>
+			<div
+				className={`absolute -left-3 top-1.5 h-1.5 w-1.5 rounded-full ${dot}`}
+				aria-hidden
+			/>
+			<div className="ml-2 flex items-baseline justify-between gap-2 rounded-md px-1 py-0.5 transition-colors group-hover:bg-surface-inset/40">
+				<div className="min-w-0 flex-1">
+					<div className="truncate text-[11.5px] leading-snug text-content-secondary group-hover:text-content">
+						{ev.label}
+					</div>
+				</div>
+				<div className="shrink-0 font-mono text-[10px] tabular-nums text-content-faint">
+					{formatTimestamp(ev.t_seconds)}
+				</div>
+			</div>
+			{hasMeta && (
+				<div
+					className="ml-2 grid grid-rows-[0fr] transition-[grid-template-rows] duration-150 ease-out group-hover:grid-rows-[1fr] group-data-[open]:grid-rows-[1fr]"
+				>
+					<div className="overflow-hidden">
+						<div className="px-1 pt-0.5 text-[10px] leading-tight text-content-faint">
+							{meta.map((chunk, i) => (
+								<span key={i}>
+									{i > 0 && <span className="mx-1.5 text-content-faint/60">·</span>}
+									{chunk}
+								</span>
+							))}
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+function buildSecondaryMeta(ev: TimelineEvent): string[] {
+	const chunks: string[] = [];
+	if (ev.path && !ev.label.includes(humanizePath(ev.path))) {
+		chunks.push(humanizePath(ev.path));
+	}
+	if (ev.cta_label && !ev.label.includes(`"${ev.cta_label}"`)) {
+		chunks.push(`botão: "${ev.cta_label}"`);
+	}
+	if (ev.near_cta && !ev.label.includes("perto do CTA")) {
+		chunks.push("perto do CTA");
+	}
+	if (ev.render_delay_ms && !ev.label.includes("depois")) {
+		chunks.push(`atraso de ${Math.round(ev.render_delay_ms / 1000)}s`);
+	}
+	if (ev.from_path && !ev.label.includes("Voltou de")) {
+		chunks.push(`veio de ${humanizePath(ev.from_path)}`);
+	}
+	if (
+		ev.cluster_count &&
+		ev.cluster_count > 1 &&
+		ev.kind === "scroll_milestone" &&
+		ev.scroll_depth_min_pct &&
+		ev.scroll_depth_pct
+	) {
+		chunks.push(`${ev.scroll_depth_min_pct}% → ${ev.scroll_depth_pct}%`);
+	}
+	if (ev.cluster_count && ev.cluster_count > 1 && ev.cluster_span_seconds) {
+		chunks.push(`${ev.cluster_span_seconds}s no total`);
+	}
+	return chunks;
 }
 
 function formatTimestamp(seconds: number): string {

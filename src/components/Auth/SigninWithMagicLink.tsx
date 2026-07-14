@@ -41,7 +41,7 @@ export default function SigninWithMagicLink() {
 
 		try {
 			// 2 requests per 20 seconds
-			await rateLimitByIp(2, 20000);
+			await rateLimitByIp(8, 60_000);
 		} catch (error) {
 			setLoading(false);
 			toast.error("Too many sign-in attempts. Please try again later.");

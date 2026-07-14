@@ -155,9 +155,17 @@ async function evaluate(
 export async function rateLimitByIp(limit = 5, windowMs = 60000) {
   const ip = await getIp();
 
-  if (!ip) {
-    throw new Error("IP address not found");
-  }
+  // Wave 22.9 fix — fail-open when the request has no IP header
+  // (dev/localhost, misconfigured proxy, some Server-Action call
+  // shapes where cf-connecting-ip/x-real-ip/x-forwarded-for don't
+  // all propagate). The prior behavior threw "IP address not found"
+  // and downstream callers (Signin.tsx, Signup.tsx) catch-alled
+  // that into a misleading "Too many attempts" toast — user saw
+  // "Too many attempts" on their FIRST legitimate login. Mirrors
+  // the fail-open policy already in checkRateLimit() (P2.3 turn).
+  // Public routes still layer Turnstile / signature-verify for the
+  // no-IP case; this is the right level of the funnel to fail-open.
+  if (!ip) return;
 
   // Skip rate limiting for whitelisted IPs
   if (WHITELIST_IPS.has(ip)) return;

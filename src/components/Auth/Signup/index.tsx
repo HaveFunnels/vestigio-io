@@ -128,7 +128,7 @@ export default function Signup() {
 
 		setLoading(true);
 		try {
-			await rateLimitByIp(2, 20000);
+			await rateLimitByIp(8, 60_000);
 		} catch {
 			setLoading(false);
 			return toast.error("Too many attempts. Please try again later.");

@@ -62,7 +62,7 @@ export default function Signin() {
 		if (!integrations.isAuthEnabled) return toast.error(messages.auth);
 		setMagicLoading(true);
 		try {
-			await rateLimitByIp(2, 20000);
+			await rateLimitByIp(8, 60_000);
 		} catch {
 			setMagicLoading(false);
 			return toast.error("Too many attempts. Please try again later.");
@@ -85,7 +85,7 @@ export default function Signin() {
 		if (!integrations.isAuthEnabled) return toast.error(messages.auth);
 		setPassLoading(true);
 		try {
-			await rateLimitByIp(2, 20000);
+			await rateLimitByIp(8, 60_000);
 		} catch {
 			setPassLoading(false);
 			return toast.error("Too many attempts. Please try again later.");

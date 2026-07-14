@@ -155,34 +155,37 @@ async function evaluate(
 export async function rateLimitByIp(limit = 5, windowMs = 60000) {
   const ip = await getIp();
 
-  // Wave 22.9 refinement — the previous revision flipped to a bare
-  // fail-open on missing IP so misconfigured proxies wouldn't show
-  // "Too many attempts" on legitimate first attempts. A background
-  // security review correctly flagged that as a bypass path: an
-  // attacker who found a way to strip cf-connecting-ip / x-real-ip
-  // / x-forwarded-for could hammer login without any throttle.
+  // Wave 22.9 · third pass — earlier iterations shipped a bare
+  // fail-open then a shared-bucket fallback. A background security
+  // review flagged both: the shared bucket still lets N attempts per
+  // window slip through to a proxy-bypass attacker.
   //
-  // Right shape: bucket ALL no-IP requests under one shared key so
-  // they collectively hit the limit rather than each bypassing
-  // individually. In dev (localhost, no proxy) all local requests
-  // share the same bucket — harmless because a single developer
-  // isn't self-DoSing. In prod behind Cloudflare + Railway, both
-  // proxies always set headers; if getIp() returns null for a real
-  // request the shared-bucket fallback caps the blast radius while
-  // ops fix the upstream misconfig.
+  // Right shape per the reviewer's option (c): fail-closed in prod,
+  // fail-open only in dev. In prod behind Cloudflare + Railway both
+  // proxies always set forwarded headers; if getIp() returns null
+  // for a real prod request the upstream is misconfigured OR
+  // someone is stripping headers to bypass throttle. Either way,
+  // reject rather than serve.
   //
-  // NB: for auth specifically, NextAuth's authorize() also runs
-  // checkLockout(email) which per-email locks after N failed
-  // password attempts. The IP rate limit is defense-in-depth
-  // against credential-stuffing across many emails from one IP,
-  // not the primary account-lockout mechanism.
-  const bucketKey = ip ?? "__no_ip_fallback__";
+  // In dev (localhost, no proxy) fail-open so `pnpm dev` login works.
+  // Downside preserved from the reviewer's guidance: dev's fail-open
+  // is not a security hole because dev instances aren't public.
+  //
+  // NB: NextAuth's authorize() still runs checkLockout(email) — per-
+  // account throttle that works regardless of IP. This IP throttle
+  // is defense-in-depth against credential-stuffing across many
+  // emails from one IP, not the primary account-lockout mechanism.
+  if (!ip) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Rate limit exceeded");
+    }
+    return;
+  }
 
-  // Skip rate limiting for whitelisted IPs (only when we know the
-  // caller's IP; the shared no-IP fallback doesn't honor whitelist).
-  if (ip && WHITELIST_IPS.has(ip)) return;
+  // Skip rate limiting for whitelisted IPs.
+  if (WHITELIST_IPS.has(ip)) return;
 
-  const { limited } = await evaluate(bucketKey, limit, windowMs);
+  const { limited } = await evaluate(ip, limit, windowMs);
   if (limited) {
     throw new Error("Rate limit exceeded");
   }

@@ -436,6 +436,16 @@ export interface StrategyPlan {
 	 *  o heroMetrics.capturedMid quando o plano persistido ainda não
 	 *  regenerou — UI usa esse total como número primário. */
 	attributionTotal?: number;
+	/**
+	 * Reta-final · visual proof: map of normalized surface path
+	 * (e.g. "/", "/precos") → 1h-presigned R2 URL of the last captured
+	 * screenshot for that path in this environment. Consumed by the
+	 * PlanScreenshotContext + FindingCard so every finding whose
+	 * `source_url` matches a captured surface renders alongside a
+	 * screenshot of the actual page. Empty object when R2 unconfigured
+	 * or the env has no captured surfaces yet — UI degrades to text.
+	 */
+	screenshotUrlByPath?: Record<string, string>;
 	narrativeWhatHappened: string;
 	valuePreviewNarrative: string;
 	valuePreview: ValuePreview;

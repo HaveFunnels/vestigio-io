@@ -562,16 +562,33 @@ export async function GET(request: Request, { params }: RouteParams) {
 		if (k) matchedKeyByStepId.set(s.id, k);
 	}
 	const screenshotUrlByKey = new Map<string, string>();
-	if (matchedKeyByStepId.size > 0) {
+	// Presign every distinct r2Key in the env — small set (≤ ~20 rows),
+	// single-digit signing calls, no network round-trip. Powers both the
+	// per-step NextSteps figure AND the new per-finding figure inside the
+	// PlanSideDrawer (visual proof beside each finding card). Degrade-safe:
+	// R2 unset → empty map → UI stays text-only.
+	const allKeys = new Set<string>([
+		...matchedKeyByStepId.values(),
+		...screenshotKeyByPath.values(),
+	]);
+	if (allKeys.size > 0) {
 		try {
 			const { r2Configured, getScreenshotUrl } = await import("@/libs/r2-screenshots");
 			if (r2Configured()) {
-				const distinct = Array.from(new Set(matchedKeyByStepId.values()));
-				await Promise.all(distinct.map(async (k) => {
+				await Promise.all(Array.from(allKeys).map(async (k) => {
 					try { screenshotUrlByKey.set(k, await getScreenshotUrl(k)); } catch { /* skip */ }
 				}));
 			}
 		} catch { /* R2 helper unavailable - text-only */ }
+	}
+	// Reta-final: expose the full path→URL map so the FindingCard drawer
+	// can render a figure per finding based on its source_url. Same TTL
+	// semantics as the per-step screenshots (1h presigned; response cached
+	// implicitly by the plan payload's short-lived nature).
+	const screenshotUrlByPath: Record<string, string> = {};
+	for (const [path, key] of screenshotKeyByPath.entries()) {
+		const url = screenshotUrlByKey.get(key);
+		if (url) screenshotUrlByPath[path] = url;
 	}
 	const hero = plan.heroMetricsJson as any;
 	const buyerSegments = plan.buyerSegmentsJson as any;
@@ -654,6 +671,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 		packDistribution,
 		attributionTimeline,
 		attributionTotal,
+		screenshotUrlByPath,
 		narrativeWhatHappened: plan.narrativeWhatHappened,
 		valuePreviewNarrative: plan.valuePreviewNarrative,
 		valuePreview,

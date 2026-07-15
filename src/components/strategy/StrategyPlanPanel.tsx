@@ -30,6 +30,7 @@ import CrossCustomerPattern from "./sections/CrossCustomerPattern";
 import Carteira from "./sections/Carteira";
 import PlanTOCRail, { type TocItem } from "./PlanTOCRail";
 import MonthPicker from "./MonthPicker";
+import { PlanScreenshotProvider } from "./PlanScreenshotContext";
 
 /*
  * StrategyPlanPanel — top-level composition of the 6 plan sections
@@ -557,6 +558,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 	const isPorPagina = viewMode === "por_pagina" && !isPrint;
 
 	return (
+		<PlanScreenshotProvider urlByPath={plan.screenshotUrlByPath}>
 		<div
 			data-vsgp-plan
 			data-vsgp-print={isPrint ? "true" : "false"}
@@ -804,5 +806,6 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 			</div>
 			</div>
 		</div>
+		</PlanScreenshotProvider>
 	);
 }

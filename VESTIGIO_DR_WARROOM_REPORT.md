@@ -92,84 +92,11 @@ _Consensus report from a 15-character sealed war room (5 clusters × 3 skills ea
 
 ---
 
-## 🟡 Good — polish only — 10 items
+## 🟡 Good — polish only — 1 item remaining
 
-### 1. Hero primary CTA copy (both home and /lp)
+_9 of 10 shipped in commit d0fd9ca4 (hero CTA + badge, subtitle, secondary CTA rename, MiniCalc CTA + price microcopy, Counter tile descriptions, StickyCTA mirror, /activate progress 3-of-3, Pix monthly warning chip, DE hero idiomatic). Item below is deferred pending non-code sequencing._
 
-**Current:** 'Rodar diagnóstico gratuito' / 'Run free diagnostic' — curiosity CTA, not commitment. Named as suspect #4 in brief.
-**Polish:** 'Ver meu vazamento em 60s — grátis' / 'See my leak (60s — free)' / 'Ver mi fuga (60s — gratis)' / 'Meinen Leak zeigen (60s — kostenlos)'. Locale-mapped. Keeps 'grátis' explicit (per user memory feedback_hero_cta_free_action_beats_preview — free-action framing is founder-locked) while tightening to outcome-first + timebox.
-
-**Why:** The user memory locks the free-action feel; the polish is verb+specific-outcome+timebox, completing the ad's promise instead of restarting the decision. Growth-revenue's tripwire replacement ('R$1' / 'R$47 tripwire') was killed by every other critic — it violates founder-tested positioning AND breaks ad-to-LP message match for cold Meta clicks that arrive with zero brand equity.
-
-
-### 2. Hero subtitle passive-observer clause
-
-**Current:** 'Mostramos onde o dinheiro escapa, quanto, e o que você faz pra parar.'
-**Polish:** 'Mostramos onde o dinheiro escapa, quanto, e como parar.' / 'We show where the money leaks, how much, and how to stop it.' / 'Mostramos dónde se fuga el dinero, cuánto, y cómo pararlo.' / 'Wir zeigen, wo Geld entgeht, wie viel und wie man es stoppt.'
-
-**Why:** 'O que você faz pra parar' puts the burden on the buyer — 'the Vestigio SABE' promise chain breaks with the passive-observer construction. Also fixes an English grammar break ('what you do to stop it' should be 'what to do to stop it').
-
-
-### 3. Secondary hero CTA
-
-**Current:** 'Ver tour do produto' — competing button of equal weight against primary CTA, and it's just an in-page scroll (ProductTour renders in DemoSurface below).
-
-**Polish:** Demote to text-link 'Ver como funciona' with scroll-anchor to #product-tour. Kill the button-equivalent visual weight. Ship 'Ver um Plano real' idea was killed — requires a redacted-havefunnels anonymization pipeline that doesn't exist (per user memory project_havefunnels_redacted_plan_consent).
-
-**Why:** Two CTAs of equal visual weight split intent in DR. Single primary + text-link secondary preserves the warm on-ramp for the 60% of hero traffic that won't take primary action, without diluting click intent.
-
-
-### 4. MiniCalc result-page CTA
-
-**Current:** 'Receber meu Plano' (dictionary/pt-BR.json line 781) — names a product ('Plano') the low-awareness buyer has been on the site 45 seconds and never seen defined.
-
-**Polish:** 'Ver quanto está vazando →' / 'See how much is leaking →' / 'Ver cuánto se está fugando →' / 'Zeigen, wie viel leckt →'. Add price microcopy right below: 'R$99/mês — Garantia 4× em 30 dias'. Anchors the commitment at the moment of peak intent (results just revealed) and kills the tardy-price-shock at /activate.
-
-**Why:** Peak-intent moment; buyer just typed their URL. Outcome-first CTA + price transparency at result = single most efficient copy edit on the site. Positioning + Funnel-CRO + Growth-revenue all converged on this.
-
-
-### 5. Counter tile empty descriptions (visibility_desc, monitoring_desc, integrations_desc)
-
-**Current:** Empty strings in pt-BR — tiles render title-only, reads as 'unfinished section' to low-awareness buyers.
-**Polish:** visibility_desc → '15.000 sinais varridos a cada análise: checkout, funil, mobile, scripts, meta ads, SEO.' monitoring_desc → 'Toda mudança no site é comparada ao ciclo anterior. Regressões críticas em horas, não em semanas.' integrations_desc → 'Shopify, WordPress, Webflow, Framer, Next.js, site custom — se abre num browser, a Vestigio lê.'
-
-**Why:** Kills the 'this probably won't work on my site' objection (integrations line specifically) + the 'what do they actually look at' unknown. Small copy edit × 4 locales, no engineering.
-
-
-### 6. Sticky CTA copy mirror
-
-**Current:** Independent of hero — reads as generic re-exposure.
-**Polish:** Mirror hero CTA exactly on sticky bar. When Hero says 'Ver meu vazamento em 60s — grátis', StickyCTA says the same. Under paid sessions, 3 sticky variants keyed by utm_campaign: ghost angle → 'Ver seus 9 vazamentos'; guarantee → 'Grátis, 4X ou 100% de volta em 30d'; category → 'Ver benchmark do seu setor'.
-
-**Why:** Sticky CTA is the second-chance close. Repeating the hero (or the ad, under paid) accumulates commitment; new words = new decision.
-
-
-### 7. Progress bar on /activate
-
-**Current:** 'Passo 2 de 2' with 2 segments — buyer has already crossed audit form + result reveal + signup, feels shorter than it is.
-
-**Polish:** 'Passo 3 de 3: Ativar' with 3 filled segments (Diagnóstico done, Conta done, Pagamento active). Small honest re-labeling.
-
-**Why:** Sunk-cost fallacy works FOR you when the progress bar reflects actual sunk cost. Reduces abandon-at-the-goal-line.
-
-### 8. Pix monthly renewal warning position
-
-**Current:** 'Renovação manual por email todo mês' buried in sidebar aside (line 509) — invisible at decision moment.
-**Polish:** Move to warning-tone chip UNDER 'Gerar Pix' button when cycle=monthly: 'Pix mensal exige nova confirmação todo mês — economize 20% e vá anual (R$16/mês)' with one-click switch.
-
-**Why:** Making friction VISIBLE at decision converts a slice to Pix-annual (higher LTV, less involuntary churn) and drives Card selection (auto-renews). Also gets ahead of BR CDC Art. 6º VIII disclosure requirements that quiet monthly-Pix renewal may violate.
-
-
-### 9. German hero headline (native-DE nuance)
-
-**Current:** Machine-translation-tier 'Es leckt Geld aus Ihrem Betrieb' — 'lecken' in DE reads as physical leak (pipe/roof), weak money idiom.
-
-**Polish:** 'Ihrem Betrieb entgehen Einnahmen — Vestigio zeigt, wo und wie viel.' 'Entgehen' is the exact DE idiom for money you should have received but didn't. Native DE copywriter must sign off — DACH-locale hero + guarantee + paywall are the three surfaces that must not machine-translate.
-
-**Why:** DACH = 25% of cross-border TAM. Machine-translated guarantee copy is both a conversion killer AND a Verbraucherzentrale flag risk. €400-800 native review is a rounding error against unlocking the locale.
-
-
-### 10. Add Instagram + TikTok + LinkedIn + YouTube icons to Footer
+### 1. Add Instagram + TikTok + LinkedIn + YouTube icons to Footer
 
 **Current:** Footer only links x.com/vestigio_io + github.com/vestigio-io. Meta ad clickers who search 'vestigio' on IG mid-funnel find nothing → 'ad-farm signal' bounce.
 
@@ -265,17 +192,17 @@ _Consensus report from a 15-character sealed war room (5 clusters × 3 skills ea
 
 **Owner Cluster:** positioning
 
-### 7. Delete '20.000 empresas' overclaim + fix pricing_section.plans[*] Lorem Ipsum + SaaS-analytics feature bullets + delete dead testimonials/newsletter Lorem
+### 7. Delete dead testimonials/newsletter Lorem
 
-**Current:** (a) ClientGallery pt-BR: 'Junte-se a mais de 20.000 empresas que não escalam no escuro' — unverifiable at current customer scale (havefunnels is first paying customer per project memory). (b) pt-BR.json lines 616-670: pricing_section.plans still contains 'Basic/Pro/Empresarial' with 'Lorem ipsum dolor sit amet' descriptions AND SaaS-analytics feature bullets ('Até 1.000.000 de visitas rastreadas', 'Até 03 membros da equipe') — this IS what /pricing + /activate render via getPricingData(). (c) dictionary/pt-BR.json:691-725 testimonials_section + :730-735 newsletter_section still contain Lorem Ipsum — verified NOT rendered (Home/index.tsx doesn't import) but strings ship in JSON bundle.
+**Current:** json lines 616-670: pricing_section.plans still contains 'Basic/Pro/Empresarial' with 'Lorem ipsum dolor sit amet' descriptions AND SaaS-analytics feature bullets ('Até 1.000.000 de visitas rastreadas', 'Até 03 membros da equipe') — this IS what /pricing + /activate render via getPricingData(). (b) dictionary/pt-BR.json:691-725 testimonials_section + :730-735 newsletter_section still contain Lorem Ipsum — verified NOT rendered (Home/index.tsx doesn't import) but strings ship in JSON bundle.
 
-**Proposed:** (a) Delete 20K number entirely. Replace with 'Operadores que pararam de escalar no escuro.' (no number) OR — if verified — 'Rodando em [X] operações no BR, US e EU.' (b) Rewrite all three pricing tier bodies to leak-diagnosis outcome language. Example Pro: name='Pro', for='Para negócios de R$50k-500k/mês', description='Achamos o vazamento em 60s. Você fecha em 4 passos. Todo mês.', included.items=['Plano mensal com tese central', '9 vazamentos identificados (média)', 'R$ exato em cada finding', '4 passos priorizados por edição', 'Pix, cartão, boleto', 'Garantia: 100% de volta em 30 dias se não achar 4×']. Zero SaaS-analytics vocabulary. (c) Delete dead testimonials + newsletter Lorem blocks from all 4 locale dicts as hygiene cleanup — defense-in-depth against ad-review crawl + accidental re-enablement.
+**Proposed:** Rewrite all three pricing tier bodies to leak-diagnosis outcome language. Example Pro: name='Pro', for='Para negócios de R$50k-500k/mês', description='Achamos o vazamento em 60s. Você fecha em 4 passos. Todo mês.', included.items=['Plano mensal com tese central', '9 vazamentos identificados (média)', 'R$ exato em cada finding', '4 passos priorizados por edição', 'Pix, cartão, boleto', 'Garantia: 100% de volta em 30 dias se não achar 4×']. Zero SaaS-analytics vocabulary. (c) Delete dead testimonials + newsletter Lorem blocks from all 4 locale dicts as hygiene cleanup — defense-in-depth against ad-review crawl + accidental re-enablement.
 
-**Why:** The 20K overclaim is asymmetric downside: one screenshot in a BR founder WhatsApp group = permanent 60-day CAC penalty. The pricing_section Lorem is the LIVE Lorem that renders on the money page — brief mis-flagged; Growth-revenue caught the actual crisis. SaaS-analytics bullets ('visitas rastreadas', 'membros') position Vestigio AS Google Analytics — kills the entire category wedge. Dead Lorem in JSON bundle = ad-review crawl fingerprint + git-hazard for accidental re-enablement.
+**Why:** The pricing_section Lorem is the LIVE Lorem that renders on the money page — brief mis-flagged; Growth-revenue caught the actual crisis. SaaS-analytics bullets ('visitas rastreadas', 'membros') position Vestigio AS Google Analytics — kills the entire category wedge. Dead Lorem in JSON bundle = ad-review crawl fingerprint + git-hazard for accidental re-enablement.
 
 **Effort:** S
 **Impact:** critical
-**Risk If Skipped:** Ship ads to a page with unverified '20K empresas' + Lorem tier descriptions + analytics-tool feature bullets = confidence-killer worse than any positioning polish can fix downstream.
+**Risk If Skipped:** Ship ads to a page with Lorem tier descriptions + analytics-tool feature bullets = confidence-killer worse than any positioning polish can fix downstream.
 
 **Owner Cluster:** positioning (copy) + growth-revenue (pricing card review)
 

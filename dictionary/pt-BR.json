@@ -64,7 +64,7 @@
 		"hero_v2": {
 			"banner": {
 				"label": "Tese do mês",
-				"message": "Toda análise abre com a tese central do ciclo — o que está custando dinheiro e o que fazer.",
+				"message": "Toda análise abre com a tese central do ciclo: o que está custando dinheiro e o que fazer.",
 				"cta": "Como funciona"
 			},
 			"headline_part1": "Tem dinheiro vazando na sua operação.",
@@ -81,7 +81,7 @@
 			"cta_secondary": "Ver tour do produto",
 			"cta_micro": "",
 			"trust_microcopy": {
-				"guarantee": "Garantia 4X — se não encontrar 4x o valor do plano, devolvemos 100%.",
+				"guarantee": "Garantia 4X: se não encontrar 4x o valor do plano, devolvemos 100%.",
 				"platforms": "Funciona com qualquer plataforma."
 			},
 			"shell": {
@@ -108,7 +108,7 @@
 		"hero_lp": {
 			"banner": {
 				"label": "Tese do mês",
-				"message": "Toda análise abre com a tese central do ciclo — o que está custando dinheiro e o que fazer.",
+				"message": "Toda análise abre com a tese central do ciclo: o que está custando dinheiro e o que fazer.",
 				"cta": "Como funciona"
 			},
 			"headline_part1": "Quanto dinheiro está",
@@ -265,8 +265,8 @@
 						"tone": "emerald"
 					}
 				],
-				"narrative_lead": "A cobertura de política na página inicial está **calibrada** e segurando faturamento. O tema dominante deste ciclo é **copy desalinhado** — onde a leitura do comprador rompe com a leitura do site.",
-				"narrative_detail": "Títulos descreviam o produto sem comunicar o ganho do comprador. No checkout, um **redirect cross-domain** dispersou compradores qualificados antes da conversão. Ambos já resolvidos — **R$ ~67k recuperados** neste mês."
+				"narrative_lead": "A cobertura de política na página inicial está **calibrada** e segurando faturamento. O tema dominante deste ciclo é **copy desalinhado**, onde a leitura do comprador rompe com a leitura do site.",
+				"narrative_detail": "Títulos descreviam o produto sem comunicar o ganho do comprador. No checkout, um **redirect cross-domain** dispersou compradores qualificados antes da conversão. Ambos já resolvidos: **R$ ~67k recuperados** neste mês."
 			},
 			"step3": {
 				"heading": "Próximos passos priorizados",
@@ -280,14 +280,14 @@
 					},
 					{
 						"n": "02",
-						"title": "Reduzir o formulário de captura de 7 pra 3 campos — abandono cai pela metade",
+						"title": "Reduzir o formulário de captura de 7 pra 3 campos. Abandono cai pela metade",
 						"impact": "R$ 18k–35k/mês",
 						"buyer": "Eng",
 						"dot": "bg-sky-400"
 					},
 					{
 						"n": "03",
-						"title": "Mover o CTA principal pra acima da dobra no mobile — 64% dos visitantes não vê",
+						"title": "Mover o CTA principal pra acima da dobra no mobile: 64% dos visitantes não vê",
 						"impact": "R$ 8k–20k/mês",
 						"buyer": "Diretoria",
 						"dot": "bg-amber-400"
@@ -333,7 +333,7 @@
 		},
 		"mini_calc_card": {
 			"eyebrow": "Análise gratuita instantânea",
-			"tagline": "Teste a Vestigio no seu próprio domínio — sem cadastro, sem cartão."
+			"tagline": "Teste a Vestigio no seu próprio domínio. Sem cadastro, sem cartão."
 		},
 		"faq": {
 			"title": "Perguntas frequentes",
@@ -341,23 +341,23 @@
 			"items": [
 				{
 					"question": "O que a Vestigio faz?",
-					"answer": "A Vestigio analisa sua operação ponta a ponta e entrega um Plano de Estratégia mensal — onde o dinheiro está vazando, quem precisa agir, qual o impacto em R$, e o que fazer primeiro. Cada Plano é assinado por Vestigio e atualiza a cada ciclo."
+					"answer": "A Vestigio analisa sua operação ponta a ponta e entrega um Plano de Estratégia mensal: onde o dinheiro está vazando, quem precisa agir, qual o impacto em R$, e o que fazer primeiro. Cada Plano é assinado por Vestigio e atualiza a cada ciclo."
 				},
 				{
 					"question": "Quanto tempo leva pra ter resultado?",
-					"answer": "A primeira análise fica pronta em 60 segundos. Seu Plano de Estratégia completo — com Tese do mês, Próximos passos priorizados e Continuidade — chega no início do mês seguinte. Os clientes que aplicam os primeiros passos costumam ver impacto já no mesmo ciclo."
+					"answer": "A primeira análise fica pronta em 60 segundos. Seu Plano de Estratégia completo (com Tese do mês, Próximos passos priorizados e Continuidade) chega no início do mês seguinte. Os clientes que aplicam os primeiros passos costumam ver impacto já no mesmo ciclo."
 				},
 				{
 					"question": "Precisa de desenvolvedor pra instalar?",
-					"answer": "Não. Você cola a URL do seu site e a Vestigio faz o resto — sem código, sem tag, sem integração técnica pra começar a análise."
+					"answer": "Não. Você cola a URL do seu site e a Vestigio faz o resto. Sem código, sem tag, sem integração técnica pra começar a análise."
 				},
 				{
 					"question": "É grátis? Qual o custo depois?",
-					"answer": "A primeira análise é gratuita, sem cartão. Depois, você assina um plano com um Plano de Estratégia por mês — análise contínua dos vazamentos identificados, atualização de ciclo, exportação em PDF e link compartilhável. Garantia 4× nos 30 primeiros dias."
+					"answer": "A primeira análise é gratuita, sem cartão. Depois, você assina um plano com um Plano de Estratégia por mês: análise contínua dos vazamentos identificados, atualização de ciclo, exportação em PDF e link compartilhável. Garantia 4× nos 30 primeiros dias."
 				},
 				{
 					"question": "Funciona com minha plataforma?",
-					"answer": "Sim. Vestigio analisa qualquer site — Shopify, WooCommerce, Nuvemshop, WordPress, sites customizados e landing pages. Se tem URL, a gente analisa."
+					"answer": "Sim. Vestigio analisa qualquer site: Shopify, WooCommerce, Nuvemshop, WordPress, sites customizados e landing pages. Se tem URL, a gente analisa."
 				}
 			]
 		},
@@ -449,7 +449,7 @@
 				"label": "O buraco",
 				"stat": "67%",
 				"caption": "dos visitantes somem entre o **clique** e a **compra**.",
-				"aside": "A conta do anúncio chega igual no fim do mês — você paga por cada um deles."
+				"aside": "A conta do anúncio chega igual no fim do mês. Você paga por cada um deles."
 			},
 			"ciclo": {
 				"label": "O ciclo",
@@ -504,7 +504,7 @@
 		"features_bento": {
 			"eyebrow": "ESTRUTURA DO PLANO",
 			"title": "Quatro seções por edição",
-			"subtitle": "Cada edição mensal traz a Tese, Onde você está, os Próximos passos, e a Continuidade — o que mudou desde a edição anterior.",
+			"subtitle": "Cada edição mensal traz a Tese, Onde você está, os Próximos passos, e a Continuidade: o que mudou desde a edição anterior.",
 			"tese": {
 				"eyebrow": "Qual é o problema deste mês",
 				"dateline": "Edição mais recente",
@@ -746,7 +746,7 @@
 			"roi_title": "Garantia 4X",
 			"roi_subtitle": "Se a Vestigio não achar 4× o valor do plano em perdas mensais, devolvemos 100%.",
 			"pulse_title": "Tese do mês",
-			"pulse_desc": "Cada análise abre com uma tese — a leitura central do ciclo, em R$, com próximos passos.",
+			"pulse_desc": "Cada análise abre com uma tese: a leitura central do ciclo, em R$, com próximos passos.",
 			"pulse_cta": "Veja um exemplo",
 			"monitoring_title": "Erros encontrados em horas",
 			"monitoring_desc": "",
@@ -789,7 +789,7 @@
 			"business_blog": "Blog / Notícias / Fórum",
 			"business_institutional": "Institucional",
 			"findings_found": "findings",
-			"showing_of": "Mostrando {shown} de {total} findings — crie uma conta para ver todos",
+			"showing_of": "Mostrando {shown} de {total} findings. Crie uma conta para ver todos",
 			"f_checkout_trust": "Indicadores de confiança no checkout ausentes",
 			"f_chargeback_exposure": "Exposição elevada a chargebacks detectada",
 			"f_payment_redirect_chain": "Cadeia de redirecionamentos no pagamento muito longa",
@@ -5512,7 +5512,7 @@
 			"trust_signal_gap": "Falta prova social onde o comprador decide",
 			"trust_signal": "Falta prova social onde o comprador decide",
 			"weak_cta_on_commercial": "Botão de compra sem força na página que vende",
-			"cta_clarity_weak_on_commercial": "Botão de compra sem clareza na página que vende",
+			"cta_clarity_weak_on_commercial": "Seus botões competem entre si e nenhum convence",
 			"pricing_confusion": "Preço confuso faz comprador voltar atrás",
 			"copy_pricing_confusion": "Preço confuso faz comprador voltar atrás",
 			"variant_selection_friction": "Comprador trava para escolher tamanho ou cor",
@@ -5651,7 +5651,6 @@
 			"form_error_messages_unhelpful": "Seus formulários espantam o comprador quando ele erra alguma coisa",
 			"onboarding_no_quick_win": "Seu onboarding não entrega uma vitória rápida nos primeiros minutos",
 			"checkout_trust_language_absent": "Seu checkout não diz pro comprador que é seguro comprar",
-			"cta_clarity_weak_on_commercial": "Seus botões competem entre si e nenhum convence",
 			"product_page_copy_generic": "Suas páginas de produto usam o texto genérico do fornecedor",
 			"pricing_page_framing_unclear": "Seu visitante não sabe qual plano escolher",
 			"checkout_abandonment_revenue_leak": "Seu checkout perde dinheiro toda vez que um comprador vai embora",

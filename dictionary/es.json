@@ -64,7 +64,7 @@
 		"hero_v2": {
 			"banner": {
 				"label": "Tesis del mes",
-				"message": "Cada análisis abre con la tesis central del ciclo — qué está costando dinero y qué hacer.",
+				"message": "Cada análisis abre con la tesis central del ciclo: qué está costando dinero y qué hacer.",
 				"cta": "Cómo funciona"
 			},
 			"headline_part1": "Hay dinero fugándose de tu operación.",
@@ -101,7 +101,7 @@
 		"hero_lp": {
 			"banner": {
 				"label": "Tesis del mes",
-				"message": "Cada análisis abre con la tesis central del ciclo — qué está costando dinero y qué hacer.",
+				"message": "Cada análisis abre con la tesis central del ciclo: qué está costando dinero y qué hacer.",
 				"cta": "Cómo funciona"
 			},
 			"headline_part1": "Cuánto dinero se está",
@@ -258,8 +258,8 @@
 						"tone": "emerald"
 					}
 				],
-				"narrative_lead": "La cobertura de política en la página inicial está **calibrada** y reteniendo ingresos. El tema dominante este ciclo es **copy desalineado** — donde la lectura del comprador rompe con la lectura del sitio.",
-				"narrative_detail": "Los títulos describían el producto sin comunicar la ganancia del comprador. En el checkout, un **redirect cross-domain** dispersó compradores calificados antes de la conversión. Ambos ya resueltos — **~$13k recuperados** este mes."
+				"narrative_lead": "La cobertura de política en la página inicial está **calibrada** y reteniendo ingresos. El tema dominante este ciclo es **copy desalineado**, donde la lectura del comprador rompe con la lectura del sitio.",
+				"narrative_detail": "Los títulos describían el producto sin comunicar la ganancia del comprador. En el checkout, un **redirect cross-domain** dispersó compradores calificados antes de la conversión. Ambos ya resueltos: **~$13k recuperados** este mes."
 			},
 			"step3": {
 				"heading": "Próximos pasos priorizados",
@@ -273,14 +273,14 @@
 					},
 					{
 						"n": "02",
-						"title": "Reducir el formulario de captura de 7 a 3 campos — el abandono cae a la mitad",
+						"title": "Reducir el formulario de captura de 7 a 3 campos. El abandono cae a la mitad",
 						"impact": "$4k–7k/mes",
 						"buyer": "Desarrollo",
 						"dot": "bg-sky-400"
 					},
 					{
 						"n": "03",
-						"title": "Mover el CTA principal sobre la dobla en mobile — 64% de los visitantes no lo ve",
+						"title": "Mover el CTA principal sobre la dobla en mobile: 64% de los visitantes no lo ve",
 						"impact": "$2k–4k/mes",
 						"buyer": "Liderazgo",
 						"dot": "bg-amber-400"
@@ -326,7 +326,7 @@
 		},
 		"mini_calc_card": {
 			"eyebrow": "Análisis gratuito instantáneo",
-			"tagline": "Prueba Vestigio en tu propio dominio — sin registro, sin tarjeta."
+			"tagline": "Prueba Vestigio en tu propio dominio. Sin registro, sin tarjeta."
 		},
 		"faq": {
 			"title": "Preguntas frecuentes",
@@ -334,23 +334,23 @@
 			"items": [
 				{
 					"question": "¿Qué hace Vestigio?",
-					"answer": "Vestigio analiza tu operación punta a punta y entrega un Plan de Estrategia mensual — dónde se fuga el dinero, quién debe actuar, el impacto en dólares, y qué hacer primero. Cada Plan está firmado por Vestigio y se actualiza en cada ciclo."
+					"answer": "Vestigio analiza tu operación punta a punta y entrega un Plan de Estrategia mensual: dónde se fuga el dinero, quién debe actuar, el impacto en dólares, y qué hacer primero. Cada Plan está firmado por Vestigio y se actualiza en cada ciclo."
 				},
 				{
 					"question": "¿Cuánto tiempo lleva ver resultado?",
-					"answer": "El primer análisis queda listo en 60 segundos. Tu Plan de Estrategia completo — con Tesis del mes, Próximos pasos priorizados y Continuidad — llega al inicio del mes siguiente. Los clientes que aplican los primeros pasos suelen ver impacto en el mismo ciclo."
+					"answer": "El primer análisis queda listo en 60 segundos. Tu Plan de Estrategia completo (con Tesis del mes, Próximos pasos priorizados y Continuidad) llega al inicio del mes siguiente. Los clientes que aplican los primeros pasos suelen ver impacto en el mismo ciclo."
 				},
 				{
 					"question": "¿Necesito un desarrollador para instalar?",
-					"answer": "No. Pegas tu URL y Vestigio hace el resto — sin código, sin tag, sin integración técnica para empezar el análisis."
+					"answer": "No. Pegas tu URL y Vestigio hace el resto. Sin código, sin tag, sin integración técnica para empezar el análisis."
 				},
 				{
 					"question": "¿Es gratis? ¿Cuál es el costo después?",
-					"answer": "El primer análisis es gratis, sin tarjeta. Después, te suscribes a un plan con un Plan de Estrategia por mes — análisis continuo de las fugas identificadas, actualización de ciclo, exportación en PDF y enlace compartible. Garantía 4× en los primeros 30 días."
+					"answer": "El primer análisis es gratis, sin tarjeta. Después, te suscribes a un plan con un Plan de Estrategia por mes: análisis continuo de las fugas identificadas, actualización de ciclo, exportación en PDF y enlace compartible. Garantía 4× en los primeros 30 días."
 				},
 				{
 					"question": "¿Funciona con mi plataforma?",
-					"answer": "Sí. Vestigio analiza cualquier sitio — Shopify, WooCommerce, BigCommerce, WordPress, builds customizados y landing pages. Si tiene URL, lo analizamos."
+					"answer": "Sí. Vestigio analiza cualquier sitio: Shopify, WooCommerce, BigCommerce, WordPress, builds customizados y landing pages. Si tiene URL, lo analizamos."
 				}
 			]
 		},
@@ -442,7 +442,7 @@
 				"label": "El hueco",
 				"stat": "67%",
 				"caption": "de los visitantes desaparecen entre el **clic** y la **compra**.",
-				"aside": "La factura del anuncio llega igual a fin de mes — pagas por cada uno de ellos."
+				"aside": "La factura del anuncio llega igual a fin de mes. Pagas por cada uno de ellos."
 			},
 			"ciclo": {
 				"label": "El ciclo",
@@ -497,7 +497,7 @@
 		"features_bento": {
 			"eyebrow": "ESTRUCTURA DEL PLAN",
 			"title": "Cuatro secciones por edición",
-			"subtitle": "Cada edición mensual trae la Tesis, Dónde estás, los Próximos pasos, y la Continuidad — lo que cambió desde la edición anterior.",
+			"subtitle": "Cada edición mensual trae la Tesis, Dónde estás, los Próximos pasos, y la Continuidad: lo que cambió desde la edición anterior.",
 			"tese": {
 				"eyebrow": "Cuál es el problema de este mes",
 				"dateline": "Edición más reciente",
@@ -739,7 +739,7 @@
 			"roi_title": "Garantía 4X",
 			"roi_subtitle": "Si Vestigio no encuentra 4× el valor de tu plan en pérdidas mensuales, devolvemos el 100%.",
 			"pulse_title": "Tesis del mes",
-			"pulse_desc": "Cada análisis abre con una tesis — la lectura central del ciclo, en dólares, con próximos pasos.",
+			"pulse_desc": "Cada análisis abre con una tesis: la lectura central del ciclo, en dólares, con próximos pasos.",
 			"pulse_cta": "Ver un ejemplo",
 			"monitoring_title": "Errores encontrados en horas",
 			"monitoring_desc": "",
@@ -782,7 +782,7 @@
 			"business_blog": "Blog / Noticias / Foro",
 			"business_institutional": "Institucional",
 			"findings_found": "findings",
-			"showing_of": "Mostrando {shown} de {total} findings — crea una cuenta para ver todos",
+			"showing_of": "Mostrando {shown} de {total} findings. Crea una cuenta para ver todos",
 			"f_checkout_trust": "Indicadores de confianza en el checkout ausentes",
 			"f_chargeback_exposure": "Exposición elevada a chargebacks detectada",
 			"f_payment_redirect_chain": "Cadena de redirecciones en pago muy larga",

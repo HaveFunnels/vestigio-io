@@ -142,7 +142,7 @@ export function ROICalculator({
                   style={{ textShadow: "0 0 40px rgba(16,185,129,0.3)" }}
                 >
                   {formatCurrency(results.recoveryLow, locale, currencySymbol)}
-                  {" — "}
+                  {" → "}
                   {formatCurrency(
                     results.recoveryHigh,
                     locale,

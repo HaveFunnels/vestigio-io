@@ -65,7 +65,7 @@ const ROW2_EN: Testimonial[] = [
     recovered: "+$5k/mo",
   },
   {
-    quote: "Showed the report to my partner — he approved the investment immediately. Numbers don't lie.",
+    quote: "Showed the report to my partner. He approved the investment immediately. Numbers don't lie.",
     name: "Rafael Santos",
     role: "CEO",
     company: "FunnelPro",

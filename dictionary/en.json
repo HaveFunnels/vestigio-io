@@ -64,7 +64,7 @@
 		"hero_v2": {
 			"banner": {
 				"label": "Thesis of the month",
-				"message": "Every analysis opens with the central thesis of the cycle — what's costing money and what to do.",
+				"message": "Every analysis opens with the central thesis of the cycle: what's costing money and what to do.",
 				"cta": "See how"
 			},
 			"headline_part1": "There's money leaking from your operation.",
@@ -81,7 +81,7 @@
 			"cta_secondary": "Watch product tour",
 			"cta_micro": "",
 			"trust_microcopy": {
-				"guarantee": "4X Guarantee — if we don't find 4x the plan value in opportunities, full refund.",
+				"guarantee": "4X Guarantee: if we don't find 4x the plan value in opportunities, full refund.",
 				"platforms": "Works with any platform."
 			},
 			"shell": {
@@ -108,7 +108,7 @@
 		"hero_lp": {
 			"banner": {
 				"label": "Thesis of the month",
-				"message": "Every analysis opens with the central thesis of the cycle — what's costing money and what to do.",
+				"message": "Every analysis opens with the central thesis of the cycle: what's costing money and what to do.",
 				"cta": "See how"
 			},
 			"headline_part1": "How much money is",
@@ -265,8 +265,8 @@
 						"tone": "emerald"
 					}
 				],
-				"narrative_lead": "Policy coverage on the home page is **calibrated** and holding revenue. The dominant theme this cycle is **misaligned copy** — where the buyer's reading breaks from the site's reading.",
-				"narrative_detail": "Headlines described the product without communicating the buyer's gain. At checkout, a **cross-domain redirect** dispersed qualified buyers before conversion. Both already resolved — **~$13k recovered** this month."
+				"narrative_lead": "Policy coverage on the home page is **calibrated** and holding revenue. The dominant theme this cycle is **misaligned copy**, where the buyer's reading breaks from the site's reading.",
+				"narrative_detail": "Headlines described the product without communicating the buyer's gain. At checkout, a **cross-domain redirect** dispersed qualified buyers before conversion. Both already resolved: **~$13k recovered** this month."
 			},
 			"step3": {
 				"heading": "Prioritized next steps",
@@ -280,14 +280,14 @@
 					},
 					{
 						"n": "02",
-						"title": "Cut the lead form from 7 fields to 3 — abandonment drops by half",
+						"title": "Cut the lead form from 7 fields to 3. Abandonment drops by half",
 						"impact": "$4k–7k/mo",
 						"buyer": "Eng",
 						"dot": "bg-sky-400"
 					},
 					{
 						"n": "03",
-						"title": "Move the primary CTA above the fold on mobile — 64% of visitors don't see it",
+						"title": "Move the primary CTA above the fold on mobile: 64% of visitors don't see it",
 						"impact": "$2k–4k/mo",
 						"buyer": "Leadership",
 						"dot": "bg-amber-400"
@@ -333,7 +333,7 @@
 		},
 		"mini_calc_card": {
 			"eyebrow": "Free instant analysis",
-			"tagline": "Test Vestigio on your own domain — no signup, no credit card."
+			"tagline": "Test Vestigio on your own domain. No signup, no credit card."
 		},
 		"faq": {
 			"title": "Frequently asked questions",
@@ -341,23 +341,23 @@
 			"items": [
 				{
 					"question": "What does Vestigio do?",
-					"answer": "Vestigio analyzes your operation end-to-end and delivers a monthly Strategy Plan — where money is leaking, who needs to act, the dollar impact, and what to do first. Every Plan is signed by Vestigio and refreshes each cycle."
+					"answer": "Vestigio analyzes your operation end-to-end and delivers a monthly Strategy Plan: where money is leaking, who needs to act, the dollar impact, and what to do first. Every Plan is signed by Vestigio and refreshes each cycle."
 				},
 				{
 					"question": "How long until I see results?",
-					"answer": "The first analysis is ready in 60 seconds. Your full Strategy Plan — with Thesis of the month, prioritized Next steps, and Continuity — arrives at the start of the following month. Customers who act on the first steps usually see impact within the same cycle."
+					"answer": "The first analysis is ready in 60 seconds. Your full Strategy Plan (with Thesis of the month, prioritized Next steps, and Continuity) arrives at the start of the following month. Customers who act on the first steps usually see impact within the same cycle."
 				},
 				{
 					"question": "Do I need a developer to install it?",
-					"answer": "No. You paste your URL and Vestigio does the rest — no code, no tag, no technical integration to start the analysis."
+					"answer": "No. You paste your URL and Vestigio does the rest. No code, no tag, no technical integration to start the analysis."
 				},
 				{
 					"question": "Is it free? What's the cost afterward?",
-					"answer": "The first analysis is free, no credit card. After that, you subscribe to a plan with one Strategy Plan per month — continuous analysis of identified leakage, cycle updates, PDF export, and a shareable link. 4× Guarantee in the first 30 days."
+					"answer": "The first analysis is free, no credit card. After that, you subscribe to a plan with one Strategy Plan per month: continuous analysis of identified leakage, cycle updates, PDF export, and a shareable link. 4× Guarantee in the first 30 days."
 				},
 				{
 					"question": "Does it work with my platform?",
-					"answer": "Yes. Vestigio analyzes any site — Shopify, WooCommerce, BigCommerce, WordPress, custom builds, and landing pages. If it has a URL, we analyze it."
+					"answer": "Yes. Vestigio analyzes any site: Shopify, WooCommerce, BigCommerce, WordPress, custom builds, and landing pages. If it has a URL, we analyze it."
 				}
 			]
 		},
@@ -449,7 +449,7 @@
 				"label": "The hole",
 				"stat": "67%",
 				"caption": "of visitors vanish between the **click** and the **purchase**.",
-				"aside": "The ad bill arrives just the same at the end of the month — you pay for every single one."
+				"aside": "The ad bill arrives just the same at the end of the month. You pay for every single one."
 			},
 			"ciclo": {
 				"label": "The cycle",
@@ -504,7 +504,7 @@
 		"features_bento": {
 			"eyebrow": "PLAN STRUCTURE",
 			"title": "Four sections per edition",
-			"subtitle": "Each monthly edition brings the Thesis, Where you are, the Next steps, and the Continuity — what changed since the previous edition.",
+			"subtitle": "Each monthly edition brings the Thesis, Where you are, the Next steps, and the Continuity: what changed since the previous edition.",
 			"tese": {
 				"eyebrow": "What is the problem this month",
 				"dateline": "Latest issue",
@@ -695,7 +695,7 @@
 				{
 					"name": "Marina Costa",
 					"designation": "Head of Growth, TechFlow",
-					"comment": "We were spending $40k/month on ads without knowing our checkout was broken on mobile. Vestigio found it in the first cycle — $18k/month recovered."
+					"comment": "We were spending $40k/month on ads without knowing our checkout was broken on mobile. Vestigio found it in the first cycle. $18k/month recovered."
 				},
 				{
 					"name": "Rafael Mendes",
@@ -705,7 +705,7 @@
 				{
 					"name": "Sarah Chen",
 					"designation": "Founder, ScaleKit",
-					"comment": "I used to spend 4 hours a week in GA4 trying to figure out what was wrong. Vestigio tells me what to fix Monday morning — with evidence I can show my investors."
+					"comment": "I used to spend 4 hours a week in GA4 trying to figure out what was wrong. Vestigio tells me what to fix Monday morning, with evidence I can show my investors."
 				},
 				{
 					"name": "Diego Alvarez",
@@ -746,7 +746,7 @@
 			"roi_title": "4X Guarantee",
 			"roi_subtitle": "If Vestigio doesn't find 4× your plan's value in monthly losses, we refund 100%.",
 			"pulse_title": "Thesis of the month",
-			"pulse_desc": "Every analysis opens with a thesis — the central read of the cycle, in dollars, with next steps.",
+			"pulse_desc": "Every analysis opens with a thesis: the central read of the cycle, in dollars, with next steps.",
 			"pulse_cta": "See an example",
 			"monitoring_title": "Errors caught in hours",
 			"monitoring_desc": "",
@@ -789,7 +789,7 @@
 			"business_blog": "Blog / News / Forum",
 			"business_institutional": "Institutional",
 			"findings_found": "findings",
-			"showing_of": "Showing {shown} of {total} findings — create an account to see all",
+			"showing_of": "Showing {shown} of {total} findings. Create an account to see all",
 			"f_checkout_trust": "Missing checkout trust indicators",
 			"f_chargeback_exposure": "Elevated chargeback exposure detected",
 			"f_payment_redirect_chain": "Payment redirect chain too long",

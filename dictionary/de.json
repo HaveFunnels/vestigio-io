@@ -64,7 +64,7 @@
 		"hero_v2": {
 			"banner": {
 				"label": "These des Monats",
-				"message": "Jede Analyse beginnt mit der zentralen These des Zyklus — was Geld kostet und was zu tun ist.",
+				"message": "Jede Analyse beginnt mit der zentralen These des Zyklus: was Geld kostet und was zu tun ist.",
 				"cta": "So funktioniert's"
 			},
 			"headline_part1": "Es leckt Geld aus Ihrem Betrieb.",
@@ -101,7 +101,7 @@
 		"hero_lp": {
 			"banner": {
 				"label": "These des Monats",
-				"message": "Jede Analyse beginnt mit der zentralen These des Zyklus — was Geld kostet und was zu tun ist.",
+				"message": "Jede Analyse beginnt mit der zentralen These des Zyklus: was Geld kostet und was zu tun ist.",
 				"cta": "So funktioniert's"
 			},
 			"headline_part1": "Wie viel Geld",
@@ -258,8 +258,8 @@
 						"tone": "emerald"
 					}
 				],
-				"narrative_lead": "Die Richtlinienabdeckung auf der Startseite ist **kalibriert** und hält Umsatz. Das dominante Thema dieses Zyklus ist **unausgerichteter Text** — wo die Lesart des Käufers von der Lesart der Seite abweicht.",
-				"narrative_detail": "Überschriften beschrieben das Produkt, ohne den Käufernutzen zu kommunizieren. Im Checkout vertrieb ein **domainübergreifender Redirect** qualifizierte Käufer vor der Conversion. Beide bereits behoben — **~12k € erholt** in diesem Monat."
+				"narrative_lead": "Die Richtlinienabdeckung auf der Startseite ist **kalibriert** und hält Umsatz. Das dominante Thema dieses Zyklus ist **unausgerichteter Text**, wo die Lesart des Käufers von der Lesart der Seite abweicht.",
+				"narrative_detail": "Überschriften beschrieben das Produkt, ohne den Käufernutzen zu kommunizieren. Im Checkout vertrieb ein **domainübergreifender Redirect** qualifizierte Käufer vor der Conversion. Beide bereits behoben: **~12k € erholt** in diesem Monat."
 			},
 			"step3": {
 				"heading": "Priorisierte nächste Schritte",
@@ -273,14 +273,14 @@
 					},
 					{
 						"n": "02",
-						"title": "Lead-Formular von 7 auf 3 Felder reduzieren — Abbruch halbiert sich",
+						"title": "Lead-Formular von 7 auf 3 Felder reduzieren. Abbruch halbiert sich",
 						"impact": "4k–7k €/Mon",
 						"buyer": "Entw.",
 						"dot": "bg-sky-400"
 					},
 					{
 						"n": "03",
-						"title": "Haupt-CTA auf mobile above-the-fold platzieren — 64% der Besucher sehen ihn nicht",
+						"title": "Haupt-CTA auf mobile above-the-fold platzieren: 64% der Besucher sehen ihn nicht",
 						"impact": "2k–4k €/Mon",
 						"buyer": "Leitung",
 						"dot": "bg-amber-400"
@@ -326,7 +326,7 @@
 		},
 		"mini_calc_card": {
 			"eyebrow": "Kostenlose Sofortanalyse",
-			"tagline": "Testen Sie Vestigio mit Ihrer eigenen Domain — ohne Anmeldung, ohne Kreditkarte."
+			"tagline": "Testen Sie Vestigio mit Ihrer eigenen Domain. Ohne Anmeldung, ohne Kreditkarte."
 		},
 		"faq": {
 			"title": "Häufig gestellte Fragen",
@@ -334,23 +334,23 @@
 			"items": [
 				{
 					"question": "Was macht Vestigio?",
-					"answer": "Vestigio analysiert Ihren Betrieb End-to-End und liefert einen monatlichen Strategieplan — wo Geld lecks, wer handeln muss, die Euro-Wirkung und was zuerst zu tun ist. Jeder Plan ist von Vestigio signiert und wird jeden Zyklus aktualisiert."
+					"answer": "Vestigio analysiert Ihren Betrieb End-to-End und liefert einen monatlichen Strategieplan: wo Geld lecks, wer handeln muss, die Euro-Wirkung und was zuerst zu tun ist. Jeder Plan ist von Vestigio signiert und wird jeden Zyklus aktualisiert."
 				},
 				{
 					"question": "Wie lange bis zum Ergebnis?",
-					"answer": "Die erste Analyse ist in 60 Sekunden fertig. Ihr vollständiger Strategieplan — mit These des Monats, priorisierten Nächsten Schritten und Kontinuität — kommt am Anfang des Folgemonats. Kunden, die die ersten Schritte umsetzen, sehen meist schon im selben Zyklus Wirkung."
+					"answer": "Die erste Analyse ist in 60 Sekunden fertig. Ihr vollständiger Strategieplan (mit These des Monats, priorisierten Nächsten Schritten und Kontinuität) kommt am Anfang des Folgemonats. Kunden, die die ersten Schritte umsetzen, sehen meist schon im selben Zyklus Wirkung."
 				},
 				{
 					"question": "Brauche ich einen Entwickler zur Installation?",
-					"answer": "Nein. Sie fügen Ihre URL ein und Vestigio macht den Rest — kein Code, kein Tag, keine technische Integration, um die Analyse zu starten."
+					"answer": "Nein. Sie fügen Ihre URL ein und Vestigio macht den Rest. Kein Code, kein Tag, keine technische Integration, um die Analyse zu starten."
 				},
 				{
 					"question": "Ist es kostenlos? Was kostet es danach?",
-					"answer": "Die erste Analyse ist kostenlos, ohne Kreditkarte. Danach abonnieren Sie einen Plan mit einem Strategieplan pro Monat — kontinuierliche Analyse der identifizierten Leckagen, Zyklus-Updates, PDF-Export und teilbarer Link. 4×-Garantie in den ersten 30 Tagen."
+					"answer": "Die erste Analyse ist kostenlos, ohne Kreditkarte. Danach abonnieren Sie einen Plan mit einem Strategieplan pro Monat: kontinuierliche Analyse der identifizierten Leckagen, Zyklus-Updates, PDF-Export und teilbarer Link. 4×-Garantie in den ersten 30 Tagen."
 				},
 				{
 					"question": "Funktioniert es mit meiner Plattform?",
-					"answer": "Ja. Vestigio analysiert jede Website — Shopify, WooCommerce, BigCommerce, WordPress, individuelle Builds und Landing Pages. Wenn es eine URL hat, analysieren wir es."
+					"answer": "Ja. Vestigio analysiert jede Website: Shopify, WooCommerce, BigCommerce, WordPress, individuelle Builds und Landing Pages. Wenn es eine URL hat, analysieren wir es."
 				}
 			]
 		},
@@ -442,7 +442,7 @@
 				"label": "Das Loch",
 				"stat": "67%",
 				"caption": "der Besucher verschwinden zwischen **Klick** und **Kauf**.",
-				"aside": "Die Werberechnung kommt am Monatsende trotzdem — Sie zahlen für jeden einzelnen."
+				"aside": "Die Werberechnung kommt am Monatsende trotzdem. Sie zahlen für jeden einzelnen."
 			},
 			"ciclo": {
 				"label": "Der Zyklus",
@@ -497,7 +497,7 @@
 		"features_bento": {
 			"eyebrow": "PLAN-STRUKTUR",
 			"title": "Vier Abschnitte pro Ausgabe",
-			"subtitle": "Jede monatliche Ausgabe enthält die These, Wo Sie stehen, die Nächsten Schritte und die Kontinuität — was sich seit der letzten Ausgabe geändert hat.",
+			"subtitle": "Jede monatliche Ausgabe enthält die These, Wo Sie stehen, die Nächsten Schritte und die Kontinuität: was sich seit der letzten Ausgabe geändert hat.",
 			"tese": {
 				"eyebrow": "Was ist das Problem dieses Monats",
 				"dateline": "Letzte Ausgabe",
@@ -738,7 +738,7 @@
 			"visibility_desc": "",
 			"roi_subtitle": "Sie können buchstäblich nicht verlieren.",
 			"pulse_title": "These des Monats",
-			"pulse_desc": "Jede Analyse beginnt mit einer These — die zentrale Lesart des Zyklus, in Euro, mit nächsten Schritten.",
+			"pulse_desc": "Jede Analyse beginnt mit einer These: die zentrale Lesart des Zyklus, in Euro, mit nächsten Schritten.",
 			"pulse_cta": "Beispiel ansehen",
 			"monitoring_title": "Fehler in Stunden gefunden",
 			"monitoring_desc": "",
@@ -781,7 +781,7 @@
 			"business_blog": "Blog / News / Forum",
 			"business_institutional": "Institutionell",
 			"findings_found": "Findings",
-			"showing_of": "Zeige {shown} von {total} Findings — erstellen Sie ein Konto, um alle zu sehen",
+			"showing_of": "Zeige {shown} von {total} Findings. Erstellen Sie ein Konto, um alle zu sehen",
 			"f_checkout_trust": "Fehlende Vertrauensindikatoren im Checkout",
 			"f_chargeback_exposure": "Erhöhte Chargeback-Exposition erkannt",
 			"f_payment_redirect_chain": "Zahlungsumleitungskette zu lang",
@@ -825,7 +825,7 @@
 		"pricing_cadence": {
 			"eyebrow": "DIE KADENZ",
 			"statement": "Entscheidung > Alarm.",
-			"body": "Vestigio ist eine Kadenz, kein Benachrichtigungsstrom. Findings erscheinen in Echtzeit, aber der Plan schließt den Zyklus. Was den Umsatz bewegt, ist Klarheit zur Entscheidung, was zuerst zu beheben ist — nicht noch eine Glocke, die läutet."
+			"body": "Vestigio ist eine Kadenz, kein Benachrichtigungsstrom. Findings erscheinen in Echtzeit, aber der Plan schließt den Zyklus. Was den Umsatz bewegt, ist Klarheit zur Entscheidung, was zuerst zu beheben ist: nicht noch eine Glocke, die läutet."
 		}
 	},
 	"footer": {

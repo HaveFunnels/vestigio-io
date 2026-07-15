@@ -70,8 +70,14 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 		plans[0]?.key ||
 		"";
 	const [selectedPlanKey, setSelectedPlanKey] = useState(defaultPlanKey);
+	// Wave 22.9 · war-room quick-win: default cycle is now "annually"
+	// (was "monthly"). At $30-50 blended CAC on FB/IG, monthly-Pro is
+	// barely 1× first-charge payback; annual-Pro is 8-12× and absorbs
+	// refunds. Default is the pricing decision under emotional-impulse
+	// DR conditions. Monthly stays available via toggle; stashed
+	// preference from prior visit still wins if it was explicitly monthly.
 	const [cycle, setCycle] = useState<Cycle>(
-		stashedCycle === "annually" ? "annually" : "monthly",
+		stashedCycle === "monthly" ? "monthly" : "annually",
 	);
 
 	// Keep state in sync once localStorage is read on mount.
@@ -491,18 +497,34 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 							</div>
 						)}
 
-						<div className="mt-4 flex items-baseline gap-1">
-							<span className="font-mono text-3xl font-bold tabular-nums text-content">
-								{formatBRL(priceCents)}
-							</span>
-							<span className="text-[12px] text-content-muted">
-								/{cycle === "monthly" ? "mês" : "ano"}
-							</span>
-						</div>
-
-						{cycle === "annually" && annualSavings > 0 && (
-							<div className="mt-2 text-[12px] text-emerald-700 dark:text-emerald-300">
-								Você economiza {formatBRL(annualSavings)} no ano.
+						{/* Wave 22.9 · war-room quick-win: on annual, show the
+						    monthly-equivalent as primary (mental accounting:
+						    R$16/mês reads smaller than R$1.910/ano) with the
+						    lump + savings badge underneath. On monthly, keep
+						    the direct "R$/mês" primary. */}
+						{cycle === "annually" ? (
+							<>
+								<div className="mt-4 flex items-baseline gap-1">
+									<span className="font-mono text-3xl font-bold tabular-nums text-content">
+										{formatBRL(Math.round(priceCents / 12))}
+									</span>
+									<span className="text-[12px] text-content-muted">/mês</span>
+								</div>
+								<div className="mt-1 text-[12px] text-content-muted">
+									Cobrado {formatBRL(priceCents)}/ano
+									{annualSavings > 0 && (
+										<span className="ml-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">
+											economize 20%
+										</span>
+									)}
+								</div>
+							</>
+						) : (
+							<div className="mt-4 flex items-baseline gap-1">
+								<span className="font-mono text-3xl font-bold tabular-nums text-content">
+									{formatBRL(priceCents)}
+								</span>
+								<span className="text-[12px] text-content-muted">/mês</span>
 							</div>
 						)}
 
@@ -517,17 +539,22 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 						</div>
 					</div>
 
-					{/* Trust: Garantia 4x */}
+					{/* Trust: Garantia 4× — canonicalized to 30-day timeframe.
+					    Previously "90 dias" here contradicted the war-room-
+					    canonical 30-day promise carried on hero, counter, mini-
+					    calc microcopy, pricing subheading and FAQ. Single
+					    clause everywhere kills the "sharp reader spots contradiction"
+					    smoke test that torches DR credibility. */}
 					<div className="flex items-start gap-3 rounded-2xl border border-edge bg-surface-inset p-4">
 						<div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
 							<ShieldCheck size={18} strokeWidth={2.2} />
 						</div>
 						<div className="min-w-0 flex-1">
 							<div className="font-[family-name:var(--font-fraunces)] text-[14px] font-medium text-content">
-								Garantia 4x
+								Garantia 4×
 							</div>
 							<p className="mt-0.5 text-[12px] leading-relaxed text-content-muted">
-								Recupere ao menos 4× em 90 dias ou devolvemos todo o valor.
+								100% do dinheiro de volta em 30 dias se a Vestigio não apontar 4× o valor do plano em vazamento mensal.
 							</p>
 						</div>
 					</div>

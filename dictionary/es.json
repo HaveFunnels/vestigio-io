@@ -97,7 +97,10 @@
 					"label": "Por edición"
 				}
 			],
-			"cta_primary_badge": "Gratis"
+			"cta_primary_badge": "Gratis",
+			"trust_microcopy": {
+				"guarantee": "Garantía: 100% del dinero de vuelta en 30 días si Vestigio no identifica 4× el valor del plan en fugas mensuales."
+			}
 		},
 		"hero_lp": {
 			"banner": {
@@ -139,7 +142,10 @@
 			"shell": {
 				"_deprecated": "moved to product_tour"
 			},
-			"cta_primary_badge": "Gratis"
+			"cta_primary_badge": "Gratis",
+			"trust_microcopy": {
+				"guarantee": "Garantía: 100% del dinero de vuelta en 30 días si Vestigio no identifica 4× el valor del plan en fugas mensuales."
+			}
 		},
 		"product_tour": {
 			"section_headline": "Plan de Estrategia · Tour guiado",
@@ -348,7 +354,7 @@
 				},
 				{
 					"question": "¿Es gratis? ¿Cuál es el costo después?",
-					"answer": "El primer análisis es gratis, sin tarjeta. Después, te suscribes a un plan con un Plan de Estrategia por mes: análisis continuo de las fugas identificadas, actualización de ciclo, exportación en PDF y enlace compartible. Garantía 4× en los primeros 30 días."
+					"answer": "El primer análisis es gratis, sin tarjeta. Después, te suscribes a un plan con un Plan de Estrategia por mes: análisis continuo de las fugas identificadas, actualización de ciclo, exportación en PDF y enlace compartible. Garantía 4×: 100% del dinero de vuelta en 30 días si Vestigio no identifica 4× el valor del plan en fugas mensuales."
 				},
 				{
 					"question": "¿Funciona con mi plataforma?",
@@ -608,58 +614,6 @@
 				}
 			]
 		},
-		"pricing_section": {
-			"title": "Precios Simples y Accesibles",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
-			"subscription": "mensual",
-			"plans": [
-				{
-					"name": "Básico",
-					"for": "Para Individuos",
-					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
-					"included": {
-						"title": "Qué incluye",
-						"items": [
-							"Todas las funciones básicas",
-							"Hasta 1,000,000 de visitas rastreadas",
-							"Soporte premium por email",
-							"Hasta 03 miembros del equipo"
-						]
-					},
-					"cta": "Comenzar"
-				},
-				{
-					"name": "Pro",
-					"for": "Para Startups",
-					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
-					"included": {
-						"title": "Qué incluye",
-						"items": [
-							"Todas las funciones básicas",
-							"Hasta 1,000,000 de visitas rastreadas",
-							"Soporte premium por email",
-							"Hasta 03 miembros del equipo"
-						]
-					},
-					"cta": "Comenzar"
-				},
-				{
-					"name": "Empresarial",
-					"for": "Para grandes empresas",
-					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
-					"included": {
-						"title": "Qué incluye",
-						"items": [
-							"Todas las funciones básicas",
-							"Hasta 1,000,000 de visitas rastreadas",
-							"Soporte premium por email",
-							"Hasta 03 miembros del equipo"
-						]
-					},
-					"cta": "Comenzar"
-				}
-			]
-		},
 		"faq_section": {
 			"title": "Preguntas Frecuentes",
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
@@ -683,50 +637,8 @@
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
 			"cta": "Probar Demo en Vivo"
 		},
-		"testimonials_section": {
-			"title": "Amado por empresas en todo el mundo.",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",
-			"items": [
-				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
-				},
-				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
-				},
-				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
-				},
-				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus."
-				},
-				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
-				},
-				{
-					"name": "Devid warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros"
-				}
-			]
-		},
 		"counter_section": {
 			"title": "Los números hablan por sí mismos"
-		},
-		"newsletter_section": {
-			"title": "Suscríbete al boletín",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
-			"input": "Ingresa tu email",
-			"cta": "Suscribirse"
 		},
 		"latest_blog_section": {
 			"title": "Últimos Blogs y Noticias",
@@ -738,8 +650,8 @@
 			"quick_start_desc": "Pega tu URL. Sin código, sin tag, sin onboarding.",
 			"visibility_title": "Revisamos 15.000 señales en tu sitio",
 			"visibility_desc": "15.000 señales revisadas por análisis: checkout, funnel, mobile, scripts, ads, SEO.",
-			"roi_title": "Garantía 4X",
-			"roi_subtitle": "Si Vestigio no encuentra 4× el valor de tu plan en pérdidas mensuales, devolvemos el 100%.",
+			"roi_title": "Garantía 4×",
+			"roi_subtitle": "100% del dinero de vuelta en 30 días si Vestigio no identifica 4× el valor del plan en fugas mensuales.",
 			"pulse_title": "Tesis del mes",
 			"pulse_desc": "Cada análisis abre con una tesis: la lectura central del ciclo, en dólares, con próximos pasos.",
 			"pulse_cta": "Ver un ejemplo",
@@ -815,11 +727,11 @@
 			"f_admin_panel_exposed": "Panel admin descubrible externamente",
 			"f_error_pages_unbranded": "Páginas de error perdiendo visitantes sin recuperación",
 			"f_social_proof_missing": "Prueba social ausente en puntos clave de decisión",
-			"cta_price_microcopy": "US$19/mes · Garantía 4× en 30 días"
+			"cta_price_microcopy": "US$19/mes · Garantía 4×, 30 días, 100% de vuelta"
 		},
 		"pricing_heading": {
 			"heading": "Mira exactamente lo que estás perdiendo todos los meses.",
-			"subheading": "Recibe un Plan de Estrategia que te dice qué hacer. Análisis continuo, exportación en PDF y enlace compartible. Garantía 4×."
+			"subheading": "Recibe un Plan de Estrategia que te dice qué hacer. Análisis continuo, exportación en PDF y enlace compartible. Garantía 4×: 100% de vuelta en 30 días si no identificamos 4× el plan en fugas."
 		},
 		"sticky_cta": {
 			"hook": "Mira dónde tu facturación se fuga.",
@@ -9513,7 +9425,8 @@
 					"history": "Histórico mes a mes de lo que cambió y cuánto recuperó",
 					"map": "Mapa de causa raíz: hallazgo → embudo → impacto en $"
 				},
-				"trust_line": "Acceso inmediato tras el pago. Cancela cuando quieras."
+				"trust_line": "Acceso inmediato tras el pago. Cancela cuando quieras.",
+				"guarantee_title": "Garantía 4×, 30 días, 100% de vuelta"
 			},
 			"map": {
 				"title": "Problemas en tu embudo",

@@ -97,7 +97,10 @@
 					"label": "Pro Ausgabe"
 				}
 			],
-			"cta_primary_badge": "Kostenlos"
+			"cta_primary_badge": "Kostenlos",
+			"trust_microcopy": {
+				"guarantee": "Garantie: 100% Geld zurück innerhalb von 30 Tagen, wenn Vestigio nicht 4× den Planwert an monatlichen Umsatzlecks identifiziert."
+			}
 		},
 		"hero_lp": {
 			"banner": {
@@ -139,7 +142,10 @@
 			"shell": {
 				"_deprecated": "moved to product_tour"
 			},
-			"cta_primary_badge": "Kostenlos"
+			"cta_primary_badge": "Kostenlos",
+			"trust_microcopy": {
+				"guarantee": "Garantie: 100% Geld zurück innerhalb von 30 Tagen, wenn Vestigio nicht 4× den Planwert an monatlichen Umsatzlecks identifiziert."
+			}
 		},
 		"product_tour": {
 			"section_headline": "Strategieplan · Geführte Tour",
@@ -348,7 +354,7 @@
 				},
 				{
 					"question": "Ist es kostenlos? Was kostet es danach?",
-					"answer": "Die erste Analyse ist kostenlos, ohne Kreditkarte. Danach abonnieren Sie einen Plan mit einem Strategieplan pro Monat: kontinuierliche Analyse der identifizierten Leckagen, Zyklus-Updates, PDF-Export und teilbarer Link. 4×-Garantie in den ersten 30 Tagen."
+					"answer": "Die erste Analyse ist kostenlos, ohne Kreditkarte. Danach abonnieren Sie einen Plan mit einem Strategieplan pro Monat: kontinuierliche Analyse der identifizierten Leckagen, Zyklus-Updates, PDF-Export und teilbarer Link. 4×-Garantie: 100% Geld zurück innerhalb von 30 Tagen, wenn Vestigio nicht 4× den Planwert an monatlichen Umsatzlecks identifiziert."
 				},
 				{
 					"question": "Funktioniert es mit meiner Plattform?",
@@ -608,58 +614,6 @@
 				}
 			]
 		},
-		"pricing_section": {
-			"title": "Einfache und erschwingliche Preise",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
-			"subscription": "monatlich",
-			"plans": [
-				{
-					"name": "Basic",
-					"for": "Für Einzelpersonen",
-					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
-					"included": {
-						"title": "Was enthalten ist",
-						"items": [
-							"Alle Grundfunktionen",
-							"Bis zu 1.000.000 verfolgte Besuche",
-							"Premium E-Mail-Support",
-							"Bis zu 03 Teammitglieder"
-						]
-					},
-					"cta": "Loslegen"
-				},
-				{
-					"name": "Pro",
-					"for": "Für Startups",
-					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
-					"included": {
-						"title": "Was enthalten ist",
-						"items": [
-							"Alle Grundfunktionen",
-							"Bis zu 1.000.000 verfolgte Besuche",
-							"Premium E-Mail-Support",
-							"Bis zu 03 Teammitglieder"
-						]
-					},
-					"cta": "Loslegen"
-				},
-				{
-					"name": "Enterprise",
-					"for": "Für große Unternehmen",
-					"description": "Lorem ipsum dolor sit amet dolorol met conse ctetur adipiscing elit.",
-					"included": {
-						"title": "Was enthalten ist",
-						"items": [
-							"Alle Grundfunktionen",
-							"Bis zu 1.000.000 verfolgte Besuche",
-							"Premium E-Mail-Support",
-							"Bis zu 03 Teammitglieder"
-						]
-					},
-					"cta": "Loslegen"
-				}
-			]
-		},
 		"faq_section": {
 			"title": "Häufig gestellte Fragen",
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
@@ -683,50 +637,8 @@
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
 			"cta": "Live-Demo testen"
 		},
-		"testimonials_section": {
-			"title": "Geliebt von Unternehmen weltweit.",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam",
-			"items": [
-				{
-					"name": "Devid Warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
-				},
-				{
-					"name": "Devid Warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
-				},
-				{
-					"name": "Devid Warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros."
-				},
-				{
-					"name": "Devid Warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus."
-				},
-				{
-					"name": "Devid Warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
-				},
-				{
-					"name": "Devid Warner",
-					"designation": "CEO, ABC Company",
-					"comment": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam pulvinar eu mauris sit amet, pretium scelerisque eros"
-				}
-			]
-		},
 		"counter_section": {
 			"title": "Zahlen, die für sich selbst sprechen"
-		},
-		"newsletter_section": {
-			"title": "Newsletter abonnieren",
-			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam.",
-			"input": "Geben Sie Ihre E-Mail ein",
-			"cta": "Abonnieren"
 		},
 		"latest_blog_section": {
 			"title": "Neueste Blogs & News",
@@ -738,14 +650,15 @@
 			"quick_start_desc": "Starten Sie in Sekunden, nur mit Ihrer Domain.",
 			"visibility_title": "Wir prüfen 15.000 Signale auf Ihrer Website",
 			"visibility_desc": "15.000 Signale pro Analyse: Checkout, Funnel, Mobile, Skripte, Ads, SEO.",
-			"roi_subtitle": "Sie können buchstäblich nicht verlieren.",
+			"roi_subtitle": "100% Geld zurück innerhalb von 30 Tagen, wenn Vestigio nicht 4× den Planwert an monatlichen Umsatzlecks identifiziert.",
 			"pulse_title": "These des Monats",
 			"pulse_desc": "Jede Analyse beginnt mit einer These: die zentrale Lesart des Zyklus, in Euro, mit nächsten Schritten.",
 			"pulse_cta": "Beispiel ansehen",
 			"monitoring_title": "Fehler in Stunden gefunden",
 			"monitoring_desc": "Jede Website-Änderung wird mit dem vorherigen Zyklus verglichen. Kritische Regressionen in Stunden, nicht Wochen.",
 			"integrations_title": "Funktioniert mit jeder Website",
-			"integrations_desc": "Shopify, WordPress, Webflow, Framer, Next.js, individuelle Seiten. Öffnet es sich im Browser, liest es Vestigio."
+			"integrations_desc": "Shopify, WordPress, Webflow, Framer, Next.js, individuelle Seiten. Öffnet es sich im Browser, liest es Vestigio.",
+			"roi_title": "4×-Garantie"
 		},
 		"mini_calculator": {
 			"title": "Sehen Sie, wo Ihre Umsätze lecken.",
@@ -814,11 +727,11 @@
 			"f_admin_panel_exposed": "Admin-Panel extern auffindbar",
 			"f_error_pages_unbranded": "Fehlerseiten verlieren Besucher ohne Wiederherstellung",
 			"f_social_proof_missing": "Social Proof fehlt an wichtigen Entscheidungspunkten",
-			"cta_price_microcopy": "€19/Monat · 4× Garantie in 30 Tagen"
+			"cta_price_microcopy": "€19/Monat · 4×-Garantie, 30 Tage, 100% zurück"
 		},
 		"pricing_heading": {
 			"heading": "Sehen Sie genau, was Sie jeden Monat verlieren.",
-			"subheading": "Erhalten Sie einen Strategieplan, der Ihnen sagt, was zu tun ist. Kontinuierliche Analyse, PDF-Export und teilbarer Link. 4×-Garantie."
+			"subheading": "Erhalten Sie einen Strategieplan, der Ihnen sagt, was zu tun ist. Kontinuierliche Analyse, PDF-Export und teilbarer Link. 4×-Garantie: 100% zurück in 30 Tagen, wenn wir nicht 4× den Planwert an Lecks identifizieren."
 		},
 		"sticky_cta": {
 			"hook": "Sehen Sie, wo Ihr Umsatz leckt.",
@@ -8032,7 +7945,8 @@
 					"history": "Monat-für-Monat-Historie: was sich geändert hat und wie viel zurückkam",
 					"map": "Ursache-Karte: Befund → Funnel → € Wirkung"
 				},
-				"trust_line": "Sofortiger Zugang nach Zahlung. Jederzeit kündbar."
+				"trust_line": "Sofortiger Zugang nach Zahlung. Jederzeit kündbar.",
+				"guarantee_title": "4×-Garantie, 30 Tage, 100% zurück"
 			},
 			"map": {
 				"title": "Probleme in Ihrem Funnel",

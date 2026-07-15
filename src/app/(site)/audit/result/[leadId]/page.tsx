@@ -14,7 +14,7 @@ import {
   Target,
   ShieldHalf
 } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -39,6 +39,7 @@ import { trackLpEvent } from "@/lib/lp-audit-track";
 import { PREVIEW_SCENARIOS } from "@/lib/lp-audit-preview-scenarios";
 import MiniFunnelMap from "@/components/lp/MiniFunnelMap";
 import CopilotPanel from "@/components/lp/CopilotPanel";
+import ShareBar from "@/components/audit/ShareBar";
 
 // ──────────────────────────────────────────────
 // /audit/result/[leadId] — Mini-Audit Result
@@ -538,6 +539,21 @@ export default function MiniAuditResultPage() {
 						launching={launching}
 					/>
 
+					{/* Wave 22.9 · war-room quick-win (Missing #2) — native share
+					    bar activates the pre-existing per-leadId OG image
+					    infrastructure at src/app/(site)/audit/result/[leadId]/opengraph-image.tsx.
+					    Peer-share is the highest-ROI acquisition channel in DR
+					    when the free result is emotionally striking. Only
+					    shows after reveal, when the buyer has already seen
+					    the R$ number and is at peak emotional intent. */}
+					{revealed && lead.domain && (
+						<ResultShareBar
+							domain={lead.domain}
+							negativeFindings={negativeFindings}
+							leadId={leadId ?? ""}
+						/>
+					)}
+
 					{/* FAQ — last buyer surface before they leave the page
 					    or click create account. signup-flow-cro principle:
 					    answer the 6 objections that are actively live in
@@ -593,6 +609,35 @@ export default function MiniAuditResultPage() {
 			/>
 			{previewWidget}
 		</>
+	);
+}
+
+// ──────────────────────────────────────────────
+// ResultShareBar — thin wrapper that computes the top-finding impact
+// label + reads the active locale via useLocale, keeping the outer
+// call site enxuto. Wave 22.9 · war-room quick-win (Missing #2).
+// ──────────────────────────────────────────────
+function ResultShareBar({
+	domain,
+	negativeFindings,
+	leadId,
+}: {
+	domain: string;
+	negativeFindings: MiniFinding[];
+	leadId: string;
+}) {
+	const locale = useLocale();
+	const shareSummary = summarizeMiniImpact(negativeFindings.map((f) => f.impact));
+	const impactLabel = shareSummary && shareSummary.count > 0
+		? `${formatBRL(shareSummary.max_brl_cents)}/mês`
+		: "milhares/mês";
+	return (
+		<ShareBar
+			domain={domain}
+			topImpactLabel={impactLabel}
+			leadId={leadId}
+			locale={locale}
+		/>
 	);
 }
 

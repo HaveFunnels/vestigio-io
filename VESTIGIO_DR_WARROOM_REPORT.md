@@ -11,7 +11,7 @@ _Consensus report from a 15-character sealed war room (5 clusters × 3 skills ea
 ### Top 5 movements
 
 1. Wire Meta Pixel + CAPI, Google Ads gtag + Enhanced Conversions, TikTok Pixel + Events API — server-side, deduped on the event_id TrackingScript already emits, with EMQ acceptance criterion (hashed email + hashed phone + IP + user-agent + fbc/fbp + external_id) targeting 8.0+ per event. Every paid recommendation in this report is downstream of this — verified grep-empty today, ad spend before this ships is money burned during learning-phase-that-never-exits. 8-12 engineering days, Meta first then Google then TikTok, do not block Meta launch waiting for TikTok.
-2. Fix 4 credibility bombs before ANY new ad flight (all ship-blocking, all 1-day-or-less each): (a) canonicalize Garantia 4X to ONE clause across all surfaces + 4 locales — 'Garantia: 100% do dinheiro de volta em 30 dias se a Vestigio não apontar 4× o valor do plano em vazamento mensal' — lead with 100%-back, 4X as proof point, kill the shipped 90-day EN variant that contradicts the 30-day promise, position adjacent to every buy button not in sidebar; (b) delete '20.000 empresas' overclaim from ClientGallery — one screenshot in a BR founder WhatsApp group is a 60-day CAC penalty; (c) rewrite pricing_section.plans[*].description (Lorem Ipsum + SaaS-analytics feature bullets like 'Até 1.000.000 visitas rastreadas / Até 03 membros da equipe' — verified rendering on /pricing + /activate via pricingData.ts) to revenue-leak-diagnosis outcome copy; (d) resolve 287 German __TODO__ strings on the /activate paywall (verified in de.json — DE checkout literally prints '__TODO__ __TODO__ __TODO__' today) with native DE copywriter (do NOT machine-translate the guarantee or paywall — use 'entgehen', not 'lecken').
+2. Fix 4 credibility bombs before ANY new ad flight (all ship-blocking, all 1-day-or-less each): (a) canonicalize Garantia 4X to ONE clause across all surfaces + 4 locales — 'Garantia: 100% do dinheiro de volta em 30 dias se a Vestigio não apontar 4× o valor do plano em vazamento mensal' — lead with 100%-back, 4X as proof point, kill the shipped 90-day EN variant that contradicts the 30-day promise, position adjacent to every buy button not in sidebar; (b) delete dead Lorem Ipsum residuals (testimonials, newsletter, pricing_section — all dead code, 0 external refs); (c) resolve 287 German __TODO__ strings on the /activate paywall (verified in de.json — DE checkout literally prints '__TODO__ __TODO__ __TODO__' today) with native DE copywriter (do NOT machine-translate the guarantee or paywall — use 'entgehen', not 'lecken').
 3. Ship the AOV stack that requires zero acquisition dependency: (a) order bump at /activate = 'Entrega Prioritária, primeira edição em 48h — +R$147' (Priority Delivery replaces the killed 'Competitor Comparison' — on-thesis, near-zero delivery cost); (b) post-purchase OTO interstitial before /app redirect ('upgrade to Max at discounted rate, 60-second window'); (c) abandoned-checkout 3-email drip (T+1h/T+24h/T+72h) — leadId + email already captured, pure backend work; (d) native share buttons on /audit/result (WhatsApp / X / LinkedIn / Copy Link) with pre-filled copy naming top R$ finding — activates the already-shipped opengraph-image.tsx per-leadId OG image, highest ROI-per-engineering-hour in the entire war room.
 4. Kill every checkout structural break in one activation sprint: (a) cut /audit from 7-8 to 3 screens (domain → business_type → email), move revenue/concern/current_method/why_now to progressive profiling on /audit/result AFTER buyer sees findings — fire pixel events per abandoned step so retargeting audiences survive the reduced surface (Traffic-ads' audience concern reconciled with Funnel-CRO's throughput fix); (b) default paywall cycle to annually (2-line change in ActivatePaywall.tsx line 73-75); (c) native USD/EUR/MXN pricing per locale via getLocalCurrency() router (kill hardcoded formatBRL — verified in ActivatePaywall.tsx line 41-48, German buyer literally sees Reais today); (d) Apple Pay + Google Pay wallet buttons above tabs on /activate; (e) BR 12x installment display ('12x R$16 sem juros'); (f) hide CPF field for non-BR, route non-BR to Paddle-only.
 5. Ship '9 Vazamentos' PDF lead magnet as Meta Lead Ad NATIVE FORM (not just LP conversion) with 4-email nurture ending at /audit — 4 locales (pt-BR/en/es/de), each ~12-page PDF (one leak per page + example screenshot + R$ typical impact + CTA to /audit). Meta Lead Ad conversion is 8-15% on cold IG/FB vs 1-3% LP-click conversion for the same audience — turns retargetable pool from 2% (audit completers) to 40-60% (email captures), math-critical at realistic 0.1-0.5% session-1 paid conversion rates. Exit-intent recovery on /audit for form abandoners uses the same PDF as consolation. Fifth-most-important move because it multiplies against #1 (pixels), #3 (share tail), and #4 (activation) — without it, cold-Meta CAC ceiling makes $500K math impossible.
@@ -108,7 +108,7 @@ _9 of 10 shipped in commit d0fd9ca4 (hero CTA + badge, subtitle, secondary CTA r
 
 ---
 
-## 🔧 Improve / Rework — 16 items
+## 🔧 Improve / Rework — 25 items
 
 ### 1. Ad-platform conversion infrastructure — pixels + CAPI + EMQ across Meta / Google / TikTok
 
@@ -178,34 +178,6 @@ _9 of 10 shipped in commit d0fd9ca4 (hero CTA + badge, subtitle, secondary CTA r
 **Risk If Skipped:** Leaving 25-50% AOV expansion + viral loop on the floor at the moment ad spend is scaling — direct dollars uncollected.
 **Owner Cluster:** funnel-cro (bump + OTO) with lead-acquisition-social (share copy per locale)
 
-### 6. Canonicalize Garantia 4X clause + position adjacent to every CTA + resolve 30-vs-90-day contradiction
-
-**Current:** Three formulations shipping in prod: (a) Hero trust 'se não encontrar 4x o valor do plano, devolvemos 100%' (no timeframe), (b) Counter 'em perdas mensais, devolvemos 100%' (no timeframe), (c) /audit result EN 'Recover at least 4x what you paid within 90 days' (contradicts brief-stated 30-day). Positioned in sidebar aside, not adjacent to buy button.
-
-**Proposed:** ONE canonical clause everywhere: 'Garantia: 100% do dinheiro de volta em 30 dias se a Vestigio não apontar 4× o valor do plano em vazamento mensal.' EN 'Guarantee: 100% money back in 30 days if Vestigio does not identify 4× your plan value in monthly leaks.' Lead with 100%-back (binary the buyer parses instantly), 4X as proof point. Two-word badge variant near every buy button: '4× ou 100% de volta'. Position INLINE below Pay button (duplicate from sidebar) on /activate. Same clause on Hero, MiniCalc result, /audit result CTA cluster, /activate, and /pricing.
-
-**Why:** Guarantee is the load-bearing DR trust asset — three inconsistent formulations with contradicting timeframes is a smoking gun for any operator who reads carefully (and cold DR buyers DO read the guarantee at decision moment). Growth-revenue's self-punishing +R$200 bonus was killed by every critic — creates unbounded liability + PROCON exposure + Wanamaker 'too-good = scam' filter. Positioning + Traffic-ads' merged clause is enforceable, consistent, and legally defensible.
-
-**Effort:** S
-**Impact:** high
-**Risk If Skipped:** Guarantee inconsistency undermines the single largest checkout-conversion lever in DR at low awareness. Also: shipping 90-day EN copy against brief-stated 30-day is a Reclame Aqui / consumer-protection landmine at scale.
-
-**Owner Cluster:** positioning
-
-### 7. Delete dead testimonials/newsletter Lorem
-
-**Current:** json lines 616-670: pricing_section.plans still contains 'Basic/Pro/Empresarial' with 'Lorem ipsum dolor sit amet' descriptions AND SaaS-analytics feature bullets ('Até 1.000.000 de visitas rastreadas', 'Até 03 membros da equipe') — this IS what /pricing + /activate render via getPricingData(). (b) dictionary/pt-BR.json:691-725 testimonials_section + :730-735 newsletter_section still contain Lorem Ipsum — verified NOT rendered (Home/index.tsx doesn't import) but strings ship in JSON bundle.
-
-**Proposed:** Rewrite all three pricing tier bodies to leak-diagnosis outcome language. Example Pro: name='Pro', for='Para negócios de R$50k-500k/mês', description='Achamos o vazamento em 60s. Você fecha em 4 passos. Todo mês.', included.items=['Plano mensal com tese central', '9 vazamentos identificados (média)', 'R$ exato em cada finding', '4 passos priorizados por edição', 'Pix, cartão, boleto', 'Garantia: 100% de volta em 30 dias se não achar 4×']. Zero SaaS-analytics vocabulary. (c) Delete dead testimonials + newsletter Lorem blocks from all 4 locale dicts as hygiene cleanup — defense-in-depth against ad-review crawl + accidental re-enablement.
-
-**Why:** The pricing_section Lorem is the LIVE Lorem that renders on the money page — brief mis-flagged; Growth-revenue caught the actual crisis. SaaS-analytics bullets ('visitas rastreadas', 'membros') position Vestigio AS Google Analytics — kills the entire category wedge. Dead Lorem in JSON bundle = ad-review crawl fingerprint + git-hazard for accidental re-enablement.
-
-**Effort:** S
-**Impact:** critical
-**Risk If Skipped:** Ship ads to a page with Lorem tier descriptions + analytics-tool feature bullets = confidence-killer worse than any positioning polish can fix downstream.
-
-**Owner Cluster:** positioning (copy) + growth-revenue (pricing card review)
-
 ### 8. Ship German locale — resolve 287 __TODO__ placeholders on the conversion path first
 
 **Current:** de.json contains 287 __TODO__ strings including activate.plans.vestigio.name/price/features all set to '__TODO__'. DE hero + Counter + FAQ are translated, but the paying part of the flow renders literal '__TODO__ __TODO__ __TODO__'.
@@ -261,20 +233,6 @@ _9 of 10 shipped in commit d0fd9ca4 (hero CTA + badge, subtitle, secondary CTA r
 **Risk If Skipped:** Bleeding mobile conversion vs any competitor with wallet support. Non-BR ad spend is wasted at CPF wall. BR paywall reads as expensive.
 
 **Owner Cluster:** funnel-cro
-
-### 12. Default paywall cycle to annually + display annual as 'R$16/mês (cobrado R$1.910/ano — economize 20%)'
-
-**Current:** ActivatePaywall.tsx line 73-75: cycle defaults to 'monthly' unless localStorage stashed 'annually'. Annual displayed as lump R$1.910.
-
-**Proposed:** Change default cycle state to 'annually'. Monthly stays available via toggle click. Display format: annual lump PRIMARY ('R$1.910/ano') with monthly-equivalent SECONDARY ('equivale a R$16/mês, economize 20% vs mensal'). BR consumer-protection norms require transparent lump display first — flipping to monthly-first primary (Growth-revenue's original) creates chargeback exposure when the R$1.910 hits the statement 14 days later. Keep Starter tier VISIBLE as decoy anchor (Growth-revenue's 'kill Starter' was overruled — Starter creates the R$99 anchor that makes Pro feel reasonable at R$199).
-
-**Why:** Monthly-Pro R$199 (~US$40) is barely 1X payback at $30-50 FB CAC; annual-Pro R$1.910 is 8-12X payback on first charge and absorbs refunds. Default IS the pricing decision under emotional-impulse conditions. 2-line code change.
-
-**Effort:** S
-**Impact:** high
-**Risk If Skipped:** Monthly-Starter/Pro cohort is CAC-negative for first 90 days at target CAC bands; unit economics never cross 3:1 LTV:CAC.
-
-**Owner Cluster:** growth-revenue
 
 ### 13. First-Plano-delivery SLA + Day-1 preview Plano bridge deliverable — hardened inside the 30-day guarantee window
 
@@ -334,7 +292,7 @@ _9 of 10 shipped in commit d0fd9ca4 (hero CTA + badge, subtitle, secondary CTA r
 
 ---
 
-## ❗ Missing — create from zero — 14 items
+## ❗ Missing — create from zero — 12 items
 
 ### 1. '9 Vazamentos' PDF lead magnet in 4 locales — deployed as Meta Lead Ad NATIVE FORM (not just LP conversion) + exit-intent recovery on /audit + 4-email nurture sequence ending at /audit
 
@@ -343,14 +301,6 @@ _9 of 10 shipped in commit d0fd9ca4 (hero CTA + badge, subtitle, secondary CTA r
 **Effort:** L
 **Impact:** critical
 **Owner Cluster:** lead-acquisition-social (creative + lead magnet) with traffic-ads (Meta Lead Ad campaign setup + audience configuration)
-
-### 2. Native share buttons on /audit/result/[leadId] — WhatsApp / X / LinkedIn / Copy Link — pre-filled with top R$ finding, activates already-shipped dynamic OG image per leadId
-
-**Why:** opengraph-image.tsx exists at /audit/result/[leadId] and serves dynamic 1200x630 PNG per leadId (domain + findings count + top-finding headline) cached at edge — verified in code. But audit/result/[leadId]/page.tsx (2,955 lines) has ZERO share/whatsapp/twitter/linkedin/clipboard tokens. The infra is deployed; only the UI trigger is missing. Buyer at emotional peak (just saw their own leaks with R$ numbers) is the only moment they'll share. Every share drops the /audit URL into another founder's WhatsApp group with a custom OG image showing THEIR peer's domain leaking money — cold traffic pre-warmed by peer testimony (not an ad). Estimated 3-5% paste rate without buttons vs 15-25% share rate with buttons = 4-5x growth-loop leak. 1.5-day build. Highest ROI-per-engineering-hour in the entire war room. WhatsApp specifically dominates pt-BR where near-term revenue concentrates.
-
-**Effort:** S
-**Impact:** critical
-**Owner Cluster:** lead-acquisition-social (copy) + funnel-cro (button + mobile-first tap targets)
 
 ### 3. Meta Custom Audience + Lookalike infrastructure — 6 retargeting layers per platform + audience export cron
 
@@ -440,24 +390,21 @@ _9 of 10 shipped in commit d0fd9ca4 (hero CTA + badge, subtitle, secondary CTA r
 **Impact:** high
 **Owner Cluster:** funnel-cro
 
-### 14. Anti-abuse / rate limiting on free /audit — Cloudflare Turnstile + per-IP/email rate limits + abuse-domain blacklist
-
-**Why:** Free URL-input scanner + real crawl + LLM findings = $0.03-0.20/scan cost. At scale of paid traffic (10k audits/mo), even 5% bot/abuse = 500 wasted audits/mo. Competitors WILL scan competitors through Vestigio (real behavior in every free-scan tool). Abuse spikes can 10-20x baseline. Ship: Cloudflare Turnstile on domain-submit step, rate limits per IP/email (existing rateLimitByIp module supports), blacklist of known abuse domains + repeat-abuser email flags. Also protects against ad-account exhaustion by scraper traffic that fires pixel events without real intent.
-
-**Effort:** S
-**Impact:** medium
-**Owner Cluster:** funnel-cro
-
 
 ---
 
 ## 🗺️ Sequenced Roadmap
 
 ### Phase 1 — Foundation & Credibility (survive the ad-review + credibility gate) · _Weeks 1-4_
+
+_Note (shipped 2026-07-15): most Phase 1 quick wins retired ad-hoc across polish commits — canonical Garantia 4X, ShareBar on /audit/result, default paywall annually, Turnstile + per-IP rate-limit on /run-audit, dead Lorem code deleted. Remaining Phase 1: paid-ad pixel infrastructure, Meta CAPI, German locale unblock (287 __TODO__), and Google Ads campaign launch._
+
+_Note: many Phase 1 items shipped ad-hoc in commits d0fd9ca4 (polish batch), and follow-up polish commits. Remaining items in this phase are the paid-ad infrastructure (pixels, Meta CAPI, LP proliferation), German locale unblock (287 __TODO__ still open), and Google Ads campaign launch._
+
 **Expected impact:** Weeks 1-4 unlock the ability to spend at all (pixel + policy pre-flight), remove the 4 credibility bombs that would tank every acquired click, ship 30-50% AOV expansion on existing traffic (order bump + OTO + share tail), and cut form abandonment by 12-25% via 3-screen /audit. Ad account warm-up ceiling caps first-month spend at $10-30K regardless — so use Weeks 1-4 to BUILD infrastructure with controlled spend during Meta's 21-30 day warm-up window. Expected revenue Weeks 1-4: $15-40K (mostly organic + Google Search + warm Meta at capped spend + AOV lift on existing pipeline).
 
 **Items:**
-- WEEK 1 — Credibility bomb defusal (all shipping BEFORE any new ad flight): (a) delete '20.000 empresas' overclaim from ClientGallery (5-min dict × 4 locales), (b) rewrite pricing_section.plans[*] descriptions from Lorem Ipsum + SaaS-analytics feature bullets to leak-diagnosis outcome copy (verified rendering on /pricing + /activate), (c) canonicalize Garantia 4X to one clause with 30-day timeframe ('100% do dinheiro de volta em 30 dias se a Vestigio não apontar 4× o valor do plano em vazamento mensal') + position inline adjacent to every CTA + resolve 90-day EN contradiction, (d) delete dead testimonials/newsletter Lorem from JSON bundle (defense-in-depth), (e) tighten hero CTA to 'Ver meu vazamento em 60s — grátis' (locale-mapped), (f) rewrite MiniCalc CTA 'Receber meu Plano' → 'Ver quanto está vazando →' + add price microcopy 'R$99/mês · Garantia 4× em 30 dias'.- WEEK 1-2 — Ad infrastructure sprint (parallel to Week 1 credibility): (a) wire Meta Pixel + CAPI server-side with event_id dedup + Advanced Matching (hashed email + phone + IP + user_agent + fbc/fbp + external_id) targeting EMQ 8.0+, (b) provision main Meta BM + 2 backup BMs on separate business identities (pre-warm for ban insurance), (c) verify domain on Meta/Google/TikTok, (d) submit /termos + /politica-de-reembolso + /privacidade in 4 locales, (e) submit to Google Ads Financial Services vertical review, (f) evidence-log for any specific R$ number in creative.- WEEK 2 — Ship the AOV stack (no ad dependency): (a) order bump on /activate 'Entrega Prioritária — primeira edição em 48h — +R$147', (b) post-purchase OTO 60s interstitial before /app redirect (upgrade Max at discount), (c) native share buttons on /audit/result (WhatsApp / X / LinkedIn / Copy Link) with pre-filled top-R$-finding copy — activates already-deployed opengraph-image.tsx per-leadId, (d) baseline funnel analytics dashboard (2-3 days reusing TrackingScript stream) + PostHog feature flags on 6 highest-stakes surfaces + self-attribution dropdown on signup form.- WEEK 2-3 — Checkout structural fixes (activation-week sprint): (a) cut /audit form from 7-8 to 3 required screens + fire pixel events per abandoned step for retargeting, (b) progressive-profile widget on /audit/result for revenue/concern/current_method/why_now, (c) default paywall cycle to annually (ActivatePaywall.tsx line 73-75 2-line change), (d) native USD/EUR/MXN pricing per locale via getLocalCurrency() (kill hardcoded formatBRL), (e) Apple Pay + Google Pay wallet buttons above tabs, (f) BR 12x installment display, (g) hide CPF for non-BR, route non-BR to Paddle-only, (h) unify MiniCalc business_type list with /audit canonical 7-option set, (i) progress bar 'Passo 3 de 3: Ativar'.- WEEK 3-4 — Recovery + Lead capture (start): (a) abandoned-checkout 3-email drip (T+1h, T+24h, T+72h with 10% code) — complete MP checkout_started webhook parity with Paddle, (b) '9 Vazamentos' PDF lead magnet designed + copy'd in pt-BR (12 pages, one leak per page + example screenshot + R$ typical impact + CTA), (c) Google Ads RSA campaign for commercial-intent pt-BR terms ('auditoria de conversão site preço', 'quanto meu site perde por mês', 'diagnóstico de site para vendas' + brand defense), (d) Enhanced Conversions verified, (e) refund + chargeback ops SOP documented (15% revenue reserve, 48h refund SLA, chargeback dispute template, Reclame Aqui/Trustpilot monitoring alert), (f) BR consumer-protection attorney review of guarantee terms + Pix monthly disclosure + refund policy.- WEEK 4 — Ship German locale (unblock DACH): 287 __TODO__ resolved on conversion path (activate.plans.vestigio.name/price/features + /audit + /audit/result + /auth/signup + /app/library) with native DE copywriter, 'entgehen' idiom (not 'lecken'), DACH legal disclosure of 30-day guarantee alongside statutory 14-day withdrawal right, Impressum with named natural person + DE Widerrufsrecht response infrastructure.
+- WEEK 1 — Credibility bomb defusal (all shipping BEFORE any new ad flight): (c) canonicalize Garantia 4X to one clause with 30-day timeframe ('100% do dinheiro de volta em 30 dias se a Vestigio não apontar 4× o valor do plano em vazamento mensal') + position inline adjacent to every CTA + resolve 90-day EN contradiction, (d) delete dead testimonials/newsletter Lorem from JSON bundle (defense-in-depth), (e) tighten hero CTA to 'Ver meu vazamento em 60s — grátis' (locale-mapped), (f) rewrite MiniCalc CTA 'Receber meu Plano' → 'Ver quanto está vazando →' + add price microcopy 'R$99/mês · Garantia 4× em 30 dias'.- WEEK 1-2 — Ad infrastructure sprint (parallel to Week 1 credibility): (a) wire Meta Pixel + CAPI server-side with event_id dedup + Advanced Matching (hashed email + phone + IP + user_agent + fbc/fbp + external_id) targeting EMQ 8.0+, (b) provision main Meta BM + 2 backup BMs on separate business identities (pre-warm for ban insurance), (c) verify domain on Meta/Google/TikTok, (d) submit /termos + /politica-de-reembolso + /privacidade in 4 locales, (e) submit to Google Ads Financial Services vertical review, (f) evidence-log for any specific R$ number in creative.- WEEK 2 — Ship the AOV stack (no ad dependency): (a) order bump on /activate 'Entrega Prioritária — primeira edição em 48h — +R$147', (b) post-purchase OTO 60s interstitial before /app redirect (upgrade Max at discount), (c) native share buttons on /audit/result (WhatsApp / X / LinkedIn / Copy Link) with pre-filled top-R$-finding copy — activates already-deployed opengraph-image.tsx per-leadId, (d) baseline funnel analytics dashboard (2-3 days reusing TrackingScript stream) + PostHog feature flags on 6 highest-stakes surfaces + self-attribution dropdown on signup form.- WEEK 2-3 — Checkout structural fixes (activation-week sprint): (a) cut /audit form from 7-8 to 3 required screens + fire pixel events per abandoned step for retargeting, (b) progressive-profile widget on /audit/result for revenue/concern/current_method/why_now, (c) default paywall cycle to annually (ActivatePaywall.tsx line 73-75 2-line change), (d) native USD/EUR/MXN pricing per locale via getLocalCurrency() (kill hardcoded formatBRL), (e) Apple Pay + Google Pay wallet buttons above tabs, (f) BR 12x installment display, (g) hide CPF for non-BR, route non-BR to Paddle-only, (h) unify MiniCalc business_type list with /audit canonical 7-option set, (i) progress bar 'Passo 3 de 3: Ativar'.- WEEK 3-4 — Recovery + Lead capture (start): (a) abandoned-checkout 3-email drip (T+1h, T+24h, T+72h with 10% code) — complete MP checkout_started webhook parity with Paddle, (b) '9 Vazamentos' PDF lead magnet designed + copy'd in pt-BR (12 pages, one leak per page + example screenshot + R$ typical impact + CTA), (c) Google Ads RSA campaign for commercial-intent pt-BR terms ('auditoria de conversão site preço', 'quanto meu site perde por mês', 'diagnóstico de site para vendas' + brand defense), (d) Enhanced Conversions verified, (e) refund + chargeback ops SOP documented (15% revenue reserve, 48h refund SLA, chargeback dispute template, Reclame Aqui/Trustpilot monitoring alert), (f) BR consumer-protection attorney review of guarantee terms + Pix monthly disclosure + refund policy.- WEEK 4 — Ship German locale (unblock DACH): 287 __TODO__ resolved on conversion path (activate.plans.vestigio.name/price/features + /audit + /audit/result + /auth/signup + /app/library) with native DE copywriter, 'entgehen' idiom (not 'lecken'), DACH legal disclosure of 30-day guarantee alongside statutory 14-day withdrawal right, Impressum with named natural person + DE Widerrufsrecht response infrastructure.
 
 ### Phase 2 — Scale & Learn (turn on demand, iterate creative, unlock cross-border) · _Weeks 4-12_
 **Expected impact:** Weeks 4-12 lift ad spend ceiling as Meta warm-up completes (~$50-150K/mo capacity by end of window), unlock 3 of 4 target locales via cross-border pricing + German paywall + Meta Lead Ads + PDF localization, cut effective CAC 30-50% via retargeting + email nurture + share tail, and ship the modal-overlay consolidation that kills the last major structural funnel break. Realistic revenue Weeks 4-12: $150-300K (majority window). Attribution honestly split: ~45% paid direct, ~25% Lead-Ad + nurture, ~15% viral share tail, ~15% AOV expansion + retargeting.

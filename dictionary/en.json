@@ -81,7 +81,7 @@
 			"cta_secondary": "See how it works",
 			"cta_micro": "",
 			"trust_microcopy": {
-				"guarantee": "4X Guarantee: if we don't find 4x the plan value in opportunities, full refund.",
+				"guarantee": "Guarantee: 100% money back in 30 days if Vestigio does not identify 4× your plan's value in monthly leaks.",
 				"platforms": "Works with any platform."
 			},
 			"shell": {
@@ -146,7 +146,10 @@
 			"shell": {
 				"_deprecated": "moved to product_tour"
 			},
-			"cta_primary_badge": "Free"
+			"cta_primary_badge": "Free",
+			"trust_microcopy": {
+				"guarantee": "Guarantee: 100% money back in 30 days if Vestigio does not identify 4× your plan's value in monthly leaks."
+			}
 		},
 		"product_tour": {
 			"section_headline": "Strategy Plan · Guided tour",
@@ -355,7 +358,7 @@
 				},
 				{
 					"question": "Is it free? What's the cost afterward?",
-					"answer": "The first analysis is free, no credit card. After that, you subscribe to a plan with one Strategy Plan per month: continuous analysis of identified leakage, cycle updates, PDF export, and a shareable link. 4× Guarantee in the first 30 days."
+					"answer": "The first analysis is free, no credit card. After that, you subscribe to a plan with one Strategy Plan per month: continuous analysis of identified leakage, cycle updates, PDF export, and a shareable link. 4× Guarantee: 100% money back in 30 days if Vestigio does not identify 4× your plan's value in monthly leaks."
 				},
 				{
 					"question": "Does it work with my platform?",
@@ -615,58 +618,6 @@
 				}
 			]
 		},
-		"pricing_section": {
-			"title": "Pick the plan that matches your revenue at risk",
-			"subtitle": "Every plan pays for itself in the first cycle.",
-			"subscription": "monthly",
-			"plans": [
-				{
-					"name": "Vestigio",
-					"for": "For early-stage teams",
-					"description": "See what's costing you money. Fix the top 3.",
-					"included": {
-						"title": "What's included",
-						"items": [
-							"1 environment",
-							"Weekly diagnostic cycles",
-							"Agentic analyses",
-							"Impact quantification"
-						]
-					},
-					"cta": "Start with Vestigio"
-				},
-				{
-					"name": "Pro",
-					"for": "For growing businesses",
-					"description": "Full financial clarity across 3 environments. Daily.",
-					"included": {
-						"title": "What's included",
-						"items": [
-							"3 environments",
-							"Daily diagnostic cycles",
-							"5x Agentic analyses",
-							"Revenue integrity maps"
-						]
-					},
-					"cta": "Choose Pro"
-				},
-				{
-					"name": "Max",
-					"for": "For large organizations",
-					"description": "Enterprise-grade. 10 environments. Dedicated support. SLA.",
-					"included": {
-						"title": "What's included",
-						"items": [
-							"10 environments",
-							"Daily diagnostic cycles",
-							"20x Agentic analyses",
-							"Dedicated account manager"
-						]
-					},
-					"cta": "Choose Max"
-				}
-			]
-		},
 		"faq_section": {
 			"title": "Frequently Asked Questions",
 			"subtitle": "Common questions about how Vestigio works and what to expect.",
@@ -690,50 +641,8 @@
 			"subtitle": "Enter your domain. No signup. No credit card. Results in 60 seconds.",
 			"cta": "Run Free Diagnostic"
 		},
-		"testimonials_section": {
-			"title": "Built for operators who decide with evidence.",
-			"subtitle": "Real results from teams using Vestigio to find and fix revenue leaks.",
-			"items": [
-				{
-					"name": "Marina Costa",
-					"designation": "Head of Growth, TechFlow",
-					"comment": "We were spending $40k/month on ads without knowing our checkout was broken on mobile. Vestigio found it in the first cycle. $18k/month recovered."
-				},
-				{
-					"name": "Rafael Mendes",
-					"designation": "CTO, NovaPay",
-					"comment": "The action queue changed how my team prioritizes. Instead of guessing what to fix, we have a ranked list with dollar amounts. No more spreadsheet debates."
-				},
-				{
-					"name": "Sarah Chen",
-					"designation": "Founder, ScaleKit",
-					"comment": "I used to spend 4 hours a week in GA4 trying to figure out what was wrong. Vestigio tells me what to fix Monday morning, with evidence I can show my investors."
-				},
-				{
-					"name": "Diego Alvarez",
-					"designation": "Revenue Ops, Cartly",
-					"comment": "Our chargeback rate was climbing and we couldn't find the root cause across 5 different tools. Vestigio traced it to a trust gap on our checkout page in one cycle."
-				},
-				{
-					"name": "Priya Sharma",
-					"designation": "VP Product, CloudBase",
-					"comment": "We shipped a release that broke our pricing page. Vestigio caught the regression in hours, not days. The evidence trail made the bug report write itself."
-				},
-				{
-					"name": "Lucas Ferreira",
-					"designation": "CEO, DropStore",
-					"comment": "Finally I can see exactly what's broken AND what it costs. The financial quantification is what separates Vestigio from every other tool we've tried."
-				}
-			]
-		},
 		"counter_section": {
 			"title": "Numbers speaking for themselves"
-		},
-		"newsletter_section": {
-			"title": "Stay ahead of revenue leaks",
-			"subtitle": "Get weekly insights on conversion optimization and revenue intelligence.",
-			"input": "Enter your email",
-			"cta": "Subscribe"
 		},
 		"latest_blog_section": {
 			"title": "Latest from Vestigio",
@@ -745,8 +654,8 @@
 			"quick_start_desc": "Paste your URL. No code, no tag, no onboarding.",
 			"visibility_title": "We check 15,000 signals on your site",
 			"visibility_desc": "15,000 signals swept per scan: checkout, funnel, mobile, scripts, ads, SEO.",
-			"roi_title": "4X Guarantee",
-			"roi_subtitle": "If Vestigio doesn't find 4× your plan's value in monthly losses, we refund 100%.",
+			"roi_title": "4× Guarantee",
+			"roi_subtitle": "100% money back in 30 days if Vestigio does not identify 4× your plan's value in monthly leaks.",
 			"pulse_title": "Thesis of the month",
 			"pulse_desc": "Every analysis opens with a thesis: the central read of the cycle, in dollars, with next steps.",
 			"pulse_cta": "See an example",
@@ -822,11 +731,11 @@
 			"f_admin_panel_exposed": "Admin panel externally discoverable",
 			"f_error_pages_unbranded": "Error pages losing visitors without recovery",
 			"f_social_proof_missing": "Social proof missing from key decision points",
-			"cta_price_microcopy": "$19/mo · 4× guarantee within 30 days"
+			"cta_price_microcopy": "$19/mo · 4× guarantee, 30 days, 100% back"
 		},
 		"pricing_heading": {
 			"heading": "See exactly what you are losing every month.",
-			"subheading": "Get a Strategy Plan that tells you what to do. Continuous analysis, PDF export, and shareable link. 4× Guarantee."
+			"subheading": "Get a Strategy Plan that tells you what to do. Continuous analysis, PDF export, and shareable link. 4× Guarantee: 100% back in 30 days if we don't identify 4× your plan in leaks."
 		},
 		"sticky_cta": {
 			"hook": "See where your sales are leaking.",
@@ -9728,7 +9637,7 @@
 				"headline": "{org} is losing money right now.",
 				"headline_l1": "Stop the bleeding.",
 				"headline_l2": "Your full Analysis starts in 60s.",
-				"guarantee_title": "4× guarantee or your money back",
+				"guarantee_title": "4× guarantee, 30 days, 100% back",
 				"guarantee_desc": "Recover at least 4x what you paid within 90 days. If not, we refund every cent. No questions asked.",
 				"you_told_us": "You told us",
 				"generic_close": "There {count, plural, one {is # critical leak} other {are # critical leaks}} waiting for the first move.",

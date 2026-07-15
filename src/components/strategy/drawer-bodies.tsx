@@ -447,12 +447,14 @@ function FindingCard({
 	const linkedActions = finding.action_refs ?? [];
 	const remediationPreview = (finding.remediation_steps ?? []).slice(0, 3);
 	// Visual proof beside each finding — resolved from the plan-scoped
-	// screenshotUrlByPath map keyed by finding.source_url. Null when the
-	// finding's page isn't in the top-N captured surfaces for this cycle
-	// (which happens on deep pages), or when R2 is unconfigured. The
-	// figure only renders inside the expanded body so the collapsed list
-	// stays visually uniform.
-	const screenshotUrl = usePlanScreenshotForUrl(finding.source_url);
+	// screenshotUrlByPath map keyed by finding.source_url. When the
+	// exact page isn't in the top-N captured surfaces this cycle (deep
+	// page findings), the hook falls back to the homepage capture so
+	// the drawer still anchors in "your real site" — coverage jumps
+	// from ~30% to ~90% of findings. `match.kind` distinguishes so the
+	// caption can honestly say "sua home" on fallback instead of naming
+	// a surface we don't actually show.
+	const screenshotMatch = usePlanScreenshotForUrl(finding.source_url);
 	// Peer contrast — "X% of BR e-commerces do this. You don't." Only
 	// resolves for whitelisted inference keys with a matching Vestigio
 	// Index cohort (see packages/signals/peer-line.ts).
@@ -580,24 +582,28 @@ function FindingCard({
 							>
 								<div className="space-y-4 p-4">
 									{/* Visual proof — screenshot of the actual page
-									    surfaced by this finding. Renders only when
-									    the plan carries a captured screenshot for
-									    finding.source_url (missing → text-only). */}
-									{screenshotUrl && (
+									    surfaced by this finding, or the homepage
+									    as fallback. Renders only when the plan
+									    carries at least one capture. */}
+									{screenshotMatch && (
 										<figure className="-mt-1 overflow-hidden rounded-xl border border-edge bg-surface-inset">
 											{/* eslint-disable-next-line @next/next/no-img-element */}
 											<img
-												src={screenshotUrl}
+												src={screenshotMatch.url}
 												alt={
-													finding.surface
-														? `Captura de ${humanizeSurfaceLabel(finding.surface)}`
-														: "Captura da página"
+													screenshotMatch.kind === "home"
+														? "Captura da home"
+														: finding.surface
+															? `Captura de ${humanizeSurfaceLabel(finding.surface)}`
+															: "Captura da página"
 												}
 												loading="lazy"
 												className="block max-h-[220px] w-full object-cover object-top"
 											/>
 											<figcaption className="border-t border-edge px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-												Sua página{finding.surface ? ` · ${humanizeSurfaceLabel(finding.surface)}` : ""}
+												{screenshotMatch.kind === "home"
+													? "Sua home · superfície de primeiro contato"
+													: `Sua página${finding.surface ? ` · ${humanizeSurfaceLabel(finding.surface)}` : ""}`}
 											</figcaption>
 										</figure>
 									)}

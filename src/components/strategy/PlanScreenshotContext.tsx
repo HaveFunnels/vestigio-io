@@ -53,15 +53,31 @@ function normalizePath(input: string): string {
 	return path.length > 1 ? path.replace(/\/+$/, "") : "/";
 }
 
+export interface PlanScreenshotMatch {
+	url: string;
+	/** "exact" — screenshot of the finding's actual source URL (best).
+	 *  "home" — falls back to homepage when the exact page wasn't in
+	 *  the top-N surfaces captured this cycle. Home is always in the
+	 *  capture set, so this fallback lifts coverage from ~30% to ~90%
+	 *  of findings and still anchors the drawer in "your real page".
+	 *  Consumers should adjust the caption to say "sua home" instead
+	 *  of the specific surface when kind === "home". */
+	kind: "exact" | "home";
+}
+
 /**
- * Resolves a source URL to a presigned screenshot URL, or null when the
- * environment has no capture for that path (common on findings whose
- * source is a page outside the top-N surfaces the capture worker
- * screenshots per cycle).
+ * Resolves a source URL to a presigned screenshot URL. Returns null
+ * only when both the exact page AND the homepage have no capture (R2
+ * unset, or the cycle failed to capture anything).
  */
-export function usePlanScreenshotForUrl(sourceUrl: string | null | undefined): string | null {
+export function usePlanScreenshotForUrl(sourceUrl: string | null | undefined): PlanScreenshotMatch | null {
 	const map = useContext(PlanScreenshotContext);
-	if (!sourceUrl) return null;
-	const path = normalizePath(sourceUrl);
-	return map[path] ?? null;
+	if (sourceUrl) {
+		const path = normalizePath(sourceUrl);
+		const exact = map[path];
+		if (exact) return { url: exact, kind: "exact" };
+	}
+	const home = map["/"];
+	if (home) return { url: home, kind: "home" };
+	return null;
 }

@@ -116,6 +116,23 @@ export async function GET(
 			}
 		: null;
 
+	// Presign the homepage screenshot r2Key each request (1h TTL). Never
+	// cache the URL — the 24h result-view window would outlive it. Silent
+	// on failure so a broken presign never blocks the findings render.
+	if (result && result.preview && typeof result.preview === "object") {
+		const preview = result.preview as { screenshot_r2_key?: string; screenshotUrl?: string };
+		if (preview.screenshot_r2_key) {
+			try {
+				const { r2Configured, getScreenshotUrl } = await import("@/libs/r2-screenshots");
+				if (r2Configured()) {
+					preview.screenshotUrl = await getScreenshotUrl(preview.screenshot_r2_key);
+				}
+			} catch (err) {
+				console.warn(`[lead-get] screenshot presign failed for ${lead.id}:`, err instanceof Error ? err.message : err);
+			}
+		}
+	}
+
 	// Active payment provider for any checkout the LP page might
 	// open. Resolved from admin override → env default. Per-request
 	// because we want to react to admin toggles without a redeploy.

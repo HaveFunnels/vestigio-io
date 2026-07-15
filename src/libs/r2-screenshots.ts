@@ -10,7 +10,7 @@
 // a soft gap in the Plano, never a failed cycle.
 // ──────────────────────────────────────────────
 
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 let _client: S3Client | null = null;
@@ -54,6 +54,36 @@ export async function uploadScreenshot(key: string, body: Buffer): Promise<void>
 			ContentType: "image/jpeg",
 		}),
 	);
+}
+
+/** Stable key for a free-audit mini-scan screenshot (single homepage
+ *  capture keyed by leadId + url hash). Sibling namespace to
+ *  surface-screenshots so the TTL purge cron can prefix-scan the
+ *  free-scan set independently when we need to (e.g. batch cleanup by
+ *  expiredLeads). */
+export function miniScreenshotKey(leadId: string, urlHash: string): string {
+	return `mini-audit-screenshots/${leadId}/${urlHash}.jpg`;
+}
+
+/** Batch-delete a set of R2 keys. Silent on individual failures — we're
+ *  called from the TTL purge cron and a stuck delete shouldn't block the
+ *  Prisma deleteMany that runs after. S3 DeleteObjects supports up to
+ *  1000 keys per call; the free-lead purge batches are much smaller. */
+export async function deleteScreenshots(keys: string[]): Promise<void> {
+	if (keys.length === 0) return;
+	try {
+		await client().send(
+			new DeleteObjectsCommand({
+				Bucket: process.env.R2_BUCKET_NAME!,
+				Delete: {
+					Objects: keys.map((Key) => ({ Key })),
+					Quiet: true,
+				},
+			}),
+		);
+	} catch (err) {
+		console.warn(`[r2-screenshots] batch delete failed (${keys.length} keys):`, err);
+	}
 }
 
 /** Presigned GET URL for rendering the screenshot in the Plano. Default 1h —

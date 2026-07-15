@@ -28,6 +28,57 @@ import type { CrawlProgress } from "@/types/crawl-progress";
 
 const CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
+/**
+ * Fire-and-forget homepage screenshot capture for a free /audit lead.
+ *
+ * Captures one above-the-fold viewport shot of the audited domain's
+ * root URL, uploads to R2, and patches the MiniAuditResult.preview
+ * JSON with the r2Key. The result page's poll picks up the r2Key on
+ * the next tick (~3s) and renders the figure between the header and
+ * the cost banner.
+ *
+ * Idempotent: repeat runs for the same miniAuditId overwrite the same
+ * R2 object (deterministic key = leadId + urlHash) and re-patch the
+ * preview blob. Safe to retry.
+ *
+ * Never throws — every failure path (R2 unconfigured, chromium OOM, nav
+ * timeout, JSON re-parse) resolves to a silent no-op so the visitor
+ * still sees text-only findings within the mini-audit budget.
+ */
+async function captureMiniHomepageScreenshot(
+	miniAuditId: string,
+	rootUrl: string,
+	preview: import("../../workers/ingestion/landing-preview").LandingPreview,
+): Promise<void> {
+	// Late-imported to keep the mini-audit hot path free of Playwright
+	// weight when R2 isn't configured (local/dev/CI). The chromium-pool
+	// helper inside screenshot-capture only warms browsers on first call.
+	const [{ captureViewport, hashUrl }, { r2Configured, uploadScreenshot, miniScreenshotKey }] =
+		await Promise.all([
+			import("../../workers/verification/screenshot-capture"),
+			import("@/libs/r2-screenshots"),
+		]);
+	if (!r2Configured()) return;
+
+	const buf = await captureViewport(rootUrl);
+	if (!buf) return;
+
+	const key = miniScreenshotKey(miniAuditId, hashUrl(rootUrl));
+	await uploadScreenshot(key, buf);
+
+	// Merge into the existing preview blob — never overwrite the whole row.
+	const updatedPreview: import("../../workers/ingestion/landing-preview").LandingPreview = {
+		...preview,
+		screenshot_r2_key: key,
+		screenshot_captured_at: new Date().toISOString(),
+	};
+	await prisma.miniAuditResult.update({
+		where: { id: miniAuditId },
+		data: { preview: JSON.stringify(updatedPreview) },
+	});
+	console.log(`[mini-audit-screenshot] ${miniAuditId} captured, key=${key}`);
+}
+
 /** Fire-and-forget email to the lead's email with findings summary. */
 async function sendCompletionEmail(
 	leadId: string,
@@ -378,6 +429,17 @@ export async function runMiniAudit(leadId: string): Promise<RunMiniAuditResult> 
 		console.log(
 			`[mini-audit ${leadId}] complete — ${normalized}, ${findings.visible.length}+${findings.blurred.length} findings, ${Date.now() - startedAt}ms`,
 		);
+
+		// 8b. Fire-and-forget homepage screenshot capture — same R2 pipeline
+		// the paid Plano uses. Runs AFTER the upsert so the result page can
+		// paint immediately with text findings, then poll picks up the shot
+		// (~2-4s later). Reuses screenshot-capture.ts's warm chromium-pool.
+		// Degrades silently: R2 unset, chromium OOM, nav timeout → row stays
+		// as-is and the result page renders text-only (same UX as before
+		// this feature shipped).
+		captureMiniHomepageScreenshot(result.id, rootUrl, preview).catch((err) => {
+			console.warn(`[mini-audit ${leadId}] screenshot capture failed:`, err instanceof Error ? err.message : err);
+		});
 
 		// Fire-and-forget email
 		sendCompletionEmail(leadId, lead.email, lead.domain!, {

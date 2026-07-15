@@ -33,6 +33,18 @@ export interface LandingPreview {
 	response_time_ms: number;
 	content_length: number | null;
 	captured_at: string; // ISO timestamp — shown in the preview card
+	/** Optional — set by run-mini-audit AFTER the initial persist when a
+	 *  homepage screenshot capture succeeds. Stored as the raw R2 object
+	 *  key; the /api/lead/[id] GET presigns it each request (1h TTL) so
+	 *  the client never sees a stale URL. Absent when R2 is unconfigured
+	 *  or the capture failed. */
+	screenshot_r2_key?: string;
+	screenshot_captured_at?: string; // ISO timestamp
+	/** Populated only at API read time (/api/lead/[id]) — the 1h
+	 *  presigned R2 URL derived from screenshot_r2_key. Never persisted
+	 *  to Prisma; regenerated per request so we don't ship a stale URL
+	 *  to the client. Undefined when no r2Key was captured. */
+	screenshotUrl?: string;
 }
 
 interface ExtractInput {

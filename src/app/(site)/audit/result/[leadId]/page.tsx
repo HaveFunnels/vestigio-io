@@ -449,6 +449,17 @@ export default function MiniAuditResultPage() {
 					    eroding trust. ResultHeader now uses honest counts:
 					    visible vs blurred. */}
 
+					{/* Homepage screenshot — fires ~2-4s after the initial
+					    findings render (captured fire-and-forget in
+					    run-mini-audit after upsert, presigned each GET by
+					    /api/lead/[id]). Anchors the whole page: buyer sees
+					    "this IS my site, these ARE my leaks", not prose
+					    about a generic homepage. Powers the ShareBar below
+					    — a peer receiving the shared link lands on this
+					    same visual proof surface. Hidden when capture is
+					    still in flight or R2 is unconfigured. */}
+					<HomepageScreenshot preview={preview} domain={lead.domain || ""} />
+
 					{/* Cost summary — the loss-aversion anchor. Lives right
 					    under the header so the buyer hits the money
 					    framing before anything else competes for attention. */}
@@ -2116,6 +2127,39 @@ function FindingCard({
 				/>
 			</button>
 		</li>
+	);
+}
+
+// ──────────────────────────────────────────────
+// HomepageScreenshot — visual proof between the header and the cost
+// banner. Renders the captured above-the-fold JPEG of the audited
+// domain's homepage when the fire-and-forget capture in run-mini-audit
+// has completed. Null while pending or when R2 is unconfigured, so the
+// page never shifts weirdly during the capture window (~2-4s).
+// ──────────────────────────────────────────────
+function HomepageScreenshot({
+	preview,
+	domain,
+}: {
+	preview: LandingPreview;
+	domain: string;
+}) {
+	const url = preview.screenshotUrl;
+	if (!url) return null;
+	return (
+		<figure className="mt-6 overflow-hidden rounded-2xl border border-edge bg-surface-card shadow-[0_1px_0_0_rgb(255_255_255_/_0.03)_inset]">
+			{/* eslint-disable-next-line @next/next/no-img-element */}
+			<img
+				src={url}
+				alt={`Captura da home de ${domain}`}
+				loading="lazy"
+				className="block max-h-[360px] w-full object-cover object-top"
+			/>
+			<figcaption className="flex items-center justify-between gap-3 border-t border-edge px-4 py-2 font-sans text-[10.5px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+				<span>Sua home · como o comprador vê</span>
+				<span className="font-mono normal-case text-[10px] tracking-normal text-content-muted">{domain}</span>
+			</figcaption>
+		</figure>
 	);
 }
 

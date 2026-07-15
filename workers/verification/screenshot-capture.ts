@@ -26,12 +26,14 @@ const VIEWPORT = { width: 1280, height: 800 };
 const NAV_TIMEOUT_MS = 15_000;
 const PAINT_SETTLE_MS = 1_200;
 
-function hashUrl(url: string): string {
+export function hashUrl(url: string): string {
 	return createHash("sha1").update(url).digest("hex").slice(0, 16);
 }
 
-/** Capture one above-the-fold viewport screenshot as a JPEG buffer. null on any failure. */
-async function captureViewport(url: string): Promise<Buffer | null> {
+/** Capture one above-the-fold viewport screenshot as a JPEG buffer. null on any failure.
+ *  Exported so the free-audit path (apps/audit-runner/run-mini-audit.ts) can reuse
+ *  the same chromium-pool + timing tuned for the paid path — no divergent capture logic. */
+export async function captureViewport(url: string): Promise<Buffer | null> {
 	try {
 		return await withBrowserContext({ viewport: VIEWPORT }, async (context) => {
 			const page = await context.newPage();

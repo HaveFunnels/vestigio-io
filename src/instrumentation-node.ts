@@ -201,7 +201,36 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			// at lookup time but we delete rows past the cap to keep the
 			// table bounded. We retain a 7-day grace window past expiresAt
 			// so an admin can still inspect a recently-expired result.
+			//
+			// Also GC the R2 screenshot objects captured for those rows —
+			// otherwise every purged free-audit lead orphans a JPEG. Read
+			// the r2Key out of each doomed row's preview blob, batch-delete
+			// from R2, then deleteMany the DB rows. R2 delete failures are
+			// swallowed inside deleteScreenshots so a stuck object never
+			// blocks the DB cleanup.
 			const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+			const doomed = await prisma.miniAuditResult.findMany({
+				where: { expiresAt: { lt: sevenDaysAgo } },
+				select: { id: true, preview: true },
+			});
+			if (doomed.length > 0) {
+				const keys: string[] = [];
+				for (const row of doomed) {
+					try {
+						const preview = row.preview ? JSON.parse(row.preview) : null;
+						const key = preview?.screenshot_r2_key;
+						if (typeof key === "string" && key.length > 0) keys.push(key);
+					} catch { /* malformed preview — no key to reclaim */ }
+				}
+				if (keys.length > 0) {
+					try {
+						const { deleteScreenshots } = await import("@/libs/r2-screenshots");
+						await deleteScreenshots(keys);
+					} catch (err) {
+						console.warn("[lead-cleanup] R2 screenshot GC failed:", err instanceof Error ? err.message : err);
+					}
+				}
+			}
 			const purged = await prisma.miniAuditResult.deleteMany({
 				where: { expiresAt: { lt: sevenDaysAgo } },
 			});

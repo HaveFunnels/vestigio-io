@@ -310,8 +310,12 @@ export function FindingListBody({
 }: FindingListProps) {
 	const mcp = useMcpData();
 	const { currency } = mcp;
+	// Narrow via the discriminant directly so the `data` field is
+	// visible to the type checker (`findingsReady` boolean loses the
+	// narrowing when read through a separate variable).
+	const all: FindingProjection[] =
+		mcp.findings.status === "ready" ? mcp.findings.data : [];
 	const findingsReady = mcp.findings.status === "ready";
-	const all = findingsReady ? mcp.findings.data : [];
 	// Match by id OR inference_key. The plan generator now stores
 	// inferenceKey strings (stable across cycles) instead of DB UUIDs,
 	// but legacy plans still carry projection ids like
@@ -319,14 +323,17 @@ export function FindingListBody({
 	// shapes resolving without an extra migration step.
 	const wanted = new Set(findingIds);
 	const matched: FindingProjection[] = all
-		.filter((f) => wanted.has(f.id) || wanted.has(f.inference_key))
+		.filter((f: FindingProjection) => wanted.has(f.id) || wanted.has(f.inference_key))
 		// Drop positives — the plan's drawer is about "problems to fix",
 		// not state-of-health checks. Positives belong on /app/findings
 		// with their own UI affordances.
-		.filter((f) => f.polarity !== "positive")
+		.filter((f: FindingProjection) => f.polarity !== "positive")
 		// Sort by impact descending so the highest-leverage card lands at
 		// the top.
-		.sort((a, b) => (b.impact?.midpoint ?? 0) - (a.impact?.midpoint ?? 0));
+		.sort(
+			(a: FindingProjection, b: FindingProjection) =>
+				(b.impact?.midpoint ?? 0) - (a.impact?.midpoint ?? 0),
+		);
 
 	// MCP findings still loading from the layout / refresh in flight.
 	// Show a shimmer instead of jumping straight to "Problemas

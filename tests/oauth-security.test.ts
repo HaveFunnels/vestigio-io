@@ -91,11 +91,12 @@ console.log("OAuth security");
 // ── OAuth state ──
 
 runSuite("OAuth state — roundtrips env + provider", () => {
-	const state = encodeOAuthState("env_abc_123", "meta_ads");
+	const state = encodeOAuthState("env_abc_123", "user_abc", "meta_ads");
 	const res = decodeOAuthState(state);
 	assert(res.ok, "decode ok");
 	if (res.ok) {
 		assertEqual(res.payload.environmentId, "env_abc_123", "env preserved");
+		assertEqual(res.payload.userId, "user_abc", "user preserved");
 		assertEqual(res.payload.provider, "meta_ads", "provider preserved");
 		assert(res.payload.timestamp > 0, "timestamp populated");
 		assert(res.payload.nonce.length >= 8, "nonce populated");
@@ -103,7 +104,7 @@ runSuite("OAuth state — roundtrips env + provider", () => {
 });
 
 runSuite("OAuth state — tampered payload rejected", () => {
-	const state = encodeOAuthState("env_real", "google_ads");
+	const state = encodeOAuthState("env_real", "user_real", "google_ads");
 	const [payload, sig] = state.split(".");
 	// Flip a byte in the payload — signature no longer matches
 	const tampered = payload.slice(0, -2) + "AA" + "." + sig;
@@ -119,7 +120,7 @@ runSuite("OAuth state — tampered payload rejected", () => {
 });
 
 runSuite("OAuth state — tampered signature rejected", () => {
-	const state = encodeOAuthState("env_x", "meta_ads");
+	const state = encodeOAuthState("env_x", "user_x", "meta_ads");
 	const [payload] = state.split(".");
 	const bogus = `${payload}.AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA`;
 	const res = decodeOAuthState(bogus);
@@ -143,7 +144,7 @@ runSuite("OAuth state — provider mismatch visible (not a decode error)", () =>
 	// The decoder doesn't enforce provider match — that's the caller's
 	// responsibility. Confirm the payload carries whichever provider was
 	// encoded, so caller can branch.
-	const state = encodeOAuthState("env_1", "google_ads");
+	const state = encodeOAuthState("env_1", "user_1", "google_ads");
 	const res = decodeOAuthState(state);
 	assert(res.ok, "decode ok");
 	if (res.ok) {

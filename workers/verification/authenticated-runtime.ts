@@ -306,7 +306,7 @@ async function attemptLogin(
     const { isUrlSafeForFetch } = await import(
       "../../packages/url-normalize/ssrf"
     );
-    await context.route("**/*", async (route, request) => {
+    await context.route("**/*", async (route: import("playwright").Route, request: import("playwright").Request) => {
       try {
         const safety = await isUrlSafeForFetch(request.url());
         if (!safety.safe) {

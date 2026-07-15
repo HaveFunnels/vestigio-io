@@ -241,8 +241,22 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 					{/* data-vtg-cta picked up by the delegated click listener
 					    in components/analytics/TrackingScript — fires a
 					    cta_click event with target="hero-primary". Stable
-					    name; don't rename without updating the funnel view. */}
-					<ShinyButton href={primaryCtaHref} data-vtg-cta="hero-primary">{t("cta_primary")}</ShinyButton>
+					    name; don't rename without updating the funnel view.
+					    Wave 22.9 · war-room polish #1 — wrap in relative
+					    container to overlay a Grátis/Free/Gratis/Kostenlos
+					    badge at the top-right corner. Council: text of CTA
+					    is verb+outcome+timebox ("Ver meu vazamento em 60s");
+					    the free-ness is a badge so the button reads clean
+					    and the free-signal doesn't get lost in the CTA prose. */}
+					<div className="relative inline-block">
+						<ShinyButton href={primaryCtaHref} data-vtg-cta="hero-primary">{t("cta_primary")}</ShinyButton>
+						<span
+							aria-hidden
+							className="pointer-events-none absolute -right-2 -top-2 rotate-3 rounded-full border border-emerald-400/60 bg-emerald-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-black shadow-[0_2px_8px_-2px_rgba(16,185,129,0.6)] sm:-right-3 sm:-top-2.5 sm:text-[11px]"
+						>
+							{t("cta_primary_badge")}
+						</span>
+					</div>
 					{/* Trust microcopy — subtle guarantee + platform signals */}
 					<TrustMicrocopy />
 				</div>

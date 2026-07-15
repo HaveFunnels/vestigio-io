@@ -72,13 +72,13 @@
 			"headline_part3": "",
 			"headline_gradient_parts": "",
 			"headline_brush_word": "",
-			"subtitle": "Te mostramos dónde se fuga el dinero, cuánto, y qué haces para pararlo.",
+			"subtitle": "Mostramos dónde se fuga el dinero, cuánto, y cómo pararlo.",
 			"subtitle_line1": "",
 			"subtitle_before_bold": "Te mostramos ",
-			"subtitle_bold": "dónde se fuga el dinero, cuánto, y qué haces para pararlo",
+			"subtitle_bold": "dónde se fuga el dinero, cuánto, y cómo pararlo",
 			"subtitle_after_bold": ".",
-			"cta_primary": "Hacer diagnóstico gratis",
-			"cta_secondary": "Ver tour del producto",
+			"cta_primary": "Ver mi fuga en 60s",
+			"cta_secondary": "Ver cómo funciona",
 			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
@@ -96,7 +96,8 @@
 					"value": "4 pasos",
 					"label": "Por edición"
 				}
-			]
+			],
+			"cta_primary_badge": "Gratis"
 		},
 		"hero_lp": {
 			"banner": {
@@ -132,12 +133,13 @@
 					"solution": "Impacto en dólares"
 				}
 			],
-			"cta_primary": "Hacer diagnóstico gratis",
-			"cta_secondary": "Ver tour del producto",
+			"cta_primary": "Ver mi fuga en 60s",
+			"cta_secondary": "Ver cómo funciona",
 			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
-			}
+			},
+			"cta_primary_badge": "Gratis"
 		},
 		"product_tour": {
 			"section_headline": "Plan de Estrategia · Tour guiado",
@@ -735,16 +737,16 @@
 			"quick_start_title": "Listo en 60 segundos",
 			"quick_start_desc": "Pega tu URL. Sin código, sin tag, sin onboarding.",
 			"visibility_title": "Revisamos 15.000 señales en tu sitio",
-			"visibility_desc": "",
+			"visibility_desc": "15.000 señales revisadas por análisis: checkout, funnel, mobile, scripts, ads, SEO.",
 			"roi_title": "Garantía 4X",
 			"roi_subtitle": "Si Vestigio no encuentra 4× el valor de tu plan en pérdidas mensuales, devolvemos el 100%.",
 			"pulse_title": "Tesis del mes",
 			"pulse_desc": "Cada análisis abre con una tesis: la lectura central del ciclo, en dólares, con próximos pasos.",
 			"pulse_cta": "Ver un ejemplo",
 			"monitoring_title": "Errores encontrados en horas",
-			"monitoring_desc": "",
+			"monitoring_desc": "Cada cambio en el sitio se compara con el ciclo anterior. Regresiones críticas en horas, no en semanas.",
 			"integrations_title": "Funciona con cualquier sitio",
-			"integrations_desc": ""
+			"integrations_desc": "Shopify, WordPress, Webflow, Framer, Next.js, sitios custom. Si se abre en un navegador, Vestigio lo lee."
 		},
 		"mini_calculator": {
 			"title": "Mira dónde tus ingresos se fugan.",
@@ -771,7 +773,7 @@
 			"col_impact": "Impacto est.",
 			"total_impact": "En riesgo / mes",
 			"cta_question": "¿Quieres el Plan de Estrategia completo, con Próximos pasos priorizados y actualización mensual?",
-			"cta_signup": "Recibir mi Plan",
+			"cta_signup": "Ver cuánto se está fugando →",
 			"cta_pricing": "Ver Precios",
 			"disclaimer": "Estimación preliminar. El análisis completo incluye verificación punta a punta, cadena de causa y Próximos pasos priorizados.",
 			"scan_another": "Analizar otro sitio",
@@ -812,7 +814,8 @@
 			"f_session_token_exposed": "Tokens de sesión expuestos en contexto inseguro",
 			"f_admin_panel_exposed": "Panel admin descubrible externamente",
 			"f_error_pages_unbranded": "Páginas de error perdiendo visitantes sin recuperación",
-			"f_social_proof_missing": "Prueba social ausente en puntos clave de decisión"
+			"f_social_proof_missing": "Prueba social ausente en puntos clave de decisión",
+			"cta_price_microcopy": "US$19/mes · Garantía 4× en 30 días"
 		},
 		"pricing_heading": {
 			"heading": "Mira exactamente lo que estás perdiendo todos los meses.",
@@ -820,7 +823,7 @@
 		},
 		"sticky_cta": {
 			"hook": "Mira dónde tu facturación se fuga.",
-			"cta": "Quiero saber ahora",
+			"cta": "Ver mi fuga en 60s",
 			"dismiss": "Cerrar"
 		},
 		"pricing_cadence": {
@@ -9608,5 +9611,8 @@
 			"error_copy_failed": "No se pudo copiar el enlace. Intenta seleccionar la barra de URL manualmente.",
 			"your_site": "tu sitio"
 		}
+	},
+	"activate": {
+		"progress_label": "Paso 3 de 3: Activar"
 	}
 }

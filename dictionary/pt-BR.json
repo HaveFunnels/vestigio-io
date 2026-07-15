@@ -72,13 +72,13 @@
 			"headline_part3": "",
 			"headline_gradient_parts": "",
 			"headline_brush_word": "",
-			"subtitle": "Mostramos onde o dinheiro escapa, quanto, e o que você faz pra parar.",
+			"subtitle": "Mostramos onde o dinheiro escapa, quanto, e como parar.",
 			"subtitle_line1": "",
 			"subtitle_before_bold": "Mostramos ",
-			"subtitle_bold": "onde o dinheiro escapa, quanto, e o que você faz pra parar",
+			"subtitle_bold": "onde o dinheiro escapa, quanto, e como parar",
 			"subtitle_after_bold": ".",
-			"cta_primary": "Rodar diagnóstico gratuito",
-			"cta_secondary": "Ver tour do produto",
+			"cta_primary": "Ver meu vazamento em 60s",
+			"cta_secondary": "Ver como funciona",
 			"cta_micro": "",
 			"trust_microcopy": {
 				"guarantee": "Garantia 4X: se não encontrar 4x o valor do plano, devolvemos 100%.",
@@ -100,7 +100,8 @@
 					"value": "4 passos",
 					"label": "Por edição"
 				}
-			]
+			],
+			"cta_primary_badge": "Grátis"
 		},
 		"logo_strip": {
 			"headline": "Confiada por empresas, marcas e especialistas em crescimento."
@@ -139,12 +140,13 @@
 					"solution": "Impacto em reais"
 				}
 			],
-			"cta_primary": "Rodar diagnóstico gratuito",
-			"cta_secondary": "Ver tour do produto",
+			"cta_primary": "Ver meu vazamento em 60s",
+			"cta_secondary": "Ver como funciona",
 			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
-			}
+			},
+			"cta_primary_badge": "Grátis"
 		},
 		"product_tour": {
 			"section_headline": "Plano de Estratégia · Tour guiado",
@@ -742,16 +744,16 @@
 			"quick_start_title": "Pronto em 60 segundos",
 			"quick_start_desc": "Cola a URL. Sem código, sem tag, sem onboarding.",
 			"visibility_title": "Olhamos 15 mil sinais no seu site",
-			"visibility_desc": "",
+			"visibility_desc": "15.000 sinais varridos a cada análise: checkout, funil, mobile, scripts, ads, SEO.",
 			"roi_title": "Garantia 4X",
 			"roi_subtitle": "Se a Vestigio não achar 4× o valor do plano em perdas mensais, devolvemos 100%.",
 			"pulse_title": "Tese do mês",
 			"pulse_desc": "Cada análise abre com uma tese: a leitura central do ciclo, em R$, com próximos passos.",
 			"pulse_cta": "Veja um exemplo",
 			"monitoring_title": "Erros encontrados em horas",
-			"monitoring_desc": "",
+			"monitoring_desc": "Toda mudança no site é comparada ao ciclo anterior. Regressões críticas em horas, não em semanas.",
 			"integrations_title": "Funciona com qualquer site",
-			"integrations_desc": ""
+			"integrations_desc": "Shopify, WordPress, Webflow, Framer, Next.js, sites customizados. Se abre num browser, a Vestigio lê."
 		},
 		"mini_calculator": {
 			"title": "Veja onde seu faturamento está vazando.",
@@ -778,7 +780,7 @@
 			"col_impact": "Impacto est.",
 			"total_impact": "Em risco / mês",
 			"cta_question": "Quer o Plano de Estratégia completo, com Próximos passos priorizados e atualização mensal?",
-			"cta_signup": "Receber meu Plano",
+			"cta_signup": "Ver quanto está vazando →",
 			"cta_pricing": "Ver Preços",
 			"disclaimer": "Estimativa preliminar. A análise completa inclui verificação ponta a ponta, cadeia de causa e Próximos passos priorizados.",
 			"scan_another": "Analisar outro site",
@@ -819,7 +821,8 @@
 			"f_session_token_exposed": "Tokens de sessão expostos em contexto inseguro",
 			"f_admin_panel_exposed": "Interface administrativa descobrível externamente",
 			"f_error_pages_unbranded": "Páginas de erro perdendo visitantes sem recuperação",
-			"f_social_proof_missing": "Prova social ausente em pontos-chave de decisão"
+			"f_social_proof_missing": "Prova social ausente em pontos-chave de decisão",
+			"cta_price_microcopy": "R$ 99/mês · Garantia 4× em 30 dias"
 		},
 		"pricing_heading": {
 			"heading": "Veja exatamente o que está perdendo todo mês.",
@@ -827,7 +830,7 @@
 		},
 		"sticky_cta": {
 			"hook": "Veja onde seu faturamento está vazando.",
-			"cta": "Quero saber agora",
+			"cta": "Ver meu vazamento em 60s",
 			"dismiss": "Fechar"
 		},
 		"pricing_cadence": {
@@ -7793,5 +7796,8 @@
 			"error_copy_failed": "Não foi possível copiar o link. Tente selecionar a barra de URL manualmente.",
 			"your_site": "seu site"
 		}
+	},
+	"activate": {
+		"progress_label": "Passo 3 de 3: Ativar"
 	}
 }

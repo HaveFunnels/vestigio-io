@@ -355,12 +355,13 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 					<Image src={logoLight} alt="Vestigio" height={24} className="dark:hidden invert" />
 				</Link>
 				<div className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-semibold uppercase tracking-[0.18em] text-content-muted">
-					Passo 2 de 2
+					Passo 3 de 3: Ativar
 				</div>
 			</div>
 
-			{/* Progress bar */}
+			{/* Progress bar — Wave 22.9 · war-room polish #7. Buyer already crossed audit form + result reveal + signup before landing on /activate; 3 segments (Diagnóstico done, Conta done, Pagamento active) reflect actual sunk cost and reduce abandon-at-the-goal-line. */}
 			<div className="mx-auto mb-8 flex max-w-3xl items-center gap-2">
+				<div className="h-1 flex-1 rounded-full bg-emerald-500" />
 				<div className="h-1 flex-1 rounded-full bg-emerald-500" />
 				<div className="h-1 flex-1 rounded-full bg-content/80" />
 			</div>
@@ -447,6 +448,8 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 									payment={payment}
 									onStart={startPix}
 									priceCents={priceCents}
+									cycle={cycle}
+									onSwitchToAnnual={() => setCycle("annually")}
 								/>
 							)}
 							{tab === "card" && (
@@ -505,9 +508,9 @@ export function ActivatePaywall({ plans, userEmail, userName }: Props) {
 
 						<div className="mt-4 border-t border-edge-subtle pt-4 text-[12px] text-content-muted">
 							{tab === "pix"
-								? cycle === "monthly"
-									? "Pagamento via Pix. Renovação manual por email todo mês."
-									: "Pagamento via Pix. Renovação anual."
+								? cycle === "annually"
+									? "Pagamento via Pix. Renovação anual."
+									: "Pagamento via Pix."
 								: cycle === "monthly"
 									? "Assinatura recorrente no cartão. Cancele a qualquer momento."
 									: "Assinatura anual no cartão. Cancele a qualquer momento."}
@@ -553,10 +556,14 @@ function PixTab({
 	payment,
 	onStart,
 	priceCents,
+	cycle,
+	onSwitchToAnnual,
 }: {
 	payment: PaymentState;
 	onStart: () => void;
 	priceCents: number;
+	cycle: Cycle;
+	onSwitchToAnnual: () => void;
 }) {
 	if (payment.kind === "idle" || payment.kind === "error") {
 		return (
@@ -580,6 +587,21 @@ function PixTab({
 						<path d="M3 8h10M9 4l4 4-4 4" />
 					</svg>
 				</button>
+				{/* Wave 22.9 · war-room polish #8 — Pix monthly warning as visible chip under the button. Previously buried in sidebar aside (invisible at decision moment); now makes friction VISIBLE at commit + surfaces the annual switch (Pix annual = higher LTV, less involuntary churn). Also ahead of BR CDC Art. 6º VIII disclosure. */}
+				{cycle === "monthly" && (
+					<div className="mt-3 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-50 p-3 text-[12px] leading-relaxed text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+						<svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+							<path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+						</svg>
+						<div>
+							<span className="font-semibold">Pix mensal exige nova confirmação todo mês.</span>{" "}
+							<button type="button" onClick={onSwitchToAnnual} className="underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-100">
+								Economize 20% no anual
+							</button>
+							.
+						</div>
+					</div>
+				)}
 			</div>
 		);
 	}

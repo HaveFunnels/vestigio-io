@@ -67,18 +67,18 @@
 				"message": "Jede Analyse beginnt mit der zentralen These des Zyklus: was Geld kostet und was zu tun ist.",
 				"cta": "So funktioniert's"
 			},
-			"headline_part1": "Es leckt Geld aus Ihrem Betrieb.",
-			"headline_part2": "Vestigio weiß wo und wie viel.",
+			"headline_part1": "Ihrem Betrieb entgehen Einnahmen.",
+			"headline_part2": "Vestigio zeigt, wo und wie viel.",
 			"headline_part3": "",
 			"headline_gradient_parts": "",
 			"headline_brush_word": "",
-			"subtitle": "Wir zeigen, wo das Geld entkommt, wie viel, und was Sie tun, um es zu stoppen.",
+			"subtitle": "Wir zeigen, wo Geld entgeht, wie viel und wie man es stoppt.",
 			"subtitle_line1": "",
 			"subtitle_before_bold": "Wir zeigen, ",
-			"subtitle_bold": "wo das Geld entkommt, wie viel, und was Sie tun, um es zu stoppen",
+			"subtitle_bold": "wo Geld entgeht, wie viel und wie man es stoppt",
 			"subtitle_after_bold": ".",
-			"cta_primary": "Kostenlose Diagnose starten",
-			"cta_secondary": "Produkt-Tour ansehen",
+			"cta_primary": "Meinen Leak zeigen (60 Sek.)",
+			"cta_secondary": "So funktioniert es",
 			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
@@ -96,7 +96,8 @@
 					"value": "4 Schritte",
 					"label": "Pro Ausgabe"
 				}
-			]
+			],
+			"cta_primary_badge": "Kostenlos"
 		},
 		"hero_lp": {
 			"banner": {
@@ -132,12 +133,13 @@
 					"solution": "Impact in Euro"
 				}
 			],
-			"cta_primary": "Kostenlose Diagnose starten",
-			"cta_secondary": "Produkt-Tour ansehen",
+			"cta_primary": "Meinen Leak zeigen (60 Sek.)",
+			"cta_secondary": "So funktioniert es",
 			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
-			}
+			},
+			"cta_primary_badge": "Kostenlos"
 		},
 		"product_tour": {
 			"section_headline": "Strategieplan · Geführte Tour",
@@ -735,15 +737,15 @@
 			"quick_start_title": "Quick Start",
 			"quick_start_desc": "Starten Sie in Sekunden, nur mit Ihrer Domain.",
 			"visibility_title": "Wir prüfen 15.000 Signale auf Ihrer Website",
-			"visibility_desc": "",
+			"visibility_desc": "15.000 Signale pro Analyse: Checkout, Funnel, Mobile, Skripte, Ads, SEO.",
 			"roi_subtitle": "Sie können buchstäblich nicht verlieren.",
 			"pulse_title": "These des Monats",
 			"pulse_desc": "Jede Analyse beginnt mit einer These: die zentrale Lesart des Zyklus, in Euro, mit nächsten Schritten.",
 			"pulse_cta": "Beispiel ansehen",
 			"monitoring_title": "Fehler in Stunden gefunden",
-			"monitoring_desc": "",
+			"monitoring_desc": "Jede Website-Änderung wird mit dem vorherigen Zyklus verglichen. Kritische Regressionen in Stunden, nicht Wochen.",
 			"integrations_title": "Funktioniert mit jeder Website",
-			"integrations_desc": ""
+			"integrations_desc": "Shopify, WordPress, Webflow, Framer, Next.js, individuelle Seiten. Öffnet es sich im Browser, liest es Vestigio."
 		},
 		"mini_calculator": {
 			"title": "Sehen Sie, wo Ihre Umsätze lecken.",
@@ -770,7 +772,7 @@
 			"col_impact": "Geschätzte Wirkung",
 			"total_impact": "Im Risiko / Monat",
 			"cta_question": "Möchten Sie den vollständigen Strategieplan mit priorisierten Nächsten Schritten und monatlichen Updates?",
-			"cta_signup": "Meinen Plan erhalten",
+			"cta_signup": "Zeigen, wie viel entgeht →",
 			"cta_pricing": "Preise sehen",
 			"disclaimer": "Vorläufige Schätzung. Die vollständige Analyse umfasst End-to-End-Verifizierung, Ursachenkette und priorisierte Nächste Schritte.",
 			"scan_another": "Andere Site analysieren",
@@ -811,7 +813,8 @@
 			"f_session_token_exposed": "Sitzungstoken in unsicherem Kontext freigelegt",
 			"f_admin_panel_exposed": "Admin-Panel extern auffindbar",
 			"f_error_pages_unbranded": "Fehlerseiten verlieren Besucher ohne Wiederherstellung",
-			"f_social_proof_missing": "Social Proof fehlt an wichtigen Entscheidungspunkten"
+			"f_social_proof_missing": "Social Proof fehlt an wichtigen Entscheidungspunkten",
+			"cta_price_microcopy": "€19/Monat · 4× Garantie in 30 Tagen"
 		},
 		"pricing_heading": {
 			"heading": "Sehen Sie genau, was Sie jeden Monat verlieren.",
@@ -819,7 +822,7 @@
 		},
 		"sticky_cta": {
 			"hook": "Sehen Sie, wo Ihr Umsatz leckt.",
-			"cta": "Ich will es jetzt wissen",
+			"cta": "Meinen Leak zeigen (60 Sek.)",
 			"dismiss": "Schließen"
 		},
 		"pricing_cadence": {
@@ -8127,5 +8130,8 @@
 			"error_copy_failed": "Link konnte nicht kopiert werden. Versuchen Sie, die URL-Leiste manuell auszuwählen.",
 			"your_site": "Ihre Website"
 		}
+	},
+	"activate": {
+		"progress_label": "Schritt 3 von 3: Aktivieren"
 	}
 }

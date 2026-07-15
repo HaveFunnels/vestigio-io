@@ -653,6 +653,10 @@ const MiniCalculator = ({ primaryCtaHref = "/audit" }: MiniCalculatorProps = {})
 											{t("cta_pricing")}
 										</Link>
 									</div>
+									{/* Wave 22.9 · war-room polish #4 — price microcopy under the CTA cluster. Kills late-price-shock at /activate by anchoring commitment at the moment of peak intent. Values locale-mapped; interpunct separates price/guarantee (no em-dash per house style). */}
+									<p className="mx-auto mb-4 max-w-[500px] text-[12px] font-medium text-content-muted">
+										{t("cta_price_microcopy")}
+									</p>
 									<p className="mx-auto max-w-[500px] text-xs text-content-muted">
 										{t("disclaimer")}
 									</p>

@@ -72,13 +72,13 @@
 			"headline_part3": "",
 			"headline_gradient_parts": "",
 			"headline_brush_word": "",
-			"subtitle": "We show you where the money escapes, how much, and what you do to stop it.",
+			"subtitle": "We show where the money leaks, how much, and how to stop it.",
 			"subtitle_line1": "",
 			"subtitle_before_bold": "We show you ",
-			"subtitle_bold": "where the money escapes, how much, and what you do to stop it",
+			"subtitle_bold": "where the money leaks, how much, and how to stop it",
 			"subtitle_after_bold": ".",
-			"cta_primary": "Run free diagnostic",
-			"cta_secondary": "Watch product tour",
+			"cta_primary": "See my leak in 60s",
+			"cta_secondary": "See how it works",
 			"cta_micro": "",
 			"trust_microcopy": {
 				"guarantee": "4X Guarantee: if we don't find 4x the plan value in opportunities, full refund.",
@@ -100,7 +100,8 @@
 					"value": "4 steps",
 					"label": "Per edition"
 				}
-			]
+			],
+			"cta_primary_badge": "Free"
 		},
 		"logo_strip": {
 			"headline": "Trusted by companies, brands, and growth specialists."
@@ -139,12 +140,13 @@
 					"solution": "Impact in dollars"
 				}
 			],
-			"cta_primary": "Run free diagnostic",
-			"cta_secondary": "Watch product tour",
+			"cta_primary": "See my leak in 60s",
+			"cta_secondary": "See how it works",
 			"cta_micro": "",
 			"shell": {
 				"_deprecated": "moved to product_tour"
-			}
+			},
+			"cta_primary_badge": "Free"
 		},
 		"product_tour": {
 			"section_headline": "Strategy Plan · Guided tour",
@@ -742,16 +744,16 @@
 			"quick_start_title": "Ready in 60 seconds",
 			"quick_start_desc": "Paste your URL. No code, no tag, no onboarding.",
 			"visibility_title": "We check 15,000 signals on your site",
-			"visibility_desc": "",
+			"visibility_desc": "15,000 signals swept per scan: checkout, funnel, mobile, scripts, ads, SEO.",
 			"roi_title": "4X Guarantee",
 			"roi_subtitle": "If Vestigio doesn't find 4× your plan's value in monthly losses, we refund 100%.",
 			"pulse_title": "Thesis of the month",
 			"pulse_desc": "Every analysis opens with a thesis: the central read of the cycle, in dollars, with next steps.",
 			"pulse_cta": "See an example",
 			"monitoring_title": "Errors caught in hours",
-			"monitoring_desc": "",
+			"monitoring_desc": "Every site change is compared to the previous cycle. Critical regressions in hours, not weeks.",
 			"integrations_title": "Works with any site",
-			"integrations_desc": ""
+			"integrations_desc": "Shopify, WordPress, Webflow, Framer, Next.js, custom sites. If it opens in a browser, Vestigio reads it."
 		},
 		"mini_calculator": {
 			"title": "See where your revenue is leaking.",
@@ -778,7 +780,7 @@
 			"col_impact": "Est. impact",
 			"total_impact": "At risk / month",
 			"cta_question": "Want the full Strategy Plan, with prioritized Next steps and monthly updates?",
-			"cta_signup": "Get my Plan",
+			"cta_signup": "See how much is leaking →",
 			"cta_pricing": "See Pricing",
 			"disclaimer": "Preliminary estimate. The full analysis includes end-to-end verification, root-cause chain, and prioritized Next steps.",
 			"scan_another": "Analyze another site",
@@ -819,7 +821,8 @@
 			"f_session_token_exposed": "Session tokens exposed in insecure context",
 			"f_admin_panel_exposed": "Admin panel externally discoverable",
 			"f_error_pages_unbranded": "Error pages losing visitors without recovery",
-			"f_social_proof_missing": "Social proof missing from key decision points"
+			"f_social_proof_missing": "Social proof missing from key decision points",
+			"cta_price_microcopy": "$19/mo · 4× guarantee within 30 days"
 		},
 		"pricing_heading": {
 			"heading": "See exactly what you are losing every month.",
@@ -827,7 +830,7 @@
 		},
 		"sticky_cta": {
 			"hook": "See where your sales are leaking.",
-			"cta": "Show me now",
+			"cta": "See my leak in 60s",
 			"dismiss": "Close"
 		},
 		"pricing_cadence": {
@@ -9898,5 +9901,8 @@
 			"error_copy_failed": "Could not copy the link. Try selecting the URL bar manually.",
 			"your_site": "your site"
 		}
+	},
+	"activate": {
+		"progress_label": "Step 3 of 3: Activate"
 	}
 }

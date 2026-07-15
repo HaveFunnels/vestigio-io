@@ -83,6 +83,10 @@ export async function GET(request: Request, { params }: RouteParams) {
 				select: {
 					ownerId: true,
 					memberships: { select: { userId: true, role: true } },
+					// Peer-line source: businessModel drives cohort selection
+					// (ecommerce | saas → saas-b2b | infoproduct → infoprodutos).
+					// Null-safe: no profile → no peer lines.
+					businessProfile: { select: { businessModel: true } },
 				},
 			},
 		},
@@ -590,6 +594,40 @@ export async function GET(request: Request, { params }: RouteParams) {
 		const url = screenshotUrlByKey.get(key);
 		if (url) screenshotUrlByPath[path] = url;
 	}
+
+	// Reta-final · peer prevalence: for each whitelisted inference key
+	// backed by a Vestigio Index cohort, resolve the customer's peer
+	// contrast line and attach it to the plan payload. Client renders
+	// under the finding's root cause. Only lines resolvable server-side
+	// ship — no cohort data on client, keeps the /app bundle small.
+	const peerLineByInferenceKey: Record<
+		string,
+		{ prevalence: number; cohortSampleSize: number; cohortPeriod: string; vertical: string; patternLabel: string; direction: string }
+	> = {};
+	try {
+		const { getPeerLine } = await import("../../../../../../packages/signals/peer-line");
+		const businessModel = env.organization?.businessProfile?.businessModel ?? null;
+		const locale = plan.locale;
+		// Whitelist mirrors PEER_LINE_RULES in packages/signals/peer-line.ts.
+		// Kept explicit here so a new rule addition ships end-to-end in
+		// one PR (add rule → add key here → client already renders it).
+		const WHITELIST = [
+			"payment_options_invisible",
+			"whatsapp_channel_disconnected",
+			"no_free_trial_offered",
+			"pricing_page_framing_unclear",
+			"trust_signal_gap",
+		];
+		for (const key of WHITELIST) {
+			const line = getPeerLine(key, businessModel, locale);
+			if (line) peerLineByInferenceKey[key] = line;
+		}
+	} catch (err) {
+		// Peer-line helper missing or cohort data broken — degrade to
+		// text-only findings. Log so we notice regressions.
+		console.warn("[strategy] peer-line resolution failed:", err instanceof Error ? err.message : err);
+	}
+
 	const hero = plan.heroMetricsJson as any;
 	const buyerSegments = plan.buyerSegmentsJson as any;
 	const memoryRollups = plan.memoryRollupsJson as any;
@@ -672,6 +710,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 		attributionTimeline,
 		attributionTotal,
 		screenshotUrlByPath,
+		peerLineByInferenceKey,
 		narrativeWhatHappened: plan.narrativeWhatHappened,
 		valuePreviewNarrative: plan.valuePreviewNarrative,
 		valuePreview,

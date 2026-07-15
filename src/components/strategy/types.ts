@@ -446,6 +446,26 @@ export interface StrategyPlan {
 	 * or the env has no captured surfaces yet — UI degrades to text.
 	 */
 	screenshotUrlByPath?: Record<string, string>;
+	/**
+	 * Reta-final · peer prevalence: map of inference_key → peer contrast
+	 * line, resolved server-side from the Vestigio Index cohort matching
+	 * the org's businessModel + locale. The FindingCard consumes this
+	 * via <PlanPeerProvider> to render "X% of peers do this. You don't."
+	 * beneath the root cause. Empty object when no cohort applies (e.g.
+	 * lead_gen orgs — no dedicated cohort yet). See
+	 * packages/signals/peer-line.ts for the whitelist + copy templates.
+	 */
+	peerLineByInferenceKey?: Record<
+		string,
+		{
+			prevalence: number;
+			cohortSampleSize: number;
+			cohortPeriod: string;
+			vertical: string;
+			patternLabel: string;
+			direction: string;
+		}
+	>;
 	narrativeWhatHappened: string;
 	valuePreviewNarrative: string;
 	valuePreview: ValuePreview;

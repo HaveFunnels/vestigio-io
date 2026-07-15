@@ -31,6 +31,7 @@ import Carteira from "./sections/Carteira";
 import PlanTOCRail, { type TocItem } from "./PlanTOCRail";
 import MonthPicker from "./MonthPicker";
 import { PlanScreenshotProvider } from "./PlanScreenshotContext";
+import { PlanPeerProvider } from "./PlanPeerContext";
 
 /*
  * StrategyPlanPanel — top-level composition of the 6 plan sections
@@ -559,6 +560,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 
 	return (
 		<PlanScreenshotProvider urlByPath={plan.screenshotUrlByPath}>
+		<PlanPeerProvider lineByInferenceKey={plan.peerLineByInferenceKey}>
 		<div
 			data-vsgp-plan
 			data-vsgp-print={isPrint ? "true" : "false"}
@@ -806,6 +808,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 			</div>
 			</div>
 		</div>
+		</PlanPeerProvider>
 		</PlanScreenshotProvider>
 	);
 }

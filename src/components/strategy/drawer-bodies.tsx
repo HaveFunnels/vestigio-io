@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { ChevronDown, ExternalLink } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { humanizeSurfaceLabel } from "@/lib/surface-label";
@@ -15,6 +15,7 @@ import type {
 } from "../../../packages/projections";
 import { buildFindingBackUrl, type DrawerCtx } from "./plan-url";
 import { usePlanScreenshotForUrl } from "./PlanScreenshotContext";
+import { usePeerLineForInference } from "./PlanPeerContext";
 
 // ──────────────────────────────────────────────
 // Drawer content bodies — composable inside PlanSideDrawer.
@@ -51,6 +52,76 @@ const SEVERITY_LABEL: Record<string, string> = {
 	low: "baixa",
 	none: "—",
 };
+
+// ──────────────────────────────────────────────
+// Peer-line copy composer
+//
+// Turns the raw PeerLine (prevalence + labels resolved server-side
+// from the Vestigio Index cohort) into the finished sentence rendered
+// under the finding's root cause. Kept local to drawer-bodies so
+// changing the tone doesn't ripple through the /packages helper —
+// the helper stays "just the data".
+// ──────────────────────────────────────────────
+
+const VERTICAL_LABEL: Record<string, Partial<Record<string, string>>> = {
+	ecommerce: {
+		"pt-BR": "e-commerces BR",
+		en: "BR e-commerce sites",
+		es: "e-commerce brasileños",
+		de: "brasilianische E-Commerce-Seiten",
+	},
+	"saas-b2b": {
+		"pt-BR": "SaaS B2B BR",
+		en: "BR B2B SaaS companies",
+		es: "SaaS B2B brasileños",
+		de: "brasilianische B2B-SaaS-Anbieter",
+	},
+	infoprodutos: {
+		"pt-BR": "infoprodutos BR",
+		en: "BR info-products",
+		es: "info-productos brasileños",
+		de: "brasilianische Info-Produkte",
+	},
+};
+
+function composePeerLineCopy(
+	line: { prevalence: number; cohortSampleSize: number; cohortPeriod: string; vertical: string; patternLabel: string; direction: string },
+	locale: string,
+): { sentence: string; footer: string } | null {
+	const pct = Math.round(line.prevalence * 100);
+	if (pct <= 0) return null;
+	const verticalLabel = VERTICAL_LABEL[line.vertical]?.[locale] ?? line.vertical;
+	// Sentence templates. Loss-frame default assumes peer_has direction
+	// (most peers do X → customer's absence is contrast). Kept minimal
+	// so translation drift doesn't obscure the number.
+	const sentence = (() => {
+		switch (locale) {
+			case "en":
+				return `${pct}% of ${verticalLabel} we analyzed have ${line.patternLabel}. Your page does not.`;
+			case "es":
+				return `${pct}% de los ${verticalLabel} que analizamos tienen ${line.patternLabel}. Tu página, no.`;
+			case "de":
+				return `${pct}% der von uns analysierten ${verticalLabel} zeigen ${line.patternLabel}. Ihre Seite nicht.`;
+			case "pt-BR":
+			default:
+				return `${pct}% dos ${verticalLabel} que analisamos têm ${line.patternLabel}. Sua página, não.`;
+		}
+	})();
+	const footer = (() => {
+		switch (locale) {
+			case "en":
+				return `Vestigio Index · ${line.cohortSampleSize} sites analyzed in ${line.cohortPeriod}`;
+			case "es":
+				return `Vestigio Index · ${line.cohortSampleSize} sitios analizados en ${line.cohortPeriod}`;
+			case "de":
+				return `Vestigio Index · ${line.cohortSampleSize} Seiten analysiert im ${line.cohortPeriod}`;
+			case "pt-BR":
+			default:
+				return `Vestigio Index · ${line.cohortSampleSize} sites analisados em ${line.cohortPeriod}`;
+		}
+	})();
+	return { sentence, footer };
+}
 
 // ──────────────────────────────────────────────
 // ActionListBody
@@ -375,6 +446,12 @@ function FindingCard({
 	// figure only renders inside the expanded body so the collapsed list
 	// stays visually uniform.
 	const screenshotUrl = usePlanScreenshotForUrl(finding.source_url);
+	// Peer contrast — "X% of BR e-commerces do this. You don't." Only
+	// resolves for whitelisted inference keys with a matching Vestigio
+	// Index cohort (see packages/signals/peer-line.ts).
+	const peerLine = usePeerLineForInference(finding.inference_key);
+	const locale = useLocale();
+	const peerCopy = peerLine ? composePeerLineCopy(peerLine, locale) : null;
 
 	// Header-level deep link, in addition to the "Abrir ficha completa"
 	// button inside the expanded body. The tester reported wanting any
@@ -549,6 +626,25 @@ function FindingCard({
 											<p className="font-serif text-[13px] leading-[1.6] text-content-secondary">
 												{rootCause}
 											</p>
+										</div>
+									)}
+
+									{/* Peer contrast — Vestigio Index cohort prevalence
+									    beside the root cause. Loss-frame mimetic lever:
+									    "X% of peers do this. You don't." Only renders
+									    when the finding is whitelisted AND cohort data
+									    exists for the org's vertical/locale. */}
+									{peerCopy && (
+										<div className="rounded-lg border border-edge-focus/40 bg-surface-inset/40 p-3">
+											<div className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+												Vs. seus pares
+											</div>
+											<p className="font-serif text-[13px] leading-[1.55] text-content">
+												{peerCopy.sentence}
+											</p>
+											<div className="mt-1.5 font-sans text-[10px] text-content-faint">
+												{peerCopy.footer}
+											</div>
 										</div>
 									)}
 

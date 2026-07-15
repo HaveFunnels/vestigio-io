@@ -65,13 +65,19 @@ interface PeerLineRule {
 /** Inference-key → peer-line rule. Curated whitelist — expand as new
  *  cohorts land or as the engine emits new patterns worth benchmarking.
  *  See dictionary/pt-BR.json engine.inference_titles for the full
- *  inference-key catalog. */
+ *  inference-key catalog. Each rule is only meaningful when the cohort
+ *  actually publishes that pattern at ≥ minPrevalenceToShow; low-
+ *  prevalence patterns (customerLogos, garantiaXDias, cookieBanner in
+ *  BR) are deliberately not mapped — absence isn't a finding when the
+ *  market norm is also absence. */
 const PEER_LINE_RULES: Record<string, PeerLineRule> = {
 	// Ecommerce ─────
 	payment_options_invisible: {
 		patternKey: "pixMention",
-		verticals: ["ecommerce", "saas-b2b"],
-		minPrevalenceToShow: 0.30,
+		// Also fires for infoprodutos (25% pix mention) and saas-b2b (33%)
+		// — Brazilian buyers expect Pix on any transactional surface.
+		verticals: ["ecommerce", "saas-b2b", "infoprodutos"],
+		minPrevalenceToShow: 0.20,
 	},
 	whatsapp_channel_disconnected: {
 		patternKey: "whatsappContact",
@@ -89,12 +95,34 @@ const PEER_LINE_RULES: Record<string, PeerLineRule> = {
 		verticals: ["saas-b2b"],
 		minPrevalenceToShow: 0.40,
 	},
-	trust_signal_gap: {
-		patternKey: "customerLogos",
+	// Added 2026-07-15 — SaaS-B2B ecosystem + self-serve expansion.
+	integration_ecosystem_invisible: {
+		patternKey: "integrationsPage",
+		verticals: ["saas-b2b"],
+		minPrevalenceToShow: 0.30,
+	},
+	enterprise_signals_missing: {
+		patternKey: "apiDocsLink",
+		verticals: ["saas-b2b"],
+		minPrevalenceToShow: 0.30,
+	},
+	weak_cta_on_commercial: {
+		patternKey: "selfServeSignupCTA",
+		verticals: ["saas-b2b"],
+		minPrevalenceToShow: 0.30,
+	},
+	cta_clarity_weak_on_commercial: {
+		patternKey: "selfServeSignupCTA",
 		verticals: ["saas-b2b"],
 		minPrevalenceToShow: 0.30,
 	},
 };
+
+/** Public whitelist consumed by the strategy API to build the
+ *  peerLineByInferenceKey payload. Kept in sync with PEER_LINE_RULES
+ *  by construction so a new rule ships end-to-end (helper + API) in
+ *  one PR — no drift between "resolvable" and "queried". */
+export const PEER_LINE_INFERENCE_KEYS = Object.keys(PEER_LINE_RULES);
 
 export interface PeerLine {
 	/** 0..1 prevalence in the peer cohort. */
@@ -147,6 +175,24 @@ const PATTERN_LABELS: Record<string, Partial<Record<string, string>>> = {
 		en: "customer logos above the fold",
 		es: "logos de clientes sobre la primera vista",
 		de: "Kundenlogos über der Falz",
+	},
+	integrationsPage: {
+		"pt-BR": "página de integrações linkada no menu",
+		en: "integrations page linked in the nav",
+		es: "página de integraciones enlazada en el menú",
+		de: "Integrationsseite in der Navigation verlinkt",
+	},
+	apiDocsLink: {
+		"pt-BR": "documentação de API pública linkada",
+		en: "public API docs linked",
+		es: "documentación de API pública enlazada",
+		de: "öffentliche API-Dokumentation verlinkt",
+	},
+	selfServeSignupCTA: {
+		"pt-BR": "CTA de cadastro self-serve visível na home",
+		en: "self-serve signup CTA visible on the home page",
+		es: "CTA de registro self-serve visible en la home",
+		de: "Self-Serve-Anmelde-CTA auf der Startseite sichtbar",
 	},
 };
 

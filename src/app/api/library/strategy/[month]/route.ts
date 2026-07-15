@@ -605,20 +605,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 		{ prevalence: number; cohortSampleSize: number; cohortPeriod: string; vertical: string; patternLabel: string; direction: string }
 	> = {};
 	try {
-		const { getPeerLine } = await import("../../../../../../packages/signals/peer-line");
+		const { getPeerLine, PEER_LINE_INFERENCE_KEYS } = await import(
+			"../../../../../../packages/signals/peer-line"
+		);
 		const businessModel = env.organization?.businessProfile?.businessModel ?? null;
 		const locale = plan.locale;
-		// Whitelist mirrors PEER_LINE_RULES in packages/signals/peer-line.ts.
-		// Kept explicit here so a new rule addition ships end-to-end in
-		// one PR (add rule → add key here → client already renders it).
-		const WHITELIST = [
-			"payment_options_invisible",
-			"whatsapp_channel_disconnected",
-			"no_free_trial_offered",
-			"pricing_page_framing_unclear",
-			"trust_signal_gap",
-		];
-		for (const key of WHITELIST) {
+		// Whitelist ships from packages/signals/peer-line.ts so a new
+		// rule reaches the API without a second edit here.
+		for (const key of PEER_LINE_INFERENCE_KEYS) {
 			const line = getPeerLine(key, businessModel, locale);
 			if (line) peerLineByInferenceKey[key] = line;
 		}

@@ -119,7 +119,11 @@ async function main() {
 	const whitelistSet = new Set(PEER_LINE_INFERENCE_KEYS);
 
 	for (const f of findings) {
-		const proj = f.projection as { source_url?: string | null } | null;
+		// projection may be persisted as a JSON string (Text column) or a
+		// JS object (Json column) depending on write path. Handle both.
+		const raw = f.projection as unknown;
+		const proj: { source_url?: string | null } | null =
+			typeof raw === "string" ? (raw ? JSON.parse(raw) : null) : (raw as any);
 		const sourceUrl = proj?.source_url ?? null;
 
 		// Peer-line eligibility

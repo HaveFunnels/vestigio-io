@@ -1,6 +1,7 @@
 import FooterWrapper from "@/components/Footer/FooterWrapper";
 import { HeaderWrapper } from "@/components/Header/HeaderWrapper";
 import TrackingScript from "@/components/analytics/TrackingScript";
+import PixelTracker from "@/components/tracking/PixelTracker";
 import NextTopLoader from "nextjs-toploader";
 // react-quill CSS moved to admin layout — not needed on public pages
 import ToastContext from "../context/ToastContext";
@@ -15,6 +16,7 @@ export default function RootLayout({
 		<div className='isolate'>
 			<ToastContext />
 			<TrackingScript />
+			<PixelTracker />
 			<Providers>
 				<NextTopLoader
 					color='#635BFF'

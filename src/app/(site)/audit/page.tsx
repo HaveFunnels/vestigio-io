@@ -301,9 +301,11 @@ export default function LpAuditPage() {
 
 			{/* Turnstile invisible widget — resolves a challenge on mount
 			    and refreshes every ~5min. Token feeds fireAudit() when
-			    the visitor reaches the final /run-audit step. Renders
-			    nothing when NEXT_PUBLIC_TURNSTILE_SITE_KEY is unset (dev). */}
-			<TurnstileWidget onToken={f.setTurnstileToken} />
+			    the visitor reaches the final /run-audit step. Widget
+			    ref lets the hook call .reset() and retry on transient
+			    Cloudflare failures (B5). Renders nothing when
+			    NEXT_PUBLIC_TURNSTILE_SITE_KEY is unset (dev). */}
+			<TurnstileWidget ref={f.turnstileRef} onToken={f.setTurnstileToken} />
 
 			<StepShell
 				stepIndex={f.stepIndex}

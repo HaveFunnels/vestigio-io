@@ -224,6 +224,18 @@ export default function MiniAuditResultPage() {
 		trackLpEvent(leadId, "lp_audit_cta_clicked");
 		setLaunching(true);
 
+		// Ad-platform InitiateCheckout — fires the moment the buyer
+		// asks to pay (before Paddle overlay renders). Dedup key =
+		// leadId. Purchase event fires server-side from the Paddle
+		// webhook with the same leadId so Meta CAPI/gtag can dedupe.
+		import("@/libs/tracking").then(({ trackConversion }) => {
+			trackConversion("initiate_checkout", {
+				eventId: leadId,
+				email: checkoutEmail || undefined,
+				contentId: LP_PRICE_ID,
+			});
+		}).catch(() => { /* best-effort */ });
+
 		// BUG-11 fix: Mark lead as checkout_started so we can distinguish
 		// "abandoned checkout" from "never reached checkout" in analytics,
 		// and prevent the result expiration timer from firing mid-checkout.

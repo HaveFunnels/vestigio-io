@@ -1,7 +1,7 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 
 // ──────────────────────────────────────────────
 // TurnstileWidget — invisible Cloudflare Turnstile challenge.
@@ -53,11 +53,36 @@ interface Props {
 	onToken: (token: string) => void;
 }
 
-export function TurnstileWidget({ onToken }: Props) {
+/** Imperative handle exposed via ref — lets the parent (useLpAuditForm)
+ *  force a fresh challenge on the widget when a server-side verify
+ *  timed out or errored transiently. Calling reset() clears the current
+ *  token and re-executes the challenge; the callback fires again with
+ *  the new token, and the parent can retry the request that failed. */
+export interface TurnstileHandle {
+	reset: () => void;
+}
+
+export const TurnstileWidget = forwardRef<TurnstileHandle, Props>(function TurnstileWidget({ onToken }, ref) {
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const widgetIdRef = useRef<string | null>(null);
 	const [scriptReady, setScriptReady] = useState(false);
 	const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
+	useImperativeHandle(
+		ref,
+		() => ({
+			reset: () => {
+				if (widgetIdRef.current && typeof window !== "undefined" && window.turnstile?.reset) {
+					try {
+						window.turnstile.reset(widgetIdRef.current);
+					} catch (err) {
+						console.warn("[turnstile] reset failed:", err);
+					}
+				}
+			},
+		}),
+		[],
+	);
 
 	useEffect(() => {
 		if (!siteKey || !scriptReady) return;
@@ -107,6 +132,6 @@ export function TurnstileWidget({ onToken }: Props) {
 			<div ref={containerRef} aria-hidden="true" />
 		</>
 	);
-}
+});
 
 export default TurnstileWidget;

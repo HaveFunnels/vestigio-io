@@ -271,7 +271,22 @@ export default function useLpAuditForm() {
 	// then either fails-open (no TURNSTILE_SECRET_KEY) or 400s the
 	// request (secret set, no token). Real prod requires the widget
 	// live on the page and this token present.
-	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+	const [turnstileToken, setTurnstileTokenState] = useState<string | null>(null);
+	// Ref mirror of the token so fireAudit's retry loop can read the
+	// FRESHLY-produced token after calling widget.reset() without
+	// waiting for a React re-render.
+	const turnstileTokenRef = useRef<string | null>(null);
+	const setTurnstileToken = useCallback((token: string | null) => {
+		turnstileTokenRef.current = token;
+		setTurnstileTokenState(token);
+	}, []);
+	// Imperative handle to the invisible Turnstile widget. Populated
+	// via ref forward from <TurnstileWidget> mounted on the /audit
+	// page. fireAudit calls .reset() on it when Cloudflare returns a
+	// verify_timeout / verify_network_error so we can silently retry
+	// once with a fresh challenge before surfacing an error to the
+	// visitor (B5 · Cloudflare network blip resilience).
+	const turnstileRef = useRef<{ reset: () => void } | null>(null);
 
 	// ── Early-crawl progress ──
 	// Dispatched after step 1 (domain). Polled by useCrawlPolling. Feeds
@@ -540,33 +555,69 @@ export default function useLpAuditForm() {
 			}
 			return false;
 		}
-		try {
-			const res = await fetch(`/api/lead/${leadId}/run-audit`, {
+		// Turnstile-aware POST. Retries once on transient Cloudflare
+		// failures (timeout, network error, missing token from a stale
+		// widget) after asking the widget for a fresh challenge. Real
+		// bot rejections (verify_failed:*) don't retry — those are the
+		// point of the check.
+		const TURNSTILE_TRANSIENT_REASONS = new Set([
+			"missing_token",
+			"verify_timeout",
+			"verify_network_error",
+		]);
+		async function doPost(token: string | null | undefined) {
+			return fetch(`/api/lead/${leadId}/run-audit`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
-					"X-Vestigio-Form-Session": formToken,
+					"X-Vestigio-Form-Session": formToken ?? "",
 				},
-				// Include the Turnstile token when available. Server
-				// fails-open when TURNSTILE_SECRET_KEY is unset (dev), so
-				// missing token there is fine; in prod with secret set,
-				// the widget must have resolved a challenge before this
-				// call — the invisible widget resolves auto on mount + on
-				// expiry, so the token is normally ready by the time the
-				// buyer reaches the final /run-audit step (screen ~7).
-				body: JSON.stringify({ turnstileToken: turnstileToken ?? undefined }),
+				body: JSON.stringify({ turnstileToken: token ?? undefined }),
 			});
+		}
+		try {
+			let res = await doPost(turnstileTokenRef.current);
+			if (!res.ok && res.status === 400) {
+				const err = await res.clone().json().catch(() => ({} as { reason?: string }));
+				const reason = (err as { reason?: string }).reason;
+				if (reason && TURNSTILE_TRANSIENT_REASONS.has(reason) && turnstileRef.current) {
+					// Ask widget for a fresh challenge, wait briefly for
+					// the callback to populate the ref, then retry once.
+					turnstileRef.current.reset();
+					const start = Date.now();
+					while (Date.now() - start < 4000) {
+						await new Promise((r) => setTimeout(r, 150));
+						if (turnstileTokenRef.current) break;
+					}
+					res = await doPost(turnstileTokenRef.current);
+				}
+			}
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
 				setGlobalError(err.message || "Couldn't start the audit. Please try again.");
 				return false;
+			}
+			// Lead event fires when the free /audit form submission is
+			// accepted — every DR platform reads this as "buyer intent
+			// captured" and it becomes the primary optimization signal
+			// for ad campaigns before real Purchases have volume.
+			// Dedup key = leadId so a client + server pair (future
+			// enhancement) counts once.
+			try {
+				const { trackConversion } = await import("@/libs/tracking");
+				trackConversion("lead", {
+					eventId: leadId ?? undefined,
+					email: form.email || undefined,
+				});
+			} catch {
+				/* pixel dispatch is best-effort */
 			}
 			return true;
 		} catch {
 			setGlobalError("Erro de conexão. Tente novamente.");
 			return false;
 		}
-	}, [leadId, formToken, turnstileToken]);
+	}, [leadId, formToken, form.email]);
 
 	// ── Active screen list ──
 	// Recomputed whenever businessModel flips so picking "services"
@@ -748,6 +799,7 @@ export default function useLpAuditForm() {
 		honeypot,
 		setHoneypot,
 		setTurnstileToken,
+		turnstileRef,
 		// Session
 		leadId,
 		// Value-on-fill

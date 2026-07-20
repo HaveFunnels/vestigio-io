@@ -118,6 +118,28 @@ async function findUserOrg(userId: string) {
 function logEvent(eventType: string, detail: string) {
 }
 
+/** Extract the paid amount in the smallest currency unit (cents) from
+ *  a Paddle transaction.completed payload. Paddle's `totals` blocks
+ *  come in a few shapes across API versions; prefer `details.totals`
+ *  → `data.details.line_items[].totals` → `items[].totals` in that
+ *  order. Values are strings ("990" for $9.90), converted to int. */
+function extractPaddleGrossCents(data: any): number | null {
+	const t = data?.details?.totals?.grand_total ?? data?.totals?.grand_total;
+	if (typeof t === "string" && /^\d+$/.test(t)) return parseInt(t, 10);
+	if (typeof t === "number") return t;
+	return null;
+}
+
+/** Currency code from a Paddle transaction payload. Falls back to BRL
+ *  since Vestigio is BR-primary; Meta CAPI accepts any ISO 4217. */
+function extractPaddleCurrency(data: any): string {
+	return (
+		data?.details?.currency_code ??
+		data?.currency_code ??
+		"BRL"
+	);
+}
+
 export const POST = withErrorTracking(async function POST(req: NextRequest) {
 	try {
 		const paddleSignature = req.headers.get("paddle-signature");
@@ -508,6 +530,34 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 				custom_data?.leadId
 			) {
 				await handleOnboardingActivation(custom_data, priceId, customer_id);
+			}
+
+			// ──────────────────────────────────────────────
+			// Ad-platform Purchase event (Meta CAPI, server-side)
+			//
+			// Fires the moment Paddle confirms payment. eventId is the
+			// leadId when this transaction came from the /audit funnel so
+			// client-side InitiateCheckout + server-side Purchase share
+			// keys and Meta dedupes properly (a peer signal that Meta
+			// weights heavily in optimization). Fire-and-forget; a slow
+			// or failing CAPI never blocks the webhook 200 back to Paddle.
+			//
+			// No-ops when META_CAPI_ACCESS_TOKEN / NEXT_PUBLIC_META_PIXEL_ID
+			// are unset (dev / no pixel wired yet).
+			try {
+				const { sendServerConversion } = await import("@/libs/tracking");
+				const grossCents = extractPaddleGrossCents(data);
+				const currency = extractPaddleCurrency(data);
+				void sendServerConversion("purchase", {
+					eventId: custom_data?.leadId || transactionId,
+					email: customer?.email || undefined,
+					valueCents: grossCents ?? undefined,
+					currency,
+					contentId: priceId || undefined,
+					sourceUrl: process.env.NEXT_PUBLIC_APP_URL || undefined,
+				});
+			} catch (err) {
+				console.warn("[paddle-webhook] Purchase CAPI dispatch failed:", err instanceof Error ? err.message : err);
 			}
 		}
 

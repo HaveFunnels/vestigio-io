@@ -262,6 +262,17 @@ export default function useLpAuditForm() {
 	const [leadId, setLeadId] = useState<string | null>(null);
 	const [formToken, setFormToken] = useState<string | null>(null);
 
+	// ── Turnstile token ──
+	// Populated by <TurnstileWidget> on the /audit page shell each
+	// time Cloudflare resolves a fresh challenge (auto-refreshes ~5min).
+	// Read by fireAudit() and included in the /run-audit POST body.
+	// Null before first resolution or when Turnstile isn't configured
+	// (dev / missing NEXT_PUBLIC_TURNSTILE_SITE_KEY) — server-verify
+	// then either fails-open (no TURNSTILE_SECRET_KEY) or 400s the
+	// request (secret set, no token). Real prod requires the widget
+	// live on the page and this token present.
+	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
 	// ── Early-crawl progress ──
 	// Dispatched after step 1 (domain). Polled by useCrawlPolling. Feeds
 	// the CrawlStatusWidget (sticky banner) AND the interstitial registry
@@ -536,6 +547,14 @@ export default function useLpAuditForm() {
 					"Content-Type": "application/json",
 					"X-Vestigio-Form-Session": formToken,
 				},
+				// Include the Turnstile token when available. Server
+				// fails-open when TURNSTILE_SECRET_KEY is unset (dev), so
+				// missing token there is fine; in prod with secret set,
+				// the widget must have resolved a challenge before this
+				// call — the invisible widget resolves auto on mount + on
+				// expiry, so the token is normally ready by the time the
+				// buyer reaches the final /run-audit step (screen ~7).
+				body: JSON.stringify({ turnstileToken: turnstileToken ?? undefined }),
 			});
 			if (!res.ok) {
 				const err = await res.json().catch(() => ({}));
@@ -547,7 +566,7 @@ export default function useLpAuditForm() {
 			setGlobalError("Erro de conexão. Tente novamente.");
 			return false;
 		}
-	}, [leadId, formToken]);
+	}, [leadId, formToken, turnstileToken]);
 
 	// ── Active screen list ──
 	// Recomputed whenever businessModel flips so picking "services"
@@ -728,6 +747,7 @@ export default function useLpAuditForm() {
 		// Anti-bot
 		honeypot,
 		setHoneypot,
+		setTurnstileToken,
 		// Session
 		leadId,
 		// Value-on-fill

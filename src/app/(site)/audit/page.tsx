@@ -66,6 +66,7 @@ import {
 	CompassIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import useLpAuditForm from "./useLpAuditForm";
+import { TurnstileWidget } from "@/components/audit/TurnstileWidget";
 import type {
 	BusinessType,
 	PrimaryConcern,
@@ -297,6 +298,12 @@ export default function LpAuditPage() {
 					onChange={(e) => f.setHoneypot(e.target.value)}
 				/>
 			</div>
+
+			{/* Turnstile invisible widget — resolves a challenge on mount
+			    and refreshes every ~5min. Token feeds fireAudit() when
+			    the visitor reaches the final /run-audit step. Renders
+			    nothing when NEXT_PUBLIC_TURNSTILE_SITE_KEY is unset (dev). */}
+			<TurnstileWidget onToken={f.setTurnstileToken} />
 
 			<StepShell
 				stepIndex={f.stepIndex}

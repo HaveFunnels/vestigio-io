@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
-import { getPlanConfigs } from "@/libs/plan-config";
+import { getPlanConfigs, annualPriceCentsFromMonthly } from "@/libs/plan-config";
 import { ActivatePaywall } from "./ActivatePaywall";
 
 // ──────────────────────────────────────────────
@@ -36,12 +36,20 @@ export default async function ActivatePage() {
 	// Surface only what the client needs. Prices come through as cents
 	// (BRL when present, fall back to USD-cents converted at a rough
 	// fixed rate — TODO swap for live FX or admin-managed BRL field).
-	const publicPlans = plans.map((p) => ({
-		key: p.key,
-		label: p.label,
-		monthlyPriceCents: (p as any).monthlyPriceCentsBrl || p.monthlyPriceCents,
-		annualPriceCents: ((p as any).monthlyPriceCentsBrl || p.monthlyPriceCents) * 10,
-	}));
+	// Annual price MUST route through annualPriceCentsFromMonthly (currently
+	// × 9.6 = -20%) so display + Paddle sync + MP paywall all read the same
+	// number. Previous hardcoded × 10 rendered "-20% economize" while
+	// charging -17% — refund-lever + trust hit. See ANNUAL_DISCOUNT_MULTIPLIER
+	// history note in src/libs/plan-config.ts.
+	const publicPlans = plans.map((p) => {
+		const monthly = (p as any).monthlyPriceCentsBrl || p.monthlyPriceCents;
+		return {
+			key: p.key,
+			label: p.label,
+			monthlyPriceCents: monthly,
+			annualPriceCents: annualPriceCentsFromMonthly(monthly),
+		};
+	});
 
 	return (
 		<ActivatePaywall

@@ -15,6 +15,7 @@ import { MpLoader } from "@/mp/MpLoader";
 import { MpCheckoutModal } from "@/mp/MpCheckoutModal";
 import { MpPixChargePanel, type PixChargeData } from "@/mp/MpPixChargePanel";
 import { BuyCreditsModal } from "@/components/app/BuyCreditsModal";
+import { annualPriceCentsFromMonthly } from "@/libs/plan-config";
 
 // ──────────────────────────────────────────────
 // Types
@@ -321,9 +322,11 @@ export default function BillingPage() {
           toast.error(t("errors.plan_unavailable"));
           return;
         }
+        // -20% annual via canonical helper (× 9.6). Prior × 10 hardcode
+        // silently charged -17% while UI badge promised -20%.
         const amountCentsBrl =
           billingCycle === "annually"
-            ? (targetPlan.monthlyPriceCentsBrl ?? 0) * 10
+            ? annualPriceCentsFromMonthly(targetPlan.monthlyPriceCentsBrl ?? 0)
             : targetPlan.monthlyPriceCentsBrl ?? 0;
         setMpCheckout({
           planKey: planId as "vestigio" | "pro" | "max",

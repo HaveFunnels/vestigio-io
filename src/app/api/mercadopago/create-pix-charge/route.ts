@@ -12,7 +12,7 @@ import {
 	createPixPayment,
 	isMpConfigured,
 } from "@/libs/mp-api";
-import { getPlanByKey } from "@/libs/plan-config";
+import { getPlanByKey, annualPriceCentsFromMonthly } from "@/libs/plan-config";
 
 // ──────────────────────────────────────────────
 // POST /api/mercadopago/create-pix-charge
@@ -96,8 +96,13 @@ const POST = withErrorTracking(
 			return NextResponse.json({ message: "Unknown plan" }, { status: 400 });
 		}
 
+		// Route through annualPriceCentsFromMonthly (× 9.6 = -20%) so this
+		// charge matches every other pricing surface. Note: comment used to
+		// claim "× 10 matches ANNUAL_DISCOUNT_MULTIPLIER" — that was wrong,
+		// the multiplier was aligned to 9.6 when the payment provider
+		// flipped back to Paddle. See src/libs/plan-config.ts.
 		const amountCents = cycle === "annually"
-			? (plan.monthlyPriceCentsBrl ?? 0) * 10 // matches ANNUAL_DISCOUNT_MULTIPLIER
+			? annualPriceCentsFromMonthly(plan.monthlyPriceCentsBrl ?? 0)
 			: plan.monthlyPriceCentsBrl ?? 0;
 		if (!amountCents) {
 			return NextResponse.json(

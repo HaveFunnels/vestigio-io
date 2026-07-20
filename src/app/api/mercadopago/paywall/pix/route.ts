@@ -11,7 +11,7 @@ import {
 	createPixPayment,
 	isMpConfigured,
 } from "@/libs/mp-api";
-import { getPlanByKey } from "@/libs/plan-config";
+import { getPlanByKey, annualPriceCentsFromMonthly } from "@/libs/plan-config";
 
 // ──────────────────────────────────────────────
 // POST /api/mercadopago/paywall/pix
@@ -85,8 +85,14 @@ const POST = withErrorTracking(
 		// dev envs without BRL sync still produce a charge.
 		const monthlyCentsBrl =
 			(plan as any).monthlyPriceCentsBrl ?? plan.monthlyPriceCents;
+		// Annual amount MUST go through annualPriceCentsFromMonthly (× 9.6
+		// = -20%) so the amount MP charges equals what the paywall UI
+		// promised. Previous hardcoded × 10 charged -17% while the badge
+		// said "-20%" — trust break + refund lever.
 		const amountCents =
-			cycle === "annually" ? monthlyCentsBrl * 10 : monthlyCentsBrl;
+			cycle === "annually"
+				? annualPriceCentsFromMonthly(monthlyCentsBrl)
+				: monthlyCentsBrl;
 		const amountBrl = centsToReais(amountCents);
 
 		if (!amountBrl || amountBrl <= 0) {

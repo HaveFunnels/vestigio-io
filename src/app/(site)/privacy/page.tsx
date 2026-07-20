@@ -40,6 +40,7 @@ const SECTION_IDS = [
 	"s14",
 	"s15",
 	"s16",
+	"s17",
 ] as const;
 
 // Default-shape sections that render a bullet list after the body.

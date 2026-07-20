@@ -307,11 +307,12 @@ export default function BillingPage() {
 
       // Decide which provider runs this checkout:
       //   - Existing sub → userProvider (don't migrate them mid-flow)
-      //   - No sub        → activeProvider (today: MP)
+      //   - No sub        → activeProvider (locked to Paddle 2026-07-20;
+      //                     see src/libs/payment-provider.ts)
       const provider: "mercadopago" | "paddle" =
         (billing?.userProvider as any) ||
         (billing?.activeProvider as any) ||
-        "mercadopago";
+        "paddle";
 
       if (provider === "mercadopago") {
         const mpPlanId =
@@ -398,12 +399,13 @@ export default function BillingPage() {
     return labels[key] || key;
   };
 
-  // Provider that drives THIS page's UI. Existing sub → userProvider,
-  // else activeProvider (today: MP). Loaders + modals are gated on this.
+  // Provider that drives THIS page's UI. Existing sub → userProvider
+  // (MP subscribers still see MP management UI), else activeProvider
+  // (locked to Paddle 2026-07-20). Loaders + modals are gated on this.
   const uiProvider: "mercadopago" | "paddle" =
     (billing?.userProvider as any) ||
     (billing?.activeProvider as any) ||
-    "mercadopago";
+    "paddle";
 
   return (
     <div className="p-6">

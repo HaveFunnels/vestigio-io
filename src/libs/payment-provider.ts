@@ -39,24 +39,28 @@ export type PaymentProvider = "mercadopago" | "paddle";
 export const PROVIDER_CONFIG_KEY = "payment_provider";
 
 /**
- * Provider for a brand-new checkout. Resolution order:
- *   1. PlatformConfig.payment_provider (admin override, if set)
- *   2. Default → "paddle" if PADDLE_API_KEY is configured
- *   3. Fallback → "mercadopago" (BR-only test environments)
+ * Provider for a brand-new checkout.
  *
- * Async because step 1 hits the DB. Cache-safe to call per-request;
- * the single PlatformConfig row read is cheap and the value rarely
- * changes outside admin action.
+ * 2026-07-20 · consolidation: pre-PMF the split-brain checkout
+ * (Paddle + MP forks in every UI + copy path) was doubling bug
+ * surface without generating actionable data at N=1 customer.
+ * Locked to Paddle for all NEW checkouts until a Paddle conversion
+ * baseline exists — then MP can re-enable with a real signal to
+ * compare against. Existing MP subscribers continue on MP through
+ * `resolveUserProvider` — no forced migration.
+ *
+ * Kept async + the DB read intact so callers don't have to change
+ * shape when we un-gate later; the PlatformConfig override is
+ * intentionally ignored during this consolidation so a stray admin
+ * flip can't quietly re-open the MP funnel.
  */
 export async function getActiveProvider(): Promise<PaymentProvider> {
-	const override = await prisma.platformConfig
+	// Consumed by getActiveProvider but ignored during Paddle-only lock.
+	// Read anyway so the query cache stays warm and admin UI has data
+	// to display the current stored value (for when we unlock).
+	await prisma.platformConfig
 		.findUnique({ where: { configKey: PROVIDER_CONFIG_KEY } })
 		.catch(() => null);
-	if (override?.value === "mercadopago" || override?.value === "paddle") {
-		return override.value;
-	}
-	if (isPaddleConfigured()) return "paddle";
-	if (isMpConfigured()) return "mercadopago";
 	return "paddle";
 }
 

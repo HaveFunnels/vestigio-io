@@ -198,28 +198,19 @@ export default function MiniAuditResultPage() {
 		return () => { cancelled = true; };
 	}, [leadId, lead, checkoutEmail, isPreview]);
 
-	// ── Open checkout (gateway picked server-side) ──
-	const activeProvider = lead?.paymentProvider ?? "paddle";
+	// ── Open checkout ──
+	// 2026-07-20 · Paddle-only lock. The MP fork here (redirected to
+	// /auth/signup?callbackUrl=/activate) is disabled — new checkouts
+	// go through the Paddle overlay only. Existing MP subscribers
+	// manage their sub via /app/billing (resolveUserProvider still
+	// routes them correctly). See src/libs/payment-provider.ts for the
+	// history and un-gating plan.
+	const activeProvider = "paddle" as const;
 
 	function openCheckout() {
 		if (isPreview) {
 			// In preview mode we never want to actually open a gateway —
 			// just acknowledge the click so the buttons feel alive.
-			return;
-		}
-		if (activeProvider === "mercadopago") {
-			// MP path: account creation FIRST, then paywall. We send the
-			// visitor to the existing /auth/signup with a callbackUrl
-			// pointing at /activate (the Pix + cartão paywall page).
-			// leadId + domain carry over so the paywall can recover the
-			// audit context after the OAuth/email round-trip.
-			trackLpEvent(leadId, "lp_audit_cta_clicked");
-			const params = new URLSearchParams({
-				callbackUrl: "/activate",
-				leadId: leadId ?? "",
-			});
-			if (lead?.domain) params.set("domain", lead.domain);
-			window.location.href = `/auth/signup?${params.toString()}`;
 			return;
 		}
 		if (!leadId || !window.Paddle || !paddleReady) {

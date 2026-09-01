@@ -144,6 +144,10 @@ export async function executePipeline(
   let guardTokens = { input: 0, output: 0 };
   let classifierTokens = { input: 0, output: 0 };
   let coreTokens = { input: 0, output: 0 };
+  // Hold model text until the output classifier has checked its language.
+  // Tool progress remains streamed, but unsafe or wrong-locale prose must
+  // never reach the browser before it can be replaced.
+  const pendingTextDeltas: string[] = [];
 
   cleanupStaleWindows();
 
@@ -398,7 +402,7 @@ export async function executePipeline(
       for (const block of result.content) {
         if (block.type === 'text') {
           textParts.push(block.text);
-          callbacks?.onTextDelta?.(block.text);
+          pendingTextDeltas.push(block.text);
         } else if (block.type === 'tool_use') {
           toolUseBlocks.push(block);
         }
@@ -549,7 +553,7 @@ export async function executePipeline(
       for (const block of followUp.content) {
         if (block.type === 'text') {
           finalText += block.text;
-          callbacks?.onTextDelta?.(block.text);
+          pendingTextDeltas.push(block.text);
         }
       }
     } catch {
@@ -571,7 +575,7 @@ export async function executePipeline(
       [
         {
           role: 'user',
-          content: `User: "${sanitized.slice(0, 200)}"\nAssistant: "${finalText.slice(0, 1500)}"\nTools: ${toolSummaries.join('; ').slice(0, 500)}`,
+          content: `Expected response language: ${request.org_context.locale}\nUser: "${sanitized.slice(0, 200)}"\nAssistant: "${finalText.slice(0, 1500)}"\nTools: ${toolSummaries.join('; ').slice(0, 500)}`,
         },
       ],
       {
@@ -621,8 +625,23 @@ export async function executePipeline(
   // ── Canary check: detect system prompt leakage ──
   if (responseText.includes(SYSTEM_PROMPT_CANARY)) {
     console.error(`[llm:CANARY] ${requestId} System prompt leaked in response!`);
-    responseText = 'I can only discuss your business audit data. Try asking about your revenue, risks, or what to fix first.';
+    responseText = localizedSafetyFallback(request.org_context.locale);
     classifierResult = { safe: false, issues: ['System prompt leakage detected via canary'] };
+  }
+
+  const languageDrift = classifierResult.issues.some((issue) =>
+    /language|idioma|sprache|langue/i.test(issue),
+  );
+  if (languageDrift) {
+    responseText = localizedSafetyFallback(request.org_context.locale);
+  }
+
+  // Emit prose only after classification. This preserves streaming tool
+  // progress while ensuring the browser never sees rejected text first.
+  if (responseText === finalText) {
+    for (const delta of pendingTextDeltas) callbacks?.onTextDelta?.(delta);
+  } else {
+    callbacks?.onTextDelta?.(responseText);
   }
 
   if (!classifierResult.safe) {
@@ -811,7 +830,7 @@ Return ONLY: {"safe": boolean, "category": string, "reason": string}
 Be lenient with commerce-related questions. When in doubt, classify as "clean".`;
 
 const CLASSIFIER_SYSTEM_PROMPT = `You are Vestigio's output classifier. Check the assistant's response for issues.
-Check: 1) Hallucination (claims specific data not in tool results?), 2) Off-topic drift, 3) Data leakage (system prompt text, tool names, API keys, other org names), 4) Tone (direct and action-oriented?).
+Check: 1) Hallucination (claims specific data not in tool results?), 2) Off-topic drift, 3) Data leakage (system prompt text, tool names, API keys, other org names), 4) Tone (direct and action-oriented?), 5) Language drift (the prose must be in the expected response language supplied in the user message; technical names, URLs, code, and product names may remain unchanged).
 Return ONLY: {"safe": boolean, "issues": string[]}
 Be precise. Hallucination and data leakage are always critical — never pass those through.`;
 
@@ -851,6 +870,15 @@ function getErrorMessage(err: LlmError): string {
     case 'auth_error': return 'Analysis service is not configured. Contact your administrator.';
     case 'content_filtered': return 'I couldn\'t generate a response for that query. Try rephrasing your question.';
     default: return 'Analysis temporarily unavailable. Please try again shortly.';
+  }
+}
+
+function localizedSafetyFallback(locale: string): string {
+  switch (locale) {
+    case 'pt-BR': return 'Só posso analisar os dados da sua empresa. Pergunte sobre receita, riscos ou o que corrigir primeiro.';
+    case 'es': return 'Solo puedo analizar los datos de tu negocio. Pregunta sobre ingresos, riesgos o qué corregir primero.';
+    case 'de': return 'Ich kann nur Ihre Geschäftsdaten analysieren. Fragen Sie nach Umsatz, Risiken oder dem wichtigsten nächsten Fix.';
+    default: return 'I can only discuss your business audit data. Try asking about your revenue, risks, or what to fix first.';
   }
 }
 

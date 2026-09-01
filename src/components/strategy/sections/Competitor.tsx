@@ -288,7 +288,7 @@ export default function Competitor({ competitor, embedded = false }: Props) {
 											<div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-edge/30 pt-2 text-[11px] text-content-muted">
 												{pricingHint && (
 													<span className="inline-flex items-baseline gap-1">
-														<span className="text-content-faint">Pricing:</span>
+										<span className="text-content-faint">Preços:</span>
 														{deep!.pricingUrl ? (
 															<a
 																href={deep!.pricingUrl}

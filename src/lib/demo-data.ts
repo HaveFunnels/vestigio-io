@@ -203,7 +203,7 @@ export function getDemoFindings(): FindingProjection[] {
 // prefer getDemoFindings() for locale-aware data.
 export const DEMO_FINDINGS: FindingProjection[] = buildFindings();
 
-export const DEMO_ACTIONS: ActionProjection[] = [
+const BASE_DEMO_ACTIONS: ActionProjection[] = [
 	{
 		id: "demo_action_fix_checkout_redirect",
 		title: "Migrate checkout to same-domain embedded flow",
@@ -316,6 +316,36 @@ export const DEMO_ACTIONS: ActionProjection[] = [
 	} as ActionProjection,
 ];
 
+/** Resolve demo action copy from the same locale-aware findings source. */
+export function getDemoActions(): ActionProjection[] {
+	const locale = _translations?.locale ?? "en";
+	if (locale === "en") return BASE_DEMO_ACTIONS;
+
+	const findingByKey = new Map(getDemoFindings().map((finding) => [finding.inference_key, finding]));
+	const sourceFindingByAction: Record<string, string> = {
+		demo_action_fix_checkout_redirect: "checkout_off_domain",
+		demo_action_fix_cart_500: "cart_intermittent_500",
+		demo_action_add_trust_signals: "checkout_trust_signals_absent",
+		demo_action_fix_mobile: "mobile_checkout_blocked",
+		demo_action_add_refund_policy: "refund_policy_missing",
+	};
+	const prefix = locale === "de" ? "Beheben" : locale === "es" ? "Corregir" : "Corrigir";
+	return BASE_DEMO_ACTIONS.map((action) => {
+		const finding = findingByKey.get(sourceFindingByAction[action.id]);
+		return {
+			...action,
+			title: `${prefix}: ${finding?.root_cause ?? action.root_cause ?? action.title}`,
+			description: finding?.effect ?? action.description,
+			root_cause: finding?.root_cause ?? action.root_cause,
+			remediation_steps: finding?.remediation_steps ?? action.remediation_steps,
+			verification_notes: finding?.verification_notes ?? action.verification_notes,
+		};
+	});
+}
+
+// Backwards-compatible English fixture export for scripts and tests.
+export const DEMO_ACTIONS: ActionProjection[] = BASE_DEMO_ACTIONS;
+
 // ── Demo engine maps ──
 // Built using buildCustomMap which produces the same 3-column layout
 // (findings → root causes → actions) as the real engine maps.
@@ -339,7 +369,7 @@ function buildDemoProjectionResult(): {
 	return {
 		projections: {
 			findings,
-			actions: DEMO_ACTIONS,
+			actions: getDemoActions(),
 			workspaces: getDemoWorkspaces(),
 			change_report: getDemoChangeReport(),
 		} as unknown as ProjectionResult,

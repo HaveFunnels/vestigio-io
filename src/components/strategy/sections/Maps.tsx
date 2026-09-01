@@ -94,14 +94,14 @@ export default function Maps({ maps }: Props) {
 					<StatTile
 						label="Conexões este ciclo"
 						value={maps.relationsThisCycle}
-						subline={hasGraph ? "entre surfaces" : "nenhum grafo ainda"}
+						subline={hasGraph ? "entre páginas" : "nenhum grafo ainda"}
 					/>
 					<StatTile
-						label="Surfaces conectadas"
+						label="Páginas conectadas"
 						value={maps.distinctHostCount}
 					/>
 					<StatTile
-						label="Cross-domain"
+						label="Entre domínios"
 						value={maps.crossDomainCount}
 						subline={
 							maps.crossDomainCount > 0

@@ -29,7 +29,18 @@ const FUNNEL_STAGE_FALLBACK: Record<string, string> = {
 
 function friendlyStage(token: string, translations?: EngineTranslations): string {
 	const stageNames = translations?.funnel_stage_names;
-	return stageNames?.[token] ?? FUNNEL_STAGE_FALLBACK[token] ?? token.replace(/_/g, " ");
+	const ptStageNames: Record<string, string> = {
+		awareness: "descoberta",
+		consideration: "consideração",
+		decision: "decisão",
+		post_purchase: "pós-compra",
+	};
+	return (
+		stageNames?.[token] ??
+		(translations?.locale === "pt-BR" ? ptStageNames[token] : undefined) ??
+		FUNNEL_STAGE_FALLBACK[token] ??
+		token.replace(/_/g, " ")
+	);
 }
 
 /**
@@ -63,8 +74,10 @@ export function resolveInferenceTitle(
 	if (key.startsWith("funnel_missing_stage_")) {
 		const stage = friendlyStage(key.replace("funnel_missing_stage_", ""), translations);
 		const tpl =
-			translations?.dynamic_titles?.funnel_missing_stage
-			?? "Missing funnel stage: {stage}";
+			translations?.dynamic_titles?.funnel_missing_stage ??
+			(translations?.locale === "pt-BR"
+				? "Etapa ausente no funil: {stage}"
+				: "Missing funnel stage: {stage}");
 		return tpl.replace("{stage}", stage);
 	}
 	if (key.startsWith("funnel_broken_path_")) {
@@ -72,8 +85,10 @@ export function resolveInferenceTitle(
 		const from = friendlyStage(parts[0] ?? "", translations);
 		const to = friendlyStage(parts[1] ?? "", translations);
 		const tpl =
-			translations?.dynamic_titles?.funnel_broken_path
-			?? "No CTA path: {from} → {to}";
+			translations?.dynamic_titles?.funnel_broken_path ??
+			(translations?.locale === "pt-BR"
+				? "Caminho sem CTA: {from} → {to}"
+				: "No CTA path: {from} → {to}");
 		return tpl.replace("{from}", from).replace("{to}", to);
 	}
 	if (key.startsWith("funnel_weak_connection_")) {
@@ -81,14 +96,18 @@ export function resolveInferenceTitle(
 		const from = friendlyStage(parts[0] ?? "", translations);
 		const to = friendlyStage(parts[1] ?? "", translations);
 		const tpl =
-			translations?.dynamic_titles?.funnel_weak_connection
-			?? "Weak connection: {from} → {to}";
+			translations?.dynamic_titles?.funnel_weak_connection ??
+			(translations?.locale === "pt-BR"
+				? "Conexão fraca: {from} → {to}"
+				: "Weak connection: {from} → {to}");
 		return tpl.replace("{from}", from).replace("{to}", to);
 	}
 	if (key === "funnel_dead_end_page") {
 		return (
-			translations?.dynamic_titles?.funnel_dead_end_page
-			?? "Dead-end commercial page (no CTA to next stage)"
+			translations?.dynamic_titles?.funnel_dead_end_page ??
+			(translations?.locale === "pt-BR"
+				? "Página comercial sem saída (sem CTA para a próxima etapa)"
+				: "Dead-end commercial page (no CTA to next stage)")
 		);
 	}
 

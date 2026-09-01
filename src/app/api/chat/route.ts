@@ -5,17 +5,18 @@ import { evaluateAlerts } from "@/libs/alert-evaluator";
 import { trackError } from "@/libs/error-tracker";
 import { parseBlockMarkers, resolveCardData } from "@/lib/chat-block-parser";
 import {
-  executePipeline,
-  isLlmEnabled,
-  createEmptyConversation,
-  TIER_QUERY_COST,
-  type ModelTier,
-  type PipelineRequest,
-  type PipelineCallbacks,
-  type OrgContext as LlmOrgContext,
+	executePipeline,
+	isLlmEnabled,
+	createEmptyConversation,
+	TIER_QUERY_COST,
+	type ModelTier,
+	type PipelineRequest,
+	type PipelineCallbacks,
+	type OrgContext as LlmOrgContext,
 } from "../../../../apps/mcp/llm";
 import { createEmptySession } from "../../../../apps/mcp/session";
 import { safeIncrementMcpUsage } from "../../../../apps/platform/billing-safety";
+import { resolveCurrentLocale } from "@/i18n/resolve-locale";
 import { getConversationStore } from "../../../../apps/platform/conversation-store";
 import type { PlanKey } from "../../../../packages/plans";
 import { getBusinessContext } from "../../../../packages/perception/business-context";
@@ -36,611 +37,770 @@ const MAX_CONVERSATION_MESSAGES = 50;
 const STREAM_TIMEOUT_MS = 120_000; // 2 minutes
 
 export async function POST(request: Request) {
-  // ── Auth: session → user → org membership ──
-  const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+	// ── Auth: session → user → org membership ──
+	const session = await getServerSession(authOptions);
+	if (!session?.user) {
+		return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+	}
 
-  const userId = (session.user as any).id;
-  if (!userId) {
-    return NextResponse.json({ message: "Invalid session" }, { status: 401 });
-  }
+	const userId = (session.user as any).id;
+	if (!userId) {
+		return NextResponse.json({ message: "Invalid session" }, { status: 401 });
+	}
 
-  // ── Parse + validate request body ──────────
-  let body: {
-    message: string;
-    environment_id?: string;
-    model_tier?: string;
-    conversation_id?: string;
-    conversation_messages?: Array<{ role: string; content: string; timestamp: number }>;
-    /** Real conversation length as the client sees it — distinct
-     *  from `conversation_messages.length`, which is capped at the
-     *  50-message window we send to the LLM. Used so the LLM can
-     *  reason about how much history was truncated. */
-    total_message_count?: number;
-    attached_files?: Array<{ name: string; type: string; content: string }>;
-    /** Items the user pinned via context chips above the composer. */
-    attached_context?: Array<{ kind: string; id: string; title: string }>;
-  };
+	// ── Parse + validate request body ──────────
+	let body: {
+		message: string;
+		environment_id?: string;
+		model_tier?: string;
+		conversation_id?: string;
+		conversation_messages?: Array<{
+			role: string;
+			content: string;
+			timestamp: number;
+		}>;
+		/** Real conversation length as the client sees it — distinct
+		 *  from `conversation_messages.length`, which is capped at the
+		 *  50-message window we send to the LLM. Used so the LLM can
+		 *  reason about how much history was truncated. */
+		total_message_count?: number;
+		attached_files?: Array<{ name: string; type: string; content: string }>;
+		/** Items the user pinned via context chips above the composer. */
+		attached_context?: Array<{ kind: string; id: string; title: string }>;
+	};
 
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ message: "Invalid request body" }, { status: 400 });
-  }
+	try {
+		body = await request.json();
+	} catch {
+		return NextResponse.json(
+			{ message: "Invalid request body" },
+			{ status: 400 }
+		);
+	}
 
-  if (!body.message || typeof body.message !== "string") {
-    return NextResponse.json({ message: "message is required" }, { status: 400 });
-  }
+	if (!body.message || typeof body.message !== "string") {
+		return NextResponse.json(
+			{ message: "message is required" },
+			{ status: 400 }
+		);
+	}
 
-  if (body.message.length > MAX_MESSAGE_LENGTH) {
-    return NextResponse.json({ message: `Message too long (max ${MAX_MESSAGE_LENGTH} characters)` }, { status: 400 });
-  }
+	if (body.message.length > MAX_MESSAGE_LENGTH) {
+		return NextResponse.json(
+			{ message: `Message too long (max ${MAX_MESSAGE_LENGTH} characters)` },
+			{ status: 400 }
+		);
+	}
 
-  if (body.conversation_messages && body.conversation_messages.length > MAX_CONVERSATION_MESSAGES) {
-    return NextResponse.json({ message: `Too many conversation messages (max ${MAX_CONVERSATION_MESSAGES})` }, { status: 400 });
-  }
+	if (
+		body.conversation_messages &&
+		body.conversation_messages.length > MAX_CONVERSATION_MESSAGES
+	) {
+		return NextResponse.json(
+			{
+				message: `Too many conversation messages (max ${MAX_CONVERSATION_MESSAGES})`,
+			},
+			{ status: 400 }
+		);
+	}
 
-  // ── LLM availability check ─────────────────
-  if (!isLlmEnabled()) {
-    return NextResponse.json(
-      { message: "Chat is not configured. Set ANTHROPIC_API_KEY and VESTIGIO_LLM_ENABLED=true." },
-      { status: 503 },
-    );
-  }
+	// ── LLM availability check ─────────────────
+	if (!isLlmEnabled()) {
+		return NextResponse.json(
+			{
+				message:
+					"Chat is not configured. Set ANTHROPIC_API_KEY and VESTIGIO_LLM_ENABLED=true.",
+			},
+			{ status: 503 }
+		);
+	}
 
-  // ── Resolve org context with ownership validation ──
-  let orgId: string;
-  let orgName: string;
-  let envId: string;
-  let domain: string;
-  let plan: PlanKey;
+	// ── Resolve org context with ownership validation ──
+	let orgId: string;
+	let orgName: string;
+	let envId: string;
+	let domain: string;
+	let plan: PlanKey;
 
-  try {
-    const { prisma } = await import("@/libs/prismaDb");
+	try {
+		const { prisma } = await import("@/libs/prismaDb");
 
-    // Reta-final: resolve env id with priority:
-    //   1. body.environment_id (caller explicitly scoped — Plan view)
-    //   2. active_env cookie (sidenav switcher state — every page mounts it)
-    //   3. isProduction=true env (legacy fallback for callers without a
-    //      cookie, e.g. first server render after fresh login)
-    //
-    // The previous version went straight from (1) to (3), so chats from
-    // a Plan page on a non-production env (very common — havefunnels
-    // doesn't tag any env as isProduction) got scoped to whichever env
-    // happened to have isProduction=true (often none → 404, sometimes
-    // the wrong one → empty plan/findings in MCP context).
-    const cookieEnvIdRaw = request.headers
-      .get("cookie")
-      ?.match(/(?:^|;\s*)active_env=([^;]*)/)?.[1];
-    const cookieEnvId =
-      cookieEnvIdRaw && cookieEnvIdRaw !== "default" && cookieEnvIdRaw !== "default_env"
-        ? decodeURIComponent(cookieEnvIdRaw)
-        : null;
+		// Reta-final: resolve env id with priority:
+		//   1. body.environment_id (caller explicitly scoped — Plan view)
+		//   2. active_env cookie (sidenav switcher state — every page mounts it)
+		//   3. isProduction=true env (legacy fallback for callers without a
+		//      cookie, e.g. first server render after fresh login)
+		//
+		// The previous version went straight from (1) to (3), so chats from
+		// a Plan page on a non-production env (very common — havefunnels
+		// doesn't tag any env as isProduction) got scoped to whichever env
+		// happened to have isProduction=true (often none → 404, sometimes
+		// the wrong one → empty plan/findings in MCP context).
+		const cookieEnvIdRaw = request.headers
+			.get("cookie")
+			?.match(/(?:^|;\s*)active_env=([^;]*)/)?.[1];
+		const cookieEnvId =
+			cookieEnvIdRaw &&
+			cookieEnvIdRaw !== "default" &&
+			cookieEnvIdRaw !== "default_env"
+				? decodeURIComponent(cookieEnvIdRaw)
+				: null;
 
-    // Validate user → org membership
-    const membership = await prisma.membership.findFirst({
-      where: { userId },
-      include: {
-        organization: {
-          include: {
-            environments: {
-              where: body.environment_id
-                ? { id: body.environment_id }
-                : cookieEnvId
-                  ? { id: cookieEnvId }
-                  : { isProduction: true },
-              take: 1,
-            },
-          },
-        },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+		// Validate user → org membership
+		const membership = await prisma.membership.findFirst({
+			where: { userId },
+			include: {
+				organization: {
+					include: {
+						environments: {
+							where: body.environment_id
+								? { id: body.environment_id }
+								: cookieEnvId
+									? { id: cookieEnvId }
+									: { isProduction: true },
+							take: 1,
+						},
+					},
+				},
+			},
+			orderBy: { createdAt: "desc" },
+		});
 
-    if (!membership?.organization) {
-      return NextResponse.json({ message: "No organization found" }, { status: 403 });
-    }
+		if (!membership?.organization) {
+			return NextResponse.json(
+				{ message: "No organization found" },
+				{ status: 403 }
+			);
+		}
 
-    const org = membership.organization;
-    let env: typeof org.environments[number] | null = org.environments[0] ?? null;
+		const org = membership.organization;
+		let env: (typeof org.environments)[number] | null =
+			org.environments[0] ?? null;
 
-    // If cookie pointed at an env that doesn't belong to this org, fall
-    // back to isProduction=true so the chat still works. Bad cookies
-    // shouldn't 404 the chat.
-    if (!env && cookieEnvId && !body.environment_id) {
-      env = await prisma.environment.findFirst({
-        where: { organizationId: org.id, isProduction: true },
-      });
-    }
-    // Last-resort fallback when no isProduction-tagged env exists either:
-    // grab the org's most-recent env. Better than 404.
-    if (!env) {
-      env = await prisma.environment.findFirst({
-        where: { organizationId: org.id },
-        orderBy: { createdAt: "desc" },
-      });
-    }
+		// If cookie pointed at an env that doesn't belong to this org, fall
+		// back to isProduction=true so the chat still works. Bad cookies
+		// shouldn't 404 the chat.
+		if (!env && cookieEnvId && !body.environment_id) {
+			env = await prisma.environment.findFirst({
+				where: { organizationId: org.id, isProduction: true },
+			});
+		}
+		// Last-resort fallback when no isProduction-tagged env exists either:
+		// grab the org's most-recent env. Better than 404.
+		if (!env) {
+			env = await prisma.environment.findFirst({
+				where: { organizationId: org.id },
+				orderBy: { createdAt: "desc" },
+			});
+		}
 
-    if (!env) {
-      return NextResponse.json({ message: "No environment configured" }, { status: 404 });
-    }
+		if (!env) {
+			return NextResponse.json(
+				{ message: "No environment configured" },
+				{ status: 404 }
+			);
+		}
 
-    // If environment_id was specified, verify it belongs to this org
-    if (body.environment_id && env.id !== body.environment_id) {
-      return NextResponse.json({ message: "Environment not found in your organization" }, { status: 403 });
-    }
+		// If environment_id was specified, verify it belongs to this org
+		if (body.environment_id && env.id !== body.environment_id) {
+			return NextResponse.json(
+				{ message: "Environment not found in your organization" },
+				{ status: 403 }
+			);
+		}
 
-    orgId = org.id;
-    orgName = org.name;
-    envId = env.id;
-    domain = env.domain;
-    plan = (org.plan || "vestigio") as PlanKey;
-  } catch {
-    // Fallback for dev without DB
-    orgId = "demo";
-    orgName = "Demo";
-    envId = "env_1";
-    domain = "shop.com";
-    plan = "vestigio";
-  }
+		orgId = org.id;
+		orgName = org.name;
+		envId = env.id;
+		domain = env.domain;
+		plan = (org.plan || "vestigio") as PlanKey;
+	} catch {
+		// Fallback for dev without DB
+		orgId = "demo";
+		orgName = "Demo";
+		envId = "env_1";
+		domain = "shop.com";
+		plan = "vestigio";
+	}
 
-  // ── Model tier + atomic budget check ───────
-  const modelTier: ModelTier = body.model_tier === "ultra" ? "ultra" : "default";
-  const queryCost = TIER_QUERY_COST[modelTier];
+	// ── Model tier + atomic budget check ───────
+	const modelTier: ModelTier =
+		body.model_tier === "ultra" ? "ultra" : "default";
+	const queryCost = TIER_QUERY_COST[modelTier];
 
-  // Check the FULL cost upfront before any side effects. Previous
-  // code called safeIncrementMcpUsage (consuming 1 unit) then checked
-  // ultra cost separately — if ultra failed, the 1 unit was wasted.
-  const { getDailyUsageSummary } = await import("../../../../apps/platform/daily-usage");
-  const preCheck = await getDailyUsageSummary(orgId, plan);
-  const currentUsage = preCheck.usage.mcp_queries;
-  const budgetLimit = preCheck.limits.daily_mcp_budget;
+	// Check the FULL cost upfront before any side effects. Previous
+	// code called safeIncrementMcpUsage (consuming 1 unit) then checked
+	// ultra cost separately — if ultra failed, the 1 unit was wasted.
+	const { getDailyUsageSummary } =
+		await import("../../../../apps/platform/daily-usage");
+	const preCheck = await getDailyUsageSummary(orgId, plan);
+	const currentUsage = preCheck.usage.mcp_queries;
+	const budgetLimit = preCheck.limits.daily_mcp_budget;
 
-  if (currentUsage >= budgetLimit) {
-    return NextResponse.json(
-      { message: "Daily analysis budget exhausted. Try again tomorrow or upgrade your plan." },
-      { status: 429 },
-    );
-  }
+	if (currentUsage >= budgetLimit) {
+		return NextResponse.json(
+			{
+				message:
+					"Daily analysis budget exhausted. Try again tomorrow or upgrade your plan.",
+			},
+			{ status: 429 }
+		);
+	}
 
-  if (currentUsage + queryCost > budgetLimit) {
-    return NextResponse.json(
-      { message: `Not enough budget for Ultra analysis (needs ${queryCost} units, ${budgetLimit - currentUsage} remaining). Try Default mode.` },
-      { status: 429 },
-    );
-  }
+	if (currentUsage + queryCost > budgetLimit) {
+		return NextResponse.json(
+			{
+				message: `Not enough budget for Ultra analysis (needs ${queryCost} units, ${budgetLimit - currentUsage} remaining). Try Default mode.`,
+			},
+			{ status: 429 }
+		);
+	}
 
-  // Budget confirmed — now consume all units for this query
-  for (let i = 0; i < queryCost; i++) {
-    await safeIncrementMcpUsage(orgId, plan);
-  }
+	// Budget confirmed — now consume all units for this query
+	for (let i = 0; i < queryCost; i++) {
+		await safeIncrementMcpUsage(orgId, plan);
+	}
 
-  // Fire-and-forget: evaluate alert rules for mcp_usage and org_over_limit
-  evaluateAlerts("mcp_usage").catch(() => {});
-  evaluateAlerts("org_over_limit").catch(() => {});
+	// Fire-and-forget: evaluate alert rules for mcp_usage and org_over_limit
+	evaluateAlerts("mcp_usage").catch(() => {});
+	evaluateAlerts("org_over_limit").catch(() => {});
 
-  // ── Get MCP server ─────────────────────────
-  const { getMcpServer } = await import("@/lib/mcp-client");
-  const mcpServer = getMcpServer();
+	// ── Get MCP server ─────────────────────────
+	const { getMcpServer } = await import("@/lib/mcp-client");
+	const mcpServer = getMcpServer();
 
-  // Wave 22.6 Step 9 fix — bind the signed-in user as the scope's
-  // actor so MCP write tools (propose_plan_edit, add_plan_comment)
-  // can RBAC-gate against the plan's org. Without this the tools
-  // refuse with "no actor in MCP scope."
-  mcpServer.setActor({
-    user_id: userId,
-    user_role: (session.user as any).role ?? null,
-  });
+	// Wave 22.6 Step 9 fix — bind the signed-in user as the scope's
+	// actor so MCP write tools (propose_plan_edit, add_plan_comment)
+	// can RBAC-gate against the plan's org. Without this the tools
+	// refuse with "no actor in MCP scope."
+	mcpServer.setActor({
+		user_id: userId,
+		user_role: (session.user as any).role ?? null,
+	});
 
-  // ── Validate conversation total size ─────────
-  if (body.conversation_messages) {
-    const totalChars = body.conversation_messages.reduce((sum, m) => sum + (m.content?.length || 0), 0);
-    if (totalChars > 50_000) {
-      return NextResponse.json(
-        { message: `Conversation too large (${Math.round(totalChars / 1000)}k chars, max 50k)` },
-        { status: 400 },
-      );
-    }
-  }
+	// ── Validate conversation total size ─────────
+	if (body.conversation_messages) {
+		const totalChars = body.conversation_messages.reduce(
+			(sum, m) => sum + (m.content?.length || 0),
+			0
+		);
+		if (totalChars > 50_000) {
+			return NextResponse.json(
+				{
+					message: `Conversation too large (${Math.round(totalChars / 1000)}k chars, max 50k)`,
+				},
+				{ status: 400 }
+			);
+		}
+	}
 
-  // ── Build conversation state ───────────────
-  // total_message_count comes from the client's separate field
-  // (real conversation length) when provided, falling back to the
-  // window length for older callers. The previous behaviour used
-  // `body.conversation_messages.length` even for long threads, which
-  // capped at 50 and made the LLM think the conversation was much
-  // shorter than reality.
-  const conversationState = body.conversation_messages?.length
-    ? {
-        messages: body.conversation_messages.slice(-MAX_CONVERSATION_MESSAGES).map((m) => ({
-          role: m.role as "user" | "assistant",
-          content: String(m.content || '').slice(0, 5000),
-          timestamp: m.timestamp || Date.now(),
-        })),
-        summary_of_older: null,
-        total_message_count:
-          typeof body.total_message_count === "number" && body.total_message_count >= body.conversation_messages.length
-            ? body.total_message_count
-            : body.conversation_messages.length,
-      }
-    : createEmptyConversation();
+	// ── Build conversation state ───────────────
+	// total_message_count comes from the client's separate field
+	// (real conversation length) when provided, falling back to the
+	// window length for older callers. The previous behaviour used
+	// `body.conversation_messages.length` even for long threads, which
+	// capped at 50 and made the LLM think the conversation was much
+	// shorter than reality.
+	const conversationState = body.conversation_messages?.length
+		? {
+				messages: body.conversation_messages
+					.slice(-MAX_CONVERSATION_MESSAGES)
+					.map((m) => ({
+						role: m.role as "user" | "assistant",
+						content: String(m.content || "").slice(0, 5000),
+						timestamp: m.timestamp || Date.now(),
+					})),
+				summary_of_older: null,
+				total_message_count:
+					typeof body.total_message_count === "number" &&
+					body.total_message_count >= body.conversation_messages.length
+						? body.total_message_count
+						: body.conversation_messages.length,
+			}
+		: createEmptyConversation();
 
-  // ── Detect locale from cookie or Accept-Language ──
-  const localeCookie = request.headers.get("cookie")?.match(/NEXT_LOCALE=([^;]+)/)?.[1];
-  const acceptLang = request.headers.get("accept-language")?.split(",")[0]?.trim() || "en";
-  const locale = localeCookie || (acceptLang.startsWith("pt") ? "pt-BR" : acceptLang.startsWith("es") ? "es" : acceptLang.startsWith("de") ? "de" : "en");
+	// ── Resolve locale using the same source of truth as the app ──
+	// This prioritizes the authenticated user's saved preference, then the
+	// validated `locale` cookie, preventing UI/AI language drift.
+	const locale = await resolveCurrentLocale();
 
-  // ── Build LLM org context ──────────────────
-  const llmOrgContext: LlmOrgContext = {
-    org_id: orgId,
-    org_name: orgName,
-    environment_id: envId,
-    domain,
-    business_model: "ecommerce",
-    monthly_revenue: null,
-    plan,
-    freshness_state: "unknown",
-    finding_count: 0,
-    top_findings_summary: "",
-    locale,
-  };
+	// ── Build LLM org context ──────────────────
+	const llmOrgContext: LlmOrgContext = {
+		org_id: orgId,
+		org_name: orgName,
+		environment_id: envId,
+		domain,
+		business_model: "ecommerce",
+		monthly_revenue: null,
+		plan,
+		freshness_state: "unknown",
+		finding_count: 0,
+		top_findings_summary: "",
+		locale,
+	};
 
-  // Enrich from DB (fire-and-forget on failure)
-  try {
-    const { prisma } = await import("@/libs/prismaDb");
-    const profile = await prisma.businessProfile.findUnique({
-      where: { organizationId: orgId },
-    });
-    if (profile) {
-      llmOrgContext.business_model = profile.businessModel;
-      llmOrgContext.monthly_revenue = profile.monthlyRevenue;
-    }
-    // Wave 19c — DomainFingerprint. Populated on the first cold cycle.
-    // Falls back silently if missing so chat keeps working on
-    // newly-onboarded envs that haven't completed a cold cycle yet.
-    const fingerprint = await prisma.domainFingerprint.findUnique({
-      where: { environmentId: envId },
-      select: { industry: true, detectedPlatforms: true },
-    });
-    if (fingerprint) {
-      llmOrgContext.industry = fingerprint.industry;
-      llmOrgContext.detected_platforms = fingerprint.detectedPlatforms;
-    }
-    // PV.3 — reconciled perception (vertical + surface purposes). Surface the
-    // perceived vertical only when it actually overrode onboarding (source=
-    // 'perceived'); otherwise business_model already reflects the prior. The
-    // surface list lets the copilot speak about pages by role.
-    const bizContext = await getBusinessContext(envId);
-    if (bizContext.vertical_source === "perceived" && bizContext.vertical) {
-      llmOrgContext.perceived_vertical = bizContext.vertical;
-      llmOrgContext.perceived_vertical_confidence = bizContext.vertical_confidence;
-    }
-    if (bizContext.surfaces.length > 0) {
-      llmOrgContext.perceived_surfaces = bizContext.surfaces.map((s) => ({
-        url: s.url,
-        purpose: s.purpose,
-      }));
-    }
-    // Wave 24 — surface curated competitor domains so the model can
-    // reason about positioning without the user re-typing peers.
-    const competitors = await prisma.competitorDomain.findMany({
-      where: { environmentId: envId, active: true },
-      orderBy: { addedAt: "desc" },
-      take: 20,
-      select: { domain: true },
-    });
-    if (competitors.length > 0) {
-      llmOrgContext.competitor_domains = competitors.map((c) => c.domain);
-    }
-  } catch {
-    // Continue with defaults
-  }
+	// Enrich from DB (fire-and-forget on failure)
+	try {
+		const { prisma } = await import("@/libs/prismaDb");
+		const profile = await prisma.businessProfile.findUnique({
+			where: { organizationId: orgId },
+		});
+		if (profile) {
+			llmOrgContext.business_model = profile.businessModel;
+			llmOrgContext.monthly_revenue = profile.monthlyRevenue;
+		}
+		// Wave 19c — DomainFingerprint. Populated on the first cold cycle.
+		// Falls back silently if missing so chat keeps working on
+		// newly-onboarded envs that haven't completed a cold cycle yet.
+		const fingerprint = await prisma.domainFingerprint.findUnique({
+			where: { environmentId: envId },
+			select: { industry: true, detectedPlatforms: true },
+		});
+		if (fingerprint) {
+			llmOrgContext.industry = fingerprint.industry;
+			llmOrgContext.detected_platforms = fingerprint.detectedPlatforms;
+		}
+		// PV.3 — reconciled perception (vertical + surface purposes). Surface the
+		// perceived vertical only when it actually overrode onboarding (source=
+		// 'perceived'); otherwise business_model already reflects the prior. The
+		// surface list lets the copilot speak about pages by role.
+		const bizContext = await getBusinessContext(envId);
+		if (bizContext.vertical_source === "perceived" && bizContext.vertical) {
+			llmOrgContext.perceived_vertical = bizContext.vertical;
+			llmOrgContext.perceived_vertical_confidence =
+				bizContext.vertical_confidence;
+		}
+		if (bizContext.surfaces.length > 0) {
+			llmOrgContext.perceived_surfaces = bizContext.surfaces.map((s) => ({
+				url: s.url,
+				purpose: s.purpose,
+			}));
+		}
+		// Wave 24 — surface curated competitor domains so the model can
+		// reason about positioning without the user re-typing peers.
+		const competitors = await prisma.competitorDomain.findMany({
+			where: { environmentId: envId, active: true },
+			orderBy: { addedAt: "desc" },
+			take: 20,
+			select: { domain: true },
+		});
+		if (competitors.length > 0) {
+			llmOrgContext.competitor_domains = competitors.map((c) => c.domain);
+		}
+	} catch {
+		// Continue with defaults
+	}
 
-  // ── Build exploration state from conversation history ──
-  const sessionContext = createEmptySession();
-  if (body.conversation_messages) {
-    // Derive exploration state from tools mentioned in previous messages
-    for (const msg of body.conversation_messages) {
-      const content = msg.content || "";
-      // Detect previously discussed packs
-      if (content.includes("scale_readiness") || content.includes("scale")) sessionContext.exploration_state.explored_packs.push("scale_readiness");
-      if (content.includes("revenue_integrity") || content.includes("revenue")) sessionContext.exploration_state.explored_packs.push("revenue_integrity");
-      if (content.includes("chargeback")) sessionContext.exploration_state.explored_packs.push("chargeback_resilience");
-      // Detect previously viewed maps
-      if (content.includes("revenue_leakage")) sessionContext.exploration_state.explored_maps.push("revenue_leakage");
-      if (content.includes("root_cause")) sessionContext.exploration_state.explored_maps.push("root_cause");
-      if (content.includes("chargeback_risk")) sessionContext.exploration_state.explored_maps.push("chargeback_risk");
-      // Track questions asked
-      if (msg.role === "user") {
-        sessionContext.exploration_state.asked_questions.push(content.slice(0, 100));
-      }
-    }
-    // Deduplicate
-    sessionContext.exploration_state.explored_packs = [...new Set(sessionContext.exploration_state.explored_packs)];
-    sessionContext.exploration_state.explored_maps = [...new Set(sessionContext.exploration_state.explored_maps)];
-  }
+	// ── Build exploration state from conversation history ──
+	const sessionContext = createEmptySession();
+	if (body.conversation_messages) {
+		// Derive exploration state from tools mentioned in previous messages
+		for (const msg of body.conversation_messages) {
+			const content = msg.content || "";
+			// Detect previously discussed packs
+			if (content.includes("scale_readiness") || content.includes("scale"))
+				sessionContext.exploration_state.explored_packs.push("scale_readiness");
+			if (content.includes("revenue_integrity") || content.includes("revenue"))
+				sessionContext.exploration_state.explored_packs.push(
+					"revenue_integrity"
+				);
+			if (content.includes("chargeback"))
+				sessionContext.exploration_state.explored_packs.push(
+					"chargeback_resilience"
+				);
+			// Detect previously viewed maps
+			if (content.includes("revenue_leakage"))
+				sessionContext.exploration_state.explored_maps.push("revenue_leakage");
+			if (content.includes("root_cause"))
+				sessionContext.exploration_state.explored_maps.push("root_cause");
+			if (content.includes("chargeback_risk"))
+				sessionContext.exploration_state.explored_maps.push("chargeback_risk");
+			// Track questions asked
+			if (msg.role === "user") {
+				sessionContext.exploration_state.asked_questions.push(
+					content.slice(0, 100)
+				);
+			}
+		}
+		// Deduplicate
+		sessionContext.exploration_state.explored_packs = [
+			...new Set(sessionContext.exploration_state.explored_packs),
+		];
+		sessionContext.exploration_state.explored_maps = [
+			...new Set(sessionContext.exploration_state.explored_maps),
+		];
+	}
 
-  // ── Pipeline request ───────────────────────
-  // Sanitize attached_context: only the known kinds, IDs and titles
-  // bounded so a malicious client can't bloat the system prompt.
-  // `surface` was added when inventory bulk-select started attaching
-  // selected URLs to the chat.
-  const VALID_CONTEXT_KINDS = new Set(["finding", "action", "workspace", "map", "surface"]);
-  const attachedContext = Array.isArray(body.attached_context)
-    ? body.attached_context
-        .filter(
-          (item: any) =>
-            item &&
-            VALID_CONTEXT_KINDS.has(item.kind) &&
-            typeof item.id === "string" &&
-            typeof item.title === "string",
-        )
-        .slice(0, 12)
-        .map((item: any) => ({
-          kind: item.kind as "finding" | "action" | "workspace" | "map" | "surface",
-          id: String(item.id).slice(0, 200),
-          title: String(item.title).slice(0, 200),
-        }))
-    : undefined;
+	// ── Pipeline request ───────────────────────
+	// Sanitize attached_context: only the known kinds, IDs and titles
+	// bounded so a malicious client can't bloat the system prompt.
+	// `surface` was added when inventory bulk-select started attaching
+	// selected URLs to the chat.
+	const VALID_CONTEXT_KINDS = new Set([
+		"finding",
+		"action",
+		"workspace",
+		"map",
+		"surface",
+	]);
+	const attachedContext = Array.isArray(body.attached_context)
+		? body.attached_context
+				.filter(
+					(item: any) =>
+						item &&
+						VALID_CONTEXT_KINDS.has(item.kind) &&
+						typeof item.id === "string" &&
+						typeof item.title === "string"
+				)
+				.slice(0, 12)
+				.map((item: any) => ({
+					kind: item.kind as
+						| "finding"
+						| "action"
+						| "workspace"
+						| "map"
+						| "surface",
+					id: String(item.id).slice(0, 200),
+					title: String(item.title).slice(0, 200),
+				}))
+		: undefined;
 
-  const pipelineRequest: PipelineRequest = {
-    user_message: body.message,
-    conversation: conversationState,
-    org_context: llmOrgContext,
-    user_id: userId,
-    conversation_id: body.conversation_id || "ephemeral",
-    model_tier: modelTier,
-    session_context: sessionContext,
-    attached_files: body.attached_files?.slice(0, 3).map((f: any) => ({
-      name: String(f.name || "file").slice(0, 100),
-      type: String(f.type || "text/plain").slice(0, 50),
-      content: String(f.content || "").slice(0, 50_000),
-    })),
-    attached_context: attachedContext,
-  };
+	const pipelineRequest: PipelineRequest = {
+		user_message: body.message,
+		conversation: conversationState,
+		org_context: llmOrgContext,
+		user_id: userId,
+		conversation_id: body.conversation_id || "ephemeral",
+		model_tier: modelTier,
+		session_context: sessionContext,
+		attached_files: body.attached_files?.slice(0, 3).map((f: any) => ({
+			name: String(f.name || "file").slice(0, 100),
+			type: String(f.type || "text/plain").slice(0, 50),
+			content: String(f.content || "").slice(0, 50_000),
+		})),
+		attached_context: attachedContext,
+	};
 
-  // ── SSE streaming response with timeout ────
-  const encoder = new TextEncoder();
-  const abortController = new AbortController();
-  const streamTimeout = setTimeout(() => abortController.abort(), STREAM_TIMEOUT_MS);
+	// ── SSE streaming response with timeout ────
+	const encoder = new TextEncoder();
+	const abortController = new AbortController();
+	const streamTimeout = setTimeout(
+		() => abortController.abort(),
+		STREAM_TIMEOUT_MS
+	);
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      function sendEvent(event: string, data: any) {
-        if (abortController.signal.aborted) return;
-        try {
-          const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
-          controller.enqueue(encoder.encode(payload));
-        } catch {
-          // Stream may be closed by client
-        }
-      }
+	const stream = new ReadableStream({
+		async start(controller) {
+			function sendEvent(event: string, data: any) {
+				if (abortController.signal.aborted) return;
+				try {
+					const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+					controller.enqueue(encoder.encode(payload));
+				} catch {
+					// Stream may be closed by client
+				}
+			}
 
-      const callbacks: PipelineCallbacks = {
-        onGuardResult: (result) => sendEvent("guard", { safe: result.safe, category: result.category }),
-        onToolStart: (tool, label) => sendEvent("tool_start", { tool, label }),
-        onToolDone: (tool, summary, meta) => sendEvent("tool_done", {
-          tool,
-          summary: summary.slice(0, 200),
-          cached: meta?.cached === true,
-          slow: meta?.slow === true,
-          duration_ms: meta?.durationMs ?? null,
-          error: meta?.error === true,
-        }),
-        onStillWorking: (round, elapsedMs) => sendEvent("still_working", { round, elapsed_ms: elapsedMs }),
-        onTextDelta: (text) => sendEvent("delta", { text }),
-        onError: (message, code) => sendEvent("error", { message, code }),
-        onPromptSuggestion: (original, suggested, reason) => sendEvent("prompt_suggestion", { original, suggested, reason }),
-      };
+			const callbacks: PipelineCallbacks = {
+				onGuardResult: (result) =>
+					sendEvent("guard", { safe: result.safe, category: result.category }),
+				onToolStart: (tool, label) => sendEvent("tool_start", { tool, label }),
+				onToolDone: (tool, summary, meta) =>
+					sendEvent("tool_done", {
+						tool,
+						summary: summary.slice(0, 200),
+						cached: meta?.cached === true,
+						slow: meta?.slow === true,
+						duration_ms: meta?.durationMs ?? null,
+						error: meta?.error === true,
+					}),
+				onStillWorking: (round, elapsedMs) =>
+					sendEvent("still_working", { round, elapsed_ms: elapsedMs }),
+				onTextDelta: (text) => sendEvent("delta", { text }),
+				onError: (message, code) => sendEvent("error", { message, code }),
+				onPromptSuggestion: (original, suggested, reason) =>
+					sendEvent("prompt_suggestion", { original, suggested, reason }),
+			};
 
-      try {
-        // Pass abort signal to pipeline so it stops consuming tokens on timeout
-        const result = await executePipeline(pipelineRequest, mcpServer, callbacks, {
-          signal: abortController.signal,
-        });
+			try {
+				// Pass abort signal to pipeline so it stops consuming tokens on timeout
+				const result = await executePipeline(
+					pipelineRequest,
+					mcpServer,
+					callbacks,
+					{
+						signal: abortController.signal,
+					}
+				);
 
-        // ── Cost computation ──────────────────────
-        const totalInputTokens = result.tokens.input + result.guard_tokens.input + result.classifier_tokens.input;
-        const totalOutputTokens = result.tokens.output + result.guard_tokens.output + result.classifier_tokens.output;
-        // Use actual token-based cost (not rough estimate)
-        const { calculateCostCents } = await import("../../../../apps/platform/token-cost");
-        const costCents = calculateCostCents({
-          model: result.model_id_used,
-          input_tokens: totalInputTokens,
-          output_tokens: totalOutputTokens,
-          cache_creation_input_tokens: 0,
-          cache_read_input_tokens: 0,
-        });
+				// ── Cost computation ──────────────────────
+				const totalInputTokens =
+					result.tokens.input +
+					result.guard_tokens.input +
+					result.classifier_tokens.input;
+				const totalOutputTokens =
+					result.tokens.output +
+					result.guard_tokens.output +
+					result.classifier_tokens.output;
+				// Use actual token-based cost (not rough estimate)
+				const { calculateCostCents } =
+					await import("../../../../apps/platform/token-cost");
+				const costCents = calculateCostCents({
+					model: result.model_id_used,
+					input_tokens: totalInputTokens,
+					output_tokens: totalOutputTokens,
+					cache_creation_input_tokens: 0,
+					cache_read_input_tokens: 0,
+				});
 
-        // ── Compute remaining budget ─────────────
-        let mcpRemaining: number | undefined;
-        try {
-          const { getDailyUsageSummary } = await import("../../../../apps/platform/daily-usage");
-          const summary = await getDailyUsageSummary(orgId, plan);
-          mcpRemaining = summary.mcp_remaining;
-        } catch { /* continue */ }
+				// ── Compute remaining budget ─────────────
+				let mcpRemaining: number | undefined;
+				try {
+					const { getDailyUsageSummary } =
+						await import("../../../../apps/platform/daily-usage");
+					const summary = await getDailyUsageSummary(orgId, plan);
+					mcpRemaining = summary.mcp_remaining;
+				} catch {
+					/* continue */
+				}
 
-        // ── Collect finding/action data for card resolution ──
-        // IMPORTANT: this used to happen AFTER persistence, so the saved
-        // assistant message was the raw LLM text with $$MARKER{...}$$
-        // tokens still inline. On re-mount, the client had no way to
-        // reconstruct the cards (it would need to refetch every finding)
-        // so the rich blocks fell back to literal text. We now compute
-        // these maps BEFORE persistence, parse + resolve the blocks
-        // server-side, and persist the resolved JSON so loadConversation()
-        // gets a render-ready payload with one round trip.
-        let findingsMap: Record<string, any> = {};
-        let actionsMap: Record<string, any> = {};
-        try {
-          const findingsResult = mcpServer.callTool("get_finding_projections");
-          if (findingsResult.type === "finding_projections" && Array.isArray(findingsResult.data)) {
-            for (const f of findingsResult.data) {
-              // Wave 2.4: confidence is no longer surfaced to the chat UI.
-              // Severity carries the qualitative signal the user needs.
-              findingsMap[f.id] = {
-                id: f.id, title: f.title, severity: f.severity,
-                impact_mid: f.impact?.midpoint || 0, impact_min: f.impact?.monthly_range?.min || 0,
-                impact_max: f.impact?.monthly_range?.max || 0, pack: f.pack, root_cause: f.root_cause || null,
-              };
-            }
-          }
-          const actionsResult = mcpServer.callTool("get_action_projections");
-          if (actionsResult.type === "action_projections" && Array.isArray(actionsResult.data)) {
-            for (const a of actionsResult.data) {
-              actionsMap[a.id] = {
-                id: a.id, title: a.title, severity: a.severity,
-                impact_mid: a.impact?.midpoint || 0, cross_pack: a.cross_pack || false,
-                priority_score: a.priority_score || 0,
-              };
-            }
-          }
-        } catch { /* MCP data not available — cards will show IDs only */ }
+				// ── Collect finding/action data for card resolution ──
+				// IMPORTANT: this used to happen AFTER persistence, so the saved
+				// assistant message was the raw LLM text with $$MARKER{...}$$
+				// tokens still inline. On re-mount, the client had no way to
+				// reconstruct the cards (it would need to refetch every finding)
+				// so the rich blocks fell back to literal text. We now compute
+				// these maps BEFORE persistence, parse + resolve the blocks
+				// server-side, and persist the resolved JSON so loadConversation()
+				// gets a render-ready payload with one round trip.
+				const findingsMap: Record<string, any> = {};
+				const actionsMap: Record<string, any> = {};
+				try {
+					const findingsResult = mcpServer.callTool("get_finding_projections");
+					if (
+						findingsResult.type === "finding_projections" &&
+						Array.isArray(findingsResult.data)
+					) {
+						for (const f of findingsResult.data) {
+							// Wave 2.4: confidence is no longer surfaced to the chat UI.
+							// Severity carries the qualitative signal the user needs.
+							findingsMap[f.id] = {
+								id: f.id,
+								title: f.title,
+								severity: f.severity,
+								impact_mid: f.impact?.midpoint || 0,
+								impact_min: f.impact?.monthly_range?.min || 0,
+								impact_max: f.impact?.monthly_range?.max || 0,
+								pack: f.pack,
+								root_cause: f.root_cause || null,
+							};
+						}
+					}
+					const actionsResult = mcpServer.callTool("get_action_projections");
+					if (
+						actionsResult.type === "action_projections" &&
+						Array.isArray(actionsResult.data)
+					) {
+						for (const a of actionsResult.data) {
+							actionsMap[a.id] = {
+								id: a.id,
+								title: a.title,
+								severity: a.severity,
+								impact_mid: a.impact?.midpoint || 0,
+								cross_pack: a.cross_pack || false,
+								priority_score: a.priority_score || 0,
+							};
+						}
+					}
+				} catch {
+					/* MCP data not available — cards will show IDs only */
+				}
 
-        // ── Resolve $$KB{kind:key}$$ markers from the response into Sanity articles ──
-        // Keys are bundled in kbArticlesMap as "<kind>:<key>" → { title, slug, excerpt }
-        // so the client can match each block deterministically. Articles that don't
-        // exist in Sanity yet are simply omitted — the client falls back to a
-        // styled "Browse related docs" card linking to the catalog filtered by key.
-        const kbArticlesMap: Record<string, { title: string; slug: string; excerpt: string | null }> = {};
-        try {
-          const kbMarkerRegex = /\$\$KB\{(finding|root_cause):([^}]+)\}\$\$/g;
-          const seenLookups = new Set<string>();
-          const kbLookups: Array<{ kind: "finding" | "root_cause"; key: string }> = [];
-          for (const match of result.response_text.matchAll(kbMarkerRegex)) {
-            const kind = match[1] as "finding" | "root_cause";
-            const key = match[2].trim();
-            const lookup = `${kind}:${key}`;
-            if (!key || seenLookups.has(lookup)) continue;
-            seenLookups.add(lookup);
-            kbLookups.push({ kind, key });
-          }
+				// ── Resolve $$KB{kind:key}$$ markers from the response into Sanity articles ──
+				// Keys are bundled in kbArticlesMap as "<kind>:<key>" → { title, slug, excerpt }
+				// so the client can match each block deterministically. Articles that don't
+				// exist in Sanity yet are simply omitted — the client falls back to a
+				// styled "Browse related docs" card linking to the catalog filtered by key.
+				const kbArticlesMap: Record<
+					string,
+					{ title: string; slug: string; excerpt: string | null }
+				> = {};
+				try {
+					const kbMarkerRegex = /\$\$KB\{(finding|root_cause):([^}]+)\}\$\$/g;
+					const seenLookups = new Set<string>();
+					const kbLookups: Array<{
+						kind: "finding" | "root_cause";
+						key: string;
+					}> = [];
+					for (const match of result.response_text.matchAll(kbMarkerRegex)) {
+						const kind = match[1] as "finding" | "root_cause";
+						const key = match[2].trim();
+						const lookup = `${kind}:${key}`;
+						if (!key || seenLookups.has(lookup)) continue;
+						seenLookups.add(lookup);
+						kbLookups.push({ kind, key });
+					}
 
-          if (kbLookups.length > 0) {
-            const [{ getKnowledgeArticleByFindingKey, getKnowledgeArticleByRootCauseKey }] = await Promise.all([
-              import("@/sanity/sanity-utils"),
-            ]);
-            const fetched = await Promise.all(
-              kbLookups.map(async ({ kind, key }) => {
-                try {
-                  const article = kind === "finding"
-                    ? await getKnowledgeArticleByFindingKey(key, llmOrgContext.locale || "en")
-                    : await getKnowledgeArticleByRootCauseKey(key);
-                  return article ? { kind, key, article } : null;
-                } catch { return null; }
-              }),
-            );
-            for (const entry of fetched) {
-              if (!entry) continue;
-              kbArticlesMap[`${entry.kind}:${entry.key}`] = {
-                title: entry.article.title,
-                slug: entry.article.slug.current,
-                excerpt: entry.article.excerpt ?? null,
-              };
-            }
-          }
-        } catch { /* Sanity unavailable — client will render fallback cards */ }
+					if (kbLookups.length > 0) {
+						const [
+							{
+								getKnowledgeArticleByFindingKey,
+								getKnowledgeArticleByRootCauseKey,
+							},
+						] = await Promise.all([import("@/sanity/sanity-utils")]);
+						const fetched = await Promise.all(
+							kbLookups.map(async ({ kind, key }) => {
+								try {
+									const article =
+										kind === "finding"
+											? await getKnowledgeArticleByFindingKey(
+													key,
+													llmOrgContext.locale || "en"
+												)
+											: await getKnowledgeArticleByRootCauseKey(
+													key,
+													llmOrgContext.locale || "en"
+												);
+									return article ? { kind, key, article } : null;
+								} catch {
+									return null;
+								}
+							})
+						);
+						for (const entry of fetched) {
+							if (!entry) continue;
+							kbArticlesMap[`${entry.kind}:${entry.key}`] = {
+								title: entry.article.title,
+								slug: entry.article.slug.current,
+								excerpt: entry.article.excerpt ?? null,
+							};
+						}
+					}
+				} catch {
+					/* Sanity unavailable — client will render fallback cards */
+				}
 
-        // ── Parse + resolve blocks for the assistant message ──
-        // This is the persistence-side counterpart to what the client
-        // streaming hook does in `flushText` + the SSE done handler.
-        // Running it here means the database holds a render-ready
-        // ContentBlock[] JSON payload for every assistant message, so
-        // restoring a conversation on a later page load doesn't need
-        // to re-parse markers or re-fetch finding/action/KB metadata —
-        // the renderer just iterates the deserialized blocks. If the
-        // parse fails for any reason we still fall back to persisting
-        // the raw text so the message isn't lost; the renderer treats
-        // unrecognised content as a single markdown block.
-        let assistantMessageContent = result.response_text;
-        try {
-          const placeholderBlocks = parseBlockMarkers(result.response_text);
-          const resolvedBlocks = resolveCardData(
-            placeholderBlocks,
-            findingsMap,
-            actionsMap,
-            kbArticlesMap,
-          );
-          assistantMessageContent = JSON.stringify(resolvedBlocks);
-        } catch (err) {
-        }
+				// ── Parse + resolve blocks for the assistant message ──
+				// This is the persistence-side counterpart to what the client
+				// streaming hook does in `flushText` + the SSE done handler.
+				// Running it here means the database holds a render-ready
+				// ContentBlock[] JSON payload for every assistant message, so
+				// restoring a conversation on a later page load doesn't need
+				// to re-parse markers or re-fetch finding/action/KB metadata —
+				// the renderer just iterates the deserialized blocks. If the
+				// parse fails for any reason we still fall back to persisting
+				// the raw text so the message isn't lost; the renderer treats
+				// unrecognised content as a single markdown block.
+				let assistantMessageContent = result.response_text;
+				try {
+					const placeholderBlocks = parseBlockMarkers(result.response_text);
+					const resolvedBlocks = resolveCardData(
+						placeholderBlocks,
+						findingsMap,
+						actionsMap,
+						kbArticlesMap
+					);
+					assistantMessageContent = JSON.stringify(resolvedBlocks);
+				} catch (err) {}
 
-        // ── Persist messages to conversation store ──
-        const convId = pipelineRequest.conversation_id;
-        if (convId && convId !== "ephemeral") {
-          const store = getConversationStore();
-          // Save user message (raw text — user input has no markers to resolve)
-          store.addMessage(convId, { role: "user", content: body.message }).catch(() => {});
-          // Save assistant message with resolved blocks JSON + cost tracking (atomic)
-          store.addMessage(convId, {
-            role: "assistant",
-            content: assistantMessageContent,
-            model: result.model_id_used,
-            inputTokens: totalInputTokens,
-            outputTokens: totalOutputTokens,
-            costCents,
-            toolCalls: result.tool_calls_made.length > 0
-              ? JSON.stringify(result.tool_calls_made.map((tc) => ({ tool: tc.tool_name, ms: tc.execution_ms })))
-              : undefined,
-            purpose: "core_chat",
-          }).catch(() => {});
-          // Update conversation totals
-          store.updateTotals(convId, costCents, totalInputTokens, totalOutputTokens).catch(() => {});
-        }
+				// ── Persist messages to conversation store ──
+				const convId = pipelineRequest.conversation_id;
+				if (convId && convId !== "ephemeral") {
+					const store = getConversationStore();
+					// Save user message (raw text — user input has no markers to resolve)
+					store
+						.addMessage(convId, { role: "user", content: body.message })
+						.catch(() => {});
+					// Save assistant message with resolved blocks JSON + cost tracking (atomic)
+					store
+						.addMessage(convId, {
+							role: "assistant",
+							content: assistantMessageContent,
+							model: result.model_id_used,
+							inputTokens: totalInputTokens,
+							outputTokens: totalOutputTokens,
+							costCents,
+							toolCalls:
+								result.tool_calls_made.length > 0
+									? JSON.stringify(
+											result.tool_calls_made.map((tc) => ({
+												tool: tc.tool_name,
+												ms: tc.execution_ms,
+											}))
+										)
+									: undefined,
+							purpose: "core_chat",
+						})
+						.catch(() => {});
+					// Update conversation totals
+					store
+						.updateTotals(
+							convId,
+							costCents,
+							totalInputTokens,
+							totalOutputTokens
+						)
+						.catch(() => {});
+				}
 
-        sendEvent("done", {
-          request_id: result.request_id,
-          response: result.response_text,
-          model_tier: result.model_tier_used,
-          // Forwarded straight from the pipeline. The chat composer reads
-          // this to show a "running on the lighter model" hint once the
-          // user's 5h session budget pushed Sonnet/Opus down to Haiku.
-          session_downgraded: result.session_downgraded === true,
-          cost_cents: costCents,
-          mcp_remaining: mcpRemaining,
-          findings_data: findingsMap,
-          actions_data: actionsMap,
-          kb_articles_data: kbArticlesMap,
-          tokens: result.tokens,
-          guard_tokens: result.guard_tokens,
-          classifier_tokens: result.classifier_tokens,
-          tool_calls: result.tool_calls_made.map((tc) => ({
-            tool: tc.tool_name,
-            summary: tc.result_summary.slice(0, 200),
-            ms: tc.execution_ms,
-          })),
-          latency_ms: result.latency_ms,
-        });
-      } catch (err: any) {
-        if (abortController.signal.aborted) {
-          sendEvent("error", { message: "Request timed out. Try a more specific question.", code: "timeout" });
-        } else {
-          sendEvent("error", { message: "An unexpected error occurred. Please try again.", code: "internal_error" });
+				sendEvent("done", {
+					request_id: result.request_id,
+					response: result.response_text,
+					model_tier: result.model_tier_used,
+					// Forwarded straight from the pipeline. The chat composer reads
+					// this to show a "running on the lighter model" hint once the
+					// user's 5h session budget pushed Sonnet/Opus down to Haiku.
+					session_downgraded: result.session_downgraded === true,
+					cost_cents: costCents,
+					mcp_remaining: mcpRemaining,
+					findings_data: findingsMap,
+					actions_data: actionsMap,
+					kb_articles_data: kbArticlesMap,
+					tokens: result.tokens,
+					guard_tokens: result.guard_tokens,
+					classifier_tokens: result.classifier_tokens,
+					tool_calls: result.tool_calls_made.map((tc) => ({
+						tool: tc.tool_name,
+						summary: tc.result_summary.slice(0, 200),
+						ms: tc.execution_ms,
+					})),
+					latency_ms: result.latency_ms,
+				});
+			} catch (err: any) {
+				if (abortController.signal.aborted) {
+					sendEvent("error", {
+						message: "Request timed out. Try a more specific question.",
+						code: "timeout",
+					});
+				} else {
+					sendEvent("error", {
+						message: "An unexpected error occurred. Please try again.",
+						code: "internal_error",
+					});
 
-          trackError({
-            errorType: "LlmPipelineError",
-            message: err?.message || "Unknown pipeline error",
-            endpoint: "/api/chat",
-            method: "POST",
-            userId,
-            organizationId: orgId,
-            severity: "error",
-          }).catch(() => {});
-        }
-      } finally {
-        clearTimeout(streamTimeout);
-        controller.close();
-      }
-    },
-  });
+					trackError({
+						errorType: "LlmPipelineError",
+						message: err?.message || "Unknown pipeline error",
+						endpoint: "/api/chat",
+						method: "POST",
+						userId,
+						organizationId: orgId,
+						severity: "error",
+					}).catch(() => {});
+				}
+			} finally {
+				clearTimeout(streamTimeout);
+				controller.close();
+			}
+		},
+	});
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
-    },
-  });
+	return new Response(stream, {
+		headers: {
+			"Content-Type": "text/event-stream",
+			"Cache-Control": "no-cache, no-transform",
+			Connection: "keep-alive",
+			"X-Accel-Buffering": "no",
+		},
+	});
 }

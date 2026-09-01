@@ -25,7 +25,10 @@ import { formatDate } from "@/lib/format-date";
 import { renderRichText } from "@/lib/rich-text";
 import { humanizeSurfaceLabel } from "@/lib/surface-label";
 import Link from "next/link";
-import type { FindingProjection, ActionProjection } from "@/../../packages/projections/types";
+import type {
+	FindingProjection,
+	ActionProjection,
+} from "@/../../packages/projections/types";
 import { useCopilot } from "@/components/app/CopilotProvider";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import FeedbackMoment from "./FeedbackMoment";
@@ -43,7 +46,7 @@ import VerificationPanel from "@/components/console/VerificationPanel";
 import VerificationSufficiencyWarning from "@/components/console/VerificationSufficiencyWarning";
 import FixWithAiSection from "@/components/console/actions/FixWithAiSection";
 import CausalTimeline from "@/components/console/CausalTimeline";
-import { translateEngineCopy } from "@/lib/engine-i18n";
+import { translateEngineCopy, translateFindingField } from "@/lib/engine-i18n";
 
 export interface FindingDetailPanelProps {
 	finding: FindingProjection;
@@ -78,6 +81,30 @@ export default function FindingDetailPanel({
 	const copilot = useCopilot();
 	const mcpData = useMcpData();
 	const isFull = variant === "full";
+	const translatedEffect = translateFindingField(
+		finding,
+		"effect",
+		finding.effect,
+		tEngine
+	) as string;
+	const translatedRootCause = translateFindingField(
+		finding,
+		"root_cause",
+		finding.root_cause,
+		tEngine
+	) as string;
+	const translatedReasoning = translateFindingField(
+		finding,
+		"reasoning",
+		finding.reasoning,
+		tEngine
+	) as string;
+	const translatedRemediation = translateFindingField(
+		finding,
+		"remediation_steps",
+		finding.remediation_steps,
+		tEngine
+	) as string[];
 
 	// Resolve full ActionProjection(s) from lightweight action_refs
 	const linkedActions = useMemo<ActionProjection[]>(() => {
@@ -97,7 +124,7 @@ export default function FindingDetailPanel({
 	useEffect(() => {
 		if (!isFull || !finding.inference_key) return;
 		fetch(
-			`/api/knowledge-base/by-finding-key?key=${encodeURIComponent(finding.inference_key)}`,
+			`/api/knowledge-base/by-finding-key?key=${encodeURIComponent(finding.inference_key)}`
 		)
 			.then((r) => r.json())
 			.then((data) => {
@@ -111,7 +138,9 @@ export default function FindingDetailPanel({
 	const dwellTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	useEffect(() => {
 		dwellTimer.current = setTimeout(() => setShowFeedback(true), 10_000);
-		return () => { if (dwellTimer.current) clearTimeout(dwellTimer.current); };
+		return () => {
+			if (dwellTimer.current) clearTimeout(dwellTimer.current);
+		};
 	}, [finding.id]);
 
 	// All pack keys ship with dictionary entries under `pack_labels.*`.
@@ -152,29 +181,31 @@ export default function FindingDetailPanel({
 					: "default";
 
 	return (
-		<div className="space-y-5">
+		<div className='space-y-5'>
 			{/* Summary + badges */}
 			<DrawerSection title={td("summary")} accent={severityAccent}>
-				<p className="text-sm text-content-secondary">{renderRichText(translateEngineCopy(finding.inference_key, finding.cause, tEngine))}</p>
-				<div className="mt-2 flex flex-wrap items-center gap-2">
+				<p className='text-sm text-content-secondary'>
+					{renderRichText(
+						translateEngineCopy(finding.inference_key, finding.cause, tEngine)
+					)}
+				</p>
+				<div className='mt-2 flex flex-wrap items-center gap-2'>
 					{finding.polarity === "positive" ? (
-						<span className="rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400">
+						<span className='rounded bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400'>
 							{tc("healthy")}
 						</span>
 					) : (
 						<SeverityBadge value={finding.severity} />
 					)}
 					<VerificationBadge value={finding.verification_maturity} />
-					{finding.change_class && (
-						<ChangeBadge value={finding.change_class} />
-					)}
+					{finding.change_class && <ChangeBadge value={finding.change_class} />}
 					<span
 						className={`rounded border px-2 py-0.5 text-xs ${packBadgeStyles[finding.pack] || "border-edge text-content-muted"}`}
 					>
 						{packLabel(finding.pack)}
 					</span>
 					{finding.surface && (
-						<span className="rounded border border-edge px-2 py-0.5 text-xs text-content-muted">
+						<span className='rounded border border-edge px-2 py-0.5 text-xs text-content-muted'>
 							{humanizeSurfaceLabel(finding.surface)}
 						</span>
 					)}
@@ -186,7 +217,7 @@ export default function FindingDetailPanel({
 				finding.action_refs.length > 0 ||
 				finding.opportunity_ref) && (
 				<DrawerSection title={td("context")}>
-					<div className="space-y-1.5">
+					<div className='space-y-1.5'>
 						{/* Reta-final: workspace_refs used to deep-link into legacy
 						    /app/workspaces/[id] (removed via Opção C). The new
 						    hub at /app/workspaces is the configuration surface,
@@ -197,10 +228,10 @@ export default function FindingDetailPanel({
 						{finding.workspace_refs.map((ws) => (
 							<span
 								key={ws.id}
-								className="flex items-center gap-2 rounded-md border border-edge bg-surface-card/40 px-3 py-1.5 text-xs text-content-muted"
+								className='flex items-center gap-2 rounded-md border border-edge bg-surface-card/40 px-3 py-1.5 text-xs text-content-muted'
 								title={ws.name}
 							>
-								<span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+								<span className='h-1.5 w-1.5 rounded-full bg-amber-500' />
 								{ws.name}
 							</span>
 						))}
@@ -208,26 +239,28 @@ export default function FindingDetailPanel({
 							<Link
 								key={action.id}
 								href={`/app/actions?selected=${encodeURIComponent(action.id)}`}
-								className="flex items-center gap-2 rounded-md border border-edge px-3 py-1.5 text-xs text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover"
+								className='flex items-center gap-2 rounded-md border border-edge px-3 py-1.5 text-xs text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover'
 							>
 								<span
 									className={`h-1.5 w-1.5 rounded-full ${action.category === "incident" ? "bg-red-500" : "bg-emerald-500"}`}
 								/>
 								{action.title}
 								{action.status && (
-									<span className="ml-auto text-[10px] text-content-faint">
+									<span className='ml-auto text-[10px] text-content-faint'>
 										{action.status}
 									</span>
 								)}
 							</Link>
 						))}
 						{finding.opportunity_ref && (
-							<div className="rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-xs text-emerald-600 dark:text-emerald-400">
+							<div className='rounded-md border border-emerald-500/20 bg-emerald-500/5 px-3 py-1.5 text-xs text-emerald-600 dark:text-emerald-400'>
 								{finding.opportunity_ref.hypothesis}
 								{finding.opportunity_ref.value_range && (
-									<span className="ml-1 font-mono text-[10px]">
-										${finding.opportunity_ref.value_range.min.toLocaleString()}-$
-										{finding.opportunity_ref.value_range.max.toLocaleString()}/mo
+									<span className='ml-1 font-mono text-[10px]'>
+										${finding.opportunity_ref.value_range.min.toLocaleString()}
+										-$
+										{finding.opportunity_ref.value_range.max.toLocaleString()}
+										/mo
 									</span>
 								)}
 							</div>
@@ -243,17 +276,17 @@ export default function FindingDetailPanel({
 
 			{/* Suppression Callout */}
 			{finding.suppression_context?.is_suppressed && (
-				<DrawerStatBox accent="warning">
-					<div className="px-4 py-3">
-						<div className="mb-1 flex items-center gap-2">
-							<span className="text-xs font-semibold text-amber-600 dark:text-amber-500">
+				<DrawerStatBox accent='warning'>
+					<div className='px-4 py-3'>
+						<div className='mb-1 flex items-center gap-2'>
+							<span className='text-xs font-semibold text-amber-600 dark:text-amber-500'>
 								{td("suppressed")}
 							</span>
-							<span className="rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+							<span className='rounded border border-amber-500/20 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-600 dark:text-amber-400'>
 								{finding.suppression_context.visibility}
 							</span>
 						</div>
-						<p className="text-xs text-amber-600/80 dark:text-amber-300/80">
+						<p className='text-xs text-amber-600/80 dark:text-amber-300/80'>
 							{finding.suppression_context.explanation}
 						</p>
 					</div>
@@ -261,19 +294,21 @@ export default function FindingDetailPanel({
 			)}
 
 			{/* Effect */}
-			{finding.effect && (
+			{translatedEffect && (
 				<DrawerSection title={td("effect")}>
-					<p className="text-sm text-content-muted">{renderRichText(finding.effect)}</p>
+					<p className='text-sm text-content-muted'>
+						{renderRichText(translatedEffect)}
+					</p>
 				</DrawerSection>
 			)}
 
 			{/* Root Cause */}
-			{finding.root_cause && (
+			{translatedRootCause && (
 				<DrawerSection title={td("root_cause")}>
 					<DrawerStatBox>
-						<div className="px-4 py-3">
-							<span className="text-sm font-medium text-content-secondary">
-								{renderRichText(finding.root_cause)}
+						<div className='px-4 py-3'>
+							<span className='text-sm font-medium text-content-secondary'>
+								{renderRichText(translatedRootCause)}
 							</span>
 						</div>
 					</DrawerStatBox>
@@ -283,15 +318,13 @@ export default function FindingDetailPanel({
 			{/* Reasoning */}
 			<DrawerSection
 				title={
-					finding.polarity === "positive"
-						? td("why_good")
-						: td("reasoning")
+					finding.polarity === "positive" ? td("why_good") : td("reasoning")
 				}
 			>
 				<DrawerStatBox>
-					<div className="px-4 py-3">
-						<p className="text-sm leading-relaxed text-content-secondary">
-							{renderRichText(finding.reasoning)}
+					<div className='px-4 py-3'>
+						<p className='text-sm leading-relaxed text-content-secondary'>
+							{renderRichText(translatedReasoning)}
 						</p>
 					</div>
 				</DrawerStatBox>
@@ -304,34 +337,44 @@ export default function FindingDetailPanel({
 			    on-site crawl, brand impersonation, etc.). */}
 			{finding.source_url && (
 				<DrawerSection title={td("source")}>
-					<DrawerStatBox accent={finding.data_freshness === "stale" ? "warning" : "default"}>
-						<div className="px-4 py-3 space-y-2">
-							<div className="flex items-start gap-2">
-								<span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-[10px] text-blue-500">🔗</span>
+					<DrawerStatBox
+						accent={finding.data_freshness === "stale" ? "warning" : "default"}
+					>
+						<div className='space-y-2 px-4 py-3'>
+							<div className='flex items-start gap-2'>
+								<span className='mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-[10px] text-blue-500'>
+									🔗
+								</span>
 								<a
 									href={finding.source_url}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="break-all text-xs font-mono text-content-secondary hover:text-accent"
+									target='_blank'
+									rel='noopener noreferrer'
+									className='break-all font-mono text-xs text-content-secondary hover:text-accent'
 								>
 									{finding.source_url}
 								</a>
 							</div>
 							{finding.source_url_observed_at && (
-								<div className="flex items-start gap-2">
-									<span className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
-										finding.data_freshness === "stale"
-											? "bg-amber-500/10 text-amber-500"
-											: finding.data_freshness === "fresh"
-												? "bg-emerald-500/10 text-emerald-500"
-												: "bg-blue-500/10 text-blue-500"
-									}`}>
+								<div className='flex items-start gap-2'>
+									<span
+										className={`mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] ${
+											finding.data_freshness === "stale"
+												? "bg-amber-500/10 text-amber-500"
+												: finding.data_freshness === "fresh"
+													? "bg-emerald-500/10 text-emerald-500"
+													: "bg-blue-500/10 text-blue-500"
+										}`}
+									>
 										{finding.data_freshness === "stale" ? "⏳" : "✓"}
 									</span>
-									<span className="text-xs text-content-muted">
-										{td("checked_on", { date: formatDate(finding.source_url_observed_at, locale) })}
+									<span className='text-xs text-content-muted'>
+										{td("checked_on", {
+											date: formatDate(finding.source_url_observed_at, locale),
+										})}
 										{finding.data_freshness === "stale" && (
-											<span className="ml-2 text-amber-500">— {td("stale_warning")}</span>
+											<span className='ml-2 text-amber-500'>
+												— {td("stale_warning")}
+											</span>
 										)}
 									</span>
 								</div>
@@ -345,15 +388,14 @@ export default function FindingDetailPanel({
 			{isFull && finding.polarity !== "positive" && (
 				<DrawerSection title={td("remediation")} accent={severityAccent}>
 					<DrawerStatBox accent={severityAccent}>
-						{finding.remediation_steps &&
-						finding.remediation_steps.length > 0 ? (
-							<ol className="list-none space-y-2 px-4 py-3">
-								{finding.remediation_steps.map((step, i) => (
+						{translatedRemediation.length > 0 ? (
+							<ol className='list-none space-y-2 px-4 py-3'>
+								{translatedRemediation.map((step, i) => (
 									<li
 										key={i}
-										className="flex items-start gap-3 text-sm leading-relaxed text-content-secondary"
+										className='flex items-start gap-3 text-sm leading-relaxed text-content-secondary'
 									>
-										<span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset text-[10px] font-semibold text-content-muted">
+										<span className='mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-edge bg-surface-inset text-[10px] font-semibold text-content-muted'>
 											{i + 1}
 										</span>
 										<span>{step}</span>
@@ -361,17 +403,17 @@ export default function FindingDetailPanel({
 								))}
 							</ol>
 						) : (
-							<div className="px-4 py-3 text-sm text-content-faint italic">
+							<div className='px-4 py-3 text-sm italic text-content-faint'>
 								{td("remediation_empty")}
 							</div>
 						)}
 						{finding.estimated_effort_hours != null && (
-							<div className="border-t border-edge/50 px-4 py-2.5">
-								<div className="flex items-center justify-between text-xs">
-									<span className="uppercase tracking-wider text-content-faint">
+							<div className='border-t border-edge/50 px-4 py-2.5'>
+								<div className='flex items-center justify-between text-xs'>
+									<span className='uppercase tracking-wider text-content-faint'>
 										{td("estimated_effort")}
 									</span>
-									<span className="font-mono font-medium text-content-secondary">
+									<span className='font-mono font-medium text-content-secondary'>
 										{td("estimated_effort_hours", {
 											hours: finding.estimated_effort_hours,
 										})}
@@ -384,25 +426,24 @@ export default function FindingDetailPanel({
 			)}
 
 			{/* Fix with AI — only shown when linked actions have remediation steps */}
-			{isFull && finding.polarity !== "positive" && linkedActions.length > 0 && (
-				<>
-					{linkedActions.length === 1 &&
-						linkedActions[0].remediation_steps &&
-						linkedActions[0].remediation_steps.length > 0 && (
-							<FixWithAiSection action={linkedActions[0]} />
+			{isFull &&
+				finding.polarity !== "positive" &&
+				linkedActions.length > 0 && (
+					<>
+						{linkedActions.length === 1 &&
+							linkedActions[0].remediation_steps &&
+							linkedActions[0].remediation_steps.length > 0 && (
+								<FixWithAiSection action={linkedActions[0]} />
+							)}
+						{linkedActions.length > 1 && (
+							<FixWithAiPicker actions={linkedActions} />
 						)}
-					{linkedActions.length > 1 && (
-						<FixWithAiPicker actions={linkedActions} />
-					)}
-				</>
-			)}
+					</>
+				)}
 
 			{/* Impact Breakdown */}
 			{finding.polarity !== "positive" && (
-				<DrawerSection
-					title={td("impact_breakdown")}
-					accent={severityAccent}
-				>
+				<DrawerSection title={td("impact_breakdown")} accent={severityAccent}>
 					<DrawerStatBox accent={severityAccent}>
 						<DrawerStatRow
 							label={td("monthly_range")}
@@ -436,9 +477,8 @@ export default function FindingDetailPanel({
 								<DrawerStatRow
 									label={td("impact_type")}
 									value={
-										impactTypeLabels[
-											finding.impact.impact_type
-										] || finding.impact.impact_type
+										impactTypeLabels[finding.impact.impact_type] ||
+										finding.impact.impact_type
 									}
 								/>
 							</>
@@ -449,14 +489,12 @@ export default function FindingDetailPanel({
 
 			{/* Evidence Quality */}
 			{finding.evidence_quality && (
-				<DrawerSection title={td("evidence_quality")} accent="info">
-					<DrawerStatBox accent="info">
-						<div className="space-y-2 px-4 py-3">
+				<DrawerSection title={td("evidence_quality")} accent='info'>
+					<DrawerStatBox accent='info'>
+						<div className='space-y-2 px-4 py-3'>
 							<EvidenceQualityBar
 								label={td("source_reliability")}
-								value={
-									finding.evidence_quality.source_reliability
-								}
+								value={finding.evidence_quality.source_reliability}
 							/>
 							<EvidenceQualityBar
 								label={td("completeness")}
@@ -476,7 +514,7 @@ export default function FindingDetailPanel({
 			)}
 
 			{/* Verification Lifecycle Panel + CTA */}
-			<DrawerSection title={td("verification")} accent="info">
+			<DrawerSection title={td("verification")} accent='info'>
 				<VerificationPanel
 					maturity={finding.verification_maturity}
 					method={finding.verification_method}
@@ -486,7 +524,7 @@ export default function FindingDetailPanel({
 					decisionStatus={null}
 					onRequestVerification={() =>
 						router.push(
-							`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`,
+							`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`
 						)
 					}
 				/>
@@ -495,7 +533,7 @@ export default function FindingDetailPanel({
 					maturity={finding.verification_maturity}
 					onVerify={() =>
 						router.push(
-							`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`,
+							`/app/chat?intent=verify&finding=${encodeURIComponent(finding.id)}`
 						)
 					}
 				/>
@@ -503,16 +541,12 @@ export default function FindingDetailPanel({
 
 			{/* Truth Context */}
 			{finding.truth_context?.has_contradictions && (
-				<DrawerSection
-					title={td("evidence_contradictions")}
-					accent="warning"
-				>
-					<DrawerStatBox accent="warning">
-						<div className="px-4 py-3">
-							<p className="text-xs text-amber-600 dark:text-amber-300">
+				<DrawerSection title={td("evidence_contradictions")} accent='warning'>
+					<DrawerStatBox accent='warning'>
+						<div className='px-4 py-3'>
+							<p className='text-xs text-amber-600 dark:text-amber-300'>
 								{td("contradictions_detected", {
-									count: finding.truth_context
-										.contradiction_count,
+									count: finding.truth_context.contradiction_count,
 								})}
 							</p>
 						</div>
@@ -529,45 +563,45 @@ export default function FindingDetailPanel({
 								? `/app/knowledge-base/${kbLink.slug}`
 								: `/app/knowledge-base?finding=${encodeURIComponent(finding.inference_key)}`
 						}
-						className="group flex items-start gap-3 rounded-md border border-edge bg-surface-card px-4 py-3 text-sm text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover"
+						className='group flex items-start gap-3 rounded-md border border-edge bg-surface-card px-4 py-3 text-sm text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover'
 					>
-						<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-inset text-content-faint group-hover:text-accent">
+						<div className='flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-edge bg-surface-inset text-content-faint group-hover:text-accent'>
 							<svg
-								className="h-4 w-4"
-								fill="none"
-								viewBox="0 0 24 24"
+								className='h-4 w-4'
+								fill='none'
+								viewBox='0 0 24 24'
 								strokeWidth={1.5}
-								stroke="currentColor"
+								stroke='currentColor'
 							>
 								<path
-									strokeLinecap="round"
-									strokeLinejoin="round"
-									d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+									strokeLinecap='round'
+									strokeLinejoin='round'
+									d='M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25'
 								/>
 							</svg>
 						</div>
-						<div className="min-w-0 flex-1">
-							<div className="text-[10px] font-semibold uppercase tracking-wider text-content-faint">
+						<div className='min-w-0 flex-1'>
+							<div className='text-[10px] font-semibold uppercase tracking-wider text-content-faint'>
 								{td("learn_more")}
 							</div>
-							<div className="mt-0.5 truncate text-sm font-medium text-content">
+							<div className='mt-0.5 truncate text-sm font-medium text-content'>
 								{kbLink ? kbLink.title : td("browse_related_docs")}
 							</div>
-							<div className="mt-0.5 line-clamp-2 text-xs text-content-muted">
+							<div className='mt-0.5 line-clamp-2 text-xs text-content-muted'>
 								{kbLink?.excerpt || td("docs_coming_soon")}
 							</div>
 						</div>
 						<svg
-							className="mt-1 h-3.5 w-3.5 shrink-0 text-content-faint group-hover:text-accent"
-							fill="none"
-							viewBox="0 0 24 24"
+							className='mt-1 h-3.5 w-3.5 shrink-0 text-content-faint group-hover:text-accent'
+							fill='none'
+							viewBox='0 0 24 24'
 							strokeWidth={2}
-							stroke="currentColor"
+							stroke='currentColor'
 						>
 							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M8.25 4.5l7.5 7.5-7.5 7.5"
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								d='M8.25 4.5l7.5 7.5-7.5 7.5'
 							/>
 						</svg>
 					</a>
@@ -575,7 +609,7 @@ export default function FindingDetailPanel({
 			)}
 
 			{/* CTAs — state-driven */}
-			<section className="space-y-2 pt-2">
+			<section className='space-y-2 pt-2'>
 				{/* See Action / Create Action */}
 				{finding.polarity !== "positive" && (
 					<>
@@ -589,23 +623,23 @@ export default function FindingDetailPanel({
 							<button
 								onClick={() =>
 									router.push(
-										`/app/actions?selected=${encodeURIComponent(finding.action_refs[0].id)}`,
+										`/app/actions?selected=${encodeURIComponent(finding.action_refs[0].id)}`
 									)
 								}
-								className="w-full rounded-lg border border-edge bg-surface-card px-4 py-2.5 text-sm font-medium text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover hover:text-content"
+								className='w-full rounded-lg border border-edge bg-surface-card px-4 py-2.5 text-sm font-medium text-content-secondary transition-colors hover:border-accent/40 hover:bg-surface-card-hover hover:text-content'
 							>
 								{td("see_action")}
 							</button>
 						) : (
 							<ShinyButton
-								variant="console"
+								variant='console'
 								onClick={() =>
 									copilot.open({
 										finding,
 										prompt: tp("discuss_finding", { title: finding.title }),
 									})
 								}
-								className="w-full"
+								className='w-full'
 							>
 								{td("discuss_finding")}
 							</ShinyButton>
@@ -616,8 +650,11 @@ export default function FindingDetailPanel({
 
 			{/* Feedback moment — appears after 10s of viewing */}
 			{showFeedback && (
-				<section className="mt-2">
-					<FeedbackMoment trigger="finding_dwell" questionKey="finding_question" />
+				<section className='mt-2'>
+					<FeedbackMoment
+						trigger='finding_dwell'
+						questionKey='finding_question'
+					/>
 				</section>
 			)}
 		</div>
@@ -632,17 +669,17 @@ function FixWithAiPicker({ actions }: { actions: ActionProjection[] }) {
 
 	// Filter to only actions that have remediation steps
 	const eligible = actions.filter(
-		(a) => a.remediation_steps && a.remediation_steps.length > 0,
+		(a) => a.remediation_steps && a.remediation_steps.length > 0
 	);
 
 	if (eligible.length === 0) return null;
 
 	if (selectedIdx !== null && eligible[selectedIdx]) {
 		return (
-			<div className="space-y-2">
+			<div className='space-y-2'>
 				<button
 					onClick={() => setSelectedIdx(null)}
-					className="text-[10px] text-content-faint hover:text-content-muted transition-colors"
+					className='text-[10px] text-content-faint transition-colors hover:text-content-muted'
 				>
 					&larr; {tFix("pick_different")}
 				</button>
@@ -652,50 +689,50 @@ function FixWithAiPicker({ actions }: { actions: ActionProjection[] }) {
 	}
 
 	return (
-		<div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
-			<div className="flex items-center gap-2 mb-2">
+		<div className='rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3'>
+			<div className='mb-2 flex items-center gap-2'>
 				<svg
-					className="h-4 w-4 text-emerald-400"
-					fill="none"
-					viewBox="0 0 24 24"
+					className='h-4 w-4 text-emerald-400'
+					fill='none'
+					viewBox='0 0 24 24'
 					strokeWidth={1.5}
-					stroke="currentColor"
+					stroke='currentColor'
 				>
 					<path
-						strokeLinecap="round"
-						strokeLinejoin="round"
-						d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"
+						strokeLinecap='round'
+						strokeLinejoin='round'
+						d='M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5'
 					/>
 				</svg>
-				<span className="text-xs font-semibold text-emerald-400">
+				<span className='text-xs font-semibold text-emerald-400'>
 					{tFix("title")}
 				</span>
 			</div>
-			<p className="text-[11px] text-content-muted mb-2">
+			<p className='mb-2 text-[11px] text-content-muted'>
 				{tFix("select_action")}
 			</p>
-			<div className="space-y-1.5">
+			<div className='space-y-1.5'>
 				{eligible.map((action, idx) => (
 					<button
 						key={action.id}
 						onClick={() => setSelectedIdx(idx)}
-						className="w-full flex items-center gap-2 rounded-md border border-edge px-3 py-1.5 text-xs text-content-secondary transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/5 text-left"
+						className='flex w-full items-center gap-2 rounded-md border border-edge px-3 py-1.5 text-left text-xs text-content-secondary transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/5'
 					>
 						<span
 							className={`h-1.5 w-1.5 shrink-0 rounded-full ${action.category === "incident" ? "bg-red-500" : "bg-emerald-500"}`}
 						/>
-						<span className="flex-1 truncate">{action.title}</span>
+						<span className='flex-1 truncate'>{action.title}</span>
 						<svg
-							className="h-3 w-3 shrink-0 text-content-faint"
-							fill="none"
-							viewBox="0 0 24 24"
+							className='h-3 w-3 shrink-0 text-content-faint'
+							fill='none'
+							viewBox='0 0 24 24'
 							strokeWidth={2}
-							stroke="currentColor"
+							stroke='currentColor'
 						>
 							<path
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								d="M8.25 4.5l7.5 7.5-7.5 7.5"
+								strokeLinecap='round'
+								strokeLinejoin='round'
+								d='M8.25 4.5l7.5 7.5-7.5 7.5'
 							/>
 						</svg>
 					</button>
@@ -716,23 +753,17 @@ function EvidenceQualityBar({
 }) {
 	const pct = Math.max(0, Math.min(100, value));
 	const color =
-		pct >= 70
-			? "bg-emerald-500"
-			: pct >= 40
-				? "bg-amber-500"
-				: "bg-red-500";
+		pct >= 70 ? "bg-emerald-500" : pct >= 40 ? "bg-amber-500" : "bg-red-500";
 	return (
-		<div className="flex items-center gap-3">
-			<span className="w-28 shrink-0 text-xs text-content-muted">
-				{label}
-			</span>
-			<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800">
+		<div className='flex items-center gap-3'>
+			<span className='w-28 shrink-0 text-xs text-content-muted'>{label}</span>
+			<div className='h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800'>
 				<div
 					className={`h-1.5 rounded-full transition-all ${color}`}
 					style={{ width: `${pct}%` }}
 				/>
 			</div>
-			<span className="w-8 shrink-0 text-right font-mono text-xs text-content-muted">
+			<span className='w-8 shrink-0 text-right font-mono text-xs text-content-muted'>
 				{pct}
 			</span>
 		</div>

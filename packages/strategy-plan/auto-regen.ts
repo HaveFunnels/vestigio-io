@@ -162,7 +162,12 @@ export async function maybeAutoRegenPlan(
 		const result = await generateAndPersistPlan(prisma, {
 			environmentId: params.environmentId,
 			month,
-			locale: (params.locale as "pt-BR" | "en" | "es" | "de") ?? "pt-BR",
+			// Leave it undefined when the cycle runner has no locale.
+			// The generator then resolves the organization's locale instead
+			// of silently forcing an English/Spanish/German org to pt-BR.
+			locale: params.locale
+				? (params.locale as "pt-BR" | "en" | "es" | "de")
+				: undefined,
 		});
 		return { triggered: true, decision, planId: result.planId };
 	} catch (err) {

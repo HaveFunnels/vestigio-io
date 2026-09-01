@@ -1,4 +1,6 @@
 import { prisma } from "@/libs/prismaDb";
+import { loadEngineTranslationsForLocale } from "@/lib/engine-translations";
+import { resolveInferenceTitle } from "../../packages/strategy-plan/title-resolver";
 
 // ──────────────────────────────────────────────
 // Bundle E — Predictive Layer
@@ -94,7 +96,9 @@ const EXPOSURE_BREACH_THRESHOLD_CENTS = 50_000_00; // R$ 50k
 export async function buildPredictiveSummary(
 	envId: string,
 	asOf: Date = new Date(),
+	locale = "pt-BR",
 ): Promise<PredictiveSummary> {
+	const translations = loadEngineTranslationsForLocale(locale);
 	const weeks = buildWeekRange(asOf, WEEKS_HISTORY);
 
 	// Para cada semana, conta findings em aberto no fim da janela
@@ -177,7 +181,9 @@ export async function buildPredictiveSummary(
 
 		trends.push({
 			pack,
-			display_label: PACK_LABEL_PTBR[pack] ?? humanizeKey(pack),
+			display_label:
+				PACK_LABEL_PTBR[pack] ??
+				(locale === "pt-BR" ? "Tema de receita" : humanizeKey(pack)),
 			data_points: dataPoints,
 			trend_direction: direction,
 			slope_per_week: slope,
@@ -214,7 +220,9 @@ export async function buildPredictiveSummary(
 	const chronic: ChronicFinding[] = chronicRaw.slice(0, 6).map((f) => ({
 		id: f.id,
 		inference_key: f.inferenceKey,
-		humanized_title: humanizeKey(f.inferenceKey),
+		humanized_title:
+			resolveInferenceTitle(f.inferenceKey, translations) ??
+			(locale === "pt-BR" ? "Achado de receita" : humanizeKey(f.inferenceKey)),
 		surface: f.surface,
 		severity: f.severity,
 		pack: f.pack,

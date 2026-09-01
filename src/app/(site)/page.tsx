@@ -24,10 +24,10 @@ const META_BY_LOCALE: Record<
 	{ title: string; description: string; ogAlt: string }
 > = {
 	"pt-BR": {
-		title: "Vestigio — Onde seu site perde dinheiro, em segundos",
+		title: "Vestigio — Veja onde seu funil digital perde vendas",
 		description:
-			"Diagnóstico gratuito em 60 segundos. Vestigio mostra quanto seu site perde por mês e o que corrigir primeiro — em R$, não em cores.",
-		ogAlt: "Vestigio — auditoria de conversão que mostra perdas em R$",
+			"Diagnóstico gratuito em 60 segundos. A Vestigio mostra onde seu funil perde vendas, o impacto em R$ e o que corrigir primeiro.",
+		ogAlt: "Vestigio — diagnóstico do funil digital com impacto em R$",
 	},
 	en: {
 		title: "Vestigio — See where your site is losing money",

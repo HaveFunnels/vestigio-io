@@ -1,6 +1,8 @@
 import { isAuthorized } from "@/libs/isAuthorized";
 import { prisma } from "@/libs/prismaDb";
+import { loadEngineTranslationsForLocale } from "@/lib/engine-translations";
 import { NextResponse } from "next/server";
+import { resolveInferenceTitle } from "../../../../../../packages/strategy-plan/title-resolver";
 
 // ──────────────────────────────────────────────
 // GET /api/library/strategy/[month]?envId=<id>
@@ -213,6 +215,22 @@ export async function GET(request: Request, { params }: RouteParams) {
 			},
 		})
 		: [];
+	const planTranslations = loadEngineTranslationsForLocale(plan.locale);
+	const planLocale = plan.locale;
+	// Plans generated before the locale fixes can be marked pt-BR while
+	// still containing English LLM output. Never let that stale content
+	// cross the API boundary into the Portuguese frontend.
+	const ENGLISH_PLAN_COPY_RE =
+		/\b(the|your|this|that|these|those|we found|you have|revenue leak|root cause|next step|why first|how to proceed|not calibrated|in progress|high confidence)\b/i;
+	function ptSafeText(value: unknown, fallback: string): string {
+		if (typeof value !== "string" || !value.trim()) return fallback;
+		if (planLocale === "pt-BR" && ENGLISH_PLAN_COPY_RE.test(value)) return fallback;
+		return value;
+	}
+	function ptSafeList(value: unknown, fallback: string[]): string[] {
+		if (!Array.isArray(value)) return fallback;
+		return value.map((item) => ptSafeText(item, "Siga o procedimento indicado para este passo."));
+	}
 	type LinkedAction = {
 		id: string;
 		title: string;
@@ -229,8 +247,18 @@ export async function GET(request: Request, { params }: RouteParams) {
 		let description = "";
 		try {
 			const parsed = JSON.parse(row.projection);
-			if (typeof parsed?.title === "string") title = parsed.title;
-			if (typeof parsed?.description === "string") description = parsed.description;
+			if (typeof parsed?.title === "string") title = ptSafeText(parsed.title, title);
+			if (typeof parsed?.description === "string") {
+				description = ptSafeText(parsed.description, "Ação vinculada a este passo.");
+			}
+			const inferenceKey =
+				typeof parsed?.inference_key === "string"
+					? parsed.inference_key
+					: typeof parsed?.inferenceKey === "string"
+						? parsed.inferenceKey
+						: row.decisionKey;
+			const localizedTitle = resolveInferenceTitle(inferenceKey, planTranslations);
+			if (localizedTitle) title = ptSafeText(localizedTitle, title);
 		} catch { /* keep defaults */ }
 		linkedActionsById.set(row.id, {
 			id: row.id,
@@ -419,6 +447,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 					pack: r.pack,
 					label:
 						PACK_LABEL_PTBR[k] ??
+						(plan.locale === "pt-BR" ? "Tema de receita" : undefined) ??
 						// Defensive fallback: humanize raw pack key in Title Case
 						// (capitalize first letter of each word). Prevents
 						// "money moment exposure" lowercase-leaks when a new
@@ -693,7 +722,12 @@ export async function GET(request: Request, { params }: RouteParams) {
 		viewerCanApprove: canApprove,
 		heroMetrics: hero,
 		buyerSegments,
-		thesisOfMonth: (plan as any).thesisOfMonth ?? null,
+		thesisOfMonth: plan.locale === "pt-BR"
+			? ptSafeText(
+				(plan as any).thesisOfMonth,
+				"Este mês, o foco é fechar os vazamentos de maior impacto.",
+			)
+			: (plan as any).thesisOfMonth ?? null,
 		continuity: (plan as any).continuityJson ?? null,
 		crossCustomerPattern: (plan as any).crossCustomerPatternJson ?? null,
 		copyLens: (plan as any).copyLensJson ?? null,
@@ -705,8 +739,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 		attributionTotal,
 		screenshotUrlByPath,
 		peerLineByInferenceKey,
-		narrativeWhatHappened: plan.narrativeWhatHappened,
-		valuePreviewNarrative: plan.valuePreviewNarrative,
+		narrativeWhatHappened: ptSafeText(
+			plan.narrativeWhatHappened,
+			"Este plano reúne os principais padrões observados no ciclo e os próximos movimentos recomendados.",
+		),
+		valuePreviewNarrative: ptSafeText(
+			plan.valuePreviewNarrative,
+			"Continue seguindo o plano para acumular histórico e medir a evolução dos resultados.",
+		),
 		valuePreview,
 		memoryRollups,
 		nextSteps: plan.nextSteps.map((s) => {
@@ -727,9 +767,14 @@ export async function GET(request: Request, { params }: RouteParams) {
 			return {
 				id: s.id,
 				order: s.order,
-				title: s.title,
-				reasoning: s.reasoning,
-				procedureSteps: (s.procedureStepsJson as string[]) ?? [],
+				title: ptSafeText(s.title, "Corrigir o principal vazamento identificado"),
+				reasoning: ptSafeText(
+					s.reasoning,
+					"Este passo trata o ponto de maior impacto identificado no ciclo.",
+				),
+				procedureSteps: planLocale === "pt-BR"
+					? ptSafeList(s.procedureStepsJson, ["Siga o procedimento indicado para este passo."])
+					: ((s.procedureStepsJson as string[]) ?? []),
 				researchRefs: (s.researchRefsJson as Array<{ title: string; url?: string }>) ?? [],
 				estimatedEffort: s.estimatedEffort,
 				suggestedOwner: s.suggestedOwner,

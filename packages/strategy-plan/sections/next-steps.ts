@@ -134,9 +134,9 @@ function humanizeSurface(surface: string | null, locale: string): string {
 		// ("em /checkout-v2") and reads correctly in pt.
 		return ` em ${surface}`;
 	}
-	// Other locales: keep "em <surface>" English fallback for now;
-	// add localised maps when those plans regenerate at scale.
-	return ` em ${surface}`;
+	if (locale === "es") return ` en ${surface}`;
+	if (locale === "de") return ` auf ${surface}`;
+	return ` on ${surface}`;
 }
 
 // Wave 22.9 · Bloco 1 — anti-pattern refusal + alias-suffix fallback.

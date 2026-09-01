@@ -44,19 +44,19 @@ export async function POST(request: Request) {
 		return NextResponse.json({ message: "month must be YYYY-MM" }, { status: 400 });
 	}
 
-	const locale: "pt-BR" | "en" | "es" | "de" = body?.locale ?? "pt-BR";
-
 	const env = await prisma.environment.findUnique({
 		where: { id: environmentId },
 		select: {
 			id: true,
 			domain: true,
-			organization: { select: { ownerId: true } },
+			organization: { select: { ownerId: true, locale: true } },
 		},
 	});
 	if (!env) {
 		return NextResponse.json({ message: "Environment not found" }, { status: 404 });
 	}
+	const locale: "pt-BR" | "en" | "es" | "de" =
+		body?.locale ?? (env.organization?.locale as "pt-BR" | "en" | "es" | "de") ?? "pt-BR";
 
 	// Admin trigger defaults to NOT firing the notification email
 	// (testing/development should not spam customers). Pass

@@ -151,6 +151,7 @@
 			"section_headline": "Strategieplan · Geführte Tour",
 			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Kostenlose Diagnose starten",
+			"findings_label": "Befunde",
 			"step_indicator": [
 				"Das Problem",
 				"Die Lesung",
@@ -165,6 +166,7 @@
 				"tese_eyebrow": "DIE THESE DIESES MONATS",
 				"tese_body": "Vestigio hat **~12k €/Monat** an Leckage identifiziert, konzentriert auf Startseite und Checkout, wo unausgerichteter Text Käufer vor der Conversion vertreibt.",
 				"tese_attribution": "Vestigio · Zyklusanalyse",
+				"evidence_cta": "Sehen, wo das passiert",
 				"metrics": [
 					{
 						"label": "Erholt / Monat",
@@ -1090,85 +1092,85 @@
 	},
 	"console": {
 		"common": {
-			"severity": {
-				"all": "__TODO__",
-				"critical": "__TODO__",
-				"high": "__TODO__",
-				"medium": "__TODO__",
-				"low": "__TODO__"
+				"severity": {
+					"all": "Alle",
+					"critical": "Kritisch",
+					"high": "Hoch",
+					"medium": "Mittel",
+					"low": "Niedrig"
 			},
 			"packs": {
-				"all": "__TODO__",
-				"scale_readiness": "__TODO__",
-				"revenue_integrity": "__TODO__",
-				"chargeback_resilience": "__TODO__",
+					"all": "Alle",
+					"scale_readiness": "Skalierungsbereitschaft",
+					"revenue_integrity": "Umsatzintegrität",
+					"chargeback_resilience": "Chargeback-Resilienz",
 				"copy_alignment": "Copy-Ausrichtung",
 				"channel_integrity": "Kanalintegrität",
 				"discoverability": "Auffindbarkeit",
 				"brand_integrity": "Markenintegrität",
-				"saas_growth_readiness": "__TODO__",
+					"saas_growth_readiness": "SaaS-Wachstumsbereitschaft",
 				"friction_tax": "Reibungssteuer"
 			},
 			"pack_labels": {
-				"scale_readiness": "__TODO__",
-				"revenue_integrity": "__TODO__",
-				"chargeback_resilience": "__TODO__",
+					"scale_readiness": "Skalierung",
+					"revenue_integrity": "Umsatz",
+					"chargeback_resilience": "Chargebacks",
 				"copy_alignment": "Copy",
 				"channel_integrity": "Kanal",
 				"discoverability": "Auffindbarkeit",
 				"brand_integrity": "Marke",
-				"saas_growth_readiness": "__TODO__",
+					"saas_growth_readiness": "SaaS-Wachstum",
 				"friction_tax": "Reibung",
 				"first_impression_revenue": "Erster Eindruck",
 				"mobile_revenue_exposure": "Mobil"
 			},
 			"polarity": {
-				"all": "__TODO__",
-				"negative": "__TODO__",
-				"positive": "__TODO__",
-				"neutral": "__TODO__"
+					"all": "Alle",
+					"negative": "Negativ",
+					"positive": "Positiv",
+					"neutral": "Neutral"
 			},
 			"impact_types": {
-				"revenue_loss": "__TODO__",
-				"conversion_loss": "__TODO__",
-				"chargeback_risk": "__TODO__",
-				"traffic_waste": "__TODO__",
-				"lifetime_value_loss": "__TODO__",
-				"none": "__TODO__"
+					"revenue_loss": "Umsatzverlust",
+					"conversion_loss": "Conversion-Verlust",
+					"chargeback_risk": "Chargeback-Risiko",
+					"traffic_waste": "Traffic-Verschwendung",
+					"lifetime_value_loss": "Verlust des Kundenlebenswerts",
+					"none": "Keine"
 			},
 			"workspace_types": {
-				"preflight": "__TODO__",
-				"revenue": "__TODO__",
-				"chargeback": "__TODO__"
+					"preflight": "Bereitschaft",
+					"revenue": "Umsatz",
+					"chargeback": "Chargebacks"
 			},
 			"columns": {
-				"finding": "__TODO__",
-				"severity": "__TODO__",
-				"confidence": "__TODO__",
-				"est_impact": "__TODO__",
+					"finding": "Befund",
+					"severity": "Schweregrad",
+					"confidence": "Konfidenz",
+					"est_impact": "Geschätzte Auswirkung",
 				"impact": "Impact",
 				"verification": "Verifizierung",
 				"change": "Änderung",
-				"type": "__TODO__",
+					"type": "Typ",
 				"pack": "Kategorie",
-				"surface": "__TODO__",
-				"action": "__TODO__",
-				"scope": "__TODO__",
-				"status": "__TODO__",
-				"sessions": "__TODO__",
-				"findings": "__TODO__",
-				"sources": "__TODO__",
+					"surface": "Oberfläche",
+					"action": "Aktion",
+					"scope": "Umfang",
+					"status": "Status",
+					"sessions": "Sitzungen",
+					"findings": "Befunde",
+					"sources": "Quellen",
 				"root_cause": "Ursache",
 				"confidence_tier": "Vertrauen",
 				"first_seen": "Erstmals gesehen"
 			},
-			"healthy": "__TODO__",
+			"healthy": "Gesund",
 			"per_month_short": "/Monat",
-			"confidence_label": "__TODO__",
-			"loading": "__TODO__",
-			"clear_filters": "__TODO__",
-			"hide_positive_signals": "__TODO__",
-			"n_of_total": "__TODO__",
+			"confidence_label": "Konfidenz",
+			"loading": "Wird geladen ...",
+			"clear_filters": "Filter löschen",
+			"hide_positive_signals": "Positive Signale ausblenden",
+			"n_of_total": "{filtered} von {total} Befunden",
 			"page_tooltips": {
 				"actions": "Priorisierte nächste Schritte zur Verbesserung Ihrer Umgebung. Starten Sie hier.",
 				"workspaces": "Entscheidungszusammenfassungen nach Geschäftsfrage gruppiert. Das große Bild.",
@@ -1182,29 +1184,29 @@
 			}
 		},
 		"analysis": {
-			"title": "__TODO__",
-			"subtitle_ongoing": "__TODO__",
-			"subtitle_complete": "__TODO__",
-			"loading": "__TODO__",
-			"empty": "__TODO__",
-			"coverage": "__TODO__",
-			"protection_detected": "__TODO__",
-			"protection_description": "__TODO__",
-			"connection_lost": "__TODO__",
-			"updating": "__TODO__",
+			"title": "Analyse",
+			"subtitle_ongoing": "Analyse läuft — Befunde erscheinen, sobald sie bereit sind.",
+			"subtitle_complete": "Globale Befunde mit quantifizierter finanzieller Auswirkung.",
+			"loading": "Ihre Domain wird analysiert ...",
+			"empty": "Noch keine Befunde erkannt.",
+			"coverage": "{score}% Abdeckung",
+			"protection_detected": "Schutz erkannt: {type}",
+			"protection_description": "Der Zugriff auf {url} ist eingeschränkt. Fügen Sie die Vestigio-IP Ihrer Allowlist hinzu.",
+			"connection_lost": "Verbindung verloren",
+			"updating": "wird aktualisiert ...",
 			"cards": {
-				"findings": "__TODO__",
-				"findings_value": "__TODO__",
-				"est_monthly_impact": "__TODO__",
-				"per_month_midpoint": "__TODO__",
-				"high_impact_issues": "__TODO__",
-				"high_impact_threshold": "__TODO__",
-				"avg_confidence": "__TODO__",
-				"verified_findings": "__TODO__"
+				"findings": "Befunde",
+				"findings_value": "{issues} Probleme, {strengths} Stärken",
+				"est_monthly_impact": "Geschätzte monatliche Auswirkung",
+				"per_month_midpoint": "/Monat (Mittelwert)",
+				"high_impact_issues": "Probleme mit hoher Auswirkung",
+				"high_impact_threshold": "> 5.000 $/Monat",
+				"avg_confidence": "Durchschnittliche Konfidenz",
+				"verified_findings": "Bestätigte Befunde"
 			},
-			"discuss": "__TODO__",
-			"analyze_together": "__TODO__",
-			"no_match": "__TODO__"
+			"discuss": "Besprechen",
+			"analyze_together": "{count} gemeinsam analysieren",
+			"no_match": "Keine passenden Befunde"
 		},
 		"findings": {
 			"views": {
@@ -1252,27 +1254,72 @@
 				"read_only": "Schreibgeschuetzt (geteilt)"
 			}
 		},
-		"finding_drawer": {
-			"context": "Kontext",
-			"summary": "__TODO__",
-			"effect": "__TODO__",
-			"root_cause": "__TODO__",
-			"impact_breakdown": "__TODO__",
-			"monthly_range": "__TODO__",
-			"midpoint": "__TODO__",
-			"impact_type": "__TODO__",
-			"reasoning": "__TODO__",
-			"why_good": "__TODO__",
-			"evidence_contradictions": "__TODO__",
-			"contradictions_detected": "__TODO__",
-			"discuss_finding": "__TODO__",
+			"finding_drawer": {
+				"context": "Kontext",
+				"summary": "Zusammenfassung",
+				"effect": "Auswirkung",
+				"root_cause": "Hauptursache",
+				"impact_breakdown": "Auswirkungsaufschlüsselung",
+				"monthly_range": "Monatliche Spanne",
+				"midpoint": "Mittelwert",
+				"impact_type": "Auswirkungstyp",
+				"reasoning": "Begründung",
+				"why_good": "Warum das gut ist",
+				"evidence_contradictions": "Widersprüchliche Evidenz",
+				"contradictions_detected": "{count} Widerspruch/Widersprüche erkannt",
+				"discuss_finding": "Befund besprechen",
 			"verification_tooltip": "Die Verifizierungsreife zeigt, wie die Evidenz dieses Befunds validiert wurde. Nicht verifiziert = nur statische Analyse. Verifiziert = durch Browser bestätigt.",
 			"learn_more": "Mehr erfahren",
 			"browse_related_docs": "Verwandte Dokumente durchsuchen",
 			"docs_coming_soon": "Die Dokumentation für diesen Befund wird gerade geschrieben.",
-			"see_action": "Aktion ansehen"
-		},
-		"customer_center": {
+				"see_action": "Aktion ansehen"
+			},
+			"verification_badge": {
+				"static_evidence": "Statische Evidenz",
+				"confirming": "Wird bestätigt",
+				"partial_confirmation": "Teilweise bestätigt",
+				"confirmed": "Bestätigt",
+				"evidence_weakened": "Evidenz geschwächt",
+				"confirmation_expired": "Bestätigung abgelaufen"
+			},
+			"verification_panel": {
+				"method": {
+					"static_only": "Aus statischer Analyse gesammelt",
+					"browser_verified": "Durch Browser-Verifizierung bestätigt",
+					"mixed": "Statische Analyse + Browser-Bestätigung",
+					"unknown": "Automatisch von Vestigio AI erkannt"
+				},
+				"confirmed_at": "Bestätigt {time}",
+				"expires_at": "Läuft ab {time}",
+				"time": {
+					"in_less_than_one_minute": "in <1 Min.",
+					"less_than_one_minute_ago": "vor <1 Min.",
+					"in_minutes": "in {count} Min.",
+					"minutes_ago": "vor {count} Min.",
+					"in_hours": "in {count} Std.",
+					"hours_ago": "vor {count} Std.",
+					"in_days": "in {count} Tagen",
+					"days_ago": "vor {count} Tagen"
+				},
+				"recheck": {
+					"weakened_title": "Die stützende Evidenz ist schwächer geworden",
+					"weakened_body": "Dieser Befund wurde einmal bestätigt, aber eine erneute Prüfung zeigt, dass die stützende Evidenz nicht mehr so stark ist. Eine erneute Verifizierung aktualisiert das Bild.",
+					"expired_title": "Bestätigung abgelaufen",
+					"expired_body": "Die letzte Bestätigung dieses Befunds ist zu alt, um ohne eine neue Prüfung darauf zu vertrauen.",
+					"button": "Erneut verifizieren"
+				},
+				"resolution": {
+					"title": "Problem als behoben markiert",
+					"button": "Behebung bestätigen"
+				}
+			},
+			"verification_sufficiency": {
+				"high": "Dieser Befund mit hoher Schwere stammt aus einer statischen Analyse. Eine Verifizierung bestätigt ihn mit einem echten Browserlauf, bevor Sie handeln.",
+				"critical": "Dieser kritische Befund stammt aus einer statischen Analyse. Eine Verifizierung bestätigt ihn mit einem echten Browserlauf, bevor Sie handeln.",
+				"verify_cta": "Diesen Befund verifizieren",
+				"verify_cta_sub": "Vestigio AI analysiert die Evidenz und bestätigt die Auswirkung mit echten Daten"
+			},
+			"customer_center": {
 			"title": "Kundencenter",
 			"subtitle": "Dokumentation, Support und Feedback an einem Ort.",
 			"cards": {
@@ -1979,67 +2026,67 @@
 		},
 		"chat": {
 			"title": "Vestigio Pulse",
-			"subtitle": "__TODO__",
-			"placeholder": "__TODO__",
-			"send": "__TODO__",
-			"open_playbooks": "__TODO__",
-			"clear_context": "__TODO__",
-			"est_monthly_loss": "__TODO__",
-			"suggested_followups": "__TODO__",
-			"next_step": "__TODO__",
-			"why": "__TODO__",
-			"analysis": "__TODO__",
-			"actions": "__TODO__",
-			"analyzing_finding": "__TODO__",
-			"batch_analysis": "__TODO__",
-			"findings_selected": "__TODO__",
-			"shared": "__TODO__",
-			"confidence": "__TODO__",
-			"discussing_finding": "__TODO__",
-			"batch_analysis_label": "__TODO__",
-			"findings_label": "__TODO__",
-			"playbook_running": "__TODO__",
-			"playbook_step": "__TODO__",
-			"no_context": "__TODO__",
-			"step_failed": "__TODO__",
+			"subtitle": "Fragen Sie Vestigio nach Ihrer Analyse",
+			"placeholder": "Fragen Sie etwas zu Ihrem Geschäft ...",
+			"send": "Senden",
+			"open_playbooks": "Playbooks öffnen",
+			"clear_context": "Kontext löschen",
+			"est_monthly_loss": "Geschätzter monatlicher Verlust",
+			"suggested_followups": "Vorgeschlagene Anschlussfragen",
+			"next_step": "Nächster Schritt",
+			"why": "Warum",
+			"analysis": "Analyse",
+			"actions": "Aktionen",
+			"analyzing_finding": "Befund wird analysiert",
+			"batch_analysis": "Sammelanalyse",
+			"findings_selected": "Befunde ausgewählt",
+			"shared": "Geteilt",
+			"confidence": "Konfidenz",
+			"discussing_finding": "Befund wird besprochen",
+			"batch_analysis_label": "Sammelanalyse",
+			"findings_label": "Befunde",
+			"playbook_running": "Playbook läuft",
+			"playbook_step": "Playbook-Schritt",
+			"no_context": "Kein Kontext ausgewählt",
+			"step_failed": "Schritt fehlgeschlagen",
 			"preset_questions": {
-				"scale_traffic": "__TODO__",
-				"losing_money": "__TODO__",
-				"underlying_cause": "__TODO__",
-				"fix_first": "__TODO__"
+				"scale_traffic": "Kann ich den Traffic sicher skalieren?",
+				"losing_money": "Wo verliere ich Geld?",
+				"underlying_cause": "Was ist die zugrunde liegende Ursache?",
+				"fix_first": "Was sollte ich zuerst beheben?"
 			},
 			"validation": {
-				"accidental": "__TODO__",
-				"too_short": "__TODO__",
-				"too_vague": "__TODO__",
-				"too_broad": "__TODO__",
-				"try_specific": "__TODO__",
-				"asked_recently": "__TODO__"
+				"accidental": "Das sieht nach einer versehentlichen Eingabe aus.",
+				"too_short": "Bitte geben Sie etwas mehr Details ein.",
+				"too_vague": "Versuchen Sie eine spezifischere Frage.",
+				"too_broad": "Grenzen Sie die Frage auf einen Bereich ein.",
+				"try_specific": "Versuchen Sie eine konkrete Frage zu Umsatz, Risiko oder einem Befund.",
+				"asked_recently": "Diese Frage wurde kürzlich bereits gestellt."
 			},
-			"playbooks": {
-				"revenue_leaks": {
-					"title": "__TODO__",
-					"description": "__TODO__"
-				},
-				"conversion": {
-					"title": "__TODO__",
-					"description": "__TODO__"
-				},
-				"chargeback": {
-					"title": "__TODO__",
-					"description": "__TODO__"
-				},
-				"onboarding": {
-					"title": "__TODO__",
-					"description": "__TODO__"
-				},
-				"trust": {
-					"title": "__TODO__",
-					"description": "__TODO__"
-				},
-				"landing_vs_app": {
-					"title": "__TODO__",
-					"description": "__TODO__"
+				"playbooks": {
+					"revenue_leaks": {
+						"title": "Umsatzverluste",
+						"description": "Finden und priorisieren Sie die größten Umsatzverluste."
+					},
+					"conversion": {
+						"title": "Conversion",
+						"description": "Identifizieren Sie Engpässe im Conversion-Funnel."
+					},
+					"chargeback": {
+						"title": "Chargebacks",
+						"description": "Reduzieren Sie Risiken nach dem Kauf und bei Rückerstattungen."
+					},
+					"onboarding": {
+						"title": "Onboarding",
+						"description": "Verbessern Sie den Weg vom ersten Besuch bis zur Aktivierung."
+					},
+					"trust": {
+						"title": "Vertrauen",
+						"description": "Stärken Sie Vertrauen an den entscheidenden Punkten."
+					},
+					"landing_vs_app": {
+						"title": "Landingpage vs. App",
+						"description": "Vergleichen Sie Erwartungen auf der Landingpage mit dem Produkterlebnis."
 				},
 				"playbook_prompts": {
 					"revenue_leak_full_audit": "Führe eine vollständige Analyse von Umsatzverlusten durch. Zeige jeden Befund, der Umsatzverlust verursacht, sortiert nach monatlichem Dollar-Impact von hoch nach niedrig. Für die Top 5 erkläre die Ursache und was die Behebung jeweils einbringen würde. Dann zeige den gesamten monatlichen kombinierten Verlust und die geschätzte Erholung, wenn ich die Top 3 behebe.",
@@ -2133,16 +2180,16 @@
 			}
 		},
 		"actions": {
-			"title": "__TODO__",
-			"subtitle": "__TODO__",
-			"loading": "__TODO__",
-			"empty": "__TODO__",
+			"title": "Aktionen",
+			"subtitle": "Priorisierte nächste Schritte aus Ihren Befunden",
+			"loading": "Aktionen werden geladen ...",
+			"empty": "Noch keine Aktionen verfügbar.",
 			"cards": {
-				"total_actions": "__TODO__",
-				"total_impact": "__TODO__",
-				"per_month_midpoint": "__TODO__",
-				"cross_pack": "__TODO__",
-				"high_severity": "__TODO__"
+				"total_actions": "Aktionen insgesamt",
+				"total_impact": "Gesamtauswirkung",
+				"per_month_midpoint": "/Monat (Mittelwert)",
+				"cross_pack": "Pack-übergreifend",
+				"high_severity": "Hoher Schweregrad"
 			},
 			"tabs": {
 				"observations": "Beobachtungen",
@@ -2218,20 +2265,20 @@
 			},
 			"explainer": "Aktionen sind priorisierte nächste Schritte, die aus Entscheidungen abgeleitet werden. Jede Aktion kann mehrere Befunde adressieren. Befunde liefern die unterstützende Evidenz.",
 			"scope": {
-				"cross_pack": "__TODO__",
-				"single": "__TODO__"
+				"cross_pack": "Betrifft mehrere Packs",
+				"single": "Betrifft ein Pack"
 			},
 			"drawer": {
 				"description": "Beschreibung",
-				"what_fixes": "__TODO__",
-				"impact_unlocked": "__TODO__",
-				"monthly_range": "__TODO__",
-				"midpoint": "__TODO__",
-				"root_cause": "__TODO__",
-				"scope": "__TODO__",
-				"affects_multiple": "__TODO__",
-				"single_pack": "__TODO__",
-				"request_verification": "__TODO__",
+				"what_fixes": "Was diese Aktion behebt",
+				"impact_unlocked": "Freigesetzte Auswirkung",
+				"monthly_range": "Monatliche Spanne",
+				"midpoint": "Mittelwert",
+				"root_cause": "Hauptursache",
+				"scope": "Umfang",
+				"affects_multiple": "Betrifft mehrere Befunde",
+				"single_pack": "Einzelnes Pack",
+				"request_verification": "Verifizierung anfordern",
 				"learnMore": "Mehr erfahren",
 				"browseRelatedDocs": "Verwandte Dokumente durchsuchen",
 				"docsComingSoon": "Die Dokumentation für diese Ursache wird gerade geschrieben.",
@@ -2284,80 +2331,80 @@
 			}
 		},
 		"data_sources": {
-			"title": "__TODO__",
-			"subtitle": "__TODO__",
-			"snippet_section": "__TODO__",
-			"commerce_section": "__TODO__",
-			"snippet_label": "__TODO__",
-			"copy": "__TODO__",
-			"copied": "__TODO__",
-			"copy_snippet": "__TODO__",
-			"connect": "__TODO__",
+			"title": "Datenquellen",
+			"subtitle": "Verbinden Sie Ihre Plattformen und steuern Sie den Analysezugriff.",
+			"snippet_section": "Vestigio Pixel",
+			"commerce_section": "Commerce-Integrationen",
+			"snippet_label": "Pixel-Snippet",
+			"copy": "Kopieren",
+			"copied": "Kopiert",
+			"copy_snippet": "Snippet kopieren",
+			"connect": "Verbinden",
 			"status": {
-				"connected": "__TODO__",
-				"error": "__TODO__",
-				"not_connected": "__TODO__"
+				"connected": "Verbunden",
+				"error": "Fehler",
+				"not_connected": "Nicht verbunden"
 			},
-			"last_event": "__TODO__",
+			"last_event": "Letztes Ereignis",
 			"integrations": {
 				"shopify": {
-					"name": "__TODO__",
-					"description": "__TODO__"
+					"name": "Shopify",
+					"description": "Verbinden Sie Ihren Shopify-Shop für Commerce-Daten."
 				},
 				"wordpress": {
-					"name": "__TODO__",
-					"description": "__TODO__"
+					"name": "WordPress",
+					"description": "Verbinden Sie eine WordPress-Website."
 				},
 				"wix": {
-					"name": "__TODO__",
-					"description": "__TODO__"
+					"name": "Wix",
+					"description": "Verbinden Sie Ihre Wix-Website."
 				},
 				"framer": {
-					"name": "__TODO__",
-					"description": "__TODO__"
+					"name": "Framer",
+					"description": "Verbinden Sie Ihre Framer-Website."
 				},
 				"webflow": {
-					"name": "__TODO__",
-					"description": "__TODO__"
+					"name": "Webflow",
+					"description": "Verbinden Sie Ihre Webflow-Website."
 				},
 				"vibecoding": {
-					"name": "__TODO__",
-					"description": "__TODO__"
+					"name": "Vibe Coding",
+					"description": "Fügen Sie das Pixel zu einer individuell entwickelten Website hinzu."
 				},
 				"other": {
-					"name": "__TODO__",
-					"description": "__TODO__"
+					"name": "Andere",
+					"description": "Verbinden Sie eine andere Plattform oder Website."
 				},
 				"shopify_commerce": {
-					"name": "__TODO__",
-					"description": "__TODO__"
+					"name": "Shopify Commerce",
+					"description": "Synchronisieren Sie Umsatz- und Bestelldaten aus Shopify."
 				}
 			}
 		},
 		"inventory": {
-			"title": "__TODO__",
-			"subtitle": "__TODO__",
+			"title": "Inventar",
+			"subtitle": "Alle Seiten und Oberflächen, die Vestigio auf Ihrer Website entdeckt hat.",
 			"cards": {
-				"total_surfaces": "__TODO__",
-				"live": "__TODO__",
-				"commercial": "__TODO__",
-				"with_findings": "__TODO__"
+				"total_surfaces": "Oberflächen insgesamt",
+				"live": "Live",
+				"commercial": "Kommerziell",
+				"with_findings": "Mit Befunden"
 			},
 			"status": {
-				"live": "__TODO__",
-				"not_seen": "__TODO__",
-				"all": "__TODO__"
+				"live": "Live",
+				"not_seen": "Nicht gesehen",
+				"all": "Alle"
 			},
 			"type_filter": {
-				"all": "__TODO__",
-				"commercial": "__TODO__",
-				"support": "__TODO__",
-				"policy": "__TODO__",
-				"other": "__TODO__"
+				"all": "Alle Typen",
+				"commercial": "Kommerziell",
+				"support": "Support",
+				"policy": "Richtlinie",
+				"other": "Andere"
 			},
 			"empty": {
-				"title": "__TODO__",
-				"description": "__TODO__"
+				"title": "Noch keine Oberflächen entdeckt",
+				"description": "Führen Sie eine Analyse aus, um Seiten und Oberflächen zu entdecken."
 			}
 		},
 		"maps": {
@@ -2516,7 +2563,7 @@
 			}
 		},
 		"onboard": {
-			"step_indicator": "__TODO__",
+			"step_indicator": ["Organisation", "Domain", "Geschäft", "Zugang", "Benachrichtigungen", "Prüfen", "Plan"],
 			"primary_concern": {
 				"title": "Was beschäftigt Sie aktuell am meisten?",
 				"subtitle": "Damit erkennen wir die Engpässe, die Ihr Wachstum am stärksten bremsen.",
@@ -2580,46 +2627,46 @@
 				}
 			},
 			"nav": {
-				"previous": "__TODO__",
-				"next": "__TODO__"
+				"previous": "Zurück",
+				"next": "Weiter"
 			},
 			"org_name": {
-				"title": "__TODO__",
-				"subtitle": "__TODO__",
-				"label": "__TODO__",
-				"placeholder": "__TODO__"
+				"title": "Wie heißt Ihre Organisation?",
+				"subtitle": "Damit Ihr Vestigio-Arbeitsbereich richtig benannt ist.",
+				"label": "Organisationsname",
+				"placeholder": "z. B. Meine Marke"
 			},
 			"domain": {
 				"title": "Jetzt gehen wir in die Tiefe.",
 				"subtitle": "Bestätigen Sie die Domain. Die Analyse geht in die Tiefe — Handelsseiten, Kaufwege, Risikosignale. Die ersten Spuren erscheinen in Echtzeit, und Ihr erster Strategieplan beginnt geschrieben zu werden.",
-				"label": "__TODO__",
-				"placeholder": "__TODO__"
+				"label": "Website-Domain",
+				"placeholder": "https://ihre-domain.de"
 			},
 			"business_context": {
 				"title": "Welche Art von Geschäft?",
 				"subtitle": "Um die Diagnose an Ihr Modell anzupassen.",
-				"business_type": "__TODO__",
+				"business_type": "Geschäftsmodell",
 				"types": {
-					"ecommerce": "__TODO__",
-					"ecommerce_desc": "__TODO__",
-					"lead_gen": "__TODO__",
-					"lead_gen_desc": "__TODO__",
-					"saas": "__TODO__",
-					"saas_desc": "__TODO__",
-					"hybrid": "__TODO__",
-					"hybrid_desc": "__TODO__"
+					"ecommerce": "E-Commerce",
+					"ecommerce_desc": "Verkauf von Produkten oder Dienstleistungen online",
+					"lead_gen": "Lead-Generierung",
+					"lead_gen_desc": "Gewinnen Sie qualifizierte Anfragen und Kontakte",
+					"saas": "SaaS",
+					"saas_desc": "Software-Produkt mit wiederkehrenden Abonnements",
+					"hybrid": "Hybrid",
+					"hybrid_desc": "Kombination aus mehreren Geschäftsmodellen"
 				},
-				"monthly_revenue": "__TODO__",
-				"monthly_revenue_placeholder": "__TODO__",
-				"avg_order_value": "__TODO__",
-				"avg_order_value_placeholder": "__TODO__",
-				"optional": "__TODO__",
-				"conversion_model": "__TODO__",
+				"monthly_revenue": "Ungefährer monatlicher Umsatz",
+				"monthly_revenue_placeholder": "z. B. 50.000 €",
+				"avg_order_value": "Durchschnittlicher Bestellwert",
+				"avg_order_value_placeholder": "z. B. 85 €",
+				"optional": "optional",
+				"conversion_model": "Wie konvertieren Ihre Kunden?",
 				"conversion_models": {
-					"checkout": "__TODO__",
-					"whatsapp": "__TODO__",
-					"form": "__TODO__",
-					"external": "__TODO__",
+					"checkout": "Online-Checkout",
+					"whatsapp": "Messaging",
+					"form": "Lead-Formular",
+					"external": "Externe Zahlung",
 					"checkout_desc": "Online-Kauf auf der Website",
 					"whatsapp_desc": "Verkauf per Messaging",
 					"form_desc": "Lead-Erfassungsformulare",
@@ -2629,114 +2676,114 @@
 				"conversion_subtitle": "Das bestimmt, welche Pfade wir analysieren."
 			},
 			"saas_access": {
-				"title": "__TODO__",
-				"subtitle": "__TODO__",
-				"login_url": "__TODO__",
-				"login_url_placeholder": "__TODO__",
-				"email": "__TODO__",
-				"email_placeholder": "__TODO__",
-				"auth_method": "__TODO__",
+				"title": "Zugang zu Ihrer SaaS-Anwendung",
+				"subtitle": "Damit wir auch authentifizierte Bereiche analysieren können.",
+				"login_url": "Login-URL",
+				"login_url_placeholder": "https://app.ihre-domain.de/login",
+				"email": "E-Mail-Adresse",
+				"email_placeholder": "sie@unternehmen.de",
+				"auth_method": "Anmeldemethode",
 				"auth_methods": {
-					"unknown": "__TODO__",
-					"password": "__TODO__",
-					"oauth": "__TODO__",
-					"magic_link": "__TODO__"
+					"unknown": "Nicht bekannt",
+					"password": "Passwort",
+					"oauth": "OAuth / SSO",
+					"magic_link": "Magic Link"
 				},
-				"mfa": "__TODO__",
+				"mfa": "Mehrstufige Authentifizierung",
 				"mfa_options": {
-					"unknown": "__TODO__",
-					"none": "__TODO__",
-					"optional": "__TODO__",
-					"required": "__TODO__"
+					"unknown": "Nicht bekannt",
+					"none": "Nicht aktiviert",
+					"optional": "Optional",
+					"required": "Erforderlich"
 				},
-				"skip_note": "__TODO__",
-				"skip": "__TODO__"
+				"skip_note": "Sie können diesen Schritt überspringen und später ergänzen.",
+				"skip": "Überspringen"
 			},
 			"notifications": {
-				"title": "__TODO__",
-				"subtitle": "__TODO__",
-				"phone": "__TODO__",
+				"title": "Wie sollen wir Sie benachrichtigen?",
+				"subtitle": "Erhalten Sie Updates zu Analysen und wichtigen Befunden.",
+				"phone": "Telefonnummer",
 				"phone_placeholder": "+55 11 99999-9999",
-				"phone_help": "__TODO__",
-				"phone_format_hint": "__TODO__",
-				"invalid_phone": "__TODO__",
-				"notify_me_by": "__TODO__",
-				"add_phone_first": "__TODO__",
+				"phone_help": "Optional: Wir verwenden diese Nummer nur für wichtige Hinweise.",
+				"phone_format_hint": "Mit Landesvorwahl eingeben",
+				"invalid_phone": "Geben Sie eine gültige Telefonnummer ein.",
+				"notify_me_by": "Benachrichtigen über",
+				"add_phone_first": "Fügen Sie zuerst eine Telefonnummer hinzu.",
 				"channels": {
 					"email": {
-						"label": "__TODO__",
-						"description": "__TODO__"
+						"label": "E-Mail",
+						"description": "Updates an Ihre Konto-E-Mail senden"
 					},
 					"sms": {
-						"label": "__TODO__",
-						"description": "__TODO__"
+						"label": "SMS",
+						"description": "Kurze Warnungen per SMS erhalten"
 					},
 					"whatsapp": {
-						"label": "__TODO__",
-						"description": "__TODO__"
+						"label": "WhatsApp",
+						"description": "Updates über WhatsApp erhalten"
 					}
 				}
 			},
 			"review": {
-				"title": "__TODO__",
-				"subtitle": "__TODO__",
-				"organization": "__TODO__",
-				"domain": "__TODO__",
-				"business_type": "__TODO__",
-				"monthly_revenue": "__TODO__",
-				"avg_order_value": "__TODO__",
-				"conversion_model": "__TODO__",
-				"saas_access": "__TODO__",
-				"not_provided": "__TODO__",
-				"saas_skipped": "__TODO__",
-				"saas_not_configured": "__TODO__",
+				"title": "Überprüfen Sie Ihre Angaben",
+				"subtitle": "Prüfen Sie die Informationen, bevor Sie Ihre Umgebung aktivieren.",
+				"organization": "Organisation",
+				"domain": "Domain",
+				"business_type": "Geschäftsmodell",
+				"monthly_revenue": "Monatlicher Umsatz",
+				"avg_order_value": "Durchschnittlicher Bestellwert",
+				"conversion_model": "Conversion-Modell",
+				"saas_access": "SaaS-Zugang",
+				"not_provided": "Nicht angegeben",
+				"saas_skipped": "Übersprungen",
+				"saas_not_configured": "Nicht konfiguriert",
 				"activate_environment": "Umgebung aktivieren",
 				"activate_hint": "Dein erstes Audit startet sofort. Verfolge den Fortschritt live auf der Inventar-Seite."
 			},
 			"plan": {
-				"title": "__TODO__",
-				"subtitle": "__TODO__",
-				"recommended": "__TODO__",
-				"per_month": "__TODO__",
-				"redirecting": "__TODO__",
-				"activate": "__TODO__",
-				"stripe_note": "__TODO__",
+				"title": "Wählen Sie Ihren Plan",
+				"subtitle": "Starten Sie mit dem Plan, der zu Ihrem Analysebedarf passt.",
+				"recommended": "Empfohlen",
+				"per_month": "pro Monat",
+				"redirecting": "Weiterleitung zur Zahlung ...",
+				"activate": "Plan aktivieren",
+				"stripe_note": "Sichere Zahlung über Stripe.",
 				"plans": {
 					"vestigio": {
-						"name": "__TODO__",
-						"price": "__TODO__",
+						"name": "Vestigio",
+						"price": "Kostenlos",
 						"features": [
-							"__TODO__",
-							"__TODO__",
-							"__TODO__",
-							"__TODO__"
+							"Grundlegende Website-Analyse",
+							"Befunde mit Evidenz",
+							"Priorisierte Aktionen",
+							"Wöchentliche Aktualisierung"
 						]
 					},
 					"pro": {
-						"name": "__TODO__",
-						"price": "__TODO__",
+						"name": "Pro",
+						"price": "49 €",
 						"features": [
-							"__TODO__",
-							"__TODO__",
-							"__TODO__",
-							"__TODO__"
+							"Tägliche Analysen",
+							"Vertiefte Befunde und Aktionen",
+							"Playbooks und Vestigio AI",
+							"Mehr tägliche Abfragen"
 						]
 					},
 					"max": {
-						"name": "__TODO__",
-						"price": "__TODO__",
+						"name": "Max",
+						"price": "149 €",
 						"features": [
-							"__TODO__",
-							"__TODO__",
-							"__TODO__",
-							"__TODO__"
+							"Analyse mit hoher Frequenz",
+							"Alle Analyse-Packs",
+							"Erweiterte Vestigio AI",
+							"Priorisierter Support"
 						]
 					}
 				}
 			},
 			"errors": {
-				"something_wrong": "__TODO__",
-				"network_error": "__TODO__"
+				"something_wrong": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+				"network_error": "Netzwerkfehler. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut."
 			},
 			"continue": "Weiter",
 			"revenue": {

@@ -142,19 +142,19 @@ const MAP_META: Record<
 	chargeback_risk: {
 		name: "Risco de chargeback",
 		description:
-			"Cruza sinais de checkout (selo de trust, política visível, dados sensíveis) para mostrar onde o risco de disputa concentra.",
+			"Cruza sinais de checkout (selo de confiança, política visível, dados sensíveis) para mostrar onde o risco de disputa concentra.",
 		accent: "from-amber-500/15 to-transparent",
 	},
 	root_cause: {
 		name: "Causa raiz",
 		description:
-			"Liga findings a causas comuns por trás. Útil para ver que múltiplos sintomas dependem do mesmo fix.",
+			"Liga achados a causas comuns por trás. Útil para ver que múltiplos sintomas dependem da mesma correção.",
 		accent: "from-violet-500/15 to-transparent",
 	},
 	user_journey: {
 		name: "Jornada do usuário",
 		description:
-			"O caminho que o comprador percorre, da primeira página até o checkout. Onde o funnel quebra fica visível.",
+			"O caminho que o comprador percorre, da primeira página até o checkout. Onde o funil quebra fica visível.",
 		accent: "from-sky-500/15 to-transparent",
 	},
 };
@@ -326,9 +326,9 @@ export default function MapsRich({ maps, month: _month }: Props) {
 							value={maps.relationsThisCycle}
 							subline={hasGraph ? "entre páginas" : "ainda sem grafo"}
 						/>
-						<StatTile label="Surfaces conectadas" value={maps.distinctHostCount} />
+						<StatTile label="Páginas conectadas" value={maps.distinctHostCount} />
 						<StatTile
-							label="Cross-domain"
+							label="Entre domínios"
 							value={maps.crossDomainCount}
 							subline={maps.crossDomainCount > 0 ? "saem do domínio" : "tudo same-domain"}
 						/>

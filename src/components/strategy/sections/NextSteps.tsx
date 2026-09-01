@@ -901,7 +901,7 @@ function StepCard({
 				eyebrow="Ações deste passo"
 				title={step.title}
 				description={`${step.linkedActionRefs.length} ${step.linkedActionRefs.length === 1 ? "ação ligada" : "ações ligadas"} ao passo`}
-				footer="Ações sincronizam com /app/actions, mudanças aqui aparecem na fila operacional."
+								footer="Ações sincronizam com a fila operacional, e as mudanças aparecem lá automaticamente."
 			>
 				<ActionListBody
 					linkedActions={step.linkedActions}

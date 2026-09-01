@@ -155,6 +155,7 @@
 			"section_headline": "Strategy Plan · Guided tour",
 			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Run free diagnostic",
+			"findings_label": "findings",
 			"step_indicator": [
 				"The problem",
 				"The reading",
@@ -169,6 +170,7 @@
 				"tese_eyebrow": "THIS MONTH'S THESIS",
 				"tese_body": "Vestigio identified **~$13k/mo** in leakage concentrated on the home page and checkout, where misaligned copy disperses buyers before conversion.",
 				"tese_attribution": "Vestigio · cycle analysis",
+				"evidence_cta": "See where this happens",
 				"metrics": [
 					{
 						"label": "Recovered / mo",

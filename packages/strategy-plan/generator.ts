@@ -297,6 +297,16 @@ export async function generateAndPersistPlan(
 	args: GeneratePlanArgs,
 ): Promise<{ planId: string; output: PlanGeneratorOutput; regenScope: RegenScope }> {
 	const scope: RegenScope = args.regenScope ?? "all";
+	// Keep persistence aligned with buildContext. Without this, a plan
+	// generated in the organization's language could be saved with the
+	// hard-coded pt-BR metadata whenever the caller omitted args.locale.
+	const localeForPersistence: GenerateContext["locale"] =
+		args.locale ??
+		((await prisma.environment.findUnique({
+			where: { id: args.environmentId },
+			select: { organization: { select: { locale: true } } },
+		}))?.organization?.locale as GenerateContext["locale"] | null) ??
+		"pt-BR";
 
 	// 1. Mark generating + delete prior next-step rows. Done in a
 	//    transaction so a re-gen never leaves the customer staring at
@@ -314,7 +324,7 @@ export async function generateAndPersistPlan(
 		create: {
 			environmentId: args.environmentId,
 			month: args.month,
-			locale: args.locale ?? "pt-BR",
+			locale: localeForPersistence,
 			status: "generating",
 			heroMetricsJson: {},
 			buyerSegmentsJson: [],
@@ -340,7 +350,7 @@ export async function generateAndPersistPlan(
 		await prisma.$transaction(async (tx: any) => {
 			const updateData: any = {
 				status: "ready",
-				locale: args.locale ?? "pt-BR",
+				locale: localeForPersistence,
 				lastRegenerated: new Date(),
 				heroMetricsJson: output.heroMetrics as any,
 				buyerSegmentsJson: output.buyerSegments as any,

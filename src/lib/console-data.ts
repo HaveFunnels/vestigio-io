@@ -375,8 +375,8 @@ export function loadFindings(): DataState<FindingProjection[]> {
 
 export function loadActions(): DataState<ActionProjection[]> {
   if (_demoMode) {
-    const { DEMO_ACTIONS } = require('./demo-data');
-    return { status: 'ready', data: DEMO_ACTIONS };
+    const { getDemoActions } = require('./demo-data');
+    return { status: 'ready', data: getDemoActions() };
   }
   try {
     const server = getMcpServer();

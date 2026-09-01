@@ -47,15 +47,15 @@
 			}
 		},
 		"social_proof_strip": {
-			"before_highlight": "Empresas do seu tamanho têm ",
-			"highlight": "9 findings críticos",
+			"before_highlight": "Empresas como a sua têm ",
+			"highlight": "9 achados críticos",
 			"rotating_highlights": [
-				"9 findings críticos",
-				"−R$ 31k/mês em vazamento identificado",
+				"9 achados críticos",
+				"R$ 31 mil/mês em vendas perdidas",
 				"27% a 43% do faturamento em risco",
-				"12s extras no checkout"
+				"12 segundos de atraso em pontos críticos"
 			],
-			"after_highlight": " por mês. Ninguém vê."
+			"after_highlight": " no funil digital."
 		},
 		"demo_surface": {
 			"listen": "Ouvir",
@@ -67,21 +67,21 @@
 				"message": "Toda análise abre com a tese central do ciclo: o que está custando dinheiro e o que fazer.",
 				"cta": "Como funciona"
 			},
-			"headline_part1": "Tem dinheiro vazando na sua operação.",
+			"headline_part1": "Seu funil digital perde vendas.",
 			"headline_part2": "A Vestigio sabe onde e quanto.",
 			"headline_part3": "",
 			"headline_gradient_parts": "",
 			"headline_brush_word": "",
-			"subtitle": "Mostramos onde o dinheiro escapa, quanto, e como parar.",
+			"subtitle": "Veja cada problema, seu impacto em R$ e o que fazer para recuperar receita e escalar o que funciona.",
 			"subtitle_line1": "",
-			"subtitle_before_bold": "Mostramos ",
-			"subtitle_bold": "onde o dinheiro escapa, quanto, e como parar",
+			"subtitle_before_bold": "Veja cada problema, seu impacto em R$ e o que fazer para ",
+			"subtitle_bold": "recuperar receita e escalar o que funciona",
 			"subtitle_after_bold": ".",
-			"cta_primary": "Ver meu vazamento em 60s",
+			"cta_primary": "Ver onde perco vendas em 60s",
 			"cta_secondary": "Ver como funciona",
 			"cta_micro": "",
 			"trust_microcopy": {
-				"guarantee": "Garantia: 100% do dinheiro de volta em 30 dias se a Vestigio não apontar 4× o valor do plano em vazamento mensal.",
+				"guarantee": "Garantia: 100% do dinheiro de volta em 30 dias se a Vestigio não apontar perdas mensais equivalentes a 4× o valor do plano.",
 				"platforms": "Funciona com qualquer plataforma."
 			},
 			"shell": {
@@ -89,16 +89,16 @@
 			},
 			"stats": [
 				{
-					"value": "9 vazamentos",
-					"label": "Média por análise"
+					"value": "9 achados",
+					"label": "Em média por análise"
 				},
 				{
-					"value": "R$ exato",
-					"label": "Em cada vazamento"
+					"value": "Impacto em R$",
+					"label": "Para cada achado"
 				},
 				{
-					"value": "4 passos",
-					"label": "Por edição"
+					"value": "4 ações",
+					"label": "Priorizadas por edição"
 				}
 			],
 			"cta_primary_badge": "Grátis"
@@ -155,10 +155,11 @@
 			"section_headline": "Plano de Estratégia · Tour guiado",
 			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Rodar diagnóstico gratuito",
+			"findings_label": "achados",
 			"step_indicator": [
-				"O problema",
-				"A análise",
-				"O que fazer"
+				"A perda",
+				"Os achados",
+				"O plano de ação"
 			],
 			"step1": {
 				"breadcrumb_brand": "Vestigio",
@@ -167,13 +168,14 @@
 				"masthead_title": "Plano de Estratégia",
 				"masthead_subtitle": "Mês Atual",
 				"tese_eyebrow": "TESE DESTE MÊS",
-				"tese_body": "Vestigio identificou **~R$ 67k/mês** em vazamento concentrado na página inicial e checkout, onde copy desalinhado dispersa compradores antes da conversão.",
+				"tese_body": "A Vestigio encontrou **R$ 67 mil/mês em vendas perdidas** na página inicial e no checkout. A mensagem não deixa claro o ganho para o comprador, e o redirecionamento no pagamento interrompe a conversão.",
 				"tese_attribution": "Vestigio · análise do ciclo",
+				"evidence_cta": "Ver onde isso acontece",
 				"metrics": [
 					{
-						"label": "Recuperado / mês",
-						"value": "R$ ~67k",
-						"delta": "+1 desde último ciclo",
+						"label": "Potencial de recuperação / mês",
+						"value": "R$ ~67 mil",
+						"delta": "+R$ 15 mil desde o último ciclo",
 						"tone": "win",
 						"spark": [
 							12,
@@ -185,9 +187,9 @@
 						]
 					},
 					{
-						"label": "Findings críticos",
+						"label": "Achados críticos",
 						"value": "6",
-						"delta": "+1 MoM",
+						"delta": "+1 desde o mês anterior",
 						"tone": "loss",
 						"spark": [
 							3,
@@ -199,7 +201,7 @@
 						]
 					},
 					{
-						"label": "Total monitorados",
+						"label": "Achados monitorados",
 						"value": "19",
 						"delta": "em 3 segmentos",
 						"tone": "neutral",
@@ -213,99 +215,99 @@
 						]
 					},
 					{
-						"label": "Times com próximos passos",
+						"label": "Áreas responsáveis",
 						"value": "3",
-						"delta": "Marketing · Eng · Diretoria",
+						"delta": "Marketing · Tecnologia · Diretoria",
 						"tone": "neutral"
 					}
 				],
 				"competitors_label": "CONCORRENTES MONITORADOS",
 				"competitors_count": "7",
-				"competitors_body": "2 mexeram em copy, headers ou preço esta semana",
+				"competitors_body": "2 alteraram mensagens, cabeçalhos ou preços nesta semana",
 				"impersonators_label": "CLONES DA SUA MARCA",
 				"impersonators_count": "2",
 				"impersonators_body": "1 domínio suspeito registrado nos últimos 7 dias"
 			},
 			"step2": {
-				"heading": "O que sua análise revelou este mês",
-				"subheading": "Agrupado por quem precisa atuar",
+				"heading": "Onde estão as perdas e quem precisa agir",
+				"subheading": "Priorizado por área e impacto",
 				"segments": [
 					{
 						"key": "copy",
 						"label": "Marketing",
 						"count": 8,
-						"impactMid": "R$ ~28k",
-						"impactRange": "faixa R$ 14k a R$ 42k",
+						"impactMid": "R$ ~28 mil",
+						"impactRange": "faixa de R$ 14 mil a R$ 42 mil",
 						"dot": "bg-rose-400"
 					},
 					{
 						"key": "eng",
 						"label": "Desenvolvedores",
 						"count": 9,
-						"impactMid": "R$ ~35k",
-						"impactRange": "faixa R$ 13k a R$ 57k",
+						"impactMid": "R$ ~35 mil",
+						"impactRange": "faixa de R$ 13 mil a R$ 57 mil",
 						"dot": "bg-sky-400"
 					},
 					{
 						"key": "leadership",
 						"label": "Diretoria",
 						"count": 2,
-						"impactMid": "R$ ~4k",
-						"impactRange": "faixa R$ 2k a R$ 6k",
+						"impactMid": "R$ ~4 mil",
+						"impactRange": "faixa de R$ 2 mil a R$ 6 mil",
 						"dot": "bg-amber-400"
 					}
 				],
-				"narrative_eyebrow": "O QUE ACONTECEU NESTE CICLO",
+				"narrative_eyebrow": "O QUE MAIS CUSTOU RECEITA",
 				"narrative_pills": [
 					{
-						"label": "Copy desalinhado",
+						"label": "Mensagem desalinhada",
 						"tone": "rose"
 					},
 					{
-						"label": "Redirect cross-domain",
+						"label": "Redirecionamento entre domínios",
 						"tone": "sky"
 					},
 					{
-						"label": "6 críticos · todos resolvidos",
+						"label": "6 achados críticos",
 						"tone": "emerald"
 					}
 				],
-				"narrative_lead": "A cobertura de política na página inicial está **calibrada** e segurando faturamento. O tema dominante deste ciclo é **copy desalinhado**, onde a leitura do comprador rompe com a leitura do site.",
-				"narrative_detail": "Títulos descreviam o produto sem comunicar o ganho do comprador. No checkout, um **redirect cross-domain** dispersou compradores qualificados antes da conversão. Ambos já resolvidos: **R$ ~67k recuperados** neste mês."
+				"narrative_lead": "A mensagem da página inicial descreve o produto, mas não deixa claro por que o comprador deveria escolhê-lo. Esse desalinhamento aparece como a **principal perda do ciclo**.",
+				"narrative_detail": "Na página inicial, os títulos escondem o principal benefício. No checkout, uma mudança de domínio interrompe a jornada e afasta compradores prontos para concluir. **Impacto combinado: R$ 67 mil/mês.**"
 			},
 			"step3": {
 				"heading": "Próximos passos priorizados",
 				"steps": [
 					{
 						"n": "01",
-						"title": "Realinhar título da home com o benefício do comprador (não a feature do produto)",
-						"impact": "R$ 14k–28k/mês",
+						"title": "Reescrever o título da página inicial com foco no benefício para o comprador",
+						"impact": "R$ 14 mil–28 mil/mês",
 						"buyer": "Marketing",
 						"dot": "bg-rose-400"
 					},
 					{
 						"n": "02",
-						"title": "Reduzir o formulário de captura de 7 pra 3 campos. Abandono cai pela metade",
-						"impact": "R$ 18k–35k/mês",
-						"buyer": "Eng",
+						"title": "Reduzir o formulário de 7 para 3 campos e recuperar conversões perdidas",
+						"impact": "R$ 18 mil–35 mil/mês",
+						"buyer": "Tecnologia",
 						"dot": "bg-sky-400"
 					},
 					{
 						"n": "03",
-						"title": "Mover o CTA principal pra acima da dobra no mobile: 64% dos visitantes não vê",
-						"impact": "R$ 8k–20k/mês",
+						"title": "Mover o botão principal para a primeira tela no celular: hoje, 64% dos visitantes não o veem",
+						"impact": "R$ 8 mil–20 mil/mês",
 						"buyer": "Diretoria",
 						"dot": "bg-amber-400"
 					},
 					{
 						"n": "04",
-						"title": "Discutir cada passo com Vestigio AI: como atacar e verificar quando estiver feito.",
+						"title": "Usar a Vestigio AI para implementar cada ação e verificar o resultado",
 						"impact": "",
 						"buyer": "Vestigio AI",
 						"dot": "bg-emerald-400"
 					}
 				],
-				"impact_label": "impacto/mês",
+				"impact_label": "impacto mensal",
 				"footer_attribution": "Vestigio · análise do ciclo",
 				"export_pdf": "Exportar PDF",
 				"share_link": "Compartilhar"
@@ -346,29 +348,29 @@
 			"items": [
 				{
 					"question": "O que a Vestigio faz?",
-					"answer": "A Vestigio analisa sua operação ponta a ponta e entrega um Plano de Estratégia mensal: onde o dinheiro está vazando, quem precisa agir, qual o impacto em R$, e o que fazer primeiro. Cada Plano é assinado por Vestigio e atualiza a cada ciclo."
+					"answer": "A Vestigio analisa seu funil digital de ponta a ponta e entrega um Plano de Estratégia mensal: onde as vendas se perdem, quem precisa agir, qual o impacto em R$ e o que fazer primeiro. Cada Plano é assinado pela Vestigio e atualizado a cada ciclo."
 				},
 				{
-					"question": "Quanto tempo leva pra ter resultado?",
+					"question": "Quanto tempo leva para ter resultado?",
 					"answer": "A primeira análise fica pronta em 60 segundos. Seu Plano de Estratégia completo (com Tese do mês, Próximos passos priorizados e Continuidade) chega no início do mês seguinte. Os clientes que aplicam os primeiros passos costumam ver impacto já no mesmo ciclo."
 				},
 				{
-					"question": "Precisa de desenvolvedor pra instalar?",
-					"answer": "Não. Você cola a URL do seu site e a Vestigio faz o resto. Sem código, sem tag, sem integração técnica pra começar a análise."
+					"question": "Precisa de desenvolvedor para instalar?",
+					"answer": "Não. Basta informar a URL e a Vestigio faz o resto. Sem código, tags ou integração técnica para começar a análise."
 				},
 				{
 					"question": "É grátis? Qual o custo depois?",
-					"answer": "A primeira análise é gratuita, sem cartão. Depois, você assina um plano com um Plano de Estratégia por mês: análise contínua dos vazamentos identificados, atualização de ciclo, exportação em PDF e link compartilhável. Garantia 4×: 100% do dinheiro de volta em 30 dias se a Vestigio não apontar 4× o valor do plano em vazamento mensal."
+					"answer": "A primeira análise é gratuita, sem cartão. Depois, você assina um plano com um Plano de Estratégia por mês: análise contínua das perdas identificadas, atualização de ciclo, exportação em PDF e link compartilhável. Garantia 4×: 100% do dinheiro de volta em 30 dias se a Vestigio não apontar perdas mensais equivalentes a 4× o valor do plano."
 				},
 				{
 					"question": "Funciona com minha plataforma?",
-					"answer": "Sim. Vestigio analisa qualquer site: Shopify, WooCommerce, Nuvemshop, WordPress, sites customizados e landing pages. Se tem URL, a gente analisa."
+					"answer": "Sim. A Vestigio analisa qualquer site: Shopify, WooCommerce, Nuvemshop, WordPress, sites customizados e landing pages. Se tem uma URL pública, a Vestigio analisa."
 				}
 			]
 		},
 		"cta": {
-			"title": "O dinheiro está saindo agora.",
-			"subtitle": "Cada dia sem visibilidade é faturamento que você não recupera.",
+			"title": "Seu funil continua perdendo vendas.",
+			"subtitle": "Quanto antes você encontrar as perdas, mais cedo pode recuperar essas vendas.",
 			"primary": "Rodar Diagnóstico Gratuito",
 			"micro": "Você pode estar olhando seu primeiro diagnóstico em 60 segundos."
 		},
@@ -448,30 +450,30 @@
 		},
 		"solution_layers": {
 			"eyebrow": "O PROBLEMA",
-			"title_line1": "Mais tráfego não resolve.",
-			"title_line2": "O dinheiro escapa entre o clique e a conversão.",
+			"title_line1": "Mais tráfego não corrige um funil quebrado.",
+			"title_line2": "As vendas se perdem entre a primeira visita e a conversão.",
 			"buraco": {
-				"label": "O buraco",
+				"label": "A perda",
 				"stat": "67%",
-				"caption": "dos visitantes somem entre o **clique** e a **compra**.",
-				"aside": "A conta do anúncio chega igual no fim do mês. Você paga por cada um deles."
+				"caption": "dos visitantes abandonam a jornada antes da **ação principal**.",
+				"aside": "Você investiu para atrair cada um deles."
 			},
 			"ciclo": {
 				"label": "O ciclo",
-				"step1": "Você muda o anúncio.",
-				"step2": "A desistência muda pra **landing**.",
-				"step3": "Você corrige a landing.",
-				"step4": "Os compradores saem no **checkout**.",
-				"aside": "Sem visão ponta a ponta, cada correção empurra o problema pra próxima superfície."
+				"step1": "Você melhora a aquisição.",
+				"step2": "O problema reaparece na **página de entrada**.",
+				"step3": "Você corrige essa página.",
+				"step4": "O cliente desiste no **próximo passo**.",
+				"aside": "Sem visão de ponta a ponta, cada correção empurra o problema para a próxima etapa."
 			},
 			"silencio": {
 				"label": "O silêncio",
 				"zeros": [
-					"alertas no analytics",
-					"tickets de suporte",
-					"erros no log"
+					"alertas nos dados de análise",
+					"chamados de suporte",
+					"erros nos registros"
 				],
-				"one": "buraco crescendo no fim do mês.",
+				"one": "perda crescendo no fim do mês.",
 				"aside": "Seu painel diz \"**tudo certo**\". Seu fim de mês diz outra coisa."
 			},
 			"closing": "Você pode continuar escalando sem ver isso. Ou pode parar de perder."
@@ -508,35 +510,35 @@
 		},
 		"features_bento": {
 			"eyebrow": "ESTRUTURA DO PLANO",
-			"title": "Quatro seções por edição",
+			"title": "Quatro respostas em cada edição",
 			"subtitle": "Cada edição mensal traz a Tese, Onde você está, os Próximos passos, e a Continuidade: o que mudou desde a edição anterior.",
 			"tese": {
 				"eyebrow": "Qual é o problema deste mês",
 				"dateline": "Edição mais recente",
 				"attribution": "Vestigio · análise do ciclo",
-				"sample": "O tema dominante deste ciclo é copy desalinhado: títulos descrevem o produto sem comunicar o ganho do comprador."
+				"sample": "O tema dominante deste ciclo é a mensagem desalinhada: os títulos descrevem o produto sem comunicar o ganho do comprador."
 			},
 			"onde_voce_esta": {
-				"eyebrow": "Onde você tá perdendo",
+				"eyebrow": "Onde você está perdendo",
 				"description": "",
 				"tiles": [
 					{
-						"label": "Recuperado este ciclo",
-						"value": "R$ ~67k",
+						"label": "Potencial de recuperação",
+						"value": "R$ ~67 mil",
 						"tone": "win"
 					},
 					{
-						"label": "Findings críticos",
+						"label": "Achados críticos",
 						"value": "6",
 						"tone": "loss"
 					},
 					{
-						"label": "Total monitorados",
+						"label": "Achados monitorados",
 						"value": "19",
 						"tone": "neutral"
 					},
 					{
-						"label": "Times com próximos passos",
+						"label": "Áreas responsáveis",
 						"value": "3",
 						"tone": "neutral"
 					}
@@ -549,19 +551,19 @@
 					{
 						"n": "01",
 						"title": "Realinhar título da home com benefício do comprador",
-						"impact": "R$ 14k–28k/mês",
+						"impact": "R$ 14 mil–28 mil/mês",
 						"buyer": "Marketing"
 					},
 					{
 						"n": "02",
-						"title": "Reduzir o formulário de captura de 7 pra 3 campos",
-						"impact": "R$ 18k–35k/mês",
-						"buyer": "Eng"
+						"title": "Reduzir o formulário de captura de 7 para 3 campos",
+						"impact": "R$ 18 mil–35 mil/mês",
+						"buyer": "Tecnologia"
 					},
 					{
 						"n": "03",
-						"title": "Mover CTA principal pra acima da dobra no mobile",
-						"impact": "R$ 8k–20k/mês",
+						"title": "Mover o botão principal para a primeira tela no celular",
+						"impact": "R$ 8 mil–20 mil/mês",
 						"buyer": "Diretoria"
 					}
 				]
@@ -571,17 +573,17 @@
 				"description": "",
 				"pairs": [
 					{
-						"label": "Findings críticos",
+						"label": "Achados críticos",
 						"before": "5",
 						"after": "6",
 						"delta": "+1",
 						"deltaTone": "loss"
 					},
 					{
-						"label": "Recuperado / mês",
-						"before": "R$ 52k",
-						"after": "R$ 67k",
-						"delta": "+R$ 15k",
+						"label": "Potencial de recuperação / mês",
+						"before": "R$ 52 mil",
+						"after": "R$ 67 mil",
+						"delta": "+R$ 15 mil",
 						"deltaTone": "win"
 					},
 					{
@@ -649,28 +651,28 @@
 			"subtitle": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent condimentum dictum euismod malesuada lacus, non consequat quam."
 		},
 		"counter": {
-			"tagline": "Feito pra quem não aceita escalar no escuro.",
+			"tagline": "Feito para quem não aceita crescer no escuro.",
 			"quick_start_title": "Pronto em 60 segundos",
-			"quick_start_desc": "Cola a URL. Sem código, sem tag, sem onboarding.",
+			"quick_start_desc": "Cole a URL. Sem código, tags ou configuração inicial.",
 			"visibility_title": "Olhamos 15 mil sinais no seu site",
-			"visibility_desc": "15.000 sinais varridos a cada análise: checkout, funil, mobile, scripts, ads, SEO.",
+			"visibility_desc": "15.000 sinais varridos a cada análise: checkout, jornadas, experiência móvel, scripts, anúncios e SEO.",
 			"roi_title": "Garantia 4×",
-			"roi_subtitle": "100% do dinheiro de volta em 30 dias se a Vestigio não apontar 4× o valor do plano em vazamento mensal.",
+			"roi_subtitle": "100% do dinheiro de volta em 30 dias se a Vestigio não apontar perdas mensais equivalentes a 4× o valor do plano.",
 			"pulse_title": "Tese do mês",
 			"pulse_desc": "Cada análise abre com uma tese: a leitura central do ciclo, em R$, com próximos passos.",
 			"pulse_cta": "Veja um exemplo",
 			"monitoring_title": "Erros encontrados em horas",
 			"monitoring_desc": "Toda mudança no site é comparada ao ciclo anterior. Regressões críticas em horas, não em semanas.",
 			"integrations_title": "Funciona com qualquer site",
-			"integrations_desc": "Shopify, WordPress, Webflow, Framer, Next.js, sites customizados. Se abre num browser, a Vestigio lê."
+			"integrations_desc": "Shopify, WordPress, Webflow, Framer, Next.js e sites customizados. Se abre no navegador, a Vestigio analisa."
 		},
 		"mini_calculator": {
-			"title": "Veja onde seu faturamento está vazando.",
+			"title": "Veja onde seu funil perde vendas.",
 			"subtitle": "Análise gratuita do seu domínio. Resultado em segundos, sem cadastro.",
 			"currency_symbol": "R$",
 			"url_placeholder": "Cole a URL do seu site aqui...",
 			"revenue_placeholder": "Faturamento mensal médio",
-			"cta_audit": "Receber análise",
+			"cta_audit": "Analisar meu funil",
 			"url_nudge": "Cole a URL do seu site no campo acima para iniciar",
 			"trust_line": "Análise sem cadastro. Sem cartão. Sem acesso a código ou dados.",
 			"analyzing": "Analisando",
@@ -685,11 +687,11 @@
 			"scan_complete": "Análise concluída",
 			"results_for": "Resultados para",
 			"col_severity": "Severidade",
-			"col_finding": "Finding",
+			"col_finding": "Achado",
 			"col_impact": "Impacto est.",
 			"total_impact": "Em risco / mês",
 			"cta_question": "Quer o Plano de Estratégia completo, com Próximos passos priorizados e atualização mensal?",
-			"cta_signup": "Ver quanto está vazando →",
+			"cta_signup": "Ver todas as perdas →",
 			"cta_pricing": "Ver Preços",
 			"disclaimer": "Estimativa preliminar. A análise completa inclui verificação ponta a ponta, cadeia de causa e Próximos passos priorizados.",
 			"scan_another": "Analisar outro site",
@@ -699,31 +701,31 @@
 			"business_app_download": "App Download",
 			"business_blog": "Blog / Notícias / Fórum",
 			"business_institutional": "Institucional",
-			"findings_found": "findings",
-			"showing_of": "Mostrando {shown} de {total} findings. Crie uma conta para ver todos",
+			"findings_found": "achados",
+			"showing_of": "Mostrando {shown} de {total} achados. Crie uma conta para ver todos",
 			"f_checkout_trust": "Indicadores de confiança no checkout ausentes",
-			"f_chargeback_exposure": "Exposição elevada a chargebacks detectada",
+			"f_chargeback_exposure": "Risco elevado de estornos detectado",
 			"f_payment_redirect_chain": "Cadeia de redirecionamentos no pagamento muito longa",
 			"f_checkout_ssl_mismatch": "Confiança SSL degradada entre domínios do checkout",
 			"f_cart_abandonment_signals": "Sinais de abandono de carrinho acima da média",
 			"f_payment_form_friction": "Formulário de pagamento criando fricção desnecessária",
 			"f_pricing_page_weak": "Página de preços sem elementos-chave de conversão",
-			"f_subscription_churn_signals": "Padrões de risco de churn de assinatura detectados",
+			"f_subscription_churn_signals": "Risco de cancelamento de assinaturas detectado",
 			"f_refund_abuse_surface": "Fluxo de reembolso vulnerável a padrões de abuso",
 			"f_discount_endpoint_exposed": "Mecanismo de desconto explorável sem proteção",
-			"f_analytics_blind_spot": "Ponto cego de analytics em páginas críticas de faturamento",
+			"f_analytics_blind_spot": "Falha de medição em páginas críticas de faturamento",
 			"f_scripts_blocking": "Scripts de terceiros bloqueando renderização crítica",
-			"f_mobile_friction": "Experiência mobile degradada em páginas-chave",
+			"f_mobile_friction": "Experiência em dispositivos móveis degradada em páginas-chave",
 			"f_broken_critical_links": "Links quebrados em páginas de alta intenção",
 			"f_slow_page_load": "Tempo de carregamento excede limite de conversão",
 			"f_seo_metadata_gaps": "Lacunas de metadados SEO reduzindo tráfego orgânico",
 			"f_cookie_consent_missing": "Mecanismo de consentimento de cookies ausente",
-			"f_security_headers_missing": "Headers de segurança ausentes em páginas sensíveis",
+			"f_security_headers_missing": "Cabeçalhos de segurança ausentes em páginas sensíveis",
 			"f_mixed_content": "Conteúdo misto comprometendo indicadores de confiança",
 			"f_form_data_leaving_domain": "Dados de formulário saindo do domínio principal",
 			"f_measurement_gap": "Lacuna de medição de conversão afetando atribuição",
 			"f_trust_signals_absent": "Sinais de confiança ausentes em páginas de decisão",
-			"f_cta_below_fold": "Call-to-action principal escondido abaixo da dobra",
+			"f_cta_below_fold": "Botão principal escondido abaixo da primeira tela",
 			"f_third_party_dependency": "Fluxo crítico dependente de terceiro não confiável",
 			"f_accessibility_barriers": "Barreiras de acessibilidade bloqueando clientes",
 			"f_redirect_chain_long": "Cadeia de redirecionamentos adicionando latência",
@@ -738,8 +740,8 @@
 			"subheading": "Receba um Plano de Estratégia que te diz o que fazer. Análise contínua, exportação em PDF e link compartilhável. Garantia 4×: 100% de volta em 30 dias se não apontarmos 4× o plano em vazamento."
 		},
 		"sticky_cta": {
-			"hook": "Veja onde seu faturamento está vazando.",
-			"cta": "Ver meu vazamento em 60s",
+			"hook": "Veja onde seu funil perde vendas.",
+			"cta": "Ver onde perco vendas",
 			"dismiss": "Fechar"
 		},
 		"pricing_cadence": {

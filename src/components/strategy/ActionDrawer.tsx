@@ -101,7 +101,7 @@ export default function ActionDrawer({
 											{stepTitle}
 										</Dialog.Title>
 										<Dialog.Description className="mt-1 text-[12px] text-content-muted">
-											{actions.length} {actions.length === 1 ? "action" : "actions"} priorizadas pelo engine
+										{actions.length} {actions.length === 1 ? "ação" : "ações"} priorizadas pela análise
 										</Dialog.Description>
 									</div>
 									<Dialog.Close asChild>

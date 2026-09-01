@@ -152,7 +152,7 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 				    word at xl). text-balance added for mobile/tablet
 				    viewports where the long pain-hook clause necessarily
 				    wraps — balance distributes the wrap into roughly equal
-				    lines instead of letting "operação." or "quanto." orphan
+				    lines instead of leaving the final words orphaned
 				    on its own. On desktop (lg+) the type already fits one
 				    line per part so balance is a no-op there, which is the
 				    right behavior (editorial publications control desktop
@@ -171,8 +171,8 @@ const Hero = async ({ i18nNamespace = "homepage.hero_v2", primaryCtaHref = "/aud
 				    - Width tightened: max-w-[680px] → max-w-[560px]
 				    - Spacing increased: mb-8/mb-10 → mb-10/mb-12
 				    - Color lifted: text-zinc-400 → text-zinc-300
-				    - Emphasis via Fraunces serif italic on the key clause
-				      ("onde…parar") — echoes the H1 typography signature
+				    - Emphasis on the recovery-and-scale clause echoes the H1
+				      typography signature
 				      and creates an editorial micro-moment inside the
 				      otherwise sans paragraph. */}
 				<p className='mx-auto mb-10 w-full max-w-[560px] text-base leading-relaxed text-zinc-300 sm:mb-12 sm:text-lg'>

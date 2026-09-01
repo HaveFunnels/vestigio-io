@@ -2489,7 +2489,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 						data: {
 							environmentId: env.id,
 							month,
-							locale: "pt-BR",
+							locale: (cycle.organization as { locale?: string }).locale ?? "pt-BR",
 							status: "generating",
 							heroMetricsJson: {},
 							buyerSegmentsJson: [],

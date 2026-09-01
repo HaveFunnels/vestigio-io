@@ -119,7 +119,7 @@ function MiniSparkline({ values, tone }: { values: number[]; tone?: "win" | "los
 // Step 0 — Tese + HeroMetrics
 // ─────────────────────────────────────────────────────────────────────
 
-function StepThesisAndMetrics() {
+function StepThesisAndMetrics({ onShowFindings }: { onShowFindings: () => void }) {
 	const t = useTranslations("homepage.product_tour");
 	const metrics = t.raw("step1.metrics") as MetricTile[];
 
@@ -154,9 +154,18 @@ function StepThesisAndMetrics() {
 					<p className="text-[14px] font-medium leading-[1.45] text-zinc-200 sm:text-[16px] lg:text-[18px]">
 						{renderBold(t("step1.tese_body"))}
 					</p>
-					<div className="mt-4 flex items-center gap-2 text-[10px] text-zinc-500">
-						<span className="h-px w-5 bg-zinc-500/40" />
-						<span className="font-medium uppercase tracking-[0.14em]">{t("step1.tese_attribution")}</span>
+					<div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+						<div className="flex items-center gap-2 text-[10px] text-zinc-500">
+							<span className="h-px w-5 bg-zinc-500/40" />
+							<span className="font-medium uppercase tracking-[0.14em]">{t("step1.tese_attribution")}</span>
+						</div>
+						<button
+							type="button"
+							onClick={onShowFindings}
+							className="rounded-full border border-emerald-400/25 bg-emerald-400/[0.08] px-3 py-1.5 text-[11px] font-semibold text-emerald-300 transition-colors hover:border-emerald-400/40 hover:bg-emerald-400/[0.12]"
+						>
+							{t("step1.evidence_cta")} →
+						</button>
 					</div>
 				</div>
 			</div>
@@ -253,7 +262,7 @@ function StepBuyersAndNarrative() {
 							</div>
 						</div>
 						<div className="text-[13px] font-semibold text-zinc-100 sm:text-[14px]">
-							{s.count} findings
+							{s.count} {t("findings_label")}
 						</div>
 						<div className="mt-3 font-mono text-[18px] font-semibold tabular-nums text-zinc-100 sm:text-[20px]">
 							{s.impactMid}
@@ -457,6 +466,11 @@ export default function ProductTour({ primaryCtaHref = "/audit" }: ProductTourPr
 		clearTimeout(timerRef.current);
 		goToStep(step);
 	}, [goToStep]);
+	const handleShowFindings = useCallback(() => {
+		setInteractionMode("user");
+		clearTimeout(timerRef.current);
+		goToStep(1, "up");
+	}, [goToStep]);
 
 	const stepLabels = t.raw("step_indicator") as string[];
 
@@ -530,7 +544,7 @@ export default function ProductTour({ primaryCtaHref = "/audit" }: ProductTourPr
 								animation: `vptour-slide-${slideDir} 0.85s cubic-bezier(0.16, 1, 0.3, 1) both`,
 							}}
 						>
-							{currentStep === 0 && <StepThesisAndMetrics />}
+							{currentStep === 0 && <StepThesisAndMetrics onShowFindings={handleShowFindings} />}
 							{currentStep === 1 && <StepBuyersAndNarrative />}
 							{currentStep === 2 && <StepNextSteps primaryCtaHref={primaryCtaHref} />}
 						</div>

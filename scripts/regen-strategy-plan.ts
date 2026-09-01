@@ -33,7 +33,11 @@ async function main() {
 	try {
 		const env = await prisma.environment.findUnique({
 			where: { id: envId },
-			select: { id: true, domain: true },
+			select: {
+				id: true,
+				domain: true,
+				organization: { select: { locale: true } },
+			},
 		});
 		if (!env) {
 			console.error(`[regen] env ${envId} not found`);
@@ -43,7 +47,7 @@ async function main() {
 		const result = await generateAndPersistPlan(prisma, {
 			environmentId: envId,
 			month,
-			locale: "pt-BR",
+			locale: (env.organization?.locale as "pt-BR" | "en" | "es" | "de") ?? "pt-BR",
 		});
 		const durationMs = Date.now() - t0;
 		console.log(

@@ -60,7 +60,9 @@ export function FindingCard({ block, onNavigate }: FindingCardProps) {
         <div className="mt-1.5 flex flex-wrap items-center gap-2">
           <SeverityBadge value={finding.severity} />
           <span className="text-[10px] text-content-faint">
-            {finding.pack.replace(/_/g, " ")}
+            {tc.has(`pack_labels.${finding.pack}`)
+              ? tc(`pack_labels.${finding.pack}`)
+              : finding.pack.replace(/_/g, " ")}
           </span>
         </div>
 

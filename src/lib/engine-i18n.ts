@@ -24,12 +24,54 @@ type Translator = ReturnType<typeof useTranslations>;
 export function translateEngineCopy(
 	inferenceKey: string | null | undefined,
 	fallback: string | null | undefined,
-	tEngine: Translator,
+	tEngine: Translator
 ): string {
 	if (inferenceKey && tEngine.has(`inference_titles.${inferenceKey}`)) {
 		return tEngine(`inference_titles.${inferenceKey}`);
 	}
 	return fallback ?? "";
+}
+
+/**
+ * Resolve a structured finding field at render time. Persisted projections
+ * can have been generated under another locale, so fields must be looked up
+ * by their stable engine keys before falling back to stored text.
+ */
+export function translateFindingField(
+	finding: {
+		inference_key?: string | null;
+		root_cause_key?: string | null;
+	},
+	field:
+		| "effect"
+		| "root_cause"
+		| "reasoning"
+		| "verification_notes"
+		| "remediation_steps",
+	fallback: string | string[] | null | undefined,
+	tEngine: Translator
+): string | string[] {
+	const key = finding.inference_key;
+	const rootCauseKey = finding.root_cause_key;
+	const lookups: Record<string, string | null | undefined> = {
+		effect: key ? `inference_effects.${key}` : undefined,
+		reasoning: key ? `reasoning_templates.${key}` : undefined,
+		verification_notes: key
+			? `remediation.${key}.verification_notes`
+			: undefined,
+		remediation_steps: key ? `remediation.${key}.remediation_steps` : undefined,
+		root_cause: rootCauseKey ? `root_cause_titles.${rootCauseKey}` : undefined,
+	};
+	const lookup = lookups[field];
+	if (lookup && tEngine.has(lookup)) {
+		// next-intl's normal translator is for scalar messages; remediation
+		// steps are arrays and must use the raw accessor.
+		const raw = (
+			tEngine as unknown as { raw?: (key: string) => unknown }
+		).raw?.(lookup);
+		if (Array.isArray(raw) || typeof raw === "string") return raw;
+	}
+	return fallback ?? (field === "remediation_steps" ? [] : "");
 }
 
 // ──────────────────────────────────────────────
@@ -52,7 +94,8 @@ const PATTERNS: Array<{
 }> = [
 	{
 		// Severity gap >= 3 — note from conflict-resolver:143-144
-		regex: /^Note: while (.+?) suggests (.+?), (.+?) requires (.+?) action first\.$/,
+		regex:
+			/^Note: while (.+?) suggests (.+?), (.+?) requires (.+?) action first\.$/,
 		build: (m) => ({
 			key: "note_severity_gap_high",
 			payload: {
@@ -99,7 +142,8 @@ const PATTERNS: Array<{
 	},
 	{
 		// Confidence asymmetry — note from conflict-resolver:206-207
-		regex: /^Confidence in (.+?) is low \((\d+)%\)\.\s+Consider verification before acting on it\.$/,
+		regex:
+			/^Confidence in (.+?) is low \((\d+)%\)\.\s+Consider verification before acting on it\.$/,
 		build: (m) => ({
 			key: "note_confidence_low",
 			payload: { key: m[1], score: m[2] },
@@ -124,7 +168,7 @@ export function translateConflictNote(
 	note: string,
 	tNotes: Translator,
 	tImpact: Translator,
-	tSeverity: Translator,
+	tSeverity: Translator
 ): string {
 	for (const p of PATTERNS) {
 		const m = note.match(p.regex);
@@ -138,7 +182,12 @@ export function translateConflictNote(
 		// "observe", "Crítico" instead of "critical").
 		const localized: Record<string, string> = {};
 		for (const [k, v] of Object.entries(payload)) {
-			if (k === "lower_impact" || k === "higher_impact" || k === "impact_a" || k === "impact_b") {
+			if (
+				k === "lower_impact" ||
+				k === "higher_impact" ||
+				k === "impact_a" ||
+				k === "impact_b"
+			) {
 				localized[k] = tImpact.has(v) ? tImpact(v) : v;
 			} else if (k === "severity_a" || k === "severity_b") {
 				localized[k] = tSeverity.has(v) ? tSeverity(v) : v;

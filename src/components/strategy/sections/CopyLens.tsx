@@ -24,9 +24,9 @@ interface Props {
 }
 
 const PAGE_SLOT_LABEL: Record<string, string> = {
-	home: "Home",
-	pricing: "Pricing",
-	features: "Features",
+	home: "Página inicial",
+	pricing: "Preços",
+	features: "Funcionalidades",
 	about: "Sobre",
 	other: "Outras",
 };

@@ -151,6 +151,7 @@
 			"section_headline": "Plan de Estrategia · Tour guiado",
 			"url": "app.vestigio.io/library/strategy/current",
 			"cta_primary": "Hacer diagnóstico gratis",
+			"findings_label": "hallazgos",
 			"step_indicator": [
 				"El problema",
 				"La lectura",
@@ -165,6 +166,7 @@
 				"tese_eyebrow": "TESIS DE ESTE MES",
 				"tese_body": "Vestigio identificó **~$13k/mes** en fuga concentrada en la página inicial y el checkout, donde el copy desalineado dispersa compradores antes de la conversión.",
 				"tese_attribution": "Vestigio · análisis del ciclo",
+				"evidence_cta": "Ver dónde ocurre",
 				"metrics": [
 					{
 						"label": "Recuperado / mes",

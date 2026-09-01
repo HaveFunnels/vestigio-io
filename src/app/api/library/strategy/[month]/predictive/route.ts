@@ -38,12 +38,13 @@ export async function GET(request: Request, { params }: RouteParams) {
 		select: {
 			id: true,
 			organizationId: true,
-			organization: {
-				select: {
-					ownerId: true,
-					memberships: { select: { userId: true } },
+				organization: {
+					select: {
+						ownerId: true,
+						memberships: { select: { userId: true } },
+						locale: true,
+					},
 				},
-			},
 		},
 	});
 	if (!env) {
@@ -67,6 +68,10 @@ export async function GET(request: Request, { params }: RouteParams) {
 	const now = new Date();
 	const asOf = monthEnd > now ? now : monthEnd;
 
-	const summary = await buildPredictiveSummary(envId, asOf);
+	const summary = await buildPredictiveSummary(
+		envId,
+		asOf,
+		env.organization?.locale ?? "pt-BR",
+	);
 	return NextResponse.json(summary);
 }

@@ -179,7 +179,7 @@ function StatsBody({ stats }: { stats: AnalysisStatsResponse }) {
 			<Section title="Coleta de evidências" subtitle="O que foi observado no último ciclo">
 				<Tile label="Evidências capturadas" value={stats.collection.evidence_total} />
 				<Tile
-					label="Requests de rede"
+					label="Requisições de rede"
 					value={stats.collection.network_requests_captured}
 				/>
 				<Tile
@@ -216,7 +216,7 @@ function StatsBody({ stats }: { stats: AnalysisStatsResponse }) {
 			)}
 
 			{/* ANÁLISE */}
-			<Section title="Análise" subtitle="O que a engine extraiu do dado">
+			<Section title="Análise" subtitle="O que a análise extraiu dos dados">
 				<Tile label="Achados criados no mês" value={stats.analysis.findings_created_this_month} />
 				<Tile
 					label="Achados resolvidos no mês"

@@ -252,7 +252,7 @@ function withReceipt(
 		return base;
 	}
 	const range = `${fmtCurrencyUnits(min, currency)}–${fmtCurrencyUnits(max, currency)}`;
-	const noun = count === 1 ? "finding" : "findings";
+	const noun = count === 1 ? "achado" : "achados";
 	return `Faixa real este mês: ${range} de ${count} ${noun}. ${base}`;
 }
 
@@ -296,7 +296,7 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
 					emptyState="Siga o plano para ver o faturamento recuperado."
 					methodologyDescription={withReceipt(
-						"Soma dos midpoints de receita mensal recuperada por ações marcadas como done e verificadas no ciclo seguinte. Distintos de 'marcado como done': só conta quando o ciclo seguinte confirma que a finding linkada não aparece mais.",
+						"Soma dos midpoints de receita mensal recuperada por ações marcadas como feitas e verificadas no ciclo seguinte. Diferente de apenas marcar como feito: só conta quando o ciclo seguinte confirma que o achado ligado não aparece mais.",
 						hero.capturedMin,
 						hero.capturedMax,
 						hero.capturedFindingCount,
@@ -316,7 +316,7 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					staticTone="loss"
 					captionWhenStatic="em vazamento agora"
 					methodologyDescription={withReceipt(
-						"Vazamento estimado: soma dos midpoints mensais de findings em aberto que representam perda de receita ou risco operacional. Esse número diminui à medida que ações são marcadas como done e o ciclo seguinte confirma que a finding linkada não aparece mais. Quando isso acontece, o valor migra para 'Recuperado/mês'.",
+						"Vazamento estimado: soma dos midpoints mensais de achados em aberto que representam perda de receita ou risco operacional. Esse número diminui à medida que ações são marcadas como feitas e o ciclo seguinte confirma que o achado ligado não aparece mais. Quando isso acontece, o valor migra para 'Recuperado/mês'.",
 						hero.exposureMin,
 						hero.exposureMax,
 						hero.exposureFindingCount,
@@ -333,18 +333,18 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 				    eye on. Buyer-meaningful + uses data we already
 				    persist. */}
 				<Tile
-					label="Findings em monitoramento"
+					label="Achados em monitoramento"
 					rawNumber={hero.retainedFindingCount ?? hero.criticalCount}
 					delta={hero.criticalDeltaMoM}
 					invertDelta
-					methodologyDescription="Total de findings em estado aberto neste ciclo, incluindo low/medium/high. Vestigio mantém esse número em monitoramento contínuo entre ciclos. Apenas findings com confiança >= medium aparecem aqui."
+					methodologyDescription="Total de achados em estado aberto neste ciclo, incluindo baixa, média e alta severidade. Vestigio mantém esse número em monitoramento contínuo entre ciclos. Apenas achados com confiança pelo menos média aparecem aqui."
 					methodologyDrillHref="/app/findings"
 				/>
 				<Tile
 					label="Em progresso"
 					rawNumber={hero.inProgressCount}
 					delta={hero.inProgressDeltaMoM}
-					methodologyDescription="Quantidade de ações com status=in_progress atribuídas ao seu env. Reflete trabalho em curso da equipe."
+					methodologyDescription="Quantidade de ações em progresso atribuídas ao seu ambiente. Reflete trabalho em curso da equipe."
 					methodologyDrillHref="/app/actions?status=in_progress"
 				/>
 			</div>

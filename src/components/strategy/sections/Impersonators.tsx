@@ -196,7 +196,7 @@ export default function Impersonators({ impersonators, embedded = false }: Props
 											{m.hasCommerceSignals && (
 												<span
 													className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-200 ring-1 ring-inset ring-amber-500/20"
-													title="Tem sinal de comércio (carrinho, checkout, pricing)"
+													title="Tem sinal de comércio (carrinho, checkout, preços)"
 												>
 													<Globe2 className="h-3 w-3" /> comércio
 												</span>

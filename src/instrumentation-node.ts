@@ -282,6 +282,14 @@ export async function registerNodeInstrumentation(): Promise<void> {
 				});
 				totalPruned += result.count;
 			}
+			// Previously accumulated and then dropped on the floor, so a
+			// working prune and a silently failing one looked identical
+			// from the logs. They must not.
+			if (result.count > 0 || purged.count > 0 || totalPruned > 0) {
+				console.log(
+					`[lead-cleanup] leads=${result.count} miniAudits=${purged.count} behavioralEvents=${totalPruned}`,
+				);
+			}
 		} catch (err) {
 			console.error("[lead-cleanup] pass failed:", err);
 		}
@@ -293,6 +301,99 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	setInterval(runLeadCleanup, LEAD_CLEANUP_INTERVAL_MS);
 
 	console.log("✓ Lead cleanup cron registered (1h interval)");
+
+	// ── Audit-artifact retention + disk guard ──
+	//
+	// Added 2026-09-08 after the production database filled its 5 GB
+	// volume and crash-looped for eight days. Cause: the audit pipeline
+	// stores a full set of artifacts per cycle, and none of Evidence,
+	// SurfaceRelation, AuditCycle or PageProbe had any prune at all. One
+	// environment left on a 15-minute cadence wrote ~450 KB/cycle —
+	// ~1.3 GB/month — until the disk ran out.
+	//
+	// Two jobs here, deliberately separate:
+	//   1. Retention, which bounds the tables.
+	//   2. A disk guard, because the failure mode above was invisible.
+	//      There was no signal between "fine" and "database down".
+	//
+	// DELETE alone does not return space to the OS — it only makes the
+	// pages reusable. That is fine steady-state (the tables stop growing)
+	// but it means a one-off VACUUM FULL is still needed after a large
+	// backlog is cleared. The guard logs when that applies.
+	const RETENTION = {
+		evidenceDays: 30,
+		// An edge unseen for this long is gone from the site. Keyed on
+		// lastSeenAt, which the current-state writer now maintains.
+		surfaceRelationDays: 30,
+		pageProbeDays: 30,
+		// Cycles are the spine of plan history, so they get a longer
+		// window than the artifacts hanging off them.
+		auditCycleDays: 90,
+	};
+	const DB_SIZE_WARN_PCT = 70;
+	const DB_SIZE_CRITICAL_PCT = 85;
+	const VOLUME_MB = Number(process.env.DB_VOLUME_SIZE_MB || 5000);
+
+	const runStorageRetention = async () => {
+		await withLeadership("storage-retention", { ttlSec: 300 }, async () => {
+			const cutoff = (days: number) =>
+				new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+			try {
+				// Deleting the cycle cascades to Evidence, Finding and Action.
+				// This relies on Evidence.auditCycleId being indexed — without
+				// it each cycle costs a sequential scan of the whole Evidence
+				// table and this pass never finishes. See schema.prisma.
+				const cycles = await prisma.auditCycle.deleteMany({
+					where: { createdAt: { lt: cutoff(RETENTION.auditCycleDays) } },
+				});
+				// Evidence not attached to a cycle (auditCycleId null) is not
+				// reached by the cascade, so it needs its own pass.
+				const evidence = await prisma.evidence.deleteMany({
+					where: {
+						auditCycleId: null,
+						createdAt: { lt: cutoff(RETENTION.evidenceDays) },
+					},
+				});
+				const relations = await prisma.surfaceRelation.deleteMany({
+					where: { lastSeenAt: { lt: cutoff(RETENTION.surfaceRelationDays) } },
+				});
+				const probes = await prisma.pageProbe.deleteMany({
+					where: { observedAt: { lt: cutoff(RETENTION.pageProbeDays) } },
+				});
+				if (cycles.count || evidence.count || relations.count || probes.count) {
+					console.log(
+						`[storage-retention] cycles=${cycles.count} evidence=${evidence.count} relations=${relations.count} probes=${probes.count}`,
+					);
+				}
+			} catch (err) {
+				console.error("[storage-retention] pass failed:", err);
+			}
+
+			// Disk guard. Reported even when retention throws above, because
+			// a failing retention pass is exactly when the size matters.
+			try {
+				const rows = await prisma.$queryRaw<Array<{ mb: number }>>`
+					SELECT pg_database_size(current_database()) / 1024 / 1024 AS mb
+				`;
+				const usedMb = Number(rows[0]?.mb ?? 0);
+				const pct = Math.round((usedMb / VOLUME_MB) * 100);
+				if (pct >= DB_SIZE_CRITICAL_PCT) {
+					console.error(
+						`[storage-guard] CRITICAL: database at ${usedMb}MB of ${VOLUME_MB}MB (${pct}%). Retention alone will not recover this — a VACUUM FULL is required to return space to the volume.`,
+					);
+				} else if (pct >= DB_SIZE_WARN_PCT) {
+					console.warn(
+						`[storage-guard] database at ${usedMb}MB of ${VOLUME_MB}MB (${pct}%)`,
+					);
+				}
+			} catch (err) {
+				console.error("[storage-guard] size check failed:", err);
+			}
+		});
+	};
+	runStorageRetention();
+	setInterval(runStorageRetention, LEAD_CLEANUP_INTERVAL_MS);
+	console.log("✓ Storage retention + disk guard registered (1h interval)");
 
 	// ── Mini-audit followup 24h cron (Wave 22.8 #10 Move 2) ──
 	// Para leads que rodaram o mini-audit, viram resultado, e

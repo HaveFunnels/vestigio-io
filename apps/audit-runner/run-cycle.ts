@@ -21,6 +21,7 @@
 // recovers cycles that get stuck (process restart, crash, etc).
 // ──────────────────────────────────────────────
 
+import { createHash } from "crypto";
 import { prisma } from "@/libs/prismaDb";
 import { runStagedPipeline, type PipelineEvent } from "../../workers/ingestion/staged-pipeline";
 import { PrismaEvidenceStore } from "../../packages/evidence";
@@ -891,11 +892,22 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		}
 
 		// 6b. Persist SurfaceRelation records from crawled link graph.
-		// Uses createMany + skipDuplicates for single-query batch insert.
+		//
+		// The link graph is current state, not a per-cycle log. Before the
+		// 20260908 migration this table had no unique constraint, so the
+		// skipDuplicates below deduped nothing and each cycle re-inserted
+		// the whole graph — 1.08M rows for ~416 real edges on one site,
+		// which also made the edge-score updateMany and the funnel-gap
+		// findMany (both keyed on websiteRef alone) walk thousands of
+		// stale copies of every edge.
+		//
+		// Now: insert the edges we have never seen, then stamp lastSeenAt
+		// and the observing cycle on everything in this batch. Two
+		// queries, and the row count tracks the site rather than time.
 		if (result.surface_relations && result.surface_relations.length > 0) {
 			const relDedup = new Set<string>();
 			const batchData: Array<{
-				websiteRef: string; sourceUrl: string; targetUrl: string;
+				websiteRef: string; edgeKey: string; sourceUrl: string; targetUrl: string;
 				relationType: string; sourceHost: string; targetHost: string;
 				isSameDomain: boolean; confidence: number; cycleRef: string; metadata: string;
 			}> = [];
@@ -905,6 +917,10 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				relDedup.add(key);
 				batchData.push({
 					websiteRef: website.id,
+					// Hashed rather than a unique on the URL columns directly:
+					// two long URLs plus the type can exceed Postgres' btree
+					// index row limit and would reject inserts on real sites.
+					edgeKey: createHash("sha256").update(key).digest("hex"),
 					sourceUrl: rel.sourceUrl,
 					targetUrl: rel.targetUrl,
 					relationType: rel.relationType,
@@ -917,8 +933,21 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				});
 			}
 			try {
+				const seenNow = new Date();
 				const result2 = await prisma.surfaceRelation.createMany({ data: batchData, skipDuplicates: true });
-				console.log(`[audit-runner ${cycleId}] surface relations persisted: ${result2.count} (from ${batchData.length} deduped, ${result.surface_relations.length} raw)`);
+				// Chunked so the `in` list stays a reasonable query size on
+				// sites with large graphs.
+				const edgeKeys = batchData.map((d) => d.edgeKey);
+				let stamped = 0;
+				for (let i = 0; i < edgeKeys.length; i += 500) {
+					const chunk = edgeKeys.slice(i, i + 500);
+					const r = await prisma.surfaceRelation.updateMany({
+						where: { websiteRef: website.id, edgeKey: { in: chunk } },
+						data: { lastSeenAt: seenNow, cycleRef: cycleId },
+					});
+					stamped += r.count;
+				}
+				console.log(`[audit-runner ${cycleId}] surface relations: ${result2.count} new, ${stamped} seen (from ${batchData.length} deduped, ${result.surface_relations.length} raw)`);
 			} catch (err) {
 				// Wave 18m — kept non-fatal (link graph is supporting
 				// metadata, not load-bearing), but stamp a partial-write

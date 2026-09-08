@@ -41,9 +41,23 @@ async function main() {
 			err?.message?.includes("could not open") ||
 			err?.message?.includes("not found")
 		) {
-			console.log(
-				"[timescaledb] extension not available on this Postgres instance — skipping (OK for local dev)",
-			);
+			// This branch was silently taken on every production deploy.
+			// Railway's postgres image does not ship TimescaleDB, so the
+			// hypertable and the 7-day compression policy below never
+			// existed there — while the rest of the codebase was written
+			// believing RawBehavioralEvent was partitioned and compressed.
+			// That false belief is why no retention was ever added to the
+			// other audit tables, and why the volume filled in Sept 2026.
+			//
+			// Locally it is still fine to skip. In production it is a
+			// capacity bug, and it must be loud.
+			const msg =
+				"[timescaledb] extension NOT available — RawBehavioralEvent is a plain table: no partitioning, no compression. Retention must be handled by the storage-retention cron (src/instrumentation-node.ts), and reclaiming disk needs VACUUM FULL.";
+			if (process.env.NODE_ENV === "production") {
+				console.error(msg);
+			} else {
+				console.log(`${msg} (OK for local dev)`);
+			}
 			return;
 		}
 		throw err;

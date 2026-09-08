@@ -1612,9 +1612,29 @@ model PageInventoryItem {
   @@index([environmentRef, removedAt])
 }
 
+// The link graph is CURRENT STATE, not an append-only log.
+//
+// Until 2026-09 this table had no unique constraint, so the writer's
+// `createMany({ skipDuplicates: true })` had nothing to dedupe against
+// and every cycle re-inserted the whole graph. One environment on a
+// 15-minute cadence produced 1.08M rows (698 MB) in four weeks for a
+// graph of ~416 real edges. It also broke the readers: the edge-score
+// updateMany and the funnel-gap findMany both filter by `websiteRef`
+// only — no `cycleRef` — so they were writing to, and reading back,
+// thousands of stale duplicates of every edge.
+//
+// `edgeKey` is sha256(sourceUrl|targetUrl|relationType), hashed rather
+// than a unique on the URL columns directly because two long URLs plus
+// the type can exceed Postgres' ~2704-byte btree index row limit and
+// would start rejecting inserts on real sites.
+//
+// firstSeenAt/lastSeenAt replace the per-cycle rows as the history
+// mechanism — strictly more useful than what they replace, since
+// "when did this link appear or disappear" is now a direct query.
 model SurfaceRelation {
   id           String   @id @default(cuid())
   websiteRef   String
+  edgeKey      String // sha256(sourceUrl|targetUrl|relationType)
   sourceUrl    String
   targetUrl    String
   relationType String // anchor | form_action | iframe_src | script_src | stylesheet_src | redirect | canonical_external | intent_target | runtime_navigation
@@ -1622,16 +1642,20 @@ model SurfaceRelation {
   targetHost   String
   isSameDomain Boolean  @default(true)
   confidence   Float    @default(1.0)
-  cycleRef     String
+  cycleRef     String // last cycle that observed this edge
   metadata     String   @default("{}") @db.Text // JSON
   createdAt    DateTime @default(now())
+  firstSeenAt  DateTime @default(now())
+  lastSeenAt   DateTime @default(now())
 
   website Website @relation(fields: [websiteRef], references: [id], onDelete: Cascade)
 
+  @@unique([websiteRef, edgeKey])
   @@index([websiteRef])
   @@index([sourceUrl])
   @@index([targetUrl])
   @@index([cycleRef])
+  @@index([websiteRef, lastSeenAt])
 }
 
 model FunnelModel {
@@ -1792,6 +1816,13 @@ model Evidence {
   @@index([cycleRef])
   @@index([subjectRef])
   @@index([environmentRef, subjectRef, evidenceType]) // Fase 3 reuse lookup
+  // Prisma does NOT create an index for the child column of a relation,
+  // so `auditCycleId` went unindexed while carrying onDelete: Cascade.
+  // Deleting one AuditCycle then meant a sequential scan of the whole
+  // Evidence table per cycle — with 850k rows that made any retention
+  // pass effectively impossible (measured: hours for 7.2k cycles before
+  // the index, 2.7 seconds after). Do not remove.
+  @@index([auditCycleId])
 }
 
 // ──────────────────────────────────────────────

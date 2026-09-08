@@ -12,6 +12,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { createHash } from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -588,7 +589,16 @@ async function main() {
   const demoRelations = buildDemoRelations(website.id, cycle.id);
   let relationsCreated = 0;
   for (const rel of demoRelations) {
-    await prisma.surfaceRelation.create({ data: rel });
+    // SurfaceRelation is now current-state, keyed on (websiteRef, edgeKey),
+    // so re-running the seed refreshes edges instead of duplicating them.
+    const edgeKey = createHash('sha256')
+      .update(`${rel.sourceUrl}|${rel.targetUrl}|${rel.relationType}`)
+      .digest('hex');
+    await prisma.surfaceRelation.upsert({
+      where: { websiteRef_edgeKey: { websiteRef: rel.websiteRef, edgeKey } },
+      create: { ...rel, edgeKey },
+      update: { ...rel, edgeKey, lastSeenAt: new Date() },
+    });
     relationsCreated++;
   }
   console.log(`  ✓ Surface relations: ${relationsCreated} links mapped`);

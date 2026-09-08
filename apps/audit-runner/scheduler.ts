@@ -1,5 +1,6 @@
 import { prisma } from "../../src/libs/prismaDb";
 import { getCadenceForPlan } from "../../src/libs/plan-config";
+import { isDemoOrg } from "../../src/lib/demo-account";
 import { enqueueAuditCycle } from "../platform/audit-cycle-queue";
 import type { CycleMode } from "./cycle-modes";
 
@@ -153,7 +154,7 @@ export async function runSchedulerPass(): Promise<SchedulerResult> {
 	let allEnvs: Array<{
 		id: string;
 		organizationId: string;
-		organization: { plan: string | null; status: string | null } | null;
+		organization: { plan: string | null; status: string | null; orgType: string | null } | null;
 	}> = [];
 	try {
 		while (allEnvs.length < MAX_PER_TICK) {
@@ -169,7 +170,7 @@ export async function runSchedulerPass(): Promise<SchedulerResult> {
 					id: true,
 					organizationId: true,
 					organization: {
-						select: { plan: true, status: true },
+						select: { plan: true, status: true, orgType: true },
 					},
 				},
 				orderBy: { id: "asc" },
@@ -191,7 +192,22 @@ export async function runSchedulerPass(): Promise<SchedulerResult> {
 
 	for (const env of envs) {
 		try {
-			const planKey = env.organization?.plan || "vestigio";
+			// Demo orgs run on Starter cadence regardless of the plan field.
+			//
+			// The eligibility doc above always intended demo orgs to refresh
+			// on "Starter cadence (weekly cold)", but cadence was derived
+			// from organization.plan alone — so a demo org whose plan had
+			// been set to "pro" silently ran the 15-minute cadence instead.
+			// One did, for five months: 7,289 cycles against a fixture
+			// domain, which is what filled the production volume in Sept
+			// 2026. Deriving this from orgType makes the documented intent
+			// enforced rather than dependent on the plan field being kept
+			// in a particular state.
+			const isDemo = isDemoOrg({
+				id: env.organizationId,
+				orgType: env.organization?.orgType,
+			});
+			const planKey = isDemo ? "vestigio" : env.organization?.plan || "vestigio";
 			const due = await resolveDueCycleType(env.id, planKey);
 			if (!due) continue;
 

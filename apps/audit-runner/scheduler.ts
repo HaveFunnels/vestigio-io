@@ -50,7 +50,7 @@ export type { CycleMode };
  */
 export async function resolveDueCycleType(
 	environmentId: string,
-	planKey: string,
+	planKey: string
 ): Promise<CycleMode | null> {
 	const cadence = getCadenceForPlan(planKey);
 	const now = Date.now();
@@ -102,7 +102,7 @@ export async function resolveDueCycleType(
 	// don't get a duplicate cold run the hour this feature ships.
 	const lastCold = Math.max(
 		lastByType.get("cold") ?? 0,
-		lastByType.get("full") ?? 0,
+		lastByType.get("full") ?? 0
 	);
 	const lastWarm = lastByType.get("warm") ?? 0;
 	const lastHot = lastByType.get("hot") ?? 0;
@@ -149,12 +149,18 @@ export async function runSchedulerPass(): Promise<SchedulerResult> {
 	// so a one-off bad query plan can't loop forever. Real load should
 	// never approach this.
 	const BATCH_SIZE = Number(process.env.SCHEDULER_BATCH_SIZE || "200");
-	const MAX_PER_TICK = Number(process.env.SCHEDULER_MAX_ENVS_PER_TICK || "10000");
+	const MAX_PER_TICK = Number(
+		process.env.SCHEDULER_MAX_ENVS_PER_TICK || "10000"
+	);
 	let cursor: string | undefined;
 	let allEnvs: Array<{
 		id: string;
 		organizationId: string;
-		organization: { plan: string | null; status: string | null; orgType: string | null } | null;
+		organization: {
+			plan: string | null;
+			status: string | null;
+			orgType: string | null;
+		} | null;
 	}> = [];
 	try {
 		while (allEnvs.length < MAX_PER_TICK) {
@@ -207,7 +213,9 @@ export async function runSchedulerPass(): Promise<SchedulerResult> {
 				id: env.organizationId,
 				orgType: env.organization?.orgType,
 			});
-			const planKey = isDemo ? "vestigio" : env.organization?.plan || "vestigio";
+			const planKey = isDemo
+				? "vestigio"
+				: env.organization?.plan || "vestigio";
 			const due = await resolveDueCycleType(env.id, planKey);
 			if (!due) continue;
 
@@ -240,7 +248,7 @@ export async function runSchedulerPass(): Promise<SchedulerResult> {
 					.catch((err) => {
 						console.error(
 							`[audit-scheduler] in-process dispatch failed cycle=${cycle.id}:`,
-							err,
+							err
 						);
 					});
 			}
@@ -248,13 +256,10 @@ export async function runSchedulerPass(): Promise<SchedulerResult> {
 			result.cyclesEnqueued += 1;
 			result.enqueuedByType[due] += 1;
 			console.log(
-				`[audit-scheduler] enqueued ${due} cycle=${cycle.id} env=${env.id} plan=${planKey}`,
+				`[audit-scheduler] enqueued ${due} cycle=${cycle.id} env=${env.id} plan=${planKey}`
 			);
 		} catch (err) {
-			console.error(
-				`[audit-scheduler] failed to schedule env=${env.id}:`,
-				err,
-			);
+			console.error(`[audit-scheduler] failed to schedule env=${env.id}:`, err);
 		}
 	}
 

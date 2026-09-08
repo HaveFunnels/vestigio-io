@@ -2913,7 +2913,19 @@ export async function healStuckCycles(): Promise<number> {
 export async function redispatchOrphanedPending(): Promise<number> {
 	const cutoff = new Date(Date.now() - ORPHANED_PENDING_AFTER_MS);
 	const orphans = await prisma.auditCycle.findMany({
-		where: { status: "pending", createdAt: { lt: cutoff } },
+		where: {
+			status: "pending",
+			createdAt: { lt: cutoff },
+			// Deactivating an environment has to stop work on it, not just
+			// stop new work being scheduled. Without this the heal pass
+			// happily resurrects cycles queued before the deactivation —
+			// observed in production on 2026-09-08, when a demo env that
+			// had just been switched off ran a full cycle anyway because a
+			// pending row from before the change was still sitting there.
+			// The scheduler already gates on activated; this closes the
+			// other door into the same work.
+			environment: { activated: true, organization: { status: { not: "suspended" } } },
+		},
 		select: { id: true, organizationId: true, environmentId: true },
 		take: 10, // safety cap per heal pass
 	});

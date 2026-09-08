@@ -171,6 +171,81 @@ const INVARIANTS: Invariant[] = [
       return null;
     },
   },
+  {
+    name: "every Prisma model declares what bounds its growth",
+    check: () => {
+      // The Sept 2026 volume-full outage was not one runaway table. It
+      // was the absence of any place that answered "what stops this from
+      // growing forever?" for each model. Four tables had no prune at
+      // all and nobody noticed until the database stopped booting.
+      //
+      // This invariant makes that question unskippable: a new model has
+      // to be classified before the build passes. Classifying it as
+      // ENTITY_BOUNDED is a fine answer — but it has to be a decision
+      // someone made, with a reason, not an omission.
+      const schema = fs.readFileSync(path.join(ROOT, "prisma/schema.prisma"), "utf-8");
+      const models = [...schema.matchAll(/^model\s+(\w+)\s*\{/gm)].map((m) => m[1]);
+
+      const policiesSrc = fs.readFileSync(
+        path.join(ROOT, "src/libs/retention-policies.ts"),
+        "utf-8",
+      );
+      // Deliberately textual rather than an import: this must keep
+      // working even when the module fails to typecheck, which is
+      // exactly when someone is mid-edit on the schema.
+      const classified = new Set<string>();
+      for (const m of policiesSrc.matchAll(/^\t\tmodel:\s*"(\w+)"/gm)) classified.add(m[1]);
+      for (const m of policiesSrc.matchAll(/^\t(\w+):\s*$/gm)) classified.add(m[1]);
+      for (const m of policiesSrc.matchAll(/^\t(\w+):\s*"/gm)) classified.add(m[1]);
+
+      // A policy naming a field the model does not have would throw at
+      // runtime, inside a catch, once an hour, forever — the same shape
+      // of silent failure this whole file exists to prevent. Check the
+      // field against the schema instead of finding out in production.
+      const modelBlocks = new Map<string, string>();
+      for (const m of schema.matchAll(/^model\s+(\w+)\s*\{([\s\S]*?)^\}/gm)) {
+        modelBlocks.set(m[1], m[2]);
+      }
+      const badFields: string[] = [];
+      const policyRe = /\{\s*model:\s*"(\w+)",\s*(?:column:\s*"(\w+)",\s*)?field:\s*"(\w+)"/g;
+      for (const m of policiesSrc.matchAll(policyRe)) {
+        const [, model, column, field] = m;
+        const block = modelBlocks.get(model);
+        if (!block) {
+          badFields.push(`${model} (no such model)`);
+          continue;
+        }
+        for (const col of [field, column].filter(Boolean) as string[]) {
+          if (!new RegExp(`^\\s*${col}\\s`, "m").test(block)) {
+            badFields.push(`${model}.${col}`);
+          }
+        }
+      }
+      if (badFields.length > 0) {
+        return (
+          `Retention policy references fields that do not exist: ${badFields.join(", ")}.\n` +
+          `  Fix the field name in src/libs/retention-policies.ts — at runtime this\n` +
+          `  would throw inside a catch once an hour and prune nothing.`
+        );
+      }
+
+      const unclassified = models.filter((m) => !classified.has(m));
+      if (unclassified.length > 0) {
+        return (
+          `${unclassified.length} model(s) have no declared growth bound: ${unclassified.join(", ")}.\n` +
+          `  Add each one to src/libs/retention-policies.ts, in exactly one of:\n` +
+          `    RETENTION_POLICIES  — grows with time, deleted on age\n` +
+          `    NULLIFY_POLICIES    — row is kept, a fat column is blanked\n` +
+          `    PRUNED_ELSEWHERE    — bounded by dedicated logic (cascade, per-plan window, ...)\n` +
+          `    ENTITY_BOUNDED      — grows with customers/environments, not with time\n` +
+          `  The test for ENTITY_BOUNDED is: does one environment running\n` +
+          `  forever add rows forever? If yes, it needs a retention window.\n` +
+          `  "It's small" is not a reason — RawBehavioralEvent was small once.`
+        );
+      }
+      return null;
+    },
+  },
 ];
 
 function main(): void {

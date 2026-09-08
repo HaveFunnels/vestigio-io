@@ -139,19 +139,32 @@ COPY . .
 # The push runs when BUILD_DATABASE_URL is set; otherwise skipped (local
 # docker-build with no DB access still succeeds, and the operator can run
 # `prisma db push` once manually if they ever skip the build-time path).
-# `db push --skip-generate` is idempotent (no-op when schema matches), so
-# re-running on every image build is safe.
+# 2026-09-08 — switched from `db push --accept-data-loss` to
+# `migrate deploy`.
 #
-# `--accept-data-loss` is set because Prisma's warning fires on
-# ANY change Prisma considers potentially destructive (adding a unique
-# constraint, narrowing a column type, etc.) — even when the actual
-# data would NOT be lost (e.g. no duplicate rows for the new unique
-# constraint). Without the flag, every such change breaks the deploy
-# and forces an out-of-band manual push. Schema changes are reviewed
-# in PR before they land, so the trade-off is: trust the PR review +
-# unblock CI, accept that a careless "drop column" PR could silently
-# delete data. The mitigation is to always review schema PRs with
-# `prisma migrate diff` output attached.
+# Why: `db push` diffs schema.prisma straight against the database and
+# never reads prisma/migrations. The migration files were therefore
+# decorative — the history table sat three migrations behind the repo
+# for months while the schema itself was current. Two sources of truth
+# disagreeing about what shape the database is in is what led an
+# operator to reach for `prisma migrate diff --shadow-database-url`
+# against production during the Sept 2026 incident, which reset it.
+#
+# `migrate deploy` applies only pending migration files, in order,
+# recording each one. It never diffs, never guesses, and cannot decide
+# on its own that dropping a column is fine. It is also the only path
+# that supports data migrations — the SurfaceRelation collapse in
+# 20260908020000 had to backfill and de-duplicate before it could add
+# a unique index, which `db push` structurally cannot express.
+#
+# The discipline this buys, and demands: a schema.prisma change with no
+# migration file will NOT reach production. `prisma migrate dev` locally
+# generates the file; commit it alongside the schema change.
+#
+# Note the removal of `--accept-data-loss`: there is no equivalent flag
+# here, by design. Destructive changes are now explicit SQL that a human
+# wrote and reviewed, rather than something Prisma inferred and was
+# pre-authorised to do.
 ARG DATABASE_URL
 ARG BUILD_DATABASE_URL
 
@@ -159,13 +172,13 @@ ARG BUILD_DATABASE_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 RUN if [ -n "$BUILD_DATABASE_URL" ]; then \
-      echo "[build] Running prisma db push against BUILD_DATABASE_URL (public proxy)"; \
-      DATABASE_URL="$BUILD_DATABASE_URL" DIRECT_URL="$BUILD_DATABASE_URL" npx prisma db push --skip-generate --accept-data-loss; \
+      echo "[build] Running prisma migrate deploy against BUILD_DATABASE_URL (public proxy)"; \
+      DATABASE_URL="$BUILD_DATABASE_URL" DIRECT_URL="$BUILD_DATABASE_URL" npx prisma migrate deploy; \
     elif [ -n "$DATABASE_URL" ] && ! echo "$DATABASE_URL" | grep -q ".railway.internal"; then \
-      echo "[build] Running prisma db push against DATABASE_URL"; \
-      DIRECT_URL="$DATABASE_URL" npx prisma db push --skip-generate --accept-data-loss; \
+      echo "[build] Running prisma migrate deploy against DATABASE_URL"; \
+      DIRECT_URL="$DATABASE_URL" npx prisma migrate deploy; \
     else \
-      echo "[build] No build-reachable DB URL set — skipping prisma db push (operator must reconcile schema manually if migration is required)"; \
+      echo "[build] No build-reachable DB URL set — skipping migrations (operator must run 'prisma migrate deploy' manually)"; \
     fi
 RUN npm run build
 

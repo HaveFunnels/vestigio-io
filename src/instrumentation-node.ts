@@ -312,24 +312,24 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	// ~1.3 GB/month — until the disk ran out.
 	//
 	// Two jobs here, deliberately separate:
-	//   1. Retention, which bounds the tables.
+	//   1. Retention, which bounds the tables. Driven by the policy
+	//      registry so the set of bounded tables is auditable in one
+	//      place and enforced by check-invariants, rather than being
+	//      whatever someone remembered to add to this cron.
 	//   2. A disk guard, because the failure mode above was invisible.
 	//      There was no signal between "fine" and "database down".
 	//
 	// DELETE alone does not return space to the OS — it only makes the
 	// pages reusable. That is fine steady-state (the tables stop growing)
 	// but it means a one-off VACUUM FULL is still needed after a large
-	// backlog is cleared. The guard logs when that applies.
-	const RETENTION = {
-		evidenceDays: 30,
-		// An edge unseen for this long is gone from the site. Keyed on
-		// lastSeenAt, which the current-state writer now maintains.
-		surfaceRelationDays: 30,
-		pageProbeDays: 30,
-		// Cycles are the spine of plan history, so they get a longer
-		// window than the artifacts hanging off them.
-		auditCycleDays: 90,
-	};
+	// backlog is cleared. The guard says so when it fires.
+	// Windows live in src/libs/retention-policies.ts, not here, because a
+	// list of tables in a cron body is exactly what nobody audits. That
+	// file is enforced by a check-invariants rule: a new model fails the
+	// build until someone declares what bounds it.
+	const { RETENTION_POLICIES, NULLIFY_POLICIES } =
+		await import("@/libs/retention-policies");
+
 	const DB_SIZE_WARN_PCT = 70;
 	const DB_SIZE_CRITICAL_PCT = 85;
 	const VOLUME_MB = Number(process.env.DB_VOLUME_SIZE_MB || 5000);
@@ -338,53 +338,154 @@ export async function registerNodeInstrumentation(): Promise<void> {
 		await withLeadership("storage-retention", { ttlSec: 300 }, async () => {
 			const cutoff = (days: number) =>
 				new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-			try {
-				// Deleting the cycle cascades to Evidence, Finding and Action.
-				// This relies on Evidence.auditCycleId being indexed — without
-				// it each cycle costs a sequential scan of the whole Evidence
-				// table and this pass never finishes. See schema.prisma.
-				const cycles = await prisma.auditCycle.deleteMany({
-					where: { createdAt: { lt: cutoff(RETENTION.auditCycleDays) } },
-				});
-				// Evidence not attached to a cycle (auditCycleId null) is not
-				// reached by the cascade, so it needs its own pass.
-				const evidence = await prisma.evidence.deleteMany({
-					where: {
-						auditCycleId: null,
-						createdAt: { lt: cutoff(RETENTION.evidenceDays) },
-					},
-				});
-				const relations = await prisma.surfaceRelation.deleteMany({
-					where: { lastSeenAt: { lt: cutoff(RETENTION.surfaceRelationDays) } },
-				});
-				const probes = await prisma.pageProbe.deleteMany({
-					where: { observedAt: { lt: cutoff(RETENTION.pageProbeDays) } },
-				});
-				if (cycles.count || evidence.count || relations.count || probes.count) {
-					console.log(
-						`[storage-retention] cycles=${cycles.count} evidence=${evidence.count} relations=${relations.count} probes=${probes.count}`,
+			const pruned: string[] = [];
+			const failures: string[] = [];
+
+			// Ordered as declared: AuditCycle runs first so its cascade to
+			// Evidence/Finding/Action leaves the later passes less to do.
+			// That cascade only terminates in reasonable time because
+			// Evidence.auditCycleId is indexed — see schema.prisma.
+			for (const policy of RETENTION_POLICIES) {
+				// One bad policy must not take the whole pass down with it;
+				// a typo'd field would otherwise silently stop every table
+				// after it from ever being pruned.
+				try {
+					const delegate = (prisma as any)[
+						policy.model.charAt(0).toLowerCase() + policy.model.slice(1)
+					];
+					if (!delegate?.deleteMany) {
+						failures.push(`${policy.model}(no delegate)`);
+						continue;
+					}
+					const where = { [policy.field]: { lt: cutoff(policy.days) } };
+
+					// Reclaim the blob before dropping the pointer to it.
+					// Done first and deliberately non-fatally: a failed R2
+					// delete leaves one orphan object, while skipping the row
+					// delete would leave the table growing — the worse of the
+					// two. Batched because DeleteObjects caps at 1000 keys.
+					if (policy.r2KeyField) {
+						try {
+							const doomed = await delegate.findMany({
+								where,
+								select: { [policy.r2KeyField]: true },
+							});
+							const keys = doomed
+								.map((r: any) => r[policy.r2KeyField!])
+								.filter((k: unknown): k is string => typeof k === "string" && k.length > 0);
+							if (keys.length > 0) {
+								const { deleteScreenshots } = await import("@/libs/r2-screenshots");
+								for (let i = 0; i < keys.length; i += 1000) {
+									await deleteScreenshots(keys.slice(i, i + 1000));
+								}
+								pruned.push(`${policy.model}.r2=${keys.length}`);
+							}
+						} catch (err) {
+							console.warn(
+								`[storage-retention] R2 reclaim for ${policy.model} failed (rows still pruned, objects orphaned):`,
+								err instanceof Error ? err.message : err,
+							);
+						}
+					}
+
+					const res = await delegate.deleteMany({ where });
+					if (res.count > 0) pruned.push(`${policy.model}=${res.count}`);
+				} catch (err) {
+					failures.push(
+						`${policy.model}(${err instanceof Error ? err.message.split("\n")[0] : String(err)})`,
 					);
 				}
-			} catch (err) {
-				console.error("[storage-retention] pass failed:", err);
 			}
 
-			// Disk guard. Reported even when retention throws above, because
-			// a failing retention pass is exactly when the size matters.
+			for (const policy of NULLIFY_POLICIES) {
+				try {
+					const delegate = (prisma as any)[
+						policy.model.charAt(0).toLowerCase() + policy.model.slice(1)
+					];
+					const res = await delegate.updateMany({
+						where: {
+							[policy.field]: { lt: cutoff(policy.days) },
+							[policy.column]: { not: null },
+						},
+						data: { [policy.column]: null },
+					});
+					if (res.count > 0)
+						pruned.push(`${policy.model}.${policy.column}=${res.count}`);
+				} catch (err) {
+					failures.push(
+						`${policy.model}.${policy.column}(${err instanceof Error ? err.message.split("\n")[0] : String(err)})`,
+					);
+				}
+			}
+
+			if (pruned.length > 0) console.log(`[storage-retention] ${pruned.join(" ")}`);
+			// Loud on failure. The behavioral prune that existed before this
+			// counted rows into a variable it never logged, so a working pass
+			// and a silently failing one were indistinguishable for months.
+			if (failures.length > 0) {
+				console.error(`[storage-retention] FAILED: ${failures.join(" ")}`);
+			}
+
+			// Disk guard. Runs even when retention throws above, because a
+			// failing retention pass is exactly when the size matters.
 			try {
 				const rows = await prisma.$queryRaw<Array<{ mb: number }>>`
 					SELECT pg_database_size(current_database()) / 1024 / 1024 AS mb
 				`;
 				const usedMb = Number(rows[0]?.mb ?? 0);
 				const pct = Math.round((usedMb / VOLUME_MB) * 100);
-				if (pct >= DB_SIZE_CRITICAL_PCT) {
-					console.error(
-						`[storage-guard] CRITICAL: database at ${usedMb}MB of ${VOLUME_MB}MB (${pct}%). Retention alone will not recover this — a VACUUM FULL is required to return space to the volume.`,
-					);
-				} else if (pct >= DB_SIZE_WARN_PCT) {
-					console.warn(
-						`[storage-guard] database at ${usedMb}MB of ${VOLUME_MB}MB (${pct}%)`,
-					);
+
+				if (pct >= DB_SIZE_WARN_PCT) {
+					const critical = pct >= DB_SIZE_CRITICAL_PCT;
+					const line =
+						`database at ${usedMb}MB of ${VOLUME_MB}MB (${pct}%)` +
+						(critical
+							? ". Retention alone will NOT recover this — DELETE frees pages for reuse but does not return them to the volume. A VACUUM FULL is required."
+							: "");
+					if (critical) console.error(`[storage-guard] CRITICAL: ${line}`);
+					else console.warn(`[storage-guard] ${line}`);
+
+					// A log line is not an alert. The 2026-09 outage ran for
+					// eight days with the failure visible in logs the whole
+					// time. Above the critical threshold this has to reach a
+					// person, throttled to once per day so it stays readable.
+					if (critical) {
+						const admins = (process.env.ADMIN_EMAILS || "")
+							.split(",")
+							.map((e) => e.trim())
+							.filter(Boolean);
+						if (admins.length === 0) {
+							console.error(
+								"[storage-guard] ADMIN_EMAILS is unset — nobody is being told the disk is nearly full.",
+							);
+						} else {
+							const { safeRedisCall } = await import("@/libs/redis");
+							// NX+EX: the first caller of the day wins and the key
+							// expires on its own. Null (Redis down) means we send —
+							// a duplicate alert beats a missed one.
+							const firstToday = await safeRedisCall(async (c) => {
+								const key = `storage-guard:alerted:${new Date().toISOString().slice(0, 10)}`;
+								return (await c.set(key, "1", "EX", 86400, "NX")) === "OK";
+							});
+							if (firstToday !== false) {
+								const { notifyDirect } = await import("@/libs/notifications");
+								for (const email of admins) {
+									await notifyDirect({
+										event: "activation_link" as any,
+										to: { email },
+										subject: `[Vestigio] Banco em ${pct}% do volume`,
+										bodyHtml:
+											`<p>O banco de produção está em <strong>${usedMb}MB de ${VOLUME_MB}MB (${pct}%)</strong>.</p>` +
+											`<p>A retenção sozinha não recupera esse espaço: DELETE libera páginas para reuso mas não devolve ao volume. É preciso um VACUUM FULL.</p>` +
+											`<p>Em setembro de 2026 esse mesmo cenário derrubou o banco por oito dias.</p>`,
+										bodyText: `Banco em ${usedMb}MB de ${VOLUME_MB}MB (${pct}%). Retencao nao devolve espaco ao volume — rode VACUUM FULL.`,
+										tag: "storage_guard",
+									});
+								}
+								console.error(`[storage-guard] alerted ${admins.length} admin(s)`);
+							}
+						}
+					}
 				}
 			} catch (err) {
 				console.error("[storage-guard] size check failed:", err);

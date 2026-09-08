@@ -8,9 +8,13 @@ cmds = ["npm ci --legacy-peer-deps"]
 cmds = ["npx prisma generate", "npm run build"]
 
 [start]
-# --accept-data-loss matches the Dockerfile builder rationale (see
-# Dockerfile lines 75-87 comment block): Prisma's "data loss" warning
-# fires on safe additions like new unique constraints when no actual
-# duplicates exist, and blocking the start phase on it just stalls
-# deploys. Schema PRs are the place to catch real data-loss intent.
-cmd = "npx prisma db push --skip-generate --accept-data-loss && npm run start"
+# 2026-09-08 — `db push --accept-data-loss` replaced by `migrate deploy`.
+# See the long rationale in the Dockerfile builder stage: db push never
+# read prisma/migrations, so the migration history drifted three files
+# behind the schema for months, and that disagreement is what led to
+# production being reset during the Sept 2026 incident.
+#
+# Consequence to keep in mind: a schema.prisma change without a
+# committed migration file will not reach production. Generate one with
+# `prisma migrate dev` and commit it with the schema change.
+cmd = "npx prisma migrate deploy && npm run start"

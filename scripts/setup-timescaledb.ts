@@ -32,7 +32,7 @@ async function main() {
 	try {
 		// Enable TimescaleDB extension. No-op if already enabled.
 		await prisma.$executeRawUnsafe(
-			`CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;`,
+			`CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;`
 		);
 		console.log("[timescaledb] extension enabled");
 	} catch (err: any) {
@@ -82,13 +82,15 @@ async function main() {
 			);
 		`);
 		console.log(
-			"[timescaledb] RawBehavioralEvent is now a hypertable (7-day chunks by receivedAt)",
+			"[timescaledb] RawBehavioralEvent is now a hypertable (7-day chunks by receivedAt)"
 		);
 	} catch (err: any) {
 		// "already a hypertable" is not an error — if_not_exists handles it,
 		// but some versions surface a notice as an error. Swallow it.
 		if (err?.message?.includes("already a hypertable")) {
-			console.log("[timescaledb] RawBehavioralEvent was already a hypertable — no-op");
+			console.log(
+				"[timescaledb] RawBehavioralEvent was already a hypertable — no-op"
+			);
 		} else {
 			throw err;
 		}
@@ -113,7 +115,9 @@ async function main() {
 				if_not_exists => TRUE
 			);
 		`);
-		console.log("[timescaledb] compression enabled (segmentby=envId, 7-day policy)");
+		console.log(
+			"[timescaledb] compression enabled (segmentby=envId, 7-day policy)"
+		);
 	} catch (err: any) {
 		// Compression already configured — safe to swallow
 		if (

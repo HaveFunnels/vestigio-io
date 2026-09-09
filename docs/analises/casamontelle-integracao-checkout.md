@@ -68,7 +68,7 @@ Alternativa passiva, se preferirem não chamar a API: o pixel também aceita um 
 
 Vocês têm razão: no lado de vocês, é um provider `vestigio` no registro de pixels, por checkout, com o env id — como Meta e TikTok. Isso é arquitetura da plataforma de vocês, não imposição nossa; do nosso lado o requisito é só o snippet carregado com o mesmo `data-env` do storefront. O ingest já aceita o subdomínio, então nada muda no nosso backend.
 
-Sobre canonical vs URL real: o pixel lê `canonicalUrl()`, que na página de vocês aponta para `casamontelle.com`. Para o funil, queremos a **URL real do checkout** (`seguro.casamontelle.com/...`), não o canonical — é o que distingue "chegou no checkout" de "está no produto". Se o canonical do checkout aponta para o storefront, passamos a preferir `location.href` no checkout. Ajuste nosso, registrado.
+Sobre canonical vs URL real: vocês declaram `rel="canonical"` do checkout e da página de pedido apontando para `casamontelle.com` (deliberado, para indexação e link-preview). Na v2.4 isso colapsaria o campo `url` de todo evento do checkout para a home do storefront, e o agregador atribuiria o comportamento inteiro do checkout à superfície home — contaminando a leitura. **Corrigido na v2.5, do nosso lado e de forma geral:** o `canonicalUrl()` passou a ignorar canonical cross-host (hostname diferente do da página) e usar a URL real do checkout, sem parâmetros de tracking. Canonical apontando para outro host é justamente o sinal de que a página não quer ser tratada como aquele destino — vale para qualquer checkout em subdomínio, não só o de vocês. **Não precisa de ajuste de vocês.**
 
 ---
 
@@ -107,7 +107,7 @@ Os três pontos bloqueantes e os dois menores do parecer estão certos. Estado:
 
 **2. `vg_sid` adotado sem verificação.** Corrigido (`1d928b92`): a sessão carregada só é adotada se o link foi seguido dentro de **30 min** (TTL no parâmetro `vg_t`) E, quando há cookie, se o `vg_vid` da URL bate com o do dispositivo. Um link de checkout compartilhado horas depois abre sessão nova (mesmo visitante se o cookie estiver presente), não entra na sessão de quem enviou. Cobre os dois cenários que vocês levantaram.
 
-**3. SRI exige URL versionada — de acordo, e é a condição do gate.** O snippet agora carrega versão (v2.4) e a instalação no checkout deve fixar `/snippet/v2.4/vestigio.js`, imutável, com o hash SRI. O `/snippet/vestigio.js` (latest) fica só no storefront, que não é superfície de pagamento. Política: a versão sobe a cada mudança relevante para o checkout, e o hash é reemitido junto. **A infra de servir o caminho versionado imutável é o trabalho que fecha o gate — está do nosso lado, e é o pré-requisito para ativar no checkout.**
+**3. SRI exige URL versionada — de acordo, e é a condição do gate.** O snippet agora carrega versão (v2.5) e a instalação no checkout deve fixar `/snippet/v2.5/vestigio.js`, imutável, com o hash SRI. O `/snippet/vestigio.js` (latest) fica só no storefront, que não é superfície de pagamento. Política: a versão sobe a cada mudança relevante para o checkout, e o hash é reemitido junto. **A infra de servir o caminho versionado imutável é o trabalho que fecha o gate — está do nosso lado, e é o pré-requisito para ativar no checkout.**
 
 **Detalhe (value):** documentado como **BRL decimal** (ex.: `129.90`) na API `confirm`.
 
@@ -118,7 +118,7 @@ Os três pontos bloqueantes e os dois menores do parecer estão certos. Estado:
 Concordamos com vocês: **ativar na Montelle só depois do SRI com URL versionada.** A costura no storefront já está no ar sem nada de vocês, coletando o funil site-inteiro. A página de pagamento é o lugar errado para um script que ainda muda várias vezes por dia sem hash imutável. O caminho:
 
 1. Storefront: já ativo, sem ação de vocês.
-2. Nós: publicar `/snippet/v2.4/vestigio.js` imutável + hash SRI.
+2. Nós: publicar `/snippet/v2.5/vestigio.js` imutável + hash SRI.
 3. Vocês: provider `vestigio` no checkout apontando para a URL versionada + SRI; o `confirm` no pago; a linha do `decorate` se o Comprar for JS.
 
 Assim o checkout entra com o script pinado e verificado, e o storefront já vai coletando enquanto isso.

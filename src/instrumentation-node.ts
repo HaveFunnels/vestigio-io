@@ -235,53 +235,29 @@ export async function registerNodeInstrumentation(): Promise<void> {
 				where: { expiresAt: { lt: sevenDaysAgo } },
 			});
 
-			// Plan-based behavioral event retention:
-			//   vestigio (starter) + pro → 30 days
-			//   max                      → 90 days
-			// Walks each plan tier separately so an org on "max" keeps
-			// 90 days while "vestigio" orgs get pruned at 30 days.
-			// Indexed by receivedAt for fast deleteMany.
-			const RETENTION_DAYS: Record<string, number> = {
-				vestigio: 30,
-				pro: 30,
-				max: 90,
-			};
-			const DEFAULT_RETENTION_DAYS = 30;
-
-			// Group environments by their org's plan to apply per-plan retention.
-			const orgsWithPlan = await prisma.organization.findMany({
-				select: { id: true, plan: true },
-			});
-			const planByOrgId = new Map(orgsWithPlan.map((o) => [o.id, o.plan || "vestigio"]));
-
-			const envRows = await prisma.environment.findMany({
-				select: { id: true, organizationId: true },
-			});
-
-			// Bucket env IDs by retention window.
-			const envsByRetention = new Map<number, string[]>();
-			for (const env of envRows) {
-				const plan = planByOrgId.get(env.organizationId) || "vestigio";
-				const days = RETENTION_DAYS[plan] ?? DEFAULT_RETENTION_DAYS;
-				let arr = envsByRetention.get(days);
-				if (!arr) {
-					arr = [];
-					envsByRetention.set(days, arr);
-				}
-				arr.push(env.id);
-			}
-
-			let totalPruned = 0;
-			for (const [days, envIds] of envsByRetention) {
-				const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-				const result = await prisma.rawBehavioralEvent.deleteMany({
+			// Raw behavioral events are now STAGING, not storage. The
+			// per-session aggregator deletes each session's raw rows ~35min
+			// after it goes idle (BEHAVIORAL_AGGREGATE_PRUNE), and the
+			// plan-tiered retention window (30/90d) lives on
+			// BehavioralSessionAggregate instead — where it costs ~13x less.
+			//
+			// This is now only a BACKSTOP: raw rows older than 2 days that
+			// still exist were never aggregated (malformed session, a tab
+			// left open so the session never went idle, an aggregator
+			// outage). Two days is far beyond the ~35min aggregation lag, so
+			// it never races the aggregator, and it keeps the staging table
+			// bounded even if aggregation stalls. Aggregated data is
+			// unaffected — the aggregate is the retained copy.
+			const RAW_STAGING_BACKSTOP_DAYS = 2;
+			const totalPruned = (
+				await prisma.rawBehavioralEvent.deleteMany({
 					where: {
-						envId: { in: envIds },
-						receivedAt: { lt: cutoff },
+						receivedAt: {
+							lt: new Date(Date.now() - RAW_STAGING_BACKSTOP_DAYS * 24 * 60 * 60 * 1000),
+						},
 					},
-				});
-				totalPruned += result.count;
-			}
+				})
+			).count;
 			// Previously accumulated and then dropped on the floor, so a
 			// working prune and a silently failing one looked identical
 			// from the logs. They must not.

@@ -162,6 +162,26 @@ export async function GET(request: Request, { params }: RouteParams) {
 			select: { id: true, status: true, currentPhase: true, createdAt: true },
 		});
 
+		// A cycle that finished moments ago also means a plan is coming:
+		// generation is kicked off after the cycle is marked complete, so
+		// there is a window where no cycle is in flight and the plan row
+		// does not exist yet. Reporting only running cycles let a poll
+		// landing in that window resolve to "missing", which is a terminal
+		// state the page stops polling on — the plan then appeared behind
+		// a screen that had given up watching for it.
+		const RECENTLY_COMPLETED_MS = 5 * 60 * 1000;
+		const recentCycle = runningCycle
+			? null
+			: await prisma.auditCycle.findFirst({
+				where: {
+					environmentId: envId,
+					status: "complete",
+					completedAt: { gt: new Date(Date.now() - RECENTLY_COMPLETED_MS) },
+				},
+				orderBy: { completedAt: "desc" },
+				select: { id: true, completedAt: true },
+			});
+
 		const status = plansEverGenerated === 0 ? "awaiting_first_cycle" : "missing";
 		return NextResponse.json(
 			{
@@ -173,7 +193,16 @@ export async function GET(request: Request, { params }: RouteParams) {
 						phase: runningCycle.currentPhase,
 						startedAt: runningCycle.createdAt,
 					}
-					: null,
+					: recentCycle
+						? {
+							// Cycle is done; plan generation has not written its
+							// row yet. No phase to report — the honest state is
+							// "finishing", not a stale cycle phase.
+							status: "complete",
+							phase: null,
+							startedAt: recentCycle.completedAt,
+						}
+						: null,
 			},
 			{ status: 404 },
 		);

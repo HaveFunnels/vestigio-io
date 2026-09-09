@@ -48,6 +48,8 @@ interface FetchState {
 	error?: string;
 	/** Real pipeline phase of the cycle that will produce this plan. */
 	phase?: string | null;
+	/** Whether the cycle behind a "preparing" state has already finished. */
+	cycleDone?: boolean;
 }
 
 // Cycle phases the audit runner records, in the order they occur. Copy
@@ -209,7 +211,7 @@ export default function StrategyPlanPage() {
 					// "we're analyzing your site" empty state instead of the
 					// generic missing-month one.
 					let firstCycle = false;
-					let inFlight: { phase?: string | null } | null = null;
+					let inFlight: { phase?: string | null; status?: string } | null = null;
 					try {
 						const body = await res.clone().json();
 						firstCycle = body?.status === "awaiting_first_cycle";
@@ -220,8 +222,15 @@ export default function StrategyPlanPage() {
 					// plan is coming. Saying "not generated" here would be
 					// wrong for the ~16 minutes a targeted cycle takes.
 					if (inFlight) {
-						setState({ status: "preparing", phase: inFlight.phase ?? null });
-						pollTimer = setTimeout(load, 15000);
+						setState({
+							status: "preparing",
+							phase: inFlight.phase ?? null,
+							cycleDone: inFlight.status === "complete",
+						});
+						// Tighter once the cycle is done: generation takes about
+						// a minute, so a 15s gap would leave the finished plan
+						// sitting unseen for most of it.
+						pollTimer = setTimeout(load, inFlight.status === "complete" ? 5000 : 15000);
 						return;
 					}
 
@@ -277,11 +286,19 @@ export default function StrategyPlanPage() {
 	}
 
 	if (state.status === "preparing") {
-		const label = state.phase ? PHASE_LABELS[state.phase] : null;
+		// Two different waits behind one state: the analysis still running,
+		// or the analysis done and the plan being assembled from it.
+		const label = state.cycleDone
+			? "Montando o plano do mês…"
+			: (state.phase ? PHASE_LABELS[state.phase] : null) ?? "Analisando seu site…";
 		return (
 			<PlanPageSkeleton
-				caption={label ?? "Analisando seu site…"}
-				subCaption="O plano deste mês é montado ao fim da análise. Esta página se atualiza sozinha."
+				caption={label}
+				subCaption={
+					state.cycleDone
+						? "Esta página se atualiza sozinha."
+						: "O plano deste mês é montado ao fim da análise. Esta página se atualiza sozinha."
+				}
 			/>
 		);
 	}

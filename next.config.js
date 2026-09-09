@@ -205,13 +205,28 @@ const nextConfig = {
 					},
 				],
 			},
-			// Behavioral snippet — short TTL so hot fixes reach every
-			// customer within minutes. Cross-origin CORS so the pixel
-			// loads cleanly from customer domains (Access-Control-Allow-
-			// Origin: * because there's no credentialed request here —
-			// the ingest endpoint uses first-party envId, not cookies).
+			// Versioned snippet — immutable. /snippet/v<X.Y>/vestigio.js is
+			// frozen once per version (scripts/publish-snippet-version.mjs)
+			// and never rewritten, so it can be cached forever and pinned
+			// with a Subresource Integrity hash on a checkout payment page.
+			// crossorigin="anonymous" on that <script> makes the browser
+			// send a CORS request, so ACAO must be present. CORP lets the
+			// cross-origin subresource load without an embedder policy
+			// blocking it. This rule is listed BEFORE the latest rule so
+			// the version segment matches here, not there.
 			{
-				source: "/snippet/:file*",
+				source: "/snippet/:v(v\\d+\\.\\d+)/:file*",
+				headers: [
+					{ key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+					{ key: "Access-Control-Allow-Origin", value: "*" },
+					{ key: "Cross-Origin-Resource-Policy", value: "cross-origin" },
+				],
+			},
+			// Latest snippet — short TTL so hot fixes reach the storefront
+			// within minutes. The storefront is not a payment page, so it
+			// uses this unversioned URL; only the checkout pins a version.
+			{
+				source: "/snippet/vestigio.js",
 				headers: [
 					{ key: "Cache-Control", value: "public, max-age=300, must-revalidate" },
 					{ key: "Access-Control-Allow-Origin", value: "*" },

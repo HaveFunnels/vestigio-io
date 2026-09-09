@@ -26,11 +26,12 @@
 		"test:all": "npx tsx --test tests/*.test.ts",
 		"check:invariants": "npx tsx scripts/check-invariants.ts",
 		"codegen:inference-keys": "npx tsx scripts/codegen-inference-keys.ts",
-		"test-build": "npm run check-style && npm run typecheck && npm run check:invariants && npm run build",
+		"test-build": "npm run check-style && npm run typecheck && npm run check:invariants && npm run check:snippet && npm run build",
 		"seed": "npx tsx prisma/seed.ts",
 		"test:unit": "vitest run",
 		"test:unit:watch": "vitest",
-		"test:unit:coverage": "vitest run --coverage"
+		"test:unit:coverage": "vitest run --coverage",
+		"check:snippet": "node scripts/publish-snippet-version.mjs --check"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.81.0",

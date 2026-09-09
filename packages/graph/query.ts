@@ -103,7 +103,19 @@ export class GraphQuery {
     const targetUrl = target.url ?? '';
     const targetHost = (target.host ?? '').toLowerCase();
     if (targetHost === 'shopify.com' || targetHost.endsWith('.shopify.com')) {
-      if (/\/\d+\/account(\/|$|\?)/.test(targetUrl) || /accounts?\./.test(targetHost)) return true;
+      // Shopify's new customer accounts move through several path shapes:
+      //   shopify.com/<shop_id>/account         (account area)
+      //   shopify.com/authentication/<shop_id>  (login redirect)
+      //   shopify.com/<shop_id>/auth...          (auth flow)
+      // None are the purchase path; all are the platform's own login.
+      if (
+        /\/\d+\/account(\/|$|\?)/.test(targetUrl) ||
+        /\/authentication(\/|$|\?)/.test(targetUrl) ||
+        /\/\d+\/auth/.test(targetUrl) ||
+        /accounts?\./.test(targetHost)
+      ) {
+        return true;
+      }
     }
     if (/^accounts?\./.test(targetHost)) return true; // accounts.google.com etc.
     const sourcePath = (() => {

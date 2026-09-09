@@ -65,6 +65,12 @@ const googleAccounts = node({
 	host: "accounts.google.com",
 	is_external: true,
 });
+const shopifyAuth = node({
+	id: "n_shopify_auth",
+	url: "https://shopify.com/authentication/87903076629",
+	host: "shopify.com",
+	is_external: true,
+});
 const unknownExternal = node({
 	id: "n_unknown",
 	url: "https://tracker-desconhecido.com/x",
@@ -82,6 +88,15 @@ describe("findTrustBoundaries · platform logins", () => {
 		// Still inventoried as a boundary — it IS an external link.
 		expect(r.boundary_edges).toHaveLength(1);
 		expect(r.external_hosts).toContain("shopify.com");
+	});
+
+	it("does not count the Shopify /authentication login redirect as a trust gap", () => {
+		// The exact casamontelle shape: /account redirects to
+		// shopify.com/authentication/<shop_id>, not /account.
+		const q = new GraphQuery(
+			graphWith([accountPage, shopifyAuth], [{ ...edge("n_account", "n_shopify_auth"), edge_type: "redirect" } as unknown as GraphEdge]),
+		);
+		expect(q.findTrustBoundaries().trust_gaps).toHaveLength(0);
 	});
 
 	it("does not count accounts.* SSO hosts as a trust gap", () => {

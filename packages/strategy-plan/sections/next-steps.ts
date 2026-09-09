@@ -410,8 +410,33 @@ async function pickTopActions(
 			{ impactMidpoint: "desc" },
 			{ id: "asc" },
 		],
-		take: 15,
+		take: 30,
 	});
+
+	// The action query has no cycle scope: it reads every action ever
+	// produced for the env. Incremental (hot) cycles do not regenerate
+	// all actions, so scoping to the latest cycle would drop valid ones —
+	// but it means an action from a pre-fix cycle survives forever and
+	// keeps surfacing even after the engine stopped producing its cause.
+	// That is how the /account "buyers thrown to another domain" step kept
+	// coming back across regenerations after the trust finding was fixed
+	// and resolved: the FINDING was gone, but its ACTION lingered.
+	//
+	// An action is only live while at least one of the findings it was
+	// built from is still open. This ties action freshness to finding
+	// status — which the engine's lifecycle and, when needed, a manual
+	// resolve both control — without the risk of latest-cycle scoping.
+	const openInferenceKeys = new Set(
+		(
+			await prisma.finding.findMany({
+				where: {
+					environmentId: ctx.environmentId,
+					status: { in: ["created", "confirmed"] },
+				},
+				select: { inferenceKey: true },
+			})
+		).map((f) => f.inferenceKey),
+	);
 
 	const out: ActionRow[] = [];
 	for (const r of rows) {
@@ -426,6 +451,13 @@ async function pickTopActions(
 		} catch {
 			// Projection blob missing or malformed — that's OK, the step
 			// still ships with decisionKey-derived metadata.
+		}
+		// Skip actions whose every linked finding is resolved/gone — the
+		// action is stale, its cause no longer detected. An action with no
+		// linked inferences at all is kept (decisionKey-only metadata, no
+		// finding to check against).
+		if (inferenceKeys.length > 0 && !inferenceKeys.some((k) => openInferenceKeys.has(k))) {
+			continue;
 		}
 		// T3 + T5 — calibrate severity from impact; normalize surface to
 		// a path so titles never leak full URLs. Both happen at row hydration

@@ -1220,6 +1220,14 @@ model BehavioralSessionAggregate {
   // "truncated" instead of silently showing a short journey as complete.
   timelineTruncated Boolean @default(false)
 
+  // First non-null user agent of the session, truncated by the pixel to
+  // 200 chars, no PII. Kept because device classification (mobile vs
+  // desktop) is UA-based and the readers that migrate off raw events
+  // need it — process-behavioral's mobile_revenue cohort especially, on
+  // stores that are 90%+ mobile. Null on aggregates written before this
+  // column, where the reader falls back to a behavioral heuristic.
+  userAgent String?
+
   environment Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
 
   @@unique([envId, sessionId])

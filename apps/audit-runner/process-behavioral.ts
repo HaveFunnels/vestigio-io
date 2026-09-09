@@ -89,109 +89,65 @@ export async function processBehavioralEventsForEnv(
   const hours = windowHours && windowHours > 0 ? windowHours : DEFAULT_WINDOW_HOURS;
   const since = new Date(Date.now() - hours * 60 * 60 * 1000);
 
-  let rows;
+  // ── Read pre-aggregated sessions (Wave: storage) ──
+  // Reads BehavioralSessionAggregate, not raw events. Each row already
+  // holds the SessionAggregate that aggregateSession() produced when the
+  // session went idle — so the per-cycle re-aggregation (which reran
+  // aggregateSession over the last 30 days on EVERY cycle, ~96x/day at
+  // hot cadence) is gone. The reduction below is unchanged; only the
+  // source of the SessionAggregate[] moved from "recompute from raw" to
+  // "read what was already computed".
+  let aggRows;
   try {
-    rows = await prisma.rawBehavioralEvent.findMany({
-      where: { envId, occurredAt: { gte: since } },
-      orderBy: [{ sessionId: "asc" }, { occurredAt: "asc" }],
-      take: MAX_SESSIONS_PER_RUN * 100, // generous per-row cap; ~100 events/session
+    aggRows = await prisma.behavioralSessionAggregate.findMany({
+      where: { envId, startedAt: { gte: since } },
+      orderBy: { startedAt: "asc" },
+      take: MAX_SESSIONS_PER_RUN,
+      select: { aggregate: true, urls: true, userAgent: true, eventCount: true },
     });
   } catch (err) {
     console.warn(`[process-behavioral] read failed for env ${envId}:`, err);
     return { evidence: [], sessionCount: 0, eventCount: 0 };
   }
 
-  if (rows.length === 0) {
+  if (aggRows.length === 0) {
     return { evidence: [], sessionCount: 0, eventCount: 0 };
   }
 
-  // ── Group rows by sessionId ──
-  // Rows are already sorted by (sessionId, occurredAt) so a single linear
-  // pass produces ordered batches. We also collect the chronologically
-  // first attribution row per session for first-touch semantics, and the
-  // first non-null user-agent for the device classifier (Wave 0.3 cohorts).
-  const sessionMap = new Map<string, { events: RawEventShape[]; attribution: AttributionContext | null }>();
+  const aggregates: SessionAggregate[] = [];
   const sessionUserAgent = new Map<string, string>();
-  const touchedRowIds: string[] = [];
-
-  for (const row of rows) {
-    touchedRowIds.push(row.id);
-    if (sessionMap.size >= MAX_SESSIONS_PER_RUN && !sessionMap.has(row.sessionId)) {
-      continue; // safety cap reached — skip new sessions
-    }
-
-    let bucket = sessionMap.get(row.sessionId);
-    if (!bucket) {
-      bucket = { events: [], attribution: null };
-      sessionMap.set(row.sessionId, bucket);
-    }
-
-    // Capture user-agent once per session for the device classifier.
-    // Mobile/desktop split powers acquisition_integrity + mobile_revenue
-    // workspaces. Without this, every session would land in 'desktop'.
-    if (!sessionUserAgent.has(row.sessionId) && row.userAgent) {
-      sessionUserAgent.set(row.sessionId, row.userAgent);
-    }
-
-    // Decode the stored payload — Wave 0.2's sanitizer wrote it
-    let parsed: RawEventShape | null = null;
-    try {
-      parsed = JSON.parse(row.payload) as RawEventShape;
-    } catch {
-      continue; // malformed row — skip silently
-    }
-    if (!parsed) continue;
-
-    bucket.events.push({
-      type: parsed.type,
-      ts: parsed.ts,
-      session_id: parsed.session_id || row.sessionId,
-      env_id: parsed.env_id || row.envId,
-      url: parsed.url || row.url,
-      data: parsed.data || {},
-    });
-
-    // First non-null attribution wins (Wave 0.2 only stores it on the
-    // first row of each batch, so this is usually a no-op past row 0).
-    if (!bucket.attribution && row.attribution) {
-      try {
-        bucket.attribution = JSON.parse(row.attribution) as AttributionContext;
-      } catch {
-        // ignore — fall back to empty attribution below
-      }
-    }
-  }
-
-  // ── Compute pixel coverage page types from raw event URLs ──
   const coveragePageTypes = new Set<string>();
-  for (const [, bucket] of sessionMap.entries()) {
-    for (const ev of bucket.events) {
-      if (ev.url) {
-        const pt = classifyUrlPageType(ev.url);
+  let eventCountTotal = 0;
+
+  for (const row of aggRows) {
+    let agg: SessionAggregate | null = null;
+    try {
+      agg = JSON.parse(row.aggregate) as SessionAggregate;
+    } catch {
+      continue; // malformed aggregate — skip
+    }
+    if (!agg) continue;
+    aggregates.push(agg);
+    eventCountTotal += row.eventCount;
+
+    // Device classifier needs the session's user agent, stored on the
+    // aggregate row (first non-null UA of the session).
+    if (row.userAgent) sessionUserAgent.set(agg.session_id, row.userAgent);
+
+    // Pixel coverage from the session's deduped URLs.
+    try {
+      const urls = JSON.parse(row.urls) as string[];
+      for (const u of urls) {
+        const pt = classifyUrlPageType(u);
         if (pt) coveragePageTypes.add(pt);
       }
-    }
-  }
-
-  // ── Run aggregateSession() per session ──
-  const aggregates: SessionAggregate[] = [];
-  for (const [sessionId, bucket] of sessionMap.entries()) {
-    if (bucket.events.length === 0) continue;
-    const batch: RawBehavioralBatch = {
-      events: bucket.events,
-      attribution: bucket.attribution || EMPTY_ATTRIBUTION,
-      session_id: sessionId,
-      env_id: envId,
-    };
-    try {
-      aggregates.push(aggregateSession(batch));
-    } catch (err) {
-      console.warn(`[process-behavioral] aggregateSession failed for session ${sessionId}:`, err);
+    } catch {
+      /* malformed urls blob — coverage just misses this session */
     }
   }
 
   if (aggregates.length === 0) {
-    return { evidence: [], sessionCount: 0, eventCount: rows.length };
+    return { evidence: [], sessionCount: 0, eventCount: eventCountTotal };
   }
 
   // ── Reduce to BehavioralSessionPayload (env-level metrics) ──
@@ -212,19 +168,6 @@ export async function processBehavioralEventsForEnv(
   // signals never fire and the 7 workspaces stay empty.
   const cohortPayload = aggregateCohorts(aggregates, deviceClassifier);
 
-  // ── Mark rows as processed (informational; retention uses receivedAt) ──
-  if (touchedRowIds.length > 0) {
-    try {
-      await prisma.rawBehavioralEvent.updateMany({
-        where: { id: { in: touchedRowIds } },
-        data: { processedAt: new Date() },
-      });
-    } catch (err) {
-      console.warn(`[process-behavioral] processedAt update failed for env ${envId}:`, err);
-      // Non-fatal — the next cycle re-aggregates the same window anyway.
-    }
-  }
-
   // ── Wrap both as Evidence ──
   // Both evidences share evidence_type=BehavioralSession but differ in
   // payload.type. The signal extractors discriminate on payload.type:
@@ -235,7 +178,7 @@ export async function processBehavioralEventsForEnv(
   return {
     evidence: [sessionEvidence, cohortEvidence],
     sessionCount: aggregates.length,
-    eventCount: rows.length,
+    eventCount: eventCountTotal,
   };
 }
 

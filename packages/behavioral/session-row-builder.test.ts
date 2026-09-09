@@ -31,6 +31,7 @@ function row(
 			...(data ? { data } : {}),
 		}),
 		attribution,
+		userAgent: "Mozilla/5.0 test",
 	};
 }
 

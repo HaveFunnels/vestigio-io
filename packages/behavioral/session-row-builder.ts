@@ -45,6 +45,7 @@ export interface RawSessionRow {
 	occurredAt: Date;
 	payload: string;
 	attribution: string | null;
+	userAgent: string | null;
 }
 
 export interface BuiltSessionRow {
@@ -57,6 +58,7 @@ export interface BuiltSessionRow {
 	timeline: string;
 	urls: string;
 	timelineTruncated: boolean;
+	userAgent: string | null;
 }
 
 /**
@@ -79,11 +81,16 @@ export function buildSessionRow(
 	const urls: string[] = [];
 	const urlIndex = new Map<string, number>();
 	let attribution: AttributionContext | null = null;
+	let userAgent: string | null = null;
 	let truncated = false;
 
 	const startMs = rows[0].occurredAt.getTime();
 
 	for (const row of rows) {
+		// First non-null user agent of the session, matching the old
+		// readers' "first UA per session for the device classifier".
+		if (!userAgent && row.userAgent) userAgent = row.userAgent;
+
 		// First-touch: the chronologically first non-null attribution wins,
 		// matching what process-behavioral.ts did when it read raw rows.
 		if (!attribution && row.attribution) {
@@ -160,6 +167,7 @@ export function buildSessionRow(
 		timeline: JSON.stringify(timeline),
 		urls: JSON.stringify(urls),
 		timelineTruncated: truncated,
+		userAgent,
 	};
 }
 

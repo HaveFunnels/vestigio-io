@@ -199,6 +199,7 @@ export async function aggregateIdleSessions(
 				timeline: string;
 				urls: string;
 				timelineTruncated: boolean;
+				userAgent: string | null;
 			}> = [];
 			const emptySessionIds: string[] = [];
 

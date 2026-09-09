@@ -2474,10 +2474,11 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 		}
 
 		// ─────────────────────────────────────────────
-		// Wave 22.6 Step 5 — first-cycle Strategy Plan generation.
-		// Fires the FIRST time a cycle lands in `complete` for this env;
-		// the day-1 cron handles every month thereafter. Best-effort:
-		// failure must not block the cycle outcome.
+		// Wave 22.6 Step 5 — Strategy Plan safety net.
+		// Fires when a cycle lands in `complete` and the current month has
+		// no plan. The day-1 cron is still the normal path; this is what
+		// makes a missed window recoverable instead of permanent.
+		// Best-effort: failure must not block the cycle outcome.
 		//
 		// Concurrency: Two cycles for the same env can complete near-
 		// simultaneously (probe-targeted, retries, etc.). The original
@@ -2501,12 +2502,30 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			).padStart(2, "0")}`;
 			const ownerId = cycle.organization?.ownerId ?? null;
 
-			// Pre-check: skip if any plan already exists for this env
-			// (could be from a previous cycle's completion or a prior
-			// month). Avoids burning a uniqueViolation cycle for the
-			// common case of "second cycle, plan already there."
+			// Pre-check scoped to THIS month. It used to look for a plan in
+			// any month at all, which quietly made this a first-plan-ever
+			// trigger rather than a first-cycle-of-the-month one — and that
+			// left a month with no way to ever get a plan:
+			//
+			//   - the monthly cron bails once daysIntoMonth >= 7
+			//   - decideAutoRegen returns "no_plan" and refuses to create
+			//   - this hook skipped because a June plan existed
+			//
+			// Any environment that missed the 7-day window — paused that
+			// week, org inactive, or, as happened on 2026-09, the database
+			// down for eight days — was then stuck with no plan for the
+			// month and no path to one. casamontelle had plans for June and
+			// July, none for August or September, and no mechanism that
+			// could produce one.
+			//
+			// Scoped to the month, a completed cycle in a month without a
+			// plan generates it. That is what the cron's own comment
+			// assumed was already happening ("caught by the first-cycle
+			// trigger"). Cost is unchanged in the normal case: the day-1
+			// cron still gets there first, and the atomic claim below stops
+			// concurrent cycles from generating twice.
 			const prior = await prisma.monthlyStrategyPlan.findFirst({
-				where: { environmentId: env.id },
+				where: { environmentId: env.id, month },
 				select: { id: true },
 			});
 			if (!prior) {

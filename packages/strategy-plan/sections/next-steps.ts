@@ -452,11 +452,17 @@ async function pickTopActions(
 			// Projection blob missing or malformed — that's OK, the step
 			// still ships with decisionKey-derived metadata.
 		}
-		// Skip actions whose every linked finding is resolved/gone — the
-		// action is stale, its cause no longer detected. An action with no
-		// linked inferences at all is kept (decisionKey-only metadata, no
-		// finding to check against).
-		if (inferenceKeys.length > 0 && !inferenceKeys.some((k) => openInferenceKeys.has(k))) {
+		// A next step must be anchored to a real, still-open finding. Two
+		// ways an action fails that and is skipped:
+		//   - it links findings but all of them are resolved/gone (stale
+		//     action from a pre-fix cycle — the /account case);
+		//   - it links NO finding at all (a decision-level rollup like
+		//     revenue_leakage_detected, whose title humanizes to generic
+		//     English "Revenue Leakage Detected" and says nothing specific
+		//     — exactly the generic-finding the plan is not supposed to
+		//     ship).
+		// Better three specific steps than five padded with generic ones.
+		if (!inferenceKeys.some((k) => openInferenceKeys.has(k))) {
 			continue;
 		}
 		// T3 + T5 — calibrate severity from impact; normalize surface to

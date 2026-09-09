@@ -32,6 +32,8 @@ import { registerCustomMetrics } from "../../src/libs/otel-metrics";
 import * as http from "node:http";
 import { prisma } from "../../src/libs/prismaDb";
 import { getRedis, initRedis } from "../../src/libs/redis";
+import { withLeadership } from "../../src/libs/leader-election";
+import { aggregateIdleSessions } from "./aggregate-sessions";
 import {
 	dequeueAuditCycle,
 	acquireEnvLock,
@@ -368,6 +370,37 @@ async function mainLoop(): Promise<void> {
 		healTimer = setInterval(runHealPass, HEAL_INTERVAL_MS);
 		healTimer.unref?.();
 	}
+
+	// ── Behavioral session aggregation ──
+	// Runs on the WORKER, not the web instrumentation, because it is heavy
+	// DB work (read idle sessions, aggregate, write, prune raw) and the web
+	// service pools through pgbouncer at connection_limit=1 — there it
+	// timed out fetching a connection under load. The worker's pool (20)
+	// has room. withLeadership still guards against a future second worker
+	// replica double-running it. mode=prune deletes raw rows after
+	// aggregating; verified safe against production before enabling.
+	const SESSION_AGG_INTERVAL_MS = 10 * 60 * 1000;
+	const pruneRaw = process.env.BEHAVIORAL_AGGREGATE_PRUNE === "1";
+	const runSessionAggregation = async () => {
+		await withLeadership("session-aggregation", { ttlSec: 300 }, async () => {
+			try {
+				const r = await aggregateIdleSessions({ deleteRawAfterAggregate: pruneRaw });
+				if (r.sessionsAggregated > 0 || r.errors > 0) {
+					rootLog.info("session-aggregation pass", {
+						aggregated: r.sessionsAggregated,
+						rawDeleted: r.rawRowsDeleted,
+						errors: r.errors,
+						mode: pruneRaw ? "prune" : "shadow",
+					});
+				}
+			} catch (err: any) {
+				rootLog.warn("session-aggregation pass failed", { err: err?.message ?? String(err) });
+			}
+		});
+	};
+	runSessionAggregation().catch(() => {});
+	const aggTimer = setInterval(runSessionAggregation, SESSION_AGG_INTERVAL_MS);
+	aggTimer.unref?.();
 
 	if (!getRedis()) {
 		rootLog.warn(

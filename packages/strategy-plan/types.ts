@@ -416,6 +416,10 @@ export interface PlanGeneratorOutput {
 	competitor: CompetitorSectionOutput | null;
 	impersonators: ImpersonatorsSectionOutput | null;
 	maps: MapsSectionOutput | null;
+	/** O que o pixel MEDIU (janela móvel de 30 dias). Null quando não há
+	 *  sessões — sem pixel não existe seção, em vez de existir vazia. A
+	 *  única parte do plano autorizada a usar "medido". */
+	behavioral: import("./sections/behavioral-measurement").BehavioralMeasurementOutput | null;
 	cost: GenerationCost;
 	cycleNumber: number;
 }

@@ -14,6 +14,7 @@ import NextSteps from "./sections/NextSteps";
 import ValuePreview from "./sections/ValuePreview";
 import MemoryRollups from "./sections/MemoryRollups";
 import MonthlyThesis from "./sections/MonthlyThesis";
+import BehavioralMeasurement from "./sections/BehavioralMeasurement";
 import AttributionTimeline from "./sections/AttributionTimeline";
 import AnalysisStatsDrawer from "./sections/AnalysisStatsDrawer";
 import EcosystemSection from "./sections/EcosystemSection";
@@ -644,6 +645,11 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 								label: isPt ? "Padrão carteira" : "Peer pattern",
 								visible: !isResumo && !!plan.crossCustomerPattern,
 							},
+							{
+								id: "behavioral",
+								label: isPt ? "Medido" : "Measured",
+								visible: !!plan.behavioral && plan.behavioral.sources.length > 0,
+							},
 							{ id: "segments", label: isPt ? "Times" : "By team", visible: !isResumo },
 							{
 								id: "carteira",
@@ -683,6 +689,13 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 
 				<div data-toc-id="hero">
 					<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} />
+				</div>
+				{/* Medido pelo pixel — logo após o hero, de propósito: é o
+				    único bloco do plano cujos números são contagem e não
+				    estimativa, e o leitor deve encontrá-lo antes das
+				    inferências. Self-hide sem pixel. */}
+				<div data-toc-id="behavioral">
+					<BehavioralMeasurement behavioral={plan.behavioral} />
 				</div>
 				{/* #7 — Placar do time. Renderiza logo após o Hero pra
 				    transformar o "Recuperado" agregado em atribuição

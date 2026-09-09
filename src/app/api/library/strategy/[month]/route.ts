@@ -793,6 +793,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 		competitor: (plan as any).competitorJson ?? null,
 		impersonators: (plan as any).impersonatorsJson ?? null,
 		maps: (plan as any).mapsJson ?? null,
+		behavioral: (plan as any).behavioralJson ?? null,
 		packDistribution,
 		attributionTimeline,
 		attributionTotal,

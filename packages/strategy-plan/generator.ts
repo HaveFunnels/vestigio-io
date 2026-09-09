@@ -38,6 +38,7 @@ import { generateCopyLens } from "./sections/copy-lens";
 import { generateCompetitorRadar } from "./sections/competitor-radar";
 import { generateImpersonators } from "./sections/impersonators";
 import { generateMapsSection } from "./sections/maps";
+import { generateBehavioralMeasurement } from "./sections/behavioral-measurement";
 
 /**
  * Wave 22.6 Step 6 — partial regen scope. Each event trigger asks for
@@ -231,6 +232,7 @@ export async function generatePlan(
 		competitor,
 		impersonators,
 		maps,
+		behavioral,
 	] = await Promise.all([
 		generateHeroMetrics(prisma, ctx),
 		generateBuyerSegments(prisma, ctx),
@@ -242,6 +244,7 @@ export async function generatePlan(
 		generateCompetitorRadar(prisma, ctx),
 		generateImpersonators(prisma, ctx),
 		generateMapsSection(prisma, ctx),
+		generateBehavioralMeasurement(prisma, ctx),
 	]);
 
 	// E1 — monthly thesis tied to narrative regen scope. The thesis is
@@ -260,7 +263,7 @@ export async function generatePlan(
 			? generateMonthlyThesis(prisma, ctx, organizationId)
 			: Promise.resolve({ text: "", callsCount: 0, costCents: 0, fallback: false }),
 		wantNarrative
-			? generateNarrativeWhatHappened(prisma, ctx, organizationId)
+			? generateNarrativeWhatHappened(prisma, ctx, organizationId, behavioral)
 			: Promise.resolve({ text: "", callsCount: 0, costCents: 0, fallback: false }),
 		wantValuePreviewNarrative
 			? generateValuePreviewNarrative(prisma, ctx, valuePreview, organizationId)
@@ -306,6 +309,7 @@ export async function generatePlan(
 		competitor,
 		impersonators,
 		maps,
+		behavioral,
 		cost: { llmCallsCount, llmCostCents },
 		cycleNumber,
 		regenScope: scope,
@@ -420,6 +424,7 @@ export async function generateAndPersistPlan(
 				competitorJson: output.competitor as any,
 				impersonatorsJson: output.impersonators as any,
 				mapsJson: output.maps as any,
+				behavioralJson: output.behavioral as any,
 				llmCallsCount: { increment: output.cost.llmCallsCount },
 				llmCostCents: { increment: output.cost.llmCostCents },
 			};

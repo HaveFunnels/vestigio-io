@@ -59,6 +59,10 @@ interface NarrativeInputs {
 	    to open the narrative with "what's holding up" before the diagnosis.
 	    Null when no positive findings exist for the cycle. */
 	positiveSample: { title: string; surface: string | null } | null;
+	/** O que o pixel mediu — o único bloco cujos números o modelo pode
+	 *  chamar de "medido". Preenchido pelo gerador a partir da seção
+	 *  behavioral-measurement (wave 1); null sem pixel. */
+	behavioral?: import("./behavioral-measurement").BehavioralMeasurementOutput | null;
 }
 
 async function gatherInputs(
@@ -369,7 +373,7 @@ Regras estritas:
 7. PROIBIDO nomes de tema abstratos sem instância concreta atrelada na mesma frase. Se citar um tema, prove-o com R$ específico OU página específica OU comportamento observável na frase seguinte. Tema sem âncora concreta = ruído.
 8. PROIBIDO travessão (—) em qualquer parágrafo. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.
 9. PROIBIDO usar a palavra "exposição" em qualquer parágrafo. Substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.
-10. HONESTIDADE DE MEDIÇÃO (regra absoluta, vence qualquer outra): os valores em R$ deste plano são ESTIMATIVAS calculadas por severidade sobre a receita informada pelo cliente — não são medições. PROIBIDO afirmar ou insinuar que foram medidos: nada de "não é projeção", "medido", "comprovado", "observado no seu checkout", "calibrado". Enquadrar sempre como "estimativa" ou "perda potencial estimada". A palavra "medido" é reservada para dados que o pixel de fato coletou (sessões, permanência, cliques, scroll). Um cliente que conhece a própria receita compara — e uma única afirmação de medição falsa custa a credibilidade do documento inteiro.`;
+10. HONESTIDADE DE MEDIÇÃO (regra absoluta, vence qualquer outra): os valores em R$ deste plano são ESTIMATIVAS calculadas por severidade sobre a receita informada pelo cliente — não são medições. PROIBIDO afirmar ou insinuar que foram medidos: nada de "não é projeção", "medido", "comprovado", "observado no seu checkout", "calibrado". Enquadrar sempre como "estimativa" ou "perda potencial estimada". A palavra "medido" é reservada para dados que o pixel de fato coletou (sessões, permanência, cliques, scroll). O bloco "MEDIDO PELO PIXEL" abaixo, quando presente, é a ÚNICA fonte que pode ser citada como medição — cite os números dele literalmente, sem arredondar para cima nem extrapolar. Um cliente que conhece a própria receita compara — e uma única afirmação de medição falsa custa a credibilidade do documento inteiro.`;
 
 	const data: string[] = [];
 	data.push(`Dados do mês ${i.monthLabelPt} para ${i.envDomain}:`);
@@ -384,6 +388,18 @@ Regras estritas:
 		// the same day three pixel bugs were being fixed. The positive
 		// stays; the fabricated certification goes.
 		data.push(`- PONTO POSITIVO (usar como abertura do Parágrafo 1): "${i.positiveSample.title}"${where}. Descrever como ponto forte detectado, SEM afirmar calibração ou medição`);
+	}
+	if (i.behavioral && i.behavioral.sources.length > 0) {
+		data.push("");
+		data.push(`# MEDIDO PELO PIXEL (janela ${i.behavioral.windowStart} a ${i.behavioral.windowEnd}, ${i.behavioral.sessionsFiltered.toLocaleString("pt-BR")} sessões após filtro de bot)`);
+		for (const src of i.behavioral.sources) {
+			data.push(
+				`- ${src.source}: ${src.sessions.toLocaleString("pt-BR")} sessões (${src.sharePct}%), permanência mediana ${src.medianDurationS}s, ${src.pctNoScroll}% sem atingir 25% de scroll, ${src.pctFormStarted}% interagem com formulário`,
+			);
+		}
+		for (const alert of i.behavioral.alerts) {
+			data.push(`- ALERTA (usar no diagnóstico): ${alert.text}`);
+		}
 	}
 	data.push("");
 	data.push(`# Mudança do mês`);
@@ -433,8 +449,10 @@ export async function generateNarrativeWhatHappened(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
 	organizationId: string | null,
+	behavioral?: import("./behavioral-measurement").BehavioralMeasurementOutput | null,
 ): Promise<LlmTextResult> {
 	const inputs = await gatherInputs(prisma, ctx);
+	inputs.behavioral = behavioral ?? null;
 
 	// T8 — only skip the LLM when the env truly has nothing to talk about
 	// (no resolved, no criticals, no chronic, no regression, AND no open

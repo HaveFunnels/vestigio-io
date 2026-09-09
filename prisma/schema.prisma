@@ -617,6 +617,14 @@ model MonthlyStrategyPlan {
   impersonatorsJson      Json?
   /// Maps: { autoMaps: [...], customMapsCount, dominantSurface } —
   /// surface graph + user journey for the cycle.
+  // O que o pixel MEDIU — a única seção do plano autorizada a usar a
+  // palavra "medido". Origem, permanência, scroll e alertas de tráfego,
+  // computados dos agregados de sessão com filtro mínimo de bot. Nasceu
+  // do cross-exam da Casa Montelle: o alerta do TikTok (mediana de 2s,
+  // 94% sem scroll) existia no documento interno de calibração e nunca
+  // chegou ao plano do cliente — "o plano trocou o que o pixel mediu
+  // por aquilo que o crawler infere".
+  behavioralJson Json?
   mapsJson               Json?
 
   // ── Generation cost telemetry ──

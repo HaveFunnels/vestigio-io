@@ -98,18 +98,28 @@ export async function aggregateIdleSessions(
 	};
 	const idleBefore = new Date(Date.now() - SESSION_IDLE_MS);
 
-	// Which sessions are finished. Grouping in the database avoids
-	// pulling events for sessions that are still being written to.
+	// Which sessions are finished AND not yet aggregated. The exclusion
+	// has to live in the scan itself: the batched version paged with
+	// `orderBy sessionId ASC, take N`, so in shadow mode (raw rows kept)
+	// every pass re-fetched the same first N already-aggregated sessions,
+	// skipped them all, logged nothing (the log line fires on progress or
+	// errors, and this was neither), and the backlog sat at 2k of 47k for
+	// a day looking like a quiet worker instead of a wedged one. Prune
+	// mode never hits this — deleted rows leave the window — which is
+	// exactly why shadow mode needed its own scan.
 	let idle: Array<{ envId: string; sessionId: string }>;
 	try {
-		const groups = await prisma.rawBehavioralEvent.groupBy({
-			by: ["envId", "sessionId"],
-			_max: { receivedAt: true },
-			having: { receivedAt: { _max: { lt: idleBefore } } },
-			orderBy: { sessionId: "asc" },
-			take: MAX_SESSIONS_PER_RUN,
-		});
-		idle = groups.map((g) => ({ envId: g.envId, sessionId: g.sessionId }));
+		idle = await prisma.$queryRaw<Array<{ envId: string; sessionId: string }>>`
+			SELECT r."envId", r."sessionId"
+			FROM "RawBehavioralEvent" r
+			LEFT JOIN "BehavioralSessionAggregate" a
+				ON a."envId" = r."envId" AND a."sessionId" = r."sessionId"
+			WHERE a.id IS NULL
+			GROUP BY r."envId", r."sessionId"
+			HAVING max(r."receivedAt") < ${idleBefore}
+			ORDER BY r."sessionId" ASC
+			LIMIT ${MAX_SESSIONS_PER_RUN}
+		`;
 	} catch (err) {
 		console.error("[aggregate-sessions] idle-session scan failed:", err);
 		return { ...result, errors: 1 };

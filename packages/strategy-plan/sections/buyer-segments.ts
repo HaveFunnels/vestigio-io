@@ -10,12 +10,12 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { openLossExposure, type OpenExposureRow } from "../honest-aggregates";
 import type { GenerateContext, BuyerSegmentOutput } from "../types";
 import { packToBuyer, BUYER_LABEL_PT_BR, type BuyerKind } from "../pack-to-buyer";
 import { resolveInferenceTitle } from "../title-resolver";
 
 interface FindingRow {
-	id: string;
 	inferenceKey: string;
 	pack: string;
 	severity: string;
@@ -45,28 +45,15 @@ export async function generateBuyerSegments(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
 ): Promise<BuyerSegmentOutput[]> {
-	const rows: FindingRow[] = await prisma.finding.findMany({
-		where: {
-			environmentId: ctx.environmentId,
-			// Buyer segments are about "what each team OWNS to fix" — strictly
-			// loss findings. Positive (state-of-health) findings would render
-			// as problems otherwise, and they have no owner-action attached.
-			polarity: { in: ["negative", "neutral"] },
-			status: { in: ["created", "confirmed"] },
-			statusChangedAt: { lt: ctx.monthEnd },
-		},
-		select: {
-			id: true,
-			inferenceKey: true,
-			pack: true,
-			severity: true,
-			impactMin: true,
-			impactMax: true,
-			impactMidpoint: true,
-			surface: true,
-		},
-		orderBy: { impactMidpoint: "desc" },
-	});
+	// THE unified open-loss exposure. The per-team cards are a PARTITION
+	// of the plan's one exposure total: each team's sums are scaled by
+	// exposure.factor so the three cards add up to exactly the same
+	// capped figure the hero, narrative and thesis show. Before this,
+	// the blocks summed raw impactMidpoint with no cap — the narrative
+	// would have said "at most R$ 79k" while the team cards still added
+	// to R$ 305k (cross-exam round 2, hole 1).
+	const exposure = await openLossExposure(prisma, ctx.environmentId, ctx.monthEnd);
+	const rows: OpenExposureRow[] = exposure.rows;
 
 	// Bucket findings by buyer; tally impact + collect samples.
 	const buckets: Record<BuyerKind, FindingRow[]> = {
@@ -80,9 +67,9 @@ export async function generateBuyerSegments(
 		.map((buyer): BuyerSegmentOutput | null => {
 			const items = buckets[buyer];
 			if (items.length === 0) return null;
-			const impactMin = items.reduce((a, r) => a + r.impactMin, 0);
-			const impactMax = items.reduce((a, r) => a + r.impactMax, 0);
-			const impactMidpoint = items.reduce((a, r) => a + r.impactMidpoint, 0);
+			const impactMin = items.reduce((a, r) => a + r.impactMin, 0) * exposure.factor;
+			const impactMax = items.reduce((a, r) => a + r.impactMax, 0) * exposure.factor;
+			const impactMidpoint = items.reduce((a, r) => a + r.impactMidpoint, 0) * exposure.factor;
 			// Dedupe samples by their rendered title (inferenceKey+surface).
 			// Without this, two highest-impact rows sharing the same
 			// inferenceKey + surface produce identical bullets ("Pricing

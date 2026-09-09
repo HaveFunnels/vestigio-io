@@ -19,7 +19,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
-import { verifiedCaptured, cappedExposureFor } from "../honest-aggregates";
+import { verifiedCaptured, openLossExposure } from "../honest-aggregates";
 import type { GenerateContext } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
 import { monthLabel } from "../i18n";
@@ -70,7 +70,7 @@ async function gatherInputs(
 	// whenever detection stops firing, which includes the engine being
 	// fixed that morning. The Sept/2026 plan announced R$ 23.750
 	// "recuperados" on exactly that. See honest-aggregates.ts.
-	const [captured, capturedSample, newCritical, chronic, regression, openLoss, positives] = await Promise.all([
+	const [captured, capturedSample, newCritical, chronic, regression, exposure, positives] = await Promise.all([
 		verifiedCaptured(prisma, ctx.environmentId, ctx.monthStart, ctx.monthEnd),
 		prisma.userAction.findMany({
 			where: {
@@ -108,23 +108,9 @@ async function gatherInputs(
 				statusChangedAt: { gte: ctx.monthStart, lt: ctx.monthEnd },
 			},
 		}),
-		// T8 — open loss findings to derive exposure, dominant pack and
-		// dominant surface so the narrative can name the pattern.
-		prisma.finding.findMany({
-			where: {
-				environmentId: ctx.environmentId,
-				polarity: { in: ["negative", "neutral"] },
-				status: { in: ["created", "confirmed"] },
-				statusChangedAt: { lt: ctx.monthEnd },
-			},
-			select: {
-				inferenceKey: true,
-				pack: true,
-				surface: true,
-				impactMidpoint: true,
-			},
-			orderBy: { impactMidpoint: "desc" },
-		}),
+		// T8 — THE open-loss exposure (deduped + capped), shared with hero,
+		// thesis and buyer segments so every surface shows the same total.
+		openLossExposure(prisma, ctx.environmentId, ctx.monthEnd),
 		// Reta-final: top 1 positive finding to open the narrative
 		// before the diagnosis. Top by impactMidpoint so the most
 		// load-bearing strength leads — not the first row in DB order.
@@ -143,27 +129,12 @@ async function gatherInputs(
 
 	const capturedTotal = captured.total;
 
-	// Reta-final dedupe: the engine emits multiple Finding rows per real
-	// inference (per cycle, per re-detection) and openLoss naturally
-	// inflates the customer-facing count. Distinct (inferenceKey,
-	// surface) pairs is the honest "how many discrete things are open".
-	// Used in customer-facing copy; raw exposureFindingCount stays
-	// available for internal LLM prompt context (so the model knows the
-	// raw cardinality of evidence it's looking at).
-	const distinctExposurePoints = new Set(
-		openLoss.map((f) => `${f.inferenceKey}::${f.surface ?? ""}`),
-	).size;
-
-	// T8 — exposure totals + dominant pack/surface. The sum is capped
-	// against declared revenue: severity percentages describe overlapping
-	// slices of the same buyers, so an uncapped sum announced R$ 305k of
-	// risk against a R$ 198k store. See packages/impact/exposure-cap.ts.
-	const exposureCapped = await cappedExposureFor(
-		prisma,
-		ctx.environmentId,
-		openLoss.reduce((a, r) => a + r.impactMidpoint, 0),
-	);
-	const exposureTotal = exposureCapped.total;
+	// openLossExposure already dedupes to distinct (inferenceKey, surface)
+	// pairs — the count dedupe that used to live here moved there so the
+	// count AND the sum come from the same rows.
+	const openLoss = exposure.rows;
+	const distinctExposurePoints = exposure.distinctCount;
+	const exposureTotal = exposure.total;
 	const packCounts: Record<string, number> = {};
 	const surfaceCounts: Record<string, number> = {};
 	for (const f of openLoss) {
@@ -290,8 +261,13 @@ function fallbackNarrative(i: NarrativeInputs): string {
 	// Optional positive opener — 1 sentence before the diagnosis. Skips
 	// when no positive findings; never carries impact number (positives
 	// preserve receita; surfacing a R$ would imply they capture).
+	// The LLM prompt had its calibration claim removed in round 1 of the
+	// cross-exam response — and round 2 caught this deterministic
+	// fallback still writing "está calibrado ... está segurando receita"
+	// whenever the LLM path is skipped. Same rule both paths: a positive
+	// finding is a detected strength, never a certified measurement.
 	const positiveOpener = i.positiveSample
-		? `Antes do diagnóstico: **${i.positiveSample.title}** está calibrado em ${humanizeSurfaceCustomerFacing(i.positiveSample.surface)}. Esse ponto está segurando receita que poderia escapar. `
+		? `Antes do diagnóstico: **${i.positiveSample.title}** é um ponto forte detectado em ${humanizeSurfaceCustomerFacing(i.positiveSample.surface)}. `
 		: "";
 
 	// Para 1 — mudança do mês
@@ -337,7 +313,7 @@ function fallbackNarrative(i: NarrativeInputs): string {
 	// ordenados, leitura mais natural)
 	if (i.newCriticalCount > 0) {
 		paras.push(
-			`A decisão pra esse mês: priorizar **${i.newCriticalCount} ${i.newCriticalCount === 1 ? "ponto crítico novo" : "pontos críticos novos"}** antes que ${i.newCriticalCount === 1 ? "afete" : "afetem"} receita medida. Os Próximos Passos abaixo estão ordenados por impacto financeiro calibrado.`,
+			`A decisão pra esse mês: priorizar **${i.newCriticalCount} ${i.newCriticalCount === 1 ? "ponto crítico novo" : "pontos críticos novos"}** antes que ${i.newCriticalCount === 1 ? "afete" : "afetem"} a receita. Os Próximos Passos abaixo estão ordenados por impacto financeiro estimado.`,
 		);
 	} else if (i.regressionCount > 0) {
 		paras.push(

@@ -24,18 +24,33 @@
 import type { PrismaClient } from "@prisma/client";
 import { capExposure, type CappedExposure } from "../impact/exposure-cap";
 
-/** Declared monthly revenue from the business profile, null when the
- *  customer never filled it in. */
+/**
+ * Declared monthly revenue for ONE environment.
+ *
+ * Order: the environment's own figure; the organization profile's
+ * figure ONLY when the org has a single environment. An org-level
+ * number over several stores is unattributable — HaveFunnels declares
+ * R$ 580k across two environments while casamontelle alone measures
+ * R$ 198k, so borrowing the org figure made the per-store cap wrong in
+ * both directions (caught in the cross-exam round 2). Null means
+ * undeclared, and the cap then hedges instead of guessing.
+ */
 export async function declaredMonthlyRevenue(
 	prisma: PrismaClient,
 	environmentId: string,
 ): Promise<number | null> {
-	// BusinessProfile hangs off the organization, not the environment.
 	const env = await prisma.environment.findUnique({
 		where: { id: environmentId },
-		select: { organizationId: true },
+		select: { monthlyRevenue: true, organizationId: true },
 	});
 	if (!env) return null;
+	if (env.monthlyRevenue && env.monthlyRevenue > 0) return env.monthlyRevenue;
+
+	const siblingCount = await prisma.environment.count({
+		where: { organizationId: env.organizationId },
+	});
+	if (siblingCount !== 1) return null;
+
 	const profile = await prisma.businessProfile.findUnique({
 		where: { organizationId: env.organizationId },
 		select: { monthlyRevenue: true },
@@ -90,5 +105,96 @@ export async function verifiedCaptured(
 	return {
 		count: agg._count._all ?? 0,
 		total: Math.round(agg._sum.baselineImpactMidpoint ?? 0),
+	};
+}
+
+export interface OpenExposureRow {
+	inferenceKey: string;
+	surface: string;
+	pack: string;
+	severity: string;
+	impactMin: number;
+	impactMax: number;
+	impactMidpoint: number;
+}
+
+export interface OpenExposure {
+	/** Deduped open loss findings: one row per (inferenceKey, surface),
+	 *  keeping the highest midpoint. The engine can emit several Finding
+	 *  rows for the same real inference across cycles; summing rows
+	 *  instead of inferences inflates the total with re-detections. */
+	rows: OpenExposureRow[];
+	distinctCount: number;
+	/** Capped totals — the ONLY exposure figures any surface may show. */
+	total: number;
+	min: number;
+	max: number;
+	/** capped/uncapped, ≤ 1. Partitions of the total (per-team blocks)
+	 *  multiply by this so their parts sum to exactly `total` — the
+	 *  cross-exam's item (f): one aggregate, identical everywhere. */
+	factor: number;
+	revenueBasis: number;
+	revenueDeclared: boolean;
+	wasCapped: boolean;
+}
+
+/**
+ * THE open-loss exposure for an environment. Hero, narrative, thesis
+ * and buyer segments must all consume this — computing it in four
+ * places is how the September plan showed three different totals for
+ * the same concept.
+ */
+export async function openLossExposure(
+	prisma: PrismaClient,
+	environmentId: string,
+	end: Date,
+): Promise<OpenExposure> {
+	const raw = await prisma.finding.findMany({
+		where: {
+			environmentId,
+			polarity: { in: ["negative", "neutral"] },
+			// "regressed" is open and draining (Wave 22.9's hero rationale)
+			// — and item (f) of the cross-exam requires every surface to
+			// use the SAME set, so the wider, more correct one wins.
+			status: { in: ["created", "confirmed", "regressed"] },
+			statusChangedAt: { lt: end },
+		},
+		select: {
+			inferenceKey: true,
+			surface: true,
+			pack: true,
+			severity: true,
+			impactMin: true,
+			impactMax: true,
+			impactMidpoint: true,
+		},
+		orderBy: { impactMidpoint: "desc" },
+	});
+
+	// Dedupe by identity, first row wins (highest midpoint, given order).
+	const byIdentity = new Map<string, OpenExposureRow>();
+	for (const r of raw) {
+		const key = `${r.inferenceKey}::${r.surface}`;
+		if (!byIdentity.has(key)) byIdentity.set(key, r);
+	}
+	const rows = [...byIdentity.values()];
+
+	const uncapped = rows.reduce((a, r) => a + r.impactMidpoint, 0);
+	const uncappedMin = rows.reduce((a, r) => a + r.impactMin, 0);
+	const uncappedMax = rows.reduce((a, r) => a + r.impactMax, 0);
+
+	const capped = capExposure(uncapped, await declaredMonthlyRevenue(prisma, environmentId));
+	const factor = uncapped > 0 ? capped.total / uncapped : 1;
+
+	return {
+		rows,
+		distinctCount: rows.length,
+		total: capped.total,
+		min: Math.round(uncappedMin * factor),
+		max: Math.round(uncappedMax * factor),
+		factor,
+		revenueBasis: capped.revenueBasis,
+		revenueDeclared: capped.revenueDeclared,
+		wasCapped: capped.wasCapped,
 	};
 }

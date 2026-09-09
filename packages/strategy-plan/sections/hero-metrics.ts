@@ -11,6 +11,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { openLossExposure } from "../honest-aggregates";
 import type { GenerateContext, HeroMetricsOutput } from "../types";
 
 function addMonths(d: Date, n: number): Date {
@@ -136,23 +137,12 @@ async function aggregateMonth(
 				},
 			})
 			.catch(() => 0),
-		// T1 — exposure: open loss findings' total monetary mass. The hero
-		// shows this when captured == 0 so the customer always sees a
-		// concrete number on the dollars-tile, not "R$ 0".
-		prisma.finding.aggregate({
-			where: {
-				environmentId,
-				polarity: { in: ["negative", "neutral"] },
-				// Wave 22.9 — include "regressed" (see critical-count
-				// comment above). Findings that regressed are open,
-				// currently draining revenue, and must show up in the
-				// hero exposure tile alongside created + confirmed.
-				status: { in: ["created", "confirmed", "regressed"] },
-				statusChangedAt: { lt: end },
-			},
-			_sum: { impactMidpoint: true, impactMin: true, impactMax: true },
-			_count: { _all: true },
-		}),
+		// T1 — exposure: THE unified open-loss aggregate (deduped by
+		// inference identity, capped against declared revenue). The hero
+		// used to run its own uncapped _sum here, which meant the tile,
+		// the narrative and the team blocks could each show a different
+		// total for the same concept — item (f) of the cross-exam.
+		openLossExposure(prisma, environmentId, end),
 	]);
 
 	return {
@@ -166,10 +156,10 @@ async function aggregateMonth(
 		capturedMin: captured._sum.baselineImpactMin ?? 0,
 		capturedMax: captured._sum.baselineImpactMax ?? 0,
 		capturedCount: captured._count?._all ?? 0,
-		exposure: exposure._sum.impactMidpoint ?? 0,
-		exposureMin: exposure._sum.impactMin ?? 0,
-		exposureMax: exposure._sum.impactMax ?? 0,
-		exposureCount: exposure._count?._all ?? 0,
+		exposure: exposure.total,
+		exposureMin: exposure.min,
+		exposureMax: exposure.max,
+		exposureCount: exposure.distinctCount,
 	};
 }
 

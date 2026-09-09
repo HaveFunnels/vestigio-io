@@ -71,6 +71,39 @@ export class GraphQuery {
   }
 
   // 3. Trust boundary query
+  // ── Platform-login recognition ──────────────
+  //
+  // A link from /account to shopify.com/<id>/account is the platform's
+  // standard customer-accounts flow, not a merchant decision and not on
+  // the purchase path. Treating it as a trust gap produced the headline
+  // finding of the Sept/2026 casamontelle plan ("buyers thrown to
+  // another domain at checkout") anchored on a login page that no
+  // purchase ever passes through — the store sells without login. The
+  // customer's analysts falsified it with production data: purchase
+  // checkout converts at 26.7% on its own subdomain.
+  //
+  // Conservative on purpose: only destinations that are unambiguously
+  // platform account areas, plus edges LEAVING an account/login page
+  // (account-area navigation is not commercial-path navigation). A miss
+  // here degrades to the old behavior, which over-reports.
+  private isPlatformLoginBoundary(source: GraphNode, target: GraphNode): boolean {
+    const targetUrl = target.url ?? '';
+    const targetHost = (target.host ?? '').toLowerCase();
+    if (targetHost === 'shopify.com' || targetHost.endsWith('.shopify.com')) {
+      if (/\/\d+\/account(\/|$|\?)/.test(targetUrl) || /accounts?\./.test(targetHost)) return true;
+    }
+    if (/^accounts?\./.test(targetHost)) return true; // accounts.google.com etc.
+    const sourcePath = (() => {
+      try {
+        return source.url ? new URL(source.url).pathname : '';
+      } catch {
+        return '';
+      }
+    })();
+    if (/^\/(account|login|signin|minha-conta)(\/|$)/.test(sourcePath)) return true;
+    return false;
+  }
+
   findTrustBoundaries(): TrustBoundaryResult {
     const boundaryEdges: GraphEdge[] = [];
     const externalHosts = new Set<string>();
@@ -85,6 +118,10 @@ export class GraphQuery {
       if (!source.is_external && target.is_external) {
         boundaryEdges.push(edge);
         if (target.host) externalHosts.add(target.host);
+
+        // Platform account flows stay in boundary_edges (inventory) but
+        // are not trust GAPS — see isPlatformLoginBoundary above.
+        if (this.isPlatformLoginBoundary(source, target)) continue;
 
         // Determine gap type
         const isKnownProvider = target.node_type === 'provider' ||

@@ -15,7 +15,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
-import { verifiedCaptured, cappedExposureFor } from "../honest-aggregates";
+import { verifiedCaptured, openLossExposure } from "../honest-aggregates";
 import type { GenerateContext } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
 import { monthLabel } from "../i18n";
@@ -49,7 +49,7 @@ async function gatherInputs(
 	// Verified customer actions, not Finding.status="resolved" — the
 	// latter fires whenever detection stops, including when the detector
 	// itself was fixed. See honest-aggregates.ts.
-	const [resolved, newCritical, chronic, regression, openLoss] = await Promise.all([
+	const [resolved, newCritical, chronic, regression, openLossExp] = await Promise.all([
 		verifiedCaptured(prisma, ctx.environmentId, ctx.monthStart, ctx.monthEnd),
 		prisma.finding.count({
 			where: {
@@ -75,25 +75,12 @@ async function gatherInputs(
 				statusChangedAt: { gte: ctx.monthStart, lt: ctx.monthEnd },
 			},
 		}),
-		prisma.finding.findMany({
-			where: {
-				environmentId: ctx.environmentId,
-				polarity: { in: ["negative", "neutral"] },
-				status: { in: ["created", "confirmed"] },
-				statusChangedAt: { lt: ctx.monthEnd },
-			},
-			select: {
-				inferenceKey: true,
-				pack: true,
-				surface: true,
-				impactMidpoint: true,
-			},
-			orderBy: { impactMidpoint: "desc" },
-		}),
+		openLossExposure(prisma, ctx.environmentId, ctx.monthEnd),
 	]);
 
 	const packCounts: Record<string, number> = {};
 	const surfaceCounts: Record<string, number> = {};
+	const openLoss = openLossExp.rows;
 	for (const f of openLoss) {
 		packCounts[f.pack] = (packCounts[f.pack] ?? 0) + 1;
 		if (f.surface) surfaceCounts[f.surface] = (surfaceCounts[f.surface] ?? 0) + 1;
@@ -117,14 +104,8 @@ async function gatherInputs(
 		envDomain: ctx.envDomain,
 		resolvedCount: resolved.count,
 		resolvedCapturedTotal: resolved.total,
-		exposureTotal: (
-			await cappedExposureFor(
-				prisma,
-				ctx.environmentId,
-				openLoss.reduce((a, r) => a + r.impactMidpoint, 0),
-			)
-		).total,
-		exposureFindingCount: openLoss.length,
+		exposureTotal: openLossExp.total,
+		exposureFindingCount: openLossExp.distinctCount,
 		dominantPack,
 		dominantPackShare,
 		dominantSurface,
@@ -178,7 +159,7 @@ function fallbackThesis(i: ThesisInputs): string {
 	// Pattern B — regressions are concrete and need investigation. Frame
 	// as the axis "what changed since last cycle".
 	if (i.regressionCount >= 2) {
-		return `Identificamos **${i.regressionCount} regressões** desde o último ciclo. O foco do mês é descobrir o que mudou no deploy recente antes que receita medida caia. Comece pelo Passo 1.`;
+		return `Identificamos **${i.regressionCount} regressões** desde o último ciclo. O foco do mês é descobrir o que mudou no deploy recente antes que afete a receita. Comece pelo Passo 1.`;
 	}
 
 	// Pattern C — chronic pattern is the axis. Framed as decisions

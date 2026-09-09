@@ -322,6 +322,14 @@ model Environment {
   // Wave 5 Fase 2: activation lifecycle
   activated            Boolean   @default(false) // true once the first cold full cycle has been dispatched
   lastAccessedAt       DateTime? // updated (1h-debounced) when an owner/member loads /app/*; drives inactivity pause
+  // Declared monthly revenue for THIS environment. BusinessProfile's
+  // revenue hangs on the organization, which breaks the moment an org
+  // has two environments: HaveFunnels declares R$ 580k org-wide while
+  // casamontelle alone measures R$ 198k, so any per-environment impact
+  // cap computed from the org figure is wrong in both directions. Null
+  // means undeclared; the exposure cap then refuses to borrow the org
+  // number for multi-env orgs and falls back to a hedged estimate.
+  monthlyRevenue         Float?
   continuousPaused     Boolean   @default(false) // true when >14d without access; cleared on next access, triggers catch-up cycle
   engagementScore      Int       @default(0) // 0-100, computed hourly by product telemetry cron (3.16)
   // User-supplied glob patterns to exclude from crawl (e.g. "/admin/*", "/staging/*", "*.pdf").

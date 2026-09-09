@@ -31,25 +31,23 @@
 // ──────────────────────────────────────────────
 
 import { prisma } from "@/libs/prismaDb";
-import { aggregateSession } from "../../packages/behavioral";
-import type {
-	AttributionContext,
-	RawBehavioralEvent as RawEventShape,
-} from "../../packages/behavioral/types";
+import { buildSessionRow } from "../../packages/behavioral/session-row-builder";
 
 /** Snippet's SESSION_TIMEOUT is 30 min; the margin covers beacons sent on unload. */
 const SESSION_IDLE_MS = 35 * 60 * 1000;
 
-/** Sessions per pass. Bounds one run's memory and transaction size. */
-const MAX_SESSIONS_PER_RUN = 500;
-
 /**
- * Timeline entries kept per session. A 14-event session is typical; the
- * cap only bites on pathological ones (bots, a tab left open for hours).
- * Truncation is recorded on the row so a reader can say so rather than
- * present a clipped journey as a complete one.
+ * Sessions per pass.
+ *
+ * Bounds memory, not query count: the pass issues a handful of queries
+ * per environment regardless of how many sessions it handles. At ~12
+ * events per session this reads ~24k rows, a few MB.
+ *
+ * Sized to drain a backlog in hours rather than days — the first run
+ * against production had 46k un-aggregated sessions, which at the
+ * original 500 would have taken 15 hours of ten-minute passes.
  */
-const MAX_TIMELINE_ENTRIES = 400;
+const MAX_SESSIONS_PER_RUN = 2000;
 
 export interface AggregateSessionsResult {
 	sessionsAggregated: number;
@@ -79,9 +77,6 @@ export interface AggregateSessionsOptions {
 	 */
 	deleteRawAfterAggregate?: boolean;
 }
-
-/** One timeline entry: [msSinceSessionStart, eventType, urlIndex, data?]. */
-type CompactEntry = [number, string, number] | [number, string, number, unknown];
 
 /**
  * Aggregate every session that has gone idle, then drop its raw rows.
@@ -122,133 +117,135 @@ export async function aggregateIdleSessions(
 
 	if (idle.length === 0) return result;
 
+	// Everything below is batched per environment rather than per session.
+	// The first version issued three round-trips per session (existence
+	// check, event fetch, upsert), which at 500 sessions a pass meant
+	// ~1,500 queries and made draining a 46k-session backlog a 15-hour
+	// job. Since this keeps running after the cutover, the shape matters.
+	const byEnv = new Map<string, string[]>();
 	for (const { envId, sessionId } of idle) {
+		const list = byEnv.get(envId);
+		if (list) list.push(sessionId);
+		else byEnv.set(envId, [sessionId]);
+	}
+
+	for (const [envId, allSessionIds] of byEnv) {
+		let sessionIds = allSessionIds;
+
 		try {
-			// In shadow mode the raw rows survive, so without this every
-			// pass would re-aggregate the same finished sessions forever.
-			// Safe to skip on existence alone: the session is idle, so its
-			// events cannot change any more.
-			if (!deleteRaw) {
-				const existing = await prisma.behavioralSessionAggregate.findUnique({
-					where: { envId_sessionId: { envId, sessionId } },
-					select: { id: true },
-				});
-				if (existing) {
-					result.sessionsSkipped++;
-					continue;
+			// Which of these are already done. One query instead of one per
+			// session. Safe to skip on existence alone: the session is idle,
+			// so its events cannot change any more.
+			const existing = await prisma.behavioralSessionAggregate.findMany({
+				where: { envId, sessionId: { in: sessionIds } },
+				select: { sessionId: true },
+			});
+			if (existing.length > 0) {
+				const done = new Set(existing.map((e) => e.sessionId));
+				const before = sessionIds.length;
+				sessionIds = sessionIds.filter((id) => !done.has(id));
+				result.sessionsSkipped += before - sessionIds.length;
+
+				// In prune mode an already-aggregated session reappearing means
+				// a straggler beacon arrived after its rows were deleted.
+				// Re-aggregating would rebuild the session from only those late
+				// events and overwrite a correct aggregate with a fragment, so
+				// the stragglers are dropped and the aggregate is left alone.
+				if (deleteRaw) {
+					const del = await prisma.rawBehavioralEvent.deleteMany({
+						where: { envId, sessionId: { in: [...done] } },
+					});
+					result.rawRowsDeleted += del.count;
+					if (del.count > 0) {
+						console.warn(
+							`[aggregate-sessions] dropped ${del.count} late row(s) for ${done.size} already-aggregated session(s) in env ${envId}`,
+						);
+					}
 				}
 			}
+			if (sessionIds.length === 0) continue;
 
+			// All events for the remaining sessions, in one ordered read.
 			const rows = await prisma.rawBehavioralEvent.findMany({
-				where: { envId, sessionId },
-				orderBy: { occurredAt: "asc" },
+				where: { envId, sessionId: { in: sessionIds } },
+				orderBy: [{ sessionId: "asc" }, { occurredAt: "asc" }],
 			});
 			if (rows.length === 0) continue;
 
-			const events: RawEventShape[] = [];
-			const timeline: CompactEntry[] = [];
-			const urls: string[] = [];
-			const urlIndex = new Map<string, number>();
-			let attribution: AttributionContext | null = null;
-			let truncated = false;
-
-			const startMs = rows[0].occurredAt.getTime();
-
+			const grouped = new Map<string, typeof rows>();
 			for (const row of rows) {
-				if (!attribution && row.attribution) {
-					try {
-						attribution = JSON.parse(row.attribution) as AttributionContext;
-					} catch {
-						/* malformed attribution — first-touch stays null */
-					}
-				}
-
-				let parsed: RawEventShape | null = null;
-				try {
-					parsed = JSON.parse(row.payload) as RawEventShape;
-				} catch {
-					continue; // malformed row — same handling as process-behavioral
-				}
-				if (!parsed) continue;
-				events.push(parsed);
-
-				if (timeline.length >= MAX_TIMELINE_ENTRIES) {
-					truncated = true;
-					continue; // keep aggregating; only the replay detail is capped
-				}
-				let idx = urlIndex.get(row.url);
-				if (idx === undefined) {
-					idx = urls.length;
-					urls.push(row.url);
-					urlIndex.set(row.url, idx);
-				}
-				// Offset rather than absolute timestamp: buildTimeline works in
-				// seconds since session start, and offsets compress far better.
-				const base: [number, string, number] = [
-					row.occurredAt.getTime() - startMs,
-					row.eventType,
-					idx,
-				];
-				const data = (parsed as { data?: unknown }).data;
-				const hasData =
-					data !== null &&
-					typeof data === "object" &&
-					Object.keys(data as object).length > 0;
-				timeline.push(hasData ? [...base, data] : base);
+				const bucket = grouped.get(row.sessionId);
+				if (bucket) bucket.push(row);
+				else grouped.set(row.sessionId, [row]);
 			}
 
-			if (events.length === 0) {
-				// Every row was malformed. Nothing to aggregate, so drop them
-				// rather than rescanning this session on every pass forever.
-				// Done regardless of shadow mode: there is no aggregate these
-				// rows could still be needed to verify.
+			const toCreate: Array<{
+				envId: string;
+				sessionId: string;
+				startedAt: Date;
+				endedAt: Date;
+				eventCount: number;
+				aggregate: string;
+				timeline: string;
+				urls: string;
+				timelineTruncated: boolean;
+			}> = [];
+			const emptySessionIds: string[] = [];
+
+			for (const [sessionId, sessionRows] of grouped) {
+				try {
+					const built = buildSessionRow(envId, sessionId, sessionRows);
+					if (built) toCreate.push(built);
+					else emptySessionIds.push(sessionId);
+				} catch (err) {
+					result.errors++;
+					console.error(
+						`[aggregate-sessions] session ${sessionId} (env ${envId}) failed:`,
+						err instanceof Error ? err.message : err,
+					);
+				}
+			}
+
+			// Sessions whose every row was malformed have nothing to
+			// aggregate. Drop them regardless of mode, or they are rescanned
+			// on every pass forever.
+			if (emptySessionIds.length > 0) {
 				const del = await prisma.rawBehavioralEvent.deleteMany({
-					where: { envId, sessionId },
+					where: { envId, sessionId: { in: emptySessionIds } },
 				});
 				result.rawRowsDeleted += del.count;
-				continue;
 			}
 
-			const aggregate = aggregateSession({
-				events,
-				attribution: attribution ?? ({} as AttributionContext),
-				session_id: sessionId,
-				env_id: envId,
-			});
-
-			const startedAt = rows[0].occurredAt;
-			const endedAt = rows[rows.length - 1].occurredAt;
-			const payload = {
-				startedAt,
-				endedAt,
-				eventCount: events.length,
-				aggregate: JSON.stringify(aggregate),
-				timeline: JSON.stringify(timeline),
-				urls: JSON.stringify(urls),
-				timelineTruncated: truncated,
-			};
-
-			// Write the aggregate first, delete the source second. The
-			// reverse order would lose a session to a crash in between.
-			await prisma.behavioralSessionAggregate.upsert({
-				where: { envId_sessionId: { envId, sessionId } },
-				create: { envId, sessionId, ...payload },
-				update: payload,
-			});
-
-			if (deleteRaw) {
-				const deleted = await prisma.rawBehavioralEvent.deleteMany({
-					where: { envId, sessionId },
+			// createMany, not upsert: everything here was filtered against
+			// existing rows above. skipDuplicates covers the race where two
+			// replicas somehow both got past the leader lock.
+			const CHUNK = 200;
+			const written: string[] = [];
+			for (let i = 0; i < toCreate.length; i += CHUNK) {
+				const chunk = toCreate.slice(i, i + CHUNK);
+				await prisma.behavioralSessionAggregate.createMany({
+					data: chunk,
+					skipDuplicates: true,
 				});
-				result.rawRowsDeleted += deleted.count;
+				written.push(...chunk.map((c) => c.sessionId));
+				result.sessionsAggregated += chunk.length;
 			}
 
-			result.sessionsAggregated++;
+			// Source rows go only after their aggregate is committed. The
+			// reverse order would lose sessions to a crash in between.
+			if (deleteRaw && written.length > 0) {
+				for (let i = 0; i < written.length; i += CHUNK) {
+					const del = await prisma.rawBehavioralEvent.deleteMany({
+						where: { envId, sessionId: { in: written.slice(i, i + CHUNK) } },
+					});
+					result.rawRowsDeleted += del.count;
+				}
+			}
 		} catch (err) {
-			// One bad session must not stop the pass; the rest still drain.
+			// One environment failing must not stop the others.
 			result.errors++;
 			console.error(
-				`[aggregate-sessions] session ${sessionId} (env ${envId}) failed:`,
+				`[aggregate-sessions] env ${envId} failed:`,
 				err instanceof Error ? err.message : err,
 			);
 		}

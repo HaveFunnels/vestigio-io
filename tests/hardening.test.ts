@@ -277,10 +277,21 @@ runSuite('Audit Lifecycle', () => {
     assert(server.getContext() === null, 'context should not be loaded');
   });
 
-  test('switching environments reloads context', () => {
+  test('cross-tenant context swap is refused; a fresh server per env works', () => {
+    // This test used to assert the OPPOSITE — that one server instance
+    // happily swapped contexts between environments. That was the
+    // pre-M2-H2 behavior: a concurrent RSC render for org B arriving
+    // mid-flight of org A's query could rewrite the singleton scope and
+    // serialize B's data into A's response. The hardening made the swap
+    // throw, deliberately, and this suite kept encoding the old contract
+    // — failing red for months while the code was right.
+    //
+    // The contract now: same instance + different environment_ref =
+    // refusal with the previous context left intact; a fresh instance
+    // per environment is the supported path (production's cache
+    // fast-path means the singleton rarely sees a second env at all).
     const server = new McpServer();
 
-    // Load env 1
     bootstrapMcpContextSync(server, {
       organization_id: 'org_1',
       organization_name: 'Test',
@@ -294,8 +305,28 @@ runSuite('Audit Lifecycle', () => {
     const ctx1 = server.getContext();
     assert(ctx1 !== null, 'should have context for env1');
 
-    // Load env 2 — different evidence set
-    bootstrapMcpContextSync(server, {
+    let threw = false;
+    try {
+      bootstrapMcpContextSync(server, {
+        organization_id: 'org_1',
+        organization_name: 'Test',
+        environment_id: 'env_2',
+        domain: 'other.com',
+        landing_url: 'https://other.com/',
+        is_production: true,
+        audit_cycle_id: 'cycle_env2',
+      }, [pageContentEvidence('https://other.com/')]);
+    } catch (err) {
+      threw = true;
+      assert(String(err).includes('cross-tenant'), 'refusal names the guard');
+    }
+    assert(threw, 'same-instance env swap must be refused (M2 H2)');
+    assert(server.getContext()!.root_domain === ctx1!.root_domain,
+      'refused swap must leave the previous context untouched');
+
+    // The supported path: a fresh server for the other environment.
+    const server2 = new McpServer();
+    bootstrapMcpContextSync(server2, {
       organization_id: 'org_1',
       organization_name: 'Test',
       environment_id: 'env_2',
@@ -304,12 +335,9 @@ runSuite('Audit Lifecycle', () => {
       is_production: true,
       audit_cycle_id: 'cycle_env2',
     }, [pageContentEvidence('https://other.com/')]);
-
-    const ctx2 = server.getContext();
-    assert(ctx2 !== null, 'should have context for env2');
-    // Contexts should be different (different domain)
-    assert(ctx1!.root_domain !== ctx2!.root_domain || ctx1!.cycle_ref !== ctx2!.cycle_ref,
-      'different env should produce different context');
+    const ctx2 = server2.getContext();
+    assert(ctx2 !== null, 'fresh server loads env2');
+    assert(ctx2!.root_domain !== ctx1!.root_domain, 'contexts are distinct');
   });
 });
 

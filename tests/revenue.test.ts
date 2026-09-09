@@ -374,8 +374,15 @@ runSuite('Revenue Actions', () => {
     });
     const actions = deriveActions(decision);
     const primary = actions.find(a => a.action_key.endsWith('_primary'));
-    assert(primary!.title.toLowerCase().includes('stable') || primary!.title.toLowerCase().includes('no significant'),
-      'stable decision should produce monitoring action');
+    // Assert the behavior, not the copy. This test broke when the action
+    // title was rewritten ("Sustain the current revenue path and watch
+    // for new leakage signals") while still producing exactly the
+    // monitoring action it always did — the literals 'stable' / 'no
+    // significant' belonged to a previous title catalog. action_type is
+    // the semantic contract: a stable decision yields an observation,
+    // not an intervention.
+    assert(primary!.action_type === 'observation',
+      `stable decision should produce a monitoring (observation) action, got action_type=${primary!.action_type}`);
   });
 });
 

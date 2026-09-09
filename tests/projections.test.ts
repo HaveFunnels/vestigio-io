@@ -182,16 +182,19 @@ runSuite('Action Projections', () => {
 // ══════════════════════════════════════════════════
 
 runSuite('Workspace Projections', () => {
-  test('projectWorkspaces produces 9 core workspaces', () => {
+  test('projectWorkspaces produces 10 core workspaces', () => {
     const result = computeResult();
     const workspaces = projectWorkspaces(result);
     // Filter out behavioral placeholder workspaces — they always emit
     // (category='behavioral') even when there's no pixel data, so they
     // would otherwise inflate the count. Core packs are: preflight,
     // revenue, chargeback, security_posture, copy_alignment,
-    // channel_integrity, discoverability, brand_integrity, funnel_journey.
+    // channel_integrity, discoverability, brand_integrity,
+    // funnel_journey, competitive_lens (added with the competitor
+    // radar; these counts went stale for months because the suite was
+    // not green in CI — fixed 2026-09 along with the rot around it).
     const coreWorkspaces = workspaces.filter(w => w.category !== 'behavioral');
-    assertEqual(coreWorkspaces.length, 9);
+    assertEqual(coreWorkspaces.length, 10);
   });
 
   test('each workspace has correct type', () => {
@@ -281,9 +284,9 @@ runSuite('projectAll Integration', () => {
     const proj = projectAll(result);
     assertGreater(proj.findings.length, 0, 'has findings');
     assertGreater(proj.actions.length, 0, 'has actions');
-    // Filter behavioral placeholders — see "produces 9 core workspaces" above
+    // Filter behavioral placeholders — see "produces 10 core workspaces" above
     const coreWorkspaces = proj.workspaces.filter(w => w.category !== 'behavioral');
-    assertEqual(coreWorkspaces.length, 9, 'has 9 core workspaces');
+    assertEqual(coreWorkspaces.length, 10, 'has 10 core workspaces');
   });
 
   test('workspace findings sum equals total findings', () => {
@@ -409,14 +412,14 @@ runSuite('MCP Projection Tools', () => {
     assertGreater((result.data as any).length, 0, 'has actions');
   });
 
-  test('get_workspace_projections returns 9 core workspaces', () => {
+  test('get_workspace_projections returns 10 core workspaces', () => {
     const server = new McpServer();
     server.loadContext(standardEvidence(), scope, cycleRef, 'shop.com', 'https://shop.com/');
     const result = server.callTool('get_workspace_projections');
     assertEqual(result.type, 'workspace_projections');
-    // Filter behavioral placeholders — see "produces 9 core workspaces" above
+    // Filter behavioral placeholders — see "produces 10 core workspaces" above
     const coreCount = (result.data as any[]).filter(w => w.category !== 'behavioral').length;
-    assertEqual(coreCount, 9);
+    assertEqual(coreCount, 10);
   });
 
   test('get_map returns map definition', () => {

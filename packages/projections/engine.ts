@@ -1083,6 +1083,68 @@ function enrichFindingsWithCrossRefs(
   });
 }
 
+
+// ── Surface resolution ─────────────────────────
+//
+// INFERENCE_SURFACES above is a vocabulary of canonical page types, not
+// a statement about any particular site. Until 2026-09 its strings were
+// written verbatim onto findings, so an e-commerce store received
+// findings anchored on /pricing, /features, /about and /support — all
+// 404 on that site. The customer's analytics team verified each one and
+// scored the findings as fabricated. Nothing that cites a page may cite
+// a page the crawl did not see.
+//
+// Resolution order:
+//   1. The finding's own evidence URL — the page the observation
+//      actually came from. Always wins when present.
+//   2. Tokens from the static entry that a crawled path actually
+//      matches (prefix match: '/product' survives via '/products/x').
+//   3. Sitewide ('/') — honest when nothing more specific is real.
+
+/** All paths the crawl actually observed, from evidence URLs. */
+export function buildRealPathSet(evidence: Array<{ payload?: unknown; url?: string }>): Set<string> {
+  const paths = new Set<string>(['/']);
+  for (const ev of evidence) {
+    const url = extractEvidenceUrl(ev);
+    if (!url) continue;
+    try {
+      paths.add(new URL(url).pathname || '/');
+    } catch {
+      if (url.startsWith('/')) paths.add(url);
+    }
+  }
+  return paths;
+}
+
+export function resolveFindingSurface(
+  inferenceKey: string,
+  sourceUrl: string | null,
+  realPaths: Set<string>,
+): string {
+  if (sourceUrl) {
+    try {
+      return new URL(sourceUrl).pathname || '/';
+    } catch {
+      if (sourceUrl.startsWith('/')) return sourceUrl;
+      // Host-only evidence (off-site recon) — sitewide is the honest anchor.
+      return '/';
+    }
+  }
+  const raw = INFERENCE_SURFACES[inferenceKey];
+  if (!raw) return '/';
+  const tokens = raw
+    .replace(/\(.*?\)/g, '')
+    .split(',')
+    .map((t) => t.trim())
+    .filter((t) => /^\/[a-z0-9\-_/]*$/i.test(t));
+  const real = tokens.filter(
+    (t) => t === '/' || [...realPaths].some((rp) => rp === t || rp.startsWith(t + '/') || rp.startsWith(t)),
+  );
+  const specific = real.filter((t) => t !== '/');
+  if (specific.length > 0) return specific.join(', ');
+  return '/';
+}
+
 export function projectFindings(
   result: MultiPackResult,
   translations?: EngineTranslations,
@@ -1091,6 +1153,8 @@ export function projectFindings(
   const valueCases = result.impact.value_cases;
   const rootCauses = result.intelligence.root_causes;
   const inferences = result.inferences;
+  // Built once per projection: which paths the crawl actually saw.
+  const realPaths = buildRealPathSet(result.evidence);
 
   // Index inferences by key for fast lookup
   const inferenceByKey = new Map<string, Inference>();
@@ -1287,7 +1351,7 @@ export function projectFindings(
         role: vc.impact_role,
       },
       pack: packKey,
-      surface: INFERENCE_SURFACES[vc.inference_key] || '/',
+      surface: resolveFindingSurface(vc.inference_key, sourceUrl, realPaths),
       freshness: inf.freshness.freshness_state,
       inference_key: vc.inference_key,
       reasoning: resolveReasoning(vc.inference_key, inf, vc.reasoning, translations),

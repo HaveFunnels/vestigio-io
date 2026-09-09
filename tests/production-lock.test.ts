@@ -107,7 +107,11 @@ runSuite('Environment Validation', () => {
       SECRET: 'prod-secret',
       NEXTAUTH_URL: 'https://app.vestigio.io',
       SITE_URL: 'https://app.vestigio.io',
-      VESTIGIO_SECRET_KEY: 'aes-256-key-xxx',
+      // 64 hex chars — the validator now enforces a 32-char minimum on
+      // this key (short keys weaken the AES-256 derivation), and the old
+      // 15-char placeholder started failing the exact check the fixture
+      // exists to satisfy.
+      VESTIGIO_SECRET_KEY: 'a'.repeat(64),
       ANTHROPIC_API_KEY: 'sk-ant-xxx',
     });
     assertEqual(result.valid, true);

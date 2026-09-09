@@ -705,6 +705,7 @@ Regras:
 9. Voz ativa, primeira pessoa do plural ("Vestigio observou", "Detectamos") quando precisar atribuir.
 10. PROIBIDO travessão (—). Use ponto, vírgula, dois pontos, ou parênteses.
 11. PROIBIDO exclamação. PROIBIDO emoji. PROIBIDO link.
+12. COERÊNCIA (regra absoluta): o texto trata EXCLUSIVAMENTE do problema do título deste passo, na superfície deste passo. PROIBIDO discorrer sobre outra página ou outro problema como assunto principal. Mencionar outra superfície só é permitido em UMA frase de contraste explícito com o Passo 1. Um passo cujo título fala de uma coisa e cujo corpo fala de outra é defeito, não estilo.
 12. Zero menção literal a "Passo 1", "Passo 2", "próximo passo", "primeiro/segundo/terceiro" — a UI mostra a numeração.`;
 
 	// Resolve inference keys to friendly names so the LLM has no
@@ -774,7 +775,15 @@ export async function generateNextSteps(
 	// locative is dropped so the reader doesn't see the same trailing
 	// phrase three times in a row. We do this in a second pass after
 	// titles are computed.
-	const procHashByCatalog = new Map<string, number>(); // catalogKey -> first step.order using it
+	// procText -> where it first appeared AND which inference produced it.
+	// Borrowing is only legitimate when the CAUSE matches: two steps with
+	// the same primaryKey sharing a procedure is "this fix applies here
+	// too". Identical text under a DIFFERENT primaryKey is a catalog
+	// collision — the Sept/2026 plan shipped a step titled about mobile
+	// whose procedure was Passo 1's checkout-SSL checklist, exactly this
+	// path. A collision now falls back to the generic procedure instead
+	// of confidently prescribing another problem's fix.
+	const procHashByCatalog = new Map<string, { order: number; primaryKey: string }>();
 	const stepLocatives: string[] = [];
 
 	// Wave 22.9 · Bloco 3 — pre-compute the primary step's mechanism
@@ -905,19 +914,30 @@ export async function generateNextSteps(
 			"Implementar fix + adicionar teste de regressão",
 		];
 		const procHashKey = procSteps.join("\n");
-		const earlierOrder = procHashByCatalog.get(procHashKey);
+		const earlier = procHashByCatalog.get(procHashKey);
 		let finalProcedureSteps: string[];
-		if (earlierOrder !== undefined && earlierOrder < order) {
+		if (earlier !== undefined && earlier.order < order && earlier.primaryKey === primaryKey) {
+			// Same cause, earlier step — a legitimate "applies here too".
 			// surfaceHint already carries the preposition ("à página
 			// inicial" / "ao checkout") so the template glues directly
 			// without an extra "a" (which would produce "aplicada a à").
 			const surfaceHint = humanizeSurfaceForProcedure(action.surface);
 			finalProcedureSteps = [
-				`Mesma técnica do Passo ${earlierOrder} (já detalhada acima), aplicada ${surfaceHint}:`,
+				`Mesma técnica do Passo ${earlier.order} (já detalhada acima), aplicada ${surfaceHint}:`,
 				...procSteps,
 			];
+		} else if (earlier !== undefined && earlier.order < order) {
+			// Identical procedure text from a DIFFERENT cause: catalog
+			// collision. Prescribing it would attach another problem's fix
+			// to this step's title. The generic procedure is less specific
+			// but it is true.
+			finalProcedureSteps = [
+				"Reproduzir o problema localmente",
+				"Identificar o componente/arquivo afetado",
+				"Implementar fix + adicionar teste de regressão",
+			];
 		} else {
-			procHashByCatalog.set(procHashKey, order);
+			procHashByCatalog.set(procHashKey, { order, primaryKey });
 			finalProcedureSteps = procSteps;
 		}
 

@@ -322,7 +322,14 @@ await runAsyncSuite('chronic findings', async () => {
       // — chronic at minResolves=2. policy_gap on /: resolved once —
       // below threshold, excluded.
       const day = 24 * 60 * 60 * 1000;
-      const base = new Date('2026-04-01').getTime();
+      // Relative to now, not to a calendar date: detectChronicFindings
+      // filters on a 180-day lookback from Date.now(), so fixtures with
+      // fixed dates age out of the window and the test starts failing by
+      // wall-clock alone. This suite's second case did exactly that
+      // (base 2026-01-01 fell out of the window in July) and the first
+      // was ~3 weeks from the same fate. 60 days back keeps the whole
+      // 35-day fixture span comfortably inside the lookback, forever.
+      const base = Date.now() - 60 * 24 * 60 * 60 * 1000;
       const prisma = makeChronicPrisma([
         { environmentId: 'env_a', inferenceKey: 'trust_boundary_crossed', surface: '/checkout', pack: 'scale_readiness', status: 'created', impactMidpoint: 500, createdAt: new Date(base), statusChangedAt: new Date(base) },
         { environmentId: 'env_a', inferenceKey: 'trust_boundary_crossed', surface: '/checkout', pack: 'scale_readiness', status: 'resolved', impactMidpoint: 500, createdAt: new Date(base + 7 * day), statusChangedAt: new Date(base + 7 * day) },
@@ -345,7 +352,8 @@ await runAsyncSuite('chronic findings', async () => {
 
     await tCase('sorts chronic findings by resolveCount desc then impact desc', async () => {
       const day = 24 * 60 * 60 * 1000;
-      const base = new Date('2026-01-01').getTime();
+      // See the note on the first case: relative base, same reason.
+      const base = Date.now() - 60 * 24 * 60 * 60 * 1000;
       const mk = (env: string, key: string, status: string, impact: number, day_offset: number) => ({
         environmentId: env, inferenceKey: key, surface: '/', pack: 'p', status,
         impactMidpoint: impact,

@@ -74,3 +74,25 @@ Do 4.1 de vocês, em ordem da nossa fila:
 3. Qualquer "sim" é regressão nossa e voltamos ao ponto.
 
 O objetivo declarado deste ciclo, nas palavras do operador: *o plano deve ser preciso quanto às suas recomendações e descobrir insights que nem mesmo a Montelle conseguiu encontrar.* A precisão é este documento; os insights novos dependem dos itens 6, 7 e 5 acima — o pixel enxergando o que a instrumentação de vocês, por estar só no produto e checkout, não vê: o comportamento site-inteiro por origem, antes do clique em Comprar.
+
+
+---
+
+## 5. Adendo — round 2 (mesma data)
+
+O analista revisou os commits do round 1 e apontou quatro furos sobreviventes. Os quatro eram reais; os quatro foram fechados no commit `605ca4a0`:
+
+| furo apontado | correção |
+|---|---|
+| Blocos por time e tile do hero somavam sem teto (três números diferentes para o mesmo conceito) | **Um único agregado** (`openLossExposure`): dedupe por (inferência, superfície), teto, e todos os consumidores — hero, narrativa, tese, times — leem a mesma função. Os times são partição escalada: os cards somam exatamente a manchete. Item (f) satisfeito **por construção**, não por disciplina. |
+| Frase de calibração sobreviveu no caminho determinístico (narrative fallback) | Reescrita, junto com "receita medida" e "impacto financeiro calibrado" que a varredura achou nos outros fallbacks. Mesma regra nos dois caminhos agora. |
+| Base do teto era a receita da organização — HaveFunnels declara R$ 580k sobre duas lojas | `Environment.monthlyRevenue` (novo campo) vence; o valor da org só é emprestado para org de ambiente único; caso contrário o teto se declara não-informado em vez de chutar com a receita de outra loja. Antes de regenerar, o valor da Montelle será definido como R$ 198.000 (o medido por vocês). |
+| Manchete de domínio continuava na fila | **Fila invertida como pedido.** `findTrustBoundaries` não trata mais destino de conta de plataforma (`shopify.com/<id>/account`, hosts `accounts.*`) nem arestas saindo de `/account`/`/login` como gap de confiança — ficam no inventário de fronteiras, não viram finding. Destino externo desconhecido a partir de página comercial continua acusando em severidade alta. 4 testes fixam o contrato dos dois lados. |
+
+**Checklist de regeneração atualizado** com os itens de vocês:
+- (f) o mesmo R$ agregado idêntico em hero, narrativa e blocos por time ✔ por construção
+- (g) nenhum passo em posição 1 ou 2 ancorado em evidência de `/account` ✔ o gap não existe mais para gerar o passo
+
+**Sobre "o teto é curativo, não cura":** concordamos. O dedupe por identidade antes da soma já entrou neste round (era parte da cura); a sobreposição *entre* causas distintas sobre os mesmos compradores continua coberta só pelo teto. Receita medida como base entra quando houver fonte por ambiente — para a Montelle, isso é o pixel no checkout NX4 (item 5), não Shopify.
+
+**E o fecho de vocês está certo:** o que decide o valor é o item 7 — o alerta do TikTok existir no documento interno e não no plano é exatamente a troca errada que o parecer original nomeou. É o próximo trabalho depois da regeneração.

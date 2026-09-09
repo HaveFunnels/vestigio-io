@@ -53,20 +53,27 @@ async function buildWindow(
 	const start = addMonths(monthStart, -monthsBack + 1);
 	const end = addMonths(monthStart, 1);
 
-	const resolved = await prisma.finding.findMany({
+	// Verified customer actions, not Finding.status="resolved". The
+	// hero card was fixed this way after havefunnels saw R$ 67k
+	// "recuperado" without closing a single action; this section kept
+	// the old source and the Sept/2026 cross-exam caught it announcing
+	// a "biggest win" on the day the detector stopped firing — which was
+	// also the day the detector was fixed. An action row here means the
+	// customer marked work done AND the next cycle confirmed the finding
+	// gone. That is the only thing "recuperado" may be built from.
+	const resolved = await prisma.userAction.findMany({
 		where: {
 			environmentId,
-			status: "resolved",
-			statusChangedAt: { gte: start, lt: end },
+			status: "done",
+			verifiedResolvedAt: { gte: start, lt: end, not: null },
 		},
 		select: {
-			pack: true,
-			impactMidpoint: true,
-			inferenceKey: true,
-			surface: true,
-			statusChangedAt: true,
+			title: true,
+			baselineImpactMidpoint: true,
+			verifiedResolvedAt: true,
+			finding: { select: { pack: true } },
 		},
-		orderBy: { impactMidpoint: "desc" },
+		orderBy: { baselineImpactMidpoint: "desc" },
 	});
 
 	// Sprint 3.4 — also count every finding the engine *detected* in
@@ -83,24 +90,28 @@ async function buildWindow(
 	});
 
 	const capturedTotal = Math.round(
-		resolved.reduce((a, r) => a + r.impactMidpoint, 0),
+		resolved.reduce((a, r) => a + (r.baselineImpactMidpoint ?? 0), 0),
 	);
 
-	// Top packs by count.
+	// Top packs by count, via each action's linked finding.
 	const packCounts: Record<string, number> = {};
-	for (const r of resolved) packCounts[r.pack] = (packCounts[r.pack] ?? 0) + 1;
+	for (const r of resolved) {
+		const pack = r.finding?.pack;
+		if (pack) packCounts[pack] = (packCounts[pack] ?? 0) + 1;
+	}
 	const topCategories = Object.entries(packCounts)
 		.sort((a, b) => b[1] - a[1])
 		.slice(0, 3)
 		.map(([pack]) => pack);
 
-	// Biggest win — the single highest-impact resolved finding.
+	// Biggest win — the customer's highest-impact verified action, named
+	// by what they did rather than by the detector key that went quiet.
 	const biggestRow = resolved[0];
-	const biggestWin = biggestRow
+	const biggestWin = biggestRow?.verifiedResolvedAt
 		? {
-			title: `${biggestRow.inferenceKey.replace(/_/g, " ")} · ${biggestRow.surface}`,
-			capturedAmount: Math.round(biggestRow.impactMidpoint),
-			resolvedAt: biggestRow.statusChangedAt.toISOString().slice(0, 10),
+			title: biggestRow.title,
+			capturedAmount: Math.round(biggestRow.baselineImpactMidpoint ?? 0),
+			resolvedAt: biggestRow.verifiedResolvedAt.toISOString().slice(0, 10),
 		}
 		: undefined;
 
@@ -108,8 +119,9 @@ async function buildWindow(
 	// with no resolutions so the bar chart's x-axis stays continuous.
 	const buckets: Record<string, number> = {};
 	for (const r of resolved) {
-		const key = ymKey(r.statusChangedAt);
-		buckets[key] = (buckets[key] ?? 0) + r.impactMidpoint;
+		if (!r.verifiedResolvedAt) continue;
+		const key = ymKey(r.verifiedResolvedAt);
+		buckets[key] = (buckets[key] ?? 0) + (r.baselineImpactMidpoint ?? 0);
 	}
 	const monthlyValues: Array<{ month: string; value: number }> = [];
 	for (let i = monthsBack - 1; i >= 0; i--) {
@@ -141,11 +153,32 @@ export async function generateMemoryRollups(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
 ): Promise<MemoryRollupsOutput> {
-	const [w1, w3, w6, w12] = await Promise.all([
+	const [w1, w3, w6, w12, firstActivity] = await Promise.all([
 		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 1),
 		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 3),
 		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 6),
 		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 12),
+		prisma.auditCycle.findFirst({
+			where: { environmentId: ctx.environmentId },
+			orderBy: { createdAt: "asc" },
+			select: { createdAt: true },
+		}),
 	]);
+
+	// Windows that reach back before the account existed get flagged
+	// rather than silently padded: a 12-month card on a 2-month account
+	// repeats the same few datapoints in every window and reads as a
+	// year of history that never happened (caught in the Sept/2026
+	// cross-exam as pure visual noise).
+	if (firstActivity) {
+		const accountSince = ymKey(firstActivity.createdAt);
+		for (const [months, w] of [[1, w1], [3, w3], [6, w6], [12, w12]] as const) {
+			const windowStart = addMonths(ctx.monthStart, -months + 1);
+			if (firstActivity.createdAt > windowStart) {
+				w.insufficientHistory = true;
+				w.accountSince = accountSince;
+			}
+		}
+	}
 	return { "1m": w1, "3m": w3, "6m": w6, "12m": w12 };
 }

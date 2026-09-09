@@ -19,6 +19,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { verifiedCaptured, cappedExposureFor } from "../honest-aggregates";
 import type { GenerateContext } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
 import { monthLabel } from "../i18n";
@@ -64,15 +65,21 @@ async function gatherInputs(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
 ): Promise<NarrativeInputs> {
-	const [resolved, newCritical, chronic, regression, openLoss, positives] = await Promise.all([
-		prisma.finding.findMany({
+	// "Resolvido/recuperado" comes from verified customer actions, never
+	// from Finding.status="resolved" — lifecycle marks a finding resolved
+	// whenever detection stops firing, which includes the engine being
+	// fixed that morning. The Sept/2026 plan announced R$ 23.750
+	// "recuperados" on exactly that. See honest-aggregates.ts.
+	const [captured, capturedSample, newCritical, chronic, regression, openLoss, positives] = await Promise.all([
+		verifiedCaptured(prisma, ctx.environmentId, ctx.monthStart, ctx.monthEnd),
+		prisma.userAction.findMany({
 			where: {
 				environmentId: ctx.environmentId,
-				status: "resolved",
-				statusChangedAt: { gte: ctx.monthStart, lt: ctx.monthEnd },
+				status: "done",
+				verifiedResolvedAt: { gte: ctx.monthStart, lt: ctx.monthEnd, not: null },
 			},
-			select: { inferenceKey: true, surface: true, impactMidpoint: true },
-			orderBy: { impactMidpoint: "desc" },
+			select: { title: true },
+			orderBy: { baselineImpactMidpoint: "desc" },
 			take: 6,
 		}),
 		prisma.finding.findMany({
@@ -134,7 +141,7 @@ async function gatherInputs(
 		}),
 	]);
 
-	const capturedTotal = resolved.reduce((a, r) => a + r.impactMidpoint, 0);
+	const capturedTotal = captured.total;
 
 	// Reta-final dedupe: the engine emits multiple Finding rows per real
 	// inference (per cycle, per re-detection) and openLoss naturally
@@ -147,8 +154,16 @@ async function gatherInputs(
 		openLoss.map((f) => `${f.inferenceKey}::${f.surface ?? ""}`),
 	).size;
 
-	// T8 — exposure totals + dominant pack/surface.
-	const exposureTotal = Math.round(openLoss.reduce((a, r) => a + r.impactMidpoint, 0));
+	// T8 — exposure totals + dominant pack/surface. The sum is capped
+	// against declared revenue: severity percentages describe overlapping
+	// slices of the same buyers, so an uncapped sum announced R$ 305k of
+	// risk against a R$ 198k store. See packages/impact/exposure-cap.ts.
+	const exposureCapped = await cappedExposureFor(
+		prisma,
+		ctx.environmentId,
+		openLoss.reduce((a, r) => a + r.impactMidpoint, 0),
+	);
+	const exposureTotal = exposureCapped.total;
 	const packCounts: Record<string, number> = {};
 	const surfaceCounts: Record<string, number> = {};
 	for (const f of openLoss) {
@@ -193,14 +208,12 @@ async function gatherInputs(
 		: null;
 
 	return {
-		resolvedCount: resolved.length,
+		resolvedCount: captured.count,
 		vertical: ctx.businessContext?.vertical ?? null,
-		resolvedCapturedTotal: Math.round(capturedTotal),
-		resolvedSampleTitles: resolved
-			.slice(0, 3)
-			.map((r) =>
-				`${resolveInferenceTitle(r.inferenceKey, ctx.translations) ?? r.inferenceKey.replace(/_/g, " ")} em ${r.surface}`,
-			),
+		resolvedCapturedTotal: capturedTotal,
+		// Titles come from the customer's own verified actions — prose
+		// about what THEY did, grounded in rows they closed.
+		resolvedSampleTitles: capturedSample.slice(0, 3).map((a) => a.title),
 		newCriticalCount: newCritical.length,
 		newCriticalSamples: newCritical
 			.slice(0, 3)
@@ -379,7 +392,8 @@ Regras estritas:
 6. PROIBIDO "Vestigio aposta", "Vestigio acredita", "Vestigio estima". Vestigio AFIRMA com base em dado, não aposta. Verbos analíticos válidos como sujeito Vestigio: detectou, encontrou, mapeou, observou, identificou, rastreou, validou.
 7. PROIBIDO nomes de tema abstratos sem instância concreta atrelada na mesma frase. Se citar um tema, prove-o com R$ específico OU página específica OU comportamento observável na frase seguinte. Tema sem âncora concreta = ruído.
 8. PROIBIDO travessão (—) em qualquer parágrafo. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.
-9. PROIBIDO usar a palavra "exposição" em qualquer parágrafo. Substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.`;
+9. PROIBIDO usar a palavra "exposição" em qualquer parágrafo. Substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.
+10. HONESTIDADE DE MEDIÇÃO (regra absoluta, vence qualquer outra): os valores em R$ deste plano são ESTIMATIVAS calculadas por severidade sobre a receita informada pelo cliente — não são medições. PROIBIDO afirmar ou insinuar que foram medidos: nada de "não é projeção", "medido", "comprovado", "observado no seu checkout", "calibrado". Enquadrar sempre como "estimativa" ou "perda potencial estimada". A palavra "medido" é reservada para dados que o pixel de fato coletou (sessões, permanência, cliques, scroll). Um cliente que conhece a própria receita compara — e uma única afirmação de medição falsa custa a credibilidade do documento inteiro.`;
 
 	const data: string[] = [];
 	data.push(`Dados do mês ${i.monthLabelPt} para ${i.envDomain}:`);
@@ -388,7 +402,12 @@ Regras estritas:
 	data.push(`- Primeiro plano deste env? ${i.isFirstPlan ? "SIM (use tom de onboarding)" : "Não"}`);
 	if (i.positiveSample) {
 		const where = i.positiveSample.surface ? ` em ${humanizeSurfaceCustomerFacing(i.positiveSample.surface)}` : "";
-		data.push(`- PONTO POSITIVO (usar como abertura do Parágrafo 1): "${i.positiveSample.title}"${where}. Está calibrado / segura receita`);
+		// "Está calibrado / segura receita" used to be injected here and
+		// the LLM dutifully wrote "a medição está calibrada e segurando
+		// receita" — a calibration claim nobody verified, published on
+		// the same day three pixel bugs were being fixed. The positive
+		// stays; the fabricated certification goes.
+		data.push(`- PONTO POSITIVO (usar como abertura do Parágrafo 1): "${i.positiveSample.title}"${where}. Descrever como ponto forte detectado, SEM afirmar calibração ou medição`);
 	}
 	data.push("");
 	data.push(`# Mudança do mês`);

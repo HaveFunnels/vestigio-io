@@ -97,6 +97,14 @@ export interface MemoryWindowOutput {
 	 *  primary metric so the card shows continuous work even when
 	 *  customer hasn't acted yet. */
 	findingsDetected?: number;
+	/** True when the window reaches further back than the account has
+	 *  existed. A "last 12 months" card on a 2-month account otherwise
+	 *  repeats the same handful of datapoints across every window and
+	 *  reads as history that never happened. */
+	insufficientHistory?: boolean;
+	/** First month with any engine activity, YYYY-MM — lets the UI say
+	 *  "conta desde julho" instead of pretending. */
+	accountSince?: string;
 	topCategories: string[];
 	biggestWin?: {
 		title: string;

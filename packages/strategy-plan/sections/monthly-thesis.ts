@@ -15,6 +15,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { verifiedCaptured, cappedExposureFor } from "../honest-aggregates";
 import type { GenerateContext } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
 import { monthLabel } from "../i18n";
@@ -45,16 +46,11 @@ async function gatherInputs(
 	// Reuse the same input bundle shape as narrative.ts so the thesis
 	// and the body argue from identical data; otherwise they can
 	// disagree and the customer notices the inconsistency.
+	// Verified customer actions, not Finding.status="resolved" — the
+	// latter fires whenever detection stops, including when the detector
+	// itself was fixed. See honest-aggregates.ts.
 	const [resolved, newCritical, chronic, regression, openLoss] = await Promise.all([
-		prisma.finding.aggregate({
-			where: {
-				environmentId: ctx.environmentId,
-				status: "resolved",
-				statusChangedAt: { gte: ctx.monthStart, lt: ctx.monthEnd },
-			},
-			_sum: { impactMidpoint: true },
-			_count: { _all: true },
-		}),
+		verifiedCaptured(prisma, ctx.environmentId, ctx.monthStart, ctx.monthEnd),
 		prisma.finding.count({
 			where: {
 				environmentId: ctx.environmentId,
@@ -119,9 +115,15 @@ async function gatherInputs(
 	return {
 		monthLabelPt: monthLabel(ctx.month, ctx.locale),
 		envDomain: ctx.envDomain,
-		resolvedCount: resolved._count?._all ?? 0,
-		resolvedCapturedTotal: Math.round(resolved._sum.impactMidpoint ?? 0),
-		exposureTotal: Math.round(openLoss.reduce((a, r) => a + r.impactMidpoint, 0)),
+		resolvedCount: resolved.count,
+		resolvedCapturedTotal: resolved.total,
+		exposureTotal: (
+			await cappedExposureFor(
+				prisma,
+				ctx.environmentId,
+				openLoss.reduce((a, r) => a + r.impactMidpoint, 0),
+			)
+		).total,
 		exposureFindingCount: openLoss.length,
 		dominantPack,
 		dominantPackShare,
@@ -202,6 +204,8 @@ Vocabulário CUSTOMER-FACING obrigatório:
 - "página inicial" / "checkout" / "página de preços", NÃO "\`/\`" literal nem "surface"
 - "foco do mês" / "tema do mês", NÃO "eixo" (engenharia mecânica)
 - "movimento principal" / "alavanca central", NÃO "aposta" (Vestigio AFIRMA com dado, não aposta)
+
+HONESTIDADE DE MEDIÇÃO (regra absoluta): os R$ agregados são ESTIMATIVAS por severidade sobre receita informada. PROIBIDO chamá-los de medição: nada de "não é projeção", "medido", "comprovado". Enquadrar como "perda potencial estimada". "Medido" só para dado do pixel.
 
 **Estrutura obrigatória — exatamente 2 ou 3 frases:**
 

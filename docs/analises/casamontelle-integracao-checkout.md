@@ -1,65 +1,97 @@
-# Proposta de integração — pixel Vestigio no checkout NX4
+# Integração do pixel no checkout — desenho agnóstico
 
-**Data:** 2026-09-09
+**Data:** 2026-09-09 (rev. 2 — incorpora o parecer do NX4)
 **Para:** time de instrumentação da Casa Montelle / NX4
-**Objetivo:** fechar o ponto cego que o próprio parecer de vocês identificou (item 5), medindo o funil **inteiro** — storefront + checkout + confirmação — como **uma sessão só**, não dois funis colados.
+**Princípio:** a Vestigio se adapta à loja, não o contrário. O trabalho de costurar o funil mora no nosso pixel. O que sobra para vocês é o mínimo irredutível — o que só quem tem o backend consegue fazer.
 
 ---
 
-## 1. O que muda com isso
+## 0. Correção e mudança de postura
 
-Hoje o pixel da Vestigio vê o site inteiro e para no add-to-cart; a instrumentação de vocês vê produto e checkout. Nenhum dos dois vê a jornada completa de uma pessoa. Com o pixel também no `seguro.casamontelle.com` **e** com uma identidade de sessão compartilhada, a Vestigio passa a medir:
+A rev. 1 desta proposta pedia que vocês emitissem um `nx4_visitor_id`, alterassem o redirect do Comprar e chamassem uma API. Estava errada de postura — era um handshake sob medida, não um produto que se instala em qualquer loja. Reescrevemos o pixel para absorver essa complexidade.
 
-- origem → comportamento no storefront → chegada no checkout → pagamento → confirmação, **por visitante**;
-- conversão real por origem (hoje a Vestigio estima; passaria a medir), o que reconcilia a divergência que vocês apontaram (nosso "direto 17x" vs. o Meta 27,5% / direto 24,9% de vocês);
-- abandono **dentro** do checkout, que é onde as alavancas reais de vocês vivem (PIX não pago, 44% que não tocam o formulário).
-
-O `data-order-id` que vocês já adicionaram na página de pedido é metade do trabalho e já está feito. O que falta são três peças, uma de cada lado e uma compartilhada.
+E uma correção de fato, apontada por vocês: **o `data-order-id` não existe hoje** na página de pedido. A rev. 1 dizia que estava feito; não está. Isso muda o desenho da confirmação (seção 3).
 
 ---
 
-## 2. O bloqueador central: identidade de sessão atravessa domínio?
+## 1. O que o pixel passou a fazer sozinho (já no ar, commit `fd4f0443`)
 
-**Hoje, não.** O pixel guarda o id da sessão em `sessionStorage` (`public/snippet/vestigio.js`), que é **por origem**. Uma pessoa que sai de `casamontelle.com` e entra em `seguro.casamontelle.com` recebe uma sessão nova — dois funis desconexos, exatamente o que **não** queremos.
+Tudo abaixo é do nosso lado, funciona em qualquer loja com storefront + checkout em subdomínio irmão, e **não pede nada de vocês**:
 
-Os dois domínios compartilham o eTLD+1 (`casamontelle.com`), e vocês já provaram que dá para atravessar: o cookie `nx4_utm` passa. A correção é fazer o mesmo com a identidade de visitante.
+**Costura cross-domínio.** O pixel agora escreve o próprio id de visitante num cookie no eTLD+1 (`.casamontelle.com`, achado por sondagem de cookie, sem lista de sufixos públicos), espelha em localStorage, e — porque 81% do tráfego de vocês é webview onde cookie cai entre navegações — **carrega o id e a sessão na URL** de qualquer link que aponte para um subdomínio irmão. Na chegada, adota na precedência **URL → cookie → localStorage → novo**. Exatamente a ordem que vocês descreveram, feita pelo pixel.
 
-**Duas formas, e preferimos a de vocês:**
+**Um funil, uma sessão.** A sessão (timeout de 30 min) atravessa o hop storefront→checkout via URL, então as duas páginas compartilham a mesma sessão — não dois funis colados. O **visitante** (365 dias) é separado da **sessão**, como vocês frisaram: comprador que volta semana que vem é sessão nova, mesmo visitante.
 
-**Opção A (recomendada) — cookie compartilhado do NX4.** Vocês já ofereceram emitir um `nx4_visitor_id` como cookie eTLD+1 (`Domain=.casamontelle.com`), do jeito que o `nx4_utm` já funciona. Se ele existir **desde o storefront**, o pixel da Vestigio o lê como chave de sessão nos dois domínios e a costura é automática. É a opção mais limpa: uma fonte de verdade de identidade, controlada por vocês, e a Vestigio só consome.
+**First-touch preservado.** Uma chegada costurada não sobrescreve a atribuição: o referrer ali é a própria loja, não uma aquisição. A origem real (tiktok, meta) já viajou na sessão compartilhada.
 
-**Opção B (fallback, só nosso) — mudar nosso storage para cookie eTLD+1.** Se por algum motivo o `nx4_visitor_id` não sair no storefront, mudamos o pixel para gravar `vg_sid` num cookie `Domain=.casamontelle.com` em vez de `sessionStorage`. Resolve, mas duplica identidade (a nossa e a de vocês) sem necessidade.
-
-Precisamos saber de vocês: **o `nx4_visitor_id` pode ser emitido já na primeira página do storefront, com `Domain=.casamontelle.com`?** Se sim, seguimos com a Opção A e não mudamos nada no nosso storage.
+**Decoração automática de links.** Feita no clique, sobre `<a href>`. Cobre o caso comum (o botão é um link) com **zero código de vocês**.
 
 ---
 
-## 3. As três peças
+## 2. O único caso em que vocês encostam uma linha
 
-| # | peça | dono | estado |
-|---|---|---|---|
-| 1 | identidade de sessão no eTLD+1 (`nx4_visitor_id` no storefront, ou cookie nosso) | NX4 (Opção A) ou Vestigio (Opção B) | **decisão pendente** — ver seção 2 |
-| 2 | padrões de marco configuráveis por ambiente (`/c/<slug>` = conversão, `/order/<id>` = confirmação) | Vestigio | a fazer, é config por env |
-| 3 | snippet no layout do checkout NX4, mesmo `data-env` | NX4 | uma linha, condicionada à loja |
+Vocês disseram que o Comprar redireciona via JS (`inject.js` intercepta o clique e faz `location.href`), não por `<a href>`. Isso o pixel **não** consegue interceptar — o setter de `location.href` é nativo e não-configurável.
 
-**Sobre a peça 2:** hoje o pixel classifica o marco de conversão por regex de path fixo (`/checkout`, `/pagamento`). Os de vocês são `/c/<slug>` e `/order/<id>`, que não casam. Vamos tornar esses padrões configuráveis por ambiente — a Montelle recebe um conjunto que reconhece os paths do NX4. É trabalho nosso e não depende de vocês.
+Para esse caso, e só ele, expusemos uma função:
 
-**Sobre a peça 3:** o ingest da Vestigio já aceita subdomínios do domínio registrado, então `seguro.casamontelle.com` entrega eventos sem nenhuma mudança de backend nosso. Basta o snippet carregar no checkout com o mesmo `data-env` do storefront.
+```js
+// no inject.js, onde vocês montam a URL do redirect do Comprar:
+location.href = window.vestigio.decorate(targetUrl);
+```
 
-**Confirmação de compra:** já resolvida. O pixel detecta `[data-order-id]` no DOM da página de pedido (`checkConfirmation` no snippet) e vocês já colocaram o atributo. Assim que as peças 1–3 estiverem no ar, o `confirmation_seen` dispara e o funil fecha na venda.
+`decorate()` devolve a URL com os parâmetros de costura anexados, e é no-op se o destino não for subdomínio irmão. É a única linha de integração que a Montelle precisa — e existe porque o checkout de vocês é JS, não porque o desenho exige.
 
----
-
-## 4. Privacidade e escopo
-
-- A identidade de sessão é anônima (id opaco), sem PII, como hoje. O `nx4_visitor_id`, se usado, precisa ser igualmente opaco — não pode carregar e-mail, CPF ou id de pedido.
-- O IP continua hasheado com sal diário no ingest, no checkout como no storefront.
-- Nenhum dado de pagamento é lido. O pixel observa navegação, tempo, foco de formulário (contagem e tipo de campo, nunca valores) e o marco de confirmação — não o conteúdo do cartão nem do PIX.
+O parecer de vocês sugeriu embutir o `nx4_vid` no redirect. Não precisa: `decorate()` já lê o nosso id (que por sua vez adota o de vocês se ele existir no cookie/URL). Uma fonte de verdade, a de vocês quando presente.
 
 ---
 
-## 5. O que pedimos de vocês, em uma frase
+## 3. Confirmação de compra — o ponto do PIX, que vocês têm razão
 
-Confirmar se o `nx4_visitor_id` pode sair como cookie `Domain=.casamontelle.com` **desde o storefront** (Opção A). Com esse "sim", a integração é: vocês carregam o snippet no checkout com o `data-env` da loja; nós configuramos os padrões de path do NX4 e lemos o cookie de vocês como chave de sessão. O `data-order-id` já feito fecha a compra.
+Vocês apontaram o erro central: `/order/<id>` **não é venda**, é a página de espera do PIX, e 35% nunca viram pago. Nós corrigimos o pixel para **nunca inferir venda**:
 
-Se preferirem não emitir o cookie no storefront, seguimos com a Opção B (cookie nosso no eTLD+1) — mais trabalho do nosso lado, mesmo resultado.
+- `/order/`, `/checkout` e afins classificam no máximo como "pagamento em andamento", nunca como concluído.
+- A mera existência de `[data-order-id]` **não conta mais** como venda (era o nosso bug — inflava conversão em ~metade).
+- Uma venda só é registrada com sinal **explícito de pago**.
+
+Como o PIX vira pago sem reload, o caminho robusto é uma chamada quando o status muda — o que vocês mesmos propuseram e é mais confiável que observar DOM:
+
+```js
+// quando o polling do PIX confirma pagamento:
+window.vestigio.confirm({ order_id: id, value: total });
+```
+
+Alternativa passiva, se preferirem não chamar a API: o pixel também aceita um marcador `[data-order-status="paid"]` no DOM (observado por mudança de atributo). Qualquer um dos dois; a chamada é mais robusta. O `data-order-id` sozinho, deliberadamente, não basta.
+
+---
+
+## 4. Instalação no checkout — concordamos que não é "uma linha"
+
+Vocês têm razão: no lado de vocês, é um provider `vestigio` no registro de pixels, por checkout, com o env id — como Meta e TikTok. Isso é arquitetura da plataforma de vocês, não imposição nossa; do nosso lado o requisito é só o snippet carregado com o mesmo `data-env` do storefront. O ingest já aceita o subdomínio, então nada muda no nosso backend.
+
+Sobre canonical vs URL real: o pixel lê `canonicalUrl()`, que na página de vocês aponta para `casamontelle.com`. Para o funil, queremos a **URL real do checkout** (`seguro.casamontelle.com/...`), não o canonical — é o que distingue "chegou no checkout" de "está no produto". Se o canonical do checkout aponta para o storefront, passamos a preferir `location.href` no checkout. Ajuste nosso, registrado.
+
+---
+
+## 5. Limites que assumimos, para não prometer o que não entrega
+
+- **Safari/ITP:** cookie escrito por JS expira em 7 dias. Irrelevante para costurar a sessão (minutos); não conte com ele para reconhecer retorno de 8+ dias. O carry por URL cobre a costura independente disso. O `nx4_utm` tem a mesma limitação.
+- **Visitante ≠ sessão:** já tratado no pixel (seção 1), exatamente como vocês pediram.
+
+---
+
+## 6. SRI — decisão que é de vocês, e concordamos com a exigência
+
+Isso coloca um script de terceiros na página de pagamento. Vocês listaram SRI como pendência nossa e estão certos: condicionem a ativação na Montelle a publicarmos o snippet com hash de integridade. É item da nossa fila e faremos antes de qualquer ativação no checkout. Enquanto isso não sair, a costura funciona só no storefront, que já é ganho.
+
+---
+
+## 7. Resumo do que sobra para cada lado
+
+**Vestigio (nós):** costura cross-domínio ✔ (no ar), nunca-inferir-venda ✔ (no ar), padrões de path por ambiente (a fazer), preferir URL real no checkout (a fazer), SRI no snippet (a fazer, gate para ativação).
+
+**Casa Montelle / NX4:**
+1. Carregar o snippet no checkout com o `data-env` da loja (provider no registro de pixels).
+2. UMA das duas: `window.vestigio.confirm({order_id})` quando o PIX confirma, **ou** `data-order-status="paid"` no DOM.
+3. Se o Comprar redireciona por JS: `location.href = window.vestigio.decorate(url)` — uma linha.
+
+Três itens, todos coisas que só quem tem o backend do checkout consegue fazer. Nenhum cookie novo, nenhum handshake sob medida. É o mínimo irredutível.

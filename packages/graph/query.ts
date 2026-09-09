@@ -14,6 +14,19 @@ import {
 
 const MAX_DEPTH = 10;
 
+// Edge types a buyer actually traverses — the only kinds that can mean
+// "the buyer was sent to another domain". Resource inclusions
+// (script_src, stylesheet_src, iframe_src) are deliberately excluded:
+// they are supply-chain surface, not a buyer redirect. See
+// findTrustBoundaries.
+const NAVIGATION_EDGE_TYPES = new Set<GraphEdge['edge_type']>([
+  'anchor',
+  'form_action',
+  'redirect',
+  'canonical_external',
+  'intent_target',
+]);
+
 export class GraphQuery {
   constructor(private graph: BuiltGraph) {}
 
@@ -118,6 +131,17 @@ export class GraphQuery {
       if (!source.is_external && target.is_external) {
         boundaryEdges.push(edge);
         if (target.host) externalHosts.add(target.host);
+
+        // trust_boundary_crossed is a BUYER-facing claim: "you get sent
+        // to another domain". Only edges the buyer actually traverses —
+        // navigation, redirect, form submit — qualify. Resource loads
+        // (script_src, stylesheet_src, iframe_src) are not the buyer
+        // crossing a domain; they are supply-chain surface, and firing
+        // this signal on them mislabels a third-party review widget
+        // (randomuser.me on the home page) as "buyers thrown to another
+        // domain at checkout". Those are covered by the script supply
+        // chain and network-surface signals, with their own copy.
+        if (!NAVIGATION_EDGE_TYPES.has(edge.edge_type)) continue;
 
         // Platform account flows stay in boundary_edges (inventory) but
         // are not trust GAPS — see isPlatformLoginBoundary above.

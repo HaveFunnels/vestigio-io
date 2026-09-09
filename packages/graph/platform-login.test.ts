@@ -27,7 +27,7 @@ function node(partial: Partial<GraphNode> & { id: string }): GraphNode {
 function edge(sourceId: string, targetId: string): GraphEdge {
 	return {
 		id: `edge_${sourceId}_${targetId}`,
-		edge_type: "links_to",
+		edge_type: "anchor",
 		source_id: sourceId,
 		target_id: targetId,
 		confidence: 100,
@@ -98,7 +98,14 @@ describe("findTrustBoundaries · platform logins", () => {
 		expect(q.findTrustBoundaries().trust_gaps).toHaveLength(0);
 	});
 
-	it("STILL flags an unknown external destination from a commercial page", () => {
+it("does NOT count a third-party script/resource load as a buyer trust gap", () => {
+		const scriptEdge = { ...edge("n_home", "n_unknown"), edge_type: "script_src" } as unknown as GraphEdge;
+		const q = new GraphQuery(graphWith([homePage, unknownExternal], [scriptEdge]));
+		// Supply-chain surface, not the buyer crossing a domain.
+		expect(q.findTrustBoundaries().trust_gaps).toHaveLength(0);
+	});
+
+		it("STILL flags an unknown external destination from a commercial page", () => {
 		// The guard must be surgical: loosening real detection to fix the
 		// false positive would trade one wrong plan for another.
 		const q = new GraphQuery(

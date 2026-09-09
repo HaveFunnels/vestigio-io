@@ -145,7 +145,7 @@ describe("snippet cross-domain stitching", () => {
 
 	it("adopts the session id carried in the URL — the funnel stays one session", () => {
 		const { sessionStorage } = loadSnippetAt(
-			"https://seguro.loja.com/c/abc?vg_vid=vgv_known&vg_sid=vgs_carried",
+			`https://seguro.loja.com/c/abc?vg_vid=vgv_known&vg_sid=vgs_carried&vg_t=${Date.now()}`,
 		);
 		const stored = JSON.parse(sessionStorage.getItem("vg_session"));
 		expect(stored.id).toBe("vgs_carried");
@@ -153,9 +153,31 @@ describe("snippet cross-domain stitching", () => {
 
 	it("adopts the visitor id carried in the URL over generating a new one", () => {
 		const { cookie } = loadSnippetAt(
-			"https://seguro.loja.com/c/abc?vg_vid=vgv_known&vg_sid=vgs_carried",
+			`https://seguro.loja.com/c/abc?vg_vid=vgv_known&vg_sid=vgs_carried&vg_t=${Date.now()}`,
 		);
 		expect(cookie()).toMatch(/vg_vid=vgv_known/);
+	});
+
+	it("does NOT adopt a stale carried session — a shared checkout link", () => {
+		const stale = Date.now() - 60 * 60 * 1000; // 1h old, past the 30m TTL
+		const { sessionStorage } = loadSnippetAt(
+			`https://seguro.loja.com/c/abc?vg_vid=vgv_x&vg_sid=vgs_someone_else&vg_t=${stale}`,
+		);
+		const stored = JSON.parse(sessionStorage.getItem("vg_session"));
+		expect(stored.id).not.toBe("vgs_someone_else");
+	});
+
+	it("window.vestigio.confirm dedupes by order id across calls", () => {
+		const { win } = loadSnippetAt("https://seguro.loja.com/order/123");
+		let fired = 0;
+		const g: any = globalThis as any;
+		const realFetch = g.fetch;
+		// confirm calls flush → sendPayload/sendBeacon; count sends.
+		g.navigator.sendBeacon = () => { fired++; return true; };
+		win.vestigio.confirm({ order_id: "order-1", value: 129.9 });
+		win.vestigio.confirm({ order_id: "order-1", value: 129.9 });
+		g.fetch = realFetch;
+		expect(fired).toBe(1);
 	});
 
 	it("window.vestigio.confirm fires once and is idempotent", () => {

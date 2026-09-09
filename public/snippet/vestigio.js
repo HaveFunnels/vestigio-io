@@ -126,16 +126,34 @@
   };
   window.vestigio.confirm = function(order) {
     // Explicit "this order is PAID" signal — the robust confirmation
-    // path, since only the merchant knows a PIX cleared. Idempotent:
-    // fires the sale milestone once. order = { order_id?, value? }.
+    // path, since only the merchant knows a PIX cleared.
+    //   order = { order_id?, value? }   value in BRL, decimal (e.g. 129.90)
+    //
+    // Deduped by ORDER, not just by session: a buyer who reopens the paid
+    // order page days later (a WhatsApp or email receipt link) lands in a
+    // NEW session, so a session-only guard would count the sale twice.
+    // We remember confirmed order ids in localStorage. localStorage drops
+    // in webviews, so this is best-effort on our side — the server ingest
+    // must dedupe on order_id too, which is the durable guard.
     order = order || {};
-    if (currentMilestone === 'conversion_completed') return;
+    var oid = order.order_id || null;
+    if (oid) {
+      try {
+        var seen = JSON.parse(localStorage.getItem('vg_confirmed_orders') || '[]');
+        if (seen.indexOf(oid) !== -1) return; // already counted this order
+        seen.push(oid);
+        // Bound the list so it cannot grow forever on a shared device.
+        if (seen.length > 50) seen = seen.slice(-50);
+        localStorage.setItem('vg_confirmed_orders', JSON.stringify(seen));
+      } catch (e) { /* storage blocked — fall through, server dedupes */ }
+    }
+    if (currentMilestone === 'conversion_completed' && !oid) return;
     currentMilestone = 'conversion_completed';
     persistSessionState();
     emit('confirmation_seen', {
       url: canonicalUrl(),
-      order_id: order.order_id || null,
-      value: typeof order.value === 'number' ? order.value : null,
+      order_id: oid,
+      value: typeof order.value === 'number' ? order.value : null, // BRL decimal
       source: 'api',
     });
     flush(true);
@@ -165,6 +183,15 @@
   // is the registrable domain. Memoized.
   var STITCH_VID_PARAM = 'vg_vid';
   var STITCH_SID_PARAM = 'vg_sid';
+  var STITCH_TS_PARAM = 'vg_t';
+  // A carried session is adopted only if the link was followed within
+  // this window. Checkout URLs get shared between people (WhatsApp, "look
+  // at this"), and without a freshness bound whoever opens someone else's
+  // link would be merged into that person's session. A real buy-button
+  // hop reaches checkout in seconds; a shared link opened later falls
+  // back to a fresh session (still the same VISITOR if their cookie is
+  // present). Matches the 30-min session timeout.
+  var STITCH_SID_TTL_MS = 30 * 60 * 1000;
   var _registrableDomain = null;
 
   function registrableDomain() {
@@ -248,7 +275,10 @@
       var sameRegistrable = u.hostname === rd || u.hostname.slice(-(rd.length + 1)) === '.' + rd;
       if (!sameRegistrable || u.hostname === location.hostname) return rawUrl;
       u.searchParams.set(STITCH_VID_PARAM, visitorId);
-      if (sessionId) u.searchParams.set(STITCH_SID_PARAM, sessionId);
+      if (sessionId) {
+        u.searchParams.set(STITCH_SID_PARAM, sessionId);
+        u.searchParams.set(STITCH_TS_PARAM, String(Date.now()));
+      }
       return u.toString();
     } catch (e) {
       return rawUrl;
@@ -352,8 +382,19 @@
     // here (different origin), so this is the only way the checkout page
     // knows it is the same visit that started on the storefront.
     try {
-      var sidFromUrl = new URLSearchParams(location.search).get(STITCH_SID_PARAM);
-      if (sidFromUrl) {
+      var qp = new URLSearchParams(location.search);
+      var sidFromUrl = qp.get(STITCH_SID_PARAM);
+      var tsFromUrl = parseInt(qp.get(STITCH_TS_PARAM) || '0', 10);
+      // Adopt only a FRESH carried session (see STITCH_SID_TTL_MS): this
+      // is what stops a shared checkout link from merging strangers into
+      // one session. Also require the carried visitor to match the one we
+      // resolved on this device when a cookie is present — a stronger
+      // check than TTL alone, and free in the normal (non-shared) case.
+      var freshEnough = tsFromUrl > 0 && (Date.now() - tsFromUrl) < STITCH_SID_TTL_MS;
+      var vidFromUrl = qp.get(STITCH_VID_PARAM);
+      var cookieVid = readCookie(STITCH_VID_PARAM);
+      var visitorMatches = !cookieVid || !vidFromUrl || cookieVid === vidFromUrl;
+      if (sidFromUrl && freshEnough && visitorMatches) {
         sessionStorage.setItem('vg_session', JSON.stringify({ id: sidFromUrl, ts: Date.now() }));
         return sidFromUrl;
       }

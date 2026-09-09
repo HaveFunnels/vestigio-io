@@ -36,10 +36,30 @@ function getEnvironmentId(): string {
 }
 
 interface FetchState {
-	status: "loading" | "ready" | "generating" | "missing" | "awaiting_first_cycle" | "error";
+	status:
+		| "loading"
+		| "ready"
+		| "generating"
+		| "preparing"
+		| "missing"
+		| "awaiting_first_cycle"
+		| "error";
 	plan?: StrategyPlan;
 	error?: string;
+	/** Real pipeline phase of the cycle that will produce this plan. */
+	phase?: string | null;
 }
+
+// Cycle phases the audit runner records, in the order they occur. Copy
+// is deliberately about the customer's site, not about the system doing
+// work — the point is that the wait is real and has a shape, not that
+// something is busy.
+const PHASE_LABELS: Record<string, string> = {
+	pipeline_first_value: "Lendo as páginas principais",
+	pipeline_crawl: "Mapeando o site",
+	pipeline_headless: "Carregando páginas como um visitante",
+	final_assembly: "Montando as conclusões",
+};
 
 function adaptApiResponse(raw: any): StrategyPlan {
 	// API returns ISO strings for dates; the UI contract wants Date
@@ -175,10 +195,22 @@ export default function StrategyPlanPage() {
 					// "we're analyzing your site" empty state instead of the
 					// generic missing-month one.
 					let firstCycle = false;
+					let inFlight: { phase?: string | null } | null = null;
 					try {
 						const body = await res.clone().json();
 						firstCycle = body?.status === "awaiting_first_cycle";
+						inFlight = body?.cycleInFlight ?? null;
 					} catch { /* unparseable body — fall through to missing */ }
+
+					// A cycle is already running for this environment, so the
+					// plan is coming. Saying "not generated" here would be
+					// wrong for the ~16 minutes a targeted cycle takes.
+					if (inFlight) {
+						setState({ status: "preparing", phase: inFlight.phase ?? null });
+						pollTimer = setTimeout(load, 15000);
+						return;
+					}
+
 					setState({ status: firstCycle ? "awaiting_first_cycle" : "missing" });
 					if (firstCycle) {
 						// While the first cycle runs we poll just like the
@@ -228,6 +260,16 @@ export default function StrategyPlanPage() {
 
 	if (state.status === "loading") {
 		return <PlanPageSkeleton caption="Carregando plano…" />;
+	}
+
+	if (state.status === "preparing") {
+		const label = state.phase ? PHASE_LABELS[state.phase] : null;
+		return (
+			<PlanPageSkeleton
+				caption={label ?? "Analisando seu site…"}
+				subCaption="O plano deste mês é montado ao fim da análise. Esta página se atualiza sozinha."
+			/>
+		);
 	}
 
 	if (state.status === "generating") {

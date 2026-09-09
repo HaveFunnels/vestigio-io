@@ -146,9 +146,35 @@ export async function GET(request: Request, { params }: RouteParams) {
 		const plansEverGenerated = await prisma.monthlyStrategyPlan.count({
 			where: { environmentId: envId },
 		});
+
+		// A cycle in flight is the difference between "there is no plan"
+		// and "your plan is 16 minutes away". Targeted and full cycles run
+		// ~16 minutes at the median, and the plan row only appears once
+		// generation starts — so without this the customer sees a flat
+		// "not generated" for the entire wait, which is a screen actively
+		// telling them nothing is coming while something is.
+		//
+		// currentPhase is real pipeline state the runner already records,
+		// not a progress animation.
+		const runningCycle = await prisma.auditCycle.findFirst({
+			where: { environmentId: envId, status: { in: ["running", "pending"] } },
+			orderBy: { createdAt: "desc" },
+			select: { id: true, status: true, currentPhase: true, createdAt: true },
+		});
+
 		const status = plansEverGenerated === 0 ? "awaiting_first_cycle" : "missing";
 		return NextResponse.json(
-			{ message: "Plan not generated for this month", status },
+			{
+				message: "Plan not generated for this month",
+				status,
+				cycleInFlight: runningCycle
+					? {
+						status: runningCycle.status,
+						phase: runningCycle.currentPhase,
+						startedAt: runningCycle.createdAt,
+					}
+					: null,
+			},
 			{ status: 404 },
 		);
 	}

@@ -496,6 +496,44 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	setInterval(runStorageRetention, LEAD_CLEANUP_INTERVAL_MS);
 	console.log("✓ Storage retention + disk guard registered (1h interval)");
 
+	// ── Behavioral session aggregation ──
+	//
+	// Reduces finished sessions once and keeps the result, instead of
+	// keeping 61k raw rows/day per environment and re-reducing the last
+	// 30 days of them on every audit cycle.
+	//
+	// Runs in shadow until the readers migrate: aggregates are written,
+	// raw rows are left alone. BEHAVIORAL_AGGREGATE_PRUNE=1 flips it to
+	// deleting the raw rows it has aggregated — do not set that before
+	// process-behavioral, the journey map and monthly journeys read from
+	// BehavioralSessionAggregate, or behavioural findings will quietly
+	// stop being emitted.
+	//
+	// 10 minutes: sessions are only eligible 35 minutes after their last
+	// event, so a tighter interval would just scan for nothing.
+	const SESSION_AGGREGATE_INTERVAL_MS = 10 * 60 * 1000;
+	const { aggregateIdleSessions } = await import("../apps/audit-runner/aggregate-sessions");
+	const pruneRaw = process.env.BEHAVIORAL_AGGREGATE_PRUNE === "1";
+	const runSessionAggregation = async () => {
+		await withLeadership("session-aggregation", { ttlSec: 300 }, async () => {
+			try {
+				const r = await aggregateIdleSessions({ deleteRawAfterAggregate: pruneRaw });
+				if (r.sessionsAggregated > 0 || r.errors > 0) {
+					console.log(
+						`[aggregate-sessions] aggregated=${r.sessionsAggregated} skipped=${r.sessionsSkipped} rawDeleted=${r.rawRowsDeleted} errors=${r.errors}`,
+					);
+				}
+			} catch (err) {
+				console.error("[aggregate-sessions] pass failed:", err);
+			}
+		});
+	};
+	runSessionAggregation();
+	setInterval(runSessionAggregation, SESSION_AGGREGATE_INTERVAL_MS);
+	console.log(
+		`✓ Session aggregation registered (10m interval, mode=${pruneRaw ? "prune" : "shadow"})`,
+	);
+
 	// ── Mini-audit followup 24h cron (Wave 22.8 #10 Move 2) ──
 	// Para leads que rodaram o mini-audit, viram resultado, e
 	// nao converteram em 24h. Manda 1 email "Voce viu N vazamentos

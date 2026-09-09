@@ -114,6 +114,14 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
 		reason: "Full cycle JSON dump. Duplicates CycleSnapshot; matched to the cycle window.",
 	},
 
+	{
+		model: "BehavioralSessionAggregate",
+		field: "receivedAt",
+		days: 90,
+		reason:
+			"The 90-day window is a real product surface — the journey map's '90d' filter and /library/strategy/[month]/journeys both read it. It is affordable here in a way it never was on raw events: ~4,353 sessions/day at ~1.5 KB is ~585 MB steady state per environment, against the 7.6 GB the same window implied on RawBehavioralEvent.",
+	},
+
 	// ── Caches: by definition reconstructible ──
 	{
 		model: "LlmResultCache",

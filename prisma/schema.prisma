@@ -370,6 +370,7 @@ model Environment {
   integrations           IntegrationConnection[]
   // Wave 0.2: Raw behavioral events from the snippet for this env
   behavioralEvents       RawBehavioralEvent[]
+  behavioralSessions     BehavioralSessionAggregate[]
   userActions            UserAction[]
   opportunityTrackings   OpportunityTracking[]
   savedViews             SavedView[]
@@ -1152,6 +1153,55 @@ model RawBehavioralEvent {
   // receivedAt and compressed by envId. These indexes are preserved.
   @@index([envId, receivedAt])
   @@index([envId, occurredAt, eventType])
+}
+
+// Sessions, not events, are the unit worth keeping.
+//
+// The pixel wrote one row per event: 61,099/day for a single
+// environment at ~1 KB each, and every audit cycle re-reduced the last
+// 30 days of them — the same rows read and aggregated 96 times a day.
+// Nothing in the product ever displays an individual event. It displays
+// sessions, counts, rates and journeys.
+//
+// So the raw table becomes staging (about an hour of events), a worker
+// aggregates each session once it goes idle, and this is what survives.
+// 4,353 sessions/day instead of 61,099 rows: 14x fewer rows, and the
+// cost is now proportional to sessions — a business quantity — rather
+// than to how chatty the snippet happens to be.
+//
+// `aggregate` holds a serialized SessionAggregate (packages/behavioral
+// /types.ts) rather than a column per field, deliberately: that type is
+// what the engine already consumes, and re-encoding its ~40 fields as
+// columns would let the two drift. Indexed columns below are only the
+// ones queried on.
+//
+// `timeline` exists because journey replay needs the event sequence and
+// the aggregate does not carry it — buildTimeline() reads ts, url and
+// type per event. Storing those three compactly, with URLs deduped into
+// `urls` and referenced by index, costs ~700 bytes for a 14-event
+// session against ~14.6 KB as raw rows.
+model BehavioralSessionAggregate {
+  id         String   @id @default(cuid())
+  envId      String
+  sessionId  String
+  startedAt  DateTime
+  endedAt    DateTime
+  receivedAt DateTime @default(now()) // server clock — authoritative for retention
+  eventCount Int      @default(0)
+
+  aggregate String @db.Text // JSON: SessionAggregate
+  timeline  String @db.Text // JSON: [[tOffsetMs, eventType, urlIdx, data?], ...]
+  urls      String @db.Text // JSON: string[] — timeline entries index into this
+
+  // Set when the session exceeded the timeline cap, so a reader can say
+  // "truncated" instead of silently showing a short journey as complete.
+  timelineTruncated Boolean @default(false)
+
+  environment Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
+
+  @@unique([envId, sessionId])
+  @@index([envId, startedAt])
+  @@index([envId, receivedAt])
 }
 
 model CustomMap {

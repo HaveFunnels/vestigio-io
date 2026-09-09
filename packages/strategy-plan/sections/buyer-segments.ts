@@ -103,6 +103,21 @@ export async function generateBuyerSegments(
 		})
 		.filter((s): s is BuyerSegmentOutput => s !== null);
 
+	// The team blocks are a partition of the plan's single exposure total,
+	// so they must sum to it EXACTLY — the cross-exam's item (f). Scaling
+	// each block by exposure.factor and rounding independently leaves a
+	// few-real residual (79201 vs 79200). Push that residual onto the
+	// largest block, where it is proportionally invisible, so the parts
+	// add up to the headline to the last real.
+	if (segments.length > 0) {
+		const summed = segments.reduce((a, seg) => a + seg.impactMidpoint, 0);
+		const residual = exposure.total - summed;
+		if (residual !== 0) {
+			const largest = segments.reduce((a, b) => (b.impactMidpoint > a.impactMidpoint ? b : a));
+			largest.impactMidpoint += residual;
+		}
+	}
+
 	// Empty-env safe: if there are zero findings of any buyer, return an
 	// empty array. The Plan UI renders an empty-segment state in that
 	// case (Step 3 handles it).

@@ -1,0 +1,12 @@
+-- Live phase for an in-progress plan generation.
+--
+-- Plan status was binary: "generating" or "ready". Generation runs a
+-- context build, a wave of deterministic sections and then a wave of
+-- LLM sections, so a customer watching the page could not tell a run
+-- that had just started from one about to finish. AuditCycle already
+-- records currentPhase for exactly this reason; this brings the plan
+-- to parity.
+--
+-- Nullable and null when ready: it describes work in flight, not a
+-- property of the finished plan.
+ALTER TABLE "MonthlyStrategyPlan" ADD COLUMN IF NOT EXISTS "currentPhase" TEXT;

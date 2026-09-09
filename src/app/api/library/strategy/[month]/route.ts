@@ -187,7 +187,11 @@ export async function GET(request: Request, { params }: RouteParams) {
 	}
 	if (plan.status === "generating") {
 		return NextResponse.json(
-			{ message: "Plan still generating", status: "generating" },
+			{
+				message: "Plan still generating",
+				status: "generating",
+				phase: plan.currentPhase ?? null,
+			},
 			{ status: 423 },
 		);
 	}

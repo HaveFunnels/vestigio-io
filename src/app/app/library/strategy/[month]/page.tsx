@@ -54,6 +54,16 @@ interface FetchState {
 // is deliberately about the customer's site, not about the system doing
 // work — the point is that the wait is real and has a shape, not that
 // something is busy.
+// Phases of the plan generation itself, after the cycle has finished.
+// Same rule as the cycle labels: named after what is being produced for
+// the customer, not after the machinery producing it.
+const PLAN_PHASE_LABELS: Record<string, string> = {
+	context: "Reunindo os dados do mês",
+	sections: "Calculando os números do plano",
+	narrative: "Escrevendo a leitura do mês",
+	persist: "Finalizando",
+};
+
 const PHASE_LABELS: Record<string, string> = {
 	pipeline_first_value: "Lendo as páginas principais",
 	pipeline_crawl: "Mapeando o site",
@@ -184,7 +194,11 @@ export default function StrategyPlanPage() {
 				if (isStale()) return;
 
 				if (res.status === 423) {
-					setState({ status: "generating" });
+					let genPhase: string | null = null;
+					try {
+						genPhase = (await res.clone().json())?.phase ?? null;
+					} catch { /* unparseable body — fall back to the generic caption */ }
+					setState({ status: "generating", phase: genPhase });
 					// Poll every 5s while generating.
 					pollTimer = setTimeout(load, 5000);
 					return;
@@ -273,9 +287,10 @@ export default function StrategyPlanPage() {
 	}
 
 	if (state.status === "generating") {
+		const label = state.phase ? PLAN_PHASE_LABELS[state.phase] : null;
 		return (
 			<PlanPageSkeleton
-				caption={`Gerando o plano de ${month}…`}
+				caption={label ?? `Gerando o plano de ${month}…`}
 				subCaption="Atualiza automaticamente quando estiver pronto."
 			/>
 		);

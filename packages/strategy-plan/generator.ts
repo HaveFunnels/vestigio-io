@@ -62,6 +62,18 @@ export type RegenScope =
 	| "next_steps"
 	| "narrative_and_next_steps";
 
+/**
+ * Phases of a plan generation, in the order they occur.
+ *
+ * These are the real boundaries in generatePlan(), not labels chosen to
+ * fill a progress bar: a context build, a wave of deterministic
+ * sections that make no LLM calls, a wave of LLM sections that is where
+ * nearly all the wall-clock goes, and persistence. Anything finer would
+ * be inventing detail, since each wave is a Promise.all with no
+ * meaningful internal ordering.
+ */
+export type PlanPhase = "context" | "sections" | "narrative" | "persist";
+
 export interface GeneratePlanArgs {
 	environmentId: string;
 	month: string; // 'YYYY-MM'
@@ -78,6 +90,11 @@ export interface GeneratePlanArgs {
 	    generator package stays src/-isolated; notification dispatch +
 	    any other downstream work lives at the call site. Best-effort
 	    (errors are swallowed by the caller). */
+	/** Reports phase transitions while generating. Best-effort by
+	    contract: generateAndPersistPlan uses it to write currentPhase so
+	    the customer's page can show where a ~1-minute run has got to,
+	    and a failure to record that must never fail the generation. */
+	onPhase?: (phase: PlanPhase) => Promise<void> | void;
 	onReady?: (args: {
 		planId: string;
 		environmentId: string;
@@ -181,6 +198,17 @@ export async function generatePlan(
 	regenScope: RegenScope;
 	skipped: { thesis: boolean; narrative: boolean; nextSteps: boolean; valuePreviewNarrative: boolean };
 }> {
+	// Phase reporting is fire-and-forget: a generation must not fail
+	// because a progress write did.
+	const phase = async (p: PlanPhase) => {
+		try {
+			await args.onPhase?.(p);
+		} catch {
+			/* progress is cosmetic; generation is not */
+		}
+	};
+
+	await phase("context");
 	const { ctx, organizationId } = await buildContext(prisma, args);
 	const scope: RegenScope = args.regenScope ?? "all";
 
@@ -191,6 +219,7 @@ export async function generatePlan(
 	const wantValuePreviewNarrative = scope === "all";
 
 	// Deterministic sections run in parallel — no LLM, no ordering.
+	await phase("sections");
 	const [
 		heroMetrics,
 		buyerSegments,
@@ -225,6 +254,7 @@ export async function generatePlan(
 	// sections resolve to empty placeholder shapes; the persistence
 	// layer detects them via the `skipped` flag below and preserves
 	// the existing DB content for those columns.
+	await phase("narrative");
 	const [thesis, narrative, valuePreviewNarrative, nextStepsResult] = await Promise.all([
 		wantThesis
 			? generateMonthlyThesis(prisma, ctx, organizationId)
@@ -341,7 +371,31 @@ export async function generateAndPersistPlan(
 	});
 
 	try {
-		const output = await generatePlan(prisma, args);
+		// Persist each phase as the generator reaches it. Wrapped so a
+		// failed progress write is invisible to the customer rather than
+		// fatal to their plan; the phase is cosmetic, the plan is not.
+		//
+		// Only for full regens: a partial regen leaves the existing plan
+		// rendering as "ready", and writing a phase onto it would make a
+		// finished plan look like it was mid-generation.
+		const onPhase =
+			scope === "all"
+				? async (p: PlanPhase) => {
+					try {
+						await prisma.monthlyStrategyPlan.update({
+							where: { id: placeholder.id },
+							data: { currentPhase: p },
+						});
+					} catch {
+						/* progress write failed — generation continues */
+					}
+					await args.onPhase?.(p);
+				}
+				: args.onPhase;
+
+		const output = await generatePlan(prisma, { ...args, onPhase });
+
+		await onPhase?.("persist");
 
 		// 2. Write columns in a tx. Skipped LLM columns are preserved
 		//    by simply omitting them from the update payload; the
@@ -350,6 +404,10 @@ export async function generateAndPersistPlan(
 		await prisma.$transaction(async (tx: any) => {
 			const updateData: any = {
 				status: "ready",
+				// Cleared with the same write that marks it ready, so the
+				// two can never disagree — a ready plan carrying a stale
+				// phase would render as still generating.
+				currentPhase: null,
 				locale: localeForPersistence,
 				lastRegenerated: new Date(),
 				heroMetricsJson: output.heroMetrics as any,
@@ -465,7 +523,11 @@ export async function generateAndPersistPlan(
 		await prisma.monthlyStrategyPlan
 			.update({
 				where: { id: placeholder.id },
-				data: { status: "failed" },
+				// Phase cleared alongside the status. A failed plan still
+				// carrying "narrative" would read as a run in progress that
+				// never advances, which is exactly the shape of the dead
+				// screens this phase field exists to remove.
+				data: { status: "failed", currentPhase: null },
 			})
 			.catch(() => {});
 		throw err;

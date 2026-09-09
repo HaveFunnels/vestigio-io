@@ -16,7 +16,10 @@ const SNIPPET = readFileSync(
 	"utf-8",
 );
 
-function loadSnippetAt(url: string, opts: { cookie?: string } = {}) {
+function loadSnippetAt(
+	url: string,
+	opts: { cookie?: string; title?: string; h1?: string; paidMarker?: boolean } = {},
+) {
 	const u = new URL(url);
 	// Minimal but faithful browser surface.
 	let cookieJar = opts.cookie ?? "";
@@ -36,9 +39,15 @@ function loadSnippetAt(url: string, opts: { cookie?: string } = {}) {
 	const listeners: Record<string, Function[]> = {};
 	const doc: any = {
 		readyState: "complete",
-		title: "Loja",
+		title: opts.title ?? "Loja",
 		referrer: "",
-		querySelector: (sel: string) => (sel === "script[data-env]" ? scriptEl : null),
+		querySelector: (sel: string) => {
+			if (sel === "script[data-env]") return scriptEl;
+			if (sel === "h1") return opts.h1 ? { textContent: opts.h1 } : null;
+			// The paid-DOM-marker probe in checkConfirmation.
+			if (sel.indexOf("data-order-status") !== -1) return opts.paidMarker ? {} : null;
+			return null;
+		},
 		querySelectorAll: () => [],
 		addEventListener: (ev: string, fn: Function) => {
 			(listeners[ev] = listeners[ev] || []).push(fn);
@@ -94,8 +103,31 @@ function loadSnippetAt(url: string, opts: { cookie?: string } = {}) {
 		observe() {}
 		disconnect() {}
 	};
-	g.fetch = vi.fn(() => Promise.resolve({ ok: true } as never));
-	g.setInterval = () => 0 as never;
+	// Capture everything the snippet sends (fetch batches + sendBeacon),
+	// so a test can assert which event types actually left the page.
+	const sent: any[] = [];
+	const record = (body: any) => {
+		try {
+			sent.push(JSON.parse(body));
+		} catch {
+			/* non-JSON body — ignore */
+		}
+	};
+	g.fetch = vi.fn((_url: string, init: any) => {
+		if (init?.body) record(init.body);
+		return Promise.resolve({ ok: true } as never);
+	});
+	g.navigator.sendBeacon = (_url: string, body: any) => {
+		record(body);
+		return true;
+	};
+	// The snippet flushes on an interval; capture the callback so a test
+	// can drain the queue on demand instead of waiting real time.
+	const intervalFns: Function[] = [];
+	g.setInterval = ((fn: Function) => {
+		intervalFns.push(fn);
+		return 0;
+	}) as never;
 	g.setTimeout = ((fn: Function) => {
 		fn();
 		return 0;
@@ -103,7 +135,9 @@ function loadSnippetAt(url: string, opts: { cookie?: string } = {}) {
 
 	// eslint-disable-next-line no-new-func
 	new Function(SNIPPET)();
-	return { win, doc, sessionStorage: g.sessionStorage, cookie: () => cookieJar };
+	const flush = () => intervalFns.forEach((fn) => fn());
+	const emittedTypes = () => sent.flatMap((b) => (b.events || []).map((e: any) => e.type));
+	return { win, doc, sessionStorage: g.sessionStorage, cookie: () => cookieJar, flush, sent, emittedTypes };
 }
 
 describe("snippet cross-domain stitching", () => {
@@ -186,5 +220,61 @@ describe("snippet cross-domain stitching", () => {
 			win.vestigio.confirm({ order_id: "123", value: 100 });
 			win.vestigio.confirm({ order_id: "123", value: 100 });
 		}).not.toThrow();
+	});
+});
+
+// A completed purchase is money in the plan — inferring one that did not
+// happen is the worst error the pixel can make. checkConfirmation must
+// not let a lone title/H1 word match fabricate a sale on a page where an
+// unpaid order can already be on screen.
+describe("snippet confirmation hardening — never infer a sale", () => {
+	beforeEach(() => {
+		for (const k of ["window", "document", "location", "navigator", "localStorage", "sessionStorage"]) {
+			delete (globalThis as any)[k];
+		}
+	});
+
+	it("does NOT confirm on a checkout page from an H1 greeting alone", () => {
+		// The real Casa Montelle case: /c/<slug> whose H1 renders
+		// "Bem-vindo" — a weak signal on a transaction surface.
+		const { flush, emittedTypes } = loadSnippetAt("https://seguro.loja.com/c/NX-ABC123", {
+			h1: "Bem-vindo à Casa Montelle",
+		});
+		flush();
+		expect(emittedTypes()).not.toContain("confirmation_seen");
+	});
+
+	it("does NOT confirm on an order page from a title match alone (unpaid PIX order on screen)", () => {
+		const { flush, emittedTypes } = loadSnippetAt("https://seguro.loja.com/order/abc", {
+			title: "Obrigado pelo seu pedido | Loja",
+		});
+		flush();
+		expect(emittedTypes()).not.toContain("confirmation_seen");
+	});
+
+	it("DOES confirm on a checkout page when a paid DOM marker is present (strong signal)", () => {
+		const { flush, emittedTypes } = loadSnippetAt("https://seguro.loja.com/c/NX-ABC123", {
+			h1: "Bem-vindo",
+			paidMarker: true,
+		});
+		flush();
+		expect(emittedTypes()).toContain("confirmation_seen");
+	});
+
+	it("DOES confirm on a dedicated thank-you URL even off any order path (weak signal, safe surface)", () => {
+		// url_pattern is strong on its own; a generic success page still works.
+		const { flush, emittedTypes } = loadSnippetAt("https://loja.com/obrigado", {
+			title: "Compra realizada com sucesso",
+		});
+		flush();
+		expect(emittedTypes()).toContain("confirmation_seen");
+	});
+
+	it("DOES confirm from a title match on a non-transaction page (weak signal, not a checkout)", () => {
+		const { flush, emittedTypes } = loadSnippetAt("https://loja.com/bem-vindo-a-bordo", {
+			title: "Cadastro completo",
+		});
+		flush();
+		expect(emittedTypes()).toContain("confirmation_seen");
 	});
 });

@@ -11,7 +11,13 @@
       "integrity": "sha384-4F75GgKTjmILmcfLPejXbcXTVlg49sj3TUbre66OV3xCsXiWhcucvJtVlP075Vh0",
       "bytes": 55568,
       "frozenAt": "2026-09-09T15:05:52.030Z"
+    },
+    "2.6": {
+      "path": "/snippet/v2.6/vestigio.js",
+      "integrity": "sha384-WHt/laePd0swmdxTGbT6Jp7Nd9isWDz+1BYP4McENbUgu6+pUaCD2xjBc7uGnm9q",
+      "bytes": 57456,
+      "frozenAt": "2026-09-09T17:57:13.804Z"
     }
   },
-  "latest": "2.5"
+  "latest": "2.6"
 }

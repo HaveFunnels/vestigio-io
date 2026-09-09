@@ -78,27 +78,36 @@ async function main() {
 	}
 
 	let missing = 0;
+	let pending = 0;
 	let aggMismatch = 0;
 	let timelineMismatch = 0;
 	let truncatedSkipped = 0;
 	let checked = 0;
 	const examples: string[] = [];
+	// A session that crossed the idle threshold moments before this run
+	// may not have been aggregated by the 10-minute worker yet. Below this
+	// age it is "pending", not "missing".
+	const AGG_GRACE_MS = 20 * 60 * 1000;
 
 	for (const g of groups) {
 		const { envId, sessionId } = g;
 		const stored = await prisma.behavioralSessionAggregate.findUnique({
 			where: { envId_sessionId: { envId, sessionId } },
 		});
-		if (!stored) {
-			missing++;
-			if (examples.length < 5) examples.push(`missing aggregate: ${sessionId}`);
-			continue;
-		}
-
 		const rows = await prisma.rawBehavioralEvent.findMany({
 			where: { envId, sessionId },
-			orderBy: { occurredAt: "asc" },
+			orderBy: [{ occurredAt: "asc" }, { id: "asc" }],
 		});
+		if (!stored) {
+			const lastEvent = rows.length > 0 ? rows[rows.length - 1].receivedAt.getTime() : 0;
+			if (Date.now() - lastEvent < AGG_GRACE_MS) {
+				pending++; // just went idle; worker has not caught up yet
+			} else {
+				missing++;
+				if (examples.length < 5) examples.push(`missing aggregate: ${sessionId}`);
+			}
+			continue;
+		}
 		if (rows.length === 0) continue;
 
 		// Rebuild the batch exactly as the worker does.
@@ -159,28 +168,24 @@ async function main() {
 		// because the raw row's occurredAt is the server-side column while
 		// the payload carries the client clock — the worker builds offsets
 		// from the former by design.
+		// Sort by (offset, canonical) before comparing. Events sharing a
+		// millisecond have no meaningful order, and the DB does not return
+		// ties in a stable order, so a raw-vs-aggregate compare that fixed
+		// the tie order would flag false mismatches. Order ACROSS offsets is
+		// still respected (offset is the primary sort key).
 		const originalProjection = rows
 			.map((row, i) => {
 				const ev = events[i];
 				if (!ev) return null;
-				return canonical({
-					type: ev.type,
-					data: ev.data ?? {},
-					url: row.url,
-					offset: row.occurredAt.getTime() - startMs,
-				});
+				const offset = row.occurredAt.getTime() - startMs;
+				return `${offset}:${canonical({ type: ev.type, data: ev.data ?? {}, url: row.url })}`;
 			})
-			.filter(Boolean)
+			.filter((x): x is string => x !== null)
+			.sort()
 			.join("|");
 		const rebuiltProjection = rebuilt
-			.map((ev) =>
-				canonical({
-					type: ev.type,
-					data: ev.data ?? {},
-					url: ev.url,
-					offset: ev.ts - startMs,
-				}),
-			)
+			.map((ev) => `${ev.ts - startMs}:${canonical({ type: ev.type, data: ev.data ?? {}, url: ev.url })}`)
+			.sort()
 			.join("|");
 
 		if (originalProjection !== rebuiltProjection) {
@@ -192,6 +197,7 @@ async function main() {
 	console.log(`\n── results ──`);
 	console.log(`sessions compared      : ${checked}`);
 	console.log(`missing aggregate      : ${missing}`);
+	console.log(`pending (just idle)    : ${pending}`);
 	console.log(`aggregate mismatches   : ${aggMismatch}`);
 	console.log(`timeline mismatches    : ${timelineMismatch}`);
 	console.log(`truncated (skipped #3) : ${truncatedSkipped}`);

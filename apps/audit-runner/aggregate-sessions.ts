@@ -178,7 +178,10 @@ export async function aggregateIdleSessions(
 			// All events for the remaining sessions, in one ordered read.
 			const rows = await prisma.rawBehavioralEvent.findMany({
 				where: { envId, sessionId: { in: sessionIds } },
-				orderBy: [{ sessionId: "asc" }, { occurredAt: "asc" }],
+				// id as a tiebreaker so events sharing a millisecond aggregate in a
+				// stable order — without it the timeline's tie-order is whatever
+				// the DB returned, and a re-read could differ.
+				orderBy: [{ sessionId: "asc" }, { occurredAt: "asc" }, { id: "asc" }],
 			});
 			if (rows.length === 0) continue;
 

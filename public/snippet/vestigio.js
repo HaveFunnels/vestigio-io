@@ -117,8 +117,155 @@
     sessionId = '';
     consentGranted = false;
   };
+  // Decorate a URL with the cross-domain stitch params. Only needed by a
+  // store whose buy button navigates via JS (location.href = ...) instead
+  // of a plain <a href>, which we cannot intercept. Plain-link stores get
+  // stitching with zero code. Usage: location.href = window.vestigio.decorate(url).
+  window.vestigio.decorate = function(url) {
+    try { return decorateUrl(url); } catch (e) { return url; }
+  };
+  window.vestigio.confirm = function(order) {
+    // Explicit "this order is PAID" signal — the robust confirmation
+    // path, since only the merchant knows a PIX cleared. Idempotent:
+    // fires the sale milestone once. order = { order_id?, value? }.
+    order = order || {};
+    if (currentMilestone === 'conversion_completed') return;
+    currentMilestone = 'conversion_completed';
+    persistSessionState();
+    emit('confirmation_seen', {
+      url: canonicalUrl(),
+      order_id: order.order_id || null,
+      value: typeof order.value === 'number' ? order.value : null,
+      source: 'api',
+    });
+    flush(true);
+  };
 
   // ── Init ──
+  // ── Cross-domain visitor stitching ──────────────
+  //
+  // A store's checkout often lives on a sibling subdomain
+  // (seguro.loja.com) while the storefront is loja.com. Session state in
+  // sessionStorage is per-origin, so without this the visitor arrives at
+  // checkout as a brand-new session — two disconnected funnels instead
+  // of one. The whole value of measuring the funnel is being able to say
+  // "this TikTok visitor reached checkout and abandoned".
+  //
+  // We do the stitching ourselves, so the merchant does not have to emit
+  // anything: a visitor id in an eTLD+1 cookie (readable across
+  // subdomains), mirrored to localStorage, AND — because ~80% of social
+  // commerce traffic is in-app webviews where cookies drop between
+  // navigations — carried in the URL of any outbound link to a sibling
+  // subdomain. On arrival we adopt in precedence URL → cookie →
+  // localStorage → new. No merchant cookie, no merchant redirect change.
+  //
+  // Registrable domain without a public-suffix list: walk the hostname
+  // labels writing a probe cookie at each scope; the browser refuses to
+  // set a cookie on a public suffix, so the narrowest scope that sticks
+  // is the registrable domain. Memoized.
+  var STITCH_VID_PARAM = 'vg_vid';
+  var STITCH_SID_PARAM = 'vg_sid';
+  var _registrableDomain = null;
+
+  function registrableDomain() {
+    if (_registrableDomain !== null) return _registrableDomain;
+    var host = location.hostname;
+    // IPs and single-label hosts (localhost) have no registrable domain
+    // to broaden to — cookie stays host-scoped.
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(host) || host.indexOf('.') === -1) {
+      _registrableDomain = host;
+      return host;
+    }
+    var labels = host.split('.');
+    var probe = 'vg_pd=1;path=/;SameSite=Lax';
+    for (var i = labels.length - 2; i >= 0; i--) {
+      var candidate = labels.slice(i).join('.');
+      document.cookie = probe + ';Domain=.' + candidate;
+      if (document.cookie.indexOf('vg_pd=1') !== -1) {
+        // Stuck — clean the probe and take this scope.
+        document.cookie = 'vg_pd=;path=/;Domain=.' + candidate + ';expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        _registrableDomain = candidate;
+        return candidate;
+      }
+    }
+    _registrableDomain = host;
+    return host;
+  }
+
+  function readCookie(name) {
+    var m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+
+  function writeVisitorCookie(vid) {
+    // 365-day visitor cookie at the registrable domain. Safari's ITP
+    // caps JS cookies at 7 days, which is fine: within-funnel stitching
+    // happens in minutes, and the URL carry covers webviews regardless.
+    try {
+      var exp = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie =
+        STITCH_VID_PARAM + '=' + encodeURIComponent(vid) +
+        ';path=/;expires=' + exp + ';SameSite=Lax;Domain=.' + registrableDomain();
+    } catch (e) {}
+  }
+
+  var visitorId = '';
+  // True when this pageload was stitched from a sibling subdomain (the
+  // visitor arrived carrying our id in the URL). Used to preserve
+  // first-touch attribution — a stitched arrival's referrer is our own
+  // storefront, not a new acquisition source.
+  var arrivedViaStitch = false;
+
+  function initVisitor() {
+    var params = new URLSearchParams(location.search);
+    var fromUrl = params.get(STITCH_VID_PARAM);
+    if (fromUrl) {
+      visitorId = fromUrl;
+      arrivedViaStitch = true;
+    } else {
+      visitorId = readCookie(STITCH_VID_PARAM) || null;
+      if (!visitorId) {
+        try { visitorId = localStorage.getItem('vg_vid'); } catch (e) {}
+      }
+    }
+    if (!visitorId) {
+      visitorId = 'vgv_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+    writeVisitorCookie(visitorId);
+    try { localStorage.setItem('vg_vid', visitorId); } catch (e) {}
+  }
+
+  // Append our stitch params to a URL when the destination is a sibling
+  // subdomain of the same registrable domain (and not the current host).
+  // Public as window.vestigio.decorate(url) so a store whose checkout
+  // button navigates via JS (location.href = ...) rather than a plain
+  // <a href> can opt a single URL in — the only line of integration a
+  // merchant might need, and only in that case.
+  function decorateUrl(rawUrl) {
+    try {
+      var u = new URL(rawUrl, location.href);
+      var rd = registrableDomain();
+      var sameRegistrable = u.hostname === rd || u.hostname.slice(-(rd.length + 1)) === '.' + rd;
+      if (!sameRegistrable || u.hostname === location.hostname) return rawUrl;
+      u.searchParams.set(STITCH_VID_PARAM, visitorId);
+      if (sessionId) u.searchParams.set(STITCH_SID_PARAM, sessionId);
+      return u.toString();
+    } catch (e) {
+      return rawUrl;
+    }
+  }
+
+  // Decorate anchors at click time — covers the common case (the buy
+  // button is a link) with zero merchant work and no eager DOM rewriting.
+  function bindStitchDecoration() {
+    document.addEventListener('click', function(e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a) return;
+      var decorated = decorateUrl(a.getAttribute('href'));
+      if (decorated !== a.getAttribute('href')) a.setAttribute('href', decorated);
+    }, true);
+  }
+
   function init() {
     var script = document.querySelector('script[data-env]');
     if (!script) return;
@@ -148,7 +295,9 @@
       }
     }
 
+    initVisitor();
     sessionId = getOrCreateSession();
+    bindStitchDecoration();
     attribution = captureAttribution();
 
     // Emit initial page_view
@@ -189,7 +338,26 @@
   }
 
   // ── Session Management ──
+  //
+  // The session is the funnel: one visit from landing to checkout. The
+  // VISITOR (visitorId, above) is the longer-lived identity that links a
+  // returning buyer's separate visits — different thing, deliberately
+  // kept separate. Session id lives in sessionStorage (per-origin, 30min
+  // timeout); to make the funnel survive the storefront→checkout domain
+  // hop it is also carried in the stitch URL, adopted here with highest
+  // precedence so both domains share ONE session, not two.
   function getOrCreateSession() {
+    // Stitched arrival: adopt the session carried from the sibling
+    // subdomain so the funnel is continuous. sessionStorage was empty
+    // here (different origin), so this is the only way the checkout page
+    // knows it is the same visit that started on the storefront.
+    try {
+      var sidFromUrl = new URLSearchParams(location.search).get(STITCH_SID_PARAM);
+      if (sidFromUrl) {
+        sessionStorage.setItem('vg_session', JSON.stringify({ id: sidFromUrl, ts: Date.now() }));
+        return sidFromUrl;
+      }
+    } catch (e) {}
     try {
       var stored = sessionStorage.getItem('vg_session');
       if (stored) {
@@ -229,18 +397,27 @@
   // ── Attribution ──
   function captureAttribution() {
     var params = new URLSearchParams(window.location.search);
+    // A stitched arrival (checkout reached from our own storefront) is
+    // not an acquisition event: its referrer is a sibling subdomain of
+    // the same store. Sending it as a source would rewrite the visit's
+    // origin to "referrer loja.com" and lose the real first touch
+    // (tiktok, meta). The real origin already rode in on the shared
+    // session from the storefront; here we send no competing source.
+    var internalReferral = arrivedViaStitch && !params.get('utm_source');
     var attr = {
       source: params.get('utm_source') || null,
       medium: params.get('utm_medium') || null,
       campaign: params.get('utm_campaign') || null,
-      referrer: document.referrer || null,
+      referrer: internalReferral ? null : (document.referrer || null),
       landing_url: canonicalUrl(),
       gclid: params.get('gclid') || null,
       fbclid: params.get('fbclid') || null,
     };
     try {
+      // Only the first touch of the visitor's FIRST domain sets this;
+      // a stitched arrival never overwrites it.
       var firstTouch = localStorage.getItem('vg_first_touch');
-      if (!firstTouch) {
+      if (!firstTouch && !internalReferral) {
         localStorage.setItem('vg_first_touch', JSON.stringify(attr));
       }
     } catch(e) {}
@@ -320,7 +497,18 @@
         signals.push('h1_match');
       }
       // Check for order confirmation semantic markers
-      if (document.querySelector('[data-order-id], [data-confirmation], .order-confirmation, .purchase-success, #order-confirmed')) {
+      // A sale is never inferred from the mere existence of an order
+      // element. [data-order-id] alone marks an order that EXISTS, which
+      // on a PIX flow means a payment that has not happened yet — on this
+      // kind of store, ~35% of generated orders are never paid. Counting
+      // it as a sale inflates measured conversion by roughly half.
+      //
+      // Only an element that explicitly asserts PAID counts here. For
+      // stores whose paid state arrives after render without a new page
+      // (PIX polling), the robust path is the merchant calling
+      // window.vestigio.confirm({order_id}) — see the public API — which
+      // does not depend on us guessing a DOM shape at all.
+      if (document.querySelector('[data-order-status="paid"], [data-payment-status="paid"], .payment-confirmed, .purchase-success, #order-confirmed')) {
         signals.push('dom_marker');
       }
     } catch(e) {}

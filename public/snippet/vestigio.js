@@ -1,5 +1,18 @@
 /**
- * Vestigio Behavioral Intelligence Snippet v2.1
+ * Vestigio Behavioral Intelligence Snippet v2.4
+ *
+ * v2.4 (2026-09-09): cross-domain funnel stitching (visitor id in
+ * eTLD+1 cookie + URL carry), never-infer-a-sale confirmation with a
+ * per-order-deduped window.vestigio.confirm() API, fresh-session TTL so
+ * shared checkout links do not merge sessions, commercial-only cta
+ * classification, real page-load timing.
+ *
+ * Versioning: the checkout install MUST pin an immutable, versioned URL
+ * (/snippet/v2.4/vestigio.js) so a Subresource Integrity hash on a
+ * payment page stays valid across deploys. The unversioned
+ * /snippet/vestigio.js is "latest" and is fine for the storefront, which
+ * is not a payment surface. Bump this version on any change that the
+ * checkout should pick up, and re-issue the SRI hash with it.
  *
  * v2.1 (2026-07-13): fix — endpoint now derives from the pixel's own
  * script src origin instead of resolving against window.location. The

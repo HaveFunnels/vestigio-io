@@ -95,3 +95,30 @@ Isso coloca um script de terceiros na página de pagamento. Vocês listaram SRI 
 3. Se o Comprar redireciona por JS: `location.href = window.vestigio.decorate(url)` — uma linha.
 
 Três itens, todos coisas que só quem tem o backend do checkout consegue fazer. Nenhum cookie novo, nenhum handshake sob medida. É o mínimo irredutível.
+
+
+---
+
+## 8. Rev. 3 — respostas ao review do NX4
+
+Os três pontos bloqueantes e os dois menores do parecer estão certos. Estado:
+
+**1. Dedupe por pedido (não por sessão).** Corrigido no pixel (`1d928b92`): `window.vestigio.confirm` deduplica por `order_id` em localStorage, não só por sessão — reabertura da página de pedido pago dias depois não conta de novo. **Mas vocês têm razão que localStorage cai em webview**, então o dedupe durável é do lado de vocês: **o ingest do NX4 deve deduplicar por `order_id`** antes de contar. É o guard que sobrevive ao webview.
+
+**2. `vg_sid` adotado sem verificação.** Corrigido (`1d928b92`): a sessão carregada só é adotada se o link foi seguido dentro de **30 min** (TTL no parâmetro `vg_t`) E, quando há cookie, se o `vg_vid` da URL bate com o do dispositivo. Um link de checkout compartilhado horas depois abre sessão nova (mesmo visitante se o cookie estiver presente), não entra na sessão de quem enviou. Cobre os dois cenários que vocês levantaram.
+
+**3. SRI exige URL versionada — de acordo, e é a condição do gate.** O snippet agora carrega versão (v2.4) e a instalação no checkout deve fixar `/snippet/v2.4/vestigio.js`, imutável, com o hash SRI. O `/snippet/vestigio.js` (latest) fica só no storefront, que não é superfície de pagamento. Política: a versão sobe a cada mudança relevante para o checkout, e o hash é reemitido junto. **A infra de servir o caminho versionado imutável é o trabalho que fecha o gate — está do nosso lado, e é o pré-requisito para ativar no checkout.**
+
+**Detalhe (value):** documentado como **BRL decimal** (ex.: `129.90`) na API `confirm`.
+
+**Detalhe (inferência de venda no servidor):** vocês apontaram que nosso agregador ainda marca `reached_thank_you` por regex de path ("obrigado"/"confirmacao"). Para a Montelle não afeta (os paths de vocês não casam), mas o texto da rev. 2 foi absoluto demais. A precisão: o **snippet** nunca infere venda da mera existência de um elemento nem de uma página de PIX pendente. No **servidor**, uma página de sucesso explícita ("/obrigado") é um **proxy** de conversão para lojas que não chamam a API; o `confirm` explícito é **prova** e prevalece sobre o proxy quando presente. Fluxos de PIX (onde a página de pedido precede o pagamento) precisam do `confirm` — o proxy sozinho superestimaria.
+
+## 9. A decisão do gate — recomendação
+
+Concordamos com vocês: **ativar na Montelle só depois do SRI com URL versionada.** A costura no storefront já está no ar sem nada de vocês, coletando o funil site-inteiro. A página de pagamento é o lugar errado para um script que ainda muda várias vezes por dia sem hash imutável. O caminho:
+
+1. Storefront: já ativo, sem ação de vocês.
+2. Nós: publicar `/snippet/v2.4/vestigio.js` imutável + hash SRI.
+3. Vocês: provider `vestigio` no checkout apontando para a URL versionada + SRI; o `confirm` no pago; a linha do `decorate` se o Comprar for JS.
+
+Assim o checkout entra com o script pinado e verificado, e o storefront já vai coletando enquanto isso.

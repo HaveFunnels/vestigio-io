@@ -47,6 +47,38 @@ export default function Signin() {
 	const [remember, setRemember] = useState(false);
 	const [passLoading, setPassLoading] = useState(false);
 
+	// The IP throttle is a server action, so a failed call can mean either
+	// "you are throttled" or "the call itself did not complete" — a stale
+	// client bundle after a deploy, a network blip, a 500. Reporting all
+	// of those as "too many attempts" is how a visitor whose tab was open
+	// across a deploy gets told they are rate limited, with no way to act
+	// on it. That happened in production on 2026-09-09.
+	//
+	// A genuine rejection is Error("Rate limit exceeded") from
+	// src/libs/limiter.ts. Anything else means the check did not run, and
+	// the right response is to let the attempt through: this throttle is
+	// defence-in-depth against credential stuffing across many emails, and
+	// the per-account lockout in authorize() is the real protection and
+	// does not depend on the browser reaching this action.
+	//
+	// Returns true when the caller should stop.
+	const throttled = async (setLoading: (v: boolean) => void) => {
+		try {
+			await rateLimitByIp(8, 60_000);
+			return false;
+		} catch (err) {
+			const isThrottle =
+				err instanceof Error && err.message.includes("Rate limit exceeded");
+			if (isThrottle) {
+				setLoading(false);
+				toast.error("Too many attempts. Please try again later.");
+				return true;
+			}
+			console.warn("[signin] rate-limit check did not run; continuing", err);
+			return false;
+		}
+	};
+
 	const handleGoogle = () => {
 		if (!integrations.isAuthEnabled) return toast.error(messages.auth);
 		signIn("google", { callbackUrl: "/app" });
@@ -61,12 +93,7 @@ export default function Signin() {
 		e.preventDefault();
 		if (!integrations.isAuthEnabled) return toast.error(messages.auth);
 		setMagicLoading(true);
-		try {
-			await rateLimitByIp(8, 60_000);
-		} catch {
-			setMagicLoading(false);
-			return toast.error("Too many attempts. Please try again later.");
-		}
+		if (await throttled(setMagicLoading)) return;
 		try {
 			const res = await signIn("email", { redirect: false, email: magicEmail, callbackUrl: "/app" });
 			if (res?.error) {
@@ -84,16 +111,26 @@ export default function Signin() {
 		e.preventDefault();
 		if (!integrations.isAuthEnabled) return toast.error(messages.auth);
 		setPassLoading(true);
-		try {
-			await rateLimitByIp(8, 60_000);
-		} catch {
-			setPassLoading(false);
-			return toast.error("Too many attempts. Please try again later.");
-		}
+		if (await throttled(setPassLoading)) return;
 		try {
 			const res = await signIn("credentials", { email, password, remember: String(remember), redirect: false });
 			if (res?.error) {
-				toast.error(t("form.invalidCredentials"));
+				// Not every failure is a wrong password. authorize() also
+				// rejects with a lockout message after 5 failed attempts, and
+				// any infrastructure failure it hits — the database being
+				// unreachable, for one — arrives here too. Collapsing all of
+				// them into "invalid credentials" is what made an eight-day
+				// production database outage look like a forgotten password
+				// on 2026-09-08.
+				//
+				// The lockout message is safe to surface: it says nothing
+				// about whether the account exists, and it is the one case
+				// where the visitor can actually act on the information. The
+				// generic message stays the default, deliberately, because
+				// distinguishing "no such user" from "wrong password" would
+				// leak account existence.
+				const locked = res.error.toLowerCase().includes("locked");
+				toast.error(locked ? res.error : t("form.invalidCredentials"));
 			} else if (res?.ok) {
 				window.location.href = "/app";
 			}

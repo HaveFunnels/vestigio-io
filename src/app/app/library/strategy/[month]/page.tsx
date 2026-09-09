@@ -124,10 +124,30 @@ export default function StrategyPlanPage() {
 		fetch("/api/me/plan-visited", { method: "POST" }).catch(() => {});
 	}, [month, track]);
 
+	// Guarding with a per-run token rather than a boolean.
+	//
+	// The previous version captured `cancelled` per effect run and every
+	// exit path checked it before touching state — including the two
+	// early returns after the fetch, which bailed without settling
+	// anything. Switching environments changes both `envId` and `month`
+	// mid-navigation, so the run in flight got cancelled and the page was
+	// left on its initial "loading" state with nothing scheduled to
+	// replace it. A reload worked because it mounts once and never
+	// cancels; switching envs hung indefinitely.
+	//
+	// A token makes staleness the only thing being tested: a superseded
+	// run is ignored because a newer one exists and will settle the
+	// state, not because it was told to stop.
+	const runIdRef = useRef(0);
 	useEffect(() => {
 		if (!month) return;
-		let cancelled = false;
+		const runId = ++runIdRef.current;
+		const isStale = () => runIdRef.current !== runId;
 		let pollTimer: ReturnType<typeof setTimeout> | null = null;
+
+		// Switching environments must not leave the previous env's plan on
+		// screen while the new one loads.
+		setState({ status: "loading" });
 
 		const load = async () => {
 			try {
@@ -141,7 +161,7 @@ export default function StrategyPlanPage() {
 				const res = await fetch(
 					`/api/library/strategy/${encodeURIComponent(month)}?${qs.toString()}`,
 				);
-				if (cancelled) return;
+				if (isStale()) return;
 
 				if (res.status === 423) {
 					setState({ status: "generating" });
@@ -178,7 +198,7 @@ export default function StrategyPlanPage() {
 				const data = await res.json();
 				setState({ status: "ready", plan: adaptApiResponse(data) });
 			} catch (err) {
-				if (cancelled) return;
+				if (isStale()) return;
 				setState({
 					status: "error",
 					error: err instanceof Error ? err.message : "Erro desconhecido",
@@ -188,7 +208,6 @@ export default function StrategyPlanPage() {
 
 		void load();
 		return () => {
-			cancelled = true;
 			if (pollTimer) clearTimeout(pollTimer);
 		};
 	}, [month, envId]);

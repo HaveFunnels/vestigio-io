@@ -343,11 +343,35 @@
   function emitVitality() {
     window.addEventListener('load', function() {
       pageLoadTimestamp = Date.now();
+      // loadEventEnd is only set once the load event has finished
+      // dispatching, and this runs inside that event — so reading it
+      // here returned 0, and the null guard turned that into a missing
+      // value. Measured on one production store: 50,409 heartbeats,
+      // 155 with a load time. Page speed was effectively unmeasured.
+      //
+      // Navigation Timing Level 2 is read first because it reports
+      // durations relative to navigation start directly, then Level 1 as
+      // a fallback for older browsers. Either way the read is deferred
+      // to the next macrotask so loadEventEnd has been written.
       var perf = {};
-      if (window.performance && performance.timing) {
-        var t = performance.timing;
-        perf.dom_ready_ms = t.domContentLoadedEventEnd ? t.domContentLoadedEventEnd - t.navigationStart : null;
-        perf.load_ms = t.loadEventEnd ? t.loadEventEnd - t.navigationStart : null;
+      function readTimings() {
+        try {
+          var nav =
+            performance.getEntriesByType &&
+            performance.getEntriesByType('navigation')[0];
+          if (nav && nav.loadEventEnd) {
+            perf.dom_ready_ms = Math.round(nav.domContentLoadedEventEnd) || null;
+            perf.load_ms = Math.round(nav.loadEventEnd) || null;
+            return;
+          }
+        } catch (err) { /* fall through to Level 1 */ }
+        if (window.performance && performance.timing) {
+          var t = performance.timing;
+          perf.dom_ready_ms = t.domContentLoadedEventEnd
+            ? t.domContentLoadedEventEnd - t.navigationStart
+            : null;
+          perf.load_ms = t.loadEventEnd ? t.loadEventEnd - t.navigationStart : null;
+        }
       }
       var jsErrors = 0;
       var resourceErrors = 0;
@@ -355,13 +379,20 @@
         if (e.filename) jsErrors++;
         else resourceErrors++;
       });
-      emit('heartbeat', {
-        url: canonicalUrl(),
-        timing: perf,
-        js_error_count: jsErrors,
-        resource_error_count: resourceErrors,
-        page_alive: true,
-      });
+      // The heartbeat is emitted from inside the deferred read, not
+      // alongside it — emitting synchronously here would send `perf`
+      // before readTimings had filled it, which is the same class of
+      // ordering mistake that made load_ms null in the first place.
+      setTimeout(function() {
+        readTimings();
+        emit('heartbeat', {
+          url: canonicalUrl(),
+          timing: perf,
+          js_error_count: jsErrors,
+          resource_error_count: resourceErrors,
+          page_alive: true,
+        });
+      }, 0);
 
       // After load, check for late-rendered CTAs
       setTimeout(checkLateCtaRendering, CTA_LATE_THRESHOLD_MS + 500);
@@ -500,7 +531,24 @@
     if (/checkout|comprar|buy|purchase|pagar|finalizar|add.to.cart|agregar.al.carrito|adicionar.ao.carrinho|order.now|pedir.ahora|compre.agora|place.order|realizar.pedido|finalizar.compra|proceed.to.payment|ir.al.pago|ir.para.pagamento/i.test(lower) || /checkout|comprar|buy|cart|carrito|carrinho|order|pedido|payment|pago|pagamento/i.test(href)) return 'checkout_open';
     if (/support|suporte|soporte|help|ajuda|ayuda|contact|contato|contacto|faq|chat.with.us|fale.conosco|habla.con.nosotros|customer.service|atendimento|atencion.al.cliente|live.chat|chat.en.vivo|assistant|asistente|assistente/i.test(lower) || /support|help|contact|faq|soporte|suporte|ayuda|ajuda|contacto|contato|chat|atendimento/i.test(href)) return 'support_open';
     if (/policy|privacy|terms|refund|return|politica|termos|privacidad|condiciones|reembolso|devolucion|devolucao|reembolso|terms.of.service|termos.de.servico|terminos.de.servicio|privacy.policy|politica.de.privacidad|politica.de.privacidade|warranty|garantia|garantia|shipping.policy|politica.de.envio|politica.de.envio|cookie|lgpd|gdpr/i.test(lower) || /policy|privacy|terms|refund|return|politica|termos|privacidad|condiciones|reembolso|devolucion|devolucao|warranty|garantia|cookie|lgpd|gdpr/i.test(href)) return 'policy_open';
-    if (el.tagName === 'BUTTON' || el.tagName === 'A' || el.getAttribute('role') === 'button') return 'cta_click';
+    // Everything above is classified from the href or the label, so it
+    // means something commercially. This last step used to return
+    // 'cta_click' for any anchor, button or [role=button] at all, which
+    // made carousel arrows, menu toggles and close buttons count as
+    // commercial actions.
+    //
+    // That was not only noise. A 'cta_click' sets
+    // firstCommercialActionTimestamp and advances the session to the
+    // intent_expressed milestone, so clicking "Próxima" on an image
+    // carousel marked the visitor as having expressed purchase intent.
+    // Measured on one production store: of 12,795 recorded cta_click
+    // events, 24 had a commercial label — the rest were "Próxima",
+    // "Anterior", "Abrir menu", "Fechar" and untitled anchors.
+    //
+    // A CTA now has to look like one. Elements that fail this are still
+    // tracked as dead clicks, form interactions and scroll depth; they
+    // just no longer claim intent the visitor never expressed.
+    if (isPrimaryCta(el)) return 'cta_click';
     return null;
   }
 

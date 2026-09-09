@@ -171,16 +171,11 @@ export async function GET(request: Request, { params }: RouteParams) {
 				doneAt: { gte: monthStart, lt: monthEnd, not: null },
 			},
 		}),
-		// Sessões behaviorais distintas no mês (de RawBehavioralEvent)
-		prisma.rawBehavioralEvent
-			.groupBy({
-				by: ["sessionId"],
-				where: {
-					envId,
-					receivedAt: { gte: monthStart, lt: monthEnd },
-				},
-			})
-			.then((rows) => rows.length)
+		// Sessões behaviorais distintas no mês. Uma linha de
+		// BehavioralSessionAggregate É uma sessão distinta, então isto é
+		// um count direto — sem varrer eventos crus (Wave: storage).
+		prisma.behavioralSessionAggregate
+			.count({ where: { envId, receivedAt: { gte: monthStart, lt: monthEnd } } })
 			.catch(() => 0),
 		// Authenticated session attempts neste mês (subset de evidence)
 		cycleEvidenceFilter

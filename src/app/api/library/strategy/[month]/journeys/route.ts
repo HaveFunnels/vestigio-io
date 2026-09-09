@@ -75,16 +75,10 @@ export async function GET(request: Request, { params }: RouteParams) {
 	// Counta sessions distintas pra decidir se rodamos seleção OU se
 	// devolvemos pixel_required. Evita rodar aggregateSession 100 vezes
 	// pra concluir que tem 0 sessions.
-	const distinctSessions = await prisma.rawBehavioralEvent
-		.groupBy({
-			by: ["sessionId"],
-			where: {
-				envId,
-				receivedAt: { gte: monthStart, lt: monthEnd },
-			},
-			_count: { _all: true },
-		})
-		.then((rows) => rows.length)
+	// One BehavioralSessionAggregate row per distinct session, so a count
+	// replaces the groupBy over raw events (Wave: storage).
+	const distinctSessions = await prisma.behavioralSessionAggregate
+		.count({ where: { envId, receivedAt: { gte: monthStart, lt: monthEnd } } })
 		.catch(() => 0);
 
 	if (distinctSessions < MIN_SESSIONS_FOR_JOURNEYS) {

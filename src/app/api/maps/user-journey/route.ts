@@ -390,37 +390,42 @@ export async function GET(request: Request) {
     let mode: "inferred" | "pixel-enhanced" = "inferred";
 
     try {
-      const behavioralEvents = await prisma.rawBehavioralEvent.findMany({
-        where: {
-          envId: env.id,
-          occurredAt: { gte: since },
-          eventType: { in: ["page_view", "route_change"] },
-        },
-        select: { sessionId: true, url: true },
-        orderBy: { occurredAt: "asc" },
-        take: 500_000,
+      // Reads pre-aggregated sessions, not raw events (Wave: storage).
+      // The map only needs the SET of stages each session touched — the
+      // per-edge keep-rate comes from stage COUNTS, not from ordered
+      // transitions — so the aggregate's deduped `urls` array is exactly
+      // the input. This is a reader that used to force 90-day raw
+      // retention (its "90d" range); it no longer reads raw at all.
+      const aggRows = await prisma.behavioralSessionAggregate.findMany({
+        where: { envId: env.id, startedAt: { gte: since } },
+        select: { sessionId: true, urls: true },
+        take: 200_000,
       });
 
-      if (behavioralEvents.length > 0) {
-        // Group by session and resolve each URL to a stage
+      if (aggRows.length > 0) {
+        // Group by session and resolve each URL to a stage.
         const sessionsStages = new Map<string, Set<number>>();
-        for (const ev of behavioralEvents) {
-          let pt: string | null = null;
-          try {
-            const pathname = new URL(ev.url).pathname;
-            const page = pageByUrl.get(ev.url) || pageByPath.get(pathname);
-            pt = page ? getEffectiveType(page) : null;
-          } catch { /* malformed URL */ }
-          if (!pt) continue;
-          const stage = stageOrder[pt];
-          if (stage === undefined) continue;
-          if (stage < startStage || stage > endStage) continue;
-          let set = sessionsStages.get(ev.sessionId);
-          if (!set) {
-            set = new Set();
-            sessionsStages.set(ev.sessionId, set);
+        for (const row of aggRows) {
+          let urls: string[] = [];
+          try { urls = JSON.parse(row.urls) as string[]; } catch { continue; }
+          for (const url of urls) {
+            let pt: string | null = null;
+            try {
+              const pathname = new URL(url).pathname;
+              const page = pageByUrl.get(url) || pageByPath.get(pathname);
+              pt = page ? getEffectiveType(page) : null;
+            } catch { /* malformed URL */ }
+            if (!pt) continue;
+            const stage = stageOrder[pt];
+            if (stage === undefined) continue;
+            if (stage < startStage || stage > endStage) continue;
+            let set = sessionsStages.get(row.sessionId);
+            if (!set) {
+              set = new Set();
+              sessionsStages.set(row.sessionId, set);
+            }
+            set.add(stage);
           }
-          set.add(stage);
         }
 
         const totalSessions = sessionsStages.size;

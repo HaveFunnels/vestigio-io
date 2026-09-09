@@ -1,5 +1,6 @@
 import { prisma } from "@/libs/prismaDb";
 import { aggregateSession } from "../../packages/behavioral/session-aggregator";
+import { rebuildEventsFromTimeline } from "../../packages/behavioral/session-row-builder";
 import type {
 	RawBehavioralBatch,
 	SessionAggregate,
@@ -181,71 +182,26 @@ export async function selectTopJourneys(
 	});
 	const explicitVertical = env?.perceivedVertical ?? null;
 
-	// Query rows do mês. Limite com cap pra evitar OOM em envs com
-	// pixel muito ativo.
-	const rows = await prisma.rawBehavioralEvent.findMany({
-		where: {
-			envId,
-			receivedAt: { gte: monthStart, lt: monthEnd },
-		},
+	// Reads pre-aggregated sessions, not raw events (Wave: storage). Each
+	// row already holds the SessionAggregate; the timeline is reconstructed
+	// from the compact stored form via rebuildEventsFromTimeline, whose
+	// round-trip is asserted in session-row-builder.test.ts. This is what
+	// lets raw events stop being kept for 90 days.
+	const aggRows = await prisma.behavioralSessionAggregate.findMany({
+		where: { envId, receivedAt: { gte: monthStart, lt: monthEnd } },
 		select: {
-			id: true,
 			sessionId: true,
-			eventType: true,
-			url: true,
-			occurredAt: true,
-			payload: true,
-			attribution: true,
+			aggregate: true,
+			timeline: true,
+			urls: true,
 			userAgent: true,
+			startedAt: true,
 		},
-		orderBy: [{ sessionId: "asc" }, { occurredAt: "asc" }],
-		take: 50_000, // upper bound — ~500 sessões com 100 eventos cada
+		orderBy: { startedAt: "asc" },
+		take: MAX_SESSIONS_TO_AGGREGATE,
 	});
 
-	if (rows.length === 0) return [];
-
-	// Group by sessionId
-	const sessionMap = new Map<
-		string,
-		{
-			events: RawEventShape[];
-			attribution: AttributionContext | null;
-			userAgent: string | null;
-		}
-	>();
-	for (const row of rows) {
-		if (sessionMap.size >= MAX_SESSIONS_TO_AGGREGATE && !sessionMap.has(row.sessionId)) {
-			continue;
-		}
-		let bucket = sessionMap.get(row.sessionId);
-		if (!bucket) {
-			bucket = { events: [], attribution: null, userAgent: row.userAgent ?? null };
-			sessionMap.set(row.sessionId, bucket);
-		}
-		if (!bucket.userAgent && row.userAgent) {
-			bucket.userAgent = row.userAgent;
-		}
-		try {
-			const parsed = JSON.parse(row.payload) as RawEventShape;
-			bucket.events.push({
-				type: parsed.type,
-				ts: parsed.ts,
-				session_id: parsed.session_id || row.sessionId,
-				env_id: parsed.env_id || envId,
-				url: parsed.url || row.url,
-				data: parsed.data || {},
-			});
-		} catch {
-			// skip malformed
-		}
-		if (!bucket.attribution && row.attribution) {
-			try {
-				bucket.attribution = JSON.parse(row.attribution) as AttributionContext;
-			} catch {
-				// skip malformed attribution
-			}
-		}
-	}
+	if (aggRows.length === 0) return [];
 
 	// Aggregate + filter + score
 	const candidates: Array<{
@@ -255,27 +211,33 @@ export async function selectTopJourneys(
 		score: number;
 	}> = [];
 
-	for (const [sessionId, bucket] of sessionMap.entries()) {
-		if (bucket.events.length < 2) continue; // sessões muito curtas n contam
-		const batch: RawBehavioralBatch = {
-			events: bucket.events as any,
-			attribution: bucket.attribution ?? EMPTY_ATTRIBUTION,
-			session_id: sessionId,
-			env_id: envId,
-		};
+	for (const row of aggRows) {
 		let agg: SessionAggregate;
 		try {
-			agg = aggregateSession(batch);
+			agg = JSON.parse(row.aggregate) as SessionAggregate;
 		} catch {
 			continue;
 		}
 
-		// Filter: só problemas. Customer pediu só abandonos / drop-offs /
-		// desvios — converter sucesso não interessa pro plan.
+		// Filter: só problemas (abandonos / drop-offs / desvios).
 		if (!matchesProblemFilter(agg)) continue;
 
+		let rawEvents: RawEventShape[] = [];
+		try {
+			rawEvents = rebuildEventsFromTimeline({
+				envId,
+				sessionId: row.sessionId,
+				startedAt: row.startedAt,
+				timeline: JSON.parse(row.timeline),
+				urls: JSON.parse(row.urls),
+			}) as RawEventShape[];
+		} catch {
+			// timeline unparseable — the replay renders from the aggregate
+			// alone; buildTimeline just yields an empty timeline.
+		}
+
 		const score = scoreSession(agg);
-		candidates.push({ aggregate: agg, rawEvents: bucket.events, userAgent: bucket.userAgent, score });
+		candidates.push({ aggregate: agg, rawEvents, userAgent: row.userAgent, score });
 	}
 
 	// Ordena por score desc, pega top N

@@ -67,13 +67,18 @@ export async function DELETE(
 		return NextResponse.json({ deleted: 0 });
 	}
 
-	// Delete events scoped to (sessionId ∩ org's environments).
-	const result = await prisma.rawBehavioralEvent.deleteMany({
-		where: {
-			sessionId,
-			envId: { in: orgEnvIds },
-		},
-	});
+	// Delete both the raw events (staging, may already be pruned) AND the
+	// session aggregate — the aggregate is where the session now lives for
+	// up to 90 days, so a data-subject deletion that skipped it would
+	// leave the person's behavior behind.
+	const [rawDeleted, aggDeleted] = await Promise.all([
+		prisma.rawBehavioralEvent.deleteMany({
+			where: { sessionId, envId: { in: orgEnvIds } },
+		}),
+		prisma.behavioralSessionAggregate.deleteMany({
+			where: { sessionId, envId: { in: orgEnvIds } },
+		}),
+	]);
 
-	return NextResponse.json({ deleted: result.count });
+	return NextResponse.json({ deleted: rawDeleted.count + aggDeleted.count });
 }

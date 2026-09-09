@@ -129,6 +129,15 @@ export const POST = withErrorTracking(
     // first row of the batch — Wave 0.3's loader prefers the
     // chronologically-first non-null attribution per session, which
     // matches first-touch semantics.
+    //
+    // userAgent follows the same rule for the same reason. It is a
+    // per-session property, and both readers already take the first
+    // non-null occurrence and discard the rest:
+    //   apps/audit-runner/process-behavioral.ts — sessionUserAgent map
+    //   src/lib/journey-replays.ts              — bucket.userAgent
+    // Writing it on every row was storing the same ~180-byte string
+    // tens of thousands of times per session: measured at 91 MB of the
+    // 508 MB table, 18% of it, with no reader that could tell.
     const userAgent = safeUserAgent(request.headers.get("user-agent"));
     const attributionJson = attribution ? safeStringify(attribution) : null;
 
@@ -141,7 +150,7 @@ export const POST = withErrorTracking(
       payload: e.payload,
       attribution: idx === 0 ? attributionJson : null,
       ipHash,
-      userAgent,
+      userAgent: idx === 0 ? userAgent : null,
     }));
 
     // Enqueue for async write — the HTTP response returns immediately.

@@ -505,20 +505,55 @@
   }
 
   // ── CTA Visibility / Operability Tracking ──
+  //
+  // What counts as a CTA here feeds cta_viewed_count, which the engine
+  // divides cta_clicked_count by to produce an engagement rate (see
+  // cta_viewed_not_engaged in packages/signals/engine.ts). So a loose
+  // definition does not just cost storage — it inflates the denominator
+  // with elements nobody was ever supposed to click and reports the page
+  // as unpersuasive when it is fine.
+  //
+  // The previous rule observed every BUTTON and INPUT on the page. On a
+  // real storefront that is the menu toggle, carousel arrows, accordion
+  // headers, quantity steppers and the cookie banner. Measured on one
+  // production site: 7.2 cta_viewed per page view, 58% of all pixel
+  // traffic at ~35k events/day.
+  //
+  // Now an element has to look commercial — a checkout/support/policy
+  // destination, or CTA-shaped text — to be worth observing.
+  function isCommercialCta(el) {
+    var label = semanticLabel(el);
+    var intent = classifyClickIntent(el, label);
+    // These three are commercially meaningful by construction: they are
+    // classified off the href/label, not off the tag name.
+    if (intent === 'checkout_open' || intent === 'support_open' || intent === 'policy_open') {
+      return true;
+    }
+    return isPrimaryCta(el);
+  }
+
   function bindCtaVisibilityTracking() {
     if (typeof IntersectionObserver === 'undefined') return;
 
     var ctas = document.querySelectorAll('a[href], button, [role="button"], input[type="submit"]');
     if (ctas.length === 0) return;
 
+    // Backstop for pathological pages (infinite product grids, page
+    // builders that wrap every tile in a CTA-worded button). The
+    // engagement-rate signal saturates well before this.
+    var MAX_CTA_VIEWED_PER_PAGE = 12;
+    var ctaViewedCount = 0;
+
     ctaObserver = new IntersectionObserver(function(entries) {
       for (var i = 0; i < entries.length; i++) {
         var entry = entries[i];
         if (entry.isIntersecting) {
+          if (ctaViewedCount >= MAX_CTA_VIEWED_PER_PAGE) return;
           var el = entry.target;
           var key = semanticLabel(el).slice(0, 40);
           if (!ctaViewedSet[key]) {
             ctaViewedSet[key] = Date.now();
+            ctaViewedCount++;
             emit('cta_viewed', {
               url: canonicalUrl(),
               label: key,
@@ -529,13 +564,9 @@
       }
     }, { threshold: 0.5 });
 
-    // Only observe primary CTAs (buttons, submit inputs, prominent links)
     for (var j = 0; j < ctas.length; j++) {
-      var cta = ctas[j];
-      if (cta.tagName === 'BUTTON' || cta.tagName === 'INPUT' ||
-          (cta.tagName === 'A' && cta.getAttribute('role') === 'button') ||
-          isPrimaryCta(cta)) {
-        ctaObserver.observe(cta);
+      if (isCommercialCta(ctas[j])) {
+        ctaObserver.observe(ctas[j]);
       }
     }
   }

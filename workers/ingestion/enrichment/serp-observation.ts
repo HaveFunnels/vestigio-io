@@ -157,56 +157,24 @@ async function loadKnownContext(envId: string): Promise<{
 // have something to work with on the very first cycle.
 //
 // Top-up (active count between 1 and target): each subsequent cycle
-// activates up to N more new discoveries until the env reaches target.
-// This way better candidates discovered in later cycles (e.g. once
-// industry classification improves the SERP query) get into the active
-// set without manual intervention — replacing the prior "only bootstrap
-// once when empty" rule that froze the active set to the first cycle's
-// often-mediocre picks.
-//
-// Cap (active count >= target): stop auto-activating to avoid runaway
-// competitor-fetch + customer-voice cost. Owner must deactivate stale
-// ones (via UI or auto-deactivation cron — future work) to make room.
-const BOOTSTRAP_TOP_N_WHEN_EMPTY = 5;
-const AUTO_ACTIVATE_PER_CYCLE_NEW = 2;
-const TARGET_ACTIVE_COUNT = 10;
-
+// SUGGESTION-ONLY (EXAME P12): SERP discoveries are never auto-
+// activated. The old bootstrap ("first 5 SERP hits when the env is
+// empty") put businessforsale.eu, a gateway and an industry blog into a
+// bedding store's plan as its "competitors", unreviewed and permanent
+// (there is no auto-deactivation). A machine guess may be persisted as
+// a candidate (active: false) for the owner to curate in settings, but
+// it never fetches, never spends, and never reaches the plan on its
+// own — activation is a human decision.
 async function upsertAutoDiscoveries(
 	envId: string,
 	candidates: Set<string>,
 ): Promise<number> {
 	if (candidates.size === 0) return 0;
 
-	const activeCount = await prisma.competitorDomain.count({
-		where: { environmentId: envId, active: true },
-	}).catch(() => 0);
-
-	let activationBudget = 0;
-	let mode: "bootstrap" | "topup" | "at_cap" = "at_cap";
-	if (activeCount === 0) {
-		activationBudget = BOOTSTRAP_TOP_N_WHEN_EMPTY;
-		mode = "bootstrap";
-	} else if (activeCount < TARGET_ACTIVE_COUNT) {
-		activationBudget = Math.min(
-			AUTO_ACTIVATE_PER_CYCLE_NEW,
-			TARGET_ACTIVE_COUNT - activeCount,
-		);
-		mode = "topup";
-	}
-
-	let activatedRemaining = activationBudget;
 	let created = 0;
-	let newlyActivated = 0;
 	for (const domain of candidates) {
 		try {
-			// upsert: existing rows keep their state (owner may have
-			// manually pinned earlier). Activation only applies to
-			// newly-created rows — existing rows hit the update branch
-			// (empty) and keep whatever active flag they currently have.
-			// The way we detect "newly created" is to check before/after
-			// counts; here we just attempt to activate up to budget.
-			const shouldActivate = activatedRemaining > 0;
-			const result = await prisma.competitorDomain.upsert({
+			await prisma.competitorDomain.upsert({
 				where: {
 					environmentId_domain: { environmentId: envId, domain },
 				},
@@ -214,19 +182,11 @@ async function upsertAutoDiscoveries(
 					environmentId: envId,
 					domain,
 					discoveryMethod: "auto",
-					active: shouldActivate,
+					active: false, // suggestion — owner activates, never us
 				},
 				update: {}, // never overwrite owner curation
-				select: { id: true, addedAt: true, active: true },
+				select: { id: true },
 			});
-			// Detect "newly created in this call" by addedAt within last
-			// 2s — if older, it was a pre-existing row that update {} left
-			// untouched, so we don't count its activation budget.
-			const wasNew = Date.now() - result.addedAt.getTime() < 2000;
-			if (shouldActivate && wasNew) {
-				activatedRemaining--;
-				newlyActivated++;
-			}
 			created++;
 		} catch (err) {
 			console.warn(
@@ -235,13 +195,9 @@ async function upsertAutoDiscoveries(
 			);
 		}
 	}
-	if (mode === "bootstrap" && newlyActivated > 0) {
+	if (created > 0) {
 		console.log(
-			`[serp-observation] env=${envId} had 0 curated competitors. Bootstrap-activated ${newlyActivated} discovered candidate(s)`,
-		);
-	} else if (mode === "topup" && newlyActivated > 0) {
-		console.log(
-			`[serp-observation] env=${envId} top-up activated ${newlyActivated} new candidate(s) (active was ${activeCount}/${TARGET_ACTIVE_COUNT})`,
+			`[serp-observation] env=${envId} upserted ${created} SERP candidate(s) as inactive suggestions (owner curation required)`,
 		);
 	}
 	return created;

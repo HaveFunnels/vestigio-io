@@ -259,7 +259,6 @@ export async function generateCompetitorRadar(
 	});
 	const totalMonitored = curated.length;
 	const activeCurated = curated.filter((c) => c.active);
-	const totalActive = activeCurated.length;
 
 	// 2. Competitive findings (active state, latest write per inference
 	//    key per cycle wins because we order by createdAt desc and dedupe
@@ -463,13 +462,34 @@ export async function generateCompetitorRadar(
 		return a.domain.localeCompare(b.domain);
 	});
 
+	// EXAME P12 — a machine-discovered domain with zero signals is a
+	// guess, not a competitor. It never renders in the plan: an entry
+	// earns its place by owner curation (manual) or by carrying a real
+	// signal this cycle. Before this gate the plan showed a bedding
+	// store "45 monitorados" including businessforsale.eu and a payment
+	// gateway, all signal-less — a section that actively destroyed
+	// trust in every real number around it.
+	const shownEntries = entries.filter(
+		(e) => e.discoveryMethod === "manual" || e.signals.length > 0,
+	);
+	const withSignalsCount = shownEntries.filter((e) => e.signals.length > 0).length;
+
+	// Nothing curated by a human, nothing with a signal, no peer-set
+	// signal → the section has no content worth a customer's attention.
+	if (shownEntries.length === 0 && !trustPostureLag && !serpOverlap) {
+		return null;
+	}
+
+	// Counts describe what the section shows, not the raw candidate
+	// pool — "45 monitorados, sem sinais" was the inflated claim.
+	const manualMonitored = curated.filter((c) => c.discoveryMethod === "manual").length;
 	return {
 		cycleId,
-		totalMonitored,
-		totalActive,
-		withSignalsCount: entries.filter((e) => e.signals.length > 0).length,
+		totalMonitored: Math.max(manualMonitored, shownEntries.length),
+		totalActive: shownEntries.length,
+		withSignalsCount,
 		trustPostureLag,
 		serpOverlap,
-		entries,
+		entries: shownEntries,
 	};
 }

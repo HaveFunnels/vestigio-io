@@ -509,7 +509,7 @@ que a dona de uma loja de enxoval não usaria.**
 | P9 | "Checkout da página inicial" | narrative.ts prompt/inputs |
 | P10 | Packs internos na legenda da barra | WhatHappenedNarrative.tsx:162-190 |
 | P11 | 4 estimativas com precisão falsa | impact baselines exibidos sem grau |
-| P12 | 45 "concorrentes" SERP sem curadoria, 0 sinais | serp-observation.ts:171-209 |
+| P12 ✅ | 45 "concorrentes" SERP sem curadoria, 0 sinais | CORRIGIDO: SERP vira sugestão inativa (ativação é decisão humana); seção só renderiza com curadoria manual ou sinal real; 29 linhas auto-ativas desativadas em prod |
 | P13 | UTM cru no título; HTML como label; botão "0" | journey-replays.ts (persona/labels) |
 | P14 | R$ 190 vs R$ 79.200 sem ponte | journeys sem extrapolação declarada |
 | P15 | Mesmo problema em 3 passos, 3 preços | next-steps sem dedupe por raiz |

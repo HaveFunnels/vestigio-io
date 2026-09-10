@@ -38,6 +38,25 @@ export interface BehavioralAlertUI {
 	text: string;
 }
 
+export interface MeasuredFunnelStageUI {
+	key: string;
+	label: string;
+	sessions: number;
+	pctOfArrived: number;
+	dropPctFromPrev: number | null;
+}
+
+export interface MeasuredFunnelUI {
+	basis: "pixel_measured";
+	stages: MeasuredFunnelStageUI[];
+	biggestDrop: {
+		fromLabel: string;
+		toLabel: string;
+		lostSessions: number;
+		dropPct: number;
+	} | null;
+}
+
 export interface BehavioralSectionUI {
 	basis: "pixel_measured";
 	windowStart: string;
@@ -49,6 +68,7 @@ export interface BehavioralSectionUI {
 	scrollNote: string;
 	sources: BehavioralSourceStatsUI[];
 	alerts: BehavioralAlertUI[];
+	funnel?: MeasuredFunnelUI | null;
 }
 
 interface Props {
@@ -90,6 +110,49 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 						{alert.text}
 					</div>
 				))}
+
+				{/* ONDA 2.1 — o funil MEDIDO da loja: chegou → pagou, com
+				    contagem direta de sessões por degrau. A pergunta nº 1 de
+				    quem opera loja, respondida sem estimativa. */}
+				{behavioral.funnel && behavioral.funnel.stages.length > 0 && (
+					<div className="mb-6">
+						<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+							Seu funil, medido — sessões que chegaram em cada etapa
+						</div>
+						<div className="space-y-1.5">
+							{behavioral.funnel.stages.map((st) => (
+								<div key={st.key} className="flex items-center gap-3">
+									<div className="w-28 shrink-0 text-[12px] text-content-secondary sm:w-32">
+										{st.label}
+									</div>
+									<div className="relative h-5 flex-1 overflow-hidden rounded-md bg-surface-inset/50">
+										<div
+											className={`h-full rounded-md ${st.key === "paid" ? "bg-emerald-500/60" : "bg-sky-500/35"}`}
+											style={{ width: `${Math.max(st.pctOfArrived, st.sessions > 0 ? 1.2 : 0)}%` }}
+										/>
+									</div>
+									<div className="w-32 shrink-0 text-right font-mono text-[11.5px] tabular-nums text-content">
+										{st.sessions.toLocaleString("pt-BR")}
+										<span className="text-content-faint"> · {st.pctOfArrived}%</span>
+									</div>
+								</div>
+							))}
+						</div>
+						{behavioral.funnel.biggestDrop && (
+							<div className="mt-3 rounded-lg border border-rose-500/20 bg-rose-500/[0.05] px-3 py-2 text-[12px] leading-relaxed text-content-secondary">
+								Maior perda de gente:{" "}
+								<span className="font-medium text-content">
+									{behavioral.funnel.biggestDrop.fromLabel} → {behavioral.funnel.biggestDrop.toLabel}
+								</span>
+								{" — "}
+								<span className="font-mono tabular-nums text-rose-300">
+									{behavioral.funnel.biggestDrop.lostSessions.toLocaleString("pt-BR")} sessões
+								</span>{" "}
+								({behavioral.funnel.biggestDrop.dropPct}%) não seguem adiante.
+							</div>
+						)}
+					</div>
+				)}
 
 				<div className="overflow-x-auto">
 					<table className="w-full text-[13px]">

@@ -473,9 +473,12 @@ de DISCIPLINA, não de tese.
 ### Onda 2 — Entregar o que só a Vestigio tem (o salto de valor; grande)
 11. **Ledger de anúncio** (§2.1): spend × comportamento × atribuição por
     origem/campanha. Os dados já chegam todo ciclo.
-12. **Funil de e-commerce medido** (§2.3): consumir os campos de carrinho/
-    checkout do agregado — com o pixel no checkout NX4 o funil fecha até
-    "pagou". Esta é a seção-âncora do novo plano (§4.1-2).
+12. ✅ **Funil de e-commerce medido** (§2.3): SHIPPED — computeMeasuredFunnel
+    em behavioral-measurement (mesma janela/filtro 30d), 6 degraus
+    chegou→pagou por contagem, gate de 100 sessões + sinal de comércio
+    real (nunca fabrica), "pagou" = confirmation_seen (pós-v2.6 nunca
+    inferido); UI com barras proporcionais + "maior perda de gente";
+    6 testes.
 13. **"O que mudou"** (§2.5): probe diffs viram a seção longitudinal — o
     motor de retenção do mês 2+.
 14. **Grau de certeza em todo claim** (§3.D): MEDIDO/ESTIMADO/VERIFICAR

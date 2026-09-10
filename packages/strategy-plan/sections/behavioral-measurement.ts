@@ -59,6 +59,35 @@ export interface BehavioralAlert {
 	text: string;
 }
 
+// ── ONDA 2.1 — the MEASURED e-commerce funnel ─────────────────────
+// The question every store owner asks first ("onde no caminho até
+// pagar eu perco gente?") answered with counted sessions, not
+// estimates. Stages derive from fields the aggregator already
+// computes on every session (EXAME §2.3 — collected, previously
+// consumed by nothing in the plan).
+
+export interface MeasuredFunnelStage {
+	key: "arrived" | "product" | "cart" | "checkout" | "payment" | "paid";
+	label: string;
+	sessions: number;
+	/** % of ARRIVED sessions that reached this stage (monotonic read). */
+	pctOfArrived: number;
+	/** % drop from the previous stage; null on the first stage. */
+	dropPctFromPrev: number | null;
+}
+
+export interface MeasuredFunnelOutput {
+	basis: "pixel_measured";
+	stages: MeasuredFunnelStage[];
+	/** The single worst stage transition — where the most sessions die. */
+	biggestDrop: {
+		fromLabel: string;
+		toLabel: string;
+		lostSessions: number;
+		dropPct: number;
+	} | null;
+}
+
 export interface BehavioralMeasurementOutput {
 	basis: "pixel_measured";
 	windowStart: string;
@@ -71,6 +100,9 @@ export interface BehavioralMeasurementOutput {
 	scrollNote: string;
 	sources: BehavioralSourceStats[];
 	alerts: BehavioralAlert[];
+	/** Present only when the window carries enough commerce signal —
+	 *  see computeMeasuredFunnel's gate. */
+	funnel?: MeasuredFunnelOutput | null;
 }
 
 interface AggRow {
@@ -116,6 +148,7 @@ export async function generateBehavioralMeasurement(
 		durationS: number;
 		noScroll: boolean;
 		formStarted: boolean;
+		funnel: FunnelSession;
 	};
 	const sessionsTotal = rows.length;
 	const parsed: Parsed[] = [];
@@ -132,12 +165,28 @@ export async function generateBehavioralMeasurement(
 				session_duration_ms?: number;
 				max_scroll_depth?: number;
 				form_started?: boolean;
+				surface_progression?: string[];
+				highest_milestone?: string | null;
+				checkout_reached?: boolean;
+				cart_add_count?: number;
+				shipping_step_reached?: boolean;
+				payment_step_reached?: boolean;
+				confirmation_seen?: boolean;
 			};
 			parsed.push({
 				source: normalizeSource(agg.attribution?.first_touch?.source),
 				durationS: Math.round((agg.session_duration_ms ?? 0) / 1000),
 				noScroll: (agg.max_scroll_depth ?? 0) === 0,
 				formStarted: agg.form_started === true,
+				funnel: {
+					surfaces: agg.surface_progression ?? [],
+					highestMilestone: agg.highest_milestone ?? null,
+					checkoutReached: agg.checkout_reached === true,
+					cartAddCount: agg.cart_add_count ?? 0,
+					shippingStepReached: agg.shipping_step_reached === true,
+					paymentStepReached: agg.payment_step_reached === true,
+					confirmationSeen: agg.confirmation_seen === true,
+				},
 			});
 		} catch {
 			excluded++; // unparseable aggregate — treat as excluded, count it
@@ -185,6 +234,11 @@ export async function generateBehavioralMeasurement(
 				`Esse tráfego está chegando e indo embora antes de ver a oferta. Se há verba nessa origem, ela está comprando chegadas, não visitas.`,
 		}));
 
+	const funnel = computeMeasuredFunnel(
+		parsed.map((p) => p.funnel),
+		ctx.locale ?? "pt-BR",
+	);
+
 	return {
 		basis: "pixel_measured",
 		windowStart: windowStart.toISOString().slice(0, 10),
@@ -197,5 +251,121 @@ export async function generateBehavioralMeasurement(
 			"Scroll é medido em marcos de 25/50/75/90% — 'sem rolar' significa que o marco de 25% nunca disparou.",
 		sources,
 		alerts,
+		funnel,
 	};
+}
+
+// ── ONDA 2.1 — measured funnel computation (pure, tested) ──────────
+
+export interface FunnelSession {
+	surfaces: string[];
+	highestMilestone: string | null;
+	checkoutReached: boolean;
+	cartAddCount: number;
+	shippingStepReached: boolean;
+	paymentStepReached: boolean;
+	confirmationSeen: boolean;
+}
+
+const MILESTONE_ORDER = [
+	"awareness_seen",
+	"consideration_started",
+	"intent_expressed",
+	"conversion_started",
+	"conversion_completed",
+	"post_conversion_seen",
+];
+function milestoneAtLeast(m: string | null, target: string): boolean {
+	if (!m) return false;
+	return MILESTONE_ORDER.indexOf(m) >= MILESTONE_ORDER.indexOf(target);
+}
+
+const PRODUCT_PATH = /\/(products?|produto|item|p)\//i;
+const CART_PATH = /\/(cart|carrinho|carrito|basket)(\/|$|\?)/i;
+
+/** Minimum arrived sessions before a funnel is statistically worth
+ *  showing — percentages over a trickle read as precision they don't
+ *  have. */
+const MIN_SESSIONS_FOR_FUNNEL = 100;
+
+/**
+ * The store's REAL funnel from counted sessions:
+ * chegou → viu produto → carrinho → checkout → pagamento → pagou.
+ *
+ * Gate: emitted only when the window has enough sessions AND actual
+ * commerce signal (someone reached a cart or checkout) — a SaaS or
+ * content site never shows a fake commerce funnel. "Pagou" counts
+ * confirmation_seen, which after snippet v2.6 fires only on a strong
+ * signal or the merchant's confirm() — never inferred from a heading.
+ */
+export function computeMeasuredFunnel(
+	sessions: FunnelSession[],
+	locale: string,
+): MeasuredFunnelOutput | null {
+	const arrived = sessions.length;
+	if (arrived < MIN_SESSIONS_FOR_FUNNEL) return null;
+
+	const product = sessions.filter(
+		(s) =>
+			s.surfaces.some((p) => PRODUCT_PATH.test(p)) ||
+			milestoneAtLeast(s.highestMilestone, "consideration_started"),
+	).length;
+	const cart = sessions.filter(
+		(s) => s.cartAddCount > 0 || s.surfaces.some((p) => CART_PATH.test(p)),
+	).length;
+	const checkout = sessions.filter(
+		(s) => s.checkoutReached || milestoneAtLeast(s.highestMilestone, "conversion_started"),
+	).length;
+	const payment = sessions.filter(
+		(s) => s.paymentStepReached || s.confirmationSeen,
+	).length;
+	const paid = sessions.filter((s) => s.confirmationSeen).length;
+
+	// No commerce signal in the window → no funnel (never fabricate).
+	if (cart === 0 && checkout === 0) return null;
+
+	const pt = locale === "pt-BR";
+	const defs: Array<{ key: MeasuredFunnelStage["key"]; label: string; sessions: number }> = [
+		{ key: "arrived", label: pt ? "Chegou no site" : "Arrived", sessions: arrived },
+		{ key: "product", label: pt ? "Viu produto" : "Viewed a product", sessions: product },
+		{ key: "cart", label: pt ? "Carrinho" : "Cart", sessions: cart },
+		{ key: "checkout", label: pt ? "Checkout" : "Checkout", sessions: checkout },
+		{ key: "payment", label: pt ? "Pagamento" : "Payment", sessions: payment },
+		{ key: "paid", label: pt ? "Pagou" : "Paid", sessions: paid },
+	];
+
+	const stages: MeasuredFunnelStage[] = defs.map((d, i) => {
+		const prev = i > 0 ? defs[i - 1].sessions : null;
+		return {
+			key: d.key,
+			label: d.label,
+			sessions: d.sessions,
+			pctOfArrived: arrived > 0 ? Math.round((100 * d.sessions) / arrived) : 0,
+			dropPctFromPrev:
+				prev !== null && prev > 0
+					? Math.max(0, Math.round((100 * (prev - d.sessions)) / prev))
+					: null,
+		};
+	});
+
+	// Worst transition by ABSOLUTE lost sessions (that is where the
+	// money is), reported with its % for context. Skip transitions out
+	// of a zero stage.
+	let biggest: MeasuredFunnelOutput["biggestDrop"] = null;
+	for (let i = 1; i < defs.length; i++) {
+		const prev = defs[i - 1];
+		if (prev.sessions === 0) continue;
+		const lost = prev.sessions - defs[i].sessions;
+		if (lost <= 0) continue;
+		if (!biggest || lost > biggest.lostSessions) {
+			biggest = {
+				fromLabel: prev.label,
+				toLabel: defs[i].label,
+				lostSessions: lost,
+				dropPct: Math.round((100 * lost) / prev.sessions),
+			};
+		}
+	}
+
+	return { basis: "pixel_measured", stages, biggestDrop: biggest };
 }

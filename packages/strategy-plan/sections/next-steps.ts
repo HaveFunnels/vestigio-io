@@ -26,7 +26,7 @@ import {
 	getDynamicRemediation,
 } from "../../projections/remediation-catalog";
 import { resolveInferenceTitle } from "../title-resolver";
-import { openLossExposure } from "../honest-aggregates";
+import { openLossExposure, latestComprehensiveCycleId } from "../honest-aggregates";
 import { sourceIdentity } from "../../behavioral/source-identity";
 import { voiceRulesFor } from "../voice-rules";
 
@@ -436,31 +436,26 @@ async function pickTopActions(
 	// built from is still open. This ties action freshness to finding
 	// status — which the engine's lifecycle and, when needed, a manual
 	// resolve both control — without the risk of latest-cycle scoping.
-	// GHOST v4 (Sept/2026): "open" must be the LATEST status per finding
-	// identity, not "any historical created row". The lifecycle uses
-	// phantom rows — resolution writes a NEW row with status='resolved'
-	// in the resolving cycle, and the older 'created' row STAYS
-	// 'created' forever as that cycle's history. Querying `status in
-	// (created,confirmed)` across all cycles therefore keeps a resolved
-	// finding (the /account trust boundary) eternally "open", so its
-	// step never gets skipped. Reduce to the most recent row per
-	// (inferenceKey, surface) and treat 'resolved' as closed.
-	const findingRows = await prisma.finding.findMany({
-		where: { environmentId: ctx.environmentId },
-		select: { inferenceKey: true, surface: true, status: true, createdAt: true },
-		orderBy: { createdAt: "desc" },
-	});
-	const latestStatusByIdentity = new Map<string, string>();
-	for (const f of findingRows) {
-		const idKey = `${f.inferenceKey}::${f.surface ?? ""}`;
-		if (!latestStatusByIdentity.has(idKey)) latestStatusByIdentity.set(idKey, f.status);
-	}
-	const openInferenceKeys = new Set<string>();
-	for (const [idKey, status] of latestStatusByIdentity) {
-		if (status === "created" || status === "confirmed" || status === "regressed") {
-			openInferenceKeys.add(idKey.split("::")[0]);
-		}
-	}
+	// Open-set = the open findings of the latest comprehensive audit
+	// (full/cold), NOT "any created row across all cycles" — the latter
+	// kept a resolved finding (the /account trust boundary) eternally
+	// open via its stale created row, and a plain latest-status read is
+	// poisoned by targeted verification cycles that phantom-resolve
+	// findings they never checked. See latestComprehensiveCycleId.
+	const openCycleId = await latestComprehensiveCycleId(prisma, ctx.environmentId, ctx.monthEnd);
+	const openInferenceKeys = new Set(
+		openCycleId
+			? (
+				await prisma.finding.findMany({
+					where: {
+						cycleId: openCycleId,
+						status: { in: ["created", "confirmed", "regressed"] },
+					},
+					select: { inferenceKey: true },
+				})
+			).map((f) => f.inferenceKey)
+			: [],
+	);
 
 	const out: ActionRow[] = [];
 	for (const r of rows) {

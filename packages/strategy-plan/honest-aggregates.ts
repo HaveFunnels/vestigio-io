@@ -144,50 +144,68 @@ export interface OpenExposure {
  * places is how the September plan showed three different totals for
  * the same concept.
  */
+// GHOST v5 (Sept/2026): the finding lifecycle uses phantom rows, and
+// TARGETED/hot verification cycles (1955 of them on Casa Montelle)
+// write 'resolved' rows for findings they never actually re-checked —
+// poisoning any "latest status" read. The only trustworthy open-set is
+// the latest COMPREHENSIVE audit (full/cold): it re-emits the real
+// open findings and, when a cause is genuinely gone (the /account
+// trust boundary, suppressed by the measured-continuity gate), simply
+// omits it. Both the exposure and the next-steps open-set scope to
+// this cycle. Point-in-time preserved via createdAt < end.
+export async function latestComprehensiveCycleId(
+	prisma: PrismaClient,
+	environmentId: string,
+	end: Date,
+): Promise<string | null> {
+	const row = await prisma.finding.findFirst({
+		where: {
+			environmentId,
+			createdAt: { lt: end },
+			cycle: { status: "complete", cycleType: { in: ["full", "cold"] } },
+		},
+		orderBy: { createdAt: "desc" },
+		select: { cycleId: true },
+	});
+	return row?.cycleId ?? null;
+}
+
 export async function openLossExposure(
 	prisma: PrismaClient,
 	environmentId: string,
 	end: Date,
 ): Promise<OpenExposure> {
-	// GHOST v4 (Sept/2026): the lifecycle uses phantom rows — a
-	// resolved finding keeps its old 'created' row (that cycle's
-	// history) and gains a NEW 'resolved' row. Filtering `status in
-	// (created,confirmed,regressed)` across all cycles therefore counts
-	// a resolved finding's stale created row forever (the /account
-	// trust boundary, R$ 8.750, kept draining the headline after it was
-	// resolved). Determine the LATEST status per identity as of `end`,
-	// and only the ones still open enter the exposure.
-	const raw = await prisma.finding.findMany({
-		where: {
-			environmentId,
-			polarity: { in: ["negative", "neutral"] },
-			createdAt: { lt: end },
-		},
-		select: {
-			inferenceKey: true,
-			surface: true,
-			pack: true,
-			severity: true,
-			impactMin: true,
-			impactMax: true,
-			impactMidpoint: true,
-			status: true,
-			createdAt: true,
-		},
-		orderBy: [{ createdAt: "desc" }, { impactMidpoint: "desc" }],
-	});
+	// Scope to the latest comprehensive audit (see
+	// latestComprehensiveCycleId): its open findings ARE the current
+	// open-set, immune to targeted-cycle phantom-resolves. Empty when no
+	// full/cold cycle exists yet → zero exposure (honest for a brand-new
+	// env before its first full audit).
+	const cycleId = await latestComprehensiveCycleId(prisma, environmentId, end);
+	const raw = cycleId
+		? await prisma.finding.findMany({
+			where: {
+				cycleId,
+				polarity: { in: ["negative", "neutral"] },
+				status: { in: ["created", "confirmed", "regressed"] },
+			},
+			select: {
+				inferenceKey: true,
+				surface: true,
+				pack: true,
+				severity: true,
+				impactMin: true,
+				impactMax: true,
+				impactMidpoint: true,
+			},
+			orderBy: { impactMidpoint: "desc" },
+		})
+		: [];
 
-	// Latest row per identity wins (createdAt desc). Include only when
-	// that latest status is still open.
-	const OPEN = new Set(["created", "confirmed", "regressed"]);
+	// One row per identity (unique per cycle already; dedupe defensively).
 	const byIdentity = new Map<string, OpenExposureRow>();
-	const seenIdentity = new Set<string>();
 	for (const r of raw) {
 		const key = `${r.inferenceKey}::${r.surface}`;
-		if (seenIdentity.has(key)) continue; // older row for an identity we've settled
-		seenIdentity.add(key);
-		if (!OPEN.has(r.status)) continue; // latest is resolved → closed
-		byIdentity.set(key, r);
+		if (!byIdentity.has(key)) byIdentity.set(key, r);
 	}
 	const rows = [...byIdentity.values()];
 
@@ -211,4 +229,3 @@ export async function openLossExposure(
 	};
 }
 
-// Deploy note: latest-status open-finding fix (7e7313e8) — worker build retrigger.

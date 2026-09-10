@@ -3689,16 +3689,26 @@ function extractBehavioralSignals(
     // complete purchases across the hop, the hop is not a revenue leak.
     // The Sept/2026 Casa Montelle plan shipped that exact ghost as its
     // R$ 24k step #1 while the same document measured 23 paid sessions.
-    if ((p.confirmation_seen_count ?? 0) >= 1) {
+    // TRAILING 30d confirmations, not the windowed count: a full/hot
+    // cycle's session set can have confirmation_seen_count=0 (the
+    // confirms happened outside this cycle's window) while the store
+    // demonstrably converts — confirmed_purchases_30d=40 on Casa
+    // Montelle. Using the windowed count here is what let the ghost
+    // survive the full audit (block-move regression, 30c8f302).
+    const confirmedForContinuity = Math.max(
+      p.confirmed_purchases_30d ?? 0,
+      p.confirmation_seen_count ?? 0,
+    );
+    if (confirmedForContinuity >= 1) {
       signals.push(createSignal({
         signal_key: 'measured_confirmed_purchases',
         category: SignalCategory.Behavioral,
         attribute: 'behavioral.confirmed_purchases',
         value: 'true',
-        numeric_value: p.confirmation_seen_count,
+        numeric_value: confirmedForContinuity,
         confidence: 95,
         scoping, cycle_ref, ids, evidence_refs: refs,
-        description: `${p.confirmation_seen_count} confirmed purchase(s) measured by the pixel in this window`,
+        description: `${confirmedForContinuity} confirmed purchase(s) measured by the pixel (trailing 30d)`,
       }));
     }
 

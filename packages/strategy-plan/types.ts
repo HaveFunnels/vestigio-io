@@ -158,6 +158,10 @@ export interface NextStepOutput {
 	 *  baseline de hoje gravado. Null quando a página do passo não tem
 	 *  medição aplicável. */
 	measuredVerification?: string | null;
+	/** ONDA 4.4 — artefato pronto-para-usar (política escrita, variantes
+	 *  de copy, brief de criativo). Null quando o passo não é elegível
+	 *  ou a geração falhou (o passo nunca depende do artefato). */
+	artifact?: { kind: string; title: string; content: string } | null;
 }
 
 export interface GenerationCost {

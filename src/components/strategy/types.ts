@@ -272,6 +272,8 @@ export interface NextStep {
 	/** ONDA 3.4 — "o que o pixel confere no próximo plano" com o
 	 *  baseline de hoje. */
 	measuredVerification?: string | null;
+	/** ONDA 4.4 — artefato pronto-para-usar do passo. */
+	artifact?: { kind: string; title: string; content: string } | null;
 	/** Reta-final: server-resolved Action objects matching linkedActionRefs.
 	 *  Lets the drawer render directly without cross-referencing MCP's
 	 *  current-cycle snapshot (which misses older Action IDs the plan

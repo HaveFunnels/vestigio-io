@@ -298,6 +298,19 @@ function StepCard({
 	const [status, setStatus] = useState<NextStepStatus>(step.status);
 	// ONDA 4.3 — regiões localizadas + nota medida da página do passo.
 	const shotDecoration = usePlanShotDecoration(step.screenshotSurface ?? null);
+	// ONDA 4.4 — artefato pronto: colapsável + copiar.
+	const [artifactOpen, setArtifactOpen] = useState(false);
+	const [artifactCopied, setArtifactCopied] = useState(false);
+	const copyArtifact = async () => {
+		if (!step.artifact) return;
+		try {
+			await navigator.clipboard.writeText(step.artifact.content);
+			setArtifactCopied(true);
+			setTimeout(() => setArtifactCopied(false), 1800);
+		} catch {
+			/* clipboard indisponível — sem drama */
+		}
+	};
 	const [title, setTitle] = useState<string>(step.title);
 	const [dueAt, setDueAt] = useState<Date | null>(step.dueAt);
 	const [editingTitle, setEditingTitle] = useState(false);
@@ -685,6 +698,47 @@ function StepCard({
 						<div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-[13.5px] leading-[1.55] text-content-secondary">
 							{step.measuredVerification}
 						</div>
+					</div>
+				)}
+
+				{/* ONDA 4.4 — o ENTREGÁVEL, não só o conselho: a política
+				    escrita, as variantes de copy, o brief — pronto pra colar. */}
+				{step.artifact && (
+					<div className="mb-5 overflow-hidden rounded-xl border border-edge">
+						<button
+							type="button"
+							onClick={() => setArtifactOpen((v) => !v)}
+							className="flex w-full items-center justify-between gap-3 bg-surface-inset/50 px-4 py-2.5 text-left transition-colors hover:bg-surface-inset"
+							aria-expanded={artifactOpen}
+						>
+							<span className="flex items-center gap-2">
+								<span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+									Pronto para usar
+								</span>
+								<span className="text-[12.5px] font-medium text-content">
+									{step.artifact.title}
+								</span>
+							</span>
+							<span className="shrink-0 text-[11px] text-content-faint">
+								{artifactOpen ? "recolher" : "abrir"}
+							</span>
+						</button>
+						{artifactOpen && (
+							<div className="border-t border-edge bg-surface-card px-4 py-3">
+								<pre className="whitespace-pre-wrap font-sans text-[13px] leading-[1.6] text-content-secondary">
+									{step.artifact.content}
+								</pre>
+								<div className="mt-3 flex justify-end" data-vsgp-print-hide>
+									<button
+										type="button"
+										onClick={copyArtifact}
+										className="rounded-lg border border-edge bg-surface-inset px-3 py-1 text-[11.5px] font-medium text-content-secondary transition-colors hover:border-edge-focus hover:text-content"
+									>
+										{artifactCopied ? "Copiado" : "Copiar texto"}
+									</button>
+								</div>
+							</div>
+						)}
 					</div>
 				)}
 

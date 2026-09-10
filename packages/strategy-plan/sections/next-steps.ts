@@ -892,6 +892,103 @@ function buildMeasuredVerification(
 	return null;
 }
 
+// ── ONDA 4.4 — ready-to-use artifacts ──────────────────────────────
+// Advice is a commodity; the artifact made with the store's own data
+// is not. Eligible steps get the DELIVERABLE: the written policy, two
+// ready copy variants, the creative brief. Optional by construction —
+// a failed call never blocks the step.
+
+type ArtifactKind = "policy" | "copy" | "ad_brief";
+
+const POLICY_KEYS = /policy|refund|return|troca|devolu/i;
+const COPY_KEYS = /cta|copy|headline|guarantee|social_proof|micro_copy|benefit|messag|trust_gradient|first_impression/i;
+
+function artifactKindForKey(primaryKey: string): ArtifactKind | null {
+	if (POLICY_KEYS.test(primaryKey)) return "policy";
+	if (COPY_KEYS.test(primaryKey)) return "copy";
+	return null;
+}
+
+async function generateArtifact(args: {
+	kind: ArtifactKind;
+	envDomain: string;
+	vertical: string | null;
+	locale: string;
+	entityLabel: string | null;
+	measuredContext: string | null;
+	stepTitle: string;
+	organizationId: string | null;
+	environmentId: string;
+}): Promise<{ kind: string; title: string; content: string } | null> {
+	const rules = voiceRulesFor(args.locale);
+	const vertical = args.vertical ?? "negócio digital";
+	const common = `Você é Vestigio, escrevendo um ARTEFATO PRONTO PARA USAR para ${args.envDomain} (${vertical}).
+Responda em ${rules.language_name}. Entregue SOMENTE o artefato, sem preâmbulo, sem explicação, sem markdown de cabeçalho.
+PROIBIDO: travessão (—), emoji, placeholders vazios tipo [NOME] sem instrução curta entre colchetes.
+${args.measuredContext ? `CONTEXTO MEDIDO (use para tornar o texto específico): ${args.measuredContext}` : ""}
+${args.entityLabel ? `A página/produto em questão: "${args.entityLabel}".` : ""}`;
+
+	const prompts: Record<ArtifactKind, { title: string; user: string; maxTokens: number }> = {
+		policy: {
+			title: "Política de troca e devolução pronta para publicar",
+			user: `${common}
+
+Escreva a política de trocas e devoluções completa e pronta para publicar, adequada ao Brasil:
+- Direito de arrependimento de 7 dias corridos (art. 49 do CDC), com reembolso integral.
+- Prazo e condições para troca por defeito (30 dias, produto não durável / 90 dias, durável).
+- Passo a passo do cliente (como solicitar, para onde escrever, prazo de resposta).
+- Quem paga o frete em cada caso, dito claramente.
+- Tom direto e acolhedor, sem juridiquês desnecessário; use [e-mail de contato] e [prazo de postagem] como campos a preencher.
+Máximo ~350 palavras.`,
+			maxTokens: 700,
+		},
+		copy: {
+			title: "Duas variantes prontas de copy",
+			user: `${common}
+
+Tarefa do passo: ${args.stepTitle}.
+Escreva DUAS variantes prontas de copy para o ponto em questão (botão + 1 linha de apoio cada), numeradas "Variante 1" e "Variante 2":
+- Cada variante: o texto do botão (máx. 4 palavras) e uma linha de apoio (máx. 14 palavras) que responda a principal hesitação do comprador.
+- Concretas e específicas da página; nada de "Saiba mais".
+- A segunda variante deve tomar um ângulo diferente da primeira (ex.: garantia vs urgência).`,
+			maxTokens: 300,
+		},
+		ad_brief: {
+			title: "Brief de criativo pronto para a agência/gestor",
+			user: `${common}
+
+Tarefa do passo: ${args.stepTitle}.
+Escreva um brief de criativo de 1 página em tópicos curtos:
+- Problema medido (use os números do contexto).
+- O que o criativo DEVE mostrar nos 3 primeiros segundos (produto e preço reais da página de destino).
+- 2 ganchos de abertura prontos (uma frase cada).
+- O que evitar (a promessa que a página não confirma).
+- Métrica de sucesso: a que o pixel vai medir (permanência da origem).`,
+			maxTokens: 450,
+		},
+	};
+
+	const cfg = prompts[args.kind];
+	try {
+		const res = await callForText({
+			model: "haiku_4_5",
+			systemPrompt: cfg.user.split("\n\n")[0],
+			userPrompt: cfg.user,
+			maxTokens: cfg.maxTokens,
+			temperature: 0.4,
+			purpose: "strategy_plan.step_artifact",
+			organizationId: args.organizationId,
+			environmentId: args.environmentId,
+			fallbackText: "",
+		});
+		const content = (res.text ?? "").trim();
+		if (!content || content.length < 40) return null;
+		return { kind: args.kind, title: cfg.title, content };
+	} catch {
+		return null;
+	}
+}
+
 export async function generateNextSteps(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
@@ -1270,6 +1367,46 @@ export async function generateNextSteps(
 			measuredVerification: buildMeasuredVerification(pg.path, behavioral?.friction, behavioral),
 		});
 	}
+
+	// ONDA 4.4 — artifact pass: eligible steps receive the deliverable
+	// in parallel; a failure attaches nothing and never blocks a step.
+	await Promise.all(
+		steps.map(async (st, i) => {
+			let kind: ArtifactKind | null = null;
+			let measuredContext: string | null = null;
+			let entityLabel: string | null = null;
+			if (i < actions.length) {
+				const a = actions[i];
+				kind = artifactKindForKey(a.inferenceKeys[0] ?? a.decisionKey);
+				const pg = frictionForSurface(behavioral?.friction, a.surface);
+				if (pg) {
+					entityLabel = pg.label;
+					measuredContext = frictionPromptLines(pg)[0] ?? null;
+				}
+			} else if (/Tráfego do .* chega e vai embora/.test(st.title)) {
+				kind = "ad_brief";
+				measuredContext = st.reasoning.slice(0, 300);
+			} else {
+				// friction synth step — copy artifact for decision friction.
+				kind = "copy";
+				measuredContext = st.reasoning.slice(0, 300);
+				const m = st.title.match(/"([^"]+)"/);
+				entityLabel = m?.[1] ?? null;
+			}
+			if (!kind) return;
+			st.artifact = await generateArtifact({
+				kind,
+				envDomain: ctx.envDomain,
+				vertical: ctx.businessContext?.vertical ?? null,
+				locale: ctx.locale,
+				entityLabel,
+				measuredContext,
+				stepTitle: st.title,
+				organizationId,
+				environmentId: ctx.environmentId,
+			});
+		}),
+	);
 
 	return {
 		steps,

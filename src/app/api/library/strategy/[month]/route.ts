@@ -937,6 +937,8 @@ export async function GET(request: Request, { params }: RouteParams) {
 				screenshotSurface: matchedSurfaceByStepId.get(s.id) ?? null,
 				// ONDA 3.4 — pixel-checked baseline for this step.
 				measuredVerification: (s as any).measuredVerification ?? null,
+				// ONDA 4.4 — ready-to-use artifact.
+				artifact: (s as any).artifactJson ?? null,
 			};
 		}),
 	});

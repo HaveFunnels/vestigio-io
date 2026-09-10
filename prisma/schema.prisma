@@ -694,6 +694,9 @@ model PlanNextStep {
   /// ONDA 3.4 — "o que o pixel confere no próximo plano", com o
   /// baseline medido de hoje gravado no momento da geração.
   measuredVerification String?
+  /// ONDA 4.4 — artefato pronto-para-usar do passo: {kind, title,
+  /// content} (política escrita, variantes de copy, brief de criativo).
+  artifactJson Json?
   researchRefsJson     Json
   /// Qualitative ("1-2 dias dev", "15min", "afternoon").
   estimatedEffort      String

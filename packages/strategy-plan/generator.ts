@@ -493,6 +493,7 @@ export async function generateAndPersistPlan(
 							linkedActionRefsJson: s.linkedActionRefs as any,
 							linkedFindingRefsJson: s.linkedFindingRefs as any,
 							measuredVerification: s.measuredVerification ?? null,
+							artifactJson: (s.artifact ?? undefined) as any,
 						})),
 					});
 				}

@@ -53,7 +53,13 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 
 	const n = stages.length;
 	const x = (i: number) => PAD_X + (i * (W - 2 * PAD_X)) / (n - 1);
-	const half = (pct: number) => Math.max((pct / 100) * BODY, MIN_THREAD) / 2;
+	// Perceptual (sqrt) height: a 96% cliff to a 1% tail would render as
+	// a hairline under strict proportion, so the small stages get visual
+	// weight while the ORDER and the drama stay intact. The numbers and
+	// percentages in the labels are the real measured values — only the
+	// shape's proportion is eased (standard funnel-viz encoding).
+	const vh = (pct: number) => Math.sqrt(Math.max(pct, 0) / 100) * BODY;
+	const half = (pct: number) => Math.max(vh(pct), MIN_THREAD) / 2;
 
 	const topPts: Array<[number, number]> = stages.map((s, i) => [x(i), MID - half(s.pctOfArrived)]);
 	const botPts: Array<[number, number]> = stages.map((s, i) => [x(i), MID + half(s.pctOfArrived)]);
@@ -95,12 +101,22 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 					<stop offset="0%" className="[stop-color:rgb(125_211_252)]" />
 					<stop offset="100%" className="[stop-color:rgb(134_239_172)]" />
 				</linearGradient>
+				{/* Vertical gloss: lit-from-above sheen that gives the
+				    funnel-graph-js glossy 3D depth. White at the top edge,
+				    gone by the middle, a whisper of shadow at the base. */}
+				<linearGradient id={`fgl-${gid}`} x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0%" stopColor="#ffffff" stopOpacity="0.28" />
+					<stop offset="42%" stopColor="#ffffff" stopOpacity="0.03" />
+					<stop offset="60%" stopColor="#000000" stopOpacity="0" />
+					<stop offset="100%" stopColor="#000000" stopOpacity="0.16" />
+				</linearGradient>
 			</defs>
 
-			{/* The funnel body — vivid fill, no washed stroke. */}
+			{/* Journey color, then the gloss sheen over it. */}
 			<path d={bodyPath} fill={`url(#fg-${gid})`} stroke="none" />
+			<path d={bodyPath} fill={`url(#fgl-${gid})`} stroke="none" />
 			{/* Lit top edge: a bright rim tracing the taper, the signature. */}
-			<path d={smooth(topPts)} fill="none" stroke={`url(#fr-${gid})`} strokeWidth={1.75} strokeOpacity={0.85} strokeLinecap="round" />
+			<path d={smooth(topPts)} fill="none" stroke={`url(#fr-${gid})`} strokeWidth={1.75} strokeOpacity={0.9} strokeLinecap="round" />
 
 			{/* Stage dividers + per-stage labels. */}
 			{stages.map((s, i) => {

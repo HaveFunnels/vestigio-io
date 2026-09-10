@@ -274,7 +274,10 @@ function titleFromAction(
     here we want a tiny preposition-friendly form ("à página inicial",
     "ao checkout") rather than the title-style ("Página inicial"). */
 function humanizeSurfaceForProcedure(surface: string | null): string {
-	if (!surface) return "este componente";
+	// Fallback carries its own preposition — the template glues
+	// "aplicada ${hint}", and the old "este componente" produced the
+	// broken "aplicada este componente:" (EXAME A10).
+	if (!surface) return "a este componente";
 	const trimmed = surface.trim();
 	if (trimmed === "/") return "à página inicial";
 	if (trimmed === "/checkout") return "ao checkout";

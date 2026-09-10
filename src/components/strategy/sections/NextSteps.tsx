@@ -617,7 +617,11 @@ function StepCard({
 									<span className="shrink-0 font-mono text-[12px] tabular-nums text-content-faint">
 										{i + 1}.
 									</span>
-									<span className="flex-1">{proc}</span>
+									{/* EXAME A10 — procedure text carries markdown
+									    (`code`, **bold**); rendering it raw showed
+									    literal backticks that read as stray grave
+									    accents ("H̀ttpOnlỳ"). */}
+									<span className="flex-1">{renderInline(proc)}</span>
 									{/* Hover affordance — "Como faço isso?" opens the
 									    Copilot panel with the procedure text as
 									    seed. Stays hidden until hover so the

@@ -527,7 +527,7 @@ que a dona de uma loja de enxoval não usaria.**
 | A7 ✅ | 12 eventos idênticos sem compressão | CORRIGIDO: runs do mesmo CTA no mesmo path colapsam em "Clicou N× em 'X'" |
 | A8 ✅ | Mesma screenshot em todo passo; legenda sitemap.xml | CORRIGIDO: fallback de home morto (exact-only); rota escopa lote mais recente; legenda nomeia a superfície DA foto; worker captura páginas citadas por findings (MAX 8) |
 | A9 ✅ | img sem onError; presign 1h expira na aba aberta | CORRIGIDO: onError esconde a figura inteira nos 2 pontos; presign 24h |
-| A10 | Backticks viram acentos; "aplicada este componente" | NextSteps markdown + dedupe textual |
+| A10 ✅ | Backticks viram acentos; "aplicada este componente" | CORRIGIDO: procedimentos passam por renderInline (código/negrito); fallback do hint carrega preposição |
 | A11 | 4 cartões de memória idênticos zerados | memory-rollups + MemoryRollups.tsx |
 | E1 ✅ | getRootDomain quebra p/ .com.br | CORRIGIDO: `registrableDomain()` (packages/url-normalize/registrable-domain.ts) com sufixos multi-parte; 5 cópias ingênuas apontadas pra ele |
 | E2 | 12 agregações completas p/ sparkline de zeros | hero-metrics.ts:166-181 |

@@ -1629,6 +1629,10 @@ model SurfaceScreenshot {
   r2Key         String
   width         Int?
   height        Int?
+  /// ONDA 4.3 — regiões de interesse localizadas na captura (CTA
+  /// principal, formulários): [{kind, x, y, w, h, label?}] em px da
+  /// imagem capturada. UI desenha o destaque escalado.
+  annotationsJson Json?
   capturedAt    DateTime @default(now())
 
   environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)

@@ -627,6 +627,11 @@ export async function GET(request: Request, { params }: RouteParams) {
 	// no R2 -> screenshotUrl stays null and the UI renders text-only as before.
 	const normPath = (p: string) => { const x = String(p || "").trim(); return x.length > 1 ? x.replace(/\/+$/, "") : (x || "/"); };
 	const screenshotKeyByPath = new Map<string, string>();
+	const screenshotMetaByPath: Record<string, {
+		width: number | null;
+		height: number | null;
+		annotations: Array<{ kind: string; x: number; y: number; w: number; h: number; label?: string }> | null;
+	}> = {};
 	try {
 		// EXAME A8 — only the FRESHEST capture batch. The old query mixed
 		// every batch ever taken (first-wins per path across months), so
@@ -642,11 +647,22 @@ export async function GET(request: Request, { params }: RouteParams) {
 			const shots = await prisma.surfaceScreenshot.findMany({
 				where: { environmentId: plan.environmentId, cycleRef: latestShot.cycleRef },
 				orderBy: { capturedAt: "desc" },
-				select: { path: true, r2Key: true },
+				select: { path: true, r2Key: true, width: true, height: true, annotationsJson: true },
 			});
 			for (const sh of shots) {
 				const pp = normPath(sh.path);
-				if (!screenshotKeyByPath.has(pp)) screenshotKeyByPath.set(pp, sh.r2Key);
+				if (!screenshotKeyByPath.has(pp)) {
+					screenshotKeyByPath.set(pp, sh.r2Key);
+					// ONDA 4.3 — regiões localizadas na captura, para a UI
+					// desenhar o destaque escalado nas dimensões naturais.
+					screenshotMetaByPath[pp] = {
+						width: sh.width ?? null,
+						height: sh.height ?? null,
+						annotations: ((sh as { annotationsJson?: unknown }).annotationsJson as
+							| Array<{ kind: string; x: number; y: number; w: number; h: number; label?: string }>
+							| null) ?? null,
+					};
+				}
 			}
 		}
 	} catch { /* no screenshots yet - text-only Plano */ }
@@ -841,6 +857,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 		attributionTimeline,
 		attributionTotal,
 		screenshotUrlByPath,
+		screenshotMetaByPath,
 		pageLabelByPath,
 		peerLineByInferenceKey,
 		narrativeWhatHappened: ptSafeText(

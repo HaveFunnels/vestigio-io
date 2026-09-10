@@ -11,6 +11,8 @@ import type {
 } from "../types";
 import PlanSideDrawer from "../PlanSideDrawer";
 import BasisChip, { stepBasis } from "../BasisChip";
+import AnnotatedScreenshot from "../AnnotatedScreenshot";
+import { usePlanShotDecoration } from "../PlanScreenshotContext";
 import { ActionListBody, FindingListBody } from "../drawer-bodies";
 import { humanizeSurfaceLabel } from "@/lib/surface-label";
 import {
@@ -294,13 +296,8 @@ function StepCard({
 	// the server so the UI stays optimistic; failures revert to the
 	// pre-change value and toast the reason.
 	const [status, setStatus] = useState<NextStepStatus>(step.status);
-	// EXAME A9 — expired/broken presigned URL hides the whole figure
-	// instead of rendering the browser's broken-image glyph in a frame.
-	const [screenshotFailed, setScreenshotFailed] = useState(false);
-	// Captures are now FULL PAGE (height-capped); collapsed shows the
-	// top crop, click expands to the whole page so below-the-fold
-	// evidence is actually visible (validação Casa Montelle: só banner).
-	const [screenshotExpanded, setScreenshotExpanded] = useState(false);
+	// ONDA 4.3 — regiões localizadas + nota medida da página do passo.
+	const shotDecoration = usePlanShotDecoration(step.screenshotSurface ?? null);
 	const [title, setTitle] = useState<string>(step.title);
 	const [dueAt, setDueAt] = useState<Date | null>(step.dueAt);
 	const [editingTitle, setEditingTitle] = useState(false);
@@ -581,30 +578,16 @@ function StepCard({
 				    (step.screenshotSurface), never affectedSurfaces[0] — the
 				    old pairing captioned a homepage shot as
 				    "SUA PÁGINA · /SITEMAP_PRODUCTS_1.XML" (EXAME A8). */}
-				{step.screenshotUrl && !screenshotFailed && (
-					<figure className="mb-5 overflow-hidden rounded-xl border border-edge bg-surface-inset">
-						<button
-							type="button"
-							onClick={() => setScreenshotExpanded((v) => !v)}
-							className="block w-full cursor-zoom-in text-left"
-							aria-expanded={screenshotExpanded}
-						>
-							{/* eslint-disable-next-line @next/next/no-img-element */}
-							<img
-								src={step.screenshotUrl}
-								alt={`Captura de ${step.screenshotSurface ?? "sua página"}`}
-								loading="lazy"
-								onError={() => setScreenshotFailed(true)}
-								className={`block w-full object-cover object-top ${screenshotExpanded ? "max-h-none" : "max-h-[260px]"}`}
-							/>
-						</button>
-						<figcaption className="flex items-baseline justify-between gap-3 border-t border-edge px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-							<span>Sua página{step.screenshotSurface ? ` · ${step.screenshotSurface}` : ""}</span>
-							<span className="normal-case tracking-normal" data-vsgp-print-hide>
-								{screenshotExpanded ? "recolher" : "ver a página inteira"}
-							</span>
-						</figcaption>
-					</figure>
+				{step.screenshotUrl && (
+					<AnnotatedScreenshot
+						className="mb-5"
+						url={step.screenshotUrl}
+						alt={`Captura de ${step.screenshotSurface ?? "sua página"}`}
+						caption={`Sua página${step.screenshotSurface ? ` · ${step.screenshotSurface}` : ""}`}
+						meta={shotDecoration.meta}
+						measuredNote={shotDecoration.note}
+						collapsedMaxH={260}
+					/>
 				)}
 				{/* Reasoning — eyebrow varies per position (Wave 22.9 · Bloco 1). */}
 				<div className="mb-6 font-serif text-[15px] leading-[1.65] text-content-secondary">

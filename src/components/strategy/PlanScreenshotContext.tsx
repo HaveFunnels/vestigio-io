@@ -21,16 +21,43 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 // and callers skip rendering the figure entirely (text-only degrade).
 // ──────────────────────────────────────────────
 
-const PlanScreenshotContext = createContext<Record<string, string>>({});
+export interface ShotMetaCtx {
+	width: number | null;
+	height: number | null;
+	annotations: Array<{ kind: string; x: number; y: number; w: number; h: number; label?: string }> | null;
+}
+
+interface ShotCtxValue {
+	urlByPath: Record<string, string>;
+	metaByPath: Record<string, ShotMetaCtx>;
+	noteByPath: Record<string, string>;
+}
+
+const PlanScreenshotContext = createContext<ShotCtxValue>({
+	urlByPath: {},
+	metaByPath: {},
+	noteByPath: {},
+});
 
 export function PlanScreenshotProvider({
 	urlByPath,
+	metaByPath,
+	noteByPath,
 	children,
 }: {
 	urlByPath?: Record<string, string>;
+	metaByPath?: Record<string, ShotMetaCtx>;
+	noteByPath?: Record<string, string>;
 	children: ReactNode;
 }) {
-	const value = useMemo(() => urlByPath ?? {}, [urlByPath]);
+	const value = useMemo(
+		() => ({
+			urlByPath: urlByPath ?? {},
+			metaByPath: metaByPath ?? {},
+			noteByPath: noteByPath ?? {},
+		}),
+		[urlByPath, metaByPath, noteByPath],
+	);
 	return (
 		<PlanScreenshotContext.Provider value={value}>
 			{children}
@@ -69,10 +96,21 @@ export interface PlanScreenshotMatch {
  * No capture of that exact page → null (text-only figure degrade).
  */
 export function usePlanScreenshotForUrl(sourceUrl: string | null | undefined): PlanScreenshotMatch | null {
-	const map = useContext(PlanScreenshotContext);
+	const { urlByPath } = useContext(PlanScreenshotContext);
 	if (!sourceUrl) return null;
 	const path = normalizePath(sourceUrl);
-	const exact = map[path];
+	const exact = urlByPath[path];
 	if (exact) return { url: exact, kind: "exact" };
 	return null;
+}
+
+/** ONDA 4.3 — located regions + measured note for a path's capture. */
+export function usePlanShotDecoration(sourceUrl: string | null | undefined): {
+	meta: ShotMetaCtx | null;
+	note: string | null;
+} {
+	const { metaByPath, noteByPath } = useContext(PlanScreenshotContext);
+	if (!sourceUrl) return { meta: null, note: null };
+	const path = normalizePath(sourceUrl);
+	return { meta: metaByPath[path] ?? null, note: noteByPath[path] ?? null };
 }

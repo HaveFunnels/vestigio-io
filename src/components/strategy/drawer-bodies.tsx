@@ -14,7 +14,8 @@ import type {
 	ActionProjection,
 } from "../../../packages/projections";
 import { buildFindingBackUrl, type DrawerCtx } from "./plan-url";
-import { usePlanScreenshotForUrl } from "./PlanScreenshotContext";
+import { usePlanScreenshotForUrl, usePlanShotDecoration } from "./PlanScreenshotContext";
+import AnnotatedScreenshot from "./AnnotatedScreenshot";
 import BasisChip from "./BasisChip";
 import { usePeerLineForInference } from "./PlanPeerContext";
 
@@ -453,11 +454,8 @@ function FindingCard({
 	// banner under every finding, which reads as broken/fake. No
 	// capture of this page → text-only.
 	const screenshotMatch = usePlanScreenshotForUrl(finding.source_url);
-	// EXAME A9 — a presigned URL that 403s (expired while the tab sat
-	// open, purge race) must hide the whole figure, never render the
-	// browser's broken-image glyph inside a styled frame with a caption.
-	const [screenshotFailed, setScreenshotFailed] = useState(false);
-	const [screenshotExpanded, setScreenshotExpanded] = useState(false);
+	// ONDA 4.3 — regiões localizadas + nota medida da página do finding.
+	const shotDecoration = usePlanShotDecoration(finding.source_url);
 	// Peer contrast — "X% of BR e-commerces do this. You don't." Only
 	// resolves for whitelisted inference keys with a matching Vestigio
 	// Index cohort (see packages/signals/peer-line.ts).
@@ -587,34 +585,20 @@ function FindingCard({
 									{/* Visual proof — screenshot of the EXACT page this
 									    finding is about (never a homepage stand-in).
 									    Hidden entirely if the capture fails to load. */}
-									{screenshotMatch && !screenshotFailed && (
-										<figure className="-mt-1 overflow-hidden rounded-xl border border-edge bg-surface-inset">
-											<button
-												type="button"
-												onClick={() => setScreenshotExpanded((v) => !v)}
-												className="block w-full cursor-zoom-in text-left"
-												aria-expanded={screenshotExpanded}
-											>
-												{/* eslint-disable-next-line @next/next/no-img-element */}
-												<img
-													src={screenshotMatch.url}
-													alt={
-														finding.surface
-															? `Captura de ${humanizeSurfaceLabel(finding.surface)}`
-															: "Captura da página"
-													}
-													loading="lazy"
-													onError={() => setScreenshotFailed(true)}
-													className={`block w-full object-cover object-top ${screenshotExpanded ? "max-h-none" : "max-h-[220px]"}`}
-												/>
-											</button>
-											<figcaption className="flex items-baseline justify-between gap-3 border-t border-edge px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-												<span>{`Sua página${finding.surface ? ` · ${humanizeSurfaceLabel(finding.surface)}` : ""}`}</span>
-												<span className="normal-case tracking-normal" data-vsgp-print-hide>
-													{screenshotExpanded ? "recolher" : "ver a página inteira"}
-												</span>
-											</figcaption>
-										</figure>
+									{screenshotMatch && (
+										<AnnotatedScreenshot
+											className="-mt-1"
+											url={screenshotMatch.url}
+											alt={
+												finding.surface
+													? `Captura de ${humanizeSurfaceLabel(finding.surface)}`
+													: "Captura da página"
+											}
+											caption={`Sua página${finding.surface ? ` · ${humanizeSurfaceLabel(finding.surface)}` : ""}`}
+											meta={shotDecoration.meta}
+											measuredNote={shotDecoration.note}
+											collapsedMaxH={220}
+										/>
 									)}
 
 									{/* Impact box — the "what does this cost" row */}

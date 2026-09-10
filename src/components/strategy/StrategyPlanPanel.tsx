@@ -566,7 +566,23 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 	const isPorPagina = viewMode === "por_pagina" && !isPrint;
 
 	return (
-		<PlanScreenshotProvider urlByPath={plan.screenshotUrlByPath}>
+		<PlanScreenshotProvider
+			urlByPath={plan.screenshotUrlByPath}
+			metaByPath={plan.screenshotMetaByPath}
+			noteByPath={(() => {
+				// ONDA 4.3 — a nota medida por página: o tipo de fricção
+				// dominante vira a frase pinada na região do CTA.
+				const notes: Record<string, string> = {};
+				for (const pg of plan.behavioral?.friction?.pages ?? []) {
+					const parts: string[] = [];
+					if (pg.hesitationsNearCta > 0) parts.push(`${pg.hesitationsNearCta} hesitações medidas aqui`);
+					else if (pg.deadClicks > 0) parts.push(`${pg.deadClicks} cliques sem resposta medidos nesta página`);
+					else if (pg.inputAbandons > 0) parts.push(`${pg.inputAbandons} campos abandonados medidos`);
+					if (parts.length > 0) notes[pg.path] = parts[0];
+				}
+				return notes;
+			})()}
+		>
 		<PlanPeerProvider lineByInferenceKey={plan.peerLineByInferenceKey}>
 		<div
 			data-vsgp-plan

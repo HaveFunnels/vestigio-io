@@ -425,6 +425,12 @@ export interface StrategyPlan {
 	whatChanged?: import("./sections/WhatChanged").WhatChangedUI | null;
 	/** ONDA 4.1 — path → entity label (cleaned crawl title). */
 	pageLabelByPath?: Record<string, string>;
+	/** ONDA 4.3 — capture dimensions + located regions per path. */
+	screenshotMetaByPath?: Record<string, {
+		width: number | null;
+		height: number | null;
+		annotations: Array<{ kind: string; x: number; y: number; w: number; h: number; label?: string }> | null;
+	}>;
 	/** Reta-final: pack distribution for the open findings backing this
 	 *  plan. Used by the narrative to render a small horizontal stacked
 	 *  bar instead of burying "tema dominante: copy 44%" in prose. Empty

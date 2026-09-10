@@ -34,7 +34,18 @@ export function hashUrl(url: string): string {
 /** Capture one above-the-fold viewport screenshot as a JPEG buffer. null on any failure.
  *  Exported so the free-audit path (apps/audit-runner/run-mini-audit.ts) can reuse
  *  the same chromium-pool + timing tuned for the paid path — no divergent capture logic. */
+export interface CaptureResult {
+	buffer: Buffer;
+	annotations: ScreenshotAnnotation[];
+	captureHeight: number;
+}
+
 export async function captureViewport(url: string): Promise<Buffer | null> {
+	const r = await captureWithAnnotations(url);
+	return r?.buffer ?? null;
+}
+
+export async function captureWithAnnotations(url: string): Promise<CaptureResult | null> {
 	try {
 		return await withBrowserContext({ viewport: VIEWPORT }, async (context) => {
 			const page = await context.newPage();
@@ -56,13 +67,17 @@ export async function captureViewport(url: string): Promise<Buffer | null> {
 					Math.max(scrollHeight, VIEWPORT.height),
 					MAX_CAPTURE_HEIGHT,
 				);
+				// ONDA 4.3 — locate the regions BEFORE the shot (same DOM).
+				const annotations = (await locateAnnotations(page as never)).filter(
+					(a) => a.y < captureHeight,
+				);
 				const buf = await page.screenshot({
 					type: "jpeg",
 					quality: 65,
 					clip: { x: 0, y: 0, width: VIEWPORT.width, height: captureHeight },
 					fullPage: true,
 				});
-				return Buffer.from(buf);
+				return { buffer: Buffer.from(buf), annotations, captureHeight };
 			} finally {
 				await page.close().catch(() => {});
 			}
@@ -75,6 +90,77 @@ export async function captureViewport(url: string): Promise<Buffer | null> {
 interface SurfaceTarget {
 	normalizedUrl: string;
 	path: string;
+}
+
+// ── ONDA 4.3 — annotated regions ─────────────────────────────────
+// The figure stops being a flat image: the capture locates the
+// primary commercial CTA and form regions so the plan can DRAW on the
+// customer's page ("o problema está AQUI"), with the measured
+// friction note attached in the UI. Vertical-agnostic: commercial
+// CTAs and forms exist on stores, SaaS and lead-gen alike.
+
+export interface ScreenshotAnnotation {
+	kind: "primary_cta" | "form";
+	x: number;
+	y: number;
+	w: number;
+	h: number;
+	/** The element's own visible text (CTA label), when short enough. */
+	label?: string;
+}
+
+// Mirrors the pixel's commercial-CTA vocabulary (public/snippet
+// vestigio.js checkout_open/cta classification) — pt/en/es verbs.
+const CTA_TEXT_REGEX =
+	"comprar|compre|buy|purchase|add to cart|adicionar|assinar|subscribe|agendar|book|contratar|sign up|cadastr|começar|get started|start|solicitar|pedir|checkout|finalizar|pagar|quero";
+
+async function locateAnnotations(page: {
+	evaluate: (fn: string) => Promise<unknown>;
+}): Promise<ScreenshotAnnotation[]> {
+	try {
+		const raw = (await page.evaluate(`(() => {
+			const out = [];
+			const ctaRe = new RegExp(${JSON.stringify(CTA_TEXT_REGEX)}, "i");
+			const seen = new Set();
+			const push = (el, kind, label) => {
+				const r = el.getBoundingClientRect();
+				if (r.width < 40 || r.height < 16 || r.width > 900) return;
+				const x = Math.round(r.left + window.scrollX);
+				const y = Math.round(r.top + window.scrollY);
+				const key = kind + ":" + x + ":" + y;
+				if (seen.has(key)) return;
+				seen.add(key);
+				out.push({ kind, x, y, w: Math.round(r.width), h: Math.round(r.height), label });
+			};
+			// Primary CTA: first visible commercial button/link, biggest wins.
+			const candidates = [];
+			for (const el of document.querySelectorAll("a, button, input[type=submit]")) {
+				const text = (el.innerText || el.value || "").trim();
+				if (!text || text.length > 60 || !ctaRe.test(text)) continue;
+				const r = el.getBoundingClientRect();
+				if (r.width < 60 || r.height < 24) continue;
+				const style = getComputedStyle(el);
+				if (style.display === "none" || style.visibility === "hidden") continue;
+				candidates.push({ el, area: r.width * r.height, text: text.slice(0, 40) });
+			}
+			candidates.sort((a, b) => b.area - a.area);
+			if (candidates[0]) push(candidates[0].el, "primary_cta", candidates[0].text);
+			// Forms: up to 2 visible forms with inputs.
+			let forms = 0;
+			for (const f of document.querySelectorAll("form")) {
+				if (forms >= 2) break;
+				if (!f.querySelector("input, select, textarea")) continue;
+				const r = f.getBoundingClientRect();
+				if (r.height < 40) continue;
+				push(f, "form");
+				forms++;
+			}
+			return out;
+		})()`)) as ScreenshotAnnotation[];
+		return Array.isArray(raw) ? raw.slice(0, 3) : [];
+	} catch {
+		return [];
+	}
 }
 
 /** The surfaces worth showing: the pages the plan will actually TALK
@@ -165,8 +251,9 @@ export async function captureTopSurfaceScreenshots(
 	let captured = 0;
 	for (const t of targets) {
 		try {
-			const buf = await captureViewport(t.normalizedUrl);
-			if (!buf) continue;
+			const cap = await captureWithAnnotations(t.normalizedUrl);
+			if (!cap) continue;
+			const buf = cap.buffer;
 			const key = screenshotKey(environmentId, cycleRef, hashUrl(t.normalizedUrl));
 			await uploadScreenshot(key, buf);
 			await prisma.surfaceScreenshot.upsert({
@@ -184,9 +271,15 @@ export async function captureTopSurfaceScreenshots(
 					path: t.path,
 					r2Key: key,
 					width: VIEWPORT.width,
-					height: VIEWPORT.height,
+					height: cap.captureHeight,
+					annotationsJson: cap.annotations as never,
 				},
-				update: { r2Key: key, path: t.path },
+				update: {
+					r2Key: key,
+					path: t.path,
+					height: cap.captureHeight,
+					annotationsJson: cap.annotations as never,
+				},
 			});
 			captured++;
 		} catch {

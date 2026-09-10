@@ -498,7 +498,7 @@ que a dona de uma loja de enxoval não usaria.**
 
 | ID | Resumo | Raiz (file:line) |
 |----|--------|------------------|
-| P1 | /carrinho e /payment 404 como "superfícies críticas" | page-priority/index.ts:246; ecosystem/route.ts:86 |
+| P1 ✅ | /carrinho e /payment 404 como "superfícies críticas" | CORRIGIDO: filtro compartilhado `EXCLUDE_UNCONFIRMED_SPECULATIVE` (src/lib/inventory-filters.ts) aplicado na rota ecosystem + inventário + console-data; `buildRealPathSet` rejeita evidence com status>=400 |
 | P2 | Língua de agência, não do ICP | monthly-thesis.ts:177 (sem voiceRules) |
 | P3 | Tese/narrativa citam 3 superfícies-foco diferentes | narrative.ts + thesis (sem validação cruzada) |
 | P4 | Alerta TikTok não gera passo | next-steps só lê Actions de crawler |
@@ -529,7 +529,7 @@ que a dona de uma loja de enxoval não usaria.**
 | A9 | img sem onError; presign 1h expira na aba aberta | drawer-bodies.tsx:588; NextSteps.tsx:571; r2-screenshots.ts:91 |
 | A10 | Backticks viram acentos; "aplicada este componente" | NextSteps markdown + dedupe textual |
 | A11 | 4 cartões de memória idênticos zerados | memory-rollups + MemoryRollups.tsx |
-| E1 | getRootDomain quebra p/ .com.br | parser.ts:688-692 |
+| E1 ✅ | getRootDomain quebra p/ .com.br | CORRIGIDO: `registrableDomain()` (packages/url-normalize/registrable-domain.ts) com sufixos multi-parte; 5 cópias ingênuas apontadas pra ele |
 | E2 | 12 agregações completas p/ sparkline de zeros | hero-metrics.ts:166-181 |
 | E3 | PDF perde journeys/ecosystem/predictive (401 silencioso) | rotas lazy sem export_token |
 | E4 | TOC ≠ DOM; 4 seções não navegáveis | StrategyPlanPanel.tsx:634-669 |

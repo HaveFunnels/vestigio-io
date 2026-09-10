@@ -172,3 +172,5 @@ export function urlMatchesExclusion(url: string, patterns: string[]): boolean {
 
 // Re-export Wire 1 URL templating for NetworkSurface dedup.
 export { urlTemplate } from "./template";
+
+export { registrableDomain } from './registrable-domain';

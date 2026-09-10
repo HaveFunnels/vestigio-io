@@ -33,6 +33,7 @@ import {
   ContentEnrichmentPayload,
 } from '../domain';
 import type { BehavioralCohortPayload } from '../behavioral';
+import { registrableDomain } from '../url-normalize/registrable-domain';
 import { extractOffSiteReconSignals } from './off-site-recon-signals';
 import { extractEmailDeliverabilitySignals } from './email-deliverability-signals';
 import { extractCompetitiveSignals } from './competitive-signals';
@@ -4170,9 +4171,7 @@ function secGetHeader(headers: Record<string, string>, name: string): string | u
   return undefined;
 }
 function secRootDomain(host: string): string {
-  const parts = host.split('.');
-  if (parts.length <= 2) return host;
-  return parts.slice(-2).join('.');
+  return registrableDomain(host);
 }
 
 function extractSecurityPostureSignals(

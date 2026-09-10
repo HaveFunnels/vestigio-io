@@ -22,6 +22,26 @@ describe("buildRealPathSet", () => {
 	it("does not invent paths nobody crawled", () => {
 		expect(realPaths.has("/pricing")).toBe(false);
 	});
+
+	it("rejects probed paths that answered >=400 — a 404 probe is not a real page", () => {
+		// The Casa Montelle case: the pipeline speculatively probes
+		// /carrinho and /payment, both 404, and records HttpResponse
+		// evidence anyway. Those paths must never enter the real set.
+		const withProbes = buildRealPathSet([
+			{ payload: { url: "https://loja.com/" , status_code: 200 } },
+			{ payload: { url: "https://loja.com/carrinho", status_code: 404 } },
+			{ payload: { url: "https://loja.com/payment", status_code: 404 } },
+			{ payload: { url: "https://loja.com/cart", status_code: 200 } },
+		]);
+		expect(withProbes.has("/cart")).toBe(true);
+		expect(withProbes.has("/carrinho")).toBe(false);
+		expect(withProbes.has("/payment")).toBe(false);
+	});
+
+	it("keeps evidence without a status_code — absence of proof is not a 404", () => {
+		const s = buildRealPathSet([{ payload: { url: "https://loja.com/products/x" } }]);
+		expect(s.has("/products/x")).toBe(true);
+	});
 });
 
 describe("resolveFindingSurface", () => {

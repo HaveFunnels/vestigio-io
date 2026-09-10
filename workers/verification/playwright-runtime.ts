@@ -1,4 +1,5 @@
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { registrableDomain } from '../../packages/url-normalize/registrable-domain';
 import { VerificationStep, VerificationScenario, BROWSER_LIMITS, classifyNetworkRequest, isCommercialPage, buildNetworkAnalysisSummary } from './browser-types';
 import type { StepResult, CapturedNetworkRequest, NetworkAnalysisSummary } from './browser-types';
 import { acquireBrowserSlot, releaseBrowserSlot } from './chromium-pool';
@@ -332,9 +333,7 @@ export class PlaywrightRuntime {
 
   private extractRootDomain(url: string): string {
     try {
-      const host = new URL(url).hostname;
-      const parts = host.split('.');
-      return parts.length >= 2 ? parts.slice(-2).join('.') : host;
+      return registrableDomain(new URL(url).hostname);
     } catch { return ''; }
   }
 }

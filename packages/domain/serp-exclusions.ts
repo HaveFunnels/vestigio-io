@@ -1,3 +1,4 @@
+import { registrableDomain } from '../url-normalize/registrable-domain';
 // ──────────────────────────────────────────────
 // SERP host exclusions — Wave 25
 //
@@ -75,10 +76,7 @@ export function isSerpExcluded(host: string, ownApex: string | null): boolean {
 	if (!host) return true;
 	if (ownApex && (host === ownApex || host.endsWith("." + ownApex))) return true;
 	if (SERP_EXCLUDED_HOSTS.has(host)) return true;
-	const parts = host.split(".");
-	if (parts.length > 2) {
-		const apex = parts.slice(-2).join(".");
-		if (SERP_EXCLUDED_HOSTS.has(apex)) return true;
-	}
+	const apex = registrableDomain(host);
+	if (apex !== host && SERP_EXCLUDED_HOSTS.has(apex)) return true;
 	return false;
 }

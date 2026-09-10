@@ -1,4 +1,5 @@
 import { getMcpServer, initMcpServer } from './mcp-client';
+import { EXCLUDE_UNCONFIRMED_SPECULATIVE } from './inventory-filters';
 import type { FindingProjection, ActionProjection, WorkspaceProjection, ChangeReportProjection } from '../../packages/projections';
 import type { MapDefinition } from '../../packages/maps';
 import type { McpAnswer } from '../../apps/mcp/types';
@@ -603,25 +604,14 @@ export async function loadInventoryForEnv(envId: string): Promise<DataState<Inve
       };
     }
 
-    // Same orphan + speculative-critical-path filter as the API route.
-    // Keep these in sync by hand for now; the alternative is exporting
-    // the where clause from the route, which couples server vs route
-    // imports in ways that have caused subtle bugs.
+    // Same speculative-critical-path filter as the API route — now a
+    // shared constant (src/lib/inventory-filters.ts) instead of a
+    // hand-synced copy; a third consumer (plan ecosystem route) shipped
+    // without the copy and reported phantom 404 surfaces to a customer.
     const inventoryWhere: Record<string, unknown> = {
       websiteRef: website.id,
       removedAt: null,
-      NOT: {
-        AND: [
-          { discoverySource: 'critical_path' },
-          {
-            OR: [
-              { statusCode: null },
-              { statusCode: 0 },
-              { statusCode: { gte: 400 } },
-            ],
-          },
-        ],
-      },
+      ...EXCLUDE_UNCONFIRMED_SPECULATIVE,
     };
 
     const [total, items] = await Promise.all([

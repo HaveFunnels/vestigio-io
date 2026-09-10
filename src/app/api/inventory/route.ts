@@ -18,6 +18,7 @@ import { withErrorTracking } from "@/libs/error-tracker";
 // ──────────────────────────────────────────────
 
 import { isCommercialPageType } from "@/lib/page-type-colors";
+import { EXCLUDE_UNCONFIRMED_SPECULATIVE } from "@/lib/inventory-filters";
 const DEFAULT_LIMIT = 200;
 const MAX_LIMIT = 500;
 
@@ -112,18 +113,7 @@ export const GET = withErrorTracking(async function GET(request: Request) {
   const inventoryWhere: any = { websiteRef: website.id };
   if (!includeRemoved) inventoryWhere.removedAt = null;
   if (!includeUnchecked) {
-    inventoryWhere.NOT = {
-      AND: [
-        { discoverySource: "critical_path" },
-        {
-          OR: [
-            { statusCode: null },
-            { statusCode: 0 },
-            { statusCode: { gte: 400 } },
-          ],
-        },
-      ],
-    };
+    inventoryWhere.NOT = EXCLUDE_UNCONFIRMED_SPECULATIVE.NOT;
   }
   const [total, items] = await Promise.all([
     prisma.pageInventoryItem.count({ where: inventoryWhere }),

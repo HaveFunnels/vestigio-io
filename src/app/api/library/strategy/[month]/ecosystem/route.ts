@@ -6,6 +6,7 @@ import {
 	getVendorAdvisory,
 } from "@/lib/vendor-advisories";
 import { VENDOR_STATUS_PAGES } from "@/lib/vendor-status-pages";
+import { EXCLUDE_UNCONFIRMED_SPECULATIVE } from "@/lib/inventory-filters";
 
 // ──────────────────────────────────────────────
 // GET /api/library/strategy/[month]/ecosystem?envId=<id>
@@ -87,6 +88,13 @@ export async function GET(request: Request, { params }: RouteParams) {
 		where: {
 			environmentRef: envId,
 			removedAt: null,
+			// A speculative probe that never resolved is OUR invention, not
+			// the customer's broken page — without this filter the plan once
+			// opened with "/carrinho HTTP 404 · superfície primária" on a
+			// store whose cart lives at /cart (EXAME_DO_PLANO.md P1).
+			// "Critical surface down" must mean: a page that exists (or that
+			// the customer's own site links to) stopped answering.
+			...EXCLUDE_UNCONFIRMED_SPECULATIVE,
 			OR: [
 				{ statusCode: { gte: 400 } },
 				{ freshnessState: "expired" },

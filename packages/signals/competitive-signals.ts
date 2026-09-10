@@ -13,6 +13,7 @@ import type {
 	SerpResultsPayload,
 } from "../domain";
 import { isSerpExcluded } from "../domain";
+import { registrableDomain } from '../url-normalize/registrable-domain';
 import { createSignal } from "./create";
 
 // ──────────────────────────────────────────────
@@ -398,8 +399,7 @@ function deriveOwnApex(byType: Map<EvidenceType, Evidence[]>): string | null {
 		if (!p.url) continue;
 		try {
 			const host = new URL(p.url).hostname.replace(/^www\./, "").toLowerCase();
-			const parts = host.split(".");
-			return parts.length > 2 ? parts.slice(-2).join(".") : host;
+			return registrableDomain(host);
 		} catch {
 			continue;
 		}

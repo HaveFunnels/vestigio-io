@@ -1,4 +1,5 @@
 import { URL } from 'url';
+import { registrableDomain } from '../../packages/url-normalize/registrable-domain';
 
 // ──────────────────────────────────────────────
 // HTML Parser — lightweight regex-based extraction
@@ -686,9 +687,11 @@ export function extractBodyText(html: string): string | null {
 }
 
 export function getRootDomain(hostname: string): string {
-  const parts = hostname.split('.');
-  if (parts.length <= 2) return hostname;
-  return parts.slice(-2).join('.');
+  // Delegates to the shared eTLD+1 helper. The old "last two labels"
+  // rule returned `com.br` for `loja.com.br`, and isSameDomain then
+  // accepted every *.com.br host — crawl scope, same-domain relations
+  // and real-path sets all wrong together on Brazilian domains.
+  return registrableDomain(hostname);
 }
 
 export function isSameDomain(host1: string, rootDomain: string): boolean {

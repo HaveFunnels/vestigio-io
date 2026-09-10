@@ -1105,6 +1105,18 @@ function enrichFindingsWithCrossRefs(
 export function buildRealPathSet(evidence: Array<{ payload?: unknown; url?: string }>): Set<string> {
   const paths = new Set<string>(['/']);
   for (const ev of evidence) {
+    // A probed URL that answered >=400 is NOT a real path on this site.
+    // The pipeline speculatively probes template paths (/checkout,
+    // /carrinho, /payment, …) and records an HttpResponse evidence row
+    // regardless of status; without this guard those 404s enter the
+    // "real" set and findings then cite surfaces the site never had —
+    // the exact regression this module exists to prevent
+    // (docs/EXAME_DO_PLANO.md P1). Evidence without a status_code
+    // (non-HTTP shapes) passes through: absence of proof of death is
+    // not proof of death, and those URLs came from real site data.
+    const p = ev.payload as Record<string, unknown> | undefined;
+    const status = p && typeof p.status_code === 'number' ? p.status_code : null;
+    if (status !== null && status >= 400) continue;
     const url = extractEvidenceUrl(ev);
     if (!url) continue;
     try {

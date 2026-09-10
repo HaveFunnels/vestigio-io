@@ -60,6 +60,17 @@ const PT_BR_BANNED = [
 	// Cross-cutting (existing rules survived here for one enforcement point)
 	"exposição",
 	"friction",
+	// EXAME P17 — active-attack alarmism. A theoretical cookie-flag risk
+	// was narrated as "sessões de comprador estão sendo roubadas". Risk
+	// is ABSENCE of protection, never an attack in progress.
+	"estão sendo roubad",
+	"está sendo roubad",
+	"sendo atacad",
+	"sob ataque",
+	"hackers estão",
+	"invasores estão",
+	"está sendo explorad",
+	"estão sendo explorad",
 ];
 
 const EN_BANNED = [
@@ -72,6 +83,13 @@ const EN_BANNED = [
 	"composes with Step",
 	"without competing for focus",
 	"supports the primary move",
+	// EXAME P17 — active-attack alarmism
+	"are being stolen",
+	"is being stolen",
+	"under attack",
+	"is being exploited",
+	"are being exploited",
+	"hackers are",
 ];
 
 const ES_BANNED = [
@@ -83,6 +101,11 @@ const ES_BANNED = [
 	"movimiento de apoyo",
 	"se compone con el Paso",
 	"sin competir por foco",
+	// EXAME P17 — alarmismo de ataque activo
+	"están siendo robad",
+	"está siendo robad",
+	"bajo ataque",
+	"está siendo explotad",
 ];
 
 const DE_BANNED = [
@@ -94,6 +117,11 @@ const DE_BANNED = [
 	"Unterstützender Schritt",
 	"ergänzt Schritt",
 	"ohne um Fokus zu konkurrieren",
+	// EXAME P17 — Alarmismus über aktive Angriffe
+	"werden gestohlen",
+	"wird gestohlen",
+	"unter Angriff",
+	"wird ausgenutzt",
 ];
 
 function buildBannedRegex(phrases: string[]): RegExp {

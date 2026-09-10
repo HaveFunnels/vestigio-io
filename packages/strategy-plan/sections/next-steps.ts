@@ -26,6 +26,7 @@ import {
 	getDynamicRemediation,
 } from "../../projections/remediation-catalog";
 import { resolveInferenceTitle } from "../title-resolver";
+import { openLossExposure } from "../honest-aggregates";
 import { voiceRulesFor } from "../voice-rules";
 
 interface ActionRow {
@@ -521,7 +522,10 @@ async function pickTopActions(
 		}
 		return b.score.total - a.score.total;
 	});
-	const top = scored.slice(0, 5).map((s) => s.row);
+	const top = dedupeByRootProblem(
+		scored.map((s) => s.row),
+		5,
+	);
 
 	// Surface which candidates fell out of top-5 and why — helps ops
 	// debug the ranking algorithm when a plan surprises the customer.
@@ -644,14 +648,44 @@ function executabilityFor(category: string, surface: string | null, decisionKey:
 //                              money inside the funnel next month.
 // If a plan has fewer than 5 steps, angle=cycle_trap always applies
 // to the last step so the closing tension lands.
-type StepAngle = "central_lever" | "compounding_dependency" | "different_surface" | "quick_win" | "cycle_trap";
+// EXAME P15 — ONE step per root problem. The September plan sold the
+// missing refund policy three times (R$ 15.375 + R$ 16.650 + R$ 10.000)
+// and session-cookie flags twice: distinct decisionKeys, same underlying
+// findings. Greedy pick down the ranking, skipping any action that
+// shares an inference key with an already-picked one — the shared key
+// IS the root problem. Fewer, distinct steps beat five that are three
+// ("better three specific steps" house rule). Exported for tests.
+export function dedupeByRootProblem<T extends { inferenceKeys: string[] }>(
+	ranked: T[],
+	limit: number,
+): T[] {
+	const picked: T[] = [];
+	const usedKeys = new Set<string>();
+	for (const row of ranked) {
+		if (picked.length >= limit) break;
+		const keys = row.inferenceKeys;
+		if (keys.length > 0 && keys.some((k) => usedKeys.has(k))) continue;
+		picked.push(row);
+		for (const k of keys) usedKeys.add(k);
+	}
+	return picked;
+}
+
+type StepAngle = "central_lever" | "different_surface" | "quick_win" | "cycle_trap";
 
 function angleFor(order: number, totalSteps: number): StepAngle {
+	// EXAME P16 — "compounding_dependency" is gone. It told position 2
+	// to narrate "CONTINUAÇÃO MECÂNICA do Passo 1: mesma causa raiz"
+	// regardless of what the action actually was, which produced the
+	// Frankenstein step: security title, refund-policy reasoning,
+	// cookie procedure. And after the P15 dedupe, two steps sharing a
+	// root cause cannot both exist, so the angle's premise is
+	// structurally false. Every middle step is an independent leak on
+	// its own surface.
 	if (order === 1) return "central_lever";
-	if (order === totalSteps) return "cycle_trap";
-	if (order === 2) return "compounding_dependency";
-	if (order === 3) return "different_surface";
-	return "quick_win";
+	if (order === totalSteps && totalSteps >= 3) return "cycle_trap";
+	if (order === 4) return "quick_win";
+	return "different_surface";
 }
 
 interface PrimaryStepContext {
@@ -697,24 +731,20 @@ function buildPrompt(
 	const roleLine =
 		angle === "central_lever"
 			? `Este é a alavanca central do mês. O resto do plano se desdobra a partir daqui.`
-			: angle === "compounding_dependency"
-				? `Este passo é a CONTINUAÇÃO MECÂNICA do Passo 1: mesma causa raiz, outro ponto onde o dinheiro sangra. Consertar o Passo 1 sem consertar este deixa a metade do vazamento aberta.`
-				: angle === "different_surface"
-					? `Este passo atinge uma superfície DISTINTA do Passo 1. Não é apoio, é um vazamento independente no mesmo mês. Pode rodar em paralelo em outro time sem conflito.`
-					: angle === "quick_win"
-						? `Este passo tem o MENOR custo de execução dos cinco. Justifique pelo retorno em HORAS, não por severidade.`
-						: `Este passo consolida o que os anteriores recuperam. Não é o maior vazamento hoje, é o que faz o dinheiro ficar dentro do funil no mês seguinte.`;
+			: angle === "different_surface"
+				? `Este passo atinge uma superfície DISTINTA do Passo 1. Não é apoio, é um vazamento independente no mesmo mês. Pode rodar em paralelo em outro time sem conflito.`
+				: angle === "quick_win"
+					? `Este passo tem o MENOR custo de execução dos cinco. Justifique pelo retorno em HORAS, não por severidade.`
+					: `Este passo consolida o que os anteriores recuperam. Não é o maior vazamento hoje, é o que faz o dinheiro ficar dentro do funil no mês seguinte.`;
 
 	const voiceLine =
 		angle === "central_lever"
 			? `Tom: lead confiante. Sem hedge. Termine sinalizando que o restante do plano se desdobra daqui.`
-			: angle === "compounding_dependency"
-				? `Tom: composição causal. Explique a mecânica compartilhada com o Passo 1 (mesma causa, outro ponto). Nunca diga "movimento de apoio". Nunca diga "em paralelo".`
-				: angle === "different_surface"
-					? `Tom: eixo independente. Nomeie a superfície e o comportamento que ali quebra. Zero referência ao Passo 1.`
-					: angle === "quick_win"
-						? `Tom: destravamento rápido. Fale em horas, não em severidade. Zero "movimento de apoio".`
-						: `Tom: contenção preventiva. Fale em "vira o vazamento de daqui X semanas se ignorado". Não fale em "apoio".`;
+			: angle === "different_surface"
+				? `Tom: eixo independente. Nomeie a superfície e o comportamento que ali quebra. Zero referência ao Passo 1.`
+				: angle === "quick_win"
+					? `Tom: destravamento rápido. Fale em horas, não em severidade. Zero "movimento de apoio".`
+					: `Tom: contenção preventiva. Fale em "vira o vazamento de daqui X semanas se ignorado". Não fale em "apoio".`;
 
 	// Council seat: primer the model with Passo 1's title + mechanism
 	// so Passos 2+ can compose or contrast without echoing the label.
@@ -744,7 +774,8 @@ Regras:
 10. PROIBIDO travessão (—). Use ponto, vírgula, dois pontos, ou parênteses.
 11. PROIBIDO exclamação. PROIBIDO emoji. PROIBIDO link.
 12. COERÊNCIA (regra absoluta): o texto trata EXCLUSIVAMENTE do problema do título deste passo, na superfície deste passo. PROIBIDO discorrer sobre outra página ou outro problema como assunto principal. Mencionar outra superfície só é permitido em UMA frase de contraste explícito com o Passo 1. Um passo cujo título fala de uma coisa e cujo corpo fala de outra é defeito, não estilo.
-12. Zero menção literal a "Passo 1", "Passo 2", "próximo passo", "primeiro/segundo/terceiro" — a UI mostra a numeração.`;
+13. HONESTIDADE (regra absoluta): descreva riscos como AUSÊNCIA de proteção, nunca como ataque em andamento. PROIBIDO afirmar que dados/sessões "estão sendo roubados", que o site "está sob ataque" ou que invasores "estão explorando" algo — nada disso foi observado; o que existe é uma proteção faltando.
+14. Zero menção literal a "Passo 1", "Passo 2", "próximo passo", "primeiro/segundo/terceiro" — a UI mostra a numeração.`;
 
 	// Resolve inference keys to friendly names so the LLM has no
 	// raw snake_case to echo. Falls back to mechanical humanize when
@@ -996,6 +1027,34 @@ export async function generateNextSteps(
 			},
 		};
 	});
+
+	// EXAME P19 — the steps' money must live under the same roof as the
+	// hero headline. combinedImpact came straight from each Action's raw
+	// estimate, so the five steps could (and did) sum past the capped
+	// exposure the plan leads with. After the P15 dedupe removes double
+	// counting, any remaining overshoot is scaled down proportionally so
+	// sum(steps) <= headline. One money discipline, everywhere.
+	try {
+		const exposure = await openLossExposure(prisma, ctx.environmentId, ctx.monthEnd);
+		const sumMid = steps.reduce((acc, s) => acc + (s.combinedImpact?.midpoint ?? 0), 0);
+		if (exposure.total > 0 && sumMid > exposure.total) {
+			const factor = exposure.total / sumMid;
+			for (const s of steps) {
+				if (!s.combinedImpact) continue;
+				s.combinedImpact = {
+					min: Math.round(s.combinedImpact.min * factor),
+					max: Math.round(s.combinedImpact.max * factor),
+					midpoint: Math.round(s.combinedImpact.midpoint * factor),
+				};
+			}
+			console.log(
+				`[strategy-plan] next-steps impact scaled by ${factor.toFixed(3)} to fit the capped exposure (sum ${Math.round(sumMid)} > headline ${Math.round(exposure.total)})`,
+			);
+		}
+	} catch (err) {
+		// Cap unavailable — ship uncapped rather than no steps, but say so.
+		console.warn("[strategy-plan] next-steps exposure cap skipped:", err);
+	}
 
 	return {
 		steps,

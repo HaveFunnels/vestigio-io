@@ -512,11 +512,11 @@ que a dona de uma loja de enxoval não usaria.**
 | P12 ✅ | 45 "concorrentes" SERP sem curadoria, 0 sinais | CORRIGIDO: SERP vira sugestão inativa (ativação é decisão humana); seção só renderiza com curadoria manual ou sinal real; 29 linhas auto-ativas desativadas em prod |
 | P13 | UTM cru no título; HTML como label; botão "0" | journey-replays.ts (persona/labels) |
 | P14 | R$ 190 vs R$ 79.200 sem ponte | journeys sem extrapolação declarada |
-| P15 | Mesmo problema em 3 passos, 3 preços | next-steps sem dedupe por raiz |
-| P16 | Passo com título/razão/procedimento de 3 assuntos | next-steps LLM sem validador |
-| P17 | "Sessões estão sendo roubadas" como fato | idem + voice rules ausentes no claim |
+| P15 ✅ | Mesmo problema em 3 passos, 3 preços | CORRIGIDO: dedupeByRootProblem — 1 passo por inference key compartilhada, greedy no ranking; +5 testes |
+| P16 ✅ | Passo com título/razão/procedimento de 3 assuntos | CORRIGIDO: ângulo compounding_dependency removido (forçava 'mesma causa raiz do Passo 1' por posição); pós-dedupe a premissa é estruturalmente falsa |
+| P17 ✅ | "Sessões estão sendo roubadas" como fato | CORRIGIDO: bans de ataque-ativo nos voice-rules (4 locales) + regra 13 HONESTIDADE no prompt (risco = ausência de proteção) |
 | P18 | Política de troca → "Desenvolvedor 4-5h" | suggestedOwner do catálogo |
-| P19 | Soma dos passos > headline capado | next-steps.ts:992-996 |
+| P19 ✅ | Soma dos passos > headline capado | CORRIGIDO: combinedImpact escalado proporcionalmente pra caber no openLossExposure capado (pós-dedupe) |
 | P20 ✅ | Stripe/40%/2121 ciclos/benchmark-fantasma | CORRIGIDO: marcos só prometem o que existe (vertical-aware, sem Stripe p/ e-commerce); narrativa sem cycleCount; benchmarkAvailability não é mais emitido |
 | A1 | Hero = parede de zeros + sparklines 0 | hero-metrics p/ conta nova |
 | A2 | facebook/tiktok minúsculo sem ícone; 2 humanizadores | behavioral-measurement.ts:86 vs journey-replays.ts:364 |

@@ -86,9 +86,13 @@ export async function deleteScreenshots(keys: string[]): Promise<void> {
 	}
 }
 
-/** Presigned GET URL for rendering the screenshot in the Plano. Default 1h —
- *  long enough for a plan page session, short enough to keep the asset private. */
-export async function getScreenshotUrl(key: string, expiresIn = 3600): Promise<string> {
+/** Presigned GET URL for rendering the screenshot in the Plano.
+ *  Default 24h (EXAME A9): the URL map is minted once at page mount and
+ *  never refreshed, and the plan is a long-read document — with the old
+ *  1h TTL a tab left open over lunch came back to a page of broken-image
+ *  glyphs. 24h outlives any realistic reading session while keeping the
+ *  asset private; the img onError guards handle the residual case. */
+export async function getScreenshotUrl(key: string, expiresIn = 24 * 3600): Promise<string> {
 	return getSignedUrl(
 		client(),
 		new GetObjectCommand({

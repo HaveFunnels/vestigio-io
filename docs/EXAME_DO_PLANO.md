@@ -525,8 +525,8 @@ que a dona de uma loja de enxoval não usaria.**
 | A5 | Texto sobreposto no header Carteira | Carteira.tsx |
 | A6 | Timeline é lista uniforme, 4 cores p/ 10 tipos | JourneyReplays.tsx:117-128,361-405 |
 | A7 | 12 eventos idênticos sem compressão | journey event builder |
-| A8 | Mesma screenshot em todo passo; legenda sitemap.xml | PlanScreenshotContext.tsx:60-65; route.ts:628 |
-| A9 | img sem onError; presign 1h expira na aba aberta | drawer-bodies.tsx:588; NextSteps.tsx:571; r2-screenshots.ts:91 |
+| A8 ✅ | Mesma screenshot em todo passo; legenda sitemap.xml | CORRIGIDO: fallback de home morto (exact-only); rota escopa lote mais recente; legenda nomeia a superfície DA foto; worker captura páginas citadas por findings (MAX 8) |
+| A9 ✅ | img sem onError; presign 1h expira na aba aberta | CORRIGIDO: onError esconde a figura inteira nos 2 pontos; presign 24h |
 | A10 | Backticks viram acentos; "aplicada este componente" | NextSteps markdown + dedupe textual |
 | A11 | 4 cartões de memória idênticos zerados | memory-rollups + MemoryRollups.tsx |
 | E1 ✅ | getRootDomain quebra p/ .com.br | CORRIGIDO: `registrableDomain()` (packages/url-normalize/registrable-domain.ts) com sufixos multi-parte; 5 cópias ingênuas apontadas pra ele |

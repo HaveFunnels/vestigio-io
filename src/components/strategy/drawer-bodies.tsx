@@ -447,14 +447,15 @@ function FindingCard({
 	const linkedActions = finding.action_refs ?? [];
 	const remediationPreview = (finding.remediation_steps ?? []).slice(0, 3);
 	// Visual proof beside each finding — resolved from the plan-scoped
-	// screenshotUrlByPath map keyed by finding.source_url. When the
-	// exact page isn't in the top-N captured surfaces this cycle (deep
-	// page findings), the hook falls back to the homepage capture so
-	// the drawer still anchors in "your real site" — coverage jumps
-	// from ~30% to ~90% of findings. `match.kind` distinguishes so the
-	// caption can honestly say "sua home" on fallback instead of naming
-	// a surface we don't actually show.
+	// screenshotUrlByPath map keyed by finding.source_url. EXACT page
+	// only (EXAME A8): the old home-fallback repeated the same homepage
+	// banner under every finding, which reads as broken/fake. No
+	// capture of this page → text-only.
 	const screenshotMatch = usePlanScreenshotForUrl(finding.source_url);
+	// EXAME A9 — a presigned URL that 403s (expired while the tab sat
+	// open, purge race) must hide the whole figure, never render the
+	// browser's broken-image glyph inside a styled frame with a caption.
+	const [screenshotFailed, setScreenshotFailed] = useState(false);
 	// Peer contrast — "X% of BR e-commerces do this. You don't." Only
 	// resolves for whitelisted inference keys with a matching Vestigio
 	// Index cohort (see packages/signals/peer-line.ts).
@@ -581,29 +582,25 @@ function FindingCard({
 								className="overflow-hidden border-t border-edge"
 							>
 								<div className="space-y-4 p-4">
-									{/* Visual proof — screenshot of the actual page
-									    surfaced by this finding, or the homepage
-									    as fallback. Renders only when the plan
-									    carries at least one capture. */}
-									{screenshotMatch && (
+									{/* Visual proof — screenshot of the EXACT page this
+									    finding is about (never a homepage stand-in).
+									    Hidden entirely if the capture fails to load. */}
+									{screenshotMatch && !screenshotFailed && (
 										<figure className="-mt-1 overflow-hidden rounded-xl border border-edge bg-surface-inset">
 											{/* eslint-disable-next-line @next/next/no-img-element */}
 											<img
 												src={screenshotMatch.url}
 												alt={
-													screenshotMatch.kind === "home"
-														? "Captura da home"
-														: finding.surface
-															? `Captura de ${humanizeSurfaceLabel(finding.surface)}`
-															: "Captura da página"
+													finding.surface
+														? `Captura de ${humanizeSurfaceLabel(finding.surface)}`
+														: "Captura da página"
 												}
 												loading="lazy"
+												onError={() => setScreenshotFailed(true)}
 												className="block max-h-[220px] w-full object-cover object-top"
 											/>
 											<figcaption className="border-t border-edge px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-												{screenshotMatch.kind === "home"
-													? "Sua home · superfície de primeiro contato"
-													: `Sua página${finding.surface ? ` · ${humanizeSurfaceLabel(finding.surface)}` : ""}`}
+												{`Sua página${finding.surface ? ` · ${humanizeSurfaceLabel(finding.surface)}` : ""}`}
 											</figcaption>
 										</figure>
 									)}

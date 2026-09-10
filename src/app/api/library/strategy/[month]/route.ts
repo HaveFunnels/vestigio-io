@@ -628,30 +628,51 @@ export async function GET(request: Request, { params }: RouteParams) {
 	const normPath = (p: string) => { const x = String(p || "").trim(); return x.length > 1 ? x.replace(/\/+$/, "") : (x || "/"); };
 	const screenshotKeyByPath = new Map<string, string>();
 	try {
-		const shots = await prisma.surfaceScreenshot.findMany({
+		// EXAME A8 — only the FRESHEST capture batch. The old query mixed
+		// every batch ever taken (first-wins per path across months), so
+		// a plan could confidently caption "Sua página" over a months-old
+		// screenshot. One cycleRef = one coherent visual snapshot; a path
+		// not captured in the latest batch simply has no figure.
+		const latestShot = await prisma.surfaceScreenshot.findFirst({
 			where: { environmentId: plan.environmentId },
 			orderBy: { capturedAt: "desc" },
-			select: { path: true, r2Key: true },
+			select: { cycleRef: true },
 		});
-		for (const sh of shots) {
-			const pp = normPath(sh.path);
-			if (!screenshotKeyByPath.has(pp)) screenshotKeyByPath.set(pp, sh.r2Key);
+		if (latestShot) {
+			const shots = await prisma.surfaceScreenshot.findMany({
+				where: { environmentId: plan.environmentId, cycleRef: latestShot.cycleRef },
+				orderBy: { capturedAt: "desc" },
+				select: { path: true, r2Key: true },
+			});
+			for (const sh of shots) {
+				const pp = normPath(sh.path);
+				if (!screenshotKeyByPath.has(pp)) screenshotKeyByPath.set(pp, sh.r2Key);
+			}
 		}
 	} catch { /* no screenshots yet - text-only Plano */ }
-	function screenshotKeyForStep(keys: string[]): string | null {
+	// EXAME A8 — the match must remember WHICH surface it hit so the
+	// caption names the page in the picture, never affectedSurfaces[0]
+	// (the old pairing captioned a homepage shot as
+	// "SUA PÁGINA · /SITEMAP_PRODUCTS_1.XML").
+	function screenshotMatchForStep(keys: string[]): { key: string; surface: string } | null {
 		for (const { surface } of affectedSurfacesForStep(keys)) {
 			for (const tok of String(surface).split(/[,\s]+/)) {
 				if (!tok.startsWith("/")) continue;
-				const k = screenshotKeyByPath.get(normPath(tok));
-				if (k) return k;
+				const pp = normPath(tok);
+				const k = screenshotKeyByPath.get(pp);
+				if (k) return { key: k, surface: pp };
 			}
 		}
 		return null;
 	}
 	const matchedKeyByStepId = new Map<string, string>();
+	const matchedSurfaceByStepId = new Map<string, string>();
 	for (const s of plan.nextSteps) {
-		const k = screenshotKeyForStep(((s as any).linkedFindingRefsJson as string[]) ?? []);
-		if (k) matchedKeyByStepId.set(s.id, k);
+		const m = screenshotMatchForStep(((s as any).linkedFindingRefsJson as string[]) ?? []);
+		if (m) {
+			matchedKeyByStepId.set(s.id, m.key);
+			matchedSurfaceByStepId.set(s.id, m.surface);
+		}
 	}
 	const screenshotUrlByKey = new Map<string, string>();
 	// Presign every distinct r2Key in the env — small set (≤ ~20 rows),
@@ -871,6 +892,9 @@ export async function GET(request: Request, { params }: RouteParams) {
 				dueAt: s.dueAt?.toISOString() ?? null,
 				commentsCount: commentsByStepId.get(s.id) ?? 0,
 				screenshotUrl: screenshotUrlByKey.get(matchedKeyByStepId.get(s.id) ?? "") ?? null,
+				// The path actually pictured — the caption must name THIS,
+				// not affectedSurfaces[0] (EXAME A8).
+				screenshotSurface: matchedSurfaceByStepId.get(s.id) ?? null,
 			};
 		}),
 	});

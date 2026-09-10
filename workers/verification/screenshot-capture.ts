@@ -21,7 +21,7 @@ import { createHash } from "crypto";
 import { withBrowserContext } from "./chromium-pool";
 import { r2Configured, uploadScreenshot, screenshotKey } from "../../src/libs/r2-screenshots";
 
-const MAX_SURFACES = 5;
+const MAX_SURFACES = 8; // was 5 — room for finding-cited pages (EXAME A8)
 const VIEWPORT = { width: 1280, height: 800 };
 const NAV_TIMEOUT_MS = 15_000;
 const PAINT_SETTLE_MS = 1_200;
@@ -56,8 +56,11 @@ interface SurfaceTarget {
 	path: string;
 }
 
-/** The surfaces worth showing: real crawled pages where findings cluster
- *  (findingCount), then criticality/priority. Homepage always included. */
+/** The surfaces worth showing: the pages the plan will actually TALK
+ *  about. Homepage first, then every surface an OPEN finding cites
+ *  (EXAME A8 — the plan's figures exist to prove findings, so the
+ *  capture set must chase the findings, not just generic top pages),
+ *  then top inventory pages by finding density. */
 async function selectSurfaces(prisma: PrismaClient, environmentId: string): Promise<SurfaceTarget[]> {
 	const items = await prisma.pageInventoryItem.findMany({
 		where: {
@@ -70,21 +73,53 @@ async function selectSurfaces(prisma: PrismaClient, environmentId: string): Prom
 		take: 24,
 		select: { normalizedUrl: true, path: true },
 	});
+	const normPath = (p: string) => {
+		const x = String(p || "").trim();
+		return x.length > 1 ? x.replace(/\/+$/, "") : x || "/";
+	};
+	const itemByPath = new Map<string, { normalizedUrl: string; path: string }>();
+	for (const it of items) {
+		if (it.normalizedUrl && !itemByPath.has(normPath(it.path))) {
+			itemByPath.set(normPath(it.path), { normalizedUrl: it.normalizedUrl, path: it.path });
+		}
+	}
+
+	// Paths cited by open findings — split multi-surface strings
+	// ("/checkout, /cart") into tokens, keep real inventory pages only.
+	const findingPaths: string[] = [];
+	try {
+		const open = await prisma.finding.findMany({
+			where: {
+				environmentId,
+				status: { in: ["created", "confirmed", "regressed"] },
+			},
+			select: { surface: true },
+			take: 100,
+		});
+		for (const f of open) {
+			for (const tok of String(f.surface ?? "").split(/[,\s]+/)) {
+				if (tok.startsWith("/")) findingPaths.push(normPath(tok));
+			}
+		}
+	} catch {
+		// Findings unavailable — generic top pages still ship.
+	}
 
 	const seen = new Set<string>();
 	const out: SurfaceTarget[] = [];
-	// Homepage first — it's the universal "your storefront as buyers see it" shot.
-	const home = items.find((i) => i.path === "/" || i.path === "");
-	if (home?.normalizedUrl) {
-		out.push({ normalizedUrl: home.normalizedUrl, path: home.path });
-		seen.add(home.normalizedUrl);
+	const push = (t: { normalizedUrl: string; path: string } | undefined) => {
+		if (!t?.normalizedUrl || seen.has(t.normalizedUrl) || out.length >= MAX_SURFACES) return;
+		seen.add(t.normalizedUrl);
+		out.push({ normalizedUrl: t.normalizedUrl, path: t.path });
+	};
+	// Homepage first — the universal "your storefront as buyers see it" shot.
+	push(items.find((i) => i.path === "/" || i.path === ""));
+	// Then the pages findings actually cite (skip "/", already in).
+	for (const p of findingPaths) {
+		if (p !== "/") push(itemByPath.get(p));
 	}
-	for (const it of items) {
-		if (out.length >= MAX_SURFACES) break;
-		if (!it.normalizedUrl || seen.has(it.normalizedUrl)) continue;
-		seen.add(it.normalizedUrl);
-		out.push({ normalizedUrl: it.normalizedUrl, path: it.path });
-	}
+	// Then generic top pages by finding density.
+	for (const it of items) push(it);
 	return out;
 }
 

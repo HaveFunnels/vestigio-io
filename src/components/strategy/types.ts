@@ -266,6 +266,9 @@ export interface NextStep {
 	/** PV.9b - presigned URL of a captured screenshot of this step's surface
 	 *  (the customer's actual page). Null when no screenshot matched / R2 off. */
 	screenshotUrl?: string | null;
+	/** EXAME A8 — the path actually pictured by screenshotUrl. The
+	 *  caption must name THIS surface, never affectedSurfaces[0]. */
+	screenshotSurface?: string | null;
 	/** Reta-final: server-resolved Action objects matching linkedActionRefs.
 	 *  Lets the drawer render directly without cross-referencing MCP's
 	 *  current-cycle snapshot (which misses older Action IDs the plan

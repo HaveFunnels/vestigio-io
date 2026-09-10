@@ -55,29 +55,24 @@ function normalizePath(input: string): string {
 
 export interface PlanScreenshotMatch {
 	url: string;
-	/** "exact" — screenshot of the finding's actual source URL (best).
-	 *  "home" — falls back to homepage when the exact page wasn't in
-	 *  the top-N surfaces captured this cycle. Home is always in the
-	 *  capture set, so this fallback lifts coverage from ~30% to ~90%
-	 *  of findings and still anchors the drawer in "your real page".
-	 *  Consumers should adjust the caption to say "sua home" instead
-	 *  of the specific surface when kind === "home". */
-	kind: "exact" | "home";
+	/** Always "exact" now. EXAME A8 killed the "home" fallback: it put
+	 *  the SAME homepage promo banner under five different findings,
+	 *  which the customer reads as broken or fake — worse than no
+	 *  image. A finding without a capture of ITS page shows text only;
+	 *  coverage comes from capturing the right surfaces (the worker now
+	 *  targets finding-referenced paths), not from lying with the home. */
+	kind: "exact";
 }
 
 /**
- * Resolves a source URL to a presigned screenshot URL. Returns null
- * only when both the exact page AND the homepage have no capture (R2
- * unset, or the cycle failed to capture anything).
+ * Resolves a source URL to a presigned screenshot of THAT page.
+ * No capture of that exact page → null (text-only figure degrade).
  */
 export function usePlanScreenshotForUrl(sourceUrl: string | null | undefined): PlanScreenshotMatch | null {
 	const map = useContext(PlanScreenshotContext);
-	if (sourceUrl) {
-		const path = normalizePath(sourceUrl);
-		const exact = map[path];
-		if (exact) return { url: exact, kind: "exact" };
-	}
-	const home = map["/"];
-	if (home) return { url: home, kind: "home" };
+	if (!sourceUrl) return null;
+	const path = normalizePath(sourceUrl);
+	const exact = map[path];
+	if (exact) return { url: exact, kind: "exact" };
 	return null;
 }

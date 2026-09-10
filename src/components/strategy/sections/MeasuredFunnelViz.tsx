@@ -17,13 +17,16 @@ import type { MeasuredFunnelUI } from "./BehavioralMeasurement";
  */
 
 const W = 720;
-const H = 250;
+const H = 228;
 const PAD_X = 44;
-const TOP = 58; // room for per-stage value labels
-const BOT = 210; // funnel bottom; below it, stage names
+const TOP = 74; // funnel top — leaves a wide gap under the value labels
+const BOT = 186; // funnel bottom; stage names sit well below it
 const MID = (TOP + BOT) / 2;
-const BODY = BOT - TOP;
+const BODY = BOT - TOP; // 112 — a shorter, calmer funnel
 const MIN_THREAD = 3; // px — a 0-ish stage stays a visible thread
+const LABEL_VALUE_Y = 26; // sessions count (absolute, up near the top)
+const LABEL_PCT_Y = 42; // percentage under it — 32px of air to the funnel
+const LABEL_NAME_DY = 26; // stage-name gap below the funnel bottom
 
 function fmtPct(n: number): string {
 	return `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
@@ -114,16 +117,16 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 							strokeWidth={1}
 						/>
 						{/* value above */}
-						<text x={cx} y={TOP - 26} textAnchor="middle" fontSize={13} className="fill-content tabular-nums font-medium">
+						<text x={cx} y={LABEL_VALUE_Y} textAnchor="middle" fontSize={13} className="fill-content tabular-nums font-medium">
 							{s.sessions.toLocaleString("pt-BR")}
 						</text>
-						<text x={cx} y={TOP - 12} textAnchor="middle" fontSize={11} className="fill-content-faint tabular-nums">
+						<text x={cx} y={LABEL_PCT_Y} textAnchor="middle" fontSize={11} className="fill-content-faint tabular-nums">
 							{fmtPct(s.pctOfArrived)}
 						</text>
 						{/* stage name below */}
 						<text
 							x={cx}
-							y={BOT + 20}
+							y={BOT + LABEL_NAME_DY}
 							textAnchor="middle"
 							fontSize={10.5}
 							className={isPaid ? "fill-green-300" : "fill-content-secondary"}

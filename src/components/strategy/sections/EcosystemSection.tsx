@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { planSectionQuery } from "../section-query";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -113,7 +114,7 @@ export default function EcosystemSection({ envId, month, mode = "full" }: Props)
 	useEffect(() => {
 		setLoading(true);
 		fetch(
-			`/api/library/strategy/${encodeURIComponent(month)}/ecosystem?envId=${encodeURIComponent(envId)}`,
+			`/api/library/strategy/${encodeURIComponent(month)}/ecosystem?${planSectionQuery(envId)}`,
 			{ cache: "no-store" },
 		)
 			.then((r) => (r.ok ? r.json() : null))

@@ -490,8 +490,12 @@ function PlanHeader({ plan }: { plan: StrategyPlan }) {
 				{/* Wave 22.8 IA reform — Month picker substitutes the
 				    standalone /app/library Plans gallery tab. Customer
 				    navega entre meses sem sair do plano. */}
-				<MonthPicker envId={plan.environmentId} currentMonth={plan.month} />
-				<span className="text-edge">·</span>
+				{/* EXAME E5 — interactive control; hidden in the PDF, where a
+				    dropdown chevron baked into the header reads as broken. */}
+				<span data-vsgp-print-hide className="contents">
+					<MonthPicker envId={plan.environmentId} currentMonth={plan.month} />
+					<span className="text-edge">·</span>
+				</span>
 				<span className="font-mono">{plan.envDomain}</span>
 				<span className="text-edge">·</span>
 				<span suppressHydrationWarning>Gerado {formatTimestamp(plan.generatedAt)}</span>
@@ -632,9 +636,34 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				    grid so position:fixed lifts cleanly. */}
 				<PlanTOCRail
 					items={(() => {
+						// EXAME E4 — this list MUST mirror the DOM render order of
+						// the sections below (thesis → hero → behavioral →
+						// attribution → ecosystem → continuity → cross-customer →
+						// segments → narrative → carteira → journeys → predictive
+						// → next-steps → value-preview → memory). It used to be a
+						// different order with four rendered sections missing
+						// (attribution, ecosystem, journeys, predictive), so the
+						// rail scrolled to the wrong places and those sections
+						// were unreachable by dot-nav. When you reorder the
+						// sections, reorder THIS.
 						const items: TocItem[] = [
 							{ id: "thesis", label: isPt ? "Tese" : "Thesis", visible: !!plan.thesisOfMonth },
 							{ id: "hero", label: isPt ? "Onde está" : "Where you are", visible: true },
+							{
+								id: "behavioral",
+								label: isPt ? "Medido" : "Measured",
+								visible: !!plan.behavioral && plan.behavioral.sources.length > 0,
+							},
+							{
+								id: "attribution",
+								label: isPt ? "Recuperações" : "Recovered",
+								visible: !isResumo,
+							},
+							{
+								id: "ecosystem",
+								label: isPt ? "Ecossistema" : "Ecosystem",
+								visible: !isResumo,
+							},
 							{
 								id: "continuity",
 								label: isPt ? "O que mudou esse mês" : "What changed this month",
@@ -645,21 +674,26 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 								label: isPt ? "Padrão carteira" : "Peer pattern",
 								visible: !isResumo && !!plan.crossCustomerPattern,
 							},
-							{
-								id: "behavioral",
-								label: isPt ? "Medido" : "Measured",
-								visible: !!plan.behavioral && plan.behavioral.sources.length > 0,
-							},
 							{ id: "segments", label: isPt ? "Times" : "By team", visible: !isResumo },
+							{
+								id: "narrative",
+								label: isPt ? "O que aconteceu" : "What happened",
+								visible: !isResumo && !!plan.narrativeWhatHappened,
+							},
 							{
 								id: "carteira",
 								label: isPt ? "Carteira" : "Market signals",
 								visible: !isResumo && (!!plan.competitor || !!plan.impersonators),
 							},
 							{
-								id: "narrative",
-								label: isPt ? "O que aconteceu" : "What happened",
-								visible: !isResumo && !!plan.narrativeWhatHappened,
+								id: "journeys",
+								label: isPt ? "Jornadas" : "Journeys",
+								visible: !isResumo,
+							},
+							{
+								id: "predictive",
+								label: isPt ? "O que vem por aí" : "What's ahead",
+								visible: !isResumo,
 							},
 							{ id: "next-steps", label: isPt ? "Próximos passos" : "Next steps", visible: true },
 							{ id: "value-preview", label: isPt ? "O que ganha" : "Value preview", visible: !isResumo },

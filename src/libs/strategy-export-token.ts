@@ -81,3 +81,41 @@ export function isExportTokenWellFormed(token: string): boolean {
 	if (!/^[0-9a-f]+$/i.test(sigHex)) return false;
 	return true;
 }
+
+/**
+ * Alt-auth for the plan's LAZY section routes (journeys, ecosystem,
+ * predictive, analysis-stats) — EXAME E3. These routes only accepted a
+ * session cookie, so the cookie-less headless chromium that renders
+ * the PDF got a silent 401 on each, and the components swallowed it
+ * (`.then(r => r.ok ? r.json() : null)`): "Jornadas que custaram
+ * dinheiro", "Saúde do ecossistema" and "O que vem por aí" were
+ * absent from every exported PDF — the very document customers hand
+ * to third parties.
+ *
+ * The token embeds its planId, so verification is: HMAC + expiry
+ * check first (no DB), then one lookup to confirm THAT plan belongs
+ * to the (envId, month) the route was asked for — otherwise a token
+ * minted for env A could read env B's sections.
+ */
+export async function verifyExportTokenForEnvMonth(
+	prisma: {
+		monthlyStrategyPlan: {
+			findFirst(args: {
+				where: { id: string; environmentId: string; month: string };
+				select: { id: true };
+			}): Promise<{ id: string } | null>;
+		};
+	},
+	token: string,
+	envId: string,
+	month: string,
+): Promise<boolean> {
+	if (!isExportTokenWellFormed(token)) return false;
+	const tokenPlanId = token.split(".")[0];
+	if (!verifyExportToken(token, tokenPlanId)) return false;
+	const plan = await prisma.monthlyStrategyPlan.findFirst({
+		where: { id: tokenPlanId, environmentId: envId, month },
+		select: { id: true },
+	});
+	return !!plan;
+}

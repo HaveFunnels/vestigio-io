@@ -1,4 +1,5 @@
 import { isAuthorized } from "@/libs/isAuthorized";
+import { verifyExportTokenForEnvMonth } from "@/libs/strategy-export-token";
 import { prisma } from "@/libs/prismaDb";
 import { NextResponse } from "next/server";
 
@@ -36,8 +37,20 @@ export async function GET(request: Request, { params }: RouteParams) {
 		return NextResponse.json({ message: "envId is required" }, { status: 400 });
 	}
 
-	const user = await isAuthorized();
-	if (!user) {
+	// EXAME E3 — accept the PDF exporter's HMAC token as alt auth so
+	// this section renders in the exported document (it was silently
+	// 401-absent from every PDF). Verified against the plan for THIS
+	// (envId, month).
+	const exportToken = url.searchParams.get("export_token");
+	const tokenAuthorized = exportToken
+		? await verifyExportTokenForEnvMonth(prisma, exportToken, envId, month)
+		: false;
+	if (exportToken && !tokenAuthorized) {
+		return NextResponse.json({ message: "Invalid export token" }, { status: 401 });
+	}
+
+	const user = tokenAuthorized ? null : await isAuthorized();
+	if (!tokenAuthorized && !user) {
 		return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 	}
 
@@ -62,11 +75,11 @@ export async function GET(request: Request, { params }: RouteParams) {
 	if (!env) {
 		return NextResponse.json({ message: "Environment not found" }, { status: 404 });
 	}
-	const userId = (user as { id?: string }).id;
+	const userId = (user as { id?: string } | null)?.id;
 	const isOwner = !!userId && env.organization?.ownerId === userId;
 	const isMember = !!userId && !!env.organization?.memberships?.some((m) => m.userId === userId);
-	const isSiteAdmin = (user as { role?: string }).role === "ADMIN";
-	if (!isOwner && !isMember && !isSiteAdmin) {
+	const isSiteAdmin = (user as { role?: string } | null)?.role === "ADMIN";
+	if (!tokenAuthorized && !isOwner && !isMember && !isSiteAdmin) {
 		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 	}
 

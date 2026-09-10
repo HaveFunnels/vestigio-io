@@ -531,9 +531,9 @@ que a dona de uma loja de enxoval não usaria.**
 | A11 | 4 cartões de memória idênticos zerados | memory-rollups + MemoryRollups.tsx |
 | E1 ✅ | getRootDomain quebra p/ .com.br | CORRIGIDO: `registrableDomain()` (packages/url-normalize/registrable-domain.ts) com sufixos multi-parte; 5 cópias ingênuas apontadas pra ele |
 | E2 | 12 agregações completas p/ sparkline de zeros | hero-metrics.ts:166-181 |
-| E3 | PDF perde journeys/ecosystem/predictive (401 silencioso) | rotas lazy sem export_token |
-| E4 | TOC ≠ DOM; 4 seções não navegáveis | StrategyPlanPanel.tsx:634-669 |
-| E5 | Seletor CSS morto no print | strategy.css:133-137 |
+| E3 ✅ | PDF perde journeys/ecosystem/predictive (401 silencioso) | CORRIGIDO: verifyExportTokenForEnvMonth nas 4 rotas lazy + planSectionQuery propaga o token nos fetches dos componentes |
+| E4 ✅ | TOC ≠ DOM; 4 seções não navegáveis | CORRIGIDO: rail espelha a ordem real do DOM e inclui attribution/ecosystem/journeys/predictive |
+| E5 ✅ | Seletor CSS morto no print | CORRIGIDO: safety-net escopado a [data-vsgp-print] (atributos no MESMO elemento); MonthPicker com print-hide |
 | E6 | Locale pela metade | thesis/narrative/labels hardcoded |
 | E7 | researchRefs sempre vazio | next-steps.ts:987 |
 | E8 | Seções somem sem placeholder (layout shift) | PredictiveLayer.tsx:91; EcosystemSection.tsx:125 |

@@ -133,9 +133,14 @@
    IntersectionObserver fires, but as defense-in-depth force-reveal
    any element whose inline style still has opacity:0 at capture
    time. The selector is intentionally global within the plan: every
-   sub-section uses the same FM pattern. */
-[data-vsgp-print="true"] [data-vsgp-plan] [style*="opacity: 0"],
-[data-vsgp-print="true"] [data-vsgp-plan] [style*="opacity:0"] {
+   sub-section uses the same FM pattern.
+   EXAME E5 — the original selector required [data-vsgp-plan] as a
+   DESCENDANT of [data-vsgp-print], but both attributes sit on the
+   SAME element, so this safety net never matched and the export
+   relied entirely on the scroll-walk. Scoping to [data-vsgp-print]
+   alone covers both arrangements. */
+[data-vsgp-print="true"] [style*="opacity: 0"],
+[data-vsgp-print="true"] [style*="opacity:0"] {
 	opacity: 1 !important;
 	transform: none !important;
 }

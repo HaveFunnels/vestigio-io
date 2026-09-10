@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { planSectionQuery } from "../section-query";
 import { motion } from "framer-motion";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
@@ -79,7 +80,7 @@ export default function PredictiveLayer({ envId, month }: Props) {
 	useEffect(() => {
 		setLoading(true);
 		fetch(
-			`/api/library/strategy/${encodeURIComponent(month)}/predictive?envId=${encodeURIComponent(envId)}`,
+			`/api/library/strategy/${encodeURIComponent(month)}/predictive?${planSectionQuery(envId)}`,
 			{ cache: "no-store" },
 		)
 			.then((r) => (r.ok ? r.json() : null))

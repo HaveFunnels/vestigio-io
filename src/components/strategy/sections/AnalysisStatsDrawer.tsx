@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { planSectionQuery } from "../section-query";
 import { motion, AnimatePresence } from "framer-motion";
 
 // ──────────────────────────────────────────────
@@ -67,7 +68,7 @@ export default function AnalysisStatsDrawer({ open, onClose, envId, month, month
 		if (!open || stats) return;
 		setLoading(true);
 		setError(null);
-		fetch(`/api/library/strategy/${month}/analysis-stats?envId=${encodeURIComponent(envId)}`, {
+		fetch(`/api/library/strategy/${month}/analysis-stats?${planSectionQuery(envId)}`, {
 			cache: "no-store",
 		})
 			.then(async (r) => {

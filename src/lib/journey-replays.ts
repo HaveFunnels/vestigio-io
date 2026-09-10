@@ -1,4 +1,5 @@
 import { prisma } from "@/libs/prismaDb";
+import { identifySource } from "../../packages/behavioral/source-identity";
 import { aggregateSession } from "../../packages/behavioral/session-aggregator";
 import { rebuildEventsFromTimeline } from "../../packages/behavioral/session-row-builder";
 import type {
@@ -371,25 +372,15 @@ function normalizeJourney(
 }
 
 function humanizeSource(touch: AttributionContext): string {
-	const source = (touch.source ?? "").toLowerCase();
-	const medium = (touch.medium ?? "").toLowerCase();
-	if (touch.gclid || source.includes("google") && medium.includes("cpc")) return "Google Ads";
-	if (touch.fbclid || source.includes("facebook") || source.includes("fb")) return "Facebook Ads";
-	if (source.includes("instagram") || source.includes("ig")) return "Instagram";
-	if (source.includes("tiktok")) return "TikTok";
-	if (source.includes("linkedin")) return "LinkedIn";
-	if (medium === "email" || source.includes("klaviyo") || source.includes("brevo"))
-		return "Email";
-	if (medium === "organic" || source === "google" || source === "bing") return "Orgânico";
-	if (touch.referrer) {
-		try {
-			const host = new URL(touch.referrer).hostname.replace(/^www\./, "");
-			return `Referência (${host})`;
-		} catch {
-			return "Referência";
-		}
-	}
-	return "Direto";
+	// EXAME A2 — delegates to the shared source-identity module so the
+	// persona label matches the measured table's label exactly.
+	return identifySource({
+		source: touch.source,
+		medium: touch.medium,
+		referrer: touch.referrer,
+		gclid: touch.gclid,
+		fbclid: touch.fbclid,
+	}).label;
 }
 
 function humanizeCampaign(touch: AttributionContext): string | null {

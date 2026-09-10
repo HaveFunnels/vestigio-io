@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { sourceIdentity } from "../../../../packages/behavioral/source-identity";
 
 /*
  * O que o pixel MEDIU — a seção de chão-de-fábrica do plano.
@@ -102,9 +103,22 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 							</tr>
 						</thead>
 						<tbody>
-							{behavioral.sources.map((s) => (
+							{behavioral.sources.map((s) => {
+								// EXAME A2 — shared identity: proper label + brand
+								// dot instead of the raw lowercase utm token.
+								const id = sourceIdentity(s.source);
+								return (
 								<tr key={s.source} className="border-b border-edge/50 text-content">
-									<td className="py-2.5 pr-4 font-medium">{s.source}</td>
+									<td className="py-2.5 pr-4 font-medium">
+										<span className="inline-flex items-center gap-2">
+											<span
+												aria-hidden
+												className="inline-block h-2 w-2 shrink-0 rounded-full"
+												style={{ backgroundColor: id.color }}
+											/>
+											{id.label}
+										</span>
+									</td>
 									<td className="py-2.5 pr-4 tabular-nums">
 										{s.sessions.toLocaleString("pt-BR")}
 										<span className="text-content-faint"> · {s.sharePct}%</span>
@@ -113,7 +127,8 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 									<td className="py-2.5 pr-4 tabular-nums">{s.pctNoScroll}%</td>
 									<td className="py-2.5 tabular-nums">{s.pctFormStarted}%</td>
 								</tr>
-							))}
+								);
+							})}
 						</tbody>
 					</table>
 				</div>

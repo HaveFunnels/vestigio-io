@@ -29,6 +29,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { canonicalSourceKey, sourceIdentity } from "../../behavioral/source-identity";
 import type { GenerateContext } from "../types";
 
 const WINDOW_DAYS = 30;
@@ -83,12 +84,11 @@ function median(values: number[]): number {
 	return sorted[Math.floor(sorted.length / 2)];
 }
 
+// EXAME A2 — canonical key from the ONE shared identity module. The
+// plan persists the key; every customer-facing string renders the
+// module's label (never the raw lowercase utm token).
 function normalizeSource(raw: string | null | undefined): string {
-	if (!raw) return "direto/sem origem";
-	const s = raw.toLowerCase().trim();
-	if (s === "fb" || s === "facebook" || s === "meta") return "facebook";
-	if (s === "ig" || s === "instagram") return "instagram";
-	return s;
+	return canonicalSourceKey({ source: raw ?? null });
 }
 
 export async function generateBehavioralMeasurement(
@@ -180,7 +180,7 @@ export async function generateBehavioralMeasurement(
 			pctNoScroll: s.pctNoScroll,
 			sessions: s.sessions,
 			text:
-				`Medido pelo pixel nos últimos ${WINDOW_DAYS} dias: as ${s.sessions.toLocaleString("pt-BR")} sessões vindas de ${s.source} ` +
+				`Medido pelo pixel nos últimos ${WINDOW_DAYS} dias: as ${s.sessions.toLocaleString("pt-BR")} sessões vindas de ${sourceIdentity(s.source).label} ` +
 				`ficam ${s.medianDurationS}s no site (mediana) e ${s.pctNoScroll}% delas saem sem rolar a primeira tela. ` +
 				`Esse tráfego está chegando e indo embora antes de ver a oferta. Se há verba nessa origem, ela está comprando chegadas, não visitas.`,
 		}));

@@ -519,7 +519,7 @@ que a dona de uma loja de enxoval não usaria.**
 | P19 ✅ | Soma dos passos > headline capado | CORRIGIDO: combinedImpact escalado proporcionalmente pra caber no openLossExposure capado (pós-dedupe) |
 | P20 ✅ | Stripe/40%/2121 ciclos/benchmark-fantasma | CORRIGIDO: marcos só prometem o que existe (vertical-aware, sem Stripe p/ e-commerce); narrativa sem cycleCount; benchmarkAvailability não é mais emitido |
 | A1 | Hero = parede de zeros + sparklines 0 | hero-metrics p/ conta nova |
-| A2 | facebook/tiktok minúsculo sem ícone; 2 humanizadores | behavioral-measurement.ts:86 vs journey-replays.ts:364 |
+| A2 ✅ | facebook/tiktok minúsculo sem ícone; 2 humanizadores | CORRIGIDO: packages/behavioral/source-identity.ts (chave canônica + label + cor de marca); tabela renderiza dot+label; jornadas e alerta usam o mesmo módulo |
 | A3 | "Seu time ainda não recuperou nada" | AttributionTimeline empty state |
 | A4 | Faixas 4× sem explicação | BuyerSegments render |
 | A5 | Texto sobreposto no header Carteira | Carteira.tsx |

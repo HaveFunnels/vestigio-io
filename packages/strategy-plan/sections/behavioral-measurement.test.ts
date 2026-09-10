@@ -63,10 +63,11 @@ describe("generateBehavioralMeasurement", () => {
 		expect(out.sources[0].sessions).toBe(120);
 	});
 
-	it("buckets unattributed sessions as direto/sem origem, not as a crash", async () => {
+	it("buckets unattributed sessions under the canonical direct key, not as a crash", async () => {
 		const rows = Array.from({ length: 110 }, () => aggRow(null, 45, true));
 		const out = (await generateBehavioralMeasurement(prismaWith(rows), ctx))!;
-		expect(out.sources[0].source).toBe("direto/sem origem");
+		// EXAME A2 — canonical key; the UI renders the label ("Direto")
+		expect(out.sources[0].source).toBe("direct");
 	});
 
 	it("hides sources below the minimum sample instead of alerting on noise", async () => {

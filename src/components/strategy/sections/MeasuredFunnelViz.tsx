@@ -64,11 +64,37 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 	const topPts: Array<[number, number]> = stages.map((s, i) => [x(i), MID - half(s.pctOfArrived)]);
 	const botPts: Array<[number, number]> = stages.map((s, i) => [x(i), MID + half(s.pctOfArrived)]);
 
-	// Closed funnel body: top edge L→R, down the right, bottom edge R→L.
+	// Rounded caps: the left "mouth" and the right tip get soft corners.
+	// Radius is clamped to half the cap height, so the thin right end
+	// rounds into a ribbon tip while the tall left mouth just softens.
+	const CORNER = 9;
+	const x0 = x(0);
+	const xN = x(n - 1);
+	const [t0x, t0y] = topPts[0];
+	const [b0x, b0y] = botPts[0];
+	const [tNx, tNy] = topPts[n - 1];
+	const [bNx, bNy] = botPts[n - 1];
+	const rL = Math.min(CORNER, (b0y - t0y) / 2);
+	const rR = Math.min(CORNER, (bNy - tNy) / 2);
+
+	// Top/bottom edges inset horizontally by the corner radius at the
+	// caps, so the corner arcs land cleanly.
+	const topInset: Array<[number, number]> = topPts.map((p) => [...p]) as Array<[number, number]>;
+	topInset[0] = [t0x + rL, t0y];
+	topInset[n - 1] = [tNx - rR, tNy];
+	const botInset: Array<[number, number]> = botPts.map((p) => [...p]) as Array<[number, number]>;
+	botInset[0] = [b0x + rL, b0y];
+	botInset[n - 1] = [bNx - rR, bNy];
+
 	const bodyPath =
-		smooth(topPts) +
-		` L ${botPts[n - 1][0]},${botPts[n - 1][1]}` +
-		smooth([...botPts].reverse()).replace(/^M [^C]*/, " ") +
+		smooth(topInset) +
+		` Q ${tNx},${tNy} ${tNx},${tNy + rR}` + // top-right rounded corner
+		` L ${bNx},${bNy - rR}` + // right cap
+		` Q ${bNx},${bNy} ${bNx - rR},${bNy}` + // bottom-right rounded corner
+		smooth([...botInset].reverse()).replace(/^M [^C]*/, " ") + // bottom edge R→L
+		` Q ${b0x},${b0y} ${b0x},${b0y - rL}` + // bottom-left rounded corner
+		` L ${t0x},${t0y + rL}` + // left cap (mouth)
+		` Q ${t0x},${t0y} ${t0x + rL},${t0y}` + // top-left rounded corner
 		" Z";
 
 	// Biggest narrowing by absolute lost sessions.
@@ -116,7 +142,7 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 			<path d={bodyPath} fill={`url(#fg-${gid})`} stroke="none" />
 			<path d={bodyPath} fill={`url(#fgl-${gid})`} stroke="none" />
 			{/* Lit top edge: a bright rim tracing the taper, the signature. */}
-			<path d={smooth(topPts)} fill="none" stroke={`url(#fr-${gid})`} strokeWidth={1.75} strokeOpacity={0.9} strokeLinecap="round" />
+			<path d={smooth(topInset)} fill="none" stroke={`url(#fr-${gid})`} strokeWidth={1.75} strokeOpacity={0.9} strokeLinecap="round" />
 
 			{/* Stage dividers + per-stage labels. */}
 			{stages.map((s, i) => {

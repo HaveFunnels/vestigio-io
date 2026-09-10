@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { sourceIdentity } from "../../../../packages/behavioral/source-identity";
 import BasisChip from "../BasisChip";
+import MeasuredFunnelViz from "./MeasuredFunnelViz";
 
 /*
  * O que o pixel MEDIU — a seção de chão-de-fábrica do plano.
@@ -152,25 +153,9 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 						<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
 							Seu funil, medido — sessões que chegaram em cada etapa
 						</div>
-						<div className="space-y-1.5">
-							{behavioral.funnel.stages.map((st) => (
-								<div key={st.key} className="flex items-center gap-3">
-									<div className="w-28 shrink-0 text-[12px] text-content-secondary sm:w-32">
-										{st.label}
-									</div>
-									<div className="relative h-5 flex-1 overflow-hidden rounded-md bg-surface-inset/50">
-										<div
-											className={`h-full rounded-md ${st.key === "paid" ? "bg-emerald-500/60" : "bg-sky-500/35"}`}
-											style={{ width: `${Math.max(st.pctOfArrived, st.sessions > 0 ? 1.2 : 0)}%` }}
-										/>
-									</div>
-									<div className="w-32 shrink-0 text-right font-mono text-[11.5px] tabular-nums text-content">
-										{st.sessions.toLocaleString("pt-BR")}
-										<span className="text-content-faint"> · {fmtPct(st.pctOfArrived)}</span>
-									</div>
-								</div>
-							))}
-						</div>
+						{/* ONDA 4.5 — o funil como desenho: fluxo afunilando de
+						    verdade, maior estreitamento anotado no traço. */}
+						<MeasuredFunnelViz funnel={behavioral.funnel} />
 						{behavioral.funnel.note && (
 							<p className="mt-2 text-[11px] leading-relaxed text-content-faint">
 								{behavioral.funnel.note}

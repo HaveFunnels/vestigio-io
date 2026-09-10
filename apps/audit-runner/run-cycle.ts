@@ -1550,6 +1550,10 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 									syncError: realErrors[0] ?? null,
 									syncMetadata: JSON.stringify({
 										ad_spend_30d: metaPollResult.data.ad_spend_30d,
+										// ONDA 2.2 — the plan's ad ledger reads spend AND
+										// platform-attributed revenue from here (the full
+										// snapshot only lives in-memory during the cycle).
+										attributed_revenue_30d: metaPollResult.data.attributed_revenue_30d ?? null,
 										currency: metaPollResult.data.currency,
 										creative_count: metaPollResult.data.creatives.length,
 										synced_at: new Date().toISOString(),
@@ -1616,6 +1620,8 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 									syncError: googlePollResult.errors[0] ?? null,
 									syncMetadata: JSON.stringify({
 										ad_spend_30d: googlePollResult.data.ad_spend_30d,
+										// ONDA 2.2 — see meta_ads note above.
+										attributed_revenue_30d: googlePollResult.data.attributed_revenue_30d ?? null,
 										currency: googlePollResult.data.currency,
 										campaign_count: googlePollResult.data.campaigns.length,
 										synced_at: new Date().toISOString(),

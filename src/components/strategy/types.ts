@@ -416,6 +416,8 @@ export interface StrategyPlan {
 	/** O que o pixel mediu (30d móveis) — única seção com licença para
 	 *  "medido". Null sem pixel; a UI se esconde. */
 	behavioral?: import("./sections/BehavioralMeasurement").BehavioralSectionUI | null;
+	/** ONDA 2.2 — spend × measured sessions per ad platform. */
+	adLedger?: import("./sections/AdLedger").AdLedgerUI | null;
 	/** Reta-final: pack distribution for the open findings backing this
 	 *  plan. Used by the narrative to render a small horizontal stacked
 	 *  bar instead of burying "tema dominante: copy 44%" in prose. Empty

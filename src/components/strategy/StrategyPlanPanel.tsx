@@ -15,6 +15,7 @@ import ValuePreview from "./sections/ValuePreview";
 import MemoryRollups from "./sections/MemoryRollups";
 import MonthlyThesis from "./sections/MonthlyThesis";
 import BehavioralMeasurement from "./sections/BehavioralMeasurement";
+import AdLedger from "./sections/AdLedger";
 import AttributionTimeline from "./sections/AttributionTimeline";
 import AnalysisStatsDrawer from "./sections/AnalysisStatsDrawer";
 import EcosystemSection from "./sections/EcosystemSection";
@@ -655,6 +656,11 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 								visible: !!plan.behavioral && plan.behavioral.sources.length > 0,
 							},
 							{
+								id: "ad-ledger",
+								label: isPt ? "Anúncios" : "Ad spend",
+								visible: (plan.adLedger?.rows?.length ?? 0) > 0,
+							},
+							{
 								id: "attribution",
 								label: isPt ? "Recuperações" : "Recovered",
 								// A3 — section self-hides until the first verified
@@ -742,6 +748,12 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				    inferências. Self-hide sem pixel. */}
 				<div data-toc-id="behavioral">
 					<BehavioralMeasurement behavioral={plan.behavioral} />
+				</div>
+
+				{/* ONDA 2.2 — spend × sessões medidas × receita atribuída.
+				    Self-hide sem integração de anúncio. */}
+				<div data-toc-id="ad-ledger">
+					<AdLedger adLedger={plan.adLedger} />
 				</div>
 				{/* #7 — Placar do time. Renderiza logo após o Hero pra
 				    transformar o "Recuperado" agregado em atribuição

@@ -471,8 +471,13 @@ de DISCIPLINA, não de tese.
     conteúdo real; markdown corretamente renderizado nos procedimentos.
 
 ### Onda 2 — Entregar o que só a Vestigio tem (o salto de valor; grande)
-11. **Ledger de anúncio** (§2.1): spend × comportamento × atribuição por
-    origem/campanha. Os dados já chegam todo ciclo.
+11. ✅ **Ledger de anúncio** (§2.1): SHIPPED — seção "Seu dinheiro de
+    anúncio": spend 30d (syncMetadata, agora com attributed_revenue_30d
+    persistido no poll) × sessões/permanência medidas por identidade de
+    origem (meta=facebook/instagram, google=google_ads) × receita
+    atribuída; custo/sessão; nota de honestidade sobre os dois modelos
+    de atribuição; gated por integração com spend>0; coluna
+    adLedgerJson + migration; 7 testes.
 12. ✅ **Funil de e-commerce medido** (§2.3): SHIPPED — computeMeasuredFunnel
     em behavioral-measurement (mesma janela/filtro 30d), 6 degraus
     chegou→pagou por contagem, gate de 100 sessões + sinal de comércio

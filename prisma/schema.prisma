@@ -625,6 +625,10 @@ model MonthlyStrategyPlan {
   // chegou ao plano do cliente — "o plano trocou o que o pixel mediu
   // por aquilo que o crawler infere".
   behavioralJson Json?
+  /// ONDA 2.2 — ad ledger: platform spend (syncMetadata) crossed with
+  /// measured behavioral sessions per source. Null when no ad
+  /// integration is connected.
+  adLedgerJson Json?
   mapsJson               Json?
 
   // ── Generation cost telemetry ──

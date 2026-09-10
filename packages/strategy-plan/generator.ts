@@ -39,6 +39,7 @@ import { generateCompetitorRadar } from "./sections/competitor-radar";
 import { generateImpersonators } from "./sections/impersonators";
 import { generateMapsSection } from "./sections/maps";
 import { generateBehavioralMeasurement } from "./sections/behavioral-measurement";
+import { generateAdLedger } from "./sections/ad-ledger";
 
 /**
  * Wave 22.6 Step 6 — partial regen scope. Each event trigger asks for
@@ -247,6 +248,11 @@ export async function generatePlan(
 		generateBehavioralMeasurement(prisma, ctx),
 	]);
 
+	// ONDA 2.2 — ad ledger crosses platform spend with the measured
+	// sources; depends on `behavioral`, so it runs right after the
+	// deterministic wave.
+	const adLedger = await generateAdLedger(prisma, ctx, behavioral);
+
 	// E1 — monthly thesis tied to narrative regen scope. The thesis is
 	// the one-line frame for the narrative body, so they share the same
 	// "should we regenerate?" decision. Regenerating just the body
@@ -310,6 +316,7 @@ export async function generatePlan(
 		impersonators,
 		maps,
 		behavioral,
+		adLedger,
 		cost: { llmCallsCount, llmCostCents },
 		cycleNumber,
 		regenScope: scope,
@@ -425,6 +432,7 @@ export async function generateAndPersistPlan(
 				impersonatorsJson: output.impersonators as any,
 				mapsJson: output.maps as any,
 				behavioralJson: output.behavioral as any,
+				adLedgerJson: output.adLedger as any,
 				llmCallsCount: { increment: output.cost.llmCallsCount },
 				llmCostCents: { increment: output.cost.llmCostCents },
 			};

@@ -420,6 +420,9 @@ export interface PlanGeneratorOutput {
 	 *  sessões — sem pixel não existe seção, em vez de existir vazia. A
 	 *  única parte do plano autorizada a usar "medido". */
 	behavioral: import("./sections/behavioral-measurement").BehavioralMeasurementOutput | null;
+	/** ONDA 2.2 — platform spend × measured sessions; null without a
+	 *  connected ad integration. */
+	adLedger: import("./sections/ad-ledger").AdLedgerOutput | null;
 	cost: GenerationCost;
 	cycleNumber: number;
 }

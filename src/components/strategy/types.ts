@@ -269,6 +269,9 @@ export interface NextStep {
 	/** EXAME A8 — the path actually pictured by screenshotUrl. The
 	 *  caption must name THIS surface, never affectedSurfaces[0]. */
 	screenshotSurface?: string | null;
+	/** ONDA 3.4 — "o que o pixel confere no próximo plano" com o
+	 *  baseline de hoje. */
+	measuredVerification?: string | null;
 	/** Reta-final: server-resolved Action objects matching linkedActionRefs.
 	 *  Lets the drawer render directly without cross-referencing MCP's
 	 *  current-cycle snapshot (which misses older Action IDs the plan

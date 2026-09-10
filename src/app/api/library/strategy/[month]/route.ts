@@ -897,6 +897,8 @@ export async function GET(request: Request, { params }: RouteParams) {
 				// The path actually pictured — the caption must name THIS,
 				// not affectedSurfaces[0] (EXAME A8).
 				screenshotSurface: matchedSurfaceByStepId.get(s.id) ?? null,
+				// ONDA 3.4 — pixel-checked baseline for this step.
+				measuredVerification: (s as any).measuredVerification ?? null,
 			};
 		}),
 	});

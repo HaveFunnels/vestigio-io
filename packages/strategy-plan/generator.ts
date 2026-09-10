@@ -41,6 +41,7 @@ import { generateMapsSection } from "./sections/maps";
 import { generateBehavioralMeasurement } from "./sections/behavioral-measurement";
 import { generateAdLedger } from "./sections/ad-ledger";
 import { generateWhatChanged } from "./sections/what-changed";
+import { generateMeasuredFriction } from "./sections/measured-friction";
 
 /**
  * Wave 22.6 Step 6 — partial regen scope. Each event trigger asks for
@@ -252,10 +253,15 @@ export async function generatePlan(
 	// ONDA 2.2 — ad ledger crosses platform spend with the measured
 	// sources; depends on `behavioral`, so it runs right after the
 	// deterministic wave.
-	const [adLedger, whatChanged] = await Promise.all([
+	const [adLedger, whatChanged, friction] = await Promise.all([
 		generateAdLedger(prisma, ctx, behavioral),
 		generateWhatChanged(prisma, ctx),
+		generateMeasuredFriction(prisma, ctx),
 	]);
+	// ONDA 3.2 — friction rides inside behavioralJson (same measured
+	// basis, same window), so persistence and the read route carry it
+	// with zero extra columns.
+	if (behavioral) behavioral.friction = friction;
 
 	// E1 — monthly thesis tied to narrative regen scope. The thesis is
 	// the one-line frame for the narrative body, so they share the same
@@ -486,6 +492,7 @@ export async function generateAndPersistPlan(
 							suggestedOwner: s.suggestedOwner,
 							linkedActionRefsJson: s.linkedActionRefs as any,
 							linkedFindingRefsJson: s.linkedFindingRefs as any,
+							measuredVerification: s.measuredVerification ?? null,
 						})),
 					});
 				}

@@ -730,6 +730,7 @@ function buildPrompt(
 	vertical: string | null,
 	locale: string,
 	primary: PrimaryStepContext | null,
+	frictionLines: string[] = [],
 ): { system: string; user: string } {
 	const rules = voiceRulesFor(locale);
 	const angle = angleFor(order, totalSteps);
@@ -811,8 +812,84 @@ Regras:
 	}
 	lines.push(`- Categoria: ${action.category}`);
 	lines.push("");
+	for (const fl of frictionLines) lines.push(fl);
 	lines.push("Escreva o POR QUE PRIMEIRO agora. Sem repetir os códigos do engine, apenas os nomes humanos.");
 	return { system, user: lines.join("\n") };
+}
+
+// ── ONDA 3.2/3.4 — measured friction wiring ────────────────────────
+type FrictionData = import("./measured-friction").MeasuredFrictionOutput;
+type FrictionPage = import("./measured-friction").FrictionPageStats;
+
+function normPathToken(p: string | null): string | null {
+	if (!p) return null;
+	const t = p.trim().split(/[,\s]+/)[0] ?? "";
+	if (!t.startsWith("/")) return null;
+	return t.length > 1 ? t.replace(/\/+$/, "") : "/";
+}
+
+function frictionForSurface(
+	friction: FrictionData | null | undefined,
+	surface: string | null,
+): FrictionPage | null {
+	const path = normPathToken(surface);
+	if (!path || !friction) return null;
+	return friction.pages.find((pg) => pg.path === path) ?? null;
+}
+
+/** Counted-behavior line injected into a step's prompt (ONDA 3.3):
+ *  the recommendation cites the store's own measured behavior instead
+ *  of catalog generalities. */
+function frictionPromptLines(pg: FrictionPage): string[] {
+	const bits: string[] = [];
+	if (pg.deadClicks > 0) bits.push(`${pg.deadClicks} cliques sem resposta (elemento parece clicável e não faz nada)`);
+	if (pg.hesitationsNearCta > 0) bits.push(`${pg.hesitationsNearCta} pausas de hesitação perto do botão de compra`);
+	if (pg.inputAbandons > 0) bits.push(`${pg.inputAbandons} campos de formulário abandonados no meio`);
+	if (pg.formRetries > 0) bits.push(`${pg.formRetries} tentativas repetidas de formulário`);
+	if (pg.backtracks > 0) bits.push(`${pg.backtracks} entradas com volta imediata`);
+	if (bits.length === 0) return [];
+	return [
+		`- COMPORTAMENTO MEDIDO NESTA PÁGINA (pixel, ${pg.sessions.toLocaleString("pt-BR")} sessões da amostra): ${bits.join("; ")}. ${pg.sessionsWithFriction.toLocaleString("pt-BR")} sessões tiveram pelo menos um desses atritos.`,
+		`- OBRIGATÓRIO: cite pelo menos UM desses números medidos no texto, com a palavra "medido"/"medidas". Números medidos são contagem real, os únicos que podem ser chamados assim.`,
+	];
+}
+
+/** ONDA 3.4 — the measured baseline this step will be checked against
+ *  in the next plan. Written at generation time so "melhorou?" has an
+ *  anchored before-number. */
+function buildMeasuredVerification(
+	surface: string | null,
+	friction: FrictionData | null | undefined,
+	behavioral: import("./behavioral-measurement").BehavioralMeasurementOutput | null | undefined,
+): string | null {
+	const pg = frictionForSurface(friction, surface);
+	if (pg) {
+		const worst =
+			pg.deadClicks >= Math.max(pg.hesitationsNearCta, pg.inputAbandons, pg.backtracks, pg.formRetries)
+				? `cliques sem resposta (hoje: ${pg.deadClicks})`
+				: pg.hesitationsNearCta >= Math.max(pg.inputAbandons, pg.backtracks, pg.formRetries)
+					? `hesitações perto do botão de compra (hoje: ${pg.hesitationsNearCta})`
+					: pg.inputAbandons >= Math.max(pg.backtracks, pg.formRetries)
+						? `campos abandonados (hoje: ${pg.inputAbandons})`
+						: pg.formRetries >= pg.backtracks
+							? `tentativas repetidas de formulário (hoje: ${pg.formRetries})`
+							: `voltas imediatas (hoje: ${pg.backtracks})`;
+		return `O pixel confere no próximo plano: ${worst} e a taxa de sessões com atrito em ${pg.path} (hoje: ${pg.frictionRatePct.toLocaleString("pt-BR")}% de ${pg.sessions.toLocaleString("pt-BR")} sessões).`;
+	}
+	// Checkout-family surfaces verify against the measured funnel.
+	const path = normPathToken(surface);
+	const funnel = behavioral?.funnel;
+	if (path && funnel && /checkout|cart|carrinho|pagamento|payment|^\/c$/.test(path)) {
+		const paid = funnel.stages.find((st) => st.key === "paid");
+		const checkout = funnel.stages.find((st) => st.key === "checkout");
+		if (checkout) {
+			const paidTxt = paid
+				? ` e sessões que pagaram (hoje: ${paid.sessions.toLocaleString("pt-BR")})`
+				: "";
+			return `O pixel confere no próximo plano: sessões que chegam ao checkout (hoje: ${checkout.sessions.toLocaleString("pt-BR")})${paidTxt}.`;
+		}
+	}
+	return null;
 }
 
 export async function generateNextSteps(
@@ -892,6 +969,10 @@ export async function generateNextSteps(
 				REMEDIATION_CATALOG[primaryKey] ?? getDynamicRemediation(primaryKey);
 
 			const primary = order === 1 ? null : primaryContextForSupportingSteps;
+			// ONDA 3.3 — the step's page has counted behavior? The prompt
+			// receives it and must cite it: recommendations anchored in
+			// the store's own measured sessions, not catalog generalities.
+			const stepFriction = frictionForSurface(behavioral?.friction, action.surface);
 			const { system, user } = buildPrompt(
 				action,
 				order,
@@ -902,6 +983,7 @@ export async function generateNextSteps(
 				ctx.businessContext?.vertical ?? null,
 				ctx.locale,
 				primary,
+				stepFriction ? frictionPromptLines(stepFriction) : [],
 			);
 			// Wave 22.9 · Bloco 3.3 — verification-with-regen loop.
 			// Fire the initial call; if the output tripped any banned
@@ -1035,6 +1117,13 @@ export async function generateNextSteps(
 				max: Math.round(action.impactMax ?? 0),
 				midpoint: Math.round(action.impactMidpoint ?? 0),
 			},
+			// ONDA 3.4 — the baseline this step is checked against next
+			// plan; null when the page has no applicable measurement.
+			measuredVerification: buildMeasuredVerification(
+				action.surface,
+				behavioral?.friction,
+				behavioral,
+			),
 		};
 	});
 
@@ -1092,6 +1181,92 @@ export async function generateNextSteps(
 			linkedActionRefs: [],
 			linkedFindingRefs: [],
 			combinedImpact: { min: 0, max: 0, midpoint: 0 },
+			measuredVerification: `O pixel confere no próximo plano: permanência mediana do ${label} (hoje: ${alert.medianDurationS}s) e % que sai sem rolar (hoje: ${alert.pctNoScroll}%).`,
+		});
+	}
+
+	// ONDA 3.2 — the top measured-friction page becomes a step of its
+	// own when no existing step already covers it. Deterministic (no
+	// LLM): the counted numbers ARE the argument. One per plan — the
+	// friction block in the measured section carries the rest.
+	const coveredPaths = new Set(
+		steps
+			.map((st) => normPathToken((st as { screenshotSurface?: string | null }).screenshotSurface ?? null))
+			.filter(Boolean),
+	);
+	for (const a of actions) {
+		const t = normPathToken(a.surface);
+		if (t) coveredPaths.add(t);
+	}
+	const topFriction = (behavioral?.friction?.pages ?? []).find(
+		(pg) => !coveredPaths.has(pg.path),
+	);
+	if (topFriction) {
+		const pg = topFriction;
+		const dominant =
+			pg.deadClicks >= Math.max(pg.hesitationsNearCta, pg.inputAbandons, pg.backtracks, pg.formRetries)
+				? "dead_click"
+				: pg.hesitationsNearCta >= Math.max(pg.inputAbandons, pg.backtracks, pg.formRetries)
+					? "hesitation"
+					: pg.inputAbandons >= Math.max(pg.backtracks, pg.formRetries)
+						? "input_abandon"
+						: pg.formRetries >= pg.backtracks
+							? "form_retry"
+							: "backtrack";
+		const titles: Record<string, string> = {
+			dead_click: `Elementos que parecem clicáveis não respondem em ${pg.path}`,
+			hesitation: `Compradores hesitam na hora de decidir em ${pg.path}`,
+			input_abandon: `Campos de formulário travam compradores em ${pg.path}`,
+			form_retry: `O formulário de ${pg.path} faz o comprador tentar de novo`,
+			backtrack: `Compradores entram e voltam rápido de ${pg.path}`,
+		};
+		const procedures: Record<string, string[]> = {
+			dead_click: [
+				`Abra ${pg.path} no celular e clique no que parece botão/imagem clicável; identifique os que não fazem nada.`,
+				"Torne cada elemento clicável funcional ou remova a aparência de clicável (cursor, sombra, cor).",
+				"O pixel mede de novo: os cliques sem resposta devem cair no próximo plano.",
+			],
+			hesitation: [
+				`Veja o que está ao lado do botão de compra em ${pg.path}: preço sem contexto, frete oculto, garantia invisível.`,
+				"Coloque a resposta da principal dúvida (frete/garantia/troca) a um palmo do botão.",
+				"O pixel mede de novo: as pausas perto do botão devem cair no próximo plano.",
+			],
+			input_abandon: [
+				`Reduza os campos de ${pg.path} ao mínimo e teste o teclado móvel de cada um (numérico p/ CEP/telefone).`,
+				"Valide em tempo real com mensagem clara, nunca só no envio.",
+				"O pixel mede de novo: os abandonos de campo devem cair no próximo plano.",
+			],
+			form_retry: [
+				`Envie o formulário de ${pg.path} com erros propositais e veja se a mensagem diz O QUE corrigir.`,
+				"Preserve o que o comprador já digitou após um erro.",
+				"O pixel mede de novo: as tentativas repetidas devem cair no próximo plano.",
+			],
+			backtrack: [
+				`Compare o que o anúncio/link promete com o que ${pg.path} mostra na primeira tela.`,
+				"Alinhe título, imagem e preço da primeira tela com a expectativa de quem chega.",
+				"O pixel mede de novo: as voltas imediatas devem cair no próximo plano.",
+			],
+		};
+		steps.push({
+			order: steps.length + 1,
+			title: titles[dominant],
+			reasoning:
+				`Medido pelo pixel em ${pg.sessions.toLocaleString("pt-BR")} sessões da amostra que passaram por ${pg.path}: ` +
+				`${pg.deadClicks > 0 ? `${pg.deadClicks} cliques sem resposta; ` : ""}` +
+				`${pg.hesitationsNearCta > 0 ? `${pg.hesitationsNearCta} hesitações perto do botão de compra; ` : ""}` +
+				`${pg.inputAbandons > 0 ? `${pg.inputAbandons} campos abandonados; ` : ""}` +
+				`${pg.formRetries > 0 ? `${pg.formRetries} tentativas repetidas de formulário; ` : ""}` +
+				`${pg.backtracks > 0 ? `${pg.backtracks} voltas imediatas; ` : ""}` +
+				`no total, ${pg.sessionsWithFriction.toLocaleString("pt-BR")} sessões (${pg.frictionRatePct.toLocaleString("pt-BR")}%) tiveram atrito nesta página. ` +
+				`Nenhum destes números é estimativa: é contagem direta do comportamento dos seus visitantes. A página não está no radar dos outros passos, e o atrito medido justifica olhar agora.`,
+			procedureSteps: procedures[dominant],
+			researchRefs: [],
+			estimatedEffort: "2-3 horas",
+			suggestedOwner: dominant === "hesitation" || dominant === "backtrack" ? "Marketing" : "Desenvolvedor",
+			linkedActionRefs: [],
+			linkedFindingRefs: [],
+			combinedImpact: { min: 0, max: 0, midpoint: 0 },
+			measuredVerification: buildMeasuredVerification(pg.path, behavioral?.friction, behavioral),
 		});
 	}
 

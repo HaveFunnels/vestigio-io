@@ -113,6 +113,8 @@ export interface BehavioralMeasurementOutput {
 	/** Present only when the window carries enough commerce signal —
 	 *  see computeMeasuredFunnel's gate. */
 	funnel?: MeasuredFunnelOutput | null;
+	/** ONDA 3.2 — counted friction per page from the stored timelines. */
+	friction?: import("./measured-friction").MeasuredFrictionOutput | null;
 }
 
 interface AggRow {

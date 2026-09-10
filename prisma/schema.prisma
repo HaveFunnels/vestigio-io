@@ -691,6 +691,9 @@ model PlanNextStep {
   /// string[] — 3-5 concrete procedure steps.
   procedureStepsJson   Json
   /// {title, url?}[] — external research references.
+  /// ONDA 3.4 — "o que o pixel confere no próximo plano", com o
+  /// baseline medido de hoje gravado no momento da geração.
+  measuredVerification String?
   researchRefsJson     Json
   /// Qualitative ("1-2 dias dev", "15min", "afternoon").
   estimatedEffort      String

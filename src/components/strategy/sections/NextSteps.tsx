@@ -688,6 +688,23 @@ function StepCard({
 					</div>
 				)}
 
+				{/* ONDA 3.4 — a promessa de verificação MEDIDA: o baseline de
+				    hoje gravado, e o próximo plano confere se o ponteiro
+				    mexeu. É o loop que faz o cliente voltar. */}
+				{step.measuredVerification && (
+					<div className="mb-5">
+						<div className="mb-2 flex items-center gap-2">
+							<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+								O que o pixel confere no próximo plano
+							</div>
+							<BasisChip basis="measured" />
+						</div>
+						<div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] px-4 py-3 text-[13.5px] leading-[1.55] text-content-secondary">
+							{step.measuredVerification}
+						</div>
+					</div>
+				)}
+
 				{/* Research refs */}
 				{/* EXAME E7 — o bloco "Pesquisar" (researchRefs) foi removido:
 				    o gerador nunca emitiu uma referência (next-steps.ts grava []

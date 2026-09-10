@@ -154,6 +154,10 @@ export interface NextStepOutput {
 	 */
 	linkedFindingRefs: string[];
 	combinedImpact: { min: number; max: number; midpoint: number };
+	/** ONDA 3.4 — "o que o pixel confere no próximo plano", com o
+	 *  baseline de hoje gravado. Null quando a página do passo não tem
+	 *  medição aplicável. */
+	measuredVerification?: string | null;
 }
 
 export interface GenerationCost {

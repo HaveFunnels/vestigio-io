@@ -51,32 +51,45 @@ export async function generateValuePreview(
 		hasCrossSourceSignal = false;
 	}
 
-	// Standard marker payload — these don't depend on env state, just
-	// on standard product onboarding.
+	// Marker payload. HONESTY RULE (docs/EXAME_DO_PLANO.md P20): a
+	// milestone may only name a capability that ships TODAY. No invented
+	// stats ("~40% mais específicas"), no phantom services ("benchmark vs
+	// categoria" had no implementation), no vendor guesses ("Stripe" told
+	// to a PIX store), no engine-speak ("memory rollups") — the customer
+	// checks these promises against reality, and one broken promise
+	// poisons every real number in the plan.
+	const isEcommerce = (ctx.businessContext?.vertical ?? "").toLowerCase().includes("commerce");
+	const adsLabel = isEcommerce
+		? "dados de anúncio (Meta/Google) refinam as estimativas"
+		: "dados de pagamento e anúncio refinam as estimativas";
 	return {
 		currentMonth: {
 			label: "Hoje · M1",
-			unlocked: ["surfaces visíveis", "findings públicos", "memory rollups"],
+			unlocked: [
+				"análise contínua do site",
+				"comportamento real medido pelo pixel",
+				"plano mensal com prioridades",
+			],
 			icon: "check",
 		},
 		milestoneM3: {
 			label: "M3",
 			eta: monthsUntil(envAgeMonths, 3),
 			unlocked: hasCrossSourceSignal
-				? ["Stripe + behavioral já no engine"]
-				: ["Stripe + behavioral entram no engine", "findings ~40% mais específicas"],
-			icon: envAgeMonths >= 3 || hasCrossSourceSignal ? "check" : "pending",
+				? [adsLabel, "comparação real mês a mês"]
+				: ["comparação real mês a mês", `conectando anúncios: ${adsLabel}`],
+			icon: envAgeMonths >= 3 ? "check" : "pending",
 		},
 		milestoneM6: {
 			label: "M6",
 			eta: monthsUntil(envAgeMonths, 6),
-			unlocked: ["benchmark vs categoria", "padrões cross-customer começam"],
+			unlocked: ["tendência por página ao longo de 6 meses", "o que voltou a quebrar vs o que ficou resolvido"],
 			icon: envAgeMonths >= 6 ? "check" : envAgeMonths >= 3 ? "pending" : "future",
 		},
 		milestoneM12: {
 			label: "M12",
 			eta: monthsUntil(envAgeMonths, 12),
-			unlocked: ["recommender com histórico completo", "predição de regressões"],
+			unlocked: ["um ano de histórico: comparação ano a ano", "sazonalidade real do seu funil"],
 			icon: envAgeMonths >= 12 ? "check" : envAgeMonths >= 9 ? "pending" : "future",
 		},
 	};

@@ -15,7 +15,6 @@ import { callForText, type LlmTextResult } from "../llm-helpers";
 interface PreviewInputs {
 	envDomain: string;
 	envAgeMonths: number;
-	cycleCount: number;
 	hasCrossSourceSignal: boolean;
 	nextMilestoneMonths: number | null;
 	nextMilestoneLabel: string | null;
@@ -30,9 +29,6 @@ async function gatherInputs(
 		where: { environmentId: ctx.environmentId },
 		orderBy: { createdAt: "asc" },
 		select: { createdAt: true },
-	});
-	const cycleCount = await prisma.auditCycle.count({
-		where: { environmentId: ctx.environmentId, status: "complete" },
 	});
 	const envAgeMonths = first
 		? Math.max(
@@ -72,7 +68,6 @@ async function gatherInputs(
 	return {
 		envDomain: ctx.envDomain,
 		envAgeMonths: Math.round(envAgeMonths),
-		cycleCount,
 		hasCrossSourceSignal,
 		nextMilestoneMonths,
 		nextMilestoneLabel,
@@ -92,15 +87,18 @@ function fallback(i: PreviewInputs): string {
 				: i.nextMilestoneMonths === 1
 					? "em 1 mês"
 					: `em ${i.nextMilestoneMonths} meses`;
+		// HONESTY RULE (EXAME P20): only unlocks that ship today. No
+		// "benchmark vs categoria" (no service), no Stripe named to a
+		// PIX store, no recommender.
 		const unlock =
 			i.nextMilestoneLabel === "M3"
-				? "Vestigio começa a correlacionar findings com receita real (via Stripe e behavioral). Análise sai do plano e vira atribuição direta"
+				? "a comparação mês a mês fica real: o plano mostra o que melhorou e o que voltou a quebrar desde o anterior"
 				: i.nextMilestoneLabel === "M6"
-					? "comparativo vs. categoria liga: você vê onde está acima e abaixo dos seus pares"
-					: "histórico suficiente pro Vestigio prever regressões antes delas afetarem receita. Manutenção vira preventiva, não reativa";
+					? "seis meses de histórico mostram a tendência de cada página do seu funil, não só a foto do mês"
+					: "um ano de histórico abre a comparação ano a ano e a sazonalidade real do seu funil";
 		return `Você está há **${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}** com Vestigio. Próximo marco: **${i.nextMilestoneLabel}** ${monthsTxt}. A partir daí, ${unlock}.`;
 	}
-	return `Você completou **${i.cycleCount} ciclos** com Vestigio. Histórico suficiente pra prever regressões antes delas afetarem receita.`;
+	return `Você está há **${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}** com Vestigio, com histórico completo: comparação ano a ano e sazonalidade real do seu funil.`;
 }
 
 function buildPrompt(i: PreviewInputs): { system: string; user: string } {
@@ -117,19 +115,21 @@ Regras:
 	const lines: string[] = [];
 	lines.push(`Dados do ambiente ${i.envDomain}:`);
 	lines.push(`- Tempo com Vestigio: ${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}`);
-	lines.push(`- Ciclos completos: ${i.cycleCount}`);
-	lines.push(`- Stripe/Meta/behavioral conectado: ${i.hasCrossSourceSignal ? "sim" : "não"}`);
+	// Deliberately NOT passing cycleCount: cycles run many times a day,
+	// so the raw count ("2121 ciclos") reads as a vanity number and the
+	// model was quoting it as if it backed capability claims (EXAME P20).
+	lines.push(`- Integração de dados conectada: ${i.hasCrossSourceSignal ? "sim" : "não"}`);
 	if (i.nextMilestoneLabel) {
 		lines.push(
 			`- Próximo marco: ${i.nextMilestoneLabel} em ${i.nextMilestoneMonths ?? 0} meses`,
 		);
-		lines.push(`- Desbloqueio concreto a citar:`);
+		lines.push(`- Desbloqueio concreto a citar (NÃO invente outros):`);
 		if (i.nextMilestoneLabel === "M3") {
-			lines.push(`  · Atribuição de receita real via Stripe + behavioral (sai de "estimativa de plano" pra "captura medida")`);
+			lines.push(`  · Comparação real mês a mês: o plano passa a mostrar o que melhorou e o que voltou a quebrar desde o anterior`);
 		} else if (i.nextMilestoneLabel === "M6") {
-			lines.push(`  · Comparativo vs. categoria. Buyer vê onde está acima/abaixo dos pares`);
+			lines.push(`  · Tendência de 6 meses por página do funil, não só a foto do mês`);
 		} else {
-			lines.push(`  · Predição de regressões antes de afetarem receita. Manutenção preventiva, não reativa`);
+			lines.push(`  · Comparação ano a ano e sazonalidade real do funil`);
 		}
 	}
 	lines.push("");

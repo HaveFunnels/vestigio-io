@@ -517,7 +517,7 @@ que a dona de uma loja de enxoval não usaria.**
 | P17 | "Sessões estão sendo roubadas" como fato | idem + voice rules ausentes no claim |
 | P18 | Política de troca → "Desenvolvedor 4-5h" | suggestedOwner do catálogo |
 | P19 | Soma dos passos > headline capado | next-steps.ts:992-996 |
-| P20 | Stripe/40%/2121 ciclos/benchmark-fantasma | value-preview*.ts; memory-rollups.ts:146 |
+| P20 ✅ | Stripe/40%/2121 ciclos/benchmark-fantasma | CORRIGIDO: marcos só prometem o que existe (vertical-aware, sem Stripe p/ e-commerce); narrativa sem cycleCount; benchmarkAvailability não é mais emitido |
 | A1 | Hero = parede de zeros + sparklines 0 | hero-metrics p/ conta nova |
 | A2 | facebook/tiktok minúsculo sem ícone; 2 humanizadores | behavioral-measurement.ts:86 vs journey-replays.ts:364 |
 | A3 | "Seu time ainda não recuperou nada" | AttributionTimeline empty state |

@@ -140,11 +140,11 @@ async function buildWindow(
 		...(biggestWin ? { biggestWin } : {}),
 	};
 
-	// 12-month window only: stub the benchmark placeholder. Wave 30+
-	// will rewrite this to actually consult a benchmarks service.
-	if (monthsBack === 12) {
-		out.benchmarkAvailability = "available_in_4_months";
-	}
+	// benchmarkAvailability deliberately NOT emitted: it was a literal
+	// stub string ("available_in_4_months") promising a category
+	// benchmark that has no implementation (EXAME P20). The plan must
+	// not date-stamp a promise the product can't keep; when the
+	// Vestigio Index ships, this is where it plugs back in.
 
 	return out;
 }

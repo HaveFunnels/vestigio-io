@@ -49,6 +49,9 @@ export interface MeasuredFunnelStageUI {
 
 export interface MeasuredFunnelUI {
 	basis: "pixel_measured";
+	instrumentedSince?: string | null;
+	sessionsConsidered?: number;
+	note?: string | null;
 	stages: MeasuredFunnelStageUI[];
 	biggestDrop: {
 		fromLabel: string;
@@ -74,6 +77,12 @@ export interface BehavioralSectionUI {
 
 interface Props {
 	behavioral: BehavioralSectionUI | null | undefined;
+}
+
+function fmtPct(n: number): string {
+	// 0.1 → "0,1%", 99.7 → "99,7%", 12 → "12%". Nunca 0% para algo que
+	// aconteceu, nunca 100% para algo que não foi total.
+	return `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 }
 
 function fmtDuration(s: number): string {
@@ -135,11 +144,16 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 									</div>
 									<div className="w-32 shrink-0 text-right font-mono text-[11.5px] tabular-nums text-content">
 										{st.sessions.toLocaleString("pt-BR")}
-										<span className="text-content-faint"> · {st.pctOfArrived}%</span>
+										<span className="text-content-faint"> · {fmtPct(st.pctOfArrived)}</span>
 									</div>
 								</div>
 							))}
 						</div>
+						{behavioral.funnel.note && (
+							<p className="mt-2 text-[11px] leading-relaxed text-content-faint">
+								{behavioral.funnel.note}
+							</p>
+						)}
 						{behavioral.funnel.biggestDrop && (
 							<div className="mt-3 rounded-lg border border-rose-500/20 bg-rose-500/[0.05] px-3 py-2 text-[12px] leading-relaxed text-content-secondary">
 								Maior perda de gente:{" "}
@@ -150,7 +164,7 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 								<span className="font-mono tabular-nums text-rose-300">
 									{behavioral.funnel.biggestDrop.lostSessions.toLocaleString("pt-BR")} sessões
 								</span>{" "}
-								({behavioral.funnel.biggestDrop.dropPct}%) não seguem adiante.
+								({fmtPct(behavioral.funnel.biggestDrop.dropPct)}) não seguem adiante.
 							</div>
 						)}
 					</div>

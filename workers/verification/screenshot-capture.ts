@@ -25,6 +25,7 @@ const MAX_SURFACES = 8; // was 5 — room for finding-cited pages (EXAME A8)
 const VIEWPORT = { width: 1280, height: 800 };
 const NAV_TIMEOUT_MS = 15_000;
 const PAINT_SETTLE_MS = 1_200;
+const MAX_CAPTURE_HEIGHT = 6_000; // px — cap for endless-scroll pages
 
 export function hashUrl(url: string): string {
 	return createHash("sha1").update(url).digest("hex").slice(0, 16);
@@ -39,8 +40,28 @@ export async function captureViewport(url: string): Promise<Buffer | null> {
 			const page = await context.newPage();
 			try {
 				await page.goto(url, { waitUntil: "domcontentloaded", timeout: NAV_TIMEOUT_MS });
-				await page.waitForTimeout(PAINT_SETTLE_MS); // let above-the-fold paint settle
-				const buf = await page.screenshot({ type: "jpeg", quality: 70, fullPage: false });
+				await page.waitForTimeout(PAINT_SETTLE_MS); // let paint settle
+				// FULL PAGE, capped (validação Casa Montelle): the old
+				// above-the-fold-only shot turned EVERY Shopify page into
+				// its hero banner — a finding about the guarantee hidden at
+				// the decision point showed a promo banner and proved
+				// nothing. Full page (height-capped so a 15.000px endless
+				// scroll doesn't produce megabyte figures) lets the plan
+				// actually point at below-the-fold evidence; the UI shows
+				// a top crop expandable to the whole page.
+				const scrollHeight = await page
+					.evaluate(() => document.body?.scrollHeight ?? 0)
+					.catch(() => 0);
+				const captureHeight = Math.min(
+					Math.max(scrollHeight, VIEWPORT.height),
+					MAX_CAPTURE_HEIGHT,
+				);
+				const buf = await page.screenshot({
+					type: "jpeg",
+					quality: 65,
+					clip: { x: 0, y: 0, width: VIEWPORT.width, height: captureHeight },
+					fullPage: true,
+				});
 				return Buffer.from(buf);
 			} finally {
 				await page.close().catch(() => {});

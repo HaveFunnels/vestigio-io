@@ -457,6 +457,7 @@ function FindingCard({
 	// open, purge race) must hide the whole figure, never render the
 	// browser's broken-image glyph inside a styled frame with a caption.
 	const [screenshotFailed, setScreenshotFailed] = useState(false);
+	const [screenshotExpanded, setScreenshotExpanded] = useState(false);
 	// Peer contrast — "X% of BR e-commerces do this. You don't." Only
 	// resolves for whitelisted inference keys with a matching Vestigio
 	// Index cohort (see packages/signals/peer-line.ts).
@@ -588,20 +589,30 @@ function FindingCard({
 									    Hidden entirely if the capture fails to load. */}
 									{screenshotMatch && !screenshotFailed && (
 										<figure className="-mt-1 overflow-hidden rounded-xl border border-edge bg-surface-inset">
-											{/* eslint-disable-next-line @next/next/no-img-element */}
-											<img
-												src={screenshotMatch.url}
-												alt={
-													finding.surface
-														? `Captura de ${humanizeSurfaceLabel(finding.surface)}`
-														: "Captura da página"
-												}
-												loading="lazy"
-												onError={() => setScreenshotFailed(true)}
-												className="block max-h-[220px] w-full object-cover object-top"
-											/>
-											<figcaption className="border-t border-edge px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-												{`Sua página${finding.surface ? ` · ${humanizeSurfaceLabel(finding.surface)}` : ""}`}
+											<button
+												type="button"
+												onClick={() => setScreenshotExpanded((v) => !v)}
+												className="block w-full cursor-zoom-in text-left"
+												aria-expanded={screenshotExpanded}
+											>
+												{/* eslint-disable-next-line @next/next/no-img-element */}
+												<img
+													src={screenshotMatch.url}
+													alt={
+														finding.surface
+															? `Captura de ${humanizeSurfaceLabel(finding.surface)}`
+															: "Captura da página"
+													}
+													loading="lazy"
+													onError={() => setScreenshotFailed(true)}
+													className={`block w-full object-cover object-top ${screenshotExpanded ? "max-h-none" : "max-h-[220px]"}`}
+												/>
+											</button>
+											<figcaption className="flex items-baseline justify-between gap-3 border-t border-edge px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+												<span>{`Sua página${finding.surface ? ` · ${humanizeSurfaceLabel(finding.surface)}` : ""}`}</span>
+												<span className="normal-case tracking-normal" data-vsgp-print-hide>
+													{screenshotExpanded ? "recolher" : "ver a página inteira"}
+												</span>
 											</figcaption>
 										</figure>
 									)}

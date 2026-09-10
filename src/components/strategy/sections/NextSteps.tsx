@@ -297,6 +297,10 @@ function StepCard({
 	// EXAME A9 — expired/broken presigned URL hides the whole figure
 	// instead of rendering the browser's broken-image glyph in a frame.
 	const [screenshotFailed, setScreenshotFailed] = useState(false);
+	// Captures are now FULL PAGE (height-capped); collapsed shows the
+	// top crop, click expands to the whole page so below-the-fold
+	// evidence is actually visible (validação Casa Montelle: só banner).
+	const [screenshotExpanded, setScreenshotExpanded] = useState(false);
 	const [title, setTitle] = useState<string>(step.title);
 	const [dueAt, setDueAt] = useState<Date | null>(step.dueAt);
 	const [editingTitle, setEditingTitle] = useState(false);
@@ -579,16 +583,26 @@ function StepCard({
 				    "SUA PÁGINA · /SITEMAP_PRODUCTS_1.XML" (EXAME A8). */}
 				{step.screenshotUrl && !screenshotFailed && (
 					<figure className="mb-5 overflow-hidden rounded-xl border border-edge bg-surface-inset">
-						{/* eslint-disable-next-line @next/next/no-img-element */}
-						<img
-							src={step.screenshotUrl}
-							alt={`Captura de ${step.screenshotSurface ?? "sua página"}`}
-							loading="lazy"
-							onError={() => setScreenshotFailed(true)}
-							className="block max-h-[260px] w-full object-cover object-top"
-						/>
-						<figcaption className="border-t border-edge px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-							Sua página{step.screenshotSurface ? ` · ${step.screenshotSurface}` : ""}
+						<button
+							type="button"
+							onClick={() => setScreenshotExpanded((v) => !v)}
+							className="block w-full cursor-zoom-in text-left"
+							aria-expanded={screenshotExpanded}
+						>
+							{/* eslint-disable-next-line @next/next/no-img-element */}
+							<img
+								src={step.screenshotUrl}
+								alt={`Captura de ${step.screenshotSurface ?? "sua página"}`}
+								loading="lazy"
+								onError={() => setScreenshotFailed(true)}
+								className={`block w-full object-cover object-top ${screenshotExpanded ? "max-h-none" : "max-h-[260px]"}`}
+							/>
+						</button>
+						<figcaption className="flex items-baseline justify-between gap-3 border-t border-edge px-3 py-1.5 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+							<span>Sua página{step.screenshotSurface ? ` · ${step.screenshotSurface}` : ""}</span>
+							<span className="normal-case tracking-normal" data-vsgp-print-hide>
+								{screenshotExpanded ? "recolher" : "ver a página inteira"}
+							</span>
 						</figcaption>
 					</figure>
 				)}

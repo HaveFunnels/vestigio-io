@@ -70,14 +70,24 @@ export interface MeasuredFunnelStage {
 	key: "arrived" | "product" | "cart" | "checkout" | "payment" | "paid";
 	label: string;
 	sessions: number;
-	/** % of ARRIVED sessions that reached this stage (monotonic read). */
+	/** % of ARRIVED sessions that reached this stage (one decimal —
+	 *  0.1% must never display as 0%). */
 	pctOfArrived: number;
-	/** % drop from the previous stage; null on the first stage. */
+	/** % drop from the previous stage (one decimal — 99.7% must never
+	 *  display as 100%); null on the first stage. */
 	dropPctFromPrev: number | null;
 }
 
 export interface MeasuredFunnelOutput {
 	basis: "pixel_measured";
+	/** When the checkout became instrumented inside the window — the
+	 *  funnel is computed from here so every stage shares ONE window.
+	 *  Null when the whole window is covered. */
+	instrumentedSince: string | null;
+	/** Sessions the funnel was computed over (post window-alignment). */
+	sessionsConsidered: number;
+	/** Locale-aware caveat for direct rendering; null when none. */
+	note: string | null;
 	stages: MeasuredFunnelStage[];
 	/** The single worst stage transition — where the most sessions die. */
 	biggestDrop: {
@@ -108,6 +118,7 @@ export interface BehavioralMeasurementOutput {
 interface AggRow {
 	aggregate: string;
 	eventCount: number;
+	startedAt: Date;
 }
 
 function median(values: number[]): number {
@@ -135,7 +146,7 @@ export async function generateBehavioralMeasurement(
 			envId: ctx.environmentId,
 			startedAt: { gte: windowStart, lt: windowEnd },
 		},
-		select: { aggregate: true, eventCount: true },
+		select: { aggregate: true, eventCount: true, startedAt: true },
 	});
 
 	// No pixel, or pixel just installed: the section simply does not
@@ -179,6 +190,7 @@ export async function generateBehavioralMeasurement(
 				noScroll: (agg.max_scroll_depth ?? 0) === 0,
 				formStarted: agg.form_started === true,
 				funnel: {
+					startedAt: row.startedAt,
 					surfaces: agg.surface_progression ?? [],
 					highestMilestone: agg.highest_milestone ?? null,
 					checkoutReached: agg.checkout_reached === true,
@@ -265,6 +277,9 @@ export interface FunnelSession {
 	shippingStepReached: boolean;
 	paymentStepReached: boolean;
 	confirmationSeen: boolean;
+	/** Session start — used to align every stage to the same
+	 *  instrumentation window (see computeMeasuredFunnel). */
+	startedAt: Date;
 }
 
 const MILESTONE_ORDER = [
@@ -299,11 +314,60 @@ const MIN_SESSIONS_FOR_FUNNEL = 100;
  * signal or the merchant's confirm() — never inferred from a heading.
  */
 export function computeMeasuredFunnel(
-	sessions: FunnelSession[],
+	allSessions: FunnelSession[],
 	locale: string,
 ): MeasuredFunnelOutput | null {
+	if (allSessions.length < MIN_SESSIONS_FOR_FUNNEL) return null;
+	const pt0 = locale === "pt-BR";
+
+	// ── INSTRUMENTATION-WINDOW ALIGNMENT (validação Casa Montelle) ──
+	// The paid stage only exists where the checkout pixel exists. The
+	// first generation computed 30 days of "chegou/viu produto" against
+	// ~1 day of "pagou" (checkout instrumented the day before) and
+	// presented 22.226 → 23 as if it were one funnel — objectively
+	// wrong for a store selling daily. Every stage must share ONE
+	// window: from the first session that carries checkout-domain
+	// surfaces (/c/…) or a payment/confirmation signal. Without any
+	// such signal the payment/paid stages are OMITTED — an absent
+	// instrument is never displayed as zero purchases.
+	const CHECKOUT_SURFACE = /^\/c(\/|$)|^\/checkouts?(\/|$)/i;
+	const checkoutCapable = allSessions.filter(
+		(s) =>
+			s.confirmationSeen ||
+			s.paymentStepReached ||
+			s.surfaces.some((p) => CHECKOUT_SURFACE.test(p)),
+	);
+	let sessions = allSessions;
+	let instrumentedSince: string | null = null;
+	let note: string | null = null;
+	const hasPaidInstrument = checkoutCapable.length > 0;
+	if (hasPaidInstrument) {
+		const first = checkoutCapable.reduce(
+			(min, s) => (s.startedAt < min ? s.startedAt : min),
+			checkoutCapable[0].startedAt,
+		);
+		const windowSpan =
+			Math.max(...allSessions.map((s) => s.startedAt.getTime())) -
+			Math.min(...allSessions.map((s) => s.startedAt.getTime()));
+		const coveredSpan =
+			Math.max(...allSessions.map((s) => s.startedAt.getTime())) - first.getTime();
+		// Only realign when the checkout instrument covers meaningfully
+		// less than the window (>20% missing) — otherwise the full
+		// window is honest as-is.
+		if (windowSpan > 0 && coveredSpan / windowSpan < 0.8) {
+			sessions = allSessions.filter((s) => s.startedAt >= first);
+			instrumentedSince = first.toISOString().slice(0, 10);
+			note = pt0
+				? `Funil computado desde ${instrumentedSince}, quando a medição do checkout começou — todos os degraus na mesma janela.`
+				: `Funnel computed since ${instrumentedSince}, when checkout measurement began — every stage over the same window.`;
+		}
+	} else {
+		note = pt0
+			? "Pagamento e compra ainda não são medidos (pixel não instalado no checkout) — os degraus vão até o checkout."
+			: "Payment and purchase are not yet measured (pixel not installed on the checkout) — stages go up to checkout.";
+	}
 	const arrived = sessions.length;
-	if (arrived < MIN_SESSIONS_FOR_FUNNEL) return null;
+	if (arrived === 0) return null;
 
 	// FUNNEL SEMANTICS (validação Casa Montelle): each stage counts
 	// sessions that reached AT LEAST that far — the session's FURTHEST
@@ -337,14 +401,22 @@ export function computeMeasuredFunnel(
 	if (cart === 0 && checkout === 0) return null;
 
 	const pt = locale === "pt-BR";
+	// One-decimal percentages: 23/22226 must read 0,1%, never 0%; and a
+	// 99,7% drop must never round to "100%" (which reads as "nobody").
+	const pct1 = (num: number, den: number): number =>
+		den > 0 ? Math.round((1000 * num) / den) / 10 : 0;
 	const defs: Array<{ key: MeasuredFunnelStage["key"]; label: string; sessions: number }> = [
 		{ key: "arrived", label: pt ? "Chegou no site" : "Arrived", sessions: arrived },
 		{ key: "product", label: pt ? "Viu produto" : "Viewed a product", sessions: product },
 		{ key: "cart", label: pt ? "Carrinho" : "Cart", sessions: cart },
 		{ key: "checkout", label: pt ? "Checkout" : "Checkout", sessions: checkout },
-		{ key: "payment", label: pt ? "Pagamento" : "Payment", sessions: payment },
-		{ key: "paid", label: pt ? "Pagou" : "Paid", sessions: paid },
 	];
+	if (hasPaidInstrument) {
+		defs.push(
+			{ key: "payment", label: pt ? "Pagamento" : "Payment", sessions: payment },
+			{ key: "paid", label: pt ? "Pagou" : "Paid", sessions: paid },
+		);
+	}
 
 	const stages: MeasuredFunnelStage[] = defs.map((d, i) => {
 		const prev = i > 0 ? defs[i - 1].sessions : null;
@@ -352,11 +424,9 @@ export function computeMeasuredFunnel(
 			key: d.key,
 			label: d.label,
 			sessions: d.sessions,
-			pctOfArrived: arrived > 0 ? Math.round((100 * d.sessions) / arrived) : 0,
+			pctOfArrived: pct1(d.sessions, arrived),
 			dropPctFromPrev:
-				prev !== null && prev > 0
-					? Math.max(0, Math.round((100 * (prev - d.sessions)) / prev))
-					: null,
+				prev !== null && prev > 0 ? Math.max(0, pct1(prev - d.sessions, prev)) : null,
 		};
 	});
 
@@ -374,10 +444,17 @@ export function computeMeasuredFunnel(
 				fromLabel: prev.label,
 				toLabel: defs[i].label,
 				lostSessions: lost,
-				dropPct: Math.round((100 * lost) / prev.sessions),
+				dropPct: Math.round((1000 * lost) / prev.sessions) / 10,
 			};
 		}
 	}
 
-	return { basis: "pixel_measured", stages, biggestDrop: biggest };
+	return {
+		basis: "pixel_measured",
+		instrumentedSince,
+		sessionsConsidered: arrived,
+		note,
+		stages,
+		biggestDrop: biggest,
+	};
 }

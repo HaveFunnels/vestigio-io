@@ -9,6 +9,7 @@ import {
 
 function session(over: Partial<FunnelSession>): FunnelSession {
 	return {
+		startedAt: new Date("2026-09-05T12:00:00Z"),
 		surfaces: ["/"],
 		highestMilestone: "awareness_seen",
 		checkoutReached: false,
@@ -133,5 +134,73 @@ describe("funnel monotonicity on cart-skipping flows (Casa Montelle validation)"
 		expect(byKey.cart).toBe(200); // checkout+paid sessions passed the decision stage
 		expect(byKey.checkout).toBe(200);
 		expect(byKey.paid).toBe(20);
+	});
+});
+
+describe("instrumentation-window alignment (Casa Montelle: 30d de chegadas vs 1d de checkout)", () => {
+	const d = (day: number) => new Date(Date.UTC(2026, 8, day, 12));
+
+	it("realigns every stage to the window where the checkout is instrumented", () => {
+		const sessions = [
+			// 29 days of storefront-only traffic (no checkout instrument)
+			...Array.from({ length: 800 }, (_, i) =>
+				session({ startedAt: d(1 + (i % 28)), surfaces: ["/", "/products/x"] }),
+			),
+			// last day: checkout instrumented — /c/ surfaces + confirms
+			...Array.from({ length: 150 }, () =>
+				session({ startedAt: d(29), surfaces: ["/", "/products/x", "/c/ABC"], checkoutReached: true }),
+			),
+			...Array.from({ length: 20 }, () =>
+				session({
+					startedAt: d(29),
+					surfaces: ["/", "/products/x", "/c/ABC"],
+					checkoutReached: true,
+					confirmationSeen: true,
+				}),
+			),
+			...Array.from({ length: 200 }, () =>
+				session({ startedAt: d(29), surfaces: ["/", "/products/x"] }),
+			),
+		];
+		const f = computeMeasuredFunnel(sessions, "pt-BR")!;
+		// Aligned window = day 29 only: 370 sessions, not 1170.
+		expect(f.instrumentedSince).toBe("2026-09-29");
+		expect(f.sessionsConsidered).toBe(370);
+		expect(f.note).toContain("mesma janela");
+		const byKey = Object.fromEntries(f.stages.map((s) => [s.key, s.sessions]));
+		expect(byKey.arrived).toBe(370);
+		expect(byKey.paid).toBe(20);
+	});
+
+	it("without any checkout instrument, payment/paid stages are OMITTED — never zero", () => {
+		const sessions = [
+			...Array.from({ length: 300 }, () => session({ surfaces: ["/", "/products/x"] })),
+			...Array.from({ length: 40 }, () =>
+				session({ surfaces: ["/", "/products/x", "/cart"], cartAddCount: 1 }),
+			),
+		];
+		const f = computeMeasuredFunnel(sessions, "pt-BR")!;
+		const keys = f.stages.map((s) => s.key);
+		expect(keys).not.toContain("payment");
+		expect(keys).not.toContain("paid");
+		expect(f.note).toContain("não são medidos");
+	});
+
+	it("one-decimal percentages: 0.1% never displays as 0, 99.7% never as 100", () => {
+		const sessions = [
+			...Array.from({ length: 977 }, () =>
+				session({ surfaces: ["/", "/products/x", "/c/A"], checkoutReached: false, cartAddCount: 0 }),
+			),
+			...Array.from({ length: 22 }, () =>
+				session({ surfaces: ["/", "/products/x", "/c/A"], checkoutReached: true }),
+			),
+			session({ surfaces: ["/", "/products/x", "/c/A"], checkoutReached: true, confirmationSeen: true }),
+		];
+		const f = computeMeasuredFunnel(sessions, "pt-BR")!;
+		const paid = f.stages.find((s) => s.key === "paid")!;
+		expect(paid.pctOfArrived).toBe(0.1);
+		const cart = f.stages.find((s) => s.key === "cart")!;
+		expect(cart.dropPctFromPrev).toBeGreaterThan(97);
+		expect(cart.dropPctFromPrev).toBeLessThan(100);
 	});
 });

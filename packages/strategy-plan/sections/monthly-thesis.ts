@@ -84,7 +84,13 @@ async function gatherInputs(
 	const openLoss = openLossExp.rows;
 	for (const f of openLoss) {
 		packCounts[f.pack] = (packCounts[f.pack] ?? 0) + 1;
-		if (f.surface) surfaceCounts[f.surface] = (surfaceCounts[f.surface] ?? 0) + 1;
+		// EXAME P3 — focus is weighted by IMPACT, not by finding count.
+		// Counting gave "página inicial" (many small findings) while the
+		// four biggest leaks sat on the cart; the thesis and narrative
+		// then named different focuses in the same document. Money is the
+		// plan's language, so the focus follows the money — and narrative
+		// uses the SAME formula.
+		if (f.surface) surfaceCounts[f.surface] = (surfaceCounts[f.surface] ?? 0) + (f.impactMidpoint ?? 1);
 	}
 	const sortedPacks = Object.entries(packCounts).sort((a, b) => b[1] - a[1]);
 	const sortedSurfaces = Object.entries(surfaceCounts).sort((a, b) => b[1] - a[1]);
@@ -250,8 +256,16 @@ Total: 25-44 palavras. Mais curto sempre vence.
 	if (i.dominantPack) {
 		lines.push(`- Pack dominante: ${i.dominantPack.replace(/_pack$/, "").replace(/_/g, " ")} (${Math.round(i.dominantPackShare * 100)}% dos pontos abertos)`);
 	}
-	if (i.dominantSurface) lines.push(`- Surface mais concentrada: ${i.dominantSurface}`);
-	if (i.vertical) lines.push(`- Tipo de negócio: ${i.vertical} (use linguagem de funil natural pra este tipo de negócio, ex.: agendamento, assinatura, pedido ou checkout conforme o caso)`);
+	if (i.dominantSurface) {
+		lines.push(`- FOCO DO MÊS (obrigatório: a tese nomeia ESTE foco, nunca outro): ${i.dominantSurface}`);
+	}
+	if (i.vertical) {
+		lines.push(`- Tipo de negócio: ${i.vertical} (use linguagem de funil natural pra este tipo de negócio, ex.: agendamento, assinatura, pedido ou checkout conforme o caso)`);
+		// EXAME P2 — the ICP's own vocabulary, not CRO-agency dialect.
+		if (i.vertical.toLowerCase().includes("commerce")) {
+			lines.push(`- LÍNGUA DO LEITOR (obrigatório): quem lê é dono(a) de loja. Fale de carrinho, frete, cupom, PIX, anúncio, página do produto. PROIBIDO: "copy desalinhado", "dispersa o comprador", "consistência da mensagem" e jargão de agência sem tradução concreta na mesma frase.`);
+		}
+	}
 	if (i.topFindingTitle) {
 		lines.push(`- Maior buraco individual: ${i.topFindingTitle} (R$ ${i.topFindingImpact.toLocaleString("pt-BR")}/mês)`);
 	}

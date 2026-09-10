@@ -86,3 +86,31 @@ describe("resolveFindingSurface", () => {
 		expect(s).not.toContain("(");
 	});
 });
+
+describe("SEO-family surface plausibility (EXAME P7)", () => {
+	it("an organic-visibility finding never anchors on a transactional page", () => {
+		expect(
+			resolveFindingSurface(
+				"commercial_pages_weak_search_representation",
+				"https://loja.com/cart",
+				realPaths,
+			),
+		).toBe("/");
+	});
+
+	it("SEO finding on a content page keeps its real surface", () => {
+		expect(
+			resolveFindingSurface(
+				"commercial_pages_weak_search_representation",
+				"https://loja.com/products/vedaplus",
+				realPaths,
+			),
+		).toBe("/products/vedaplus");
+	});
+
+	it("non-SEO findings on the cart keep the cart", () => {
+		expect(
+			resolveFindingSurface("guarantee_invisible_at_decision", "https://loja.com/cart", realPaths),
+		).toBe("/cart");
+	});
+});

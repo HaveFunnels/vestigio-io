@@ -35,9 +35,18 @@ function titleForFinding(
 	// leak "Funnel Dead End Page" on havefunnels because the translation
 	// lives in dynamic_titles, not inference_titles.
 	const translated = resolveInferenceTitle(row.inferenceKey, translations);
+	// EXAME P8 — the old fallback Title-Cased the snake key, shipping
+	// "Script Supply Chain Risk" into a pt-BR plan as if it were a real
+	// title. A missing translation is a bug to surface, not to disguise:
+	// warn loudly and render sentence case so it still READS as a
+	// fallback in review.
+	if (!translated) {
+		console.warn(
+			`[strategy-plan] missing inference title translation: ${row.inferenceKey} — add it to dictionary/*.json engine.inference_titles`,
+		);
+	}
 	const friendlyKey =
-		translated
-		?? row.inferenceKey.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+		translated ?? row.inferenceKey.replace(/_/g, " ");
 	return `${friendlyKey} · ${row.surface}`;
 }
 
@@ -86,7 +95,7 @@ export async function generateBuyerSegments(
 			}
 			return {
 				buyer,
-				buyerLabel: buyerLabel(buyer, ctx.locale),
+				buyerLabel: buyerLabel(buyer, ctx.locale, ctx.businessContext?.vertical ?? null),
 				count: items.length,
 				impactMin: Math.round(impactMin),
 				impactMax: Math.round(impactMax),

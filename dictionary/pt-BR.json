@@ -5686,6 +5686,7 @@
 			"checkout_identity_break": "Identidade visual quebra na hora do pagamento — continuidade da marca perdida",
 			"payment_options_invisible": "Meios de pagamento aceitos não são visíveis antes do checkout",
 			"guarantee_invisible_at_decision": "Sua garantia existe mas está escondida justo quando o comprador mais precisa",
+			"script_supply_chain_risk": "Scripts de terceiros rodam no seu site sem proteção",
 			"urgency_mechanics_absent": "Nada diz pro comprador por que comprar hoje é melhor que amanhã",
 			"first_value_path_unclear": "Novo usuário não vê caminho claro pro primeiro resultado depois de se cadastrar",
 			"support_response_expectation_gap": "Página de suporte existe mas não promete tempo de resposta",

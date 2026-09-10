@@ -499,29 +499,29 @@ que a dona de uma loja de enxoval não usaria.**
 | ID | Resumo | Raiz (file:line) |
 |----|--------|------------------|
 | P1 ✅ | /carrinho e /payment 404 como "superfícies críticas" | CORRIGIDO: filtro compartilhado `EXCLUDE_UNCONFIRMED_SPECULATIVE` (src/lib/inventory-filters.ts) aplicado na rota ecosystem + inventário + console-data; `buildRealPathSet` rejeita evidence com status>=400 |
-| P2 | Língua de agência, não do ICP | monthly-thesis.ts:177 (sem voiceRules) |
-| P3 | Tese/narrativa citam 3 superfícies-foco diferentes | narrative.ts + thesis (sem validação cruzada) |
-| P4 | Alerta TikTok não gera passo | next-steps só lê Actions de crawler |
+| P2 ✅ | Língua de agência, não do ICP | CORRIGIDO: linha LÍNGUA DO LEITOR (carrinho/frete/PIX/anúncio) nos prompts de tese e narrativa quando vertical=ecommerce; jargão de agência banido |
+| P3 ✅ | Tese/narrativa citam 3 superfícies-foco diferentes | CORRIGIDO: foco ponderado por IMPACTO (mesma fórmula nos dois); linha FOCO DO MÊS obrigatória na tese; regra 11 FOCO ÚNICO na narrativa |
+| P4 ✅ | Alerta TikTok não gera passo | CORRIGIDO: cada alerta comportamental vira um passo medido (sem R$ inventado, dono Marketing, procedimento de anúncio) |
 | P5 ✅ | 19.213 vs 51.261 sessões no mesmo plano | CORRIGIDO: journeys conta em startedAt (não receivedAt do backfill) na MESMA janela de 30d do behavioral; legenda da UI nomeia a janela |
-| P6 | Buyers de SaaS p/ loja Shopify; R$ 48k p/ "devs" | pack-to-buyer.ts:19-64 |
-| P7 | SEO finding em /cart | resolveFindingSurface + baseline SEO |
-| P8 | Título de finding em inglês cru | inference key sem label pt |
-| P9 | "Checkout da página inicial" | narrative.ts prompt/inputs |
-| P10 | Packs internos na legenda da barra | WhatHappenedNarrative.tsx:162-190 |
-| P11 | 4 estimativas com precisão falsa | impact baselines exibidos sem grau |
+| P6 ✅ | Buyers de SaaS p/ loja Shopify; R$ 48k p/ "devs" | CORRIGIDO: labels por vertical (e-commerce: Marketing da loja / Parte técnica / Decisão sua) |
+| P7 ✅ | SEO finding em /cart | CORRIGIDO: família SEO nunca ancora em superfície transacional (cart/checkout/login → sitewide); +3 testes |
+| P8 ✅ | Título de finding em inglês cru | CORRIGIDO: script_supply_chain_risk adicionado ao pt-BR; fallback não Title-Casea mais (warn + sentence case) |
+| P9 ✅ | "Checkout da página inicial" | CORRIGIDO: regra 12 anti-fusão (nunca fundir título de achado com nome de outra página) |
+| P10 ✅ | Packs internos na legenda da barra | CORRIGIDO: barra de distribuição por pack removida; o tema vive na narrativa com âncora concreta |
+| P11 ✅ (base) | 4 estimativas com precisão falsa | CORRIGIDO: pills dizem "perda potencial estimada"; faixa "estimada". Grau MEDIDO/ESTIMADO/VERIFICAR completo fica na Onda 2 |
 | P12 ✅ | 45 "concorrentes" SERP sem curadoria, 0 sinais | CORRIGIDO: SERP vira sugestão inativa (ativação é decisão humana); seção só renderiza com curadoria manual ou sinal real; 29 linhas auto-ativas desativadas em prod |
 | P13 ✅ | UTM cru no título; HTML como label; botão "0" | CORRIGIDO: sanitizeCtaText (strip HTML/entidades, exige conteúdo semântico); campanha só quando lê como NOME (encodings de ad-set descartados) |
-| P14 | R$ 190 vs R$ 79.200 sem ponte | journeys sem extrapolação declarada |
+| P14 ✅ | R$ 190 vs R$ 79.200 sem ponte | CORRIGIDO: legenda-ponte na seção (valor por sessão específica vs agregado mensal) |
 | P15 ✅ | Mesmo problema em 3 passos, 3 preços | CORRIGIDO: dedupeByRootProblem — 1 passo por inference key compartilhada, greedy no ranking; +5 testes |
 | P16 ✅ | Passo com título/razão/procedimento de 3 assuntos | CORRIGIDO: ângulo compounding_dependency removido (forçava 'mesma causa raiz do Passo 1' por posição); pós-dedupe a premissa é estruturalmente falsa |
 | P17 ✅ | "Sessões estão sendo roubadas" como fato | CORRIGIDO: bans de ataque-ativo nos voice-rules (4 locales) + regra 13 HONESTIDADE no prompt (risco = ausência de proteção) |
-| P18 | Política de troca → "Desenvolvedor 4-5h" | suggestedOwner do catálogo |
+| P18 ✅ | Política de troca → "Desenvolvedor 4-5h" | CORRIGIDO: ownerForStep pela NATUREZA do fix (policy/copy/SEO→Marketing; pricing/brand→decisão do dono; resto→dev) |
 | P19 ✅ | Soma dos passos > headline capado | CORRIGIDO: combinedImpact escalado proporcionalmente pra caber no openLossExposure capado (pós-dedupe) |
 | P20 ✅ | Stripe/40%/2121 ciclos/benchmark-fantasma | CORRIGIDO: marcos só prometem o que existe (vertical-aware, sem Stripe p/ e-commerce); narrativa sem cycleCount; benchmarkAvailability não é mais emitido |
 | A1 ✅ | Hero = parede de zeros + sparklines 0 | CORRIGIDO: sem histórico de ação, cartões Recuperado/Em-progresso dão lugar a Sessões medidas (30d) + Origem dominante (pixel) |
 | A2 ✅ | facebook/tiktok minúsculo sem ícone; 2 humanizadores | CORRIGIDO: packages/behavioral/source-identity.ts (chave canônica + label + cor de marca); tabela renderiza dot+label; jornadas e alerta usam o mesmo módulo |
 | A3 ✅ | "Seu time ainda não recuperou nada" | CORRIGIDO: seção (e dot do TOC) só existem a partir da primeira recuperação verificada |
-| A4 | Faixas 4× sem explicação | BuyerSegments render |
+| A4 ✅ | Faixas 4× sem explicação | CORRIGIDO: "faixa estimada X a Y · a largura reflete a incerteza do cálculo" |
 | A5 ✅ | Texto sobreposto no header Carteira | CORRIGIDO: label flutuante do rail ganha chip de fundo (máscara), sobreposição vira camada legível |
 | A6 ✅ (parcial) | Timeline é lista uniforme, 4 cores p/ 10 tipos | CORRIGIDO: gaps de tempo visíveis ("X min depois"), contexto sempre visível (sem hover). Redesign SVG completo fica pra fase de polish visual |
 | A7 ✅ | 12 eventos idênticos sem compressão | CORRIGIDO: runs do mesmo CTA no mesmo path colapsam em "Clicou N× em 'X'" |

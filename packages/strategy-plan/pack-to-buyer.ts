@@ -82,6 +82,28 @@ const BUYER_LABEL_EN: Record<BuyerKind, string> = {
 	leadership: "For Leadership",
 };
 
-export function buyerLabel(buyer: BuyerKind, locale?: string | null): string {
-	return (locale ?? "pt-BR") === "pt-BR" ? BUYER_LABEL_PT_BR[buyer] : BUYER_LABEL_EN[buyer];
+// EXAME P6 — a Shopify merchant is usually ONE person wearing all
+// three hats; "Para o time de Desenvolvedores" reads like the plan was
+// written for someone else's company. E-commerce verticals get labels
+// addressed to the operator, not to org-chart teams.
+const BUYER_LABEL_ECOMMERCE_PT_BR: Record<BuyerKind, string> = {
+	copy: "Marketing da loja",
+	eng: "Parte técnica",
+	leadership: "Decisão sua",
+};
+const BUYER_LABEL_ECOMMERCE_EN: Record<BuyerKind, string> = {
+	copy: "Store marketing",
+	eng: "Technical",
+	leadership: "Your call",
+};
+
+export function buyerLabel(
+	buyer: BuyerKind,
+	locale?: string | null,
+	vertical?: string | null,
+): string {
+	const pt = (locale ?? "pt-BR") === "pt-BR";
+	const ecom = (vertical ?? "").toLowerCase().includes("commerce");
+	if (ecom) return pt ? BUYER_LABEL_ECOMMERCE_PT_BR[buyer] : BUYER_LABEL_ECOMMERCE_EN[buyer];
+	return pt ? BUYER_LABEL_PT_BR[buyer] : BUYER_LABEL_EN[buyer];
 }

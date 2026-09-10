@@ -144,7 +144,9 @@ async function gatherInputs(
 	const surfaceCounts: Record<string, number> = {};
 	for (const f of openLoss) {
 		packCounts[f.pack] = (packCounts[f.pack] ?? 0) + 1;
-		if (f.surface) surfaceCounts[f.surface] = (surfaceCounts[f.surface] ?? 0) + 1;
+		// EXAME P3 — same impact-weighted focus formula as monthly-thesis;
+		// see the comment there. One document, one focus.
+		if (f.surface) surfaceCounts[f.surface] = (surfaceCounts[f.surface] ?? 0) + (f.impactMidpoint ?? 1);
 	}
 	const sortedPacks = Object.entries(packCounts).sort((a, b) => b[1] - a[1]);
 	const sortedSurfaces = Object.entries(surfaceCounts).sort((a, b) => b[1] - a[1]);
@@ -377,7 +379,9 @@ Regras estritas:
 7. PROIBIDO nomes de tema abstratos sem instância concreta atrelada na mesma frase. Se citar um tema, prove-o com R$ específico OU página específica OU comportamento observável na frase seguinte. Tema sem âncora concreta = ruído.
 8. PROIBIDO travessão (—) em qualquer parágrafo. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.
 9. PROIBIDO usar a palavra "exposição" em qualquer parágrafo. Substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.
-10. HONESTIDADE DE MEDIÇÃO (regra absoluta, vence qualquer outra): os valores em R$ deste plano são ESTIMATIVAS calculadas por severidade sobre a receita informada pelo cliente — não são medições. PROIBIDO afirmar ou insinuar que foram medidos: nada de "não é projeção", "medido", "comprovado", "observado no seu checkout", "calibrado". Enquadrar sempre como "estimativa" ou "perda potencial estimada". A palavra "medido" é reservada para dados que o pixel de fato coletou (sessões, permanência, cliques, scroll). O bloco "MEDIDO PELO PIXEL" abaixo, quando presente, é a ÚNICA fonte que pode ser citada como medição — cite os números dele literalmente, sem arredondar para cima nem extrapolar. Um cliente que conhece a própria receita compara — e uma única afirmação de medição falsa custa a credibilidade do documento inteiro.`;
+10. HONESTIDADE DE MEDIÇÃO (regra absoluta, vence qualquer outra): os valores em R$ deste plano são ESTIMATIVAS calculadas por severidade sobre a receita informada pelo cliente — não são medições. PROIBIDO afirmar ou insinuar que foram medidos: nada de "não é projeção", "medido", "comprovado", "observado no seu checkout", "calibrado". Enquadrar sempre como "estimativa" ou "perda potencial estimada". A palavra "medido" é reservada para dados que o pixel de fato coletou (sessões, permanência, cliques, scroll). O bloco "MEDIDO PELO PIXEL" abaixo, quando presente, é a ÚNICA fonte que pode ser citada como medição — cite os números dele literalmente, sem arredondar para cima nem extrapolar. Um cliente que conhece a própria receita compara — e uma única afirmação de medição falsa custa a credibilidade do documento inteiro.
+11. FOCO ÚNICO (EXAME P3): o foco nomeado no Parágrafo 2 e o movimento do Parágrafo 4 são a MESMA página/área — a "Surface dominante" dos dados abaixo. Se os maiores vazamentos individuais estiverem em OUTRA página, cite-os dizendo explicitamente que estão fora do foco; NUNCA troque o foco no meio do texto.
+12. NUNCA funda o título de um achado com o nome de outra página (EXAME P9): "o checkout da página inicial" é defeito. Cite o achado como está e a página dele separadamente.`;
 
 	const data: string[] = [];
 	data.push(`Dados do mês ${i.monthLabelPt} para ${i.envDomain}:`);
@@ -430,7 +434,13 @@ Regras estritas:
 		data.push(`- Página mais concentrada: ${humanizeSurfaceCustomerFacing(i.dominantSurface)} (${pct}% dos vazamentos abertos)`);
 	}
 	data.push(`- Problemas recorrentes (3+ ciclos): ${i.chronicCount}`);
-	if (i.vertical) data.push(`- Tipo de negócio: ${i.vertical} (escreva o funil com linguagem natural a este tipo de negócio)`);
+	if (i.vertical) {
+		data.push(`- Tipo de negócio: ${i.vertical} (escreva o funil com linguagem natural a este tipo de negócio)`);
+		// EXAME P2 — the ICP's vocabulary, not CRO-agency dialect.
+		if (i.vertical.toLowerCase().includes("commerce")) {
+			data.push(`- LÍNGUA DO LEITOR (obrigatório): quem lê é dono(a) de loja. Fale de carrinho, frete, cupom, PIX, anúncio, página do produto. PROIBIDO: "copy desalinhado", "dispersa o comprador", "consistência da mensagem" e jargão de agência sem tradução concreta na mesma frase.`);
+		}
+	}
 	data.push("");
 	data.push(`# O que está em jogo`);
 	data.push(`- Perda potencial total: R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês`);

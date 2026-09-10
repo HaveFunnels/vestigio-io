@@ -548,7 +548,7 @@ function StepCard({
 												: "text-content-faint"
 									}`}
 								>
-									perda potencial
+									perda potencial estimada
 								</div>
 								<div
 									className={`font-mono text-[13px] font-semibold tabular-nums ${
@@ -1058,7 +1058,7 @@ function StepInGroup({ step, primarySurface }: StepInGroupProps) {
 						}`}
 					>
 						<div className="text-[9px] font-semibold uppercase tracking-wider text-content-faint">
-							perda potencial
+							perda potencial estimada
 						</div>
 						<div className="font-mono text-[12px] font-semibold tabular-nums text-content">
 							{fmtCurrencyUnits(Math.round(impact), currency)}

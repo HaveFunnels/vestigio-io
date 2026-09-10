@@ -269,7 +269,7 @@ export async function generatePlan(
 			? generateValuePreviewNarrative(prisma, ctx, valuePreview, organizationId)
 			: Promise.resolve({ text: "", callsCount: 0, costCents: 0, fallback: false }),
 		wantNextSteps
-			? generateNextSteps(prisma, ctx, organizationId)
+			? generateNextSteps(prisma, ctx, organizationId, behavioral)
 			: Promise.resolve({ steps: [], cost: { llmCallsCount: 0, llmCostCents: 0 } }),
 	]);
 

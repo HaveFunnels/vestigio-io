@@ -1128,6 +1128,19 @@ export function buildRealPathSet(evidence: Array<{ payload?: unknown; url?: stri
   return paths;
 }
 
+// EXAME P7 — findings about ORGANIC VISIBILITY can never anchor on a
+// transactional surface: "Suas melhores páginas mal aparecem no Google
+// · /cart" told a merchant their CART should rank, which is category
+// error (cart/checkout/login are noindex by design on every platform).
+// When an SEO-family finding's evidence points at one of these, the
+// honest anchor is sitewide.
+const SEO_FAMILY_KEY = /seo|serp|search|organic|discover|indexab|visibilit/i;
+const TRANSACTIONAL_PATH = /^\/(cart|carrinho|carrito|checkout|checkouts|payment|pagamento|login|entrar|signin|account|conta|minha-conta)(\/|$)/i;
+
+function isImplausibleSurface(inferenceKey: string, path: string): boolean {
+  return SEO_FAMILY_KEY.test(inferenceKey) && TRANSACTIONAL_PATH.test(path);
+}
+
 export function resolveFindingSurface(
   inferenceKey: string,
   sourceUrl: string | null,
@@ -1135,9 +1148,12 @@ export function resolveFindingSurface(
 ): string {
   if (sourceUrl) {
     try {
-      return new URL(sourceUrl).pathname || '/';
+      const p = new URL(sourceUrl).pathname || '/';
+      return isImplausibleSurface(inferenceKey, p) ? '/' : p;
     } catch {
-      if (sourceUrl.startsWith('/')) return sourceUrl;
+      if (sourceUrl.startsWith('/')) {
+        return isImplausibleSurface(inferenceKey, sourceUrl) ? '/' : sourceUrl;
+      }
       // Host-only evidence (off-site recon) — sitewide is the honest anchor.
       return '/';
     }

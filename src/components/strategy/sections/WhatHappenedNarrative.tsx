@@ -148,49 +148,11 @@ export default function WhatHappenedNarrative({ narrative, monthLabel, packDistr
 					O que aconteceu em {monthLabel}
 				</h2>
 
-				{/* Reta-final: pack distribution visual. Replaces the prose
-				    "tema dominante: copy 44%" which buried the structural
-				    insight in a paragraph. A 6px stacked bar carries the
-				    same info in 1 second of scanning. Hidden when no open
-				    findings exist (single segment with 100% reads as
-				    "Vestigio is empty" — empty state belongs elsewhere). */}
-				{hasPackBar && (
-					<div className="mb-7" data-vsgp-pack-bar>
-						<div className="mb-2 flex items-baseline justify-between text-[11px] text-content-faint">
-							<span className="font-semibold uppercase tracking-[0.14em]">Distribuição por tema</span>
-							<span>
-								{packDistribution!.reduce((a, b) => a + b.count, 0)} vazamentos abertos
-							</span>
-						</div>
-						<div className="flex h-2 w-full overflow-hidden rounded-full border border-edge/40 bg-surface-inset/40">
-							{packDistribution!.map((slice) => (
-								<div
-									key={slice.pack}
-									style={{
-										width: `${slice.sharePct}%`,
-										backgroundColor: colorForPack(slice.pack),
-									}}
-									title={`${slice.label} · ${slice.sharePct}% · ${slice.count} vazamentos`}
-								/>
-							))}
-						</div>
-						{/* Legend renders every slice that's in the bar — antes
-						    truncava em slice(0, 5) e a 6ª fatia aparecia
-						    colorida sem rótulo, gerando "que cor é essa?". */}
-						<div className="mt-2.5 flex flex-wrap gap-x-3.5 gap-y-1.5 text-[11.5px] text-content-secondary">
-							{packDistribution!.map((slice) => (
-								<span key={slice.pack} className="inline-flex items-center gap-1.5">
-									<span
-										className="h-2 w-2 shrink-0 rounded-[2px]"
-										style={{ backgroundColor: colorForPack(slice.pack) }}
-									/>
-									<span>{slice.label}</span>
-									<span className="text-content-faint">{slice.sharePct}%</span>
-								</span>
-							))}
-						</div>
-					</div>
-				)}
+				{/* EXAME P10 — a barra de "Distribuição por tema" foi removida:
+				    os rótulos eram a taxonomia interna de packs ("Integridade do
+				    funil 20%"), que não significa nada para quem opera a loja e
+				    somava <100%. O tema do mês vive na própria narrativa, com
+				    âncora concreta (regra 7 do prompt). */}
 
 				<div
 					data-vsgp-narrative

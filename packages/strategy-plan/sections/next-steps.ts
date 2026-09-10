@@ -27,6 +27,7 @@ import {
 } from "../../projections/remediation-catalog";
 import { resolveInferenceTitle } from "../title-resolver";
 import { openLossExposure } from "../honest-aggregates";
+import { sourceIdentity } from "../../behavioral/source-identity";
 import { voiceRulesFor } from "../voice-rules";
 
 interface ActionRow {
@@ -99,12 +100,17 @@ function effortFromHours(h: number | null): string {
 	return `${Math.round(h / 8)} dias úteis`;
 }
 
-function ownerFromCategory(category: string): string {
-	// Customer-facing role labels — what kind of profile picks up this
-	// move. "time eng" was opaque internal jargon.
-	if (category === "incident") return "Desenvolvedor";
+// EXAME P18 — the owner follows the NATURE of the fix, not the action
+// category. "Publique política de reembolso" was labeled Desenvolvedor
+// (4-5h) because its action was category=incident; writing a store
+// policy is not a dev task, and on a Shopify store there usually is no
+// dev team at all.
+const CONTENT_OWNER_KEYS = /policy|refund|return|copy|cta|guarantee|social_proof|content|seo|search|serp|discover|trust_gradient|micro_copy|benefit|headline|messag/i;
+const OWNER_LEADERSHIP_KEYS = /pricing_strategy|positioning|competitive|brand_/i;
+function ownerForStep(primaryKey: string, category: string): string {
+	if (CONTENT_OWNER_KEYS.test(primaryKey)) return "Marketing";
+	if (OWNER_LEADERSHIP_KEYS.test(primaryKey)) return "Você (decisão de negócio)";
 	if (category === "opportunity") return "Marketing";
-	if (category === "verification") return "Desenvolvedor";
 	return "Desenvolvedor";
 }
 
@@ -813,6 +819,7 @@ export async function generateNextSteps(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
 	organizationId: string | null,
+	behavioral?: import("./behavioral-measurement").BehavioralMeasurementOutput | null,
 ): Promise<{ steps: NextStepOutput[]; cost: GenerationCost }> {
 	const month = renderedMonthLabel(ctx.month, ctx.locale);
 	const actions = await pickTopActions(prisma, ctx);
@@ -1020,7 +1027,7 @@ export async function generateNextSteps(
 			procedureSteps: finalProcedureSteps,
 			researchRefs: [],
 			estimatedEffort: effortFromHours(catalog?.estimated_effort_hours ?? null),
-			suggestedOwner: ownerFromCategory(action.category),
+			suggestedOwner: ownerForStep(primaryKey, action.category),
 			linkedActionRefs: [action.id],
 			linkedFindingRefs,
 			combinedImpact: {
@@ -1057,6 +1064,35 @@ export async function generateNextSteps(
 	} catch (err) {
 		// Cap unavailable — ship uncapped rather than no steps, but say so.
 		console.warn("[strategy-plan] next-steps exposure cap skipped:", err);
+	}
+
+	// EXAME P4 — the plan's strongest MEASURED insight (a behavioral
+	// alert like "TikTok arrives and leaves in 5s") used to live only in
+	// the measurement section; the action list ignored it entirely. Each
+	// alert now becomes a step of its own: measured basis, no invented
+	// R$ (combinedImpact zero — the money language of estimates does not
+	// apply to a counted fact), owner Marketing, concrete procedure.
+	for (const alert of behavioral?.alerts ?? []) {
+		if (alert.kind !== "no_intent_traffic") continue;
+		const label = sourceIdentity(alert.source).label;
+		steps.push({
+			order: steps.length + 1,
+			title: `Tráfego do ${label} chega e vai embora sem ver sua oferta`,
+			reasoning:
+				`Medido pelo pixel, sem estimativa: ${alert.sessions.toLocaleString("pt-BR")} sessões vindas de ${label} nos últimos 30 dias ficaram ${alert.medianDurationS}s no site (mediana) e ${alert.pctNoScroll}% saíram sem rolar a primeira tela. ` +
+				`Se há verba nessa origem, ela está comprando chegadas, não visitas. Este é o único passo do plano baseado em contagem direta do seu tráfego, e é também o mais barato de testar: nenhuma mudança no site, só no anúncio.`,
+			procedureSteps: [
+				`Abra o gerenciador de anúncios do ${label} e compare o criativo/segmentação dessa campanha com o que a página de destino mostra nos 5 primeiros segundos.`,
+				"Teste um criativo que mostre o produto e o preço reais da página de destino (a promessa do anúncio precisa ser confirmada na primeira tela).",
+				`Reduza ou pause os conjuntos com pior permanência e realoque; o pixel mede de novo e o próximo plano mostra se a permanência do ${label} subiu.`,
+			],
+			researchRefs: [],
+			estimatedEffort: "2-3 horas",
+			suggestedOwner: "Marketing",
+			linkedActionRefs: [],
+			linkedFindingRefs: [],
+			combinedImpact: { min: 0, max: 0, midpoint: 0 },
+		});
 	}
 
 	return {

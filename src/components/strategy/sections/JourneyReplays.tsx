@@ -178,6 +178,11 @@ export default function JourneyReplays({ envId, month }: Props) {
 				</h2>
 				<div className="text-[11px] text-content-faint">
 					{data.journeys.length} sessões reais reconstituídas · de {data.session_count_this_month.toLocaleString("pt-BR")} nos últimos 30 dias
+					{/* EXAME P14 — sem esta ponte, o leitor soma R$ 190 de
+					    jornadas contra R$ 79k de tese e desconfia dos dois. */}
+					<span className="mt-0.5 block">
+						O valor em cada jornada é o potencial daquela sessão específica; a perda mensal do topo do plano agrega todas as sessões parecidas.
+					</span>
 				</div>
 			</div>
 

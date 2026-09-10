@@ -61,6 +61,26 @@ export interface MeasuredFunnelUI {
 	} | null;
 }
 
+export interface FrictionPageUI {
+	path: string;
+	sessions: number;
+	deadClicks: number;
+	hesitationsNearCta: number;
+	inputAbandons: number;
+	backtracks: number;
+	formRetries: number;
+	sessionsWithFriction: number;
+	frictionRatePct: number;
+}
+
+export interface MeasuredFrictionUI {
+	basis: "pixel_measured";
+	windowStart: string;
+	windowEnd: string;
+	sampleSessions: number;
+	pages: FrictionPageUI[];
+}
+
 export interface BehavioralSectionUI {
 	basis: "pixel_measured";
 	windowStart: string;
@@ -73,6 +93,7 @@ export interface BehavioralSectionUI {
 	sources: BehavioralSourceStatsUI[];
 	alerts: BehavioralAlertUI[];
 	funnel?: MeasuredFunnelUI | null;
+	friction?: MeasuredFrictionUI | null;
 }
 
 interface Props {
@@ -167,6 +188,42 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 								({fmtPct(behavioral.funnel.biggestDrop.dropPct)}) não seguem adiante.
 							</div>
 						)}
+					</div>
+				)}
+
+				{/* ONDA 3.2 — onde a fricção acontece, por página, contado. */}
+				{behavioral.friction && behavioral.friction.pages.length > 0 && (
+					<div className="mb-6">
+						<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+							Onde a fricção acontece — amostra de {behavioral.friction.sampleSessions.toLocaleString("pt-BR")} sessões
+						</div>
+						<div className="space-y-2">
+							{behavioral.friction.pages.map((pg) => {
+								const bits: string[] = [];
+								if (pg.deadClicks > 0) bits.push(`${pg.deadClicks} cliques sem resposta`);
+								if (pg.hesitationsNearCta > 0) bits.push(`${pg.hesitationsNearCta} hesitações perto do botão`);
+								if (pg.inputAbandons > 0) bits.push(`${pg.inputAbandons} campos abandonados`);
+								if (pg.formRetries > 0) bits.push(`${pg.formRetries} tentativas de formulário`);
+								if (pg.backtracks > 0) bits.push(`${pg.backtracks} voltas imediatas`);
+								return (
+									<div
+										key={pg.path}
+										className="flex flex-col gap-1 rounded-lg border border-edge/60 bg-surface-inset/30 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between"
+									>
+										<div className="min-w-0">
+											<span className="font-mono text-[12px] text-content">{pg.path}</span>
+											<span className="ml-2 text-[12px] text-content-secondary">{bits.join(" · ")}</span>
+										</div>
+										<div className="shrink-0 font-mono text-[11.5px] tabular-nums text-content-muted">
+											{pg.sessionsWithFriction.toLocaleString("pt-BR")} de {pg.sessions.toLocaleString("pt-BR")} sessões ·{" "}
+											<span className={pg.frictionRatePct >= 20 ? "text-amber-300" : ""}>
+												{pg.frictionRatePct.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%
+											</span>
+										</div>
+									</div>
+								);
+							})}
+						</div>
 					</div>
 				)}
 

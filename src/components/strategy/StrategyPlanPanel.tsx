@@ -657,7 +657,9 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 							{
 								id: "attribution",
 								label: isPt ? "Recuperações" : "Recovered",
-								visible: !isResumo,
+								// A3 — section self-hides until the first verified
+								// recovery; the dot follows.
+								visible: !isResumo && (plan.attributionTimeline?.length ?? 0) > 0,
 							},
 							{
 								id: "ecosystem",
@@ -697,7 +699,17 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 							},
 							{ id: "next-steps", label: isPt ? "Próximos passos" : "Next steps", visible: true },
 							{ id: "value-preview", label: isPt ? "O que ganha" : "Value preview", visible: !isResumo },
-							{ id: "memory", label: isPt ? "Memória" : "Memory", visible: !isResumo },
+							{
+								id: "memory",
+								label: isPt ? "Memória" : "Memory",
+								// A11 — section self-hides until a window has real
+								// accumulation; the dot follows.
+								visible:
+									!isResumo &&
+									[plan.memoryRollups?.["1m"], plan.memoryRollups?.["3m"], plan.memoryRollups?.["6m"], plan.memoryRollups?.["12m"]].some(
+										(w) => ((w?.capturedTotal ?? 0) > 0 || (w?.actionsResolved ?? 0) > 0),
+									),
+							},
 						];
 						return items;
 					})()}
@@ -722,7 +734,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				</div>
 
 				<div data-toc-id="hero">
-					<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} />
+					<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} behavioral={plan.behavioral} />
 				</div>
 				{/* Medido pelo pixel — logo após o hero, de propósito: é o
 				    único bloco do plano cujos números são contagem e não

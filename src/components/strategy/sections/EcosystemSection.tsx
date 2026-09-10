@@ -123,7 +123,24 @@ export default function EcosystemSection({ envId, month, mode = "full" }: Props)
 			.finally(() => setLoading(false));
 	}, [envId, month]);
 
-	if (loading || !data) return null;
+	if (loading) {
+		// EXAME E8 — shimmer skeleton while fetching (house rule:
+		// skeleton over spinner, and never a silent void that pops in
+		// later and shifts the page under the reader). The banner-only
+		// variant is an ALERT at the top of the plan: absence is the
+		// normal case there, so it stays silent while loading instead
+		// of flashing a ghost block before the thesis.
+		if (mode === "banner-only") return null;
+		return (
+			<section className="mb-10">
+				<div className="mb-4 h-5 w-56 animate-pulse rounded bg-surface-card" />
+				<div className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
+					<div className="h-3 w-40 animate-pulse rounded bg-surface-inset" />
+				</div>
+			</section>
+		);
+	}
+	if (!data) return null;
 
 	const showBanner = mode !== "section-only" && data.critical_surfaces_down.length > 0;
 	const showSection =

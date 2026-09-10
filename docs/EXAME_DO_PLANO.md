@@ -518,22 +518,22 @@ que a dona de uma loja de enxoval não usaria.**
 | P18 | Política de troca → "Desenvolvedor 4-5h" | suggestedOwner do catálogo |
 | P19 ✅ | Soma dos passos > headline capado | CORRIGIDO: combinedImpact escalado proporcionalmente pra caber no openLossExposure capado (pós-dedupe) |
 | P20 ✅ | Stripe/40%/2121 ciclos/benchmark-fantasma | CORRIGIDO: marcos só prometem o que existe (vertical-aware, sem Stripe p/ e-commerce); narrativa sem cycleCount; benchmarkAvailability não é mais emitido |
-| A1 | Hero = parede de zeros + sparklines 0 | hero-metrics p/ conta nova |
+| A1 ✅ | Hero = parede de zeros + sparklines 0 | CORRIGIDO: sem histórico de ação, cartões Recuperado/Em-progresso dão lugar a Sessões medidas (30d) + Origem dominante (pixel) |
 | A2 ✅ | facebook/tiktok minúsculo sem ícone; 2 humanizadores | CORRIGIDO: packages/behavioral/source-identity.ts (chave canônica + label + cor de marca); tabela renderiza dot+label; jornadas e alerta usam o mesmo módulo |
-| A3 | "Seu time ainda não recuperou nada" | AttributionTimeline empty state |
+| A3 ✅ | "Seu time ainda não recuperou nada" | CORRIGIDO: seção (e dot do TOC) só existem a partir da primeira recuperação verificada |
 | A4 | Faixas 4× sem explicação | BuyerSegments render |
-| A5 | Texto sobreposto no header Carteira | Carteira.tsx |
+| A5 ✅ | Texto sobreposto no header Carteira | CORRIGIDO: label flutuante do rail ganha chip de fundo (máscara), sobreposição vira camada legível |
 | A6 ✅ (parcial) | Timeline é lista uniforme, 4 cores p/ 10 tipos | CORRIGIDO: gaps de tempo visíveis ("X min depois"), contexto sempre visível (sem hover). Redesign SVG completo fica pra fase de polish visual |
 | A7 ✅ | 12 eventos idênticos sem compressão | CORRIGIDO: runs do mesmo CTA no mesmo path colapsam em "Clicou N× em 'X'" |
 | A8 ✅ | Mesma screenshot em todo passo; legenda sitemap.xml | CORRIGIDO: fallback de home morto (exact-only); rota escopa lote mais recente; legenda nomeia a superfície DA foto; worker captura páginas citadas por findings (MAX 8) |
 | A9 ✅ | img sem onError; presign 1h expira na aba aberta | CORRIGIDO: onError esconde a figura inteira nos 2 pontos; presign 24h |
 | A10 ✅ | Backticks viram acentos; "aplicada este componente" | CORRIGIDO: procedimentos passam por renderInline (código/negrito); fallback do hint carrega preposição |
-| A11 | 4 cartões de memória idênticos zerados | memory-rollups + MemoryRollups.tsx |
+| A11 ✅ | 4 cartões de memória idênticos zerados | CORRIGIDO: seção só renderiza quando alguma janela tem acúmulo real; dot do TOC acompanha |
 | E1 ✅ | getRootDomain quebra p/ .com.br | CORRIGIDO: `registrableDomain()` (packages/url-normalize/registrable-domain.ts) com sufixos multi-parte; 5 cópias ingênuas apontadas pra ele |
-| E2 | 12 agregações completas p/ sparkline de zeros | hero-metrics.ts:166-181 |
+| E2 ✅ | 12 agregações completas p/ sparkline de zeros | CORRIGIDO: buildSparkSeries roda só as 2 somas necessárias por janela (12 passes completos → 6×2 aggregates baratos, sem varreduras de exposure) |
 | E3 ✅ | PDF perde journeys/ecosystem/predictive (401 silencioso) | CORRIGIDO: verifyExportTokenForEnvMonth nas 4 rotas lazy + planSectionQuery propaga o token nos fetches dos componentes |
 | E4 ✅ | TOC ≠ DOM; 4 seções não navegáveis | CORRIGIDO: rail espelha a ordem real do DOM e inclui attribution/ecosystem/journeys/predictive |
 | E5 ✅ | Seletor CSS morto no print | CORRIGIDO: safety-net escopado a [data-vsgp-print] (atributos no MESMO elemento); MonthPicker com print-hide |
 | E6 | Locale pela metade | thesis/narrative/labels hardcoded |
 | E7 | researchRefs sempre vazio | next-steps.ts:987 |
-| E8 | Seções somem sem placeholder (layout shift) | PredictiveLayer.tsx:91; EcosystemSection.tsx:125 |
+| E8 ✅ | Seções somem sem placeholder (layout shift) | CORRIGIDO: skeleton shimmer durante load (banner-only continua silencioso — ausência é o caso normal de um alerta) |

@@ -163,21 +163,44 @@ async function aggregateMonth(
 	};
 }
 
-async function buildSpark(
+// EXAME E2 — the old buildSpark ran the FULL aggregateMonth (including
+// an openLossExposure findMany over all findings, a criticals count and
+// an in-progress count it never used) 6 times PER metric = 12 complete
+// passes per plan, to draw two 6-point lines. This runs exactly the two
+// cheap sums each spark needs, once per window, for both series.
+async function buildSparkSeries(
 	prisma: PrismaClient,
 	environmentId: string,
 	monthStart: Date,
-	metric: "retained" | "captured",
-): Promise<number[]> {
-	// 6-month trailing series, oldest to newest.
-	const points: number[] = [];
+): Promise<{ retained: number[]; captured: number[] }> {
+	const retained: number[] = [];
+	const captured: number[] = [];
 	for (let i = 5; i >= 0; i--) {
 		const wStart = addMonths(monthStart, -i);
 		const wEnd = addMonths(monthStart, -i + 1);
-		const agg = await aggregateMonth(prisma, environmentId, wStart, wEnd);
-		points.push(metric === "retained" ? agg.retained : agg.captured);
+		const [r, c] = await Promise.all([
+			prisma.finding.aggregate({
+				where: {
+					environmentId,
+					polarity: "positive",
+					status: { in: ["created", "confirmed"] },
+					statusChangedAt: { lt: wEnd },
+				},
+				_sum: { impactMidpoint: true },
+			}),
+			prisma.userAction.aggregate({
+				where: {
+					environmentId,
+					status: "done",
+					verifiedResolvedAt: { gte: wStart, lt: wEnd, not: null },
+				},
+				_sum: { baselineImpactMidpoint: true },
+			}),
+		]);
+		retained.push(r._sum.impactMidpoint ?? 0);
+		captured.push(c._sum.baselineImpactMidpoint ?? 0);
 	}
-	return points;
+	return { retained, captured };
 }
 
 export async function generateHeroMetrics(
@@ -192,10 +215,11 @@ export async function generateHeroMetrics(
 		ctx.monthStart,
 	);
 
-	const [retainedSpark, capturedSpark] = await Promise.all([
-		buildSpark(prisma, ctx.environmentId, ctx.monthStart, "retained"),
-		buildSpark(prisma, ctx.environmentId, ctx.monthStart, "captured"),
-	]);
+	const { retained: retainedSpark, captured: capturedSpark } = await buildSparkSeries(
+		prisma,
+		ctx.environmentId,
+		ctx.monthStart,
+	);
 
 	return {
 		retainedMid: Math.round(current.retained),

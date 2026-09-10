@@ -270,6 +270,17 @@ function RollupCard({
 }
 
 export default function MemoryRollups({ rollups }: Props) {
+	// EXAME A11 — four identical cards of zeros ("46 vazamentos" ×4 +
+	// "Você ainda não marcou nada como resolvido" repeated) is not a
+	// memory, it's a wall. The section renders only when at least one
+	// window has actual accumulation (something captured or resolved);
+	// until then, month-over-month change lives in Continuity and the
+	// call to action lives in Next Steps.
+	const windows = [rollups["1m"], rollups["3m"], rollups["6m"], rollups["12m"]];
+	const hasAccumulation = windows.some(
+		(w) => (w?.capturedTotal ?? 0) > 0 || (w?.actionsResolved ?? 0) > 0,
+	);
+	if (!hasAccumulation) return null;
 	return (
 		<motion.section
 			initial={{ opacity: 0, y: 16 }}

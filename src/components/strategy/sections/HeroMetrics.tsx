@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { sourceIdentity } from "../../../../packages/behavioral/source-identity";
 import { useEffect, useState } from "react";
 import type { HeroMetric } from "../types";
 import { AggregateMethodologyPopover } from "@/components/console/MethodologyPopover";
@@ -21,6 +22,13 @@ import { useMcpData } from "@/components/app/McpDataProvider";
 interface Props {
 	hero: HeroMetric;
 	monthLabel: string;
+	/** EXAME A1 — measured pixel summary so a history-less account shows
+	 *  what the pixel ALREADY measured instead of a wall of zeros. */
+	behavioral?: {
+		sessionsFiltered: number;
+		windowDays: number;
+		sources: Array<{ source: string; sessions: number; sharePct: number }>;
+	} | null;
 }
 
 // Factory returning a format fn locked to one mode — passed into the
@@ -135,7 +143,7 @@ type TileProps = {
 	// where there's no time series; the customer needs to read "this is a
 	// leak" visually even at delta=0. When set, replaces the delta line
 	// with `captionWhenStatic`.
-	staticTone?: "loss" | "win" | null;
+	staticTone?: "loss" | "win" | "neutral" | null;
 	captionWhenStatic?: string;
 };
 
@@ -222,7 +230,11 @@ function Tile({
 			{!isEmpty && staticTone ? (
 				<div
 					className={`mt-2 font-mono text-[11px] ${
-						staticTone === "loss" ? "text-rose-400" : "text-emerald-400"
+						staticTone === "loss"
+							? "text-rose-400"
+							: staticTone === "win"
+								? "text-emerald-400"
+								: "text-content-muted"
 					}`}
 				>
 					{captionWhenStatic ?? (staticTone === "loss" ? "em exposição agora" : "preservado agora")}
@@ -256,8 +268,20 @@ function withReceipt(
 	return `Faixa real este mês: ${range} de ${count} ${noun}. ${base}`;
 }
 
-export default function HeroMetrics({ hero, monthLabel }: Props) {
+export default function HeroMetrics({ hero, monthLabel, behavioral }: Props) {
 	const { currency } = useMcpData();
+	// EXAME A1 — "action history" = anything the team ever moved. Without
+	// it, three of four tiles read zero and the first screen says
+	// "nothing happened"; the measured tiles take their place.
+	const hasActionHistory =
+		hero.capturedMid > 0 ||
+		hero.inProgressCount > 0 ||
+		(hero.capturedSpark ?? []).some((v) => v > 0) ||
+		(hero.retainedSpark ?? []).some((v) => v > 0);
+	const topSourceRaw = behavioral?.sources?.[0] ?? null;
+	const topSource = topSourceRaw
+		? { label: sourceIdentity(topSourceRaw.source).label, sharePct: topSourceRaw.sharePct }
+		: null;
 	// T1/RetaFinal — the old "exposureMode" toggle (single tile flipping
 	// between Capturado/Em risco) was replaced by two dedicated tiles:
 	// "Recuperado / mês" (capturedMid, with empty state) and "Capturado
@@ -288,22 +312,38 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 				    para capturedMid pelo mesmo motivo — "Recuperado" só faz
 				    sentido com a métrica de recuperação ativa, não com a
 				    preservação passiva do estado saudável. */}
-				<Tile
-					label="Recuperado / mês"
-					rawNumber={hero.capturedMid}
-					delta={hero.capturedDeltaMoM}
-					spark={hero.capturedSpark}
-					formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
-					emptyState="Siga o plano para ver o faturamento recuperado."
-					methodologyDescription={withReceipt(
-						"Soma dos midpoints de receita mensal recuperada por ações marcadas como feitas e verificadas no ciclo seguinte. Diferente de apenas marcar como feito: só conta quando o ciclo seguinte confirma que o achado ligado não aparece mais.",
-						hero.capturedMin,
-						hero.capturedMax,
-						hero.capturedFindingCount,
-						currency,
-					)}
-					methodologyDrillHref="/app/actions?status=done"
-				/>
+				{hasActionHistory ? (
+					<Tile
+						label="Recuperado / mês"
+						rawNumber={hero.capturedMid}
+						delta={hero.capturedDeltaMoM}
+						spark={hero.capturedSpark}
+						formatFn={makeCurrencyFormatter(hero.capturedMid, currency)}
+						emptyState="Siga o plano para ver o faturamento recuperado."
+						methodologyDescription={withReceipt(
+							"Soma dos midpoints de receita mensal recuperada por ações marcadas como feitas e verificadas no ciclo seguinte. Diferente de apenas marcar como feito: só conta quando o ciclo seguinte confirma que o achado ligado não aparece mais.",
+							hero.capturedMin,
+							hero.capturedMax,
+							hero.capturedFindingCount,
+							currency,
+						)}
+						methodologyDrillHref="/app/actions?status=done"
+					/>
+				) : (
+					/* EXAME A1 — a month-1 account has nothing recovered by
+					   construction; leading the plan with R$ 0 + consolation
+					   text says "nothing happened here". Lead with what the
+					   pixel DID measure. */
+					<Tile
+						label={`Sessões medidas · ${behavioral?.windowDays ?? 30}d`}
+						rawNumber={behavioral?.sessionsFiltered ?? 0}
+						delta={0}
+						captionWhenStatic="pelo pixel, no seu site"
+						staticTone="neutral"
+						methodologyDescription="Sessões reais dos seus visitantes, medidas pelo pixel — contagem direta, não estimativa. O cartão 'Recuperado/mês' assume este lugar quando o primeiro passo do plano for concluído e verificado."
+						methodologyDrillHref="/app/maps"
+					/>
+				)}
 				{/* "Vazando / mês" — antes "Capturado pelo vazamento" que
 				    customer apontou como gramaticalmente quebrado (vazamento
 				    não captura, vaza). Verbo no gerúndio nomeia a ação em
@@ -340,13 +380,34 @@ export default function HeroMetrics({ hero, monthLabel }: Props) {
 					methodologyDescription="Total de achados em estado aberto neste ciclo, incluindo baixa, média e alta severidade. Vestigio mantém esse número em monitoramento contínuo entre ciclos. Apenas achados com confiança pelo menos média aparecem aqui."
 					methodologyDrillHref="/app/findings"
 				/>
-				<Tile
-					label="Em progresso"
-					rawNumber={hero.inProgressCount}
-					delta={hero.inProgressDeltaMoM}
-					methodologyDescription="Quantidade de ações em progresso atribuídas ao seu ambiente. Reflete trabalho em curso da equipe."
-					methodologyDrillHref="/app/actions?status=in_progress"
-				/>
+				{hasActionHistory ? (
+					<Tile
+						label="Em progresso"
+						rawNumber={hero.inProgressCount}
+						delta={hero.inProgressDeltaMoM}
+						methodologyDescription="Quantidade de ações em progresso atribuídas ao seu ambiente. Reflete trabalho em curso da equipe."
+						methodologyDrillHref="/app/actions?status=in_progress"
+					/>
+				) : topSource ? (
+					<Tile
+						label={`Origem dominante · ${topSource.label}`}
+						rawNumber={topSource.sharePct}
+						delta={0}
+						formatFn={(n) => `${Math.round(n)}%`}
+						captionWhenStatic="das sessões medidas"
+						staticTone="neutral"
+						methodologyDescription="Participação da maior origem de tráfego nas sessões medidas pelo pixel na janela. Detalhe completo por origem na seção 'O que seus visitantes fizeram'."
+						methodologyDrillHref="/app/maps"
+					/>
+				) : (
+					<Tile
+						label="Em progresso"
+						rawNumber={hero.inProgressCount}
+						delta={hero.inProgressDeltaMoM}
+						methodologyDescription="Quantidade de ações em progresso atribuídas ao seu ambiente. Reflete trabalho em curso da equipe."
+						methodologyDrillHref="/app/actions?status=in_progress"
+					/>
+				)}
 			</div>
 		</motion.section>
 	);

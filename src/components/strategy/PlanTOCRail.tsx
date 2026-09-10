@@ -117,7 +117,12 @@ export default function PlanTOCRail({ items }: Props) {
 									x: hovered || isActive ? 0 : 6,
 								}}
 								transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-								className={`select-none whitespace-nowrap text-[11px] font-medium uppercase tracking-[0.14em] ${
+								// EXAME A5 — the floating label sits OVER page content
+								// (it collided with Carteira's own caption, printing
+								// "CARTEIRA" across "clonadores e concorrentes").
+								// A ground-colored chip masks what's underneath so
+								// overlap reads as a layer, not as garbled text.
+								className={`select-none whitespace-nowrap rounded-md bg-surface/90 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-[0.14em] backdrop-blur-[2px] ${
 									isActive
 										? "text-content"
 										: "text-content-muted group-hover:text-content"

@@ -63,9 +63,14 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 	const totalValue = total ?? rows.reduce((a, r) => a + (r.baselineImpactMidpoint ?? 0), 0);
 
 	// Self-hide quando o plano não regenerou ainda com o novo cálculo
-	// — `timeline === undefined` significa shape antigo. Render só
-	// quando há rows OU explicit empty (timeline=[] mas total=0).
+	// — `timeline === undefined` significa shape antigo.
 	if (!timeline) return null;
+	// EXAME A3 — zero recuperações NÃO rende um cartão inteiro dizendo
+	// "Seu time ainda não recuperou nada este mês" (culpa no mês 1, por
+	// construção). A seção simplesmente não existe até haver a primeira
+	// recuperação confirmada; o convite à ação já mora nos próximos
+	// passos.
+	if (rows.length === 0) return null;
 
 	return (
 		<motion.section
@@ -84,22 +89,7 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 				</div>
 			</div>
 
-			{rows.length === 0 ? (
-				// Empty state — encoraja o cliente a fechar ações no
-				// próximo ciclo sem soar como punição.
-				// Copy refactor: substitui jargão técnico ("atribuída",
-				// "marcada como done", "ciclo seguinte", "movimento
-				// principal") por linguagem plana. O usuário médio
-				// entende "fechar ação" + "próxima análise confirma".
-				<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
-					<div className="mb-2 text-[14px] font-medium text-content-secondary">
-						Seu time ainda não recuperou nada este mês.
-					</div>
-					<p className="text-[13px] leading-relaxed text-content-muted">
-						Quando seu time fecha uma ação e a próxima análise confirma que o problema sumiu, ela aparece aqui com quem fechou, quando e quanto seu site recuperou. Comece pela primeira ação dos próximos passos.
-					</p>
-				</div>
-			) : (
+			{rows.length === 0 ? null : (
 				<div data-vsgp-card className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
 					{/* Headline summary — "seu time recuperou R$ X em N ações" */}
 					<div className="mb-5 border-b border-edge/60 pb-4">

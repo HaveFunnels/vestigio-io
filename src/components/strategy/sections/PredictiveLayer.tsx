@@ -89,7 +89,20 @@ export default function PredictiveLayer({ envId, month }: Props) {
 			.finally(() => setLoading(false));
 	}, [envId, month]);
 
-	if (loading || !data) return null;
+	if (loading) {
+		// EXAME E8 — shimmer skeleton while fetching (house rule:
+		// skeleton over spinner, and never a silent void that pops in
+		// later and shifts the page under the reader).
+		return (
+			<section className="mb-10">
+				<div className="mb-4 h-5 w-56 animate-pulse rounded bg-surface-card" />
+				<div className="rounded-2xl border border-edge bg-surface-card p-5 sm:p-6">
+					<div className="h-3 w-40 animate-pulse rounded bg-surface-inset" />
+				</div>
+			</section>
+		);
+	}
+	if (!data) return null;
 
 	if (data.state === "needs_more_data") {
 		// Self-hide silencioso pra env novo. Aparece a partir de ~4 ciclos

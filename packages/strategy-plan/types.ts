@@ -423,6 +423,8 @@ export interface PlanGeneratorOutput {
 	/** ONDA 2.2 — platform spend × measured sessions; null without a
 	 *  connected ad integration. */
 	adLedger: import("./sections/ad-ledger").AdLedgerOutput | null;
+	/** ONDA 2.3 — probe diff since the previous plan; null without probes. */
+	whatChanged: import("./sections/what-changed").WhatChangedOutput | null;
 	cost: GenerationCost;
 	cycleNumber: number;
 }

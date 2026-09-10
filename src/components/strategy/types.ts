@@ -418,6 +418,8 @@ export interface StrategyPlan {
 	behavioral?: import("./sections/BehavioralMeasurement").BehavioralSectionUI | null;
 	/** ONDA 2.2 — spend × measured sessions per ad platform. */
 	adLedger?: import("./sections/AdLedger").AdLedgerUI | null;
+	/** ONDA 2.3 — probe diff since the previous plan. */
+	whatChanged?: import("./sections/WhatChanged").WhatChangedUI | null;
 	/** Reta-final: pack distribution for the open findings backing this
 	 *  plan. Used by the narrative to render a small horizontal stacked
 	 *  bar instead of burying "tema dominante: copy 44%" in prose. Empty

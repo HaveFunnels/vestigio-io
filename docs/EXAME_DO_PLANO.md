@@ -484,8 +484,12 @@ de DISCIPLINA, não de tese.
     real (nunca fabrica), "pagou" = confirmation_seen (pós-v2.6 nunca
     inferido); UI com barras proporcionais + "maior perda de gente";
     6 testes.
-13. **"O que mudou"** (§2.5): probe diffs viram a seção longitudinal — o
-    motor de retenção do mês 2+.
+13. ✅ **"O que mudou"** (§2.5): SHIPPED — seção "O que mudou no site"
+    lendo PageProbe desde o generatedAt do plano anterior: caiu (2
+    verificações seguidas), voltou, conteúdo mudou (hash), mais lenta
+    (medianas 2x + piso 1500ms); janela quieta renderiza a prova do
+    always-on ("N páginas monitoradas, nenhuma mudança"); coluna
+    whatChangedJson + migration; 6 testes.
 14. **Grau de certeza em todo claim** (§3.D): MEDIDO/ESTIMADO/VERIFICAR
     visível na UI; `Finding.confidence` finalmente lido.
 15. **Voz única do ICP** (§3.B): voice rules em TODOS os prompts + labels;

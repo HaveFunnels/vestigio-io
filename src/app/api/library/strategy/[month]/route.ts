@@ -816,6 +816,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 		maps: (plan as any).mapsJson ?? null,
 		behavioral: (plan as any).behavioralJson ?? null,
 		adLedger: (plan as any).adLedgerJson ?? null,
+		whatChanged: (plan as any).whatChangedJson ?? null,
 		packDistribution,
 		attributionTimeline,
 		attributionTotal,

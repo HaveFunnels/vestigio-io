@@ -16,6 +16,7 @@ import MemoryRollups from "./sections/MemoryRollups";
 import MonthlyThesis from "./sections/MonthlyThesis";
 import BehavioralMeasurement from "./sections/BehavioralMeasurement";
 import AdLedger from "./sections/AdLedger";
+import WhatChanged from "./sections/WhatChanged";
 import AttributionTimeline from "./sections/AttributionTimeline";
 import AnalysisStatsDrawer from "./sections/AnalysisStatsDrawer";
 import EcosystemSection from "./sections/EcosystemSection";
@@ -674,8 +675,13 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 							},
 							{
 								id: "continuity",
-								label: isPt ? "O que mudou esse mês" : "What changed this month",
+								label: isPt ? "Plano anterior" : "Previous plan",
 								visible: !!plan.continuity?.previousMonth,
+							},
+							{
+								id: "what-changed",
+								label: isPt ? "O que mudou no site" : "Site changes",
+								visible: !isResumo && !!plan.whatChanged,
 							},
 							{
 								id: "cross-customer",
@@ -788,6 +794,14 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				<div data-toc-id="continuity">
 					<Continuity continuity={plan.continuity} compact={isResumo} />
 				</div>
+
+				{/* ONDA 2.3 — probe diff desde o último plano. Self-hide sem
+				    probes; janela quieta renderiza a prova do always-on. */}
+				{!isResumo && (
+					<div data-toc-id="what-changed">
+						<WhatChanged whatChanged={plan.whatChanged} />
+					</div>
+				)}
 				{/* Wave 22.8 — Resumo mode esconde seções de contexto e
 				    decomposição. Mantém só Tese, Hero, Continuidade, Top
 				    3 Next Steps. */}

@@ -40,6 +40,7 @@ import { generateImpersonators } from "./sections/impersonators";
 import { generateMapsSection } from "./sections/maps";
 import { generateBehavioralMeasurement } from "./sections/behavioral-measurement";
 import { generateAdLedger } from "./sections/ad-ledger";
+import { generateWhatChanged } from "./sections/what-changed";
 
 /**
  * Wave 22.6 Step 6 — partial regen scope. Each event trigger asks for
@@ -251,7 +252,10 @@ export async function generatePlan(
 	// ONDA 2.2 — ad ledger crosses platform spend with the measured
 	// sources; depends on `behavioral`, so it runs right after the
 	// deterministic wave.
-	const adLedger = await generateAdLedger(prisma, ctx, behavioral);
+	const [adLedger, whatChanged] = await Promise.all([
+		generateAdLedger(prisma, ctx, behavioral),
+		generateWhatChanged(prisma, ctx),
+	]);
 
 	// E1 — monthly thesis tied to narrative regen scope. The thesis is
 	// the one-line frame for the narrative body, so they share the same
@@ -317,6 +321,7 @@ export async function generatePlan(
 		maps,
 		behavioral,
 		adLedger,
+		whatChanged,
 		cost: { llmCallsCount, llmCostCents },
 		cycleNumber,
 		regenScope: scope,
@@ -433,6 +438,7 @@ export async function generateAndPersistPlan(
 				mapsJson: output.maps as any,
 				behavioralJson: output.behavioral as any,
 				adLedgerJson: output.adLedger as any,
+				whatChangedJson: output.whatChanged as any,
 				llmCallsCount: { increment: output.cost.llmCallsCount },
 				llmCostCents: { increment: output.cost.llmCostCents },
 			};

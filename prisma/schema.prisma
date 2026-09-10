@@ -629,6 +629,9 @@ model MonthlyStrategyPlan {
   /// measured behavioral sessions per source. Null when no ad
   /// integration is connected.
   adLedgerJson Json?
+  /// ONDA 2.3 — longitudinal probe diff ("o que mudou no site desde o
+  /// último plano"). Null when the env has no probes in the window.
+  whatChangedJson Json?
   mapsJson               Json?
 
   // ── Generation cost telemetry ──

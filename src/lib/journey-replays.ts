@@ -188,7 +188,15 @@ export async function selectTopJourneys(
 	// round-trip is asserted in session-row-builder.test.ts. This is what
 	// lets raw events stop being kept for 90 days.
 	const aggRows = await prisma.behavioralSessionAggregate.findMany({
-		where: { envId, receivedAt: { gte: monthStart, lt: monthEnd } },
+		// startedAt, NOT receivedAt: receivedAt is when the aggregate ROW
+		// was written, and the historical backfill wrote thousands of old
+		// sessions in one day — a receivedAt window then claims sessions
+		// for the wrong month. startedAt is when the buyer was actually
+		// on the site, and it's the same field behavioral-measurement
+		// windows on, so the plan carries ONE session denominator
+		// (EXAME P5: "19.213 sessões" and "de 51261 no total" in the
+		// same plan).
+		where: { envId, startedAt: { gte: monthStart, lt: monthEnd } },
 		select: {
 			sessionId: true,
 			aggregate: true,

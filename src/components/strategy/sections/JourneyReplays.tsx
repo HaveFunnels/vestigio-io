@@ -176,7 +176,7 @@ export default function JourneyReplays({ envId, month }: Props) {
 					Jornadas que custaram dinheiro este mês
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					{data.journeys.length} sessões reais reconstituídas · de {data.session_count_this_month} no total
+					{data.journeys.length} sessões reais reconstituídas · de {data.session_count_this_month.toLocaleString("pt-BR")} nos últimos 30 dias
 				</div>
 			</div>
 

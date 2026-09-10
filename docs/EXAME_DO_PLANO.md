@@ -502,7 +502,7 @@ que a dona de uma loja de enxoval não usaria.**
 | P2 | Língua de agência, não do ICP | monthly-thesis.ts:177 (sem voiceRules) |
 | P3 | Tese/narrativa citam 3 superfícies-foco diferentes | narrative.ts + thesis (sem validação cruzada) |
 | P4 | Alerta TikTok não gera passo | next-steps só lê Actions de crawler |
-| P5 | 19.213 vs 51.261 sessões no mesmo plano | behavioral (30d) vs journeys (outro corte) |
+| P5 ✅ | 19.213 vs 51.261 sessões no mesmo plano | CORRIGIDO: journeys conta em startedAt (não receivedAt do backfill) na MESMA janela de 30d do behavioral; legenda da UI nomeia a janela |
 | P6 | Buyers de SaaS p/ loja Shopify; R$ 48k p/ "devs" | pack-to-buyer.ts:19-64 |
 | P7 | SEO finding em /cart | resolveFindingSurface + baseline SEO |
 | P8 | Título de finding em inglês cru | inference key sem label pt |

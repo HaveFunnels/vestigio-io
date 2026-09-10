@@ -67,18 +67,27 @@ export async function GET(request: Request, { params }: RouteParams) {
 		return NextResponse.json({ message: "Forbidden" }, { status: 403 });
 	}
 
-	const monthStart = new Date(`${month}-01T00:00:00Z`);
-	const monthEnd = new Date(
-		Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth() + 1, 1),
-	);
+	// ONE session window across the plan (EXAME P5): journeys used the
+	// calendar month while behavioral-measurement used a trailing 30
+	// days — two denominators in one document. Both now use the same
+	// trailing-30-day window on startedAt; the month segment stays in
+	// the URL for routing but does not define the measurement window.
+	const windowEnd = new Date();
+	const windowStart = new Date(windowEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
 
 	// Counta sessions distintas pra decidir se rodamos seleção OU se
 	// devolvemos pixel_required. Evita rodar aggregateSession 100 vezes
 	// pra concluir que tem 0 sessions.
 	// One BehavioralSessionAggregate row per distinct session, so a count
 	// replaces the groupBy over raw events (Wave: storage).
+	// startedAt, NOT receivedAt: receivedAt is the row-write time and the
+	// historical backfill wrote old sessions in bulk, inflating a
+	// receivedAt month-window to sessions that happened months earlier
+	// (the "de 51261 no total" vs "19.213 sessões" contradiction —
+	// EXAME P5). startedAt matches behavioral-measurement's field, so
+	// the plan quotes one denominator.
 	const distinctSessions = await prisma.behavioralSessionAggregate
-		.count({ where: { envId, receivedAt: { gte: monthStart, lt: monthEnd } } })
+		.count({ where: { envId, startedAt: { gte: windowStart, lt: windowEnd } } })
 		.catch(() => 0);
 
 	if (distinctSessions < MIN_SESSIONS_FOR_JOURNEYS) {
@@ -91,7 +100,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 		});
 	}
 
-	const journeys = await selectTopJourneys(envId, monthStart, monthEnd, 3);
+	const journeys = await selectTopJourneys(envId, windowStart, windowEnd, 3);
 
 	// Locale for the narrator prompt — org.locale is the single source
 	// of truth per the Organization schema. Falls back to pt-BR when

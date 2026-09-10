@@ -475,6 +475,20 @@ async function pickTopActions(
 		if (!inferenceKeys.some((k) => openInferenceKeys.has(k))) {
 			continue;
 		}
+		// GHOST v2 (Sept/2026): the /account step came back through a
+		// ROLLUP action (unsafe_to_scale_traffic) whose HEADLINE cause
+		// (trust_boundary_crossed) was already resolved, but whose
+		// secondary links kept it "live" under the dead headline —
+		// "Compradores são jogados pra outro domínio" shipped as step 1
+		// citing a finding the same cycle had resolved. The step's
+		// PRIMARY cause (first linked finding, which drives its title,
+		// reasoning and catalog) must itself be open; actions re-emit
+		// every cycle, so a skipped rollup returns next cycle headlined
+		// by a cause that is actually alive.
+		const primaryLinkedKey = inferenceKeys[0];
+		if (primaryLinkedKey && !openInferenceKeys.has(primaryLinkedKey)) {
+			continue;
+		}
 		// T3 + T5 — calibrate severity from impact; normalize surface to
 		// a path so titles never leak full URLs. Both happen at row hydration
 		// so every downstream (LLM prompt, fallback reasoning, title

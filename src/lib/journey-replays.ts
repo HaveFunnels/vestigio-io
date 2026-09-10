@@ -385,8 +385,17 @@ function humanizeSource(touch: AttributionContext): string {
 
 function humanizeCampaign(touch: AttributionContext): string | null {
 	if (!touch.campaign) return null;
-	// Normalize: cyber-monday → "cyber-monday" (lowercase, hyphenated)
-	return touch.campaign.toLowerCase().slice(0, 30);
+	// EXAME P13 — ad-set encodings ("h1-h3/ c1 + c2 | cbo | prt") were
+	// rendered raw in the persona header. A campaign label only ships
+	// when it reads like a NAME: mostly letters/digits/hyphens. Encoded
+	// strings (pipes, slashes, plus signs, low letter density) are
+	// internal targeting notation — showing them is noise, so we drop
+	// the label entirely rather than truncate garbage.
+	const raw = touch.campaign.toLowerCase().trim();
+	if (/[|/+=]/.test(raw)) return null;
+	const letters = (raw.match(/[a-zá-úà-ûä-üç]/gi) ?? []).length;
+	if (letters < 3 || letters / Math.max(raw.length, 1) < 0.5) return null;
+	return raw.slice(0, 30);
 }
 
 function inferVisitorType(agg: SessionAggregate): JourneyReplay["persona"]["visitor_type"] {
@@ -592,6 +601,25 @@ function clusterTimeline(events: NormalizedTimelineEvent[]): NormalizedTimelineE
 	const out: NormalizedTimelineEvent[] = [];
 	for (const ev of events) {
 		const prev = out[out.length - 1];
+		// EXAME A7 — runs of the SAME CTA on the same path collapse into
+		// one row ("Clicou 12× em 'Próxima'"). cta_click is an anchor in
+		// general, but 12 identical carousel clicks are one behavior,
+		// not twelve signals — the repetition buried the pattern.
+		const sameCtaRun =
+			prev !== undefined &&
+			prev.kind === "cta_click" &&
+			ev.kind === "cta_click" &&
+			prev.path === ev.path &&
+			!!prev.cta_label &&
+			prev.cta_label === ev.cta_label &&
+			ev.t_seconds - (prev.t_seconds ?? 0) <= CLUSTER_WINDOW_SECONDS;
+		if (sameCtaRun) {
+			const count = (prev!.cluster_count ?? 1) + 1;
+			prev!.cluster_count = count;
+			prev!.cluster_span_seconds = ev.t_seconds - (prev!.t_seconds ?? 0);
+			prev!.label = `Clicou ${count}× em "${prev!.cta_label}" ${humanizePathSlot(prev!.path)}`;
+			continue;
+		}
 		const mergable =
 			prev !== undefined &&
 			prev.kind === ev.kind &&
@@ -635,6 +663,23 @@ function clusterTimeline(events: NormalizedTimelineEvent[]): NormalizedTimelineE
 	return out;
 }
 
+// EXAME P13 — CTA labels come straight from the DOM and leaked raw
+// HTML into the plan ('Clicou em "<img src=\"//cdn/shop/files/…"')
+// and meaningless glyphs ('Clicou em "0"' — a carousel bullet the
+// narrator then took literally). Strip markup, collapse whitespace,
+// cap length, and reject labels with no semantic content.
+function sanitizeCtaText(raw: string): string {
+	let t = String(raw ?? "");
+	t = t.replace(/<[^>]*>/g, " ");        // strip tags (incl. broken/truncated)
+	t = t.replace(/<[a-z][^<]*$/i, " ");  // trailing unclosed tag fragment
+	t = t.replace(/&[a-z#0-9]+;/gi, " "); // entities
+	t = t.replace(/\s+/g, " ").trim();
+	if (t.length > 48) t = t.slice(0, 47).trimEnd() + "…";
+	// No letters at all ("0", "→", "|") = not a label a human can read.
+	if (!/[a-zá-úà-ûä-üç]/i.test(t)) return "";
+	return t;
+}
+
 function mapEventToTimeline(
 	ev: RawEventShape,
 	tSeconds: number,
@@ -662,7 +707,7 @@ function mapEventToTimeline(
 			};
 		}
 		case "cta_click": {
-			const ctaLabel = (ev.data?.label as string | undefined) ?? "";
+			const ctaLabel = sanitizeCtaText((ev.data?.label as string | undefined) ?? "");
 			const ecomSignal = opts.applyEcommerce ? classifyCtaLabel(ctaLabel) ?? undefined : undefined;
 			// Use the ecommerce signal's human label when available
 			// (e.g. cart_add → "Adicionou ao carrinho"), and always

@@ -250,9 +250,28 @@ function JourneyCard({ journey, currency }: { journey: Journey; currency: string
 							className="pointer-events-none absolute bottom-1 left-[3px] top-1 w-px bg-edge/40"
 							aria-hidden
 						/>
-						{visible.map((ev, i) => (
-							<TimelineRow key={i} ev={ev} />
-						))}
+						{visible.map((ev, i) => {
+							// EXAME A6 — a chronology must SHOW time. Uniform
+							// row spacing hid a 3-minute stare between two
+							// clicks; a labeled gap row makes dead time (the
+							// hesitation the diagnosis talks about) visible.
+							const prevT = i > 0 ? visible[i - 1].t_seconds : null;
+							const gap = prevT !== null ? ev.t_seconds - prevT : 0;
+							return (
+								<div key={i}>
+									{gap >= 30 && (
+										<div className="ml-2 flex items-center gap-2 py-1 pl-1" aria-hidden>
+											<span className="h-px w-4 bg-edge" />
+											<span className="text-[9.5px] font-medium uppercase tracking-[0.08em] text-content-faint">
+												{gap >= 120 ? `${Math.round(gap / 60)} min depois` : `${gap}s depois`}
+											</span>
+											<span className="h-px flex-1 bg-edge/60" />
+										</div>
+									)}
+									<TimelineRow ev={ev} />
+								</div>
+							);
+						})}
 						{hiddenCount > 0 && (
 							<button
 								type="button"
@@ -360,17 +379,12 @@ function JourneyCard({ journey, currency }: { journey: Journey; currency: string
 // ──────────────────────────────────────────────
 
 function TimelineRow({ ev }: { ev: TimelineEvent }) {
-	const [open, setOpen] = useState(false);
 	const dot = KIND_DOT_STYLE[ev.kind];
 	const meta = buildSecondaryMeta(ev);
 	const hasMeta = meta.length > 0;
 
 	return (
-		<div
-			className="group relative cursor-default select-none"
-			data-open={open ? "" : undefined}
-			onClick={() => hasMeta && setOpen((v) => !v)}
-		>
+		<div className="group relative cursor-default select-none">
 			<div
 				className={`absolute -left-3 top-1.5 h-1.5 w-1.5 rounded-full ${dot}`}
 				aria-hidden
@@ -385,11 +399,12 @@ function TimelineRow({ ev }: { ev: TimelineEvent }) {
 					{formatTimestamp(ev.t_seconds)}
 				</div>
 			</div>
+			{/* EXAME A6 — context is ALWAYS visible (muted), never behind
+			    hover: hover does not exist in the exported PDF and first
+			    read should not require a treasure hunt. */}
 			{hasMeta && (
-				<div
-					className="ml-2 grid grid-rows-[0fr] transition-[grid-template-rows] duration-150 ease-out group-hover:grid-rows-[1fr] group-data-[open]:grid-rows-[1fr]"
-				>
-					<div className="overflow-hidden">
+				<div className="ml-2">
+					<div>
 						<div className="px-1 pt-0.5 text-[10px] leading-tight text-content-faint">
 							{meta.map((chunk, i) => (
 								<span key={i}>

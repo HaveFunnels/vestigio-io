@@ -510,7 +510,7 @@ que a dona de uma loja de enxoval não usaria.**
 | P10 | Packs internos na legenda da barra | WhatHappenedNarrative.tsx:162-190 |
 | P11 | 4 estimativas com precisão falsa | impact baselines exibidos sem grau |
 | P12 ✅ | 45 "concorrentes" SERP sem curadoria, 0 sinais | CORRIGIDO: SERP vira sugestão inativa (ativação é decisão humana); seção só renderiza com curadoria manual ou sinal real; 29 linhas auto-ativas desativadas em prod |
-| P13 | UTM cru no título; HTML como label; botão "0" | journey-replays.ts (persona/labels) |
+| P13 ✅ | UTM cru no título; HTML como label; botão "0" | CORRIGIDO: sanitizeCtaText (strip HTML/entidades, exige conteúdo semântico); campanha só quando lê como NOME (encodings de ad-set descartados) |
 | P14 | R$ 190 vs R$ 79.200 sem ponte | journeys sem extrapolação declarada |
 | P15 ✅ | Mesmo problema em 3 passos, 3 preços | CORRIGIDO: dedupeByRootProblem — 1 passo por inference key compartilhada, greedy no ranking; +5 testes |
 | P16 ✅ | Passo com título/razão/procedimento de 3 assuntos | CORRIGIDO: ângulo compounding_dependency removido (forçava 'mesma causa raiz do Passo 1' por posição); pós-dedupe a premissa é estruturalmente falsa |
@@ -523,8 +523,8 @@ que a dona de uma loja de enxoval não usaria.**
 | A3 | "Seu time ainda não recuperou nada" | AttributionTimeline empty state |
 | A4 | Faixas 4× sem explicação | BuyerSegments render |
 | A5 | Texto sobreposto no header Carteira | Carteira.tsx |
-| A6 | Timeline é lista uniforme, 4 cores p/ 10 tipos | JourneyReplays.tsx:117-128,361-405 |
-| A7 | 12 eventos idênticos sem compressão | journey event builder |
+| A6 ✅ (parcial) | Timeline é lista uniforme, 4 cores p/ 10 tipos | CORRIGIDO: gaps de tempo visíveis ("X min depois"), contexto sempre visível (sem hover). Redesign SVG completo fica pra fase de polish visual |
+| A7 ✅ | 12 eventos idênticos sem compressão | CORRIGIDO: runs do mesmo CTA no mesmo path colapsam em "Clicou N× em 'X'" |
 | A8 ✅ | Mesma screenshot em todo passo; legenda sitemap.xml | CORRIGIDO: fallback de home morto (exact-only); rota escopa lote mais recente; legenda nomeia a superfície DA foto; worker captura páginas citadas por findings (MAX 8) |
 | A9 ✅ | img sem onError; presign 1h expira na aba aberta | CORRIGIDO: onError esconde a figura inteira nos 2 pontos; presign 24h |
 | A10 | Backticks viram acentos; "aplicada este componente" | NextSteps markdown + dedupe textual |

@@ -15,6 +15,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { voiceRulesFor } from "../voice-rules";
 import { verifiedCaptured, openLossExposure } from "../honest-aggregates";
 import type { GenerateContext } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
@@ -173,8 +174,14 @@ function fallbackThesis(i: ThesisInputs): string {
 	return `Vestigio mapeou **R$ ${i.exposureTotal.toLocaleString("pt-BR")}/mês** de perda potencial aberta em ${i.envDomain}, distribuída em ${i.exposureFindingCount} pontos. O foco do mês é começar a fechar os de maior impacto financeiro. Comece pelo Passo 1.`;
 }
 
-function buildPrompt(i: ThesisInputs): { system: string; user: string } {
+function buildPrompt(i: ThesisInputs, locale: string): { system: string; user: string } {
+	// EXAME E6 — the output language follows the org locale. The prompt
+	// body stays pt-BR (instructions), but the response-language line is
+	// authoritative; an en org used to receive a Portuguese thesis.
+	const rules = voiceRulesFor(locale);
 	const system = `Você é Vestigio. Escreva a TESE deste mês para o operador de ${i.envDomain}.
+
+IDIOMA DA RESPOSTA (obrigatório): escreva a tese em ${rules.language_name}. Cada palavra do texto final em ${rules.language_name}.
 
 Uma TESE é diferente de um finding:
 - TESE: nomeia um FOCO (uma área, página, ou momento do funil) onde a maior parte do problema vive este mês. Quantifica esse foco de forma AGREGADA (R$ somado sobre múltiplos pontos). Dá direção de leitura pro plano inteiro.
@@ -262,7 +269,7 @@ export async function generateMonthlyThesis(
 	organizationId: string | null,
 ): Promise<LlmTextResult> {
 	const inputs = await gatherInputs(prisma, ctx);
-	const { system, user } = buildPrompt(inputs);
+	const { system, user } = buildPrompt(inputs, ctx.locale);
 	return callForText({
 		model: "haiku_4_5",
 		systemPrompt: system,

@@ -32,7 +32,7 @@ import { useCopilot } from "@/components/app/CopilotProvider";
  *   - Title + combined impact pill in header row
  *   - "POR QUE PRIMEIRO" reasoning in Fraunces narrative voice
  *   - "COMO PROCEDER" numbered procedure steps
- *   - "PESQUISAR" research chip row
+
  *   - Effort + owner + due date + status + checkbox + comment count row
  *   - "Ver actions linkadas" trigger (Step 9 wires drawer; mock noop)
  */
@@ -673,46 +673,11 @@ function StepCard({
 				)}
 
 				{/* Research refs */}
-				{step.researchRefs.length > 0 && (
-					<div className="mb-5">
-						<div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-							Pesquisar
-						</div>
-						<div className="flex flex-wrap gap-2">
-							{step.researchRefs.map((ref, i) => {
-								const linkProps = ref.url
-									? { href: ref.url, target: "_blank", rel: "noopener noreferrer" as const }
-									: {};
-								const Tag: any = ref.url ? "a" : "span";
-								return (
-									<Tag
-										key={i}
-										{...linkProps}
-										className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-inset px-3 py-1 text-[12px] text-content-secondary transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content"
-									>
-										{ref.title}
-										{ref.url && (
-											<svg
-												width="10"
-												height="10"
-												viewBox="0 0 10 10"
-												fill="none"
-												className="opacity-60"
-											>
-												<path
-													d="M3 1.5h5.5V7M8.5 1.5L2.5 7.5"
-													stroke="currentColor"
-													strokeWidth="1"
-													strokeLinecap="round"
-												/>
-											</svg>
-										)}
-									</Tag>
-								);
-							})}
-						</div>
-					</div>
-				)}
+				{/* EXAME E7 — o bloco "Pesquisar" (researchRefs) foi removido:
+				    o gerador nunca emitiu uma referência (next-steps.ts grava []
+				    desde o design) e o catálogo não carrega URLs. A coluna
+				    persiste no schema para o dia em que referências reais
+				    existirem; até lá, superfície de UI morta é dívida. */}
 
 				{/* Chat CTA — elevated from the footer row where it was small
 				    + gray + buried (council critique: customer reads a vague

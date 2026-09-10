@@ -59,45 +59,53 @@ export async function generateValuePreview(
 	// checks these promises against reality, and one broken promise
 	// poisons every real number in the plan.
 	const isEcommerce = (ctx.businessContext?.vertical ?? "").toLowerCase().includes("commerce");
+	// EXAME E6 — pt-BR keeps the original strings; other locales get
+	// English until es/de land.
+	const pt = (ctx.locale ?? "pt-BR") === "pt-BR";
 	const adsLabel = isEcommerce
-		? "dados de anúncio (Meta/Google) refinam as estimativas"
-		: "dados de pagamento e anúncio refinam as estimativas";
+		? (pt ? "dados de anúncio (Meta/Google) refinam as estimativas" : "ad data (Meta/Google) sharpens the estimates")
+		: (pt ? "dados de pagamento e anúncio refinam as estimativas" : "payment and ad data sharpen the estimates");
 	return {
 		currentMonth: {
-			label: "Hoje · M1",
-			unlocked: [
-				"análise contínua do site",
-				"comportamento real medido pelo pixel",
-				"plano mensal com prioridades",
-			],
+			label: pt ? "Hoje · M1" : "Today · M1",
+			unlocked: pt
+				? ["análise contínua do site", "comportamento real medido pelo pixel", "plano mensal com prioridades"]
+				: ["continuous site analysis", "real behavior measured by the pixel", "monthly plan with priorities"],
 			icon: "check",
 		},
 		milestoneM3: {
 			label: "M3",
-			eta: monthsUntil(envAgeMonths, 3),
+			eta: monthsUntil(envAgeMonths, 3, pt),
 			unlocked: hasCrossSourceSignal
-				? [adsLabel, "comparação real mês a mês"]
-				: ["comparação real mês a mês", `conectando anúncios: ${adsLabel}`],
+				? [adsLabel, pt ? "comparação real mês a mês" : "real month-over-month comparison"]
+				: [
+					pt ? "comparação real mês a mês" : "real month-over-month comparison",
+					pt ? `conectando anúncios: ${adsLabel}` : `connect ads: ${adsLabel}`,
+				],
 			icon: envAgeMonths >= 3 ? "check" : "pending",
 		},
 		milestoneM6: {
 			label: "M6",
-			eta: monthsUntil(envAgeMonths, 6),
-			unlocked: ["tendência por página ao longo de 6 meses", "o que voltou a quebrar vs o que ficou resolvido"],
+			eta: monthsUntil(envAgeMonths, 6, pt),
+			unlocked: pt
+				? ["tendência por página ao longo de 6 meses", "o que voltou a quebrar vs o que ficou resolvido"]
+				: ["6-month per-page trend", "what broke again vs what stayed fixed"],
 			icon: envAgeMonths >= 6 ? "check" : envAgeMonths >= 3 ? "pending" : "future",
 		},
 		milestoneM12: {
 			label: "M12",
-			eta: monthsUntil(envAgeMonths, 12),
-			unlocked: ["um ano de histórico: comparação ano a ano", "sazonalidade real do seu funil"],
+			eta: monthsUntil(envAgeMonths, 12, pt),
+			unlocked: pt
+				? ["um ano de histórico: comparação ano a ano", "sazonalidade real do seu funil"]
+				: ["a year of history: year-over-year comparison", "your funnel's real seasonality"],
 			icon: envAgeMonths >= 12 ? "check" : envAgeMonths >= 9 ? "pending" : "future",
 		},
 	};
 }
 
-function monthsUntil(envAge: number, target: number): string | undefined {
+function monthsUntil(envAge: number, target: number, pt: boolean): string | undefined {
 	const delta = target - envAge;
 	if (delta <= 0) return undefined; // already passed
-	if (delta === 1) return "em 1 mês";
-	return `em ${delta} meses`;
+	if (delta === 1) return pt ? "em 1 mês" : "in 1 month";
+	return pt ? `em ${delta} meses` : `in ${delta} months`;
 }

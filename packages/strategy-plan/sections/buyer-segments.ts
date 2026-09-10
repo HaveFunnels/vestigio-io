@@ -12,7 +12,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { openLossExposure, type OpenExposureRow } from "../honest-aggregates";
 import type { GenerateContext, BuyerSegmentOutput } from "../types";
-import { packToBuyer, BUYER_LABEL_PT_BR, type BuyerKind } from "../pack-to-buyer";
+import { packToBuyer, buyerLabel, type BuyerKind } from "../pack-to-buyer";
 import { resolveInferenceTitle } from "../title-resolver";
 
 interface FindingRow {
@@ -86,7 +86,7 @@ export async function generateBuyerSegments(
 			}
 			return {
 				buyer,
-				buyerLabel: BUYER_LABEL_PT_BR[buyer],
+				buyerLabel: buyerLabel(buyer, ctx.locale),
 				count: items.length,
 				impactMin: Math.round(impactMin),
 				impactMax: Math.round(impactMax),

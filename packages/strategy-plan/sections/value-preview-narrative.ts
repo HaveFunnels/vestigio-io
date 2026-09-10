@@ -9,6 +9,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { voiceRulesFor } from "../voice-rules";
 import type { GenerateContext, ValuePreviewOutput } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
 
@@ -101,8 +102,11 @@ function fallback(i: PreviewInputs): string {
 	return `Você está há **${i.envAgeMonths} ${i.envAgeMonths === 1 ? "mês" : "meses"}** com Vestigio, com histórico completo: comparação ano a ano e sazonalidade real do seu funil.`;
 }
 
-function buildPrompt(i: PreviewInputs): { system: string; user: string } {
+function buildPrompt(i: PreviewInputs, locale: string): { system: string; user: string } {
+	const rules = voiceRulesFor(locale);
 	const system = `Você escreve um parágrafo curto (máximo 2 frases, ~50 palavras) para a seção "O que você ganha continuando" de um Plano de Estratégia.
+
+IDIOMA DA RESPOSTA (obrigatório): escreva em ${rules.language_name}.
 
 Regras:
 1. Apenas 1-2 frases, português brasileiro. Voz ativa. Pode usar "Vestigio" como sujeito.
@@ -144,7 +148,7 @@ export async function generateValuePreviewNarrative(
 	organizationId: string | null,
 ): Promise<LlmTextResult> {
 	const inputs = await gatherInputs(prisma, ctx, preview);
-	const { system, user } = buildPrompt(inputs);
+	const { system, user } = buildPrompt(inputs, ctx.locale);
 	return callForText({
 		model: "haiku_4_5",
 		systemPrompt: system,

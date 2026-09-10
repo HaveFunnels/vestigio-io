@@ -19,6 +19,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { voiceRulesFor } from "../voice-rules";
 import { verifiedCaptured, openLossExposure } from "../honest-aggregates";
 import type { GenerateContext } from "../types";
 import { callForText, type LlmTextResult } from "../llm-helpers";
@@ -332,14 +333,17 @@ function fallbackNarrative(i: NarrativeInputs): string {
 	return paras.join("\n\n");
 }
 
-function buildPrompt(i: NarrativeInputs): { system: string; user: string } {
+function buildPrompt(i: NarrativeInputs, locale: string): { system: string; user: string } {
 	const firstPlanFrame = i.isFirstPlan
 		? `\n\nIMPORTANTE: esse é o PRIMEIRO PLANO desse env. Não acuse o cliente de "nada foi resolvido". Ele acabou de ativar. Use tom de onboarding ("Esse é o seu primeiro plano. Vestigio acabou de mapear...").`
 		: "";
 	const positiveOpenerHint = i.positiveSample
 		? `\n\nABERTURA OBRIGATÓRIA: comece o Parágrafo 1 com 1 frase reconhecendo o que ESTÁ funcionando bem (use o ponto positivo listado nos dados como "${i.positiveSample.title}"${i.positiveSample.surface ? ` em ${i.positiveSample.surface}` : ""}). NÃO carregue R$ no positivo (não captura, segura). Em seguida emende com o diagnóstico do mês.`
 		: "";
-	const system = `Você é Vestigio escrevendo a seção "O que aconteceu em ${i.monthLabelPt}" de um Plano de Estratégia mensal para o operador de ${i.envDomain}. Essa é a tese do mês. A leitura estratégica que ancora o resto do plano.${firstPlanFrame}${positiveOpenerHint}
+	const rules = voiceRulesFor(locale);
+	const system = `Você é Vestigio escrevendo a seção "O que aconteceu em ${i.monthLabelPt}" de um Plano de Estratégia mensal para o operador de ${i.envDomain}.
+
+IDIOMA DA RESPOSTA (obrigatório): escreva os 4 parágrafos em ${rules.language_name}. Cada palavra do texto final em ${rules.language_name}. Essa é a tese do mês. A leitura estratégica que ancora o resto do plano.${firstPlanFrame}${positiveOpenerHint}
 
 Estrutura obrigatória. EXATAMENTE 4 parágrafos nessa ordem:
 
@@ -475,7 +479,7 @@ export async function generateNarrativeWhatHappened(
 		};
 	}
 
-	const { system, user } = buildPrompt(inputs);
+	const { system, user } = buildPrompt(inputs, ctx.locale);
 	return callForText({
 		model: "sonnet_4_6",
 		systemPrompt: system,

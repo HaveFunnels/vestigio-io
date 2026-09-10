@@ -30,11 +30,14 @@ function ymKey(d: Date): string {
 	return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function windowLabel(months: number): string {
-	if (months === 1) return "Último mês";
-	if (months === 3) return "Últimos 3 meses";
-	if (months === 6) return "Últimos 6 meses";
-	return "Últimos 12 meses";
+function windowLabel(months: number, locale?: string | null): string {
+	// EXAME E6 — pt-BR keeps the original labels; other locales get
+	// English until es/de land.
+	const pt = (locale ?? "pt-BR") === "pt-BR";
+	if (months === 1) return pt ? "Último mês" : "Last month";
+	if (months === 3) return pt ? "Últimos 3 meses" : "Last 3 months";
+	if (months === 6) return pt ? "Últimos 6 meses" : "Last 6 months";
+	return pt ? "Últimos 12 meses" : "Last 12 months";
 }
 
 async function buildWindow(
@@ -42,6 +45,7 @@ async function buildWindow(
 	environmentId: string,
 	monthStart: Date,
 	monthsBack: number,
+	locale?: string | null,
 ): Promise<MemoryWindowOutput> {
 	// Window semantics: "trailing N months INCLUDING the plan's own
 	// month". Previous implementation used `end = monthStart` which
@@ -131,7 +135,7 @@ async function buildWindow(
 	}
 
 	const out: MemoryWindowOutput = {
-		label: windowLabel(monthsBack),
+		label: windowLabel(monthsBack, locale),
 		actionsResolved: resolved.length,
 		capturedTotal,
 		findingsDetected,
@@ -154,10 +158,10 @@ export async function generateMemoryRollups(
 	ctx: GenerateContext,
 ): Promise<MemoryRollupsOutput> {
 	const [w1, w3, w6, w12, firstActivity] = await Promise.all([
-		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 1),
-		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 3),
-		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 6),
-		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 12),
+		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 1, ctx.locale),
+		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 3, ctx.locale),
+		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 6, ctx.locale),
+		buildWindow(prisma, ctx.environmentId, ctx.monthStart, 12, ctx.locale),
 		prisma.auditCycle.findFirst({
 			where: { environmentId: ctx.environmentId },
 			orderBy: { createdAt: "asc" },

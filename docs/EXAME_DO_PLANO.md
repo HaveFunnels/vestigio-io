@@ -534,6 +534,6 @@ que a dona de uma loja de enxoval não usaria.**
 | E3 ✅ | PDF perde journeys/ecosystem/predictive (401 silencioso) | CORRIGIDO: verifyExportTokenForEnvMonth nas 4 rotas lazy + planSectionQuery propaga o token nos fetches dos componentes |
 | E4 ✅ | TOC ≠ DOM; 4 seções não navegáveis | CORRIGIDO: rail espelha a ordem real do DOM e inclui attribution/ecosystem/journeys/predictive |
 | E5 ✅ | Seletor CSS morto no print | CORRIGIDO: safety-net escopado a [data-vsgp-print] (atributos no MESMO elemento); MonthPicker com print-hide |
-| E6 | Locale pela metade | thesis/narrative/labels hardcoded |
-| E7 | researchRefs sempre vazio | next-steps.ts:987 |
+| E6 ✅ (parcial) | Locale pela metade | CORRIGIDO: linha de idioma via voiceRulesFor nos 3 prompts LLM (saída no idioma da org) + labels de buyers/memória/value-preview localizados (pt/en; es-de caem em en). Restam: alert behavioral, detalhes competitor/impersonators |
+| E7 ✅ | researchRefs sempre vazio | RESOLVIDO por remoção: bloco "Pesquisar" da UI removido (gerador nunca emitiu, catálogo não tem URLs); coluna preservada pro futuro |
 | E8 ✅ | Seções somem sem placeholder (layout shift) | CORRIGIDO: skeleton shimmer durante load (banner-only continua silencioso — ausência é o caso normal de um alerta) |

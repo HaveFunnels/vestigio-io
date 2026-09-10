@@ -73,3 +73,15 @@ export const BUYER_LABEL_PT_BR: Record<BuyerKind, string> = {
 	eng: "Para o time de Desenvolvedores",
 	leadership: "Para a Diretoria",
 };
+
+// EXAME E6 — locale-aware buyer labels. pt-BR keeps the original set;
+// every other locale falls back to English until es/de get their own.
+const BUYER_LABEL_EN: Record<BuyerKind, string> = {
+	copy: "For the Marketing team",
+	eng: "For the Development team",
+	leadership: "For Leadership",
+};
+
+export function buyerLabel(buyer: BuyerKind, locale?: string | null): string {
+	return (locale ?? "pt-BR") === "pt-BR" ? BUYER_LABEL_PT_BR[buyer] : BUYER_LABEL_EN[buyer];
+}

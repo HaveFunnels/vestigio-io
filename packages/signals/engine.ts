@@ -3674,19 +3674,14 @@ function extractBehavioralSignals(
   // Aggregate across all behavioral evidence
   for (const ev of behavioralEvidence) {
     const p = ev.payload as BehavioralSessionPayload;
-    if (p.session_count < MIN_SESSIONS) continue;
-
     const refs = [makeRef('evidence', ev.id)];
 
-    // ── Wave 7.11: Pixel coverage gating ──
-    // Determine which page types the pixel actually observes. If a page type
-    // is NOT covered, signals that depend on that page type are unreliable
-    // (e.g., checkout_reached_rate=0 because the pixel never sees checkout).
-    const coverage = new Set<string>(p.pixel_coverage_page_types || []);
-    const hasCheckoutCoverage = coverage.has('checkout');
-    const hasThankYouCoverage = coverage.has('thank_you');
-
     // ── Measured conversion continuity (ghost-killer) ──────────────
+    // EMITTED BEFORE the MIN_SESSIONS window gate: the count is
+    // TRAILING 30d, so the window's session volume is irrelevant — a
+    // 3 AM hot cycle with 7 sessions was skipping this signal and the
+    // trust finding kept being re-confirmed exactly during low-traffic
+    // hours.
     // Confirmed purchases counted by the pixel (confirmation_seen fires
     // only on the merchant's confirm() or a strong signal — never
     // inferred). This is the measurement that FALSIFIES "buyers are
@@ -3706,6 +3701,17 @@ function extractBehavioralSignals(
         description: `${p.confirmation_seen_count} confirmed purchase(s) measured by the pixel in this window`,
       }));
     }
+
+    if (p.session_count < MIN_SESSIONS) continue;
+
+
+    // ── Wave 7.11: Pixel coverage gating ──
+    // Determine which page types the pixel actually observes. If a page type
+    // is NOT covered, signals that depend on that page type are unreliable
+    // (e.g., checkout_reached_rate=0 because the pixel never sees checkout).
+    const coverage = new Set<string>(p.pixel_coverage_page_types || []);
+    const hasCheckoutCoverage = coverage.has('checkout');
+    const hasThankYouCoverage = coverage.has('thank_you');
 
     // Emit pixel_coverage_gap signal when important page types are missing
     if (!hasCheckoutCoverage || !hasThankYouCoverage) {

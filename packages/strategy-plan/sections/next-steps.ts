@@ -436,17 +436,31 @@ async function pickTopActions(
 	// built from is still open. This ties action freshness to finding
 	// status — which the engine's lifecycle and, when needed, a manual
 	// resolve both control — without the risk of latest-cycle scoping.
-	const openInferenceKeys = new Set(
-		(
-			await prisma.finding.findMany({
-				where: {
-					environmentId: ctx.environmentId,
-					status: { in: ["created", "confirmed"] },
-				},
-				select: { inferenceKey: true },
-			})
-		).map((f) => f.inferenceKey),
-	);
+	// GHOST v4 (Sept/2026): "open" must be the LATEST status per finding
+	// identity, not "any historical created row". The lifecycle uses
+	// phantom rows — resolution writes a NEW row with status='resolved'
+	// in the resolving cycle, and the older 'created' row STAYS
+	// 'created' forever as that cycle's history. Querying `status in
+	// (created,confirmed)` across all cycles therefore keeps a resolved
+	// finding (the /account trust boundary) eternally "open", so its
+	// step never gets skipped. Reduce to the most recent row per
+	// (inferenceKey, surface) and treat 'resolved' as closed.
+	const findingRows = await prisma.finding.findMany({
+		where: { environmentId: ctx.environmentId },
+		select: { inferenceKey: true, surface: true, status: true, createdAt: true },
+		orderBy: { createdAt: "desc" },
+	});
+	const latestStatusByIdentity = new Map<string, string>();
+	for (const f of findingRows) {
+		const idKey = `${f.inferenceKey}::${f.surface ?? ""}`;
+		if (!latestStatusByIdentity.has(idKey)) latestStatusByIdentity.set(idKey, f.status);
+	}
+	const openInferenceKeys = new Set<string>();
+	for (const [idKey, status] of latestStatusByIdentity) {
+		if (status === "created" || status === "confirmed" || status === "regressed") {
+			openInferenceKeys.add(idKey.split("::")[0]);
+		}
+	}
 
 	const out: ActionRow[] = [];
 	for (const r of rows) {
@@ -1427,4 +1441,3 @@ export async function generateNextSteps(
 		cost: { llmCallsCount: totalCallsCount, llmCostCents: totalCostCents },
 	};
 }
-// build-marker: 4628dd7f follow-up (worker webhook missed the previous push)

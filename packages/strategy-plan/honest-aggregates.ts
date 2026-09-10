@@ -149,15 +149,19 @@ export async function openLossExposure(
 	environmentId: string,
 	end: Date,
 ): Promise<OpenExposure> {
+	// GHOST v4 (Sept/2026): the lifecycle uses phantom rows — a
+	// resolved finding keeps its old 'created' row (that cycle's
+	// history) and gains a NEW 'resolved' row. Filtering `status in
+	// (created,confirmed,regressed)` across all cycles therefore counts
+	// a resolved finding's stale created row forever (the /account
+	// trust boundary, R$ 8.750, kept draining the headline after it was
+	// resolved). Determine the LATEST status per identity as of `end`,
+	// and only the ones still open enter the exposure.
 	const raw = await prisma.finding.findMany({
 		where: {
 			environmentId,
 			polarity: { in: ["negative", "neutral"] },
-			// "regressed" is open and draining (Wave 22.9's hero rationale)
-			// — and item (f) of the cross-exam requires every surface to
-			// use the SAME set, so the wider, more correct one wins.
-			status: { in: ["created", "confirmed", "regressed"] },
-			statusChangedAt: { lt: end },
+			createdAt: { lt: end },
 		},
 		select: {
 			inferenceKey: true,
@@ -167,15 +171,23 @@ export async function openLossExposure(
 			impactMin: true,
 			impactMax: true,
 			impactMidpoint: true,
+			status: true,
+			createdAt: true,
 		},
-		orderBy: { impactMidpoint: "desc" },
+		orderBy: [{ createdAt: "desc" }, { impactMidpoint: "desc" }],
 	});
 
-	// Dedupe by identity, first row wins (highest midpoint, given order).
+	// Latest row per identity wins (createdAt desc). Include only when
+	// that latest status is still open.
+	const OPEN = new Set(["created", "confirmed", "regressed"]);
 	const byIdentity = new Map<string, OpenExposureRow>();
+	const seenIdentity = new Set<string>();
 	for (const r of raw) {
 		const key = `${r.inferenceKey}::${r.surface}`;
-		if (!byIdentity.has(key)) byIdentity.set(key, r);
+		if (seenIdentity.has(key)) continue; // older row for an identity we've settled
+		seenIdentity.add(key);
+		if (!OPEN.has(r.status)) continue; // latest is resolved → closed
+		byIdentity.set(key, r);
 	}
 	const rows = [...byIdentity.values()];
 

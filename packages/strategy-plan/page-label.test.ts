@@ -31,6 +31,14 @@ describe("labelFromPath / pageEntityLabel", () => {
 		expect(labelFromPath("/products/limpamax-robo-aspirador")).toBe("limpamax robo aspirador");
 		expect(labelFromPath("/")).toBe("página inicial");
 	});
+	it("brand-only titles fall through to the path label", () => {
+		expect(pageEntityLabel("Casa Montelle", "/", "casamontelle.com")).toBe("página inicial");
+	});
+	it("checkout/cart slug paths resolve to their entity, not the cart id", () => {
+		expect(labelFromPath("/c/NX-34D2C1686479")).toBe("Checkout");
+		expect(labelFromPath("/checkouts/abc123")).toBe("Checkout");
+		expect(labelFromPath("/cart")).toBe("Carrinho");
+	});
 	it("prefers the title, falls back to the path", () => {
 		expect(pageEntityLabel("Robô Aspirador LimpaMax | Loja", "/products/limpamax")).toBe(
 			"Robô Aspirador LimpaMax",

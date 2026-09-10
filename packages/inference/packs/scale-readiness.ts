@@ -67,6 +67,8 @@ function inferCommerceContext(
   ];
 }
 
+const MEASURED_CONTINUITY_MIN = 5;
+
 function inferTrustBoundary(
   first: (attr: string) => Signal | undefined,
   scoping: Scoping,
@@ -77,10 +79,26 @@ function inferTrustBoundary(
   const checkoutOffDomain = first('checkout.off_domain');
   const weakSurface = first('trust.surface_weakness');
   const redirectChain = first('trust.redirect_chain_length');
+  const confirmedPurchases = first('behavioral.confirmed_purchases');
 
   if (!boundaryCrossed && !checkoutOffDomain) return [];
 
-  const isCrossed = boundaryCrossed?.value === 'true' || checkoutOffDomain?.value === 'true';
+  let isCrossed = boundaryCrossed?.value === 'true' || checkoutOffDomain?.value === 'true';
+
+  // MEASURED CONTRADICTION GATE (ghost-killer, Sept/2026): the claim
+  // behind this inference is "buyers abandon when redirected to
+  // another domain". When the pixel COUNTS confirmed purchases in the
+  // same window (>= MEASURED_CONTINUITY_MIN, so one stray confirm
+  // never flips it), buyers demonstrably complete the flow across the
+  // hop — the abandonment claim is falsified by measurement and the
+  // finding must not exist. Vertical-agnostic: any site with the
+  // confirmation instrument gets the same protection. The crawl
+  // observation (a cross-domain hop exists) may still matter as UX
+  // context, but never as an R$ leak the measurement disproves.
+  const measuredContinuity = confirmedPurchases?.numeric_value ?? 0;
+  if (isCrossed && measuredContinuity >= MEASURED_CONTINUITY_MIN) {
+    isCrossed = false;
+  }
   const hasWeakSurface = weakSurface?.value === 'high';
   const hasLongRedirect = redirectChain != null && (redirectChain.numeric_value || 0) > 2;
 
@@ -113,7 +131,7 @@ function inferTrustBoundary(
       scoping, cycle_ref, ids,
       signal_refs: relevantSignals.map((s) => makeRef('signal', s.id)),
       evidence_refs: relevantSignals.flatMap((s) => s.evidence_refs),
-      reasoning: buildTrustBoundaryReasoning(isCrossed, hasWeakSurface, hasLongRedirect),
+      reasoning: buildTrustBoundaryReasoning(isCrossed, hasWeakSurface, hasLongRedirect, measuredContinuity),
       reasoning_slots: { severity },
     }),
   ];
@@ -123,8 +141,13 @@ function buildTrustBoundaryReasoning(
   crossed: boolean,
   weakSurface: boolean,
   longRedirect: boolean,
+  measuredContinuity = 0,
 ): string {
-  if (!crossed) return 'No trust boundary crossing detected.';
+  if (!crossed) {
+    return measuredContinuity >= MEASURED_CONTINUITY_MIN
+      ? `Cross-domain hop observed, but ${measuredContinuity} confirmed purchases measured across it in the window — the abandonment claim is contradicted by measurement, no leak.`
+      : 'No trust boundary crossing detected.';
+  }
   const parts = ['Trust boundary crossed: user leaves the primary domain during the conversion flow.'];
   if (weakSurface) parts.push('Unknown providers or unverified handoffs increase risk.');
   if (longRedirect) parts.push('Long redirect chain adds friction and reduces trust continuity.');

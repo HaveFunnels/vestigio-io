@@ -40,6 +40,11 @@ export function cleanPageTitle(
 		return n.length >= 3 && (brand.includes(n) || n.includes(brand));
 	};
 	const nonBrand = parts.filter((p) => !isBrand(p));
+	// Every part is the brand ("Casa Montelle" as the homepage title):
+	// there is no entity here — fall through to the path label
+	// ("página inicial") instead of parroting the brand as if it named
+	// a thing.
+	if (brand && nonBrand.length === 0) return null;
 	const pool = nonBrand.length > 0 ? nonBrand : parts;
 	// Among non-brand parts, the longest is the most specific; when the
 	// brand is unknown, the longest overall is still the best guess.
@@ -53,6 +58,10 @@ export function cleanPageTitle(
  *  de-slugged: "/products/limpamax-robo" → "limpamax robo". */
 export function labelFromPath(path: string): string {
 	if (!path || path === "/") return "página inicial";
+	// Checkout-slug conventions carry an opaque cart id — the entity is
+	// the checkout itself, not "NX 34D2C1686479".
+	if (/^\/(c|checkouts?)(\/|$)/i.test(path)) return "Checkout";
+	if (/^\/(cart|carrinho|carrito)(\/|$)/i.test(path)) return "Carrinho";
 	const seg = path.replace(/\/+$/, "").split("/").filter(Boolean).pop() ?? path;
 	const deslugged = decodeURIComponent(seg).replace(/[-_]+/g, " ").trim();
 	return deslugged || path;

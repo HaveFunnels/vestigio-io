@@ -13,6 +13,7 @@ import type { PrismaClient } from "@prisma/client";
 import { openLossExposure, type OpenExposureRow } from "../honest-aggregates";
 import type { GenerateContext, BuyerSegmentOutput } from "../types";
 import { packToBuyer, buyerLabel, type BuyerKind } from "../pack-to-buyer";
+import { pageEntityLabel } from "../page-label";
 import { resolveInferenceTitle } from "../title-resolver";
 
 interface FindingRow {
@@ -28,6 +29,7 @@ interface FindingRow {
 function titleForFinding(
 	row: FindingRow,
 	translations: GenerateContext["translations"],
+	surfaceLabel?: string | null,
 ): string {
 	// Centralised resolver consults inference_titles + dynamic_titles +
 	// root_cause_titles, including slot extraction for funnel_broken_path,
@@ -47,7 +49,8 @@ function titleForFinding(
 	}
 	const friendlyKey =
 		translated ?? row.inferenceKey.replace(/_/g, " ");
-	return `${friendlyKey} · ${row.surface}`;
+	// ONDA 4.1 cosmetics — the entity, path demoted (EXAME v5 verdict).
+	return `${friendlyKey} · ${surfaceLabel ?? row.surface}`;
 }
 
 export async function generateBuyerSegments(
@@ -63,6 +66,28 @@ export async function generateBuyerSegments(
 	// to R$ 305k (cross-exam round 2, hole 1).
 	const exposure = await openLossExposure(prisma, ctx.environmentId, ctx.monthEnd);
 	const rows: OpenExposureRow[] = exposure.rows;
+
+	// ONDA 4.1 cosmetics — entity labels for sample titles (the cards
+	// were still showing raw paths after the v5 exam).
+	const labelByPath = new Map<string, string>();
+	try {
+		const inv = await prisma.pageInventoryItem.findMany({
+			where: { environmentRef: ctx.environmentId, removedAt: null },
+			select: { path: true, title: true },
+			take: 500,
+		});
+		for (const it of inv) {
+			const pp = it.path && it.path.length > 1 ? it.path.replace(/\/+$/, "") : it.path || "/";
+			if (!labelByPath.has(pp)) labelByPath.set(pp, pageEntityLabel(it.title, pp, ctx.envDomain));
+		}
+	} catch { /* fallback: de-slugged in surfaceLabelFor */ }
+	const surfaceLabelFor = (surface: string | null): string | null => {
+		if (!surface) return null;
+		const tok = surface.trim().split(/[,\s]+/)[0] ?? "";
+		if (!tok.startsWith("/")) return null;
+		const pp = tok.length > 1 ? tok.replace(/\/+$/, "") : "/";
+		return labelByPath.get(pp) ?? pageEntityLabel(null, pp, ctx.envDomain);
+	};
 
 	// Bucket findings by buyer; tally impact + collect samples.
 	const buckets: Record<BuyerKind, FindingRow[]> = {
@@ -87,7 +112,7 @@ export async function generateBuyerSegments(
 			const seenTitles = new Set<string>();
 			const sample: FindingRow[] = [];
 			for (const item of items) {
-				const t = titleForFinding(item, ctx.translations);
+				const t = titleForFinding(item, ctx.translations, surfaceLabelFor(item.surface));
 				if (seenTitles.has(t)) continue;
 				seenTitles.add(t);
 				sample.push(item);
@@ -106,7 +131,7 @@ export async function generateBuyerSegments(
 				// DB row UUID. Storing UUIDs here meant the drawer never
 				// matched and always rendered the empty state.
 				sampleFindingIds: sample.map((s) => s.inferenceKey),
-				sampleFindingTitles: sample.map((s) => titleForFinding(s, ctx.translations)),
+				sampleFindingTitles: sample.map((s) => titleForFinding(s, ctx.translations, surfaceLabelFor(s.surface))),
 				allFindingIds: Array.from(new Set(items.map((r) => r.inferenceKey))),
 			};
 		})

@@ -3686,6 +3686,27 @@ function extractBehavioralSignals(
     const hasCheckoutCoverage = coverage.has('checkout');
     const hasThankYouCoverage = coverage.has('thank_you');
 
+    // ── Measured conversion continuity (ghost-killer) ──────────────
+    // Confirmed purchases counted by the pixel (confirmation_seen fires
+    // only on the merchant's confirm() or a strong signal — never
+    // inferred). This is the measurement that FALSIFIES "buyers are
+    // thrown to another domain and abandon": if buyers demonstrably
+    // complete purchases across the hop, the hop is not a revenue leak.
+    // The Sept/2026 Casa Montelle plan shipped that exact ghost as its
+    // R$ 24k step #1 while the same document measured 23 paid sessions.
+    if ((p.confirmation_seen_count ?? 0) >= 1) {
+      signals.push(createSignal({
+        signal_key: 'measured_confirmed_purchases',
+        category: SignalCategory.Behavioral,
+        attribute: 'behavioral.confirmed_purchases',
+        value: 'true',
+        numeric_value: p.confirmation_seen_count,
+        confidence: 95,
+        scoping, cycle_ref, ids, evidence_refs: refs,
+        description: `${p.confirmation_seen_count} confirmed purchase(s) measured by the pixel in this window`,
+      }));
+    }
+
     // Emit pixel_coverage_gap signal when important page types are missing
     if (!hasCheckoutCoverage || !hasThankYouCoverage) {
       const missingTypes: string[] = [];

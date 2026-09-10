@@ -63,6 +63,7 @@ export interface MeasuredFunnelUI {
 
 export interface FrictionPageUI {
 	path: string;
+	label?: string;
 	sessions: number;
 	deadClicks: number;
 	hesitationsNearCta: number;
@@ -211,8 +212,13 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 										className="flex flex-col gap-1 rounded-lg border border-edge/60 bg-surface-inset/30 px-3 py-2 sm:flex-row sm:items-baseline sm:justify-between"
 									>
 										<div className="min-w-0">
-											<span className="font-mono text-[12px] text-content">{pg.path}</span>
-											<span className="ml-2 text-[12px] text-content-secondary">{bits.join(" · ")}</span>
+											{/* ONDA 4.1 — a ENTIDADE, não o path: o nome que o
+											    cliente usa, com o path como referência técnica. */}
+											<span className="text-[13px] font-medium text-content">{pg.label ?? pg.path}</span>
+											{pg.label && (
+												<span className="ml-2 font-mono text-[10.5px] text-content-faint">{pg.path}</span>
+											)}
+											<span className="mt-0.5 block text-[12px] text-content-secondary">{bits.join(" · ")}</span>
 										</div>
 										<div className="shrink-0 font-mono text-[11.5px] tabular-nums text-content-muted">
 											{pg.sessionsWithFriction.toLocaleString("pt-BR")} de {pg.sessions.toLocaleString("pt-BR")} sessões ·{" "}

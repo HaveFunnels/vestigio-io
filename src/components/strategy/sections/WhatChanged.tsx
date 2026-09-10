@@ -31,6 +31,8 @@ export interface WhatChangedUI {
 
 interface Props {
 	whatChanged: WhatChangedUI | null | undefined;
+	/** ONDA 4.1 — path → entity label. */
+	pageLabelByPath?: Record<string, string>;
 }
 
 const KIND_STYLE: Record<WhatChangedRowUI["kind"], { dot: string; label: string }> = {
@@ -40,7 +42,7 @@ const KIND_STYLE: Record<WhatChangedRowUI["kind"], { dot: string; label: string 
 	content_changed: { dot: "bg-sky-400", label: "Conteúdo mudou" },
 };
 
-export default function WhatChanged({ whatChanged }: Props) {
+export default function WhatChanged({ whatChanged, pageLabelByPath }: Props) {
 	if (!whatChanged) return null;
 
 	return (
@@ -86,7 +88,12 @@ export default function WhatChanged({ whatChanged }: Props) {
 											<span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-content-faint">
 												{st.label}
 											</span>
-											<span className="font-mono text-[12px] text-content">{r.path}</span>
+											<span className="text-[12.5px] font-medium text-content">
+												{pageLabelByPath?.[r.path] ?? r.path}
+											</span>
+											{pageLabelByPath?.[r.path] && (
+												<span className="font-mono text-[10.5px] text-content-faint">{r.path}</span>
+											)}
 										</div>
 										<p className="mt-0.5 text-[13px] leading-relaxed text-content-secondary">
 											{r.detail}

@@ -25,9 +25,13 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { GenerateContext } from "../types";
+import { pageEntityLabel } from "../page-label";
 
 export interface FrictionPageStats {
 	path: string;
+	/** ONDA 4.1 — the entity name the customer knows this page by
+	 *  (cleaned crawl <title>; de-slugged path as fallback). */
+	label: string;
 	/** Sample sessions that touched this page. */
 	sessions: number;
 	deadClicks: number;
@@ -165,6 +169,7 @@ export function computeMeasuredFriction(
 			a.deadClicks + a.hesitationsNearCta + a.inputAbandons + a.backtracks + a.formRetries;
 		if (frictionTotal === 0) continue;
 		pages.push({
+			label: pageEntityLabel(null, path),
 			path,
 			sessions,
 			deadClicks: a.deadClicks,
@@ -211,5 +216,28 @@ export async function generateMeasuredFriction(
 	} catch {
 		return null;
 	}
-	return computeMeasuredFriction(rows, windowStart, windowEnd);
+	const out = computeMeasuredFriction(rows, windowStart, windowEnd);
+	if (!out) return null;
+
+	// ONDA 4.1 — resolve entity names from crawled titles so every
+	// downstream surface (friction block, synth step, prompts,
+	// verification) speaks in the customer's things, not in paths.
+	try {
+		const items = await prisma.pageInventoryItem.findMany({
+			where: { environmentRef: ctx.environmentId, removedAt: null },
+			select: { path: true, title: true },
+			take: 500,
+		});
+		const titleByPath = new Map<string, string | null>();
+		for (const it of items) {
+			const p2 = it.path && it.path.length > 1 ? it.path.replace(/\/+$/, "") : it.path || "/";
+			if (!titleByPath.has(p2)) titleByPath.set(p2, it.title);
+		}
+		for (const pg of out.pages) {
+			pg.label = pageEntityLabel(titleByPath.get(pg.path) ?? null, pg.path, ctx.envDomain);
+		}
+	} catch {
+		// labels keep the de-slugged fallback
+	}
+	return out;
 }

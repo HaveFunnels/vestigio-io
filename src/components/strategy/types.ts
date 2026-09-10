@@ -423,6 +423,8 @@ export interface StrategyPlan {
 	adLedger?: import("./sections/AdLedger").AdLedgerUI | null;
 	/** ONDA 2.3 — probe diff since the previous plan. */
 	whatChanged?: import("./sections/WhatChanged").WhatChangedUI | null;
+	/** ONDA 4.1 — path → entity label (cleaned crawl title). */
+	pageLabelByPath?: Record<string, string>;
 	/** Reta-final: pack distribution for the open findings backing this
 	 *  plan. Used by the narrative to render a small horizontal stacked
 	 *  bar instead of burying "tema dominante: copy 44%" in prose. Empty

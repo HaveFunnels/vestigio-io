@@ -849,7 +849,7 @@ function frictionPromptLines(pg: FrictionPage): string[] {
 	if (pg.backtracks > 0) bits.push(`${pg.backtracks} entradas com volta imediata`);
 	if (bits.length === 0) return [];
 	return [
-		`- COMPORTAMENTO MEDIDO NESTA PÁGINA (pixel, ${pg.sessions.toLocaleString("pt-BR")} sessões da amostra): ${bits.join("; ")}. ${pg.sessionsWithFriction.toLocaleString("pt-BR")} sessões tiveram pelo menos um desses atritos.`,
+		`- COMPORTAMENTO MEDIDO NESTA PÁGINA — "${pg.label}" (pixel, ${pg.sessions.toLocaleString("pt-BR")} sessões da amostra): ${bits.join("; ")}. ${pg.sessionsWithFriction.toLocaleString("pt-BR")} sessões tiveram pelo menos um desses atritos.`,
 		`- OBRIGATÓRIO: cite pelo menos UM desses números medidos no texto, com a palavra "medido"/"medidas". Números medidos são contagem real, os únicos que podem ser chamados assim.`,
 	];
 }
@@ -874,7 +874,7 @@ function buildMeasuredVerification(
 						: pg.formRetries >= pg.backtracks
 							? `tentativas repetidas de formulário (hoje: ${pg.formRetries})`
 							: `voltas imediatas (hoje: ${pg.backtracks})`;
-		return `O pixel confere no próximo plano: ${worst} e a taxa de sessões com atrito em ${pg.path} (hoje: ${pg.frictionRatePct.toLocaleString("pt-BR")}% de ${pg.sessions.toLocaleString("pt-BR")} sessões).`;
+		return `O pixel confere no próximo plano: ${worst} e a taxa de sessões com atrito em "${pg.label}" (hoje: ${pg.frictionRatePct.toLocaleString("pt-BR")}% de ${pg.sessions.toLocaleString("pt-BR")} sessões).`;
 	}
 	// Checkout-family surfaces verify against the measured funnel.
 	const path = normPathToken(surface);
@@ -1213,36 +1213,37 @@ export async function generateNextSteps(
 						: pg.formRetries >= pg.backtracks
 							? "form_retry"
 							: "backtrack";
+		const ent = pg.label;
 		const titles: Record<string, string> = {
-			dead_click: `Elementos que parecem clicáveis não respondem em ${pg.path}`,
-			hesitation: `Compradores hesitam na hora de decidir em ${pg.path}`,
-			input_abandon: `Campos de formulário travam compradores em ${pg.path}`,
-			form_retry: `O formulário de ${pg.path} faz o comprador tentar de novo`,
-			backtrack: `Compradores entram e voltam rápido de ${pg.path}`,
+			dead_click: `Elementos que parecem clicáveis não respondem em "${ent}"`,
+			hesitation: `Visitantes hesitam na hora de decidir em "${ent}"`,
+			input_abandon: `Campos de formulário travam visitantes em "${ent}"`,
+			form_retry: `O formulário de "${ent}" faz o visitante tentar de novo`,
+			backtrack: `Visitantes entram e voltam rápido de "${ent}"`,
 		};
 		const procedures: Record<string, string[]> = {
 			dead_click: [
-				`Abra ${pg.path} no celular e clique no que parece botão/imagem clicável; identifique os que não fazem nada.`,
+				`Abra "${ent}" (${pg.path}) no celular e clique no que parece botão/imagem clicável; identifique os que não fazem nada.`,
 				"Torne cada elemento clicável funcional ou remova a aparência de clicável (cursor, sombra, cor).",
 				"O pixel mede de novo: os cliques sem resposta devem cair no próximo plano.",
 			],
 			hesitation: [
-				`Veja o que está ao lado do botão de compra em ${pg.path}: preço sem contexto, frete oculto, garantia invisível.`,
+				`Veja o que está ao lado do botão principal de "${ent}": preço sem contexto, frete oculto, garantia invisível.`,
 				"Coloque a resposta da principal dúvida (frete/garantia/troca) a um palmo do botão.",
 				"O pixel mede de novo: as pausas perto do botão devem cair no próximo plano.",
 			],
 			input_abandon: [
-				`Reduza os campos de ${pg.path} ao mínimo e teste o teclado móvel de cada um (numérico p/ CEP/telefone).`,
+				`Reduza os campos do formulário de "${ent}" ao mínimo e teste o teclado móvel de cada um (numérico p/ CEP/telefone).`,
 				"Valide em tempo real com mensagem clara, nunca só no envio.",
 				"O pixel mede de novo: os abandonos de campo devem cair no próximo plano.",
 			],
 			form_retry: [
-				`Envie o formulário de ${pg.path} com erros propositais e veja se a mensagem diz O QUE corrigir.`,
+				`Envie o formulário de "${ent}" com erros propositais e veja se a mensagem diz O QUE corrigir.`,
 				"Preserve o que o comprador já digitou após um erro.",
 				"O pixel mede de novo: as tentativas repetidas devem cair no próximo plano.",
 			],
 			backtrack: [
-				`Compare o que o anúncio/link promete com o que ${pg.path} mostra na primeira tela.`,
+				`Compare o que o anúncio/link promete com o que "${ent}" mostra na primeira tela.`,
 				"Alinhe título, imagem e preço da primeira tela com a expectativa de quem chega.",
 				"O pixel mede de novo: as voltas imediatas devem cair no próximo plano.",
 			],
@@ -1251,7 +1252,7 @@ export async function generateNextSteps(
 			order: steps.length + 1,
 			title: titles[dominant],
 			reasoning:
-				`Medido pelo pixel em ${pg.sessions.toLocaleString("pt-BR")} sessões da amostra que passaram por ${pg.path}: ` +
+				`Medido pelo pixel em ${pg.sessions.toLocaleString("pt-BR")} sessões da amostra que passaram por "${pg.label}" (${pg.path}): ` +
 				`${pg.deadClicks > 0 ? `${pg.deadClicks} cliques sem resposta; ` : ""}` +
 				`${pg.hesitationsNearCta > 0 ? `${pg.hesitationsNearCta} hesitações perto do botão de compra; ` : ""}` +
 				`${pg.inputAbandons > 0 ? `${pg.inputAbandons} campos abandonados; ` : ""}` +

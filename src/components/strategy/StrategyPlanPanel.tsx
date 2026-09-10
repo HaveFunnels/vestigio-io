@@ -13,7 +13,7 @@ import WhatHappenedNarrative from "./sections/WhatHappenedNarrative";
 import NextSteps from "./sections/NextSteps";
 import ValuePreview from "./sections/ValuePreview";
 import MemoryRollups from "./sections/MemoryRollups";
-import MonthlyThesis from "./sections/MonthlyThesis";
+import EditorialOpening from "./sections/EditorialOpening";
 import BehavioralMeasurement from "./sections/BehavioralMeasurement";
 import AdLedger from "./sections/AdLedger";
 import WhatChanged from "./sections/WhatChanged";
@@ -742,7 +742,13 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				    auto-generated. Hidden on legacy plans without the
 				    field. */}
 				<div data-toc-id="thesis">
-					<MonthlyThesis thesis={plan.thesisOfMonth} monthLabel={monthLabel} />
+					{/* ONDA 4.2 — a tese abre como manchete editorial, com o site
+					    do cliente como protagonista visual (qualquer vertical). */}
+					<EditorialOpening
+						thesis={plan.thesisOfMonth ?? null}
+						monthLabel={monthLabel}
+						envDomain={plan.envDomain}
+					/>
 				</div>
 
 				<div data-toc-id="hero">
@@ -799,7 +805,7 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 				    probes; janela quieta renderiza a prova do always-on. */}
 				{!isResumo && (
 					<div data-toc-id="what-changed">
-						<WhatChanged whatChanged={plan.whatChanged} />
+						<WhatChanged whatChanged={plan.whatChanged} pageLabelByPath={plan.pageLabelByPath} />
 					</div>
 				)}
 				{/* Wave 22.8 — Resumo mode esconde seções de contexto e

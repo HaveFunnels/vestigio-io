@@ -694,6 +694,26 @@ export async function GET(request: Request, { params }: RouteParams) {
 			}
 		} catch { /* R2 helper unavailable - text-only */ }
 	}
+	// ONDA 4.1 — entity labels: path → the name the customer knows the
+	// page by (cleaned crawl <title>; every vertical has titles). UI
+	// components render entities, never raw paths, wherever this map
+	// resolves.
+	const pageLabelByPath: Record<string, string> = {};
+	try {
+		const invItems = await prisma.pageInventoryItem.findMany({
+			where: { environmentRef: plan.environmentId, removedAt: null },
+			select: { path: true, title: true },
+			take: 500,
+		});
+		const { pageEntityLabel } = await import(
+			"../../../../../../packages/strategy-plan/page-label"
+		);
+		for (const it of invItems) {
+			const pp = normPath(it.path);
+			if (!(pp in pageLabelByPath)) pageLabelByPath[pp] = pageEntityLabel(it.title, pp, env.domain);
+		}
+	} catch { /* labels degrade to de-slugged paths in the UI */ }
+
 	// Reta-final: expose the full path→URL map so the FindingCard drawer
 	// can render a figure per finding based on its source_url. Same TTL
 	// semantics as the per-step screenshots (1h presigned; response cached
@@ -821,6 +841,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 		attributionTimeline,
 		attributionTotal,
 		screenshotUrlByPath,
+		pageLabelByPath,
 		peerLineByInferenceKey,
 		narrativeWhatHappened: ptSafeText(
 			plan.narrativeWhatHappened,

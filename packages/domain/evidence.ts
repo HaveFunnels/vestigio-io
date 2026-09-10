@@ -708,6 +708,12 @@ export interface BehavioralSessionPayload {
   /** Confirmation / success evidence */
   confirmation_seen_count: number;
   confirmation_seen_rate: number;
+  /** Trailing-30d confirmed purchases, independent of the payload's
+   *  cycle window. Hot cycles window 1h, where a store doing ~20
+   *  confirms/day shows 0-2 — any floor on the windowed count is
+   *  unreachable and the measured-continuity gate (ghost-killer)
+   *  never trips. The continuity question is inherently trailing. */
+  confirmed_purchases_30d?: number;
 
   /** Hesitation near CTA: sessions with hesitation pause before CTA on conversion-proximate surfaces */
   hesitation_before_cta_count: number;

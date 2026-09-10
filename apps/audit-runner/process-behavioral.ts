@@ -110,6 +110,22 @@ export async function processBehavioralEventsForEnv(
     return { evidence: [], sessionCount: 0, eventCount: 0 };
   }
 
+  // Ghost-killer support: trailing-30d confirmed purchases, computed
+  // regardless of the cycle window (hot=1h shows 0-2 confirms on a
+  // store doing ~20/day, so any floor on the WINDOWED count is
+  // unreachable — the continuity question is inherently trailing).
+  // Cheap: indexed startedAt range + substring match on the stored
+  // JSON (stringify emits no spaces, so the token is exact).
+  const confirmed30d = await prisma.behavioralSessionAggregate
+    .count({
+      where: {
+        envId,
+        startedAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+        aggregate: { contains: '"confirmation_seen":true' },
+      },
+    })
+    .catch(() => 0);
+
   if (aggRows.length === 0) {
     return { evidence: [], sessionCount: 0, eventCount: 0 };
   }
@@ -157,7 +173,7 @@ export async function processBehavioralEventsForEnv(
     if (!ua) return "desktop"; // unknown UA → conservative default
     return MOBILE_UA_REGEX.test(ua) ? "mobile" : "desktop";
   };
-  const sessionPayload = sessionsToBehavioralPayload(aggregates, deviceClassifier, coveragePageTypes);
+  const sessionPayload = sessionsToBehavioralPayload(aggregates, deviceClassifier, coveragePageTypes, confirmed30d);
 
   // ── Reduce to BehavioralCohortPayload (cohort-level metrics) ──
   // Powers the 7 pixel-dependent workspaces (first_impression, action_value,
@@ -242,6 +258,7 @@ export function sessionsToBehavioralPayload(
   sessions: SessionAggregate[],
   deviceClassifier?: (s: SessionAggregate) => "mobile" | "desktop" | null,
   pixelCoveragePageTypes?: Set<string>,
+  confirmed30d = 0,
 ): BehavioralSessionPayload {
   const n = sessions.length;
   if (n === 0) return EMPTY_PAYLOAD;
@@ -518,6 +535,7 @@ export function sessionsToBehavioralPayload(
 
     confirmation_seen_count: confirmation,
     confirmation_seen_rate: rate(confirmation, n),
+    confirmed_purchases_30d: confirmed30d,
 
     hesitation_before_cta_count: hesitationBeforeCta,
     pricing_then_hesitation_count: pricingThenHesitation,

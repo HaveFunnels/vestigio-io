@@ -10,6 +10,7 @@ import type {
 	PendingPlanEdit,
 } from "../types";
 import PlanSideDrawer from "../PlanSideDrawer";
+import BasisChip, { stepBasis } from "../BasisChip";
 import { ActionListBody, FindingListBody } from "../drawer-bodies";
 import { humanizeSurfaceLabel } from "@/lib/surface-label";
 import {
@@ -548,7 +549,8 @@ function StepCard({
 												: "text-content-faint"
 									}`}
 								>
-									perda potencial estimada
+									perda potencial estimada{" "}
+									<BasisChip basis={stepBasis(step)} className="ml-1 align-middle" />
 								</div>
 								<div
 									className={`font-mono text-[13px] font-semibold tabular-nums ${
@@ -1058,7 +1060,8 @@ function StepInGroup({ step, primarySurface }: StepInGroupProps) {
 						}`}
 					>
 						<div className="text-[9px] font-semibold uppercase tracking-wider text-content-faint">
-							perda potencial estimada
+							perda potencial estimada{" "}
+							<BasisChip basis={stepBasis(step)} className="ml-1 align-middle" />
 						</div>
 						<div className="font-mono text-[12px] font-semibold tabular-nums text-content">
 							{fmtCurrencyUnits(Math.round(impact), currency)}

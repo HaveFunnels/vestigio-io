@@ -490,11 +490,16 @@ de DISCIPLINA, não de tese.
     (medianas 2x + piso 1500ms); janela quieta renderiza a prova do
     always-on ("N páginas monitoradas, nenhuma mudança"); coluna
     whatChangedJson + migration; 6 testes.
-14. **Grau de certeza em todo claim** (§3.D): MEDIDO/ESTIMADO/VERIFICAR
-    visível na UI; `Finding.confidence` finalmente lido.
-15. **Voz única do ICP** (§3.B): voice rules em TODOS os prompts + labels;
-    "ciclo #", packs e inference keys nunca aparecem para o cliente;
-    dono-de-passo realista por porte (businessContext).
+14. ✅ **Grau de certeza em todo claim** (§3.D): SHIPPED — BasisChip
+    (MEDIDO/ESTIMADO/VERIFICAR com tooltip explicativo) nos pills dos
+    passos (stepBasis: passo comportamental=MEDIDO, confiança
+    baixa=VERIFICAR), no drawer de findings (confidence_tier — lido
+    pela primeira vez), nos headers Medido/O-que-mudou e nos tiles do
+    hero (Vazando=ESTIMADO, tiles de pixel=MEDIDO).
+15. **Voz única do ICP** (§3.B) — BACKLOG PÓS-LOOP (parcial via P2/E6/P18):
+    varrer labels restantes (alert behavioral, competitor/impersonators,
+    breadcrumb "Ciclo #") e es/de. Junto com o redesign SVG da timeline
+    (A6 parcial), são os dois itens conscientes de backlog.
 
 ### Critério de aceite (o teste de outubro)
 O plano de outubro da Casa Montelle, lido em 60 segundos por alguém que

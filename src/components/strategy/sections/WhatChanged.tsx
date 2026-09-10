@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import BasisChip from "../BasisChip";
 
 /*
  * ONDA 2.3 — "O que mudou no site" (probe-measured, longitudinal)
@@ -54,8 +55,9 @@ export default function WhatChanged({ whatChanged }: Props) {
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
 					O que mudou no site
 				</h2>
-				<div className="text-[11px] text-content-faint">
-					Verificações diárias · {whatChanged.windowStart} a {whatChanged.windowEnd}
+				<div className="flex items-center gap-2 text-[11px] text-content-faint">
+					<BasisChip basis="measured" />
+					<span>Verificações diárias · {whatChanged.windowStart} a {whatChanged.windowEnd}</span>
 				</div>
 			</div>
 

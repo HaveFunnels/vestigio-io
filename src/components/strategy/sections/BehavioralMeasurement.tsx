@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { sourceIdentity } from "../../../../packages/behavioral/source-identity";
+import BasisChip from "../BasisChip";
 
 /*
  * O que o pixel MEDIU — a seção de chão-de-fábrica do plano.
@@ -95,8 +96,9 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 				data-vsgp-card
 				className="rounded-2xl border border-edge bg-surface-card p-6 sm:p-7"
 			>
-				<div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-content-faint">
-					Medido pelo pixel
+				<div className="mb-1 flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-content-faint">
+					<span>Medido pelo pixel</span>
+					<BasisChip basis="measured" />
 				</div>
 				<h2 className="mb-4 font-serif text-[19px] font-medium text-content">
 					O que seus visitantes fizeram, por origem

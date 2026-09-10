@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { sourceIdentity } from "../../../../packages/behavioral/source-identity";
+import BasisChip, { type ClaimBasis } from "../BasisChip";
 import { useEffect, useState } from "react";
 import type { HeroMetric } from "../types";
 import { AggregateMethodologyPopover } from "@/components/console/MethodologyPopover";
@@ -144,6 +145,8 @@ type TileProps = {
 	// leak" visually even at delta=0. When set, replaces the delta line
 	// with `captionWhenStatic`.
 	staticTone?: "loss" | "win" | "neutral" | null;
+	/** ONDA 2.4 — certainty chip rendered beside the label. */
+	basisChip?: ClaimBasis;
 	captionWhenStatic?: string;
 };
 
@@ -159,6 +162,7 @@ function Tile({
 	emptyState,
 	staticTone,
 	captionWhenStatic,
+	basisChip,
 }: Omit<TileProps, "value" | "formatted">) {
 	const sparkTone: "up" | "down" | "flat" = invertDelta
 		? delta < 0
@@ -197,8 +201,9 @@ function Tile({
 			)}
 
 			<div className="flex items-start justify-between gap-3 pr-7">
-				<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-					{label}
+				<div className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+					<span>{label}</span>
+					{basisChip && <BasisChip basis={basisChip} />}
 				</div>
 				{!isEmpty && spark && spark.length > 1 && (
 					<div className="text-content-tertiary">
@@ -335,6 +340,7 @@ export default function HeroMetrics({ hero, monthLabel, behavioral }: Props) {
 					   text says "nothing happened here". Lead with what the
 					   pixel DID measure. */
 					<Tile
+						basisChip="measured"
 						label={`Sessões medidas · ${behavioral?.windowDays ?? 30}d`}
 						rawNumber={behavioral?.sessionsFiltered ?? 0}
 						delta={0}
@@ -349,6 +355,7 @@ export default function HeroMetrics({ hero, monthLabel, behavioral }: Props) {
 				    não captura, vaza). Verbo no gerúndio nomeia a ação em
 				    curso. Sempre vermelho via staticTone="loss". */}
 				<Tile
+					basisChip="estimated"
 					label="Vazando / mês"
 					rawNumber={hero.exposureMid ?? 0}
 					delta={0}
@@ -390,6 +397,7 @@ export default function HeroMetrics({ hero, monthLabel, behavioral }: Props) {
 					/>
 				) : topSource ? (
 					<Tile
+						basisChip="measured"
 						label={`Origem dominante · ${topSource.label}`}
 						rawNumber={topSource.sharePct}
 						delta={0}

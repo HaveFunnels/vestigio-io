@@ -15,6 +15,7 @@ import type {
 } from "../../../packages/projections";
 import { buildFindingBackUrl, type DrawerCtx } from "./plan-url";
 import { usePlanScreenshotForUrl } from "./PlanScreenshotContext";
+import BasisChip from "./BasisChip";
 import { usePeerLineForInference } from "./PlanPeerContext";
 
 // ──────────────────────────────────────────────
@@ -608,8 +609,9 @@ function FindingCard({
 									{/* Impact box — the "what does this cost" row */}
 									{mid > 0 && (
 										<div className="rounded-xl border border-edge bg-surface-inset/40 p-3">
-											<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-												{role === "retention" ? "Retido" : "Exposição"} estimada
+											<div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+												<span>{role === "retention" ? "Retido" : "Exposição"} estimada</span>
+												<BasisChip basis={finding.confidence_tier === "high" ? "estimated" : "verify"} />
 											</div>
 											<div
 												className={`mt-1 font-mono text-[18px] font-semibold tabular-nums ${impactTone}`}

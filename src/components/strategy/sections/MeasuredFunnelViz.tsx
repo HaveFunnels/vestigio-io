@@ -10,9 +10,10 @@ import type { MeasuredFunnelUI } from "./BehavioralMeasurement";
  * continuous horizontal shape that tapers left→right, each stage a
  * cross-section whose HEIGHT is its measured share of arrived
  * sessions, the top and bottom edges joined by smooth cubic curves so
- * the flow narrows organically, filled with a horizontal gradient. The
- * paid stage tints emerald; the sharpest narrowing is annotated where
- * it happens. Inline SVG, viewBox-responsive, theme tokens, no lib.
+ * the flow narrows organically, filled with a vivid gradient drawn
+ * from the plan's own theme palette (sky arrival → violet decision →
+ * green paid), a lit top rim as signature, and the sharpest narrowing
+ * annotated at the choke. Inline SVG, viewBox-responsive, no lib.
  */
 
 const W = 720;
@@ -75,15 +76,28 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 	return (
 		<svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Funil medido, do primeiro acesso à compra" className="w-full">
 			<defs>
+				{/* The journey as a gradient, drawn FROM the plan's own
+				    "Distribuição por tema" palette (WhatHappenedNarrative
+				    PACK_COLORS): sky-400 arrival → violet-400 consideration
+				    → green-400 paid (green is literally the `revenue` pack
+				    color — money at the tip). Vivid opacity, not the washed
+				    0.3 it was. */}
 				<linearGradient id={`fg-${gid}`} x1="0" y1="0" x2="1" y2="0">
-					<stop offset="0%" className="[stop-color:rgb(56_189_248)]" stopOpacity="0.45" />
-					<stop offset="70%" className="[stop-color:rgb(56_189_248)]" stopOpacity="0.28" />
-					<stop offset="100%" className="[stop-color:rgb(52_211_153)]" stopOpacity="0.5" />
+					<stop offset="0%" className="[stop-color:rgb(56_189_248)]" stopOpacity="0.9" />
+					<stop offset="48%" className="[stop-color:rgb(167_139_250)]" stopOpacity="0.85" />
+					<stop offset="100%" className="[stop-color:rgb(74_222_128)]" stopOpacity="0.95" />
+				</linearGradient>
+				{/* Lit top rim — the one signature flourish. */}
+				<linearGradient id={`fr-${gid}`} x1="0" y1="0" x2="1" y2="0">
+					<stop offset="0%" className="[stop-color:rgb(125_211_252)]" />
+					<stop offset="100%" className="[stop-color:rgb(134_239_172)]" />
 				</linearGradient>
 			</defs>
 
-			{/* The funnel body. */}
-			<path d={bodyPath} fill={`url(#fg-${gid})`} className="stroke-sky-400/25" strokeWidth={1} />
+			{/* The funnel body — vivid fill, no washed stroke. */}
+			<path d={bodyPath} fill={`url(#fg-${gid})`} stroke="none" />
+			{/* Lit top edge: a bright rim tracing the taper, the signature. */}
+			<path d={smooth(topPts)} fill="none" stroke={`url(#fr-${gid})`} strokeWidth={1.75} strokeOpacity={0.85} strokeLinecap="round" />
 
 			{/* Stage dividers + per-stage labels. */}
 			{stages.map((s, i) => {
@@ -96,7 +110,7 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 							y1={topPts[i][1]}
 							x2={cx}
 							y2={botPts[i][1]}
-							className={isPaid ? "stroke-emerald-300/60" : "stroke-sky-200/30"}
+							className={isPaid ? "stroke-green-300/70" : "stroke-white/20"}
 							strokeWidth={1}
 						/>
 						{/* value above */}
@@ -112,7 +126,7 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 							y={BOT + 20}
 							textAnchor="middle"
 							fontSize={10.5}
-							className={isPaid ? "fill-emerald-300" : "fill-content-secondary"}
+							className={isPaid ? "fill-green-300" : "fill-content-secondary"}
 						>
 							{s.label}
 						</text>
@@ -128,7 +142,7 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 						y1={MID - half(stages[dropIdx - 1].pctOfArrived) - 4}
 						x2={(x(dropIdx - 1) + x(dropIdx)) / 2}
 						y2={MID - half(stages[dropIdx - 1].pctOfArrived) - 16}
-						className="stroke-rose-400/70"
+						className="stroke-rose-400"
 						strokeWidth={1}
 					/>
 					<text
@@ -136,7 +150,7 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 						y={MID - half(stages[dropIdx - 1].pctOfArrived) - 20}
 						textAnchor="middle"
 						fontSize={11}
-						className="fill-rose-400"
+						className="fill-rose-400 font-medium"
 					>
 						−{dropLost.toLocaleString("pt-BR")} sessões aqui
 					</text>

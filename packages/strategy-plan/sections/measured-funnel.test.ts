@@ -110,3 +110,28 @@ describe("computeMeasuredFunnel", () => {
 		expect(f.stages[0].label).toBe("Arrived");
 	});
 });
+
+describe("funnel monotonicity on cart-skipping flows (Casa Montelle validation)", () => {
+	it("a checkout without a cart page still counts in the cart stage — stages never rise", () => {
+		// NX4-style flow: product → checkout directly, no /cart, no
+		// cart_add CTA. Raw counting produced cart=61 < checkout=181.
+		const sessions = [
+			...Array.from({ length: 300 }, () => session({ surfaces: ["/", "/products/x"] })),
+			...Array.from({ length: 180 }, () =>
+				session({ surfaces: ["/", "/products/x"], checkoutReached: true }),
+			),
+			...Array.from({ length: 20 }, () =>
+				session({ surfaces: ["/", "/products/x"], checkoutReached: true, confirmationSeen: true }),
+			),
+		];
+		const f = computeMeasuredFunnel(sessions, "pt-BR")!;
+		const counts = f.stages.map((s) => s.sessions);
+		for (let i = 1; i < counts.length; i++) {
+			expect(counts[i]).toBeLessThanOrEqual(counts[i - 1]);
+		}
+		const byKey = Object.fromEntries(f.stages.map((s) => [s.key, s.sessions]));
+		expect(byKey.cart).toBe(200); // checkout+paid sessions passed the decision stage
+		expect(byKey.checkout).toBe(200);
+		expect(byKey.paid).toBe(20);
+	});
+});

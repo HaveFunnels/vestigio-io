@@ -134,9 +134,16 @@ export function computeWhatChanged(
 			});
 		}
 
-		// Content changes.
+		// Content changes. A page whose hash flips on MOST checks is a
+		// DYNAMIC page (rotating banners, randomized product grids) — 288
+		// "changes" on the Casa Montelle homepage were the page working
+		// as designed, not 288 pieces of news. Above the ratio threshold
+		// the row says so honestly instead of shouting a change count
+		// that means nothing; below it, discrete changes are real edits.
+		const comparable = list.filter((p) => p.changedFromPrior !== null).length;
 		const changes = list.filter((p) => p.changedFromPrior === true);
-		if (changes.length > 0) {
+		const dynamicPage = comparable >= 6 && changes.length / comparable > 0.5;
+		if (changes.length > 0 && !dynamicPage) {
 			const lastChange = changes[changes.length - 1];
 			rows.push({
 				kind: "content_changed",
@@ -146,6 +153,16 @@ export function computeWhatChanged(
 				detail: pt
 					? `O conteúdo de ${path} mudou ${changes.length === 1 ? "1 vez" : `${changes.length} vezes`} no período (última em ${lastChange.observedAt.toISOString().slice(0, 10)}).`
 					: `${path} content changed ${changes.length} time(s) in the window (last on ${lastChange.observedAt.toISOString().slice(0, 10)}).`,
+			});
+		} else if (dynamicPage) {
+			rows.push({
+				kind: "content_changed",
+				path,
+				weight: 4,
+				observedAt: last.observedAt.toISOString().slice(0, 10),
+				detail: pt
+					? `${path} tem conteúdo dinâmico (muda na maior parte das verificações — banners/vitrine rotativos). Mudanças estruturais nesta página não são distinguíveis por comparação de conteúdo.`
+					: `${path} has dynamic content (changes on most checks — rotating banners/grids). Structural changes on this page are not distinguishable by content comparison.`,
 			});
 		}
 

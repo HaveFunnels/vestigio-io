@@ -98,3 +98,24 @@ describe("computeWhatChanged", () => {
 		expect(out.rows[0].kind).toBe("went_down");
 	});
 });
+
+describe("dynamic pages (Casa Montelle validation)", () => {
+	it("a page changing on most checks reads as dynamic, never '288 mudanças'", () => {
+		const probes = Array.from({ length: 20 }, (_, i) =>
+			probe("https://loja.com/", i + 1, { changedFromPrior: i > 0 }),
+		);
+		const out = computeWhatChanged(probes, START, END, "pt-BR")!;
+		const row = out.rows.find((r) => r.kind === "content_changed")!;
+		expect(row.detail).toContain("conteúdo dinâmico");
+		expect(row.detail).not.toMatch(/\d+ vezes/);
+	});
+
+	it("a handful of discrete edits still reports the count", () => {
+		const probes = Array.from({ length: 20 }, (_, i) =>
+			probe("https://loja.com/politicas", i + 1, { changedFromPrior: i === 5 || i === 12 }),
+		);
+		const out = computeWhatChanged(probes, START, END, "pt-BR")!;
+		const row = out.rows.find((r) => r.kind === "content_changed")!;
+		expect(row.detail).toContain("2 vezes");
+	});
+});

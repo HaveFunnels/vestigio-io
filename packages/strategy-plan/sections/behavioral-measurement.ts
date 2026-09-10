@@ -305,21 +305,33 @@ export function computeMeasuredFunnel(
 	const arrived = sessions.length;
 	if (arrived < MIN_SESSIONS_FOR_FUNNEL) return null;
 
-	const product = sessions.filter(
-		(s) =>
+	// FUNNEL SEMANTICS (validação Casa Montelle): each stage counts
+	// sessions that reached AT LEAST that far — the session's FURTHEST
+	// stage, cumulative from the right. Raw per-predicate counting broke
+	// monotonicity on stores whose flow skips a stage entirely (the NX4
+	// checkout goes product → /c/ directly, so raw "cart" counted 61
+	// while "checkout" counted 181 and the display read "Carrinho 0% ·
+	// queda 100%" followed by a RISE — nonsense as a funnel). A session
+	// that reached checkout necessarily passed the decision-to-buy
+	// stage, whether or not the store renders a cart page.
+	const furthest = (s: FunnelSession): number => {
+		if (s.confirmationSeen) return 5;
+		if (s.paymentStepReached) return 4;
+		if (s.checkoutReached || milestoneAtLeast(s.highestMilestone, "conversion_started")) return 3;
+		if (s.cartAddCount > 0 || s.surfaces.some((p) => CART_PATH.test(p))) return 2;
+		if (
 			s.surfaces.some((p) => PRODUCT_PATH.test(p)) ||
-			milestoneAtLeast(s.highestMilestone, "consideration_started"),
-	).length;
-	const cart = sessions.filter(
-		(s) => s.cartAddCount > 0 || s.surfaces.some((p) => CART_PATH.test(p)),
-	).length;
-	const checkout = sessions.filter(
-		(s) => s.checkoutReached || milestoneAtLeast(s.highestMilestone, "conversion_started"),
-	).length;
-	const payment = sessions.filter(
-		(s) => s.paymentStepReached || s.confirmationSeen,
-	).length;
-	const paid = sessions.filter((s) => s.confirmationSeen).length;
+			milestoneAtLeast(s.highestMilestone, "consideration_started")
+		) return 1;
+		return 0;
+	};
+	const stagesReached = sessions.map(furthest);
+	const atLeast = (n: number) => stagesReached.filter((f) => f >= n).length;
+	const product = atLeast(1);
+	const cart = atLeast(2);
+	const checkout = atLeast(3);
+	const payment = atLeast(4);
+	const paid = atLeast(5);
 
 	// No commerce signal in the window → no funnel (never fabricate).
 	if (cart === 0 && checkout === 0) return null;

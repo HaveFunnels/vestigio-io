@@ -554,3 +554,40 @@ que a dona de uma loja de enxoval não usaria.**
 | E6 ✅ (parcial) | Locale pela metade | CORRIGIDO: linha de idioma via voiceRulesFor nos 3 prompts LLM (saída no idioma da org) + labels de buyers/memória/value-preview localizados (pt/en; es-de caem em en). Restam: alert behavioral, detalhes competitor/impersonators |
 | E7 ✅ | researchRefs sempre vazio | RESOLVIDO por remoção: bloco "Pesquisar" da UI removido (gerador nunca emitiu, catálogo não tem URLs); coluna preservada pro futuro |
 | E8 ✅ | Seções somem sem placeholder (layout shift) | CORRIGIDO: skeleton shimmer durante load (banner-only continua silencioso — ausência é o caso normal de um alerta) |
+
+---
+
+## Veredito v5 (2026-09-10, plano regenerado pós-wow-pass) — exame visual
+
+**O documento mudou de espécie.** Contra o critério de aceite:
+
+✅ Abre como capa: "A descoberta de Setembro" + manchete Fraunces + o
+site real do cliente como arte ("Seu site, visto pela Vestigio").
+✅ Hero sem zeros: Sessões medidas 22.345 [MEDIDO] · Vazando R$ 79,2k
+[ESTIMADO] · Origem dominante Facebook 91% [MEDIDO].
+✅ Funil como desenho afunilando, janela declarada ("desde 09/09,
+quando a medição do checkout começou"), −1.797 sessões anotadas no
+traço, Pagou 23 · 1,2% (decimal, verde).
+✅ Fricção por ENTIDADE ("vedaplus kit potes hermeticos · 144 de 2.641
+sessões"), rates altos em âmbar (55,4% no checkout!).
+✅ Passos citam o medido no texto ("medimos 25 pausas de hesitação…"),
+verificação [MEDIDO] com baseline ("hoje: 25 · 17,3% de 173"),
+artefatos "Pronto para usar" (política escrita, variantes de copy).
+✅ Screenshots full-page anotadas ("2 regiões marcadas · ver a página
+inteira"), caption com a página certa.
+✅ Zero superfície inexistente, zero problema em triplicata, zero
+memória-de-zeros, chips de grau em todo claim.
+
+**Defeitos remanescentes (uma família + cosméticos):**
+1. ⚠️ P-NOVO: o finding trust_boundary (/account, "compradores jogados
+   pra outro domínio") RENASCEU no recovery-audit e virou Passo 1
+   (R$ 24k) — análise errada agora que o checkout NX4 é costurado e
+   MEDIDO convertendo (23 pagos no próprio plano). É também a raiz da
+   contradição residual tese("checkout")↔narrativa("página inicial"):
+   assunto do finding ≠ surface. FIX: suprimir/reformular o
+   trust_boundary quando o destino é o checkout costurado com
+   conversões confirmadas.
+2. Cosméticos: label do checkout "/c/NX-…" deveria resolver "Checkout";
+   home rotulada "Casa Montelle" (título=marca) deveria cair em
+   "página inicial"; buyer cards ainda mostram paths nos exemplos;
+   concorrentes "1 monitorado · sem sinais" ainda rende cartão vazio.

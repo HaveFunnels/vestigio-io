@@ -210,3 +210,5 @@ export async function openLossExposure(
 		wasCapped: capped.wasCapped,
 	};
 }
+
+// Deploy note: latest-status open-finding fix (7e7313e8) — worker build retrigger.

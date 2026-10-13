@@ -609,6 +609,39 @@ export class PrismaFindingStore {
 			select: { id: true },
 		});
 		const keepIds = new Set(cyclesToKeep.map((c: { id: string }) => c.id));
+
+		// ALWAYS spare the newest comprehensive (full/cold) cycle, even
+		// when it falls outside the keep-N window.
+		//
+		// The 2026-07 fix above (ignore cycles that own no findings)
+		// handled TARGETED cycles, which emit zero findings and so never
+		// enter the window. It does not handle HOT and WARM, which do
+		// emit findings — so on a Max-tier cadence (hot 15min, warm 1h)
+		// the two-slot window is permanently occupied by hot/warm and
+		// the daily cold cycle's findings are deleted within the hour.
+		//
+		// That matters because honest-aggregates.openLossExposure scopes
+		// exposure to latestComprehensiveCycleId(), which only accepts
+		// full/cold. Pruning those rows leaves the aggregate with nothing
+		// to read: havefunnels.com (plan Max) shipped Sept AND Oct plans
+		// with R$0 exposure, empty buyer segments and zero next-steps
+		// while its hot/warm cycles were holding 19 real findings.
+		//
+		// Widening the aggregate's whitelist instead would reintroduce
+		// exactly what the GHOST v5 comment in honest-aggregates.ts warns
+		// about (phantom 'resolved' rows from verification cycles), so
+		// the retention rule is the correct place to fix it.
+		const newestComprehensive = await this.prisma.auditCycle.findFirst({
+			where: {
+				environmentId,
+				status: 'complete',
+				cycleType: { in: ['full', 'cold'] },
+				id: { in: cycleIdsWithFindings },
+			},
+			orderBy: { createdAt: 'desc' },
+			select: { id: true },
+		});
+		if (newestComprehensive) keepIds.add(newestComprehensive.id);
 		const toPrune = cycleIdsWithFindings.filter((id: string) => !keepIds.has(id));
 		if (toPrune.length === 0) return 0;
 		const result = await this.prisma.finding.deleteMany({

@@ -17,6 +17,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import { cadenceForPlan, runProbePassForEnv, type ProbeResult } from "./index";
+import { assessSiteLiveness, pauseForDeadSite } from "./site-liveness";
 
 export interface ProbeCronPassResult {
   /** Total envs the cron considered eligible. */
@@ -31,6 +32,8 @@ export interface ProbeCronPassResult {
   cyclesEnqueued: number;
   /** Aggregate per-URL fetch errors across all envs. */
   errors: number;
+  /** Envs paused this tick because their site stopped existing. */
+  envsPausedDead: number;
   durationMs: number;
 }
 
@@ -57,6 +60,7 @@ export async function runProbeCronPass(
   let changesDetected = 0;
   let cyclesEnqueued = 0;
   let errors = 0;
+  let envsPausedDead = 0;
 
   // One indexed scan: envs that are eligible to be probed at all. The
   // per-env debounce happens inside runProbePassForEnv so we don't
@@ -111,6 +115,42 @@ export async function runProbeCronPass(
       changesDetected += result.probesChanged;
       errors += result.errors;
 
+      // Dead-site check. Only runs when THIS pass saw the landing URL
+      // fail — a healthy pass can't possibly end a 7-day dead streak,
+      // so there's no reason to pay for the history query. The
+      // assessment itself re-reads the full window and is the sole
+      // authority on the verdict.
+      const landingResult = result.results.find((r) => r.url === env.landingUrl);
+      const landingLooksDown =
+        landingResult !== undefined &&
+        !(landingResult.statusCode >= 200 && landingResult.statusCode < 400);
+
+      if (landingLooksDown) {
+        try {
+          const assessment = await assessSiteLiveness(
+            prisma,
+            env.id,
+            env.landingUrl,
+            now,
+          );
+          if (assessment.verdict === "dead") {
+            const paused = await pauseForDeadSite(prisma, env.id, assessment);
+            if (paused) {
+              envsPausedDead++;
+              console.warn(
+                `[probe-cron] env ${env.id} (${env.landingUrl}) PAUSED — site gone: ${assessment.summary}`,
+              );
+            }
+          }
+        } catch (err) {
+          // Never let liveness bookkeeping break the probe pass.
+          console.error(
+            `[probe-cron] liveness check failed for env ${env.id}:`,
+            err instanceof Error ? err.message : err,
+          );
+        }
+      }
+
       // For each URL whose hash changed, enqueue a targeted cycle.
       // Multiple URLs can change in one pass — emit one cycle per URL
       // so each gets its own focused engine.run({ scope: targeted }).
@@ -147,6 +187,7 @@ export async function runProbeCronPass(
     changesDetected,
     cyclesEnqueued,
     errors,
+    envsPausedDead,
     durationMs: Date.now() - start,
   };
 }

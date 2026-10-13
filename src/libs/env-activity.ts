@@ -85,9 +85,18 @@ export async function resumeIfPaused(envId: string): Promise<boolean> {
 		// /app/* loads from the same owner each pass the read above and
 		// each create a duplicate cycle. updateMany returns the row count
 		// matched WHERE continuousPaused: true; non-winners get count=0.
+		// Clears the dead-site marks too: a human opening /app is the
+		// strongest available signal that the site is back (or that they
+		// want us looking again regardless). If it is in fact still down,
+		// the probe cron re-detects it and re-pauses after another full
+		// week — costing one catch-up cycle, not thousands.
 		const claim = await prisma.environment.updateMany({
 			where: { id: envId, continuousPaused: true },
-			data: { continuousPaused: false },
+			data: {
+				continuousPaused: false,
+				pausedReason: null,
+				siteDeadSinceAt: null,
+			},
 		});
 		if (claim.count === 0) {
 			// Lost the race — another request already cleared the flag and

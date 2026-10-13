@@ -347,6 +347,16 @@ model Environment {
   probeEnabled         Boolean   @default(true)
   probeUrlsJson        Json?
   probeLastRunAt       DateTime?
+  // Dead-site detection (apps/probe-runner/site-liveness.ts).
+  // pausedReason distinguishes WHY continuousPaused is set:
+  //   null         — not paused, or paused before this field existed
+  //   "inactivity" — >14d without an owner/member loading /app/*
+  //   "site_dead"  — landing URL failed every probe for a full week
+  // siteDeadSinceAt is the first failure of the streak that tripped
+  // the pause, so the admin UI can say "gone since the 3rd" instead
+  // of just "paused".
+  pausedReason         String?
+  siteDeadSinceAt      DateTime?
   // PV.0 — perception layer (multi-vertical coverage track).
   // Autonomously-perceived business vertical for this domain, written by the
   // perception pass (PV.2). Distinct from the per-org, user-declared

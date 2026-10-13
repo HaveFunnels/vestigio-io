@@ -835,7 +835,9 @@ export async function registerNodeInstrumentation(): Promise<void> {
 				try {
 					await prisma.environment.update({
 						where: { id: env.id },
-						data: { continuousPaused: true },
+						// pausedReason lets the admin UI and the resume path tell
+						// this apart from a site_dead pause (probe-runner).
+						data: { continuousPaused: true, pausedReason: "inactivity" },
 					});
 					// Record the event via NotificationLog so the dispatcher
 					// cron (notification-dispatcher.ts) can deliver a real

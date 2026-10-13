@@ -24,6 +24,7 @@
 import { createHash } from "crypto";
 import { prisma } from "@/libs/prismaDb";
 import { runStagedPipeline, type PipelineEvent } from "../../workers/ingestion/staged-pipeline";
+import { getRootDomain } from "../../workers/ingestion/parser";
 import { PrismaEvidenceStore } from "../../packages/evidence";
 import { PrismaSnapshotStore } from "../../packages/change-detection";
 import { PrismaActionStore, PrismaFindingStore } from "../../packages/projections";
@@ -552,6 +553,28 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			);
 		}
 
+		// Pixel-discovered landing URLs. Homepage links + sitemap +
+		// critical-path guesses systematically miss the pages ad traffic
+		// actually lands on: casamontelle had 833 distinct landing URLs
+		// in the pixel and zero product pages ever crawled, while the
+		// plan told the customer the leak was on their product page.
+		const { resolveBehavioralSeeds } = await import("./behavioral-seeds");
+		const behavioralSeedRows = await resolveBehavioralSeeds(
+			prisma,
+			env.id,
+			getRootDomain(domain),
+		);
+		const behavioralSeeds = behavioralSeedRows.map((s) => s.url);
+		if (behavioralSeeds.length > 0) {
+			const top = behavioralSeedRows
+				.slice(0, 3)
+				.map((s) => `${s.url} (${s.sessions})`)
+				.join(", ");
+			console.log(
+				`[audit-runner ${cycleId}] seeding ${behavioralSeeds.length} pixel-discovered URLs into the crawl — top: ${top}`,
+			);
+		}
+
 		const result = await runStagedPipeline(
 			{
 				domain,
@@ -568,6 +591,7 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 				url_filter: urlFilter ?? undefined,
 				exclude_patterns: (env as any).crawlExcludePatterns ?? [],
 				manual_seeds: manualSeeds.length > 0 ? manualSeeds : undefined,
+				behavioral_seeds: behavioralSeeds.length > 0 ? behavioralSeeds : undefined,
 				// Playwright budget per cycle, scoped by org plan. Cold
 				// cycles are the only mode where the renderer fires
 				// (it's gated by mode='full' inside the pipeline too,

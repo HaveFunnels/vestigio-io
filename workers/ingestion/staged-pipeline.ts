@@ -184,6 +184,12 @@ export interface StagedPipelineInput {
   // run-cycle loads these from PageInventoryItem rows tagged with
   // discoverySource = "manual".
   manual_seeds?: string[];
+  // Landing URLs the in-browser pixel observed real visitors arrive
+  // on, ordered by session volume (apps/audit-runner/behavioral-seeds).
+  // Separate from manual_seeds so provenance stays honest in the
+  // inventory: these are discovered, not user-authored. Same
+  // same-domain gate applies.
+  behavioral_seeds?: string[];
 }
 
 // Constraint overrides per mode. Anything not set falls back to
@@ -655,6 +661,29 @@ export async function runStagedPipeline(
     }
   }
 
+  // Pixel-observed landing URLs. These are the pages real (usually
+  // paid) traffic actually arrives on, which is frequently disjoint
+  // from what the homepage links to — an ad-driven store sends every
+  // visitor straight to a product page the nav never surfaces. Placed
+  // after manual seeds so an operator-authored URL always wins the
+  // dedup, and before pagination so product pages outrank page 2..N
+  // when the crawl budget runs short.
+  if (input.behavioral_seeds && input.behavioral_seeds.length > 0) {
+    const seen = new Set<string>(candidates.map(c => normalizeUrlForDedup(c.url)));
+    seen.add(normalizeUrlForDedup(rootUrl));
+    for (const bUrl of input.behavioral_seeds) {
+      try {
+        const host = new URL(bUrl).hostname;
+        if (!host.endsWith(rootDomain)) continue;
+      } catch { continue; }
+      const key = normalizeUrlForDedup(bUrl);
+      if (!seen.has(key)) {
+        seen.add(key);
+        candidates.push({ url: bUrl, source: 'behavioral_event' });
+      }
+    }
+  }
+
   // Wave 9.3 — homepage pagination links (rel=next/prev or numbered).
   // These rarely apply to the home page itself but if they do, we want
   // to discover page 2..N. Pagination links from inner pages are added
@@ -734,6 +763,13 @@ export async function runStagedPipeline(
     // wonders why it never gets crawled (warm cycles run weekly).
     if (input.manual_seeds && input.manual_seeds.length > 0) {
       for (const m of input.manual_seeds) allow.add(canon(m));
+    }
+    // Same exemption for pixel-discovered landing URLs: the pages
+    // taking real paid traffic should not be filtered out of the
+    // narrower hot/warm scopes, which is exactly where a regression on
+    // a top product page needs to be caught fast.
+    if (input.behavioral_seeds && input.behavioral_seeds.length > 0) {
+      for (const b of input.behavioral_seeds) allow.add(canon(b));
     }
     const homepageUrl = canon(rootUrl);
     candidates = candidates.filter((c) => {

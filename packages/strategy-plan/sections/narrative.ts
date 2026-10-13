@@ -381,7 +381,8 @@ Regras estritas:
 9. PROIBIDO usar a palavra "exposição" em qualquer parágrafo. Substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.
 10. HONESTIDADE DE MEDIÇÃO (regra absoluta, vence qualquer outra): os valores em R$ deste plano são ESTIMATIVAS calculadas por severidade sobre a receita informada pelo cliente — não são medições. PROIBIDO afirmar ou insinuar que foram medidos: nada de "não é projeção", "medido", "comprovado", "observado no seu checkout", "calibrado". Enquadrar sempre como "estimativa" ou "perda potencial estimada". A palavra "medido" é reservada para dados que o pixel de fato coletou (sessões, permanência, cliques, scroll). O bloco "MEDIDO PELO PIXEL" abaixo, quando presente, é a ÚNICA fonte que pode ser citada como medição — cite os números dele literalmente, sem arredondar para cima nem extrapolar. Um cliente que conhece a própria receita compara — e uma única afirmação de medição falsa custa a credibilidade do documento inteiro.
 11. FOCO ÚNICO (EXAME P3): o foco nomeado no Parágrafo 2 e o movimento do Parágrafo 4 são a MESMA página/área — a "Surface dominante" dos dados abaixo. Se os maiores vazamentos individuais estiverem em OUTRA página, cite-os dizendo explicitamente que estão fora do foco; NUNCA troque o foco no meio do texto.
-12. NUNCA funda o título de um achado com o nome de outra página (EXAME P9): "o checkout da página inicial" é defeito. Cite o achado como está e a página dele separadamente.`;
+12. NUNCA funda o título de um achado com o nome de outra página (EXAME P9): "o checkout da página inicial" é defeito. Cite o achado como está e a página dele separadamente.
+13. PROIBIDO EXPLICAR UM ZERO (regra absoluta): se algum número abaixo vier zerado, você pode REPORTAR o zero, mas NUNCA inventar a causa dele. Proibido atribuir um zero a falta de informação do cliente, a configuração pendente, a dado não fornecido, ou a qualquer motivo que não esteja escrito literalmente nos dados abaixo. Não existe "porque X não foi informado" a menos que os dados digam isso com todas as letras. Um zero mal explicado é a única falha deste documento que o cliente desmente em dez segundos na própria tela de configurações, e ela derruba a credibilidade de todos os outros números do plano. Na dúvida, descreva o que está aberto e siga para o movimento do mês sem justificar o zero.`;
 
 	const data: string[] = [];
 	data.push(`Dados do mês ${i.monthLabelPt} para ${i.envDomain}:`);
@@ -486,6 +487,47 @@ export async function generateNarrativeWhatHappened(
 			costCents: 0,
 			callsCount: 0,
 			fallback: false,
+		};
+	}
+
+	// Incoherent input guard.
+	//
+	// "There are N chronic problems" and "total potential loss is R$0
+	// across zero distinct leaks" cannot both be true. When the engine
+	// hands us that pair it means the exposure aggregate failed to read
+	// the findings, not that the customer has a free month.
+	//
+	// Shipped twice to havefunnels.com (Sept + Oct 2026) after a
+	// retention bug deleted the comprehensive cycle's findings out from
+	// under openLossExposure. The LLM, asked to reconcile 38 chronic
+	// problems with R$0, invented a cause and blamed the customer:
+	// "sem receita informada como base de cálculo, Vestigio não gera
+	// estimativa" — while monthlyRevenue was 580000 in the database.
+	// That sentence is disprovable from the customer's own settings
+	// screen, and it poisons trust in every correctly-estimated figure
+	// in every other plan.
+	//
+	// So we never ask the model to explain this state. We emit a
+	// deterministic, honest paragraph and log loudly for the on-call.
+	const hasProblems =
+		inputs.chronicCount > 0 ||
+		inputs.newCriticalCount > 0 ||
+		inputs.regressionCount > 0;
+	const exposureMissing =
+		inputs.exposureTotal === 0 && inputs.distinctExposurePoints === 0;
+	if (hasProblems && exposureMissing) {
+		console.error(
+			`[strategy-plan] INCOHERENT narrative input for ${inputs.envDomain}: ` +
+				`chronic=${inputs.chronicCount} newCritical=${inputs.newCriticalCount} ` +
+				`regression=${inputs.regressionCount} but exposureTotal=0 and ` +
+				`distinctExposurePoints=0. Exposure aggregate read nothing — check ` +
+				`finding retention (pruneOlderThan) and latestComprehensiveCycleId.`,
+		);
+		return {
+			text: `Em ${inputs.monthLabelPt}, Vestigio seguiu rastreando os problemas abertos em ${inputs.envDomain}, mas não consegue publicar a perda potencial deste ciclo: o cálculo não fechou com os dados disponíveis. Preferimos não estimar a estimar errado. Os problemas e os próximos passos abaixo continuam válidos; o número volta no próximo ciclo.`,
+			costCents: 0,
+			callsCount: 0,
+			fallback: true,
 		};
 	}
 

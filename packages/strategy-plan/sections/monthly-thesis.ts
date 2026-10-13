@@ -283,6 +283,28 @@ export async function generateMonthlyThesis(
 	organizationId: string | null,
 ): Promise<LlmTextResult> {
 	const inputs = await gatherInputs(prisma, ctx);
+
+	// Same incoherent-input guard as the narrative (see
+	// sections/narrative.ts): open problems plus a zeroed exposure
+	// aggregate is a pipeline fault, not a thesis. Asking the model to
+	// headline it produced "Vestigio identificou R$ 0/mês em vazamento
+	// agregado aberto, mas rastreou 38 problemas recorrentes" on
+	// havefunnels.com — a paying Max customer — for two months running.
+	//
+	// fallbackThesis Pattern C already says the honest version of this
+	// (lead with the chronic count, never cite a R$ we could not
+	// compute), so route straight to it and skip the LLM entirely.
+	const hasProblems =
+		inputs.chronicCount > 0 || inputs.regressionCount > 0 || inputs.newCriticalCount > 0;
+	if (hasProblems && inputs.exposureTotal === 0) {
+		return {
+			text: fallbackThesis(inputs),
+			costCents: 0,
+			callsCount: 0,
+			fallback: true,
+		};
+	}
+
 	const { system, user } = buildPrompt(inputs, ctx.locale);
 	return callForText({
 		model: "haiku_4_5",

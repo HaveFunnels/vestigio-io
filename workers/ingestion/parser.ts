@@ -694,6 +694,19 @@ export function getRootDomain(hostname: string): string {
   return registrableDomain(hostname);
 }
 
+/**
+ * Anchored same-site test. The dot boundary is the whole point: a bare
+ * `host.endsWith(rootDomain)` accepts `evilcasamontelle.com` for root
+ * `casamontelle.com`, which turns any surface that trusts it into an
+ * attacker-controlled fetch. Callers must route every same-domain gate
+ * through here rather than re-implementing the suffix check.
+ *
+ * Normalizes case and the FQDN trailing dot ("example.com." is the
+ * same host as "example.com" but loses an unanchored comparison).
+ */
 export function isSameDomain(host1: string, rootDomain: string): boolean {
-  return host1 === rootDomain || host1.endsWith('.' + rootDomain);
+  const host = host1.toLowerCase().replace(/\.$/, '');
+  const root = rootDomain.toLowerCase().replace(/\.$/, '');
+  if (!host || !root) return false;
+  return host === root || host.endsWith('.' + root);
 }

@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { isSameDomain } from "../../workers/ingestion/parser";
 
 // ──────────────────────────────────────────────
 // Pixel-discovered crawl seeds
@@ -90,10 +91,17 @@ export async function resolveBehavioralSeeds(
 			} catch {
 				continue;
 			}
-			// Same-domain only. The pipeline enforces this again, but
-			// filtering here keeps the cap honest — otherwise a burst of
-			// off-domain referrer URLs could consume every slot.
-			if (!parsed.hostname.endsWith(rootDomain)) continue;
+			// Same-domain only, via the anchored helper. landing_url comes
+			// from the browser through a public beacon endpoint, so this
+			// is the least-trusted input feeding the crawl: an unanchored
+			// suffix check would accept `evilcasamontelle.com` for root
+			// `casamontelle.com` and let anyone who can post a beacon
+			// steer the crawler at a domain they control.
+			//
+			// The pipeline re-checks with the same helper; filtering here
+			// also keeps the cap honest, since a burst of off-domain URLs
+			// would otherwise consume every slot.
+			if (!isSameDomain(parsed.hostname, rootDomain)) continue;
 			// Strip query + hash: ad traffic arrives with utm/fbclid/ttclid
 			// noise that would otherwise fragment one page into dozens of
 			// "distinct" seeds and blow the cap on a single product.

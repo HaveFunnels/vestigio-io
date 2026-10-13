@@ -1,6 +1,6 @@
 import { URL } from 'url';
 import { httpFetch, HttpResponse } from './http-client';
-import { parsePage, ParsedPage, getRootDomain, detectAbTestPlatform } from './parser';
+import { parsePage, ParsedPage, getRootDomain, isSameDomain, detectAbTestPlatform } from './parser';
 import {
   Evidence, EvidenceType, SourceKind, CollectionMethod,
   FreshnessState, Scoping, Freshness,
@@ -632,7 +632,7 @@ export async function runStagedPipeline(
     for (const alt of homepageParsed.hreflang_alternates) {
       try {
         const host = new URL(alt.href).hostname;
-        if (!host.endsWith(rootDomain)) continue;
+        if (!isSameDomain(host, rootDomain)) continue;
       } catch { continue; }
       const key = normalizeUrlForDedup(alt.href);
       if (!seen.has(key)) {
@@ -651,7 +651,7 @@ export async function runStagedPipeline(
     for (const mUrl of input.manual_seeds) {
       try {
         const host = new URL(mUrl).hostname;
-        if (!host.endsWith(rootDomain)) continue;
+        if (!isSameDomain(host, rootDomain)) continue;
       } catch { continue; }
       const key = normalizeUrlForDedup(mUrl);
       if (!seen.has(key)) {
@@ -674,7 +674,7 @@ export async function runStagedPipeline(
     for (const bUrl of input.behavioral_seeds) {
       try {
         const host = new URL(bUrl).hostname;
-        if (!host.endsWith(rootDomain)) continue;
+        if (!isSameDomain(host, rootDomain)) continue;
       } catch { continue; }
       const key = normalizeUrlForDedup(bUrl);
       if (!seen.has(key)) {
@@ -694,7 +694,7 @@ export async function runStagedPipeline(
     for (const p of homepageParsed.pagination_links) {
       try {
         const host = new URL(p.href).hostname;
-        if (!host.endsWith(rootDomain)) continue;
+        if (!isSameDomain(host, rootDomain)) continue;
       } catch { continue; }
       const key = normalizeUrlForDedup(p.href);
       if (!seen.has(key)) {

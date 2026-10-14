@@ -75,9 +75,24 @@ export async function resumeIfPaused(envId: string): Promise<boolean> {
 				organizationId: true,
 				continuousPaused: true,
 				activated: true,
+				pausedReason: true,
 			},
 		});
 		if (!env || !env.continuousPaused || !env.activated) return false;
+
+		// An operator pause is a human decision and outranks a page view.
+		// The automatic reasons (inactivity, site_dead) are meant to be
+		// undone by the customer showing up; "operator_disabled" is not —
+		// it is how we stop an env that should not be running at all (a
+		// demo burning cycles against someone else's domain, an abusive
+		// target, a billing dispute). Silently re-enabling it on the next
+		// /app load would quietly undo that call.
+		if (env.pausedReason === "operator_disabled") {
+			console.warn(
+				`[env-activity] env ${envId} is operator_disabled — not auto-resuming on access`,
+			);
+			return false;
+		}
 
 		// Wave 5 Fase 1A fix (C2): atomic conditional update — only one
 		// concurrent caller wins the flip from paused → active and dispatches

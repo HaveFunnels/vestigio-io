@@ -349,9 +349,14 @@ model Environment {
   probeLastRunAt       DateTime?
   // Dead-site detection (apps/probe-runner/site-liveness.ts).
   // pausedReason distinguishes WHY continuousPaused is set:
-  //   null         — not paused, or paused before this field existed
-  //   "inactivity" — >14d without an owner/member loading /app/*
-  //   "site_dead"  — landing URL failed every probe for a full week
+  //   null                — not paused, or paused before this field existed
+  //   "inactivity"        — >14d without an owner/member loading /app/*
+  //   "site_dead"         — landing URL failed every probe for a full week
+  //   "operator_disabled" — deliberately stopped by an operator (e.g. a
+  //                         demo env that was burning cycles against a
+  //                         third party's domain). Distinct from the two
+  //                         automatic reasons because the resume path
+  //                         should NOT silently undo a human decision.
   // siteDeadSinceAt is the first failure of the streak that tripped
   // the pause, so the admin UI can say "gone since the 3rd" instead
   // of just "paused".

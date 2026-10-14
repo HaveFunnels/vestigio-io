@@ -73,11 +73,43 @@ async function findUser(customerId: string, email?: string) {
 }
 
 // Helper: resolve plan from price ID
+/**
+ * Map a Paddle price id to a plan key.
+ *
+ * resolvePlanFromPriceId falls back to "free" when no plan config
+ * matches, which is the right default for an UNKNOWN price (never
+ * accidentally grant a paid tier). But reaching it from a webhook
+ * means a real transaction just completed and we mapped it to the
+ * lapsed-status sentinel: the customer pays and gets weekly-only
+ * cadence with paid features off.
+ *
+ * Today the LP checkout's hardcoded NEXT_PUBLIC_PADDLE_LP_PRICE_ID
+ * does match the Starter plan's paddlePriceId, so this does not fire.
+ * It becomes live the moment anyone rotates a price in Paddle without
+ * updating PlatformConfig.plan_configs — and the 1h in-process plan
+ * cache would delay the fix on top. Silent is the one thing it must
+ * not be.
+ */
 async function resolvePlan(priceId: string): Promise<string> {
 	try {
 		const { resolvePlanFromPriceId } = await import("@/libs/plan-config");
-		return await resolvePlanFromPriceId(priceId);
-	} catch {
+		const plan = await resolvePlanFromPriceId(priceId);
+		if (plan === "free") {
+			logPaymentPathFailure(
+				"resolvePlan",
+				`priceId=${priceId} matched no entry in PlatformConfig.plan_configs — ` +
+					`a completed payment is being provisioned as "free". Add this price id ` +
+					`to the plan config (admin → pricing) and re-apply the customer's plan.`,
+			);
+		}
+		return plan;
+	} catch (err) {
+		logPaymentPathFailure(
+			"resolvePlan",
+			`threw while resolving priceId=${priceId}, defaulting to "free": ${
+				err instanceof Error ? err.message : String(err)
+			}`,
+		);
 		return "free";
 	}
 }

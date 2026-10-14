@@ -18,6 +18,7 @@
 import type { PrismaClient } from "@prisma/client";
 import { cadenceForPlan, runProbePassForEnv, type ProbeResult } from "./index";
 import { assessSiteLiveness, pauseForDeadSite } from "./site-liveness";
+import { assessUrlVolatility, VOLATILITY_WINDOW_HOURS } from "./volatility";
 
 export interface ProbeCronPassResult {
   /** Total envs the cron considered eligible. */
@@ -34,6 +35,8 @@ export interface ProbeCronPassResult {
   errors: number;
   /** Envs paused this tick because their site stopped existing. */
   envsPausedDead: number;
+  /** Targeted cycles not enqueued because the URL is dynamic content. */
+  volatileSkips: number;
   durationMs: number;
 }
 
@@ -61,6 +64,7 @@ export async function runProbeCronPass(
   let cyclesEnqueued = 0;
   let errors = 0;
   let envsPausedDead = 0;
+  let volatileSkips = 0;
 
   // One indexed scan: envs that are eligible to be probed at all. The
   // per-env debounce happens inside runProbePassForEnv so we don't
@@ -160,6 +164,21 @@ export async function runProbeCronPass(
       for (const r of result.results) {
         if (r.changedFromPrior === true && r.statusCode >= 200 && r.statusCode < 400) {
           try {
+            // Suppress URLs whose hash changes on essentially every
+            // probe. A rotating storefront banner is not a deploy, and
+            // treating it as one cost ~8,400 targeted cycles in a month
+            // on a single homepage. The scheduled cold cycle still
+            // covers the page, so nothing stops being analysed.
+            const vol = await assessUrlVolatility(prisma, env.id, r.url, now);
+            if (vol.volatile) {
+              volatileSkips++;
+              console.log(
+                `[probe-cron] skipping targeted cycle for ${r.url} — dynamic content ` +
+                  `(${Math.round(vol.changeRate * 100)}% of ${vol.observations} probes changed in ` +
+                  `the last ${VOLATILITY_WINDOW_HOURS}h); cold cycle still covers it`,
+              );
+              continue;
+            }
             await enqueueTargetedCycle(prisma, env.organizationId, env.id, r);
             cyclesEnqueued++;
           } catch (err) {
@@ -188,6 +207,7 @@ export async function runProbeCronPass(
     cyclesEnqueued,
     errors,
     envsPausedDead,
+    volatileSkips,
     durationMs: Date.now() - start,
   };
 }

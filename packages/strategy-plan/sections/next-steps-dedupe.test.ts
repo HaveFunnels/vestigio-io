@@ -48,4 +48,45 @@ describe("dedupeByRootProblem", () => {
 		const ranked = Array.from({ length: 10 }, (_, i) => row(`r${i}`, [`k${i}`]));
 		expect(dedupeByRootProblem(ranked, 5)).toHaveLength(5);
 	});
+
+	// The P15 fence above only fires when two actions share a literal
+	// key. October slipped past it: Casa Montelle shipped "Loja sem
+	// política de troca visível" (R$ 15.375, ['refund_policy_gap']) as
+	// step 1 and "Políticas de proteção ao consumidor ausentes"
+	// (R$ 10.000, ['policy_gap']) as step 3 — disjoint keys, same
+	// missing page, billed twice, with two artifacts that contradicted
+	// each other on who pays return shipping.
+	it("collapses different names for the same root problem", () => {
+		const ranked = [
+			row("refund", ["refund_policy_gap"]),
+			row("policy", ["policy_gap"]),
+		];
+		expect(dedupeByRootProblem(ranked, 5).map((r) => r.id)).toEqual(["refund"]);
+	});
+
+	it("collapses the cta-clarity family", () => {
+		const ranked = [
+			row("clarity", ["cta_clarity_weak_on_commercial"]),
+			row("competing", ["cta_competing_or_unclear"]),
+			row("weak", ["weak_cta_on_commercial"]),
+		];
+		expect(dedupeByRootProblem(ranked, 5).map((r) => r.id)).toEqual(["clarity"]);
+	});
+
+	// Over-merging would hide real findings, so keys that merely sound
+	// related must survive as separate steps when the work differs.
+	it("does NOT merge keys whose remediation is different work", () => {
+		const ranked = [
+			// write the missing policy page
+			row("missing", ["refund_policy_gap"]),
+			// move an existing guarantee next to the buy button
+			row("placement", ["guarantee_invisible_at_decision"]),
+			// a business metric, not a page
+			row("rate", ["high_refund_rate_eroding_revenue"]),
+			// a rendering/timing problem, not CTA hierarchy
+			row("timing", ["primary_cta_delayed"]),
+			row("hierarchy", ["cta_clarity_weak_on_commercial"]),
+		];
+		expect(dedupeByRootProblem(ranked, 5)).toHaveLength(5);
+	});
 });

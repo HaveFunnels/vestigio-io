@@ -687,6 +687,53 @@ function executabilityFor(category: string, surface: string | null, decisionKey:
 // shares an inference key with an already-picked one — the shared key
 // IS the root problem. Fewer, distinct steps beat five that are three
 // ("better three specific steps" house rule). Exported for tests.
+/**
+ * Inference keys that are the same ROOT PROBLEM under different names.
+ *
+ * The exact-key overlap check below only catches a duplicate when the
+ * two actions happen to link an identical key. October proved that is
+ * not enough: Casa Montelle shipped "Loja sem política de troca
+ * visível" (R$ 15.375, keys ['refund_policy_gap']) as step 1 and
+ * "Políticas de proteção ao consumidor ausentes" (R$ 10.000, keys
+ * ['policy_gap']) as step 3. Disjoint keys, same missing page, two
+ * bills — and their two artifacts even gave the customer contradictory
+ * return-shipping policies in the same document.
+ *
+ * Membership rule, deliberately strict: two keys belong to the same
+ * family only when the REMEDIATION IS THE SAME ACTION. Related-sounding
+ * keys stay separate when the work differs —
+ * `guarantee_invisible_at_decision` is "move the guarantee next to the
+ * button", not "write the policy"; `high_refund_rate_eroding_revenue`
+ * is a business metric, not a missing page. Over-merging hides real
+ * findings, which is worse than the duplication it prevents.
+ */
+const ROOT_PROBLEM_FAMILIES: Record<string, string> = {
+	// Consumer-protection documentation does not exist / is too thin.
+	// One fix: publish the policy and link it from the commercial path.
+	policy_gap: "missing_policy_docs",
+	refund_policy_gap: "missing_policy_docs",
+	refund_policy_missing: "missing_policy_docs",
+	refund_terms_too_thin: "missing_policy_docs",
+	return_policy_not_on_product: "missing_policy_docs",
+
+	// The primary call to action competes with others / reads unclear.
+	// One fix: establish a single visual hierarchy on the surface.
+	// Timing variants (primary_cta_delayed, mobile_cta_late_render) are
+	// a rendering problem and stay out of this family.
+	cta_clarity_weak_on_commercial: "weak_primary_cta",
+	cta_competing_or_unclear: "weak_primary_cta",
+	weak_cta_on_commercial: "weak_primary_cta",
+
+	// Checkout carries no reassurance copy. One fix: add it.
+	checkout_trust_language_absent: "checkout_trust_absent",
+	checkout_trust_signals_absent: "checkout_trust_absent",
+};
+
+/** Collapse a key onto its family, or return it unchanged. */
+function rootProblemOf(inferenceKey: string): string {
+	return ROOT_PROBLEM_FAMILIES[inferenceKey] ?? inferenceKey;
+}
+
 export function dedupeByRootProblem<T extends { inferenceKeys: string[] }>(
 	ranked: T[],
 	limit: number,
@@ -695,7 +742,9 @@ export function dedupeByRootProblem<T extends { inferenceKeys: string[] }>(
 	const usedKeys = new Set<string>();
 	for (const row of ranked) {
 		if (picked.length >= limit) break;
-		const keys = row.inferenceKeys;
+		// Compare on the family, so two names for one problem collide
+		// even when the actions link disjoint keys.
+		const keys = row.inferenceKeys.map(rootProblemOf);
 		if (keys.length > 0 && keys.some((k) => usedKeys.has(k))) continue;
 		picked.push(row);
 		for (const k of keys) usedKeys.add(k);
@@ -1430,6 +1479,50 @@ export async function generateNextSteps(
 			});
 		}),
 	);
+
+	// ── Measured facts lead ──
+	//
+	// Until now the order was structural, not editorial: action-derived
+	// steps were built first and ranked by a MODELED R$ (severity x
+	// declared revenue), then measured steps were appended on the end.
+	// So the only content in the document that survives the "could
+	// ChatGPT write this?" test always shipped last.
+	//
+	// Casa Montelle's October plan opened with three estimate-only
+	// steps — R$ 15.375 "refund page missing", R$ 12.000 "confusing
+	// copy", R$ 10.000 "consumer policies missing" — while the two
+	// steps built from counted sessions (4.811 TikTok visits at 5s
+	// median; 64 dead clicks and 214 hesitations on the checkout) sat
+	// at positions 5 and 6. The buyer reads top-down; we were leading
+	// with the weakest claims.
+	//
+	// A counted fact outranks an estimate. The one exception is a
+	// CRITICAL action: a security or payment break still leads, because
+	// severity there is not a revenue model, it is a state of the site.
+	//
+	// Runs AFTER artifact generation on purpose — that block maps
+	// steps to artifact kinds by index against `actions.length`, so
+	// reordering earlier would attach the wrong artifact to the wrong
+	// step.
+	const actionStepCount = actions.length;
+	const actionSteps = steps.slice(0, actionStepCount);
+	const measuredSteps = steps.slice(actionStepCount);
+	if (measuredSteps.length > 0) {
+		const leadingCriticals = actionSteps.filter(
+			(_, i) => actions[i]?.severity === "critical",
+		);
+		const remainingActions = actionSteps.filter(
+			(_, i) => actions[i]?.severity !== "critical",
+		);
+		const reordered = [...leadingCriticals, ...measuredSteps, ...remainingActions];
+		reordered.forEach((st, i) => {
+			st.order = i + 1;
+		});
+		return {
+			steps: reordered,
+			cost: { llmCallsCount: totalCallsCount, llmCostCents: totalCostCents },
+		};
+	}
 
 	return {
 		steps,

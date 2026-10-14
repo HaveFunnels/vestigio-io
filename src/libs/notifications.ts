@@ -277,6 +277,13 @@ async function sendOneEmail(args: {
 		provider: "brevo",
 		providerId: res.messageId,
 		errorMsg: res.error,
+		// `tag` was missing here while the Brevo-unconfigured branch
+		// above passed it. Since this is the path every real send takes,
+		// the tag column was NULL on every row in production — so
+		// wasRecentlySent's byTag lookup could never match and the
+		// first-class dedup key was dead on arrival. havefunnels.com
+		// received 160 incident emails covering 15 distinct incidents.
+		tag: args.tag,
 	});
 	return { sent: res.ok, error: res.error };
 }
@@ -304,6 +311,9 @@ async function sendOneSms(args: {
 		provider: "twilio",
 		providerId: res.messageId,
 		errorMsg: res.error,
+		// wasRecentlySent does not filter by channel, so an untagged row
+		// on any channel weakens the shared dedup key.
+		tag: args.tag,
 	});
 	return { sent: res.ok, error: res.error };
 }
@@ -350,6 +360,7 @@ async function sendOneWhatsApp(args: {
 			provider: "meta_whatsapp",
 			providerId: res.wamid,
 			errorMsg: res.error,
+			tag: args.tag,
 		});
 		return { sent: res.ok, error: res.error };
 	}

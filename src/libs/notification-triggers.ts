@@ -18,6 +18,28 @@ interface FindingLike {
 	change_class?: string | null;
 	impact?: { midpoint?: number };
 	root_cause?: string | null;
+	/** Stable cross-cycle identity. `id` is a Finding row id, which is
+	 *  re-minted every cycle (see pruneOlderThan) — keying dedupe on it
+	 *  made the key unique per cycle, so the same open incident alerted
+	 *  daily forever. Callers pass FindingProjection, which carries
+	 *  these; optional so the legacy shape still type-checks. */
+	inference_key?: string | null;
+	surface?: string | null;
+}
+
+/**
+ * Stable dedupe identity for a finding.
+ *
+ * Prefers inference_key (+ surface), which survives across cycles.
+ * Falls back to the row id only when the projection did not carry one
+ * — that reproduces the old per-cycle behaviour rather than silently
+ * deduping two different findings together.
+ */
+function findingIdentity(f: FindingLike): string {
+	if (f.inference_key) {
+		return f.surface ? `${f.inference_key}@${f.surface}` : f.inference_key;
+	}
+	return f.id;
 }
 
 /** Window during which the same finding event will not re-fire (24h) */
@@ -51,7 +73,7 @@ export async function triggerIncidentNotifications(args: {
 		(a, b) => (b.impact?.midpoint || 0) - (a.impact?.midpoint || 0),
 	)[0];
 
-	const dedupeKey = `incident:${headline.id}`;
+	const dedupeKey = `incident:${findingIdentity(headline)}`;
 	if (await wasRecentlySent(dedupeKey, args.userId)) return;
 
 	const vars = {
@@ -107,7 +129,7 @@ export async function triggerRegressionNotifications(args: {
 		(a, b) => (b.impact?.midpoint || 0) - (a.impact?.midpoint || 0),
 	)[0];
 
-	const dedupeKey = `regression:${headline.id}`;
+	const dedupeKey = `regression:${findingIdentity(headline)}`;
 	if (await wasRecentlySent(dedupeKey, args.userId)) return;
 
 	const vars = {
@@ -811,29 +833,52 @@ export async function triggerActivationCelebratedEmail(args: {
 // Helpers
 // ──────────────────────────────────────────────
 
+/**
+ * Has this notification already been ATTEMPTED inside the dedupe
+ * window?
+ *
+ * "Attempted", not "delivered" — and that distinction is the whole
+ * point. This used to filter `status: "sent"`, so when the email
+ * provider started rejecting every call the dedupe stopped matching
+ * and each cron tick re-queued the same alert. A 33-day provider
+ * outage turned into 107 duplicate rows: the failure defeated the
+ * very mechanism meant to bound it.
+ *
+ * Counting `failed` as "already attempted" means a provider outage
+ * costs the customer one missed notification per window instead of a
+ * retry storm. That is the right trade: these are recurring-condition
+ * alerts (an incident that is still open re-fires next cycle anyway),
+ * not one-shot transactional mail. The one-shot cases — activation
+ * links, password resets — do not route through here.
+ */
 async function wasRecentlySent(tag: string, userId?: string): Promise<boolean> {
 	try {
 		const cutoff = new Date(Date.now() - DEDUPE_WINDOW_MS);
+		// Both terminal states count. See the note above.
+		const attempted = { in: ["sent", "failed"] };
 		// First, try the explicit tag column (Wave 22.6 — first-class
-		// dedup key, populated by new triggers like strategy_plan_ready).
-		// Falls back to the legacy subject-substring match for callers
-		// (incident, regression, page_down) that don't yet pass tag.
+		// dedup key). Until the fix in src/libs/notifications.ts this
+		// column was NULL on every row the real send path wrote, so this
+		// lookup could never match and everything fell through to the
+		// legacy subject match below.
 		const byTag = await prisma.notificationLog.findFirst({
 			where: {
 				tag,
 				createdAt: { gte: cutoff },
-				status: "sent",
+				status: attempted,
 				...(userId ? { userId } : {}),
 			},
 			select: { id: true },
 		});
 		if (byTag) return true;
+		// Legacy fallback — subject-substring match for rows written
+		// before tags were persisted.
 		const recent = await prisma.notificationLog.findFirst({
 			where: {
 				event: { startsWith: tag.split(":")[0] },
 				subject: { contains: tag.split(":").slice(1).join(":").slice(0, 80) },
 				createdAt: { gte: cutoff },
-				status: "sent",
+				status: attempted,
 				...(userId ? { userId } : {}),
 			},
 			select: { id: true },

@@ -114,8 +114,36 @@ async function findUserOrg(userId: string) {
 // that this webhook has been seen before; we respond 200 and skip
 // the side effects.
 
-// Helper: log webhook event for debugging
+// Payment-path audit log.
+//
+// This function had an EMPTY BODY. All ~20 call sites in this handler
+// wrote nothing — including "Lead X promotion returned null", which is
+// the exact line that fires when a paying customer fails to get an
+// account. Combined with the handler catching its own errors (so
+// withErrorTracking never records a PlatformError either), the entire
+// payment path was unobservable: money could come in and produce
+// nothing, with no trace anywhere.
+//
+// Prefixed distinctly so it greps cleanly out of Railway logs.
 function logEvent(eventType: string, detail: string) {
+	console.log(`[paddle-webhook] ${eventType} :: ${detail}`);
+}
+
+/**
+ * Loud failure for payment-path breaks that are NOT exceptions — the
+ * cases where a function politely returns null/false and the handler
+ * would otherwise carry on and answer 200 to Paddle.
+ *
+ * Deliberately console.error (not the notification system): the alert
+ * channel is email, and email is exactly what breaks in this scenario.
+ * A Railway log search for "PAYMENT-PATH FAILURE" is the one signal
+ * that does not depend on the thing that failed.
+ */
+function logPaymentPathFailure(stage: string, detail: string) {
+	console.error(
+		`[paddle-webhook] PAYMENT-PATH FAILURE at ${stage} :: ${detail} ` +
+			`— a payment may have completed without provisioning. Needs manual replay.`,
+	);
 }
 
 /** Extract the paid amount in the smallest currency unit (cents) from
@@ -141,6 +169,10 @@ function extractPaddleCurrency(data: any): string {
 }
 
 export const POST = withErrorTracking(async function POST(req: NextRequest) {
+	// Set once the idempotency claim is inserted, so the failure path can
+	// release it and let Paddle's retry actually redo the work. Declared
+	// out here because the claim is taken mid-try and released in catch.
+	let claimedIdempotencyKey: string | null = null;
 	try {
 		const paddleSignature = req.headers.get("paddle-signature");
 
@@ -181,6 +213,14 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 			await prisma.webhookEvent.create({
 				data: { source: "paddle", externalId: idempotencyKey },
 			});
+			// Claim acquired. It MUST be released if processing fails —
+			// see the catch at the end of this handler. Without that
+			// release the row becomes a permanent tombstone: Paddle
+			// retries, hits P2002, gets 200 "Already processed", and the
+			// side effects (org creation, plan flip, activation email)
+			// never run. The customer's card is charged and they receive
+			// nothing. This is a claim, not a receipt.
+			claimedIdempotencyKey = idempotencyKey;
 		} catch (err: any) {
 			// P2002 = Prisma unique constraint violation. Any other error
 			// (DB down, etc.) — bubble up so Paddle retries; better a
@@ -620,6 +660,32 @@ export const POST = withErrorTracking(async function POST(req: NextRequest) {
 		return NextResponse.json({ message: "Webhook processed successfully" }, { status: 200 });
 	} catch (error) {
 		console.error("[Paddle Webhook] Error processing webhook:", error);
+		// Release the idempotency claim so Paddle's retry re-runs the
+		// side effects instead of being short-circuited to 200
+		// "Already processed". Without this, any transient failure after
+		// the claim (getCustomer timeout, the 15s promote-lead tx
+		// deadline, a Prisma blip) permanently loses the conversion: the
+		// card is charged and no User, Organization, Environment or
+		// activation email is ever created.
+		//
+		// Best-effort: if the delete itself fails we still return 500 so
+		// Paddle retries, and the operator sees both errors in the log.
+		if (claimedIdempotencyKey) {
+			try {
+				await prisma.webhookEvent.deleteMany({
+					where: { source: "paddle", externalId: claimedIdempotencyKey },
+				});
+				console.error(
+					`[Paddle Webhook] released idempotency claim ${claimedIdempotencyKey} so the retry can reprocess`,
+				);
+			} catch (releaseErr) {
+				console.error(
+					`[Paddle Webhook] FAILED to release idempotency claim ${claimedIdempotencyKey} — ` +
+						`this event will be permanently skipped on retry and needs manual replay:`,
+					releaseErr,
+				);
+			}
+		}
 		return NextResponse.json({ error: "Internal server error" }, { status: 500 });
 	}
 }, { endpoint: "/api/paddle/webhook", method: "POST" });
@@ -662,7 +728,21 @@ async function handleOnboardingActivation(
 					`Lead ${customData.leadId} → user ${result.userId} / org ${result.organizationId} (newUser=${result.wasNewUser})`,
 				);
 			} else {
-				logEvent("lp-conversion", `Lead ${customData.leadId} promotion returned null`);
+				// promoteLeadToOrg returns null (does not throw) when the
+				// lead is gone, already converted-but-unlinked, or missing
+				// email/domain. The purge cron deletes any lead past its
+				// 14-day expiry whose status is not 'converted' — and
+				// 'checkout_started' qualifies, so a slow Paddle webhook
+				// on an old lead lands here. Payment succeeded; nothing
+				// was provisioned. Throw so the claim is released and
+				// Paddle retries, and shout either way.
+				logPaymentPathFailure(
+					"promoteLeadToOrg",
+					`lead=${customData.leadId} returned null (expired, purged, or missing email/domain)`,
+				);
+				throw new Error(
+					`promoteLeadToOrg returned null for lead ${customData.leadId} — payment completed without provisioning`,
+				);
 			}
 		} catch (err) {
 			console.error(

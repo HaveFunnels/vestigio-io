@@ -242,7 +242,7 @@ export async function sendActivationEmail(
 	const smsText = renderSmsFromTemplate("activation_link", vars)!;
 
 	const { notifyDirect } = await import("@/libs/notifications");
-	await notifyDirect({
+	const result = await notifyDirect({
 		event: "activation_link",
 		to: { email },
 		subject: rendered.subject,
@@ -250,6 +250,23 @@ export async function sendActivationEmail(
 		bodyText: smsText,
 		tag: "activation_link",
 	});
+
+	// THROW on a failed send. notifyDirect reports delivery in its return
+	// value and never throws — a missing BREVO_API_KEY or a rejected API
+	// call both come back as { sent: false }. Discarding that result let
+	// promote-lead log "activation email sent" on top of a send that
+	// never happened, leaving a paying customer with an account, a null
+	// password, and no link. Brevo rejected 107/107 sends for 33 days on
+	// an IP allowlist and nothing surfaced it.
+	//
+	// This email is the ONLY entry point to the account on the Paddle
+	// funnel, so a silent failure here is indistinguishable from fraud
+	// from the customer's side. Callers must handle the throw.
+	if (!result.email.sent) {
+		throw new Error(
+			`activation email was not delivered to ${email}: ${result.email.error ?? "unknown provider error"}`,
+		);
+	}
 }
 
 /**

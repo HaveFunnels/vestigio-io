@@ -292,7 +292,21 @@ export async function promoteLeadToOrg(
 			await sendActivationEmail(email, activationToken, normalizedDomain);
 			console.log(`[promote-lead] activation email sent to ${maskEmail(email)}`);
 		} catch (err) {
-			console.error(`[promote-lead] activation email send failed:`, err);
+			// Non-fatal by design: the Org/User/Environment are already
+			// committed and throwing here would make Paddle retry a
+			// provisioning step that already succeeded. But this is NOT a
+			// benign failure — on the Paddle funnel this email is the only
+			// way into the account, so the customer has now paid and is
+			// locked out. Shout loudly enough to find in a log search,
+			// and include the recovery path.
+			console.error(
+				`[promote-lead] PAYMENT-PATH FAILURE at sendActivationEmail :: ` +
+					`org=${txResult.org.id} user=${user.id} lead=${input.leadId} ` +
+					`email=${maskEmail(email)} — customer is PROVISIONED BUT LOCKED OUT. ` +
+					`Recover by re-sending activation for this lead once the email ` +
+					`provider is working. Cause:`,
+				err,
+			);
 		}
 	} else if (activationSkipReason === "existing_user") {
 		// Gap 7 fix: Notify existing users that a new workspace was added.

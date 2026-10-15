@@ -1394,7 +1394,18 @@ export async function generateNextSteps(
 			order: steps.length + 1,
 			title: `Tráfego do ${label} chega e vai embora sem ver sua oferta`,
 			reasoning:
-				`Medido pelo pixel, sem estimativa: ${alert.sessions.toLocaleString("pt-BR")} sessões vindas de ${label} nos últimos 30 dias ficaram ${alert.medianDurationS}s no site (mediana) e ${alert.pctNoScroll}% saíram sem rolar a primeira tela. ` +
+				`Medido pelo pixel, sem estimativa: ${alert.sessions.toLocaleString("pt-BR")} sessões vindas de ${label} nos últimos 30 dias ` +
+				`(${alert.sharePct}% do seu tráfego) ficaram ${alert.medianDurationS}s no site (mediana) e ${alert.pctNoScroll}% saíram sem rolar a primeira tela. ` +
+				// The share is stated because this step is often the only
+				// traffic the plan discusses, and the alert is a
+				// per-source verdict that ignores volume. Casa Montelle's
+				// October plan opened on TikTok at 10% of sessions while
+				// Facebook's 82% went unmentioned, and without the share
+				// the sessions count reads as the store's traffic problem
+				// rather than a tenth of it.
+				(alert.sharePct < 25
+					? `Isto é uma fatia do seu tráfego, não o todo: o passo cobre ${alert.sharePct}%, e as outras origens não dispararam este alerta porque ficam mais tempo na página. `
+					: "") +
 				`Se há verba nessa origem, ela está comprando chegadas, não visitas. Este é o único passo do plano baseado em contagem direta do seu tráfego, e é também o mais barato de testar: nenhuma mudança no site, só no anúncio.`,
 			procedureSteps: [
 				`Abra o gerenciador de anúncios do ${label} e compare o criativo/segmentação dessa campanha com o que a página de destino mostra nos 5 primeiros segundos.`,

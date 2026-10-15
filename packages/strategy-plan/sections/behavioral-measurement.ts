@@ -55,6 +55,15 @@ export interface BehavioralAlert {
 	medianDurationS: number;
 	pctNoScroll: number;
 	sessions: number;
+	/** This source's share of all measured sessions.
+	 *
+	 *  Carried because the alert is a per-source verdict that ignores
+	 *  volume, and the step built from it is often the only traffic
+	 *  the plan discusses. Casa Montelle's October plan led with
+	 *  TikTok, 10% of sessions, while Facebook's 82% went unmentioned;
+	 *  without the share, "8.784 sessões" reads as the store's traffic
+	 *  problem rather than a tenth of it. */
+	sharePct: number;
 	/** Pre-written, measurement-honest sentence for direct rendering. */
 	text: string;
 }
@@ -234,16 +243,29 @@ export async function generateBehavioralMeasurement(
 	// behavior of sources that do engage (facebook: 32s median, 78%
 	// no-scroll on the same store), so tripping this requires being
 	// dramatically worse than the worst engaged source, not merely bad.
+	//
+	// Both thresholds have to trip. That pairing is the point: a source
+	// can sit at 76% no-scroll with a 29-second median, which is a
+	// buyer reading the first screen and never needing to scroll, not a
+	// drive-by. Firing on no-scroll alone would have flagged Casa
+	// Montelle's Facebook traffic, 82% of the store, as intentless when
+	// it is the traffic that actually buys.
+	//
+	// Ordered by sessions, so when several sources trip, the step built
+	// from the first one is the one costing the most.
 	const alerts: BehavioralAlert[] = sources
 		.filter((s) => s.medianDurationS < 10 && s.pctNoScroll > 80)
+		.sort((a, b) => b.sessions - a.sessions)
 		.map((s) => ({
 			kind: "no_intent_traffic" as const,
 			source: s.source,
 			medianDurationS: s.medianDurationS,
 			pctNoScroll: s.pctNoScroll,
 			sessions: s.sessions,
+			sharePct: s.sharePct,
 			text:
 				`Medido pelo pixel nos últimos ${WINDOW_DAYS} dias: as ${s.sessions.toLocaleString("pt-BR")} sessões vindas de ${sourceIdentity(s.source).label} ` +
+				`(${s.sharePct}% do seu tráfego) ` +
 				`ficam ${s.medianDurationS}s no site (mediana) e ${s.pctNoScroll}% delas saem sem rolar a primeira tela. ` +
 				`Esse tráfego está chegando e indo embora antes de ver a oferta. Se há verba nessa origem, ela está comprando chegadas, não visitas.`,
 		}));

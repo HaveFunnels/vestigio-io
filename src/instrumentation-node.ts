@@ -837,6 +837,9 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	const runInactivityPause = async () => {
 		await withLeadership("inactivity-pause", { ttlSec: 90 }, async () => {
 		try {
+			const { INACTIVITY_PAUSEABLE_ORG_FILTER } = await import(
+				"@/libs/inactivity-pause-policy"
+			);
 			const cutoff = new Date(Date.now() - INACTIVITY_THRESHOLD_MS);
 			// Find candidate envs (activated, not already paused, idle past
 			// the threshold, and not belonging to a demo org). Null
@@ -857,9 +860,12 @@ export async function registerNodeInstrumentation(): Promise<void> {
 						{ lastAccessedAt: { lt: cutoff } },
 						{ lastAccessedAt: null, createdAt: { lt: cutoff } },
 					],
-					organization: {
-						orgType: { in: ["customer", "trial"] },
-					},
+					// A paying, active org is never paused for being quiet.
+					// See src/libs/inactivity-pause-policy.ts — this pause
+					// stops the probe cron too, so it takes an environment
+					// fully dark, which is not a thing to do to someone who
+					// pays us to watch their site while they are not looking.
+					organization: INACTIVITY_PAUSEABLE_ORG_FILTER,
 				},
 				select: {
 					id: true,

@@ -110,6 +110,8 @@ export async function GET(request: Request, { params }: RouteParams) {
 			min_required: MIN_SESSIONS_FOR_JOURNEYS,
 			env_id: envId,
 			journeys: [],
+			window_start: windowStart.toISOString().slice(0, 10),
+			window_end: windowEnd.toISOString().slice(0, 10),
 		});
 	}
 
@@ -142,5 +144,13 @@ export async function GET(request: Request, { params }: RouteParams) {
 		pixel_required: false,
 		session_count_this_month: distinctSessions,
 		journeys: enriched,
+		// The window is trailing-30-from-now, deliberately (EXAME P5:
+		// one denominator across the whole plan). But [month] is in the
+		// URL and the document is titled by that month, so a customer
+		// opening September's plan in November gets November's sessions
+		// under a September heading. Returning the dates lets the UI
+		// say which 30 days these actually are instead of "este mês".
+		window_start: windowStart.toISOString().slice(0, 10),
+		window_end: windowEnd.toISOString().slice(0, 10),
 	});
 }

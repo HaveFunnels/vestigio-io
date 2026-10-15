@@ -98,12 +98,28 @@ const TIER_CHIP_STYLE: Record<NonNullable<Journey["narrative"]["tier"]>, string>
 	sinal_isolado: "border-content-faint/40 bg-content-faint/10 text-content-muted",
 };
 
+/** "2026-10-15" → "15 out". The journeys window is trailing-30-from-now
+ *  rather than the plan's month, so the reader has to be able to see
+ *  which days these are. */
+function fmtDay(iso: string): string {
+	const [y, m, d] = iso.split("-").map(Number);
+	if (!y || !m || !d) return iso;
+	const months = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+	return `${d} ${months[m - 1] ?? ""}`.trim();
+}
+
 interface ApiResponse {
 	pixel_required: boolean;
 	session_count_this_month: number;
 	min_required?: number;
 	env_id?: string;
 	journeys: Journey[];
+	/** The 30 days these sessions actually come from. The window is
+	 *  trailing-from-now, not the plan's month, so a September plan
+	 *  opened in November shows November's sessions. Rendered instead
+	 *  of "este mês" so the reader is never told the wrong period. */
+	window_start?: string;
+	window_end?: string;
 }
 
 interface Props {
@@ -174,10 +190,13 @@ export default function JourneyReplays({ envId, month }: Props) {
 		>
 			<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 				<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
-					Jornadas que custaram dinheiro este mês
+					Jornadas que custaram dinheiro
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					{data.journeys.length} sessões reais reconstituídas · de {data.session_count_this_month.toLocaleString("pt-BR")} nos últimos 30 dias
+					{data.journeys.length} sessões reais reconstituídas · de {data.session_count_this_month.toLocaleString("pt-BR")}{" "}
+					{data.window_start && data.window_end
+						? `entre ${fmtDay(data.window_start)} e ${fmtDay(data.window_end)}`
+						: "nos últimos 30 dias"}
 					{/* EXAME P14 — sem esta ponte, o leitor soma R$ 190 de
 					    jornadas contra R$ 79k de tese e desconfia dos dois. */}
 					<span className="mt-0.5 block">

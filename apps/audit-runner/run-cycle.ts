@@ -2765,6 +2765,27 @@ export async function runAuditCycle(cycleId: string): Promise<RunAuditCycleResul
 			console.warn(`[audit-runner ${cycleId}] finding prune failed:`, err);
 		}
 
+		// Same for actions, which never had a prune at all. Their only
+		// bound was the 90-day AuditCycle cascade while every hot/warm
+		// cycle re-emitted the full set: production held 23,353 Action
+		// rows for 26 distinct decisionKeys (898x, 112 MB).
+		//
+		// keepCount is 10 rather than findings' 2 because pickTopActions
+		// deliberately reads across cycles — incremental cycles do not
+		// regenerate every action, so a tight window would drop valid
+		// ones. Ten cycles plus the newest comprehensive keeps that
+		// guarantee and still removes ~99% of the duplication.
+		try {
+			const { PrismaActionStore } = await import("../../packages/projections");
+			const actionStore = new PrismaActionStore(prisma);
+			const prunedActions = await actionStore.pruneOlderThan(env.id, 10);
+			if (prunedActions > 0) {
+				console.log(`[audit-runner ${cycleId}] pruned ${prunedActions} actions from old cycles`);
+			}
+		} catch (err) {
+			console.warn(`[audit-runner ${cycleId}] action prune failed:`, err);
+		}
+
 		// Wave 5 Fase 1B — pay-as-you-go meter. Best-effort write of
 		// cycles_run + pages_crawled + compute_seconds for this org. Failure
 		// here must NOT change the cycle outcome; the helper swallows.

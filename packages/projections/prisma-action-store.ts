@@ -176,4 +176,64 @@ export class PrismaActionStore {
 		}
 		return result;
 	}
+
+	/**
+	 * Keep actions from the N most recent cycles that own them, always
+	 * sparing the newest comprehensive (full/cold) cycle.
+	 *
+	 * Finding has had this since July; Action never did. Its only bound
+	 * was the 90-day AuditCycle cascade, and every hot/warm cycle
+	 * re-emits the whole action set, so production held 23,353 Action
+	 * rows for 26 distinct decisionKeys — a 898x duplication costing
+	 * 112 MB, second only to Evidence. The reader
+	 * (strategy-plan pickTopActions) asks for
+	 * `distinct: ["decisionKey"], take: 30`: it wants the 26, and we
+	 * were storing 898 copies of each to serve them.
+	 *
+	 * keepCount is generous on purpose. pickTopActions deliberately does
+	 * NOT scope to the latest cycle, because incremental (hot) cycles do
+	 * not regenerate every action and tighter scoping would drop valid
+	 * ones. Keeping several cycles plus the newest comprehensive
+	 * preserves that guarantee while removing the duplication.
+	 *
+	 * Mirrors PrismaFindingStore.pruneOlderThan, including the
+	 * comprehensive-cycle exemption that stopped the Max-cadence
+	 * hot/warm pair from evicting the daily cold cycle.
+	 */
+	async pruneOlderThan(environmentId: string, keepCount: number): Promise<number> {
+		const cyclesWithActions = await this.prisma.action.groupBy({
+			by: ['cycleId'],
+			where: { environmentId },
+			_count: { _all: true },
+		});
+		if (cyclesWithActions.length === 0) return 0;
+		const cycleIds = cyclesWithActions.map((g: { cycleId: string }) => g.cycleId);
+
+		const cyclesToKeep = await this.prisma.auditCycle.findMany({
+			where: { environmentId, status: 'complete', id: { in: cycleIds } },
+			orderBy: { createdAt: 'desc' },
+			take: keepCount,
+			select: { id: true },
+		});
+		const keepIds = new Set(cyclesToKeep.map((c: { id: string }) => c.id));
+
+		const newestComprehensive = await this.prisma.auditCycle.findFirst({
+			where: {
+				environmentId,
+				status: 'complete',
+				cycleType: { in: ['full', 'cold'] },
+				id: { in: cycleIds },
+			},
+			orderBy: { createdAt: 'desc' },
+			select: { id: true },
+		});
+		if (newestComprehensive) keepIds.add(newestComprehensive.id);
+
+		const toPrune = cycleIds.filter((id: string) => !keepIds.has(id));
+		if (toPrune.length === 0) return 0;
+		const res = await this.prisma.action.deleteMany({
+			where: { cycleId: { in: toPrune } },
+		});
+		return res.count;
+	}
 }

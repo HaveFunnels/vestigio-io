@@ -339,7 +339,11 @@ export const PRUNED_ELSEWHERE: Record<string, string> = {
 	PageInventoryItem: "Orphan-marked then pruned by the audit-runner inventory pass.",
 	CycleSnapshot: "Snapshot store keeps the last N per workspace/environment plus the baseline.",
 	Finding: "Cascades from AuditCycle (onDelete: Cascade).",
-	Action: "Cascades from AuditCycle (onDelete: Cascade).",
+	Action:
+		"Pruned to the last 10 action-owning cycles plus the newest comprehensive one, "
+		+ "by PrismaActionStore.pruneOlderThan at the end of every cycle. The AuditCycle "
+		+ "cascade is only the outer bound: every hot/warm cycle re-emits the whole action "
+		+ "set, so cascade-only left 23,353 rows for 26 distinct decisionKeys (898x, 112 MB).",
 	PlanNextStep: "Cascades from MonthlyStrategyPlan; also replaced wholesale on regeneration.",
 	PlanComment: "Cascades from MonthlyStrategyPlan.",
 	PlanEdit: "Cascades from MonthlyStrategyPlan.",

@@ -357,6 +357,26 @@ export async function registerNodeInstrumentation(): Promise<void> {
 				);
 			}
 
+			// Drop payloads nothing can still read. Separate from
+			// NULLIFY_POLICIES because its bound is not an age: it is
+			// "not one of the recent cycles per environment", with an
+			// age floor on top. carryEvidenceForward reads the cycle
+			// before the running one, and a monthly-cadence customer's
+			// previous cycle is always near the retention edge, so a
+			// pure age cutoff cannot be safe for both them and an
+			// hourly customer. See packages/evidence/prune-payloads.ts.
+			try {
+				const { pruneEvidencePayloads } = await import(
+					"../packages/evidence/prune-payloads"
+				);
+				const res = await pruneEvidencePayloads(prisma);
+				if (res.pruned > 0) pruned.push(`Evidence.payload=${res.pruned}`);
+			} catch (err) {
+				failures.push(
+					`evidence-payload-prune(${err instanceof Error ? err.message.split("\n")[0] : String(err)})`,
+				);
+			}
+
 			// Nullify FIRST, before the deletes.
 			//
 			// Blanking a fat column is a cheap indexed updateMany with a

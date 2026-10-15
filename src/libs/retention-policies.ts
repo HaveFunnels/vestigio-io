@@ -347,6 +347,14 @@ export const PRUNED_ELSEWHERE: Record<string, string> = {
 	PageInventoryItem: "Orphan-marked then pruned by the audit-runner inventory pass.",
 	CycleSnapshot: "Snapshot store keeps the last N per workspace/environment plus the baseline.",
 	Finding: "Cascades from AuditCycle (onDelete: Cascade).",
+	// Evidence rows are deleted on age by RETENTION_POLICIES above. The
+	// payload COLUMN is bounded separately, because its bound is not an
+	// age: pruneEvidencePayloads blanks it outside the 5 most recent
+	// cycles per environment, with a 7-day floor. carryEvidenceForward
+	// reads the cycle before the running one, and for a
+	// monthly-cadence customer that cycle sits at the retention edge,
+	// so no single age is safe for both them and an hourly customer.
+	// Measured 2026-10-15: 452 MB of payload down to 63 MB.
 	Action:
 		"Pruned to the last 10 action-owning cycles plus the newest comprehensive one, "
 		+ "by PrismaActionStore.pruneOlderThan at the end of every cycle. The AuditCycle "

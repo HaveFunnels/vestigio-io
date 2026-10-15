@@ -33,6 +33,7 @@ const RATE_PRUNE_INTERVAL_MS = 5 * 60 * 1000; // 5 min
 const DIGEST_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const INACTIVITY_PAUSE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 const INACTIVITY_THRESHOLD_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+const SILENCE_WATCH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 // Dispatcher drains NotificationLog rows queued as status="skipped".
 // Email delivery isn't time-critical (inactivity-pause tolerates minutes
 // of latency) but we don't want rows piling up either. 5min keeps the
@@ -963,6 +964,83 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	runInactivityPause();
 	setInterval(runInactivityPause, INACTIVITY_PAUSE_INTERVAL_MS);
 	console.log("✓ Inactivity pause cron registered (1h interval, 14d threshold)");
+
+	// ── Silent-environment watch ──
+	//
+	// The heal cron watches cycles that HANG. Nothing watched for
+	// cycles that never start, and that is the failure that actually
+	// happened: Casa Montelle, a paying Max customer, produced 160
+	// cycles on 2026-10-09 and then nothing of any kind until 10-14.
+	// Four days, ended only because the owner happened to open the
+	// app. The gap was visible the whole time, but only to someone
+	// grouping cycles per day per environment, which nobody was doing.
+	//
+	// A log line is not an alert — the same lesson the storage guard
+	// below already carries — so this reaches a person, throttled to
+	// once per day per environment so a long outage stays readable.
+	const runSilenceWatch = async () => {
+		await withLeadership("silence-watch", { ttlSec: 90 }, async () => {
+			try {
+				const { findSilentEnvironments } = await import("@/libs/silent-environment");
+				const findings = await findSilentEnvironments(prisma);
+				if (findings.length === 0) return;
+
+				for (const f of findings) {
+					console.error(
+						`[silence-watch] ${f.kind.toUpperCase()} ${f.domain ?? f.envId}: ${f.detail}`,
+					);
+				}
+
+				const admins = (process.env.ADMIN_EMAILS || "")
+					.split(",")
+					.map((e) => e.trim())
+					.filter(Boolean);
+				if (admins.length === 0) {
+					console.error(
+						"[silence-watch] ADMIN_EMAILS is unset — nobody is being told a customer stopped being analysed.",
+					);
+					return;
+				}
+
+				const { safeRedisCall } = await import("@/libs/redis");
+				const { notifyDirect } = await import("@/libs/notifications");
+				const today = new Date().toISOString().slice(0, 10);
+
+				for (const f of findings) {
+					// NX+EX per environment: the first detection of the day
+					// wins and the key expires on its own. Null (Redis down)
+					// means we send, because a duplicate alert beats a
+					// missed one.
+					const firstToday = await safeRedisCall(async (c) => {
+						const key = `silence-watch:${f.envId}:${today}`;
+						return (await c.set(key, "1", "EX", 86400, "NX")) === "OK";
+					});
+					if (firstToday === false) continue;
+
+					const label = f.domain ?? f.envId;
+					for (const email of admins) {
+						await notifyDirect({
+							event: "activation_link" as any,
+							to: { email },
+							subject: `[Vestigio] ${label} parou de ser analisado`,
+							bodyHtml:
+								`<p><strong>${label}</strong> não está mais produzindo ciclos.</p>` +
+								`<p>${f.detail}</p>` +
+								`<p>Último ciclo: ${f.hoursSinceLastCycle === null ? "nunca" : `${f.hoursSinceLastCycle}h atrás`}. ` +
+								`O limite para este plano é ${f.thresholdHours}h de silêncio total.</p>` +
+								`<p>Em outubro de 2026 um cliente pagante ficou quatro dias sem análise nenhuma, ` +
+								`e só voltou porque o dono abriu o app por acaso.</p>`,
+						});
+					}
+				}
+			} catch (err) {
+				console.error("[silence-watch] pass failed:", err);
+			}
+		});
+	};
+	runSilenceWatch();
+	setInterval(runSilenceWatch, SILENCE_WATCH_INTERVAL_MS);
+	console.log("✓ Silent-environment watch registered (1h interval)");
 
 	// ── Audit scheduler cron (Wave 5 Fase 3) ──
 	// Hourly leader-elected pass. Walks every activated env, checks

@@ -52,6 +52,25 @@ export interface MeasuredFrictionOutput {
 	/** Declared sample: most recent interactive sessions scanned. */
 	sampleSessions: number;
 	pages: FrictionPageStats[];
+	/** One thing the store sells, reachable at several URLs.
+	 *
+	 *  Found because labels collided: Casa Montelle serves one product
+	 *  at five handles, including one ending in "-copia" with the ®
+	 *  percent-encoded, which is what a duplicated product leaves
+	 *  behind. 53,377 measured sessions split across them.
+	 *
+	 *  Computed over every path the rollup saw, not the top-6 friction
+	 *  list, because the smaller duplicates are exactly the ones that
+	 *  never clear a ranking floor and so stay invisible. */
+	duplicateEntities?: DuplicateEntity[];
+}
+
+export interface DuplicateEntity {
+	/** The shared entity name, as the customer would say it. */
+	label: string;
+	/** Each URL serving it, biggest first. */
+	paths: { path: string; sessions: number }[];
+	totalSessions: number;
 }
 
 export interface TimelineRowInput {
@@ -313,6 +332,14 @@ export async function generateMeasuredFriction(
 		// with three different numbers, reading as an error in the
 		// document rather than a fact about the store.
 		disambiguateLabels(out.pages);
+
+		// Same titles, different URLs. Computed over every path the
+		// rollup saw rather than the six that rank, because the small
+		// duplicates are precisely the ones that never clear a floor
+		// and so never get noticed.
+		const sessions = await sessionsByPath(prisma, ctx.environmentId, windowStart, windowEnd);
+		const dupes = findDuplicateEntities(titleByPath, sessions, ctx.envDomain);
+		if (dupes.length > 0) out.duplicateEntities = dupes;
 	} catch {
 		// labels keep the de-slugged fallback
 	}
@@ -408,4 +435,83 @@ async function fromRollup(
 		sampleSessions: total,
 		pages,
 	};
+}
+
+/** Session totals per path across the window, from the rollup.
+ *  Separate from the friction read because this one must see EVERY
+ *  path, including the ones too small to rank. */
+async function sessionsByPath(
+	prisma: PrismaClient,
+	environmentId: string,
+	windowStart: Date,
+	windowEnd: Date,
+): Promise<Map<string, number>> {
+	const out = new Map<string, number>();
+	try {
+		const rows = await prisma.frictionDailyRollup.groupBy({
+			by: ["path"],
+			where: { envId: environmentId, day: { gte: windowStart, lt: windowEnd } },
+			_sum: { sessions: true },
+		});
+		for (const r of rows) out.set(r.path, r._sum.sessions ?? 0);
+	} catch {
+		// No rollup for this environment yet; duplicates simply go
+		// unreported rather than blocking the friction block.
+	}
+	return out;
+}
+
+/**
+ * One product, several URLs.
+ *
+ * Shopify-style stores accumulate handles: a product is renamed, or
+ * duplicated to edit a copy, and the old URL keeps serving and keeps
+ * taking traffic. Nothing in the store reports it, because from the
+ * inside each URL looks like a working page.
+ *
+ * It shows up here because titles collide. Casa Montelle serves one
+ * product at five paths with one <title>, 53,377 measured sessions
+ * between them, and one of those paths ends in "-copia" with the ®
+ * percent-encoded, which is what the duplicate-and-edit flow leaves
+ * behind.
+ *
+ * Deliberately NOT summed into a single row anywhere the plan counts
+ * sessions: a visitor who saw two of the handles cannot be added
+ * twice. The total here is a sum of per-path sessions and is reported
+ * as the traffic spread across them, not as distinct people.
+ */
+export function findDuplicateEntities(
+	titleByPath: Map<string, string | null>,
+	sessions: Map<string, number>,
+	envDomain: string | null | undefined,
+	minTotalSessions = MIN_SESSIONS_PER_PAGE,
+): DuplicateEntity[] {
+	const byLabel = new Map<string, { path: string; sessions: number }[]>();
+
+	for (const [path, title] of titleByPath.entries()) {
+		const label = pageEntityLabel(title ?? null, path, envDomain);
+		// Fallbacks are derived FROM the path, so two different paths
+		// can never share one except by coincidence of slug; requiring
+		// a real crawled title keeps this to genuine title collisions.
+		if (!title || !label) continue;
+		const list = byLabel.get(label) ?? [];
+		list.push({ path, sessions: sessions.get(path) ?? 0 });
+		byLabel.set(label, list);
+	}
+
+	const out: DuplicateEntity[] = [];
+	for (const [label, all] of byLabel.entries()) {
+		// A URL with no measured traffic is not splitting any. Casa
+		// Montelle's crawl finds both /c/NX-… (10,556 sessions) and a
+		// bare /checkout (zero), and reporting those as "the same thing
+		// at two addresses" is housekeeping noise dressed as a finding.
+		const paths = all.filter((p) => p.sessions > 0);
+		if (paths.length < 2) continue;
+		const total = paths.reduce((a, p) => a + p.sessions, 0);
+		if (total < minTotalSessions) continue;
+		paths.sort((a, b) => b.sessions - a.sessions);
+		out.push({ label, paths, totalSessions: total });
+	}
+	out.sort((a, b) => b.totalSessions - a.totalSessions);
+	return out;
 }

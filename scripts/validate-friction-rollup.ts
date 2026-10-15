@@ -176,6 +176,17 @@ async function main() {
 		console.log("  !! reader did not use the rollup");
 	}
 
+	const dupes = (real as unknown as { duplicateEntities?: {
+		label: string; totalSessions: number; paths: { path: string; sessions: number }[];
+	}[] })?.duplicateEntities;
+	if (dupes?.length) {
+		console.log("\nD. SAME THING, SEVERAL ADDRESSES");
+		for (const d of dupes) {
+			console.log(`  ${d.label}  ${d.paths.length} urls, ${d.totalSessions} sessions`);
+			for (const pp of d.paths) console.log(`     ${pp.sessions.toString().padStart(7)}  ${pp.path}`);
+		}
+	}
+
 	await prisma.$disconnect();
 	process.exit(mismatches === 0 ? 0 : 1);
 }

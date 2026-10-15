@@ -82,6 +82,11 @@ export interface MeasuredFrictionUI {
 	windowEnd: string;
 	sampleSessions: number;
 	pages: FrictionPageUI[];
+	duplicateEntities?: {
+		label: string;
+		paths: { path: string; sessions: number }[];
+		totalSessions: number;
+	}[];
 }
 
 export interface BehavioralSectionUI {
@@ -186,6 +191,49 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 						)}
 					</div>
 				)}
+
+				{/* Um produto, vários endereços. Não aparece em lugar
+				    nenhum da loja: por dentro, cada URL é uma página que
+				    funciona. Só salta quando dois títulos colidem. */}
+				{behavioral.friction?.duplicateEntities &&
+					behavioral.friction.duplicateEntities.length > 0 && (
+						<div className="mb-6">
+							<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+								A mesma coisa em mais de um endereço
+							</div>
+							<div className="space-y-2">
+								{behavioral.friction.duplicateEntities.map((d) => (
+									<div
+										key={d.label}
+										className="rounded-lg border border-amber-500/20 bg-amber-500/[0.05] px-3 py-2"
+									>
+										<div className="text-[13px] font-medium text-content">{d.label}</div>
+										<div className="mt-0.5 text-[11.5px] text-content-secondary">
+											{d.paths.length} endereços servem esta página, somando{" "}
+											<span className="font-mono tabular-nums">
+												{d.totalSessions.toLocaleString("pt-BR")}
+											</span>{" "}
+											sessões medidas. O tráfego, o histórico e o ranking ficam
+											divididos entre eles.
+										</div>
+										<ul className="mt-1.5 space-y-0.5">
+											{d.paths.map((p) => (
+												<li
+													key={p.path}
+													className="flex items-baseline justify-between gap-3 font-mono text-[10.5px] text-content-faint"
+												>
+													<span className="truncate">{p.path}</span>
+													<span className="tabular-nums">
+														{p.sessions.toLocaleString("pt-BR")}
+													</span>
+												</li>
+											))}
+										</ul>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
 
 				{/* ONDA 3.2 — onde a fricção acontece, por página, contado. */}
 				{behavioral.friction && behavioral.friction.pages.length > 0 && (

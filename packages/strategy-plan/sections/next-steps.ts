@@ -988,15 +988,32 @@ async function generateArtifact(args: {
 	locale: string;
 	entityLabel: string | null;
 	measuredContext: string | null;
+	/** Real page/product names observed for this env. The model may
+	 *  cite these and nothing else. Empty = it must use bracketed
+	 *  fill-in fields instead of guessing. */
+	knownEntities?: string[];
 	stepTitle: string;
 	organizationId: string | null;
 	environmentId: string;
 }): Promise<{ kind: string; title: string; content: string } | null> {
 	const rules = voiceRulesFor(args.locale);
 	const vertical = args.vertical ?? "negócio digital";
+	// Names the model is allowed to use. Anything outside this list is
+	// invention — and invention in a customer-facing deliverable reads
+	// as fabrication the moment the customer recognises their own
+	// catalogue. Casa Montelle's TikTok brief confidently cited "Jogo
+	// de Cama Montelle Premium 200 fios R$ 189,90" and "Toalha Banho
+	// Luxo R$ 79,90"; the store sells vedaplus airtight containers.
+	const knownEntities = (args.knownEntities ?? []).filter(Boolean);
+	const entitiesBlock = knownEntities.length
+		? `NOMES REAIS DISPONÍVEIS (os únicos que você pode citar): ${knownEntities.map((e) => `"${e}"`).join(", ")}.`
+		: "";
+
 	const common = `Você é Vestigio, escrevendo um ARTEFATO PRONTO PARA USAR para ${args.envDomain} (${vertical}).
 Responda em ${rules.language_name}. Entregue SOMENTE o artefato, sem preâmbulo, sem explicação, sem markdown de cabeçalho.
 PROIBIDO: travessão (—), emoji, placeholders vazios tipo [NOME] sem instrução curta entre colchetes.
+REGRA ABSOLUTA — NÃO INVENTE FATOS DO NEGÓCIO: nomes de produto, preços, prazos, percentuais de desconto e condições comerciais só podem aparecer se estiverem escritos no contexto abaixo. Não existindo, escreva um campo entre colchetes com instrução curta (ex.: "[nome do produto mais vendido]", "[preço]"). Um produto inventado num documento que o cliente vai usar com a própria agência destrói a credibilidade do plano inteiro, e o cliente percebe na primeira linha.
+${entitiesBlock}
 ${args.measuredContext ? `CONTEXTO MEDIDO (use para tornar o texto específico): ${args.measuredContext}` : ""}
 ${args.entityLabel ? `A página/produto em questão: "${args.entityLabel}".` : ""}`;
 
@@ -1009,7 +1026,7 @@ Escreva a política de trocas e devoluções completa e pronta para publicar, ad
 - Direito de arrependimento de 7 dias corridos (art. 49 do CDC), com reembolso integral.
 - Prazo e condições para troca por defeito (30 dias, produto não durável / 90 dias, durável).
 - Passo a passo do cliente (como solicitar, para onde escrever, prazo de resposta).
-- Quem paga o frete em cada caso, dito claramente.
+- Quem paga o frete em cada caso. Essa é uma decisão comercial do lojista, não nossa: escreva "[quem paga o frete de devolução por arrependimento: loja ou cliente]" e "[quem paga o frete de troca por defeito: normalmente a loja]" como campos a preencher. NUNCA afirme uma das opções como se fosse a política vigente.
 - Tom direto e acolhedor, sem juridiquês desnecessário; use [e-mail de contato] e [prazo de postagem] como campos a preencher.
 Máximo ~350 palavras.`,
 			maxTokens: 700,
@@ -1032,7 +1049,7 @@ Escreva DUAS variantes prontas de copy para o ponto em questão (botão + 1 linh
 Tarefa do passo: ${args.stepTitle}.
 Escreva um brief de criativo de 1 página em tópicos curtos:
 - Problema medido (use os números do contexto).
-- O que o criativo DEVE mostrar nos 3 primeiros segundos (produto e preço reais da página de destino).
+- O que o criativo DEVE mostrar nos 3 primeiros segundos. Cite o produto e o preço APENAS se constarem do contexto; caso contrário escreva "[produto da página de destino]" e "[preço]" para o gestor preencher.
 - 2 ganchos de abertura prontos (uma frase cada).
 - O que evitar (a promessa que a página não confirma).
 - Métrica de sucesso: a que o pixel vai medir (permanência da origem).`,
@@ -1128,6 +1145,37 @@ export async function generateNextSteps(
 	const totalSteps = actions.length;
 	const rules = voiceRulesFor(ctx.locale);
 
+	// ── One measurement, one step ──
+	//
+	// Counted friction belongs to a PAGE, but several actions can sit
+	// on the same page — and each one independently looked the page up
+	// and cited its numbers. Casa Montelle's October plan billed the
+	// same 21 measured hesitations on the homepage three times: step 2
+	// "copy confusa" at R$ 12.000, step 3 "políticas ausentes" at
+	// R$ 10.000, step 4 "problema de segurança" at R$ 8.500. Same 212
+	// sessions, same 21 pauses, three prices. A reader who notices is
+	// right to stop believing the R$ column.
+	//
+	// Worse, step 4 shows what happens when evidence is handed to an
+	// action it does not belong to: a security finding, narrated with
+	// CTA-hesitation data, remediated with CSRF tokens and HttpOnly
+	// cookies. Three unrelated things stapled together.
+	//
+	// So each friction page is claimed by exactly ONE action: the
+	// highest-ranked one on that surface. Actions are already in final
+	// rank order here, so first-wins is the right owner. The rest get
+	// null and must argue from their own finding.
+	//
+	// Computed before the parallel map because every call below would
+	// otherwise read the same source simultaneously.
+	const frictionOwnerByPath = new Map<string, number>();
+	actions.forEach((action, idx) => {
+		const path = normPathToken(action.surface);
+		if (!path) return;
+		if (!frictionForSurface(behavioral?.friction, action.surface)) return;
+		if (!frictionOwnerByPath.has(path)) frictionOwnerByPath.set(path, idx);
+	});
+
 	// Fire LLM calls in parallel (Passos 2-5 receive Passo 1's context
 	// pre-computed, so no sequential barrier is needed).
 	const llmResults = await Promise.all(
@@ -1141,7 +1189,16 @@ export async function generateNextSteps(
 			// ONDA 3.3 — the step's page has counted behavior? The prompt
 			// receives it and must cite it: recommendations anchored in
 			// the store's own measured sessions, not catalog generalities.
-			const stepFriction = frictionForSurface(behavioral?.friction, action.surface);
+			//
+			// Only the owning step gets it (see frictionOwnerByPath):
+			// otherwise every action on a shared surface re-sells the
+			// same measurement at a different price.
+			const stepPath = normPathToken(action.surface);
+			const ownsFriction =
+				stepPath !== null && frictionOwnerByPath.get(stepPath) === idx;
+			const stepFriction = ownsFriction
+				? frictionForSurface(behavioral?.friction, action.surface)
+				: null;
 			const { system, user } = buildPrompt(
 				action,
 				order,
@@ -1440,6 +1497,19 @@ export async function generateNextSteps(
 		});
 	}
 
+	// Real page names the pixel actually observed traffic on. This is
+	// the only catalogue the artifact writer gets; without it the
+	// ad-brief prompt asked for "produto e preço reais" and the model
+	// supplied plausible fiction. Labels come from measured friction
+	// pages, so they are names from this store, not guesses.
+	const knownEntities = Array.from(
+		new Set(
+			(behavioral?.friction?.pages ?? [])
+				.map((pg) => pg.label)
+				.filter((l): l is string => Boolean(l && l.trim())),
+		),
+	).slice(0, 12);
+
 	// ONDA 4.4 — artifact pass: eligible steps receive the deliverable
 	// in parallel; a failure attaches nothing and never blocks a step.
 	await Promise.all(
@@ -1450,7 +1520,15 @@ export async function generateNextSteps(
 			if (i < actions.length) {
 				const a = actions[i];
 				kind = artifactKindForKey(a.inferenceKeys[0] ?? a.decisionKey);
-				const pg = frictionForSurface(behavioral?.friction, a.surface);
+				// Same ownership rule as the reasoning prompt — an
+				// artifact for a step that does not own the measurement
+				// must not quote it either, or the duplication just
+				// reappears inside the deliverables.
+				const aPath = normPathToken(a.surface);
+				const pg =
+					aPath !== null && frictionOwnerByPath.get(aPath) === i
+						? frictionForSurface(behavioral?.friction, a.surface)
+						: null;
 				if (pg) {
 					entityLabel = pg.label;
 					measuredContext = frictionPromptLines(pg)[0] ?? null;
@@ -1468,6 +1546,7 @@ export async function generateNextSteps(
 			if (!kind) return;
 			st.artifact = await generateArtifact({
 				kind,
+				knownEntities,
 				envDomain: ctx.envDomain,
 				vertical: ctx.businessContext?.vertical ?? null,
 				locale: ctx.locale,

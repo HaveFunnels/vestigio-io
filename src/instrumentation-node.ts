@@ -317,6 +317,42 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			const pruned: string[] = [];
 			const failures: string[] = [];
 
+			// Nullify FIRST, before the deletes.
+			//
+			// Blanking a fat column is a cheap indexed updateMany with a
+			// bounded cost. Deleting AuditCycle rows cascades into
+			// Evidence (620k rows and counting) and is the part of this
+			// pass that can blow its time budget or get cut short by a
+			// container restart. Running the cheap bounded work last
+			// meant it was the work that got starved: production had
+			// 3,188 cycles still carrying projectionsCache past their
+			// 30-day nullify deadline, some 89 days old — surviving
+			// until the 90-day row delete finally removed them, which is
+			// 60 days of a 9.5 KB cache nobody can read.
+			//
+			// Neither loop depends on the other, so cheap-and-certain
+			// goes first.
+			for (const policy of NULLIFY_POLICIES) {
+				try {
+					const delegate = (prisma as any)[
+						policy.model.charAt(0).toLowerCase() + policy.model.slice(1)
+					];
+					const res = await delegate.updateMany({
+						where: {
+							[policy.field]: { lt: cutoff(policy.days) },
+							[policy.column]: { not: null },
+						},
+						data: { [policy.column]: null },
+					});
+					if (res.count > 0)
+						pruned.push(`${policy.model}.${policy.column}=${res.count}`);
+				} catch (err) {
+					failures.push(
+						`${policy.model}.${policy.column}(${err instanceof Error ? err.message.split("\n")[0] : String(err)})`,
+					);
+				}
+			}
+
 			// Ordered as declared: AuditCycle runs first so its cascade to
 			// Evidence/Finding/Action leaves the later passes less to do.
 			// That cascade only terminates in reasonable time because
@@ -373,26 +409,6 @@ export async function registerNodeInstrumentation(): Promise<void> {
 				}
 			}
 
-			for (const policy of NULLIFY_POLICIES) {
-				try {
-					const delegate = (prisma as any)[
-						policy.model.charAt(0).toLowerCase() + policy.model.slice(1)
-					];
-					const res = await delegate.updateMany({
-						where: {
-							[policy.field]: { lt: cutoff(policy.days) },
-							[policy.column]: { not: null },
-						},
-						data: { [policy.column]: null },
-					});
-					if (res.count > 0)
-						pruned.push(`${policy.model}.${policy.column}=${res.count}`);
-				} catch (err) {
-					failures.push(
-						`${policy.model}.${policy.column}(${err instanceof Error ? err.message.split("\n")[0] : String(err)})`,
-					);
-				}
-			}
 
 			if (pruned.length > 0) console.log(`[storage-retention] ${pruned.join(" ")}`);
 			// Loud on failure. The behavioral prune that existed before this

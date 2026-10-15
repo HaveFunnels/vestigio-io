@@ -1987,8 +1987,12 @@ model Evidence {
   @@unique([cycleRef, evidenceKey])
   @@index([workspaceRef, environmentRef, createdAt])
   @@index([evidenceType, createdAt])
-  @@index([cycleRef])
-  @@index([subjectRef])
+  // @@index([cycleRef]) dropped: redundant prefix of the unique
+  // index on (cycleRef, evidenceKey), which serves cycleRef-only
+  // lookups just as well. 10 MB.
+  // @@index([subjectRef]) dropped: never scanned once since the
+  // database was created (pg_stat_user_indexes, stats never reset).
+  // 7.6 MB.
   @@index([environmentRef, subjectRef, evidenceType]) // Fase 3 reuse lookup
   // Prisma does NOT create an index for the child column of a relation,
   // so `auditCycleId` went unindexed while carrying onDelete: Cascade.

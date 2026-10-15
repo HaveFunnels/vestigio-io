@@ -122,6 +122,14 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
 			"The 90-day window is a real product surface — the journey map's '90d' filter and /library/strategy/[month]/journeys both read it. It is affordable here in a way it never was on raw events: ~4,353 sessions/day at ~1.5 KB is ~585 MB steady state per environment, against the 7.6 GB the same window implied on RawBehavioralEvent.",
 	},
 
+	{
+		model: "FrictionDailyRollup",
+		field: "day",
+		days: 180,
+		reason:
+			"Pre-counted friction per page per day, so the plan stops scanning raw timelines over a 30-day window. Measured on Casa Montelle: 138 paths/day at 609 bytes/row including indexes, so 180 days is ~15 MB per environment. That buys the right to cut BehavioralSessionAggregate from 90 days to a journey-replay window, which is ~585 MB per environment. The plan itself only reads 30 days; 180 is here so a cycle can say a page got worse since the last few plans, and matches the window MarketingEvent and UserAction already use.",
+	},
+
 	// ── Caches: by definition reconstructible ──
 	{
 		model: "LlmResultCache",

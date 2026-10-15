@@ -132,8 +132,8 @@ model User {
   notificationPrefs        NotificationPreference?
   prospectScans            ProspectScan[]
   dashboardLayouts         DashboardLayout[]
-  userActions              UserAction[]   @relation("UserActionCreatedBy")
-  assignedUserActions      UserAction[]   @relation("UserActionAssignedTo")
+  userActions              UserAction[]            @relation("UserActionCreatedBy")
+  assignedUserActions      UserAction[]            @relation("UserActionAssignedTo")
   customMaps               CustomMap[]
   savedViews               SavedView[]
   pixCharges               PixCharge[]
@@ -241,23 +241,23 @@ model VerificationToken {
 // ──────────────────────────────────────────────
 
 model Organization {
-  id          String    @id @default(cuid())
-  name        String
-  ownerId     String
-  plan        String    @default("vestigio") // vestigio | pro | max
-  status      String    @default("pending") // pending | active | suspended
-  orgType     String    @default("customer") // customer | demo | trial
-  locale      String? // Platform language: en | pt-BR | es | de. Single source of truth for the org.
-  currency    String? // ISO 4217: USD, BRL, EUR. Null = auto from org locale
+  id            String    @id @default(cuid())
+  name          String
+  ownerId       String
+  plan          String    @default("vestigio") // vestigio | pro | max
+  status        String    @default("pending") // pending | active | suspended
+  orgType       String    @default("customer") // customer | demo | trial
+  locale        String? // Platform language: en | pt-BR | es | de. Single source of truth for the org.
+  currency      String? // ISO 4217: USD, BRL, EUR. Null = auto from org locale
   // Wave-22.6 review fix P2.3 — cap on user-added manual URLs that
   // get seeded into every audit cycle. Default 200 is safe for SMBs;
   // platform admin bumps it for enterprise envs with sprawling
   // inventories. The cap is enforced both on the API submit side and
   // when run-cycle.ts loads seeds into the pipeline.
-  manualSeedCap Int     @default(200)
-  trialEndsAt DateTime? // only set when orgType="trial"
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  manualSeedCap Int       @default(200)
+  trialEndsAt   DateTime? // only set when orgType="trial"
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   memberships             Membership[]
   environments            Environment[]
@@ -308,20 +308,20 @@ model OrgInvite {
 }
 
 model Environment {
-  id                   String    @id @default(cuid())
-  organizationId       String
-  domain               String
-  landingUrl           String
+  id                          String    @id @default(cuid())
+  organizationId              String
+  domain                      String
+  landingUrl                  String
   // Kept with default(true) for back-compat with 80+ downstream call
   // sites that branch on it. Wave 22 (env-flow refactor) removed the
   // UI checkbox — every env now lands as production. Distinction
   // belongs at the surface / endpoint layer, not the env row. This
   // column should be considered vestigial; do not introduce new
   // branching on it.
-  isProduction         Boolean   @default(true)
+  isProduction                Boolean   @default(true)
   // Wave 5 Fase 2: activation lifecycle
-  activated            Boolean   @default(false) // true once the first cold full cycle has been dispatched
-  lastAccessedAt       DateTime? // updated (1h-debounced) when an owner/member loads /app/*; drives inactivity pause
+  activated                   Boolean   @default(false) // true once the first cold full cycle has been dispatched
+  lastAccessedAt              DateTime? // updated (1h-debounced) when an owner/member loads /app/*; drives inactivity pause
   // Declared monthly revenue for THIS environment. BusinessProfile's
   // revenue hangs on the organization, which breaks the moment an org
   // has two environments: HaveFunnels declares R$ 580k org-wide while
@@ -329,12 +329,12 @@ model Environment {
   // cap computed from the org figure is wrong in both directions. Null
   // means undeclared; the exposure cap then refuses to borrow the org
   // number for multi-env orgs and falls back to a hedged estimate.
-  monthlyRevenue         Float?
-  continuousPaused     Boolean   @default(false) // true when >14d without access; cleared on next access, triggers catch-up cycle
-  engagementScore      Int       @default(0) // 0-100, computed hourly by product telemetry cron (3.16)
+  monthlyRevenue              Float?
+  continuousPaused            Boolean   @default(false) // true when >14d without access; cleared on next access, triggers catch-up cycle
+  engagementScore             Int       @default(0) // 0-100, computed hourly by product telemetry cron (3.16)
   // User-supplied glob patterns to exclude from crawl (e.g. "/admin/*", "/staging/*", "*.pdf").
   // Applied at discovery + per-URL crawl gate. Empty array = no exclusions.
-  crawlExcludePatterns String[]  @default([])
+  crawlExcludePatterns        String[]  @default([])
   // Wave 21.2 — probe scheduler configuration.
   // probeEnabled: kill switch per env (defaults true; set false for
   //   particularly noisy customers without ripping the cron).
@@ -344,9 +344,9 @@ model Environment {
   // probeLastRunAt: last successful probe pass timestamp — used to
   //   debounce per-env so plan cadence stays honest under any number
   //   of cron replicas.
-  probeEnabled         Boolean   @default(true)
-  probeUrlsJson        Json?
-  probeLastRunAt       DateTime?
+  probeEnabled                Boolean   @default(true)
+  probeUrlsJson               Json?
+  probeLastRunAt              DateTime?
   // Dead-site detection (apps/probe-runner/site-liveness.ts).
   // pausedReason distinguishes WHY continuousPaused is set:
   //   null                — not paused, or paused before this field existed
@@ -360,8 +360,8 @@ model Environment {
   // siteDeadSinceAt is the first failure of the streak that tripped
   // the pause, so the admin UI can say "gone since the 3rd" instead
   // of just "paused".
-  pausedReason         String?
-  siteDeadSinceAt      DateTime?
+  pausedReason                String?
+  siteDeadSinceAt             DateTime?
   // PV.0 — perception layer (multi-vertical coverage track).
   // Autonomously-perceived business vertical for this domain, written by the
   // perception pass (PV.2). Distinct from the per-org, user-declared
@@ -382,10 +382,10 @@ model Environment {
   // detectors (guarantee/credentials/curriculum/response-time/contact) language-
   // agnostically. Additive nullable — behaviour-preserving.
   perceivedContentFlagsJson   Json?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  createdAt                   DateTime  @default(now())
+  updatedAt                   DateTime  @updatedAt
 
-  organization           Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization           Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   auditCycles            AuditCycle[]
   findings               Finding[]
   actions                Action[]
@@ -394,6 +394,7 @@ model Environment {
   // Wave 0.2: Raw behavioral events from the snippet for this env
   behavioralEvents       RawBehavioralEvent[]
   behavioralSessions     BehavioralSessionAggregate[]
+  frictionRollups        FrictionDailyRollup[]
   userActions            UserAction[]
   opportunityTrackings   OpportunityTracking[]
   savedViews             SavedView[]
@@ -597,8 +598,8 @@ model MonthlyStrategyPlan {
   valuePreviewJson  Json
 
   // ── LLM-generated sections (markdown) ──
-  narrativeWhatHappened String @db.Text
-  valuePreviewNarrative String @db.Text
+  narrativeWhatHappened    String  @db.Text
+  valuePreviewNarrative    String  @db.Text
   /// Wave 22.7 E1 — single-sentence monthly thesis. The "above the
   /// hero" line that frames the entire plan's reading angle. Generated
   /// alongside narrativeWhatHappened from the same input bundle so the
@@ -606,12 +607,12 @@ model MonthlyStrategyPlan {
   /// Nullable so plans generated before E1 still render (UI hides the
   /// thesis section when null/empty). Migration backfills with the
   /// fallback thesis on next regen.
-  thesisOfMonth         String? @db.Text
+  thesisOfMonth            String? @db.Text
   /// Wave 22.7 E3 — continuity payload referencing the prior month's
   /// plan + the current state of its steps. Shape:
   /// { previousMonthLabel, previousMonth, steps: [...], exposureDelta,
   ///   captured }. Null for month-1 envs (no prior plan to compare).
-  continuityJson        Json?
+  continuityJson           Json?
   /// Wave 22.7 E4 — cross-customer peer pattern callout. Shape:
   /// { pack, packLabel, businessModel, peerCount, peersWithPattern,
   ///   peersWhoFixed, avgCapturedImpact }. Null when the segment hasn't
@@ -623,13 +624,13 @@ model MonthlyStrategyPlan {
   /// to report this cycle (UI hides those sections).
   /// Copy Lens: { cycleId, frameworks: [...], totalAudits, weakest,
   ///   strongest } — from CopyFrameworkAudit rows of the latest cycle.
-  copyLensJson           Json?
+  copyLensJson             Json?
   /// Competitor radar: { competitors: [...], summary } — from
   /// CompetitorDomain + CompetitorPageSnapshot for the cycle window.
-  competitorJson         Json?
+  competitorJson           Json?
   /// Brand impersonators: { lookalikes: [...], commerceCount } — from
   /// Finding rows with lookalike_domain_* inferenceKeys.
-  impersonatorsJson      Json?
+  impersonatorsJson        Json?
   /// Maps: { autoMaps: [...], customMapsCount, dominantSurface } —
   /// surface graph + user journey for the cycle.
   // O que o pixel MEDIU — a única seção do plano autorizada a usar a
@@ -639,37 +640,37 @@ model MonthlyStrategyPlan {
   // 94% sem scroll) existia no documento interno de calibração e nunca
   // chegou ao plano do cliente — "o plano trocou o que o pixel mediu
   // por aquilo que o crawler infere".
-  behavioralJson Json?
+  behavioralJson           Json?
   /// ONDA 2.2 — ad ledger: platform spend (syncMetadata) crossed with
   /// measured behavioral sessions per source. Null when no ad
   /// integration is connected.
-  adLedgerJson Json?
+  adLedgerJson             Json?
   /// ONDA 2.3 — longitudinal probe diff ("o que mudou no site desde o
   /// último plano"). Null when the env has no probes in the window.
-  whatChangedJson Json?
-  mapsJson               Json?
+  whatChangedJson          Json?
+  mapsJson                 Json?
 
   // ── Generation cost telemetry ──
-  llmCostCents  Int @default(0)
-  llmCallsCount Int @default(0)
+  llmCostCents  Int     @default(0)
+  llmCallsCount Int     @default(0)
   /// Wave 22.6 Step 6 — number of partial regenerations fired this month
   /// by event triggers (critical_resolve, new_critical, chronic_detected,
   /// regression_chain, probe_surface_change). Capped at 4/month to bound
   /// LLM cost. Resets when a new month's plan is created (each plan row
   /// has its own counter — no cross-month bleed).
-  regenCount Int @default(0)
+  regenCount    Int     @default(0)
   // Live phase of an in-progress generation, mirroring the pattern
   // AuditCycle already uses. Generation runs ~1 minute of LLM work
   // behind a status that was only ever "generating" or "ready", so a
   // customer watching the page could not tell a run that had just
   // started from one about to finish. Null once ready — it describes
   // work in flight, not a property of the finished plan.
-  currentPhase String?
+  currentPhase  String?
 
   // ── Locks (soft, time-bounded so they self-heal) ──
   /// While exporting, set ~30s into the future. Other export attempts
   /// return 423 Locked. Self-heals if the export process crashes.
-  exportLockedUntil    DateTime?
+  exportLockedUntil       DateTime?
   /// Wave 22.6 follow-up — per-section MCP edit lock. JSON map of
   /// { "<sectionId>": "<ISO timestamp>" } so multiple sections can
   /// have pending proposals in parallel. Each lock is ~10min into
@@ -694,38 +695,38 @@ model MonthlyStrategyPlan {
 // Member-editable for status / assignee / dueAt — those fields are the
 // checklist behavior the user toggles inline in the doc.
 model PlanNextStep {
-  id                   String @id @default(cuid())
-  planId               String
+  id                    String  @id @default(cuid())
+  planId                String
   /// 1-5, render order in the document.
-  order                Int
+  order                 Int
   /// Generated title (e.g. "Resolver fricção do mobile checkout").
-  title                String
+  title                 String
   /// Markdown narrative. "POR QUE PRIMEIRO" — LLM-generated rationale
   /// citing evidence numerically. Admin-editable; member-readonly.
-  reasoning            String @db.Text
+  reasoning             String  @db.Text
   /// string[] — 3-5 concrete procedure steps.
-  procedureStepsJson   Json
+  procedureStepsJson    Json
   /// {title, url?}[] — external research references.
   /// ONDA 3.4 — "o que o pixel confere no próximo plano", com o
   /// baseline medido de hoje gravado no momento da geração.
-  measuredVerification String?
+  measuredVerification  String?
   /// ONDA 4.4 — artefato pronto-para-usar do passo: {kind, title,
   /// content} (política escrita, variantes de copy, brief de criativo).
-  artifactJson Json?
-  researchRefsJson     Json
+  artifactJson          Json?
+  researchRefsJson      Json
   /// Qualitative ("1-2 dias dev", "15min", "afternoon").
-  estimatedEffort      String
+  estimatedEffort       String
   /// "time eng" / "copywriter" / "head of growth" / etc.
-  suggestedOwner       String
+  suggestedOwner        String
   /// string[] — Action.id values this step bundles together.
-  linkedActionRefsJson Json
+  linkedActionRefsJson  Json
   /// Phase 2 — string[] of Finding.id values that drove this step's
   /// ranking. Persisted at plan-gen time so the Plano → Findings
   /// drill-down filters by exact lineage instead of inferring from
   /// the action chain at request time. Empty `[]` on pre-Phase-2
   /// plans; the read API falls back to action-derived lineage in
   /// that case so legacy plans still work.
-  linkedFindingRefsJson Json @default("[]")
+  linkedFindingRefsJson Json    @default("[]")
 
   // ── Member-editable state ──
   /// 'todo' | 'in_progress' | 'in_review' | 'done' | 'blocked'.
@@ -858,9 +859,9 @@ model BusinessProfile {
   // signal for the buyer's mental model.
   //   (scaling_paid_traffic | recent_drop | prove_roi |
   //    competitive_pressure | chronic_pain | exploring)
-  primaryConcern             String?
-  currentOptimizationMethod  String?
-  whyNow                     String?
+  primaryConcern            String?
+  currentOptimizationMethod String?
+  whyNow                    String?
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 }
@@ -1263,6 +1264,57 @@ model BehavioralSessionAggregate {
   @@index([envId, receivedAt])
 }
 
+/// Pre-computed friction counts per environment / page / day.
+///
+/// measured-friction.ts used to derive these by scanning raw
+/// BehavioralSessionAggregate.timeline over a rolling 30-day window on
+/// every plan generation. That scan was the only long-window reader of
+/// raw timelines, and timelines are 83% of the database footprint, so
+/// it was the single thing preventing timeline retention from dropping
+/// from 90 days to roughly two weeks.
+///
+/// Rolling the counts up once per day removes that dependency. A
+/// session belongs to exactly one day via startedAt, so daily buckets
+/// sum correctly across any window — including the distinct-session
+/// counts, which is why sessions and sessionsWithFriction are safe to
+/// add up rather than needing session identity at read time.
+///
+/// Deliberate behaviour change: the live scan sampled the most recent
+/// 4,000 interactive sessions and the plan declared that sample. The
+/// rollup covers every session, so counts become a census. Numbers go
+/// up, and the "measured in a 4% sample, reported as the whole" honesty
+/// gap closes with them.
+model FrictionDailyRollup {
+  id    String   @id @default(cuid())
+  envId String
+  /// UTC day of the session's startedAt. Date, not timestamp: the
+  /// bucket is the join key and must not carry a time component.
+  day   DateTime @db.Date
+  path  String
+
+  /// Distinct sessions that touched this path on this day.
+  sessions             Int @default(0)
+  /// Distinct sessions with at least one friction event on this path.
+  sessionsWithFriction Int @default(0)
+
+  deadClicks         Int @default(0)
+  /// Only pauses flagged near_cta — a reader pausing mid-article is
+  /// engagement, not friction. Mirrors the live scan's rule exactly.
+  hesitationsNearCta Int @default(0)
+  inputAbandons      Int @default(0)
+  backtracks         Int @default(0)
+  formRetries        Int @default(0)
+
+  /// When this bucket was last recomputed. A day is recomputed while
+  /// it is still open and then settles.
+  computedAt DateTime @default(now())
+
+  environment Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
+
+  @@unique([envId, day, path])
+  @@index([envId, day])
+}
+
 model CustomMap {
   id             String   @id @default(cuid())
   organizationId String
@@ -1639,19 +1691,19 @@ model Website {
 /// surfaced in the Plano top findings ("here is your page, the problem is here").
 /// Keyed by (environmentId, cycleRef, normalizedUrl); upserted per capture pass.
 model SurfaceScreenshot {
-  id            String   @id @default(cuid())
-  environmentId String
-  cycleRef      String
-  normalizedUrl String
-  path          String
-  r2Key         String
-  width         Int?
-  height        Int?
+  id              String   @id @default(cuid())
+  environmentId   String
+  cycleRef        String
+  normalizedUrl   String
+  path            String
+  r2Key           String
+  width           Int?
+  height          Int?
   /// ONDA 4.3 — regiões de interesse localizadas na captura (CTA
   /// principal, formulários): [{kind, x, y, w, h, label?}] em px da
   /// imagem capturada. UI desenha o destaque escalado.
   annotationsJson Json?
-  capturedAt    DateTime @default(now())
+  capturedAt      DateTime @default(now())
 
   environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 
@@ -2199,9 +2251,9 @@ model AnonymousLead {
   // Stable IDs mirror BusinessProfile.primaryConcern et al so the
   // localStorage handoff into the paid onboarding form is a 1:1 copy
   // (no field name translation). Nullable so legacy leads still work.
-  primaryConcern             String?
-  currentOptimizationMethod  String?
-  whyNow                     String?
+  primaryConcern            String?
+  currentOptimizationMethod String?
+  whyNow                    String?
 
   // Services-vertical extensions. Only populated when businessModel
   // resolves to "services". Used downstream by the services-specific
@@ -2242,9 +2294,9 @@ model AnonymousLead {
   salesCycleMonths  Int?
 
   // Funnel state
-  status           String  @default("draft") // draft | auditing | audit_complete | checkout_started | converted | expired | spam
-  currentStep      Int     @default(1)
-  miniAuditId      String? // FK to MiniAuditResult
+  status      String  @default("draft") // draft | auditing | audit_complete | checkout_started | converted | expired | spam
+  currentStep Int     @default(1)
+  miniAuditId String? // FK to MiniAuditResult
 
   // Wave-23 value-on-fill — JSONB snapshot of the early-crawl worker
   // dispatched after step 1 (domain submitted). Drives the live crawl
@@ -2430,11 +2482,11 @@ model DashboardLayout {
 // via conversation N on date D" and reopen that thread.
 // ──────────────────────────────────────────────
 model UserAction {
-  id              String @id @default(cuid())
-  organizationId  String
-  environmentId   String
-  findingId       String
-  createdByUserId String
+  id               String  @id @default(cuid())
+  organizationId   String
+  environmentId    String
+  findingId        String
+  createdByUserId  String
   // Wave-22.6-review fix — explicit assignment. Previously the "Mine"
   // tab on /app/actions queried by (organizationId, environmentId)
   // and returned EVERY member's actions to every viewer, breaking
@@ -2804,31 +2856,31 @@ model DomainFingerprint {
 // ──────────────────────────────────────────────
 model NetworkSurface {
   id                String   @id @default(cuid())
-  environmentId    String
+  environmentId     String
   /// Normalized URL template — id-shaped segments collapsed to {id}.
-  urlTemplate      String
+  urlTemplate       String
   /// HTTP method. POST/GET distinguish read vs write endpoints —
   /// kept as part of the dedup key because /cart GET vs /cart POST
   /// have different security/abuse profiles.
-  method           String
+  method            String
   /// Most recent role assigned by classifyNetworkRequest. Stable in
   /// practice — when a host's role classification changes the URL
   /// template would change too, creating a new row.
-  role             String
+  role              String
   /// Content-type from the most recent observation. Used downstream
   /// to pick the right body-inspector (JSON shape detector vs HTML
   /// parser vs XML).
-  contentType      String?
+  contentType       String?
   /// Example URL — the actual URL the most recent capture saw,
   /// before templating. Operators looking at the row can reproduce
   /// the capture without re-deriving the template.
-  exampleUrl       String?
+  exampleUrl        String?
   firstSeenCycleRef String
   lastSeenCycleRef  String
   /// Bumped on every cycle that captures this template again.
-  capturedCount    Int      @default(1)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  capturedCount     Int      @default(1)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   environment Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
 

@@ -54,7 +54,7 @@ export interface MeasuredFrictionOutput {
 	pages: FrictionPageStats[];
 }
 
-interface TimelineRowInput {
+export interface TimelineRowInput {
 	timeline: string;
 	urls: string;
 }
@@ -62,7 +62,7 @@ interface TimelineRowInput {
 const SAMPLE_CAP = 4000;
 const MIN_SESSIONS_PER_PAGE = 30;
 const MAX_PAGES = 6;
-const MIN_EVENTS_INTERACTIVE = 3;
+export const MIN_EVENTS_INTERACTIVE = 3;
 
 const FRICTION_TYPES = new Set([
 	"dead_click",
@@ -80,23 +80,27 @@ function pathOf(url: string): string {
 	}
 }
 
-/** Pure scan over compact timelines — tested. */
-export function computeMeasuredFriction(
-	rows: TimelineRowInput[],
-	windowStart: Date,
-	windowEnd: Date,
-): MeasuredFrictionOutput | null {
-	if (rows.length === 0) return null;
+export interface FrictionAcc {
+	sessions: Set<number>;
+	frictionSessions: Set<number>;
+	deadClicks: number;
+	hesitationsNearCta: number;
+	inputAbandons: number;
+	backtracks: number;
+	formRetries: number;
+}
 
-	interface Acc {
-		sessions: Set<number>;
-		frictionSessions: Set<number>;
-		deadClicks: number;
-		hesitationsNearCta: number;
-		inputAbandons: number;
-		backtracks: number;
-		formRetries: number;
-	}
+/**
+ * Pure scan over compact timelines, accumulated per path.
+ *
+ * Exported because friction-rollup.ts writes the daily buckets from
+ * the SAME scan. If the rollup reimplemented these rules, especially
+ * the near_cta filter on hesitations and the distinct-session sets —
+ * the two would drift and the plan's numbers would quietly change
+ * depending on which path produced them.
+ */
+export function scanTimelinesByPath(rows: TimelineRowInput[]): Map<string, FrictionAcc> {
+	type Acc = FrictionAcc;
 	const byPath = new Map<string, Acc>();
 	const acc = (p: string): Acc => {
 		let a = byPath.get(p);
@@ -161,6 +165,18 @@ export function computeMeasuredFriction(
 		}
 	});
 
+	return byPath;
+}
+
+/** Pure scan over compact timelines — tested. */
+export function computeMeasuredFriction(
+	rows: TimelineRowInput[],
+	windowStart: Date,
+	windowEnd: Date,
+): MeasuredFrictionOutput | null {
+	if (rows.length === 0) return null;
+	const byPath = scanTimelinesByPath(rows);
+
 	const pages: FrictionPageStats[] = [];
 	for (const [path, a] of byPath.entries()) {
 		const sessions = a.sessions.size;
@@ -219,7 +235,7 @@ export async function generateMeasuredFriction(
 	const out = computeMeasuredFriction(rows, windowStart, windowEnd);
 	if (!out) return null;
 
-	// ONDA 4.1 — resolve entity names from crawled titles so every
+	// ONDA 4.1, resolve entity names from crawled titles so every
 	// downstream surface (friction block, synth step, prompts,
 	// verification) speaks in the customer's things, not in paths.
 	try {

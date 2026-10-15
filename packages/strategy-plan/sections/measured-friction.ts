@@ -25,7 +25,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { GenerateContext } from "../types";
-import { pageEntityLabel } from "../page-label";
+import { disambiguateLabels, pageEntityLabel } from "../page-label";
 
 export interface FrictionPageStats {
 	path: string;
@@ -308,6 +308,11 @@ export async function generateMeasuredFriction(
 		for (const pg of out.pages) {
 			pg.label = pageEntityLabel(titleByPath.get(pg.path) ?? null, pg.path, ctx.envDomain);
 		}
+		// Titles are not unique. Three URLs serving one product with one
+		// <title> would otherwise print as the same entity three times
+		// with three different numbers, reading as an error in the
+		// document rather than a fact about the store.
+		disambiguateLabels(out.pages);
 	} catch {
 		// labels keep the de-slugged fallback
 	}

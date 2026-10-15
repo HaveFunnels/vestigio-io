@@ -75,3 +75,33 @@ export function pageEntityLabel(
 ): string {
 	return cleanPageTitle(title, brandHint) ?? labelFromPath(path);
 }
+
+/**
+ * Disambiguate labels that collide across different paths.
+ *
+ * Titles are not unique. Casa Montelle serves one product at three
+ * URLs (/products/vedaplus, /products/vedaplus-kit,
+ * /products/vedaplus-kit-potes-hermeticos) with an identical <title>,
+ * 47,181 sessions between them. Resolved one path at a time, the plan
+ * prints the same entity name three times with three different
+ * numbers, which reads as a mistake in the document rather than as a
+ * fact about the store.
+ *
+ * The path is appended only where it is doing work. A label that
+ * already identifies one page is left exactly as it was, so the
+ * common case stays in the customer's words.
+ *
+ * Merging the rows instead would be wrong: these are distinct-session
+ * counts, and a visitor who saw two of the three URLs cannot be added
+ * twice.
+ */
+export function disambiguateLabels<T extends { path: string; label: string }>(
+	pages: T[],
+): T[] {
+	const seen = new Map<string, number>();
+	for (const p of pages) seen.set(p.label, (seen.get(p.label) ?? 0) + 1);
+	for (const p of pages) {
+		if ((seen.get(p.label) ?? 0) > 1) p.label = `${p.label} (${p.path})`;
+	}
+	return pages;
+}

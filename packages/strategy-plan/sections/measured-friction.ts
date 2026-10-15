@@ -177,63 +177,119 @@ export function computeMeasuredFriction(
 	if (rows.length === 0) return null;
 	const byPath = scanTimelinesByPath(rows);
 
-	const pages: FrictionPageStats[] = [];
-	for (const [path, a] of byPath.entries()) {
-		const sessions = a.sessions.size;
-		if (sessions < MIN_SESSIONS_PER_PAGE) continue;
-		const frictionTotal =
-			a.deadClicks + a.hesitationsNearCta + a.inputAbandons + a.backtracks + a.formRetries;
-		if (frictionTotal === 0) continue;
-		pages.push({
-			label: pageEntityLabel(null, path),
-			path,
-			sessions,
-			deadClicks: a.deadClicks,
-			hesitationsNearCta: a.hesitationsNearCta,
-			inputAbandons: a.inputAbandons,
-			backtracks: a.backtracks,
-			formRetries: a.formRetries,
-			sessionsWithFriction: a.frictionSessions.size,
-			frictionRatePct: Math.round((1000 * a.frictionSessions.size) / sessions) / 10,
-		});
-	}
+	const counted = [...byPath.entries()].map(([path, a]) => ({
+		path,
+		sessions: a.sessions.size,
+		sessionsWithFriction: a.frictionSessions.size,
+		deadClicks: a.deadClicks,
+		hesitationsNearCta: a.hesitationsNearCta,
+		inputAbandons: a.inputAbandons,
+		backtracks: a.backtracks,
+		formRetries: a.formRetries,
+	}));
 
+	const pages = rankFrictionPages(counted);
 	if (pages.length === 0) return null;
-	// Rank by sessions affected (where the most buyers hit friction).
-	pages.sort((x, y) => y.sessionsWithFriction - x.sessionsWithFriction);
 
 	return {
 		basis: "pixel_measured",
 		windowStart: windowStart.toISOString().slice(0, 10),
 		windowEnd: windowEnd.toISOString().slice(0, 10),
 		sampleSessions: rows.length,
-		pages: pages.slice(0, MAX_PAGES),
+		pages,
 	};
+}
+
+/** Per-path counts, however they were obtained. */
+export interface CountedPage {
+	path: string;
+	sessions: number;
+	sessionsWithFriction: number;
+	deadClicks: number;
+	hesitationsNearCta: number;
+	inputAbandons: number;
+	backtracks: number;
+	formRetries: number;
+}
+
+/**
+ * Honesty gates and ranking, shared by the live scan and the rollup
+ * reader so a page qualifies by the same rules whichever path counted
+ * it: a floor on visiting sessions (percentages over a trickle are
+ * noise), no page without at least one friction event, ranked by
+ * sessions affected rather than raw event volume.
+ */
+export function rankFrictionPages(counted: CountedPage[]): FrictionPageStats[] {
+	const pages: FrictionPageStats[] = [];
+	for (const c of counted) {
+		if (c.sessions < MIN_SESSIONS_PER_PAGE) continue;
+		const frictionTotal =
+			c.deadClicks + c.hesitationsNearCta + c.inputAbandons + c.backtracks + c.formRetries;
+		if (frictionTotal === 0) continue;
+		pages.push({
+			label: pageEntityLabel(null, c.path),
+			path: c.path,
+			sessions: c.sessions,
+			deadClicks: c.deadClicks,
+			hesitationsNearCta: c.hesitationsNearCta,
+			inputAbandons: c.inputAbandons,
+			backtracks: c.backtracks,
+			formRetries: c.formRetries,
+			sessionsWithFriction: c.sessionsWithFriction,
+			frictionRatePct: Math.round((1000 * c.sessionsWithFriction) / c.sessions) / 10,
+		});
+	}
+	// Rank by sessions affected (where the most buyers hit friction).
+	pages.sort((x, y) => y.sessionsWithFriction - x.sessionsWithFriction);
+	return pages.slice(0, MAX_PAGES);
 }
 
 export async function generateMeasuredFriction(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
 ): Promise<MeasuredFrictionOutput | null> {
-	const windowEnd = new Date();
-	const windowStart = new Date(windowEnd.getTime() - 30 * 24 * 60 * 60 * 1000);
-	let rows: TimelineRowInput[] = [];
-	try {
-		rows = await prisma.behavioralSessionAggregate.findMany({
-			where: {
-				envId: ctx.environmentId,
-				startedAt: { gte: windowStart, lt: windowEnd },
-				eventCount: { gte: MIN_EVENTS_INTERACTIVE },
-			},
-			orderBy: { startedAt: "desc" },
-			take: SAMPLE_CAP,
-			select: { timeline: true, urls: true },
-		});
-	} catch {
-		return null;
+	// Day-aligned, because the rollup buckets by UTC calendar day. A
+	// rolling "now minus 30 days" boundary would ask for a partial day
+	// the buckets cannot express, and every count would come back
+	// quietly short.
+	const now = new Date();
+	const windowEnd = new Date(
+		Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) + 86400_000,
+	);
+	const windowStart = new Date(windowEnd.getTime() - 30 * 86400_000);
+
+	let out = await fromRollup(prisma, ctx.environmentId, windowStart, windowEnd);
+
+	// Fall back to scanning raw timelines when the rollup has nothing
+	// for this window: an environment whose first plan lands before the
+	// first nightly rollup, or a rollup that failed. The fallback is
+	// only available while timelines are still retained, which is why
+	// shortening that retention has to wait until the rollup path is
+	// confirmed in use.
+	if (!out) {
+		let rows: TimelineRowInput[] = [];
+		try {
+			rows = await prisma.behavioralSessionAggregate.findMany({
+				where: {
+					envId: ctx.environmentId,
+					startedAt: { gte: windowStart, lt: windowEnd },
+					eventCount: { gte: MIN_EVENTS_INTERACTIVE },
+				},
+				orderBy: { startedAt: "desc" },
+				take: SAMPLE_CAP,
+				select: { timeline: true, urls: true },
+			});
+		} catch {
+			return null;
+		}
+		out = computeMeasuredFriction(rows, windowStart, windowEnd);
 	}
-	const out = computeMeasuredFriction(rows, windowStart, windowEnd);
 	if (!out) return null;
+
+	// The window is half-open and ends at midnight tonight, so the raw
+	// boundary formats as tomorrow's date. The plan states a period the
+	// customer reads, so report the last day actually included.
+	out.windowEnd = new Date(windowEnd.getTime() - 86400_000).toISOString().slice(0, 10);
 
 	// ONDA 4.1, resolve entity names from crawled titles so every
 	// downstream surface (friction block, synth step, prompts,
@@ -256,4 +312,95 @@ export async function generateMeasuredFriction(
 		// labels keep the de-slugged fallback
 	}
 	return out;
+}
+
+/**
+ * Read the pre-counted buckets instead of scanning raw timelines.
+ *
+ * Returns null when the window has no buckets at all, which the caller
+ * treats as "rollup not available here" rather than "no friction".
+ */
+async function fromRollup(
+	prisma: PrismaClient,
+	environmentId: string,
+	windowStart: Date,
+	windowEnd: Date,
+): Promise<MeasuredFrictionOutput | null> {
+	let rows: {
+		day: Date;
+		path: string;
+		sessions: number;
+		sessionsWithFriction: number;
+		deadClicks: number;
+		hesitationsNearCta: number;
+		inputAbandons: number;
+		backtracks: number;
+		formRetries: number;
+		envSessions: number;
+	}[];
+	try {
+		rows = await prisma.frictionDailyRollup.findMany({
+			where: { envId: environmentId, day: { gte: windowStart, lt: windowEnd } },
+			select: {
+				day: true,
+				path: true,
+				sessions: true,
+				sessionsWithFriction: true,
+				deadClicks: true,
+				hesitationsNearCta: true,
+				inputAbandons: true,
+				backtracks: true,
+				formRetries: true,
+				envSessions: true,
+			},
+		});
+	} catch {
+		return null;
+	}
+	if (rows.length === 0) return null;
+
+	const byPath = new Map<string, CountedPage>();
+	// Per day, not summed across paths: one session that visited three
+	// pages contributes three path rows but one session to the total.
+	const envSessionsByDay = new Map<string, number>();
+
+	for (const r of rows) {
+		const dayKey = r.day.toISOString().slice(0, 10);
+		// Same value on every row of a day; max is just a safe read in
+		// case a day was written by two different versions of the writer.
+		envSessionsByDay.set(dayKey, Math.max(envSessionsByDay.get(dayKey) ?? 0, r.envSessions));
+
+		const acc = byPath.get(r.path) ?? {
+			path: r.path,
+			sessions: 0,
+			sessionsWithFriction: 0,
+			deadClicks: 0,
+			hesitationsNearCta: 0,
+			inputAbandons: 0,
+			backtracks: 0,
+			formRetries: 0,
+		};
+		acc.sessions += r.sessions;
+		acc.sessionsWithFriction += r.sessionsWithFriction;
+		acc.deadClicks += r.deadClicks;
+		acc.hesitationsNearCta += r.hesitationsNearCta;
+		acc.inputAbandons += r.inputAbandons;
+		acc.backtracks += r.backtracks;
+		acc.formRetries += r.formRetries;
+		byPath.set(r.path, acc);
+	}
+
+	const pages = rankFrictionPages([...byPath.values()]);
+	if (pages.length === 0) return null;
+
+	let total = 0;
+	for (const n of envSessionsByDay.values()) total += n;
+
+	return {
+		basis: "pixel_measured",
+		windowStart: windowStart.toISOString().slice(0, 10),
+		windowEnd: windowEnd.toISOString().slice(0, 10),
+		sampleSessions: total,
+		pages,
+	};
 }

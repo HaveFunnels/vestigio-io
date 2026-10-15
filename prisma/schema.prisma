@@ -1297,6 +1297,14 @@ model FrictionDailyRollup {
   /// Distinct sessions with at least one friction event on this path.
   sessionsWithFriction Int @default(0)
 
+  /// Interactive sessions the environment saw that whole day, repeated
+  /// on every path row for the day. Summing `sessions` across paths
+  /// would double-count anyone who visited two pages, so the plan's
+  /// session total cannot be derived from the per-path counts. Held
+  /// here rather than in a sentinel row, which a reader could mistake
+  /// for a page and rank.
+  envSessions Int @default(0)
+
   deadClicks         Int @default(0)
   /// Only pauses flagged near_cta — a reader pausing mid-article is
   /// engagement, not friction. Mirrors the live scan's rule exactly.

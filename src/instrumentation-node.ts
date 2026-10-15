@@ -317,6 +317,46 @@ export async function registerNodeInstrumentation(): Promise<void> {
 			const pruned: string[] = [];
 			const failures: string[] = [];
 
+			// Roll up friction BEFORE anything is pruned.
+			//
+			// The rollup counts what the raw timelines say. If it ran
+			// after the BehavioralSessionAggregate pass, the day that
+			// just aged out would be deleted before it was ever counted,
+			// and the loss would be silent: the plan would simply show a
+			// slightly smaller number with no error anywhere.
+			//
+			// Idempotent by (envId, day, path), so a double run from a
+			// lease handover costs duplicated work, never duplicated
+			// counts. That matters because the 300s lease above is not
+			// enough for this loop past a few dozen environments; at
+			// that point it needs its own job rather than a ride on the
+			// retention pass. Casa Montelle's two days take ~3.5s.
+			try {
+				const { rollUpFriction } = await import(
+					"../packages/strategy-plan/sections/friction-rollup"
+				);
+				const envs = await prisma.environment.findMany({
+					where: { activated: true },
+					select: { id: true },
+				});
+				let rolled = 0;
+				for (const env of envs) {
+					try {
+						const r = await rollUpFriction(prisma, env.id);
+						rolled += r.rowsWritten;
+					} catch (err) {
+						failures.push(
+							`friction-rollup:${env.id}(${err instanceof Error ? err.message.split("\n")[0] : String(err)})`,
+						);
+					}
+				}
+				if (rolled > 0) pruned.push(`FrictionDailyRollup=${rolled}`);
+			} catch (err) {
+				failures.push(
+					`friction-rollup(${err instanceof Error ? err.message.split("\n")[0] : String(err)})`,
+				);
+			}
+
 			// Nullify FIRST, before the deletes.
 			//
 			// Blanking a fat column is a cheap indexed updateMany with a

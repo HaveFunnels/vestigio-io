@@ -150,6 +150,32 @@ async function main() {
 		console.log(`  pages leaving the top list: ${droppedFromTop.join(", ")}`);
 	}
 
+	// ── C. THE ACTUAL READER ───────────────────────────────────────
+	// A and B compare arithmetic. This exercises the function the plan
+	// really calls, so a reader that silently fell back to the live
+	// scan cannot pass as a reader that used the rollup.
+	const { generateMeasuredFriction } = await import(
+		"../packages/strategy-plan/sections/measured-friction"
+	);
+	const real = await generateMeasuredFriction(prisma, {
+		environmentId: env.id,
+		envDomain: env.domain,
+	} as never);
+	const usedRollup = (real?.sampleSessions ?? 0) > SAMPLE_CAP;
+	console.log(
+		`\nC. READER: sampleSessions=${real?.sampleSessions} ` +
+			`pages=${real?.pages.length} ` +
+			`${usedRollup ? "via ROLLUP" : "via LIVE SCAN (fallback)"}`,
+	);
+	for (const pg of real?.pages ?? []) {
+		console.log(
+			`  ${pg.path}  sessions=${pg.sessions} friction=${pg.frictionRatePct}% label="${pg.label}"`,
+		);
+	}
+	if (!usedRollup) {
+		console.log("  !! reader did not use the rollup");
+	}
+
 	await prisma.$disconnect();
 	process.exit(mismatches === 0 ? 0 : 1);
 }

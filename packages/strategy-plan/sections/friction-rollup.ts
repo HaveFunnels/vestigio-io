@@ -100,7 +100,7 @@ export async function rollUpFriction(
 		const dayIso = dayStart.toISOString().slice(0, 10);
 		const entries = [...byPath.entries()];
 
-		// Postgres caps a statement at 65535 bind parameters; 11 per row
+		// Postgres caps a statement at 65535 bind parameters; 12 per row
 		// leaves plenty of headroom at 500 rows per chunk.
 		for (let off = 0; off < entries.length; off += 500) {
 			const chunk = entries.slice(off, off + 500);
@@ -108,10 +108,10 @@ export async function rollUpFriction(
 			const tuples: string[] = [];
 
 			chunk.forEach(([path, a], i) => {
-				const b = i * 11;
+				const b = i * 12;
 				tuples.push(
 					`($${b + 1},$${b + 2},$${b + 3}::date,$${b + 4},$${b + 5},$${b + 6},` +
-						`$${b + 7},$${b + 8},$${b + 9},$${b + 10},$${b + 11})`,
+						`$${b + 7},$${b + 8},$${b + 9},$${b + 10},$${b + 11},$${b + 12})`,
 				);
 				values.push(
 					// Deterministic id over the same triple as the unique
@@ -133,13 +133,18 @@ export async function rollUpFriction(
 					a.inputAbandons,
 					a.backtracks,
 					a.formRetries,
+					// Same value on every path row for this day. See the
+					// schema note: the per-path counts cannot be summed into
+					// a session total without double-counting.
+					rows.length,
 				);
 			});
 
 			await prisma.$executeRawUnsafe(
 				`INSERT INTO "FrictionDailyRollup"
 				 ("id","envId","day","path","sessions","sessionsWithFriction",
-				  "deadClicks","hesitationsNearCta","inputAbandons","backtracks","formRetries")
+				  "deadClicks","hesitationsNearCta","inputAbandons","backtracks","formRetries",
+				  "envSessions")
 				 VALUES ${tuples.join(",")}
 				 ON CONFLICT ("envId","day","path") DO UPDATE SET
 				   "sessions" = EXCLUDED."sessions",
@@ -149,6 +154,7 @@ export async function rollUpFriction(
 				   "inputAbandons" = EXCLUDED."inputAbandons",
 				   "backtracks" = EXCLUDED."backtracks",
 				   "formRetries" = EXCLUDED."formRetries",
+				   "envSessions" = EXCLUDED."envSessions",
 				   "computedAt" = now()`,
 				...values,
 			);

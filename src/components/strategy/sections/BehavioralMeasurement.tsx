@@ -55,6 +55,7 @@ export interface MeasuredFunnelUI {
 	note?: string | null;
 	stages: MeasuredFunnelStageUI[];
 	biggestDrop: {
+		causeNote?: string | null;
 		fromLabel: string;
 		toLabel: string;
 		lostSessions: number;
@@ -172,6 +173,15 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 									{behavioral.funnel.biggestDrop.lostSessions.toLocaleString("pt-BR")} sessões
 								</span>{" "}
 								({fmtPct(behavioral.funnel.biggestDrop.dropPct)}) não seguem adiante.
+								{behavioral.funnel.biggestDrop.causeNote && (
+									// The pixel measures where people leave, not
+									// why. Without this line the drop sits above a
+									// list of recommendations and reads as though
+									// they address it.
+									<span className="mt-1.5 block text-content-muted">
+										{behavioral.funnel.biggestDrop.causeNote}
+									</span>
+								)}
 							</div>
 						)}
 					</div>

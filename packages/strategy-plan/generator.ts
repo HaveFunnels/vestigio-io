@@ -262,6 +262,15 @@ export async function generatePlan(
 	// basis, same window), so persistence and the read route carry it
 	// with zero extra columns.
 	if (behavioral) behavioral.friction = friction;
+	// The funnel says where people leave; friction is the only measured
+	// evidence of why. They are produced independently, so the
+	// comparison happens here, once both exist. Without it the document
+	// puts a 94.4% drop next to a list of recommendations and lets the
+	// reader assume the two are connected.
+	if (behavioral) {
+		const { annotateBiggestDropCause } = await import("./sections/behavioral-measurement");
+		annotateBiggestDropCause(behavioral.funnel, friction, ctx.locale);
+	}
 
 	// E1 — monthly thesis tied to narrative regen scope. The thesis is
 	// the one-line frame for the narrative body, so they share the same

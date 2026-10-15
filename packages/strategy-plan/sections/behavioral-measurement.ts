@@ -102,8 +102,20 @@ export interface MeasuredFunnelOutput {
 	biggestDrop: {
 		fromLabel: string;
 		toLabel: string;
+		fromKey: MeasuredFunnelStage["key"];
+		toKey: MeasuredFunnelStage["key"];
 		lostSessions: number;
 		dropPct: number;
+		/** Whether the plan can point at a measured reason for this
+		 *  drop, and what it is. Filled in once friction is available.
+		 *
+		 *  The pixel measures where people leave, not why. Casa
+		 *  Montelle loses 79,633 sessions between seeing a product and
+		 *  reaching the cart, and the measured friction on those same
+		 *  pages is 4.3%, which does not explain it. Saying so is the
+		 *  honest output; inventing a cause to fill the gap is how a
+		 *  measured document turns back into a generic one. */
+		causeNote: string | null;
 	} | null;
 }
 
@@ -483,8 +495,11 @@ export function computeMeasuredFunnel(
 			biggest = {
 				fromLabel: prev.label,
 				toLabel: defs[i].label,
+				fromKey: prev.key,
+				toKey: defs[i].key,
 				lostSessions: lost,
 				dropPct: Math.round((1000 * lost) / prev.sessions) / 10,
+				causeNote: null,
 			};
 		}
 	}
@@ -497,4 +512,66 @@ export function computeMeasuredFunnel(
 		stages,
 		biggestDrop: biggest,
 	};
+}
+
+/** Paths that belong to each funnel stage, for matching the measured
+ *  friction pages against the stage a drop happens on. */
+const STAGE_PATHS: Partial<Record<MeasuredFunnelStage["key"], RegExp>> = {
+	product: PRODUCT_PATH,
+	cart: CART_PATH,
+	checkout: /^\/c(\/|$)|^\/checkouts?(\/|$)|checkout/i,
+};
+
+/**
+ * Say whether the plan can explain its own biggest measured drop.
+ *
+ * The funnel answers "where do people leave". Nothing in it answers
+ * "why", and the two are easy to conflate when a document puts a
+ * 94.4% next to a list of recommendations: the reader assumes the
+ * recommendations are about the 94.4%.
+ *
+ * Measured friction is the only evidence that could explain a drop,
+ * so this compares the two. When the friction on the pages where the
+ * transition happens is nowhere near the size of the drop, the note
+ * says the cause is not measured, rather than letting the layout
+ * imply it is.
+ *
+ * Runs after friction is attached (see generator.ts), because the two
+ * are produced independently.
+ */
+export function annotateBiggestDropCause(
+	funnel: MeasuredFunnelOutput | null | undefined,
+	friction: { pages: { path: string; label: string; frictionRatePct: number }[] } | null | undefined,
+	locale = "pt-BR",
+): void {
+	const drop = funnel?.biggestDrop;
+	if (!drop) return;
+	const pt = locale === "pt-BR";
+
+	const re = STAGE_PATHS[drop.fromKey];
+	const pages = re ? (friction?.pages ?? []).filter((pg) => re.test(pg.path)) : [];
+	const worst = pages.reduce<{ label: string; frictionRatePct: number } | null>(
+		(best, pg) => (!best || pg.frictionRatePct > best.frictionRatePct ? pg : best),
+		null,
+	);
+
+	// A third of the drop is a generous bar: friction would not have to
+	// account for all of it to be a credible partial explanation. Below
+	// that, pointing at it would be dressing up a guess.
+	const explains = worst !== null && worst.frictionRatePct >= drop.dropPct / 3;
+
+	if (explains && worst) {
+		drop.causeNote = pt
+			? `O atrito medido em "${worst.label}" (${worst.frictionRatePct.toLocaleString("pt-BR")}% das sessões) é a pista mais forte que o pixel tem para essa queda.`
+			: `Measured friction on "${worst.label}" (${worst.frictionRatePct}% of sessions) is the strongest lead the pixel has for this drop.`;
+		return;
+	}
+
+	drop.causeNote = pt
+		? worst
+			? `O pixel mede onde as pessoas saem, não por quê. O atrito medido nessas páginas (${worst.frictionRatePct.toLocaleString("pt-BR")}% das sessões) não explica uma queda desse tamanho, então o plano não atribui uma causa a ela.`
+			: "O pixel mede onde as pessoas saem, não por quê. Não há atrito medido nas páginas desse trecho, então o plano não atribui uma causa a essa queda."
+		: worst
+			? `The pixel measures where people leave, not why. Measured friction on these pages (${worst.frictionRatePct}% of sessions) does not account for a drop this size, so the plan assigns it no cause.`
+			: "The pixel measures where people leave, not why. There is no measured friction on these pages, so the plan assigns this drop no cause.";
 }

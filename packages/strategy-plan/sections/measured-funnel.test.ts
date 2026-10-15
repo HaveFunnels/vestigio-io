@@ -57,6 +57,70 @@ function build(
 }
 
 describe("computeMeasuredFunnel", () => {
+	it("omits the payment stage when nothing can reach it, instead of mirroring paid", () => {
+		// Casa Montelle's real shape: a single-page NX4 checkout at
+		// /c/NX-…, so the URL-derived payment_step signal fired 0 times
+		// in 90,035 sessions while confirmation fired 1,613.
+		//
+		// Stages count a session's FURTHEST point, so an unreachable
+		// stage does not read as empty: it inherits everyone above it.
+		// "Pagamento" printed the same number as "Pagou" and the plan
+		// reported a 0% drop at payment, which a reader takes as
+		// "nobody abandons at the last step".
+		const sessions = [
+			...Array.from({ length: 800 }, () => session({})),
+			...Array.from({ length: 300 }, () =>
+				session({ surfaces: ["/", "/products/x"] }),
+			),
+			...Array.from({ length: 120 }, () =>
+				session({ surfaces: ["/", "/c/NX-1"], checkoutReached: true }),
+			),
+			...Array.from({ length: 40 }, () =>
+				session({
+					surfaces: ["/", "/c/NX-1"],
+					checkoutReached: true,
+					confirmationSeen: true,
+				}),
+			),
+		];
+		const out = computeMeasuredFunnel(sessions, "pt-BR")!;
+		const keys = out.stages.map((s) => s.key);
+		expect(keys).not.toContain("payment");
+		// Paid is still reported: the instrument for it does exist.
+		expect(keys).toContain("paid");
+		expect(out.stages.find((s) => s.key === "paid")!.sessions).toBe(40);
+	});
+
+	it("keeps the payment stage where the instrument actually fires", () => {
+		const sessions = [
+			...Array.from({ length: 500 }, () => session({})),
+			...Array.from({ length: 200 }, () =>
+				session({ surfaces: ["/", "/products/x"] }),
+			),
+			...Array.from({ length: 60 }, () =>
+				session({
+					surfaces: ["/", "/checkout/payment"],
+					checkoutReached: true,
+					paymentStepReached: true,
+				}),
+			),
+			...Array.from({ length: 25 }, () =>
+				session({
+					surfaces: ["/", "/checkout/payment"],
+					checkoutReached: true,
+					paymentStepReached: true,
+					confirmationSeen: true,
+				}),
+			),
+		];
+		const out = computeMeasuredFunnel(sessions, "pt-BR")!;
+		const payment = out.stages.find((s) => s.key === "payment");
+		expect(payment).toBeDefined();
+		// 85 reached payment, 25 paid, so the drop is real and nonzero.
+		expect(payment!.sessions).toBe(85);
+		expect(out.stages.find((s) => s.key === "paid")!.sessions).toBe(25);
+	});
+
 	it("computes monotonic stages with pct of arrived", () => {
 		const f = computeMeasuredFunnel(
 			build({ bounce: 400, product: 300, cart: 150, checkout: 90, payment: 40, paid: 20 }),

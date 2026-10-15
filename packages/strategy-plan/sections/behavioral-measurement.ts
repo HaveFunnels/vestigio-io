@@ -414,10 +414,26 @@ export function computeMeasuredFunnel(
 		{ key: "checkout", label: pt ? "Checkout" : "Checkout", sessions: checkout },
 	];
 	if (hasPaidInstrument) {
-		defs.push(
-			{ key: "payment", label: pt ? "Pagamento" : "Payment", sessions: payment },
-			{ key: "paid", label: pt ? "Pagou" : "Paid", sessions: paid },
-		);
+		// The payment stage gets the same treatment the paid stage
+		// already gets, for the same reason. payment_step_reached is
+		// derived purely from a URL shape (/checkout/pay, /pagamento),
+		// so a single-page checkout never produces it: Casa Montelle's
+		// NX4 checkout lives at /c/NX-… and fired it 0 times in 90,035
+		// sessions while confirmation fired 1,613 times.
+		//
+		// Because stages count the session's FURTHEST point, a stage
+		// nobody can reach does not read as empty. It inherits every
+		// session from the stages above it, so "Pagamento" printed
+		// exactly the same 1,613 as "Pagou" and the plan reported a 0%
+		// drop at payment, which reads as "nobody abandons at the last
+		// step" when the truth is that nothing was measured there.
+		//
+		// An absent instrument is omitted, never displayed as a perfect
+		// conversion.
+		if (sessions.some((s) => s.paymentStepReached)) {
+			defs.push({ key: "payment", label: pt ? "Pagamento" : "Payment", sessions: payment });
+		}
+		defs.push({ key: "paid", label: pt ? "Pagou" : "Paid", sessions: paid });
 	}
 
 	const stages: MeasuredFunnelStage[] = defs.map((d, i) => {

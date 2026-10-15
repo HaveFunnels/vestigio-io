@@ -1269,7 +1269,8 @@ model BehavioralSessionAggregate {
 /// measured-friction.ts used to derive these by scanning raw
 /// BehavioralSessionAggregate.timeline over a rolling 30-day window on
 /// every plan generation. That scan was the only long-window reader of
-/// raw timelines, and timelines are 83% of the database footprint, so
+/// raw timelines. Measured 2026-10-15: BehavioralSessionAggregate is
+/// 20% of the database and the timeline column itself is 107 MB, so
 /// it was the single thing preventing timeline retention from dropping
 /// from 90 days to roughly two weeks.
 ///

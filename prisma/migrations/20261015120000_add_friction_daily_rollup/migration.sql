@@ -3,7 +3,8 @@
 -- measured-friction.ts derived these by scanning raw
 -- BehavioralSessionAggregate.timeline over a rolling 30-day window on
 -- every plan generation. That scan is the only long-window reader of
--- raw timelines, and timelines are 83% of the database footprint, so
+-- raw timelines. Measured 2026-10-15: BehavioralSessionAggregate is
+-- 20% of the database and the timeline column itself is 107 MB, so
 -- it is the single thing keeping timeline retention at 90 days.
 --
 -- A session belongs to exactly one day via startedAt, so daily buckets

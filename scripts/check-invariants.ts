@@ -34,6 +34,46 @@ function walkDir(dir: string, predicate: (filePath: string) => boolean, out: str
 
 const INVARIANTS: Invariant[] = [
   {
+    name: "one session id across the funnel",
+    check: () => {
+      // The marketing tracker keyed events on "_vtg_sid" while the
+      // audit funnel minted its own under "vestigio_lp_session", so
+      // the two halves of the same visit carried different ids and
+      // could not be joined. "Ad click → homepage → /audit → lead →
+      // signup" was unqueryable, which is the only journey that tells
+      // you whether ad spend worked.
+      //
+      // So the key lives in exactly one module and everyone else
+      // imports the accessor.
+      const files = [
+        ...walkDir(path.join(ROOT, "src"), (f) => /\.(ts|tsx)$/.test(f) && !/\.test\./.test(f)),
+      ];
+      const owner = path.join(ROOT, "src", "libs", "marketing-session.ts");
+      // The in-app tracker keeps its own id on purpose: its events are
+      // post-auth and join to everything else through userId, which
+      // signup.attempt records on success. The rule being enforced is
+      // about the PRE-auth funnel, where there is no user yet and the
+      // session id is the only key there is.
+      const allowed = new Set([path.join(ROOT, "src", "hooks", "useProductTrack.tsx")]);
+      const offenders: string[] = [];
+      for (const f of files) {
+        if (f === owner || allowed.has(f)) continue;
+        const text = fs.readFileSync(f, "utf8");
+        // A module that mints its own visit id, rather than reading the
+        // shared one.
+        if (/sessionStorage\.setItem\(\s*(SESSION_KEY|["'`][^"'`]*(sid|session)[^"'`]*["'`])/i.test(text)) {
+          offenders.push(path.relative(ROOT, f));
+        }
+      }
+      if (offenders.length === 0) return null;
+      return (
+        `${offenders.length} file(s) mint their own session id instead of ` +
+        `importing getOrCreateSessionId from src/libs/marketing-session.ts:\n  ` +
+        offenders.join("\n  ")
+      );
+    },
+  },
+  {
     name: "every Turnstile-gated route has a caller that sends the token",
     check: () => {
       // verifyTurnstile fails OPEN while TURNSTILE_SECRET_KEY is unset

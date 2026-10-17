@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { getFirstTouch, getOrCreateSessionId } from "@/libs/marketing-session";
 
 // ──────────────────────────────────────────────
 // Lightweight marketing analytics tracker
@@ -8,24 +9,17 @@ import { useEffect, useRef } from "react";
 // Fire-and-forget — never blocks rendering.
 // ──────────────────────────────────────────────
 
-function getOrCreateSessionId(): string {
-  if (typeof window === "undefined") return "";
-  let sid = sessionStorage.getItem("_vtg_sid");
-  if (!sid) {
-    sid = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    sessionStorage.setItem("_vtg_sid", sid);
-  }
-  return sid;
-}
-
+// Session id and attribution moved to @/libs/marketing-session so the
+// signup form reads the same values. The UTM reader that used to live
+// here only saw window.location.search, so attribution died the moment
+// the visitor navigated off the landing page.
 function getUTMParams(): Record<string, string | undefined> {
-  if (typeof window === "undefined") return {};
-  const params = new URLSearchParams(window.location.search);
+  const ft = getFirstTouch();
   return {
-    utmSource: params.get("utm_source") || undefined,
-    utmMedium: params.get("utm_medium") || undefined,
-    utmCampaign: params.get("utm_campaign") || undefined,
-    utmContent: params.get("utm_content") || undefined,
+    utmSource: ft.utmSource,
+    utmMedium: ft.utmMedium,
+    utmCampaign: ft.utmCampaign,
+    utmContent: ft.utmContent,
   };
 }
 

@@ -24,6 +24,7 @@ import { rateLimitByIp } from "@/libs/limiter";
 import { integrations, messages } from "../../../../integrations.config";
 import logoLight from "@/../public/images/logo/logo-light.png";
 import TurnstileWidget from "@/components/audit/TurnstileWidget";
+import { getFirstTouch, getOrCreateSessionId } from "@/libs/marketing-session";
 
 const schema = z.object({
 	name: z.string().min(3, { message: "Name must be at least 3 characters long" }),
@@ -143,7 +144,16 @@ export default function Signup() {
 		}
 
 		try {
-			await axios.post("/api/user/register", { ...data, turnstileToken });
+			await axios.post("/api/user/register", {
+				...data,
+				turnstileToken,
+				// Carried so the attempt, including a failed one, is
+				// attributable to the campaign that produced it. Read
+				// here rather than on the server because both live in
+				// browser storage.
+				sessionId: getOrCreateSessionId(),
+				firstTouch: getFirstTouch(),
+			});
 			const res = await signIn("credentials", { ...data, redirect: false });
 			if (res?.error) {
 				toast.error(res.error);

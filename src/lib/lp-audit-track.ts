@@ -15,19 +15,19 @@ export type LpFunnelEvent =
 	| "lp_audit_cta_clicked"
 	| "lp_audit_checkout_complete";
 
-const SESSION_KEY = "vestigio_lp_session";
+// One session id across the whole funnel.
+//
+// This file used to mint its own under "vestigio_lp_session" while
+// TrackingScript used "_vtg_sid", so the marketing pageviews and the
+// audit-funnel events for the same visitor carried different ids and
+// could not be joined. The journey that matters, ad click → homepage
+// → /audit → lead → signup, was unqueryable: two halves with no key
+// between them.
+import { getFirstTouch, getOrCreateSessionId } from "@/libs/marketing-session";
 
 function getSessionId(): string {
 	if (typeof window === "undefined") return "ssr";
-	try {
-		const existing = window.sessionStorage.getItem(SESSION_KEY);
-		if (existing) return existing;
-		const fresh = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-		window.sessionStorage.setItem(SESSION_KEY, fresh);
-		return fresh;
-	} catch {
-		return "unavailable";
-	}
+	return getOrCreateSessionId() || "unavailable";
 }
 
 export function trackLpEvent(
@@ -45,7 +45,12 @@ export function trackLpEvent(
 		// fetch is otherwise interrupted by the next page load).
 		const body = JSON.stringify({
 			event,
-			properties: properties ?? null,
+			// First touch rides on every event, so the campaign that
+			// produced a lead survives the lead row itself: AnonymousLead
+			// is deleted at its expiresAt, while ProductEvent keeps 90
+			// days. Without this, a campaign could only be evaluated
+			// while its leads were still alive.
+			properties: { ...(properties ?? {}), firstTouch: getFirstTouch() },
 			pathname,
 			sessionId,
 		});

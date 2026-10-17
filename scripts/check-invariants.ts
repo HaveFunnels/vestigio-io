@@ -34,6 +34,110 @@ function walkDir(dir: string, predicate: (filePath: string) => boolean, out: str
 
 const INVARIANTS: Invariant[] = [
   {
+    name: "every Turnstile-gated route has a caller that sends the token",
+    check: () => {
+      // verifyTurnstile fails OPEN while TURNSTILE_SECRET_KEY is unset
+      // and fails CLOSED the moment it is set. So a route can be added
+      // to the gate, pass every test and every local run, and start
+      // rejecting 100% of real traffic the day the secret lands in
+      // production, with no error anywhere but a 400 the visitor sees.
+      //
+      // That happened. Turnstile shipped 2026-07-05; the signup form
+      // and the password-reset form never sent a token. Signup was
+      // dead from that day until 2026-10-16, and the only reason it
+      // took three months to notice is that almost nobody tried. The
+      // last user in the database predates the regression.
+      //
+      // So: a route that verifies a token must have a client that
+      // sends one. Routes with no client caller at all are skipped,
+      // since there is nothing to check against.
+      const apiDir = path.join(ROOT, "src", "app", "api");
+      const gated = walkDir(apiDir, (f) => /route\.tsx?$/.test(f)).filter((f) =>
+        fs.readFileSync(f, "utf8").includes("verifyTurnstile"),
+      );
+      if (gated.length === 0) return null;
+
+      const clientFiles = [
+        ...walkDir(path.join(ROOT, "src", "components"), (f) => /\.tsx?$/.test(f)),
+        ...walkDir(path.join(ROOT, "src", "app"), (f) => /\.tsx?$/.test(f) && !/\/route\.tsx?$/.test(f)),
+      ].map((f) => {
+        const raw = fs.readFileSync(f, "utf8");
+        // Comments are stripped once, and the stripped text drives BOTH
+        // "does this file call the route" and "does it send a token".
+        // Using raw text for the first made TurnstileWidget.tsx look
+        // like a caller of run-audit because its header comment names
+        // the route.
+        const code = raw
+          .split("\n")
+          .filter((line) => {
+            const t = line.trim();
+            return !(t.startsWith("//") || t.startsWith("*") || t.startsWith("/*"));
+          })
+          .join("\n");
+        return { file: f, code };
+      });
+
+      const broken: string[] = [];
+      for (const routeFile of gated) {
+        // src/app/api/user/register/route.ts -> /api/user/register
+        const urlPath =
+          "/" +
+          path
+            .relative(path.join(ROOT, "src", "app"), path.dirname(routeFile))
+            .split(path.sep)
+            .join("/");
+        // Dynamic segments are template holes in the caller
+        // (`/api/lead/${leadId}/run-audit`), so each becomes a
+        // wildcard. Truncating at the first segment instead would
+        // reduce this route to "/api/lead" and match every file that
+        // merely mentions a lead URL, which turns the whole check into
+        // noise.
+        const pattern = new RegExp(
+          urlPath
+            .split("/")
+            .map((seg) =>
+              /^\[.*\]$/.test(seg) ? "[^/\"'`\\s]+" : seg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+            )
+            .join("/"),
+        );
+        const callers = clientFiles.filter((c) => pattern.test(c.code));
+        if (callers.length === 0) continue; // nothing calls it
+        // The token must be SENT, not merely declared. Checking for
+        // the identifier anywhere in the file is too weak: a form that
+        // still holds `const [turnstileToken, setTurnstileToken] =
+        // useState(...)` but no longer puts it in the request body
+        // reads as fine and is just as broken. Comments and the
+        // declaration itself are stripped before looking.
+        // EVERY caller, not some. One correct form masking a broken
+        // one is exactly how this regression would come back: the live
+        // page works, a second form 400s, and the check stays green.
+        const allSendToken = callers.every((c) => {
+          // Declaring the token is not sending it: a form holding
+          // `const [turnstileToken] = useState(...)` with nothing in
+          // the request body reads as fine and is just as broken.
+          const sending = c.code
+            .split("\n")
+            .filter((line) => !/useState|useRef|useImperativeHandle/.test(line))
+            .join("\n");
+          return sending.includes("turnstileToken");
+        });
+        if (!allSendToken) {
+          broken.push(
+            `${path.relative(ROOT, routeFile)} (callers: ${callers
+              .map((c) => path.relative(ROOT, c.file))
+              .join(", ")})`,
+          );
+        }
+      }
+      if (broken.length === 0) return null;
+      return (
+        `${broken.length} Turnstile-gated route(s) with a caller that never sends a token.\n  ` +
+        broken.join("\n  ") +
+        `\n  These return 400 for every visitor once TURNSTILE_SECRET_KEY is set.`
+      );
+    },
+  },
+  {
     name: "engine.ts stays orchestrator-only (< 200 lines)",
     check: () => {
       const enginePath = path.join(ROOT, "packages/inference/engine.ts");

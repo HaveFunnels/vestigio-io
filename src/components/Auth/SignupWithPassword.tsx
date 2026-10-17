@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import z from "zod";
+import TurnstileWidget from "@/components/audit/TurnstileWidget";
 import { integrations, messages } from "../../../integrations.config";
 import Loader from "../Common/Loader";
 
@@ -41,6 +42,14 @@ const SignupWithPassword = () => {
 	});
 
 	const [loading, setLoading] = useState(false);
+
+	// /api/user/register fails closed on Turnstile in production.
+
+	// This component is currently unreferenced, but an unreferenced
+
+	// form that would 400 on revival is a trap, not dead weight.
+
+	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 	const { name, email, password } = data;
 
 	const router = useRouter();
@@ -83,6 +92,7 @@ const SignupWithPassword = () => {
 				name,
 				email,
 				password,
+				turnstileToken,
 			});
 
 			setData({
@@ -114,6 +124,10 @@ const SignupWithPassword = () => {
 
 	return (
 		<form onSubmit={handleSubmit}>
+			{/* Invisible; resolves on mount. Without it the token stays
+			    null and the route 400s, so the widget and the body field
+			    have to arrive together. */}
+			<TurnstileWidget onToken={setTurnstileToken} />
 			<div className='mb-5 space-y-4'>
 				<InputGroup
 					label={t("name.label")}

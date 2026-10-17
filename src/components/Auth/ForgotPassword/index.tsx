@@ -8,6 +8,7 @@ import axios from "axios";
 import Loader from "@/components/Common/Loader";
 import { integrations, messages } from "../../../../integrations.config";
 import z from "zod";
+import TurnstileWidget from "@/components/audit/TurnstileWidget";
 
 const schema = z.object({
 	email: z.string().email(),
@@ -16,6 +17,11 @@ const schema = z.object({
 export default function ForgotPassword() {
 	const [email, setEmail] = useState("");
 	const [loading, setLoading] = useState(false);
+	// The reset route fails CLOSED on Turnstile once the secret is set,
+	// which it has been in production since 2026-07-05. Without a token
+	// every reset returned 400, so a customer who forgot their password
+	// had no way back into the product at all.
+	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setEmail(e.target.value);
@@ -39,6 +45,7 @@ export default function ForgotPassword() {
 			setLoading(true);
 			const res = await axios.post("/api/forgot-password/reset", {
 				email,
+				turnstileToken,
 			});
 
 			// API returns 200 unconditionally (anti-enumeration: it sends
@@ -70,6 +77,8 @@ export default function ForgotPassword() {
 				</div>
 
 				<form onSubmit={handleSubmit}>
+					{/* Invisible; resolves on mount. See the signup form. */}
+					<TurnstileWidget onToken={setTurnstileToken} />
 					<div className='mb-5 space-y-4.5'>
 						<InputGroup
 							label='Email'

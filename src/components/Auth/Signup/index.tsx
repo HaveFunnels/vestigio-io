@@ -23,6 +23,7 @@ import z from "zod";
 import { rateLimitByIp } from "@/libs/limiter";
 import { integrations, messages } from "../../../../integrations.config";
 import logoLight from "@/../public/images/logo/logo-light.png";
+import TurnstileWidget from "@/components/audit/TurnstileWidget";
 
 const schema = z.object({
 	name: z.string().min(3, { message: "Name must be at least 3 characters long" }),
@@ -49,6 +50,13 @@ export default function Signup() {
 	// "Continuando como X" indicator on the form so the customer knows
 	// their mini-audit context carried over.
 	const [leadEmailPrefilled, setLeadEmailPrefilled] = useState(false);
+	// /api/user/register verifies Turnstile and fails CLOSED once
+	// TURNSTILE_SECRET_KEY is set, which it has been in production
+	// since 2026-07-05. This form never sent a token, so every signup
+	// since that date returned 400 "Captcha verification failed".
+	// Nobody noticed because the traffic was low enough that no real
+	// visitor was trying.
+	const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
 	// Post-signup destination. Defaults to /app (the existing console).
 	// LP/Pricing callers pass ?callbackUrl=/activate so new users land on
@@ -135,7 +143,7 @@ export default function Signup() {
 		}
 
 		try {
-			await axios.post("/api/user/register", data);
+			await axios.post("/api/user/register", { ...data, turnstileToken });
 			const res = await signIn("credentials", { ...data, redirect: false });
 			if (res?.error) {
 				toast.error(res.error);
@@ -269,6 +277,10 @@ export default function Signup() {
 
 					{/* Email form */}
 					<form onSubmit={handleSubmit} className="space-y-4">
+						{/* Invisible: renders nothing and resolves on mount.
+						    Absent site key (dev) means no token, and the
+						    server verify stays fail-open there. */}
+						<TurnstileWidget onToken={setTurnstileToken} />
 						<div className="auth-fade-in auth-delay-400">
 							<label className="mb-1.5 block text-xs font-medium text-zinc-500">{t("form.name.label")}</label>
 							<input

@@ -34,6 +34,51 @@ function walkDir(dir: string, predicate: (filePath: string) => boolean, out: str
 
 const INVARIANTS: Invariant[] = [
   {
+    name: "every NEXT_PUBLIC_* the code reads is a Dockerfile ARG",
+    check: () => {
+      // Next.js inlines NEXT_PUBLIC_* at BUILD time. A Dockerfile
+      // build does not inherit the platform's service variables the
+      // way a Nixpacks build does: each one must be declared as an
+      // ARG for the platform to pass it in.
+      //
+      // Only DATABASE_URL and BUILD_DATABASE_URL were declared, so
+      // every NEXT_PUBLIC_* compiled to `undefined` and shipped that
+      // way. TurnstileWidget returns null on a falsy site key, so it
+      // never rendered, never produced a token, and every
+      // Turnstile-gated route rejected every request from 2026-07-05
+      // to 2026-10-19: signup, password reset and the free audit.
+      // Paddle's client token and price id were undefined by the same
+      // mechanism, so the checkout could not open either.
+      //
+      // Nothing catches this but a browser. The server is healthy, the
+      // build is green, the component mounts and renders nothing.
+      const dockerfile = path.join(ROOT, "Dockerfile");
+      if (!fs.existsSync(dockerfile)) return null;
+      const docker = fs.readFileSync(dockerfile, "utf8");
+      const declared = new Set(
+        [...docker.matchAll(/^ARG\s+(NEXT_PUBLIC_[A-Z0-9_]+)/gm)].map((m) => m[1]),
+      );
+
+      const read = new Set<string>();
+      for (const dir of ["src", "packages"]) {
+        for (const f of walkDir(path.join(ROOT, dir), (x) => /\.(ts|tsx)$/.test(x))) {
+          const text = fs.readFileSync(f, "utf8");
+          for (const m of text.matchAll(/process\.env\.(NEXT_PUBLIC_[A-Z0-9_]+)/g)) {
+            read.add(m[1]);
+          }
+        }
+      }
+
+      const missing = [...read].filter((v) => !declared.has(v)).sort();
+      if (missing.length === 0) return null;
+      return (
+        `${missing.length} NEXT_PUBLIC_* variable(s) read by the code but not declared as ` +
+        `an ARG in the Dockerfile, so they compile to undefined:\n  ` +
+        missing.join("\n  ")
+      );
+    },
+  },
+  {
     name: "every external script host is allowed by the CSP",
     check: () => {
       // A script blocked by Content-Security-Policy fails in exactly

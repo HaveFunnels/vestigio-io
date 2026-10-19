@@ -147,13 +147,13 @@ const nextConfig = {
 
 		const baseCspDirectives = [
 			"default-src 'self'",
-			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sanity.io https://*.paddle.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com https://sdk.mercadopago.com https://*.mercadopago.com https://http2.mlstatic.com",
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://cdn.sanity.io https://*.paddle.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com https://sdk.mercadopago.com https://*.mercadopago.com https://http2.mlstatic.com",
 			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.sanity.io",
 			"img-src 'self' data: blob: https://cdn.sanity.io https://*.googleusercontent.com https://*.githubusercontent.com https://*.r2.cloudflarestorage.com https://cdn.vestigio.io https://www.google.com https://*.gstatic.com https://*.mercadolibre.com https://*.mercadolivre.com https://*.mercadopago.com https://*.mlstatic.com",
 			"media-src 'self' https://cdn.vestigio.io",
 			"font-src 'self' https://fonts.gstatic.com",
 			"connect-src 'self' https://app.vestigio.io https://audit.vestigio.io https://cdn.vestigio.io https://evt.vestigio.io https://www.vestigio.io https://vestigio.io https://*.sanity.io https://*.paddle.com https://*.google-analytics.com wss://*.sanity.io https://cdn.vestigio.io https://api.mercadopago.com https://*.mercadopago.com https://*.mercadolibre.com https://api.mercadolibre.com",
-			"frame-src 'self' https://*.paddle.com https://*.sanity.io https://*.mercadopago.com https://*.mercadolibre.com",
+			"frame-src 'self' https://challenges.cloudflare.com https://*.paddle.com https://*.sanity.io https://*.mercadopago.com https://*.mercadolibre.com",
 			"object-src 'none'",
 			"base-uri 'self'",
 			"form-action 'self'",
@@ -162,13 +162,13 @@ const nextConfig = {
 		// Studio CSP: extends base with core.sanity-cdn.com (bridge script)
 		const studioCspDirectives = [
 			"default-src 'self'",
-			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.sanity.io https://core.sanity-cdn.com https://*.paddle.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com https://sdk.mercadopago.com https://*.mercadopago.com https://http2.mlstatic.com",
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://cdn.sanity.io https://core.sanity-cdn.com https://*.paddle.com https://*.facebook.net https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com https://sdk.mercadopago.com https://*.mercadopago.com https://http2.mlstatic.com",
 			"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.sanity.io",
 			"img-src 'self' data: blob: https://cdn.sanity.io https://*.googleusercontent.com https://*.githubusercontent.com https://*.r2.cloudflarestorage.com https://cdn.vestigio.io https://www.google.com https://*.gstatic.com https://*.mercadolibre.com https://*.mercadolivre.com https://*.mercadopago.com https://*.mlstatic.com",
 			"media-src 'self' https://cdn.vestigio.io",
 			"font-src 'self' https://fonts.gstatic.com",
 			"connect-src 'self' https://app.vestigio.io https://audit.vestigio.io https://cdn.vestigio.io https://evt.vestigio.io https://www.vestigio.io https://vestigio.io https://*.sanity.io https://core.sanity-cdn.com https://*.paddle.com https://*.google-analytics.com wss://*.sanity.io https://cdn.vestigio.io https://api.mercadopago.com https://*.mercadopago.com https://*.mercadolibre.com https://api.mercadolibre.com",
-			"frame-src 'self' https://*.paddle.com https://*.sanity.io https://*.mercadopago.com https://*.mercadolibre.com",
+			"frame-src 'self' https://challenges.cloudflare.com https://*.paddle.com https://*.sanity.io https://*.mercadopago.com https://*.mercadolibre.com",
 			"object-src 'none'",
 			"base-uri 'self'",
 			"form-action 'self'",

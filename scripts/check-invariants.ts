@@ -34,6 +34,62 @@ function walkDir(dir: string, predicate: (filePath: string) => boolean, out: str
 
 const INVARIANTS: Invariant[] = [
   {
+    name: "every external script host is allowed by the CSP",
+    check: () => {
+      // A script blocked by Content-Security-Policy fails in exactly
+      // the way nothing catches: the server is fine, the build is
+      // fine, the component renders, and the only evidence is a
+      // console error in the visitor's browser.
+      //
+      // Turnstile shipped 2026-07-05 loading
+      // challenges.cloudflare.com, which was never added to the
+      // policy. The widget therefore never loaded, never produced a
+      // token, and every Turnstile-verified route rejected every
+      // request: signup, password reset AND the free audit. It took
+      // until 2026-10-19 and a real browser to see it, because the
+      // invariant that checks the token is SENT cannot know the thing
+      // producing it never ran.
+      const cfg = fs.readFileSync(path.join(ROOT, "next.config.js"), "utf8");
+      const scriptSrc = [...cfg.matchAll(/"script-src ([^"]*)"/g)].map((m) => m[1]);
+      if (scriptSrc.length === 0) return "no script-src directive found in next.config.js";
+
+      const hosts = new Set<string>();
+      for (const f of walkDir(path.join(ROOT, "src"), (x) => /\.(ts|tsx)$/.test(x))) {
+        const text = fs.readFileSync(f, "utf8");
+        // src={"https://..."} / src="https://..." on a script tag or
+        // a next/script component.
+        for (const m of text.matchAll(/src=\{?["'`](https:\/\/[^"'`\s]+)["'`]/g)) {
+          try {
+            hosts.add(new URL(m[1]).host);
+          } catch {
+            /* not a URL we can parse */
+          }
+        }
+      }
+      if (hosts.size === 0) return null;
+
+      const allowed = (host: string, directive: string) =>
+        // 'self' covers the app's own origins. They are listed rather
+        // than inferred from the request, since this runs at build
+        // time with no request to read.
+        (directive.includes("'self'") && /(^|\.)vestigio\.io$/.test(host)) ||
+        directive.split(/\s+/).some((token) => {
+          const t = token.replace(/^https:\/\//, "");
+          if (t === host) return true;
+          if (t.startsWith("*.")) return host.endsWith(t.slice(1));
+          return false;
+        });
+
+      const missing = [...hosts].filter((h) => !scriptSrc.every((d) => allowed(h, d)));
+      if (missing.length === 0) return null;
+      return (
+        `${missing.length} script host(s) the app loads are not in every script-src ` +
+        `directive, so the browser blocks them silently:\n  ` +
+        missing.join("\n  ")
+      );
+    },
+  },
+  {
     name: "one session id across the funnel",
     check: () => {
       // The marketing tracker keyed events on "_vtg_sid" while the

@@ -71,6 +71,29 @@ afterAll(async () => {
 
 /** Waits for Cloudflare to resolve the invisible challenge. */
 /**
+ * Waits for the Turnstile script to be injected.
+ *
+ * TurnstileWidget loads it through next/script with
+ * strategy="afterInteractive", so the tag appears only AFTER
+ * hydration. Counting it straight after domcontentloaded races
+ * hydration and reports zero — which is indistinguishable from the
+ * build regression this file exists to catch. CI failed exactly that
+ * way, in 4.8s, while the same assertion passed locally where earlier
+ * navigation had already warmed things up.
+ */
+async function waitForTurnstileScript(p: Page): Promise<number> {
+	try {
+		await p.waitForSelector('script[src*="challenges.cloudflare"]', {
+			state: "attached",
+			timeout: 45_000,
+		});
+	} catch {
+		// Fall through: the caller reports diagnostics on a zero count.
+	}
+	return p.locator('script[src*="challenges.cloudflare"]').count();
+}
+
+/**
  * `networkidle` never fires on these pages: Turnstile refreshes its
  * challenge on a timer and the analytics beacon keeps a connection
  * warm, so waiting for quiet is waiting forever. Wait for the DOM and
@@ -120,7 +143,7 @@ describe(`acquisition preconditions @ ${BASE}`, () => {
 		// to 2026-10-19. Both halves are needed: the script tag goes
 		// missing when the site key is undefined at build time, and the
 		// hidden input only appears once the widget actually initialized.
-		const tag = await page.locator('script[src*="challenges.cloudflare"]').count();
+		const tag = await waitForTurnstileScript(page);
 		if (tag === 0) {
 			// Distinguish "the build lost its site key" from "this vantage
 			// point was served something else". Cloudflare can answer a
@@ -155,7 +178,7 @@ describe(`acquisition preconditions @ ${BASE}`, () => {
 		cspViolations.length = 0;
 		await page.goto(`${BASE}/audit`, { waitUntil: "domcontentloaded" });
 		expect(cspViolations, cspViolations.join("\n")).toEqual([]);
-		const tag = await page.locator('script[src*="challenges.cloudflare"]').count();
+		const tag = await waitForTurnstileScript(page);
 		expect(tag, "Turnstile script tag missing on /audit").toBeGreaterThan(0);
 		await page.waitForSelector('input[name="cf-turnstile-response"]', { state: "attached", timeout: 30_000 });
 		if (REQUIRE_TOKEN) {

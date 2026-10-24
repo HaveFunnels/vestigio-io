@@ -262,6 +262,62 @@ export async function generatePlan(
 	// basis, same window), so persistence and the read route carry it
 	// with zero extra columns.
 	if (behavioral) behavioral.friction = friction;
+
+	// Fase 1B.2 — measured friction joins the finding lifecycle.
+	//
+	// The behavioural pipeline was the one analytic path that bypassed
+	// Finding entirely, so the only genuinely differentiated content in
+	// the product had no lifecycle: no new/persistent/resolved, no place
+	// in /app/findings, no way to be prioritised against crawler
+	// findings.
+	//
+	// Flag-gated and OFF by default, because hero-metrics aggregates
+	// Finding rows and emitting these would silently move the numbers in
+	// the existing plan. Phase 1 is about having the source of truth,
+	// not about changing the deliverable.
+	//
+	// Attached to the newest comprehensive cycle rather than a cycle of
+	// its own: Finding.cycleId is required, plan generation does not run
+	// inside a cycle, and inventing a synthetic cycle would pollute
+	// every per-cycle aggregate that already exists.
+	try {
+		const { areBehavioralFindingsEnabled, buildBehavioralFindings } = await import(
+			"./sections/behavioral-findings"
+		);
+		if (areBehavioralFindingsEnabled() && friction) {
+			const { latestComprehensiveCycleId } = await import("./honest-aggregates");
+			const cycleId = await latestComprehensiveCycleId(prisma, ctx.environmentId, ctx.monthEnd);
+			if (cycleId) {
+				const { findings } = buildBehavioralFindings({
+					friction,
+					windowStart: friction.windowStart,
+					windowEnd: friction.windowEnd,
+				});
+				if (findings.length > 0) {
+					const { PrismaFindingStore } = await import("../projections/prisma-finding-store");
+					// saveForCycle is a pure upsert on (cycleId,
+					// inferenceKey) — verified, there is no delete on the
+					// write path — so these land alongside the cycle's
+					// crawler findings instead of replacing them. The
+					// cycle is known to exist: latestComprehensiveCycleId
+					// derives it from an existing Finding row.
+					const res = await new PrismaFindingStore(prisma).saveForCycle({
+						cycleId,
+						environmentId: ctx.environmentId,
+						cycleRef: `behavioral:${friction.windowEnd}`,
+						findings,
+					});
+					console.log(
+						`[strategy-plan] behavioral findings: ${res.written}/${res.attempted} written env=${ctx.environmentId}`,
+					);
+				}
+			}
+		}
+	} catch (err) {
+		// Never let this block a plan. The measured sections render from
+		// their own output regardless of whether the findings landed.
+		console.warn("[strategy-plan] behavioral findings emission skipped:", err);
+	}
 	// The funnel says where people leave; friction is the only measured
 	// evidence of why. They are produced independently, so the
 	// comparison happens here, once both exist. Without it the document

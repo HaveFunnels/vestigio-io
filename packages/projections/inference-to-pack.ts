@@ -20,6 +20,17 @@
 
 
 export const INFERENCE_TO_PACK: Record<string, string> = {
+  // Measured friction, emitted from the behavioural pipeline rather
+  // than an inference pack (see
+  // packages/strategy-plan/sections/behavioral-findings.ts). Mapped
+  // here so downstream routing treats them like any other finding;
+  // their provenance is carried by Finding.origin='pixel', not by the
+  // pack name.
+  measured_dead_clicks: 'behavioral',
+  measured_hesitation_near_cta: 'behavioral',
+  measured_input_abandon: 'behavioral',
+  measured_form_retry: 'behavioral',
+  measured_immediate_backtrack: 'behavioral',
   commerce_context: 'scale_readiness',
   trust_boundary_crossed: 'scale_readiness',
   policy_gap: 'scale_readiness',

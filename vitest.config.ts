@@ -22,6 +22,11 @@ export default defineConfig({
 		include: [
 			"src/**/*.test.{ts,tsx}",
 			"packages/**/*.test.{ts,tsx}",
+			// apps/** was outside the include, so a test written next to
+			// the code it covers in apps/ silently never ran. That is the
+			// same shape as tests/** below: a file that looks like a test,
+			// passes review, and is never executed.
+			"apps/**/*.test.{ts,tsx}",
 		],
 		exclude: [
 			"node_modules/**",

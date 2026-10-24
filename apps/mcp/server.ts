@@ -24,6 +24,11 @@ import {
   VerificationPolicyDecision,
   VerificationPolicyRequest,
 } from '../../packages/verification-economics/policy';
+import {
+  arePlanWritesEnabled,
+  isPlanWriteTool,
+  planWriteDisabledResponse,
+} from './plan-write-gate';
 
 // ──────────────────────────────────────────────
 // MCP Server — bootstrap and request handling
@@ -334,10 +339,20 @@ export class McpServer {
     // session. Edits land in pending status and need admin approval
     // (see /api/library/strategy/[month]/edits/[editId]/approve).
     // Comments are immediate + team-visible.
-    if (toolName === 'propose_plan_edit') {
-      return this.proposePlanEditTool(params);
-    }
-    if (toolName === 'add_plan_comment') {
+    //
+    // Both are gated by a kill switch that fails CLOSED on an unset
+    // variable (see ./plan-write-gate). They have never been called in
+    // production — zero Conversation, PlanEdit and PlanComment rows —
+    // and an unexercised auth decision on the customer's main
+    // deliverable is not something to leave open. Reversible with
+    // MCP_PLAN_WRITES_ENABLED=true; the read tools are untouched.
+    if (isPlanWriteTool(toolName)) {
+      if (!arePlanWritesEnabled()) {
+        return planWriteDisabledResponse(toolName);
+      }
+      if (toolName === 'propose_plan_edit') {
+        return this.proposePlanEditTool(params);
+      }
       return this.addPlanCommentTool(params);
     }
 

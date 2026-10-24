@@ -1078,9 +1078,35 @@ model Finding {
   /// 'unknown'. Nullable for legacy rows that predate the
   /// surface-aware engine; new rows always carry a value.
   surfaceKind          String?
+
+  /// Where the evidence came from: 'crawler' | 'pixel' | 'integration'
+  /// | 'inference'.
+  ///
+  /// Distinct from `pack`, which is a subject category (revenue, saas)
+  /// and says nothing about provenance. Without this, a counted
+  /// behavioural observation and a heuristic guess are
+  /// indistinguishable once persisted, which is the difference
+  /// between "214 sessions did X" and "this probably costs you money".
+  ///
+  /// Nullable on purpose: historical rows are not reclassified, since
+  /// inferring provenance after the fact would be inventing it.
+  origin String?
+
+  /// What kind of claim this is: 'defect' | 'anomaly' | 'behavioral' |
+  /// 'inference'.
+  ///
+  /// A detector firing is not proof of a defect. This separates a
+  /// reproducible broken behaviour from an unusual reading, from a
+  /// real measurement whose cause is unknown, from a hypothesis. It
+  /// governs the language the plan is allowed to use: only 'defect'
+  /// may say something is broken, and 'behavioral' may never claim
+  /// causation.
+  ///
+  /// Nullable for the same reason as `origin`.
+  claimType  String?
   // Full FindingProjection JSON for cheap rehydration on cold start
-  projection           String   @db.Text
-  createdAt            DateTime @default(now())
+  projection String   @db.Text
+  createdAt  DateTime @default(now())
 
   cycle       AuditCycle   @relation(fields: [cycleId], references: [id], onDelete: Cascade)
   environment Environment  @relation(fields: [environmentId], references: [id], onDelete: Cascade)

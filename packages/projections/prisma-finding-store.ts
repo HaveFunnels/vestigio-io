@@ -219,8 +219,14 @@ export class PrismaFindingStore {
 					f.cycles_seen ?? 1,                                     // $baseIdx+19
 					// Wave 22.5 — surface_kind nullable string.
 					f.surface_kind ?? null,                                 // $baseIdx+20
+					// Provenance and claim class. Null when the emitter
+					// does not declare them, which keeps historical and
+					// un-migrated emitters working unchanged rather than
+					// inventing a classification for them.
+					f.origin ?? null,                                       // $baseIdx+21
+					f.claim_type ?? null,                                   // $baseIdx+22
 				);
-				const placeholders = Array.from({ length: 20 }, (_, i) => `$${baseIdx + i + 1}`);
+				const placeholders = Array.from({ length: 22 }, (_, i) => `$${baseIdx + i + 1}`);
 				valueRows.push(`(gen_random_uuid(), ${placeholders.join(', ')}, NOW())`);
 			}
 
@@ -233,6 +239,7 @@ export class PrismaFindingStore {
 					"projection",
 					"status", "statusChangedAt", "cyclesSeen",
 					"surfaceKind",
+					"origin", "claimType",
 					"createdAt"
 				)
 				VALUES ${valueRows.join(',\n                       ')}
@@ -252,7 +259,9 @@ export class PrismaFindingStore {
 					"status"               = EXCLUDED."status",
 					"statusChangedAt"      = EXCLUDED."statusChangedAt",
 					"cyclesSeen"           = EXCLUDED."cyclesSeen",
-					"surfaceKind"          = EXCLUDED."surfaceKind"
+					"surfaceKind"          = EXCLUDED."surfaceKind",
+					"origin"               = EXCLUDED."origin",
+					"claimType"            = EXCLUDED."claimType"
 			`;
 
 			try {
@@ -296,6 +305,10 @@ export class PrismaFindingStore {
 								// Wave 22.5 — surface_kind. Persist null when the
 								// projection didn't carry it (legacy / pre-engine).
 								surfaceKind: f.surface_kind ?? null,
+								// Provenance and claim class; null when the
+								// emitter does not declare them.
+								origin: f.origin ?? null,
+								claimType: f.claim_type ?? null,
 							},
 							update: {
 								pack: f.pack,
@@ -317,6 +330,10 @@ export class PrismaFindingStore {
 								// Wave 22.5 — surface_kind. Persist null when the
 								// projection didn't carry it (legacy / pre-engine).
 								surfaceKind: f.surface_kind ?? null,
+								// Provenance and claim class; null when the
+								// emitter does not declare them.
+								origin: f.origin ?? null,
+								claimType: f.claim_type ?? null,
 							},
 						});
 						result.written++;

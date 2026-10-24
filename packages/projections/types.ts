@@ -308,6 +308,34 @@ export interface FindingProjection {
    * legacy persisted projections that predate the surface-aware engine.
    */
   surface_kind: 'public' | 'authenticated' | 'mixed' | 'unknown' | null;
+
+  /**
+   * Where the evidence came from. Distinct from `pack`, which is a
+   * subject category and says nothing about provenance.
+   *
+   * 'crawler'     — fetched and parsed a page
+   * 'pixel'       — counted from real sessions
+   * 'integration' — came from a connected third party
+   * 'inference'   — derived from other signals, nothing observed directly
+   *
+   * Null on findings that predate the field. Never back-filled:
+   * guessing the provenance of an old finding would be inventing it.
+   */
+  origin?: 'crawler' | 'pixel' | 'integration' | 'inference' | null;
+
+  /**
+   * What kind of claim this is. A detector firing is not proof of a
+   * defect, and this is the field that stops the plan from saying so.
+   *
+   * 'defect'     — reproducible incorrect behaviour
+   * 'anomaly'    — unusual reading that needs checking
+   * 'behavioral' — a real measurement whose CAUSE is unknown
+   * 'inference'  — a hypothesis supported by evidence
+   *
+   * Governs permitted language: only 'defect' may assert something is
+   * broken, and 'behavioral' may never claim causation.
+   */
+  claim_type?: 'defect' | 'anomaly' | 'behavioral' | 'inference' | null;
 }
 
 export interface FindingTruthContext {

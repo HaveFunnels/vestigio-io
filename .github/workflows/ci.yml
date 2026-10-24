@@ -1,0 +1,44 @@
+# Source-level checks. No secrets, no network, no database.
+#
+# Deliberately does NOT duplicate the acquisition smoke: these assert
+# the source is correct, and the smoke asserts the deployment is. Every
+# acquisition outage this product has had passed checks like these and
+# broke anyway, because the fault was in the image, not the source.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+
+      # The 11 invariants. Three of them exist because of regressions
+      # that reached production: the Dockerfile ARG list, the CSP
+      # script hosts, and every Turnstile-gated route having a caller
+      # that sends a token.
+      - name: invariants
+        run: npx tsx scripts/check-invariants.ts
+
+      - name: typecheck
+        run: npx tsc --noEmit
+
+      - name: unit tests
+        run: npx vitest run
+
+      # tests/** is a separate node-test-runner suite that the vitest
+      # config excludes. It is easy to forget it exists, so CI runs it.
+      - name: legacy suite
+        run: npx tsx --test tests/all.test.ts

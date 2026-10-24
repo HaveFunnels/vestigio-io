@@ -31,7 +31,8 @@
 		"test:unit": "vitest run",
 		"test:unit:watch": "vitest",
 		"test:unit:coverage": "vitest run --coverage",
-		"check:snippet": "node scripts/publish-snippet-version.mjs --check"
+		"check:snippet": "node scripts/publish-snippet-version.mjs --check",
+		"test:e2e": "vitest run --config vitest.e2e.config.ts"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.81.0",

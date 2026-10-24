@@ -1,0 +1,59 @@
+# Does the DEPLOYED site still let someone become a customer?
+#
+# This is the control that was missing. Signup returned 400 for every
+# visitor from 2026-07-05 to 2026-10-19 — three and a half months —
+# and nothing noticed, because the failure was in the built image and
+# not in the source: a Dockerfile with no ARG for NEXT_PUBLIC_*, so
+# the captcha widget's site key compiled to undefined and the widget
+# never rendered.
+#
+# No local build, no unit test and no type check can see that. Only a
+# browser against the real URL can, which is what this runs.
+#
+# A failure here IS the alert: GitHub notifies on a failing scheduled
+# workflow. That is a deliberate limitation rather than a second
+# alerting path to maintain — see the final report.
+name: acquisition-smoke
+
+on:
+  schedule:
+    # Every 6 hours. The outage this guards against lasted months, so
+    # same-day detection is the bar; hourly would only add noise.
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Target URL"
+        required: false
+        default: "https://app.vestigio.io"
+      full_signup:
+        description: "Also create a real account (leaves a row)"
+        required: false
+        default: "false"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      E2E_BASE_URL: ${{ github.event.inputs.base_url || 'https://app.vestigio.io' }}
+      E2E_FULL_SIGNUP: ${{ github.event.inputs.full_signup || 'false' }}
+      # Read-only, for the payment contract test: it asserts every
+      # configured Paddle price id resolves to a paying plan, which
+      # lives in the database and is edited through the admin UI.
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DATABASE_URL }}
+      NEXT_PUBLIC_PADDLE_LP_PRICE_ID: ${{ secrets.NEXT_PUBLIC_PADDLE_LP_PRICE_ID }}
+      PADDLE_WEBHOOK_SECRET: ${{ secrets.PADDLE_WEBHOOK_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx playwright install --with-deps chromium
+
+      - name: acquisition smoke
+        run: npm run test:e2e

@@ -121,6 +121,24 @@ describe(`acquisition preconditions @ ${BASE}`, () => {
 		// missing when the site key is undefined at build time, and the
 		// hidden input only appears once the widget actually initialized.
 		const tag = await page.locator('script[src*="challenges.cloudflare"]').count();
+		if (tag === 0) {
+			// Distinguish "the build lost its site key" from "this vantage
+			// point was served something else". Cloudflare can answer a
+			// datacenter IP with a managed challenge, which returns 200
+			// and contains none of the app's scripts.
+			const diag = await page.evaluate(() => ({
+				title: document.title,
+				hasAppRoot: !!document.querySelector("#__next, [data-nextjs-router], main"),
+				nextScripts: document.querySelectorAll('script[src*="/_next/"]').length,
+				bodyStart: document.body?.innerText?.slice(0, 160) ?? "",
+			}));
+			console.log(`[e2e] diagnostics: ${JSON.stringify(diag)}`);
+			expect(
+				diag.nextScripts,
+				`served a page with no app bundle at all (title="${diag.title}") — ` +
+					`likely a Cloudflare challenge for this IP, not a build regression`,
+			).toBeGreaterThan(0);
+		}
 		expect(tag, "Turnstile script tag missing — site key absent from the build?").toBeGreaterThan(0);
 		await page.waitForSelector('input[name="cf-turnstile-response"]', { state: "attached", timeout: 30_000 });
 		const token = await turnstileToken(page);

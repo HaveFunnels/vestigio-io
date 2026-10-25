@@ -93,7 +93,7 @@ const TIER_HUMAN_LABEL: Record<NonNullable<Journey["narrative"]["tier"]>, string
 };
 
 const TIER_CHIP_STYLE: Record<NonNullable<Journey["narrative"]["tier"]>, string> = {
-	padrao_claro: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+	padrao_claro: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 	hipotese_consistente: "border-sky-500/30 bg-sky-500/10 text-sky-300",
 	sinal_isolado: "border-content-faint/40 bg-content-faint/10 text-content-muted",
 };
@@ -249,7 +249,7 @@ function JourneyCard({ journey, currency }: { journey: Journey; currency: string
 						</div>
 					</div>
 					<div className="text-right">
-						<div className="font-mono text-[14px] font-semibold tabular-nums text-rose-400">
+						<div className="font-mono text-[14px] font-semibold tabular-nums text-rose-700 dark:text-rose-400">
 							{fmtCurrencyUnits(lostBrl, currency)}
 						</div>
 						<div className="text-[10px] text-content-faint">não convertidos</div>
@@ -525,7 +525,7 @@ function PixelInstallHero({ envId, sessionCount }: { envId: string; sessionCount
 				className="overflow-hidden rounded-2xl border border-edge bg-gradient-to-br from-rose-500/[0.06] via-surface-card to-surface-card p-5 sm:p-6"
 			>
 				<div className="mb-4 flex items-start gap-3">
-					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-400">
+					<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-700 dark:text-rose-400">
 						<svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
 							<path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
 						</svg>
@@ -557,7 +557,7 @@ function PixelInstallHero({ envId, sessionCount }: { envId: string; sessionCount
 						onClick={handleCopy}
 						className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12px] font-medium transition-colors ${
 							copied
-								? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+								? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 								: "border-edge bg-surface-card text-content-secondary hover:border-edge-focus hover:text-content"
 						}`}
 					>
@@ -631,7 +631,7 @@ function PixelInstructionsDrawer({
 						onClick={handleCopy}
 						className={`mt-2 inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[12px] font-medium transition-colors ${
 							copied
-								? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+								? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 								: "border-edge bg-surface-card text-content-secondary hover:border-edge-focus hover:text-content"
 						}`}
 					>
@@ -689,7 +689,7 @@ function PixelInstructionsDrawer({
 							<li>Abra DevTools (F12) → aba <span className="font-mono font-medium text-content">Network</span></li>
 							<li>Filtre por <span className="font-mono font-medium text-content">vestigio.js</span></li>
 							<li>Recarregue a página</li>
-							<li>Deve aparecer 1 request com status <span className="font-mono font-medium text-emerald-300">200</span></li>
+							<li>Deve aparecer 1 request com status <span className="font-mono font-medium text-emerald-700 dark:text-emerald-300">200</span></li>
 						</ol>
 						<p className="rounded-lg border border-edge/40 bg-surface-inset/30 p-3 text-[11.5px]">
 							<span className="font-medium text-content">Próximo passo:</span> depois de 5 sessões coletadas, a seção <span className="italic">Jornadas que custaram dinheiro</span> ativa automaticamente no próximo plano mensal.

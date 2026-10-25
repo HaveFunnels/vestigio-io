@@ -183,12 +183,12 @@ function TabButton({
 		<button
 			type="button"
 			onClick={onClick}
-			aria-pressed={active}
+			aria-expanded={active}
 			className={`flex flex-col items-start gap-1.5 p-5 text-left transition-colors ${
 				active ? "bg-surface-card-hover" : "hover:bg-surface-card-hover/70"
 			}`}
 		>
-			<div className="flex items-center gap-2">
+			<div className="flex w-full items-center gap-2">
 				<span
 					className={`text-[12.5px] font-semibold uppercase tracking-[0.08em] ${
 						active ? "text-content" : "text-content-secondary"
@@ -198,15 +198,36 @@ function TabButton({
 				</span>
 				{urgent && (
 					<span
-						className="inline-flex h-1.5 w-1.5 rounded-full bg-rose-400"
+						className="inline-flex h-1.5 w-1.5 rounded-full bg-rose-500 dark:bg-rose-400"
 						aria-label="Sinais urgentes"
 					/>
 				)}
+				{/* There was no sign at all that this panel opens. The
+				    reader had to discover it by clicking, which is the
+				    one thing an affordance exists to prevent. A chevron
+				    that rotates on expand states both that it opens and
+				    which way it currently is. */}
+				<svg
+					aria-hidden
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					strokeWidth={2}
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					className={`ml-auto h-3.5 w-3.5 shrink-0 text-content-faint transition-transform duration-200 ${
+						active ? "rotate-180" : ""
+					}`}
+				>
+					<path d="m6 9 6 6 6-6" />
+				</svg>
 			</div>
 			<div className="flex items-baseline gap-1.5">
 				<span
 					className={`font-mono text-[22px] font-semibold tabular-nums ${
-						urgent && primaryValue > 0 ? "text-rose-300" : "text-content"
+						urgent && primaryValue > 0
+							? "text-rose-700 dark:text-rose-300"
+							: "text-content"
 					}`}
 				>
 					{primaryValue}

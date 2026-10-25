@@ -154,7 +154,7 @@ export default function MonthPicker({ envId, currentMonth }: Props) {
 												</div>
 											</div>
 											{p.status === "generating" && (
-												<span className="text-[10px] text-amber-300">
+												<span className="text-[10px] text-amber-700 dark:text-amber-300">
 													gerando
 												</span>
 											)}

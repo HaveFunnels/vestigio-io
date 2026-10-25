@@ -79,9 +79,9 @@ const PAGE_SLOT_LABEL: Record<string, string> = {
 };
 
 function scoreTone(pct: number): string {
-	if (pct >= 80) return "text-emerald-300";
-	if (pct >= 60) return "text-amber-300";
-	return "text-rose-300";
+	if (pct >= 80) return "text-emerald-700 dark:text-emerald-300";
+	if (pct >= 60) return "text-amber-700 dark:text-amber-300";
+	return "text-rose-700 dark:text-rose-300";
 }
 
 export default function CopyLensRich({ month, envId }: Props) {
@@ -191,7 +191,7 @@ export default function CopyLensRich({ month, envId }: Props) {
 	if (error) {
 		return (
 			<div className="rounded-2xl border border-rose-500/30 bg-surface-card/60 p-8 text-center">
-				<p className="text-[13px] text-rose-300">{error}</p>
+				<p className="text-[13px] text-rose-700 dark:text-rose-300">{error}</p>
 			</div>
 		);
 	}

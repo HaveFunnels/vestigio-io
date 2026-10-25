@@ -190,7 +190,7 @@ function BreachAlertBanner({ alert }: { alert: BreachAlert }) {
 	return (
 		<div className="flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/[0.06] px-4 py-3">
 			<svg
-				className="mt-0.5 h-4 w-4 shrink-0 text-rose-400"
+				className="mt-0.5 h-4 w-4 shrink-0 text-rose-700 dark:text-rose-400"
 				viewBox="0 0 20 20"
 				fill="currentColor"
 			>
@@ -220,9 +220,9 @@ function TrendRow({ trend, currency }: { trend: PackTrend; currency: string }) {
 	const forecast6Brl = Math.round(trend.forecast_6_weeks.midpoint_brl_cents / 100);
 	const directionColor =
 		trend.trend_direction === "up"
-			? "text-rose-400"
+			? "text-rose-700 dark:text-rose-400"
 			: trend.trend_direction === "down"
-				? "text-emerald-400"
+				? "text-emerald-700 dark:text-emerald-400"
 				: "text-content-muted";
 	const arrow =
 		trend.trend_direction === "up"
@@ -306,7 +306,7 @@ function ChronicRow({ chronic, currency }: { chronic: ChronicFinding; currency: 
 				</div>
 			</div>
 			<div className="shrink-0 text-right">
-				<div className="font-mono text-[12px] font-semibold tabular-nums text-rose-400">
+				<div className="font-mono text-[12px] font-semibold tabular-nums text-rose-700 dark:text-rose-400">
 					{fmtCurrencyUnits(brl, currency)}/mês
 				</div>
 			</div>

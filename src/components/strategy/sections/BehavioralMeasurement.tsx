@@ -174,7 +174,7 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 									{behavioral.funnel.biggestDrop.fromLabel} → {behavioral.funnel.biggestDrop.toLabel}
 								</span>
 								{" — "}
-								<span className="font-mono tabular-nums text-rose-300">
+								<span className="font-mono tabular-nums text-rose-700 dark:text-rose-300">
 									{behavioral.funnel.biggestDrop.lostSessions.toLocaleString("pt-BR")} sessões
 								</span>{" "}
 								({fmtPct(behavioral.funnel.biggestDrop.dropPct)}) não seguem adiante.
@@ -265,7 +265,7 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 										</div>
 										<div className="shrink-0 font-mono text-[11.5px] tabular-nums text-content-muted">
 											{pg.sessionsWithFriction.toLocaleString("pt-BR")} de {pg.sessions.toLocaleString("pt-BR")} sessões ·{" "}
-											<span className={pg.frictionRatePct >= 20 ? "text-amber-300" : ""}>
+											<span className={pg.frictionRatePct >= 20 ? "text-amber-700 dark:text-amber-300" : ""}>
 												{pg.frictionRatePct.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%
 											</span>
 										</div>

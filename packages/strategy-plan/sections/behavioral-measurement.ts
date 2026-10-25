@@ -567,11 +567,20 @@ export function annotateBiggestDropCause(
 		return;
 	}
 
+	// What a low friction rate RULES OUT is real information, and
+	// saying it is more useful than stopping at "we assign no cause".
+	//
+	// The first version of this note ended with "o plano não atribui
+	// uma causa a ela", which reads as "figure it out yourself" and
+	// costs the reader's trust in the measurement that precedes it.
+	// Honesty about not knowing the cause does not require abandoning
+	// the reader: the measurement still narrows the field, and naming
+	// what to look at is not the same as inventing why.
 	drop.causeNote = pt
 		? worst
-			? `O pixel mede onde as pessoas saem, não por quê. O atrito medido nessas páginas (${worst.frictionRatePct.toLocaleString("pt-BR")}% das sessões) não explica uma queda desse tamanho, então o plano não atribui uma causa a ela.`
-			: "O pixel mede onde as pessoas saem, não por quê. Não há atrito medido nas páginas desse trecho, então o plano não atribui uma causa a essa queda."
+			? `O atrito medido nessas páginas é de ${worst.frictionRatePct.toLocaleString("pt-BR")}% das sessões, baixo demais para explicar uma queda desse tamanho. Isso é informação: a desistência não vem de algo travando o clique, e sim da decisão de comprar. O que olhar primeiro é a primeira tela, comparada com o que o anúncio prometeu.`
+			: "Não há atrito medido nas páginas desse trecho, o que já diz algo: a desistência não vem de algo travando o clique, e sim da decisão de comprar. O que olhar primeiro é a primeira tela, comparada com o que o anúncio prometeu."
 		: worst
-			? `The pixel measures where people leave, not why. Measured friction on these pages (${worst.frictionRatePct}% of sessions) does not account for a drop this size, so the plan assigns it no cause.`
-			: "The pixel measures where people leave, not why. There is no measured friction on these pages, so the plan assigns this drop no cause.";
+			? `Measured friction on these pages is ${worst.frictionRatePct}% of sessions, too low to explain a drop this size. That is information: the loss is not something blocking the click, it is the decision to buy. Start with the first screen, compared against what the ad promised.`
+			: "There is no measured friction on these pages, which already says something: the loss is not something blocking the click, it is the decision to buy. Start with the first screen, compared against what the ad promised.";
 }

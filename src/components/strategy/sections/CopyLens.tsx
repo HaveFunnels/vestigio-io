@@ -33,17 +33,17 @@ const PAGE_SLOT_LABEL: Record<string, string> = {
 
 function scoreTone(pct: number): { fg: string; bg: string; ring: string } {
 	if (pct >= 80) return {
-		fg: "text-emerald-300",
+		fg: "text-emerald-700 dark:text-emerald-300",
 		bg: "bg-emerald-500/10",
 		ring: "ring-emerald-500/20",
 	};
 	if (pct >= 60) return {
-		fg: "text-amber-300",
+		fg: "text-amber-700 dark:text-amber-300",
 		bg: "bg-amber-500/10",
 		ring: "ring-amber-500/20",
 	};
 	return {
-		fg: "text-rose-300",
+		fg: "text-rose-700 dark:text-rose-300",
 		bg: "bg-rose-500/10",
 		ring: "ring-rose-500/20",
 	};

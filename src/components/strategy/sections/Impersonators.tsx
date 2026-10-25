@@ -29,8 +29,8 @@ interface Props {
 }
 
 const SEVERITY_TONE: Record<string, { fg: string; bg: string; ring: string; label: string }> = {
-	high: { fg: "text-rose-300", bg: "bg-rose-500/10", ring: "ring-rose-500/20", label: "Alto" },
-	medium: { fg: "text-amber-300", bg: "bg-amber-500/10", ring: "ring-amber-500/20", label: "Médio" },
+	high: { fg: "text-rose-700 dark:text-rose-300", bg: "bg-rose-500/10", ring: "ring-rose-500/20", label: "Alto" },
+	medium: { fg: "text-amber-700 dark:text-amber-300", bg: "bg-amber-500/10", ring: "ring-amber-500/20", label: "Médio" },
 	low: { fg: "text-sky-300", bg: "bg-sky-500/10", ring: "ring-sky-500/20", label: "Baixo" },
 };
 
@@ -66,9 +66,9 @@ function StatTile({
 }) {
 	const fg =
 		tone === "rose"
-			? "text-rose-300"
+			? "text-rose-700 dark:text-rose-300"
 			: tone === "amber"
-				? "text-amber-300"
+				? "text-amber-700 dark:text-amber-300"
 				: tone === "sky"
 					? "text-sky-300"
 					: "text-content";
@@ -163,7 +163,7 @@ export default function Impersonators({ impersonators, embedded = false }: Props
 									>
 										<div className="flex flex-1 items-baseline gap-2">
 											{m.isActive ? (
-												<AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-300" aria-hidden />
+												<AlertTriangle className="h-3.5 w-3.5 shrink-0 text-rose-700 dark:text-rose-300" aria-hidden />
 											) : (
 												<Shield className="h-3.5 w-3.5 shrink-0 text-content-faint" aria-hidden />
 											)}
@@ -257,7 +257,7 @@ export default function Impersonators({ impersonators, embedded = false }: Props
 					</>
 				) : (
 					<div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-						<div className="inline-flex items-center gap-2 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
+						<div className="inline-flex items-center gap-2 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
 							Sem clonadores ativos
 						</div>
 						<p className="mt-2 text-[12.5px] leading-snug text-content-secondary">

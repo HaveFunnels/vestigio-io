@@ -246,7 +246,7 @@ function StickyHeader({
 						<span className="text-[12px] font-medium text-emerald-200/90 sm:text-[12.5px]">
 							Gerando PDF do plano
 						</span>
-						<span className="hidden text-[11.5px] text-emerald-300/60 sm:inline">
+						<span className="hidden text-[11.5px] text-emerald-700 dark:text-emerald-300/60 sm:inline">
 							renderiza o plano inteiro no formato impresso, e costuma levar 20 a 40 segundos
 						</span>
 					</div>
@@ -271,7 +271,7 @@ function StickyHeader({
 						{formatTimestamp(plan.generatedAt)}
 					</span>
 					{exportError && (
-						<span className="ml-1 text-rose-300/90">· {exportError}</span>
+						<span className="ml-1 text-rose-700 dark:text-rose-300/90">· {exportError}</span>
 					)}
 				</div>
 				<div className="order-1 flex items-center gap-1.5 sm:order-2 sm:gap-2">
@@ -364,7 +364,7 @@ function StickyHeader({
 										: "Copiar plano em diferentes formatos"
 							}
 							className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border bg-surface-card text-content-muted transition-colors hover:border-edge-focus hover:bg-surface-card-hover hover:text-content ${
-								shareState === "copied" ? "border-emerald-500/40 text-emerald-300" : "border-edge"
+								shareState === "copied" ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-300" : "border-edge"
 							}`}
 						>
 							{shareState === "copied" ? (

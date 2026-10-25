@@ -33,8 +33,8 @@ interface Props {
 }
 
 const SEVERITY_TONE: Record<string, { fg: string; bg: string; ring: string; label: string }> = {
-	high: { fg: "text-rose-300", bg: "bg-rose-500/10", ring: "ring-rose-500/20", label: "Alto" },
-	medium: { fg: "text-amber-300", bg: "bg-amber-500/10", ring: "ring-amber-500/20", label: "Médio" },
+	high: { fg: "text-rose-700 dark:text-rose-300", bg: "bg-rose-500/10", ring: "ring-rose-500/20", label: "Alto" },
+	medium: { fg: "text-amber-700 dark:text-amber-300", bg: "bg-amber-500/10", ring: "ring-amber-500/20", label: "Médio" },
 	low: { fg: "text-sky-300", bg: "bg-sky-500/10", ring: "ring-sky-500/20", label: "Baixo" },
 };
 
@@ -81,7 +81,7 @@ export default function Competitor({ competitor, embedded = false }: Props) {
 								<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
 									Marca intacta
 								</div>
-								<span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
+								<span className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/20">
 									Sem cópia detectada
 								</span>
 							</div>
@@ -240,7 +240,7 @@ export default function Competitor({ competitor, embedded = false }: Props) {
 										<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
 											<div className="flex flex-1 items-baseline gap-2">
 												<Radio
-													className={`h-3 w-3 shrink-0 ${hasSignals ? "text-rose-300" : "text-emerald-400/70"}`}
+													className={`h-3 w-3 shrink-0 ${hasSignals ? "text-rose-700 dark:text-rose-300" : "text-emerald-700 dark:text-emerald-400/70"}`}
 													aria-hidden
 												/>
 												<div className="min-w-0">
@@ -275,7 +275,7 @@ export default function Competitor({ competitor, embedded = false }: Props) {
 													})}
 												</div>
 											) : (
-												<span className="inline-flex items-center gap-1 self-start rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-emerald-300 ring-1 ring-inset ring-emerald-500/20 sm:self-center">
+												<span className="inline-flex items-center gap-1 self-start rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.06em] text-emerald-700 dark:text-emerald-300 ring-1 ring-inset ring-emerald-500/20 sm:self-center">
 													Sem ameaça
 												</span>
 											)}

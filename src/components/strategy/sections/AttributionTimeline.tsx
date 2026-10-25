@@ -95,7 +95,7 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 					<div className="mb-5 border-b border-edge/60 pb-4">
 						<div className="text-[11px] text-content-faint">Total recuperado este mês</div>
 						<div className="mt-1 flex items-baseline gap-2">
-							<span className="font-mono text-[28px] font-semibold tabular-nums text-emerald-400">
+							<span className="font-mono text-[28px] font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
 								{fmtCurrencyUnits(totalValue, currency)}
 							</span>
 							<span className="text-[12px] text-content-muted">
@@ -136,7 +136,7 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 										</div>
 									</div>
 									<div className="shrink-0 text-right">
-										<div className="font-mono text-[15px] font-semibold tabular-nums text-emerald-400">
+										<div className="font-mono text-[15px] font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
 											{fmtCurrencyUnits(r.baselineImpactMidpoint, currency)}
 										</div>
 										<div className="text-[10px] text-content-faint">recuperado</div>

@@ -180,7 +180,7 @@ function CriticalSurfacesBanner({ surfaces }: { surfaces: CriticalSurface[] }) {
 			className="mb-6 overflow-hidden rounded-2xl border border-rose-500/40 bg-rose-500/10 p-5 sm:p-6"
 		>
 			<div className="mb-3 flex items-start gap-3">
-				<svg className="mt-0.5 h-5 w-5 shrink-0 text-rose-400" viewBox="0 0 20 20" fill="currentColor">
+				<svg className="mt-0.5 h-5 w-5 shrink-0 text-rose-700 dark:text-rose-400" viewBox="0 0 20 20" fill="currentColor">
 					<path
 						fillRule="evenodd"
 						d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z"
@@ -193,7 +193,7 @@ function CriticalSurfacesBanner({ surfaces }: { surfaces: CriticalSurface[] }) {
 							? "1 superfície crítica com problema"
 							: `${surfaces.length} superfícies críticas com problema`}
 					</div>
-					<p className="mt-0.5 text-[12px] leading-relaxed text-rose-300/90">
+					<p className="mt-0.5 text-[12px] leading-relaxed text-rose-700 dark:text-rose-300/90">
 						Detectado no último ciclo de auditoria. Vale revisar agora antes de qualquer outra ação do plano.
 					</p>
 				</div>
@@ -210,7 +210,7 @@ function CriticalSurfacesBanner({ surfaces }: { surfaces: CriticalSurface[] }) {
 								<div className="truncate font-mono text-[12px] text-rose-100 group-hover:text-white">
 									{s.path}
 								</div>
-								<div className="mt-0.5 text-[11px] text-rose-300/80">
+								<div className="mt-0.5 text-[11px] text-rose-700 dark:text-rose-300/80">
 									{PAGE_TYPE_LABEL_PT[s.page_type] ?? s.page_type}
 									{s.tier === "primary" && " · superfície primária"}
 								</div>
@@ -227,7 +227,7 @@ function CriticalSurfacesBanner({ surfaces }: { surfaces: CriticalSurface[] }) {
 									</span>
 								)}
 								<svg
-									className="h-3 w-3 shrink-0 text-rose-300/60 transition-transform group-hover:translate-x-0.5 group-hover:text-rose-200"
+									className="h-3 w-3 shrink-0 text-rose-700 dark:text-rose-300/60 transition-transform group-hover:translate-x-0.5 group-hover:text-rose-200"
 									viewBox="0 0 12 12"
 									fill="none"
 									stroke="currentColor"
@@ -244,7 +244,7 @@ function CriticalSurfacesBanner({ surfaces }: { surfaces: CriticalSurface[] }) {
 					<button
 						type="button"
 						onClick={() => setExpanded(true)}
-						className="w-full rounded-md border border-rose-500/30 bg-transparent px-3 py-1.5 text-[11.5px] font-medium text-rose-300 transition-colors hover:bg-rose-500/10 hover:text-rose-200"
+						className="w-full rounded-md border border-rose-500/30 bg-transparent px-3 py-1.5 text-[11.5px] font-medium text-rose-700 dark:text-rose-300 transition-colors hover:bg-rose-500/10 hover:text-rose-200"
 					>
 						Ver mais {surfaces.length - 3} ↓
 					</button>
@@ -312,10 +312,10 @@ function EcosystemHealthCard({
 										<span
 											className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
 												n.severity === "critical"
-													? "bg-rose-500/20 text-rose-300"
+													? "bg-rose-500/20 text-rose-700 dark:text-rose-300"
 													: n.severity === "high"
 														? "bg-orange-500/20 text-orange-300"
-														: "bg-amber-500/20 text-amber-300"
+														: "bg-amber-500/20 text-amber-700 dark:text-amber-300"
 											}`}
 										>
 											{n.severity}

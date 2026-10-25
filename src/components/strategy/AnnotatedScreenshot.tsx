@@ -115,7 +115,7 @@ export default function AnnotatedScreenshot({
 					})}
 				{/* Collapsed: advertise that the figure points somewhere. */}
 				{!expanded && annotations.length > 0 && (
-					<div className="absolute bottom-2 right-2 rounded-full border border-rose-400/40 bg-surface-card/90 px-2 py-0.5 text-[10px] font-semibold text-rose-300 shadow">
+					<div className="absolute bottom-2 right-2 rounded-full border border-rose-400/40 bg-surface-card/90 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:text-rose-300 shadow">
 						{annotations.length === 1
 							? "1 região marcada"
 							: `${annotations.length} regiões marcadas`}{" "}

@@ -70,7 +70,7 @@ export default function PlanEditBanner({ edit, month, envId, canApprove }: Props
 			className="mb-4 overflow-hidden rounded-xl border border-amber-500/30 bg-amber-500/[0.05]"
 		>
 			<div className="flex items-start gap-3 px-4 py-3">
-				<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-300">
+				<div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300">
 					<svg width="14" height="14" viewBox="0 0 14 14" fill="none">
 						<path
 							d="M7 1v6M7 9.5v0.5M1 12.5h12L7 1.5L1 12.5z"

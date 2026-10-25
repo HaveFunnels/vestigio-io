@@ -1,6 +1,5 @@
 "use client";
 
-import { useId } from "react";
 import type { MeasuredFunnelUI } from "./BehavioralMeasurement";
 
 /*
@@ -48,7 +47,6 @@ function smooth(points: Array<[number, number]>): string {
 
 export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI }) {
 	const stages = funnel.stages;
-	const gid = useId().replace(/[:]/g, "");
 	if (stages.length < 2) return null;
 
 	const n = stages.length;
@@ -109,40 +107,26 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 	}
 
 	return (
-		<svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Funil medido, do primeiro acesso à compra" className="w-full">
-			<defs>
-				{/* The journey as a gradient, drawn FROM the plan's own
-				    "Distribuição por tema" palette (WhatHappenedNarrative
-				    PACK_COLORS): sky-400 arrival → violet-400 consideration
-				    → green-400 paid (green is literally the `revenue` pack
-				    color — money at the tip). Vivid opacity, not the washed
-				    0.3 it was. */}
-				<linearGradient id={`fg-${gid}`} x1="0" y1="0" x2="1" y2="0">
-					<stop offset="0%" className="[stop-color:rgb(56_189_248)]" stopOpacity="0.9" />
-					<stop offset="48%" className="[stop-color:rgb(167_139_250)]" stopOpacity="0.85" />
-					<stop offset="100%" className="[stop-color:rgb(74_222_128)]" stopOpacity="0.95" />
-				</linearGradient>
-				{/* Lit top rim — the one signature flourish. */}
-				<linearGradient id={`fr-${gid}`} x1="0" y1="0" x2="1" y2="0">
-					<stop offset="0%" className="[stop-color:rgb(125_211_252)]" />
-					<stop offset="100%" className="[stop-color:rgb(134_239_172)]" />
-				</linearGradient>
-				{/* Vertical gloss: lit-from-above sheen that gives the
-				    funnel-graph-js glossy 3D depth. White at the top edge,
-				    gone by the middle, a whisper of shadow at the base. */}
-				<linearGradient id={`fgl-${gid}`} x1="0" y1="0" x2="0" y2="1">
-					<stop offset="0%" stopColor="#ffffff" stopOpacity="0.28" />
-					<stop offset="42%" stopColor="#ffffff" stopOpacity="0.03" />
-					<stop offset="60%" stopColor="#000000" stopOpacity="0" />
-					<stop offset="100%" stopColor="#000000" stopOpacity="0.16" />
-				</linearGradient>
-			</defs>
-
-			{/* Journey color, then the gloss sheen over it. */}
-			<path d={bodyPath} fill={`url(#fg-${gid})`} stroke="none" />
-			<path d={bodyPath} fill={`url(#fgl-${gid})`} stroke="none" />
-			{/* Lit top edge: a bright rim tracing the taper, the signature. */}
-			<path d={smooth(topInset)} fill="none" stroke={`url(#fr-${gid})`} strokeWidth={1.75} strokeOpacity={0.9} strokeLinecap="round" />
+		<svg viewBox={`0 0 ${W} ${H}`} role="img" fontFamily="inherit" aria-label="Funil medido, do primeiro acesso à compra" className="w-full">
+			{/* No gradients, no gloss.
+			    The previous version drew the journey as a three-colour
+			    gradient (sky to violet to green) with a white-to-black
+			    vertical sheen over it, imitating funnel-graph-js. Against
+			    the rest of the document, which is a calm editorial
+			    typographic surface, it read as a widget borrowed from
+			    another product.
+			    One flat token-driven fill, one hairline edge, and the
+			    numbers carry the meaning. The shape already encodes the
+			    drop; colouring it as a rainbow adds nothing the taper does
+			    not already say. */}
+			<path d={bodyPath} className="fill-content/[0.09]" stroke="none" />
+			<path
+				d={smooth(topInset)}
+				fill="none"
+				className="stroke-content/25"
+				strokeWidth={1}
+				strokeLinecap="round"
+			/>
 
 			{/* Stage dividers + per-stage labels. */}
 			{stages.map((s, i) => {
@@ -155,7 +139,8 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 							y1={topPts[i][1]}
 							x2={cx}
 							y2={botPts[i][1]}
-							className={isPaid ? "stroke-green-300/70" : "stroke-white/20"}
+							// stroke-white/20 was invisible on a light background.
+							className={isPaid ? "stroke-emerald-600/60" : "stroke-content/15"}
 							strokeWidth={1}
 						/>
 						{/* value above */}
@@ -171,7 +156,7 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 							y={BOT + LABEL_NAME_DY}
 							textAnchor="middle"
 							fontSize={10.5}
-							className={isPaid ? "fill-green-300" : "fill-content-secondary"}
+							className={isPaid ? "fill-emerald-700 dark:fill-emerald-400" : "fill-content-secondary"}
 						>
 							{s.label}
 						</text>
@@ -195,7 +180,7 @@ export default function MeasuredFunnelViz({ funnel }: { funnel: MeasuredFunnelUI
 						y={MID - half(stages[dropIdx - 1].pctOfArrived) - 20}
 						textAnchor="middle"
 						fontSize={11}
-						className="fill-rose-400 font-medium"
+						className="fill-rose-700 dark:fill-rose-400 font-medium"
 					>
 						−{dropLost.toLocaleString("pt-BR")} sessões aqui
 					</text>

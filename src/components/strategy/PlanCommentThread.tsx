@@ -123,7 +123,7 @@ export default function PlanCommentThread({
 									maxLength={4000}
 								/>
 								{error && (
-									<div className="text-[11px] text-rose-300/90">{error}</div>
+									<div className="text-[11px] text-rose-700 dark:text-rose-300/90">{error}</div>
 								)}
 								<div className="flex items-center justify-between gap-3">
 									<span className="text-[10px] text-content-faint">

@@ -45,7 +45,13 @@ describe("annotateBiggestDropCause", () => {
 			},
 			"pt-BR",
 		);
-		expect(f.biggestDrop!.causeNote).toContain("não explica");
+		expect(f.biggestDrop!.causeNote).toContain("baixo demais para explicar");
+		// It must not end in abandonment. The first version said "o
+		// plano não atribui uma causa a ela", which reads as "figure it
+		// out yourself" and costs trust in the measurement above it.
+		expect(f.biggestDrop!.causeNote).not.toContain("não atribui");
+		// And it must hand the reader somewhere to start.
+		expect(f.biggestDrop!.causeNote).toContain("primeira tela");
 		expect(f.biggestDrop!.causeNote).toContain("4,3%");
 		// The 37.5% checkout page is NOT borrowed: the drop is on
 		// product pages, and checkout friction has nothing to do with it.
@@ -67,6 +73,7 @@ describe("annotateBiggestDropCause", () => {
 		const f = funnel({});
 		annotateBiggestDropCause(f, { pages: [] }, "pt-BR");
 		expect(f.biggestDrop!.causeNote).toContain("Não há atrito medido");
+		expect(f.biggestDrop!.causeNote).not.toContain("não atribui");
 	});
 
 	it("does nothing when there is no drop to explain", () => {

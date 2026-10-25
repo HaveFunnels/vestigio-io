@@ -52,8 +52,8 @@ function formatDelta(delta: number): string {
 function deltaTone(delta: number, invert = false): string {
 	const positive = invert ? delta < 0 : delta > 0;
 	const negative = invert ? delta > 0 : delta < 0;
-	if (positive) return "text-emerald-400";
-	if (negative) return "text-rose-400";
+	if (positive) return "text-emerald-700 dark:text-emerald-400";
+	if (negative) return "text-rose-700 dark:text-rose-400";
 	return "text-content-muted";
 }
 
@@ -221,9 +221,9 @@ function Tile({
 					<div
 						className={`font-mono text-[30px] font-semibold tracking-tight tabular-nums ${
 							staticTone === "loss"
-								? "text-rose-400"
+								? "text-rose-700 dark:text-rose-400"
 								: staticTone === "win"
-									? "text-emerald-400"
+									? "text-emerald-700 dark:text-emerald-400"
 									: "text-content"
 						}`}
 					>
@@ -236,9 +236,9 @@ function Tile({
 				<div
 					className={`mt-2 font-mono text-[11px] ${
 						staticTone === "loss"
-							? "text-rose-400"
+							? "text-rose-700 dark:text-rose-400"
 							: staticTone === "win"
-								? "text-emerald-400"
+								? "text-emerald-700 dark:text-emerald-400"
 								: "text-content-muted"
 					}`}
 				>

@@ -19,7 +19,7 @@ export type ClaimBasis = "measured" | "estimated" | "verify";
 const STYLE: Record<ClaimBasis, { label: string; cls: string; title: string }> = {
 	measured: {
 		label: "MEDIDO",
-		cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
+		cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
 		title: "Contagem direta (pixel ou verificação de página). Não é estimativa.",
 	},
 	estimated: {
@@ -29,7 +29,7 @@ const STYLE: Record<ClaimBasis, { label: string; cls: string; title: string }> =
 	},
 	verify: {
 		label: "VERIFICAR",
-		cls: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+		cls: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
 		title: "Sinal de confiança baixa. Confirme antes de agir sobre o número.",
 	},
 };

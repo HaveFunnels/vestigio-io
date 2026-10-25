@@ -19,7 +19,7 @@ import type { ContinuitySection } from "../types";
 const STATUS_BADGE: Record<string, { label: string; chip: string; dot: string }> = {
 	done: {
 		label: "Concluído",
-		chip: "bg-emerald-500/10 text-emerald-300 ring-emerald-500/20",
+		chip: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ring-emerald-500/20",
 		dot: "bg-emerald-400",
 	},
 	in_progress: {
@@ -34,7 +34,7 @@ const STATUS_BADGE: Record<string, { label: string; chip: string; dot: string }>
 	},
 	blocked: {
 		label: "Bloqueado",
-		chip: "bg-amber-500/10 text-amber-300 ring-amber-500/20",
+		chip: "bg-amber-500/10 text-amber-700 dark:text-amber-300 ring-amber-500/20",
 		dot: "bg-amber-400",
 	},
 	todo: {
@@ -97,7 +97,7 @@ export default function Continuity({ continuity, compact = false }: Props) {
 						</div>
 						<div
 							className={`mt-1 font-mono text-[22px] font-semibold tabular-nums ${
-								exposureWorse ? "text-amber-300" : "text-emerald-300"
+								exposureWorse ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"
 							}`}
 						>
 							{exposureWorse ? "+" : "−"}

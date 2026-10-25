@@ -129,7 +129,7 @@ export default function AnalysisStatsDrawer({ open, onClose, envId, month, month
 						<div className="flex-1 overflow-y-auto px-6 py-5">
 							{loading && <LoadingSkeleton />}
 							{error && (
-								<div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 text-[13px] text-rose-300">
+								<div className="rounded-xl border border-rose-500/30 bg-rose-500/5 p-4 text-[13px] text-rose-700 dark:text-rose-300">
 									Falha ao carregar estatísticas: {error}
 								</div>
 							)}
@@ -292,7 +292,7 @@ function Tile({
 }) {
 	const display = formatter ? formatter(value) : value.toLocaleString("pt-BR");
 	const toneColor =
-		tone === "success" ? "text-emerald-400" : tone === "loss" ? "text-rose-400" : "text-content";
+		tone === "success" ? "text-emerald-700 dark:text-emerald-400" : tone === "loss" ? "text-rose-700 dark:text-rose-400" : "text-content";
 	return (
 		<div className="rounded-xl border border-edge/40 bg-surface-inset/30 p-3">
 			<div className={`font-mono text-[22px] font-semibold tabular-nums leading-none ${toneColor}`}>

@@ -174,7 +174,7 @@ function StakesPopover({ monthly, currency }: { monthly: number; currency: strin
 				</div>
 				<div className="flex items-baseline justify-between gap-3 border-t border-edge/40 pt-1.5">
 					<span className="text-content-muted">12 meses aberto</span>
-					<span className="font-semibold text-rose-400">{fmt(m12)}</span>
+					<span className="font-semibold text-rose-700 dark:text-rose-400">{fmt(m12)}</span>
 				</div>
 			</div>
 			<div className="mt-3 border-t border-edge/40 pt-2.5 text-[11px] leading-snug text-content-secondary">
@@ -557,9 +557,9 @@ function StepCard({
 								<div
 									className={`text-[9px] font-semibold uppercase tracking-wider ${
 										step.combinedImpact.midpoint >= 5000
-											? "text-rose-300/90"
+											? "text-rose-700 dark:text-rose-300/90"
 											: step.combinedImpact.midpoint >= 2000
-												? "text-amber-300/90"
+												? "text-amber-700 dark:text-amber-300/90"
 												: "text-content-faint"
 									}`}
 								>
@@ -1092,7 +1092,7 @@ function StepInGroup({ step, primarySurface }: StepInGroupProps) {
 					</div>
 					{otherSurfaces.length > 0 && (
 						<div className="mt-2 flex flex-wrap items-center gap-1.5">
-							<span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-amber-300">
+							<span className="rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-amber-700 dark:text-amber-300">
 								afeta também
 							</span>
 							{otherSurfaces.map((s) => (

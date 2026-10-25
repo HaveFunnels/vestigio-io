@@ -34,13 +34,19 @@ function walkDir(dir: string, predicate: (filePath: string) => boolean, out: str
 
 const INVARIANTS: Invariant[] = [
   {
-    name: "no em-dash in customer-visible prose",
+    name: "no em-dash or interpunct in customer-visible prose",
     check: () => {
       // House style, stated more than once: no em-dashes. The LLM
       // prompts already forbid them ("travessão é tic de LLM"), so
       // generated prose was clean while HARDCODED strings kept
       // shipping them — "Seu funil, medido — sessões que chegaram em
       // cada etapa" is the one the founder quoted back.
+      //
+      // The interpunct is here for the same reason, stated the same
+      // way: "parece gerado por IA". The plan used it 77 times, so
+      // every metadata row read like one generated string. Separation
+      // is now a hairline rule (components/strategy/Sep.tsx) and
+      // joins are ordinary punctuation.
       //
       // Scoped to prose. A lone "—" is the conventional "no value"
       // glyph in a data cell, not punctuation, and the prompt rules
@@ -71,17 +77,21 @@ const INVARIANTS: Invariant[] = [
             else if (closes) inBlock = false;
             if (wasInBlock || opens) return;
 
-            if (!line.includes("\u2014")) return;
+            if (!line.includes("\u2014") && !line.includes("\u00b7")) return;
             // Strip a trailing line comment before judging: an em-dash
             // in "// 112 — a shorter, calmer funnel" is commentary,
             // not copy.
             const code = line.split("//")[0];
-            if (!code.includes("\u2014")) return;
+            if (!code.includes("\u2014") && !code.includes("\u00b7")) return;
             const t = code.trim();
             if (t.startsWith("*")) return;
             // A line that is nothing but the glyph is the "no value"
             // placeholder, rendered in a data cell.
             if (t === "\u2014" || t === "{\"\u2014\"}") return;
+            // Tailwind arbitrary values legitimately contain the
+            // interpunct inside bracket syntax, e.g. bg-red-500/[0.06].
+            const stripped = code.replace(/\[[^\]]*\]/g, "");
+            if (!stripped.includes("\u2014") && !stripped.includes("\u00b7")) return;
             // The prompt rules that forbid the character by naming it.
             if (/PROIBIDO|TRAVESS|forbidden/i.test(t)) return;
             // A lone glyph standing in for "no value".
@@ -92,7 +102,7 @@ const INVARIANTS: Invariant[] = [
       }
       if (offenders.length === 0) return null;
       return (
-        `${offenders.length} em-dash(es) in customer-visible prose:\n  ` +
+        `${offenders.length} em-dash/interpunct in customer-visible prose:\n  ` +
         offenders.slice(0, 15).join("\n  ")
       );
     },

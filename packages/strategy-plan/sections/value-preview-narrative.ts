@@ -129,11 +129,11 @@ Regras:
 		);
 		lines.push(`- Desbloqueio concreto a citar (NÃO invente outros):`);
 		if (i.nextMilestoneLabel === "M3") {
-			lines.push(`  · Comparação real mês a mês: o plano passa a mostrar o que melhorou e o que voltou a quebrar desde o anterior`);
+			lines.push(`  - Comparação real mês a mês: o plano passa a mostrar o que melhorou e o que voltou a quebrar desde o anterior`);
 		} else if (i.nextMilestoneLabel === "M6") {
-			lines.push(`  · Tendência de 6 meses por página do funil, não só a foto do mês`);
+			lines.push(`  - Tendência de 6 meses por página do funil, não só a foto do mês`);
 		} else {
-			lines.push(`  · Comparação ano a ano e sazonalidade real do funil`);
+			lines.push(`  - Comparação ano a ano e sazonalidade real do funil`);
 		}
 	}
 	lines.push("");

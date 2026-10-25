@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import Sep from "../Sep";
 
 // ──────────────────────────────────────────────
 // #7 — Action Attribution Timeline
@@ -13,8 +14,8 @@ import { useMcpData } from "@/components/app/McpDataProvider";
 // número em placar do time:
 //
 //   "Este mês seu time recuperou R$ 18k:
-//    - Marcus fechou 'Checkout off-domain' em 24/Nov · R$ 12k
-//    - Marketing fechou 'CTA unclear' em 28/Nov · R$ 6k"
+//    - Marcus fechou 'Checkout off-domain' em 24/Nov, R$ 12k
+//    - Marketing fechou 'CTA unclear' em 28/Nov, R$ 6k"
 //
 // Self-hide quando attributionTimeline está vazio (mês sem
 // recuperação confirmada). Empty state explícito quando R$ 0 + plano
@@ -126,7 +127,7 @@ export default function AttributionTimeline({ timeline, total, monthLabel }: Pro
 											</span>
 											{date && (
 												<>
-													<span className="text-content-faint">·</span>
+													<Sep />
 													<span>
 														<span className="text-content-faint">Confirmado em:</span>{" "}
 														<span className="font-medium text-content-secondary" suppressHydrationWarning>{date}</span>

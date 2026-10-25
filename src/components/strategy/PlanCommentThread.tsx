@@ -127,7 +127,7 @@ export default function PlanCommentThread({
 								)}
 								<div className="flex items-center justify-between gap-3">
 									<span className="text-[10px] text-content-faint">
-										{draft.length}/4000 · markdown leve suportado
+										{draft.length}/4000, markdown leve suportado
 									</span>
 									<button
 										type="button"

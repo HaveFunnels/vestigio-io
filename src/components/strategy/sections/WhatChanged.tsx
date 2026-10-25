@@ -59,7 +59,7 @@ export default function WhatChanged({ whatChanged, pageLabelByPath }: Props) {
 				</h2>
 				<div className="flex items-center gap-2 text-[11px] text-content-faint">
 					<BasisChip basis="measured" />
-					<span>Verificações diárias · {whatChanged.windowStart} a {whatChanged.windowEnd}</span>
+					<span>Verificações diárias, {whatChanged.windowStart} a {whatChanged.windowEnd}</span>
 				</div>
 			</div>
 

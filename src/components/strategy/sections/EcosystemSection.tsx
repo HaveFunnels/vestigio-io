@@ -212,7 +212,7 @@ function CriticalSurfacesBanner({ surfaces }: { surfaces: CriticalSurface[] }) {
 								</div>
 								<div className="mt-0.5 text-[11px] text-rose-700 dark:text-rose-300/80">
 									{PAGE_TYPE_LABEL_PT[s.page_type] ?? s.page_type}
-									{s.tier === "primary" && " · superfície primária"}
+									{s.tier === "primary" && ", superfície primária"}
 								</div>
 							</div>
 							<div className="flex shrink-0 items-center gap-2 text-right">
@@ -287,7 +287,7 @@ function EcosystemHealthCard({
 				</h2>
 				<div className="text-[11px] text-content-faint">
 					{stack.length} {stack.length === 1 ? "vendor detectado" : "vendors detectados"}
-					{links.length > 0 && ` · ${links.length} com status page`}
+					{links.length > 0 && `, ${links.length} com status page`}
 				</div>
 			</div>
 

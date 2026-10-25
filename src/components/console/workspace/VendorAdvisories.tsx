@@ -150,7 +150,7 @@ export default function VendorAdvisories() {
 											<div className="flex items-center gap-2">
 												<span className={`h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[n.severity]}`} aria-hidden />
 												<span className="font-mono text-[10px] text-content-faint">
-													{n.id} · {n.publishedAt}
+													{n.id}, {n.publishedAt}
 												</span>
 												<span className={`text-[10px] font-semibold uppercase tracking-[0.08em] ${SEVERITY_TEXT[n.severity]}`}>
 													{t(`severity_${n.severity}`)}

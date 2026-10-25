@@ -144,7 +144,7 @@ export default function DependencyHealth() {
 									{s.displayName}
 								</div>
 								<div className={`truncate text-[11px] ${INDICATOR_TEXT[s.indicator]}`}>
-									{t(`indicator.${s.indicator}`)} · {s.description}
+									{t(`indicator.${s.indicator}`)}, {s.description}
 								</div>
 							</div>
 						</div>

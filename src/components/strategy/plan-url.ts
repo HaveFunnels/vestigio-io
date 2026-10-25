@@ -89,7 +89,7 @@ export function parsePlanHash(hash: string): ParsedPlanHash {
 /**
  * Build the back URL we hand to /app/findings/[id]. Contains the plan
  * route + the encoded drawer hash, plus a human label rendered in the
- * breadcrumb ("Plano de Junho de 2026 · Problemas de Engenharia").
+ * breadcrumb ("Plano de Junho de 2026, Problemas de Engenharia").
  */
 export function buildFindingBackUrl(args: {
 	month: string;

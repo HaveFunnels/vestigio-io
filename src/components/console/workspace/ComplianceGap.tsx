@@ -101,7 +101,7 @@ export default function ComplianceGap({ findings }: Props) {
 							<div className="mt-1.5 text-[10px] text-content-faint">
 								{t("passed_label", { passed: r.passed, total: denominator })}
 								{r.notEvaluated > 0 && (
-									<span className="ml-1.5">· {t("not_evaluated_label", { count: r.notEvaluated })}</span>
+									<span className="ml-1.5">{t("not_evaluated_label", { count: r.notEvaluated })}</span>
 								)}
 							</div>
 							<div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-inset/60">

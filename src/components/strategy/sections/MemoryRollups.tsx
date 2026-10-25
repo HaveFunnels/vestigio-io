@@ -8,6 +8,7 @@ import type { MemoryRollups as MemoryRollupsType, MemoryWindow } from "../types"
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { pickAnchors } from "@/lib/market-anchors";
+import Sep from "../Sep";
 
 /*
  * Memory Rollups — "Memória de meses anteriores"
@@ -148,7 +149,7 @@ function MarketAnchors() {
 					</div>
 				))}
 				<div className="border-t border-edge/40 pt-1.5 text-[10px] text-content-faint">
-					Fontes: {Array.from(new Set(anchors.map((a) => a.source))).join(" · ")}
+					Fontes: {Array.from(new Set(anchors.map((a) => a.source))).join(", ")}
 				</div>
 			</div>
 		</div>
@@ -201,7 +202,7 @@ function RollupCard({
 				</div>
 				{/* T2 — secondary line. When the customer has resolved
 				    nothing yet (common on month 1), the "0 já resolvidos
-				    · 0 recuperados" pair reads as a flat zero card and
+				   , 0 recuperados" pair reads as a flat zero card and
 				    quietly nudges churn. Swap to a CTA-style prompt so
 				    the empty state asks for an action instead of
 				    announcing emptiness. */}
@@ -218,7 +219,7 @@ function RollupCard({
 							</span>
 							{window.capturedTotal > 0 && (
 								<>
-									<span className="text-content-faint">·</span>
+									<Sep />
 									<span>
 										<span className="font-mono tabular-nums text-content">
 											{fmtCurrencyUnits(window.capturedTotal, currency)}
@@ -251,7 +252,7 @@ function RollupCard({
 						{window.biggestWin.title}
 					</div>
 					<div className="mt-0.5 font-mono text-[11px] tabular-nums text-content-muted">
-						{fmtCurrencyUnits(window.biggestWin.capturedAmount, currency)} · {window.biggestWin.resolvedAt}
+						{fmtCurrencyUnits(window.biggestWin.capturedAmount, currency)}, {window.biggestWin.resolvedAt}
 					</div>
 				</div>
 			)}

@@ -84,7 +84,7 @@ export default function Maps({ maps }: Props) {
 					Mapa do mês
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					grafo de surfaces · {maps.autoMapTypes.length} mapas auto
+					grafo de surfaces, {maps.autoMapTypes.length} mapas auto
 				</div>
 			</div>
 

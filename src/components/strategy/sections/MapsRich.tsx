@@ -297,7 +297,7 @@ export default function MapsRich({ maps, month }: Props) {
 										</p>
 										<div className="mt-auto flex items-center justify-between pt-2 text-[10.5px] text-content-faint">
 											<span>
-												{stats.nodeCount} nós · {stats.edgeCount} conexões
+												{stats.nodeCount} nós, {stats.edgeCount} conexões
 											</span>
 											<span className="inline-flex items-center gap-1 text-content-secondary transition-colors group-hover:text-content">
 												Abrir

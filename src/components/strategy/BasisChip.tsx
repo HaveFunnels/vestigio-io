@@ -24,11 +24,11 @@ const STYLE: Record<ClaimBasis, { label: string; cls: string; title: string }> =
 	},
 	estimated: {
 		label: "ESTIMADO",
-		cls: "border-sky-500/25 bg-sky-500/10 text-sky-300",
+		cls: "border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-300",
 		title: "Estimativa por severidade sobre a receita informada. Leia como ordem de grandeza, não como medição.",
 	},
 	verify: {
-		label: "VERIFICAR",
+		label: "INDÍCIO",
 		cls: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
 		title: "Sinal de confiança baixa. Confirme antes de agir sobre o número.",
 	},
@@ -45,7 +45,7 @@ export default function BasisChip({
 	return (
 		<span
 			title={s.title}
-			className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-[1px] font-sans text-[9px] font-semibold uppercase tracking-[0.1em] ${s.cls} ${className}`}
+			className={`inline-flex shrink-0 cursor-default select-none items-center rounded-full border px-1.5 py-[1px] font-sans text-[9px] font-semibold uppercase tracking-[0.1em] ${s.cls} ${className}`}
 		>
 			{s.label}
 		</span>

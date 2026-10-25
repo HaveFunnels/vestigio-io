@@ -107,7 +107,7 @@ export default function NextActionStrip({ findings }: Props) {
 						<span className="font-[family-name:var(--font-jetbrains-mono)] text-[10px] font-medium uppercase tracking-[0.15em] text-content-muted">
 							{t("label")}
 						</span>
-						<span className="text-[10px] text-content-faint">·</span>
+						<span className="text-[10px] text-content-faint"></span>
 						<span className="text-[10px] text-content-faint">{t("subtitle")}</span>
 					</div>
 					<h3 className="mt-2 text-[14px] font-semibold leading-snug text-content">

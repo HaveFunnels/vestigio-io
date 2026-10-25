@@ -23,7 +23,7 @@
 //   │ pages/finds  │ DomainFingerprint│ top 5, severity tone)│
 //   │ duration     │ emits)           │                      │
 //   ├──────────────┴──────────────────┴──────────────────────┤
-//   │ PHASE TIMELINE (9 dots) · HEALING BANNER (conditional) │
+//   │ PHASE TIMELINE (9 dots), HEALING BANNER (conditional) │
 //   └────────────────────────────────────────────────────────┘
 //
 // On complete: dispatches `onComplete` with final counts (same

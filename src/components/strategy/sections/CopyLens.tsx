@@ -69,7 +69,7 @@ export default function CopyLens({ copyLens }: Props) {
 				<div className="text-[11px] text-content-faint">
 					{copyLens.frameworks.length}{" "}
 					{copyLens.frameworks.length === 1 ? "framework aplicado" : "frameworks aplicados"}
-					{" · "}
+					{", "}
 					{copyLens.totalAudits} {copyLens.totalAudits === 1 ? "página" : "páginas"}
 				</div>
 			</div>

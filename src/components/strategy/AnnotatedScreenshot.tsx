@@ -119,7 +119,7 @@ export default function AnnotatedScreenshot({
 						{annotations.length === 1
 							? "1 região marcada"
 							: `${annotations.length} regiões marcadas`}{" "}
-						· ver a página inteira
+						ver a página inteira
 					</div>
 				)}
 			</button>

@@ -216,7 +216,7 @@ export default function MoneyOnTheTable({ findings, onFindingClick }: Props) {
 												amount: fmtCurrency(f.impact.midpoint, currency),
 											})}
 										</span>
-										<span className="text-content-faint">·</span>
+										<span className="text-content-faint"></span>
 										<span className="font-mono tabular-nums text-content-muted">
 											{formatEffort(f.estimated_effort_hours, t)}
 										</span>

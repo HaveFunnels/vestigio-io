@@ -218,7 +218,7 @@ export default function ScatterPlot({ actions, onSelect }: Props) {
 					</div>
 					{hovered.action.severity && (
 						<div className="mt-1 text-[10px] text-content-faint">
-							{tc(`severity.${hovered.action.severity}`)} · {hovered.action.effort_hint ?? 'medium'} effort
+							{tc(`severity.${hovered.action.severity}`)}, {hovered.action.effort_hint ?? 'medium'} effort
 						</div>
 					)}
 				</div>

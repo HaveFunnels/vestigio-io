@@ -145,10 +145,10 @@ export function planToEmailHtml(plan: StrategyPlan, planUrl: string): { html: st
 	// formatos rich (Email/Notas/Markdown). Email clients renderizam
 	// <code> com fonte SF-Mono/Menlo se disponível, fallback monospace.
 	parts.push(
-		`<h2 style="font-size: 18px; font-weight: 700; margin: 0 0 4px 0; color: #18181b;">Plano de <code style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #f4f4f5; padding: 1px 6px; border-radius: 4px; font-size: 15px;">${escapeHtml(s.domain)}</code> · ${escapeHtml(s.monthDisplay)}</h2>`,
+		`<h2 style="font-size: 18px; font-weight: 700; margin: 0 0 4px 0; color: #18181b;">Plano de <code style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; background: #f4f4f5; padding: 1px 6px; border-radius: 4px; font-size: 15px;">${escapeHtml(s.domain)}</code>, ${escapeHtml(s.monthDisplay)}</h2>`,
 	);
 	parts.push(
-		`<p style="font-size: 12px; color: #71717a; margin: 0 0 16px 0;">Ciclo ${s.cycleNumber} · Publicado em ${escapeHtml(s.generatedDate)}</p>`,
+		`<p style="font-size: 12px; color: #71717a; margin: 0 0 16px 0;">Ciclo ${s.cycleNumber}, Publicado em ${escapeHtml(s.generatedDate)}</p>`,
 	);
 	if (s.thesis) {
 		parts.push(
@@ -173,7 +173,7 @@ export function planToEmailHtml(plan: StrategyPlan, planUrl: string): { html: st
 		for (const step of s.topSteps) {
 			parts.push(`<li style="margin-bottom: 10px;">`);
 			parts.push(
-				`<div><strong>${escapeHtml(step.title)}</strong> · <span style="color: #16a34a; font-weight: 600;">${escapeHtml(step.range)}</span></div>`,
+				`<div><strong>${escapeHtml(step.title)}</strong>, <span style="color: #16a34a; font-weight: 600;">${escapeHtml(step.range)}</span></div>`,
 			);
 			if (step.reasoning) {
 				parts.push(
@@ -203,8 +203,8 @@ export function planToNotesHtml(plan: StrategyPlan, planUrl: string): { html: st
 	const parts: string[] = [];
 	// Domain em <code> destaca a marca registrada no meio do <h2>. Apple
 	// Notes / Notion preservam o code styling com fonte monoespaçada.
-	parts.push(`<h2>Plano de <code>${escapeHtml(s.domain)}</code> · ${escapeHtml(s.monthDisplay)}</h2>`);
-	parts.push(`<p><em>Ciclo ${s.cycleNumber} · Publicado em ${escapeHtml(s.generatedDate)}</em></p>`);
+	parts.push(`<h2>Plano de <code>${escapeHtml(s.domain)}</code>, ${escapeHtml(s.monthDisplay)}</h2>`);
+	parts.push(`<p><em>Ciclo ${s.cycleNumber}, Publicado em ${escapeHtml(s.generatedDate)}</em></p>`);
 	if (s.thesis) {
 		parts.push(`<blockquote><strong>${escapeHtml(s.thesis)}</strong></blockquote>`);
 	}
@@ -256,8 +256,8 @@ export function planToWhatsApp(plan: StrategyPlan, planUrl: string): string {
 	const s = extractSummary(plan, planUrl);
 	const lines: string[] = [];
 	// Title — domain em inline `code` pra destacar no meio do bold.
-	lines.push(`*Plano de \`${s.domain}\` · ${s.monthDisplay}*`);
-	lines.push(`_Ciclo ${s.cycleNumber} · Publicado em ${s.generatedDate}_`);
+	lines.push(`*Plano de \`${s.domain}\`, ${s.monthDisplay}*`);
+	lines.push(`_Ciclo ${s.cycleNumber}, Publicado em ${s.generatedDate}_`);
 	lines.push("");
 	if (s.thesis) {
 		// Quote funciona só single-line; collapse newlines internos.
@@ -302,8 +302,8 @@ export function planToMarkdown(plan: StrategyPlan, planUrl: string): string {
 	const s = extractSummary(plan, planUrl);
 	const lines: string[] = [];
 	// Domain em inline code — idiomático em Markdown pra nomes técnicos.
-	lines.push(`## Plano de \`${s.domain}\` · ${s.monthDisplay}`);
-	lines.push(`*Ciclo ${s.cycleNumber} · Publicado em ${s.generatedDate}*`);
+	lines.push(`## Plano de \`${s.domain}\`, ${s.monthDisplay}`);
+	lines.push(`*Ciclo ${s.cycleNumber}, Publicado em ${s.generatedDate}*`);
 	lines.push("");
 	if (s.thesis) {
 		// Markdown blockquote supports multi-line via "> " prefix per line
@@ -346,8 +346,8 @@ export function planToMarkdown(plan: StrategyPlan, planUrl: string): string {
 export function planToPlainText(plan: StrategyPlan, planUrl: string): string {
 	const s = extractSummary(plan, planUrl);
 	const lines: string[] = [];
-	lines.push(`Plano de ${s.domain} · ${s.monthDisplay}`);
-	lines.push(`Ciclo ${s.cycleNumber} · Publicado em ${s.generatedDate}`);
+	lines.push(`Plano de ${s.domain}, ${s.monthDisplay}`);
+	lines.push(`Ciclo ${s.cycleNumber}, Publicado em ${s.generatedDate}`);
 	lines.push("");
 	if (s.thesis) {
 		lines.push(s.thesis);
@@ -384,10 +384,10 @@ export const COPY_FORMATS: Array<{
 	label: string;
 	hint: string;
 }> = [
-	{ id: "email", label: "Email", hint: "HTML rich · Gmail, Outlook" },
-	{ id: "notes", label: "Notas", hint: "HTML limpo · Apple Notes, OneNote" },
-	{ id: "whatsapp", label: "WhatsApp", hint: "*bold* · > quote" },
-	{ id: "markdown", label: "Markdown", hint: "**bold** · Notion, Slack" },
+	{ id: "email", label: "Email", hint: "HTML rico para Gmail e Outlook" },
+	{ id: "notes", label: "Notas", hint: "HTML limpo para Apple Notes e OneNote" },
+	{ id: "whatsapp", label: "WhatsApp", hint: "*bold* e > quote" },
+	{ id: "markdown", label: "Markdown", hint: "**bold** para Notion e Slack" },
 	{ id: "plain", label: "Texto puro", hint: "Sem formatação" },
 ];
 

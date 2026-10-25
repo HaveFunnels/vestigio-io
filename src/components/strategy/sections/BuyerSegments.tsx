@@ -166,9 +166,9 @@ export default function BuyerSegments({
 	const ctx = returnCtx();
 	const returnLabel =
 		drawerState?.kind === "segment"
-			? `Plano · ${BUYER_LABEL_FALLBACK[drawerState.segment.buyer] ?? drawerState.segment.buyer}`
+			? `Plano, ${BUYER_LABEL_FALLBACK[drawerState.segment.buyer] ?? drawerState.segment.buyer}`
 			: drawerState?.kind === "single"
-				? "Plano · problema em destaque"
+				? "Plano, problema em destaque"
 				: "Plano";
 
 	return (
@@ -240,7 +240,7 @@ export default function BuyerSegments({
 								</span>
 							</div>
 							<div className="mt-0.5 font-mono text-[10px] tabular-nums text-content-faint">
-								faixa estimada {fmtCurrencyUnits(s.impactMin, currency)} a {fmtCurrencyUnits(s.impactMax, currency)} · a largura reflete a incerteza do cálculo
+								faixa estimada {fmtCurrencyUnits(s.impactMin, currency)} a {fmtCurrencyUnits(s.impactMax, currency)}, a largura reflete a incerteza do cálculo
 							</div>
 
 							<div className="mt-4 flex-1 space-y-1.5 border-t border-edge/40 pt-3">
@@ -258,7 +258,7 @@ export default function BuyerSegments({
 												key={i}
 												className="text-[13px] leading-snug text-content-secondary"
 											>
-												· {title}
+												{title}
 											</div>
 										);
 									}
@@ -270,7 +270,7 @@ export default function BuyerSegments({
 											className="-mx-1.5 block w-full rounded-md px-1.5 py-1 text-left text-[13px] leading-snug text-content-secondary transition-colors hover:bg-surface-card-hover hover:text-content"
 											title="Ver detalhes do problema"
 										>
-											· {title}
+											{title}
 										</button>
 									);
 								})}

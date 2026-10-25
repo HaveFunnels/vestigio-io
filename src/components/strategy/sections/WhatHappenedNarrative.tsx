@@ -139,7 +139,7 @@ export default function WhatHappenedNarrative({ narrative, monthLabel, packDistr
 				<div className="mb-3 flex items-center gap-3">
 					<div className="h-px flex-1 bg-edge/60" />
 					<div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
-						Pulse · narrativa do mês
+						Pulse, narrativa do mês
 					</div>
 					<div className="h-px flex-1 bg-edge/60" />
 				</div>

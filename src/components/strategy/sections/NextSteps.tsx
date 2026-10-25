@@ -25,6 +25,7 @@ import PlanEditBanner from "../PlanEditBanner";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import { useCopilot } from "@/components/app/CopilotProvider";
+import Sep from "../Sep";
 
 /*
  * Next Steps — "Próximo passo, atacar nesta ordem"
@@ -120,7 +121,7 @@ interface StepCardProps {
 	month: string;
 	planId: string;
 	/**
-	 * Wave 22.9 · Bloco 1 — total number of steps in the plan, so the
+	 * Wave 22.9, Bloco 1 — total number of steps in the plan, so the
 	 * eyebrow label can name the step's ROLE in the sequence rather
 	 * than hardcoding "Por que primeiro" on all of them. Tester
 	 * flagged: "todos os findings mostram 'Por que primeiro', sendo que
@@ -357,7 +358,7 @@ function StepCard({
 
 	const findingsCtx: DrawerCtx = { kind: "step", stepId: step.id, mode: "findings" };
 	const actionsCtx: DrawerCtx = { kind: "step", stepId: step.id, mode: "actions" };
-	const returnLabel = `Plano · Passo ${step.order}`;
+	const returnLabel = `Plano, Passo ${step.order}`;
 
 	const copilot = useCopilot();
 
@@ -590,19 +591,19 @@ function StepCard({
 				    finding. Caption names the surface IN the picture
 				    (step.screenshotSurface), never affectedSurfaces[0] — the
 				    old pairing captioned a homepage shot as
-				    "SUA PÁGINA · /SITEMAP_PRODUCTS_1.XML" (EXAME A8). */}
+				    "SUA PÁGINA, /SITEMAP_PRODUCTS_1.XML" (EXAME A8). */}
 				{step.screenshotUrl && (
 					<AnnotatedScreenshot
 						className="mb-5"
 						url={step.screenshotUrl}
 						alt={`Captura de ${step.screenshotSurface ?? "sua página"}`}
-						caption={`Sua página${step.screenshotSurface ? ` · ${step.screenshotSurface}` : ""}`}
+						caption={`Sua página${step.screenshotSurface ? `, ${step.screenshotSurface}` : ""}`}
 						meta={shotDecoration.meta}
 						measuredNote={shotDecoration.note}
 						collapsedMaxH={260}
 					/>
 				)}
-				{/* Reasoning — eyebrow varies per position (Wave 22.9 · Bloco 1). */}
+				{/* Reasoning — eyebrow varies per position (Wave 22.9, Bloco 1). */}
 				<div className="mb-6 font-serif text-[15px] leading-[1.65] text-content-secondary">
 					<div className="mb-2 font-sans text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
 						{eyebrowForPosition(step.order, totalSteps)}
@@ -663,7 +664,7 @@ function StepCard({
 				{step.verification && (
 					<div className="mb-5">
 						<div className="mb-2 flex items-baseline gap-2">
-							<div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
+							<div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 								Como saber se foi corrigido
 							</div>
 							{/* etaSeconds is Vestigio's internal recheck window
@@ -673,12 +674,12 @@ function StepCard({
 							    it's slow enough to matter (≥5min), and even
 							    then framed as the customer's wait window. */}
 							{step.verification.etaSeconds !== null && step.verification.etaSeconds >= 300 && (
-								<span className="text-[10.5px] text-content-faint">
-									· Vestigio reconfere em ~{Math.round(step.verification.etaSeconds / 60)}min
+								<span className="text-[10.5px] text-content-muted">
+									A Vestígio reconfere em ~{Math.round(step.verification.etaSeconds / 60)}min
 								</span>
 							)}
 						</div>
-						<div className="rounded-xl border border-edge bg-surface-inset/40 px-4 py-3 text-[13.5px] leading-[1.55] text-content-secondary">
+						<div className="rounded-xl border border-edge border-l-2 border-l-emerald-600/40 bg-surface-inset/40 px-4 py-3 text-[13.5px] leading-[1.55] text-content-secondary dark:border-l-emerald-400/40">
 							{step.verification.notes}
 						</div>
 					</div>
@@ -788,7 +789,7 @@ function StepCard({
 				</button>
 
 				{/* Effort + owner row + confidence badge (when not high).
-				    Reta-final: customer feedback "meia jornada · time eng ·
+				    Reta-final: customer feedback "meia jornada, time eng ·
 				    calibração inicial" — sem rótulos os valores ficavam
 				    incompreensíveis. Cada chip agora carrega o nome do campo
 				    (Esforço, Time, Calibração) com o valor capitalizado. */}
@@ -797,7 +798,7 @@ function StepCard({
 						<span className="text-content-faint">Esforço:</span>{" "}
 						<span className="text-content-secondary">{step.estimatedEffort}</span>
 					</span>
-					<span className="text-content-faint">·</span>
+					<Sep />
 					<span>
 						<span className="text-content-faint">Time:</span>{" "}
 						<span className="text-content-secondary">{step.suggestedOwner}</span>
@@ -1110,7 +1111,7 @@ function StepInGroup({ step, primarySurface }: StepInGroupProps) {
 							<span className="text-content-faint">Esforço:</span>{" "}
 							<span className="text-content-secondary">{step.estimatedEffort}</span>
 						</span>
-						<span className="text-content-faint">·</span>
+						<Sep />
 						<span>
 							<span className="text-content-faint">Time:</span>{" "}
 							<span className="text-content-secondary">{step.suggestedOwner}</span>
@@ -1192,10 +1193,10 @@ export default function NextSteps({
 			>
 				<div className="mb-4 flex flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
 					<h2 className="font-serif text-[20px] font-medium tracking-tight text-content">
-						Por página · {groups.length} {groups.length === 1 ? "grupo" : "grupos"}
+						Por página, {groups.length} {groups.length === 1 ? "grupo" : "grupos"}
 					</h2>
 					<div className="text-[11px] text-content-faint">
-						lente operacional · {steps.length} passos no total
+						lente operacional, {steps.length} passos no total
 					</div>
 				</div>
 
@@ -1309,7 +1310,7 @@ export default function NextSteps({
 									</div>
 									<div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[11px] text-content-muted">
 										<span>{step.estimatedEffort}</span>
-										<span className="text-content-faint">·</span>
+										<Sep />
 										<span>{step.suggestedOwner}</span>
 									</div>
 								</div>
@@ -1379,9 +1380,9 @@ export default function NextSteps({
 					Onde focar este mês
 				</h2>
 				{/* Count summary removed — the in-section eyebrows below
-				    ("O movimento principal" + "Movimentos de apoio · quando
+				    ("O movimento principal" + "Movimentos de apoio, quando
 				    o principal terminar") already communicate the structure;
-				    "1 movimento principal · 4 de apoio" lowercase was reading
+				    "1 movimento principal, 4 de apoio" lowercase was reading
 				    as fragment/clutter. */}
 			</div>
 
@@ -1406,7 +1407,7 @@ export default function NextSteps({
 						<div className="mb-3 mt-10 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-content-faint">
 							<span className="h-px w-6 bg-content-faint/40" />
 							<span>
-								Movimentos de apoio · quando o principal terminar
+								Movimentos de apoio, quando o principal terminar
 							</span>
 						</div>
 

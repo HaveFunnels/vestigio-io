@@ -67,7 +67,7 @@ export default function CrossSignalChainCard({
 						</span>
 						{headline && (
 							<span className="min-w-0 truncate text-xs text-content-muted">
-								· {headline}
+								{headline}
 								{links.length > 1 && (
 									<span className="ml-1 text-content-faint">
 										+{links.length - 1}

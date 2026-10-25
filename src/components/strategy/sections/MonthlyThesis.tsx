@@ -15,7 +15,7 @@ import type { ReactNode } from "react";
  *   - Hidden when thesis is null/empty (legacy plans).
  *   - Bold-aware: ** markdown bolds the central term so the eye
  *     locks on the apostable noun.
- *   - Attribution line: "— Vestigio · análise do ciclo".
+ *   - Attribution line: "— Vestigio, análise do ciclo".
  */
 
 interface Props {
@@ -73,7 +73,7 @@ export default function MonthlyThesis({ thesis, monthLabel }: Props) {
 					</p>
 					<div className="mt-5 flex items-center gap-2 text-[11px] text-content-faint">
 						<span className="h-px w-6 bg-content-faint/40" />
-						<span className="font-medium uppercase tracking-[0.14em]">Vestigio · análise do ciclo</span>
+						<span className="font-medium uppercase tracking-[0.14em]">Vestigio, análise do ciclo</span>
 					</div>
 				</div>
 			</div>

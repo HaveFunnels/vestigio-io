@@ -93,7 +93,7 @@ function ChainRow({ chain, editing, currency }: { chain: CrossSignalChain; editi
 					</span>
 					{chain.headline && (
 						<span className="min-w-0 truncate text-[10px] text-content-muted">
-							· {chain.headline}
+							{chain.headline}
 						</span>
 					)}
 				</div>
@@ -181,7 +181,7 @@ function CrossSignalHero({ data, editing }: WidgetProps) {
 					{chainCount}
 				</span>
 				<span className="text-[11px] text-content-secondary">
-					{chainCount === 1 ? t("pattern_singular") : t("pattern_plural")} · {formatCurrency(crossSignal.totalImpactCents, currency)}/mo
+					{chainCount === 1 ? t("pattern_singular") : t("pattern_plural")}, {formatCurrency(crossSignal.totalImpactCents, currency)}/mo
 				</span>
 			</div>
 

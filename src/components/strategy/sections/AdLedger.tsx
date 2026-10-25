@@ -62,7 +62,7 @@ export default function AdLedger({ adLedger }: Props) {
 				className="rounded-2xl border border-edge bg-surface-card p-6 sm:p-7"
 			>
 				<div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-content-faint">
-					Plataforma + pixel · últimos 30 dias
+					Plataforma + pixel, últimos 30 dias
 				</div>
 				<h2 className="mb-4 font-serif text-[19px] font-medium text-content">
 					Seu dinheiro de anúncio
@@ -100,7 +100,7 @@ export default function AdLedger({ adLedger }: Props) {
 									<td className="py-2.5 pr-4 font-mono tabular-nums">
 										{r.measuredSessions.toLocaleString("pt-BR")}
 										{r.pctNoScroll !== null && (
-											<span className="text-content-faint"> · {r.pctNoScroll}% sem rolar</span>
+											<span className="text-content-faint">, {r.pctNoScroll}% sem rolar</span>
 										)}
 									</td>
 									<td className="py-2.5 pr-4 font-mono tabular-nums">

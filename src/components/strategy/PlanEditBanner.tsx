@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import type { PendingPlanEdit } from "./types";
+import Sep from "./Sep";
 
 /*
  * Inline banner above a plan section when an MCP (or user) edit
@@ -84,7 +85,7 @@ export default function PlanEditBanner({ edit, month, envId, canApprove }: Props
 				<div className="min-w-0 flex-1">
 					<div className="mb-0.5 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-200/80">
 						<span>{edit.editorKind === "mcp" ? "Vestigio sugere" : edit.editorName + " sugere"}</span>
-						<span className="text-amber-200/40">·</span>
+						<Sep />
 						<span>{ago}</span>
 					</div>
 					{edit.reason && (

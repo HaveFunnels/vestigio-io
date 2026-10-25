@@ -149,10 +149,10 @@ function ActionQueueHeroComponent({ data }: WidgetProps) {
 											<span>esforço {EFFORT_LABELS[item.effortHint] ?? item.effortHint}</span>
 										)}
 										{item.assigneeName && (
-											<span>· {item.assigneeName}</span>
+											<span>{item.assigneeName}</span>
 										)}
 										{item.status === "in_progress" && (
-											<span className="text-amber-500">· em progresso</span>
+											<span className="text-amber-500">em progresso</span>
 										)}
 									</div>
 								</div>

@@ -213,8 +213,8 @@ export default function Competitor({ competitor, embedded = false }: Props) {
 										lowest.interval === "month" ? "/mês" :
 										lowest.interval === "year" ? "/ano" :
 										lowest.interval === "one_time" ? "" : "";
-									const freeBadge = deep.hasFreeTier ? "Free · " : "";
-									return `${deep.tierCount} ${deep.tierCount === 1 ? "tier" : "tiers"} · ${freeBadge}a partir de ${currencySymbol} ${Math.round(lowest.amount)}${intervalLabel}`;
+									const freeBadge = deep.hasFreeTier ? "Free, " : "";
+									return `${deep.tierCount} ${deep.tierCount === 1 ? "tier" : "tiers"}, ${freeBadge}a partir de ${currencySymbol} ${Math.round(lowest.amount)}${intervalLabel}`;
 								})();
 								const blogHint = (() => {
 									if (!deep || deep.blogPostCount == null) return null;
@@ -268,7 +268,7 @@ export default function Competitor({ competitor, embedded = false }: Props) {
 																title={s.detail}
 															>
 																<span className={`font-semibold ${tone.fg}`}>{tone.label}</span>
-																<span className="text-content-secondary">·</span>
+																<span className="text-content-secondary"></span>
 																<span className="text-content-secondary">{KIND_LABEL[s.kind] ?? s.kind}</span>
 															</span>
 														);

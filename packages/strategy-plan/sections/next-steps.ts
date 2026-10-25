@@ -789,7 +789,7 @@ function buildMechanismSummary(
 	const impact = action.impactMidpoint
 		? `R$ ${Math.round(action.impactMidpoint).toLocaleString("pt-BR")}/mês`
 		: "vazamento aberto";
-	return `${humanized} · ${impact}`;
+	return `${humanized}, ${impact}`;
 }
 
 function buildPrompt(

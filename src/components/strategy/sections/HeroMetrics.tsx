@@ -305,7 +305,7 @@ export default function HeroMetrics({ hero, monthLabel, behavioral }: Props) {
 					Onde você está em {monthLabel}
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					4 métricas · delta vs mês anterior
+					4 métricas, comparadas ao mês anterior
 				</div>
 			</div>
 
@@ -341,7 +341,7 @@ export default function HeroMetrics({ hero, monthLabel, behavioral }: Props) {
 					   pixel DID measure. */
 					<Tile
 						basisChip="measured"
-						label={`Sessões medidas · ${behavioral?.windowDays ?? 30}d`}
+						label={`Sessões medidas em ${behavioral?.windowDays ?? 30} dias`}
 						rawNumber={behavioral?.sessionsFiltered ?? 0}
 						delta={0}
 						captionWhenStatic="pelo pixel, no seu site"
@@ -398,7 +398,7 @@ export default function HeroMetrics({ hero, monthLabel, behavioral }: Props) {
 				) : topSource ? (
 					<Tile
 						basisChip="measured"
-						label={`Origem dominante · ${topSource.label}`}
+						label={`Origem dominante: ${topSource.label}`}
 						rawNumber={topSource.sharePct}
 						delta={0}
 						formatFn={(n) => `${Math.round(n)}%`}

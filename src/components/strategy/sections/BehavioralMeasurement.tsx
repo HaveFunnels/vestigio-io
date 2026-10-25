@@ -261,10 +261,10 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 											{pg.label && (
 												<span className="ml-2 font-mono text-[10.5px] text-content-faint">{pg.path}</span>
 											)}
-											<span className="mt-0.5 block text-[12px] text-content-secondary">{bits.join(" · ")}</span>
+											<span className="mt-0.5 block text-[12px] text-content-secondary">{bits.join(", ")}</span>
 										</div>
 										<div className="shrink-0 font-mono text-[11.5px] tabular-nums text-content-muted">
-											{pg.sessionsWithFriction.toLocaleString("pt-BR")} de {pg.sessions.toLocaleString("pt-BR")} sessões ·{" "}
+											{pg.sessionsWithFriction.toLocaleString("pt-BR")} de {pg.sessions.toLocaleString("pt-BR")} sessões,{" "}
 											<span className={pg.frictionRatePct >= 20 ? "text-amber-700 dark:text-amber-300" : ""}>
 												{pg.frictionRatePct.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%
 											</span>
@@ -306,7 +306,7 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 									</td>
 									<td className="py-2.5 pr-4 tabular-nums">
 										{s.sessions.toLocaleString("pt-BR")}
-										<span className="text-content-faint"> · {s.sharePct}%</span>
+										<span className="text-content-faint">, {s.sharePct}%</span>
 									</td>
 									<td className="py-2.5 pr-4 tabular-nums">{fmtDuration(s.medianDurationS)}</td>
 									<td className="py-2.5 pr-4 tabular-nums">{s.pctNoScroll}%</td>
@@ -319,7 +319,7 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 				</div>
 
 				<p className="mt-4 text-[11px] leading-relaxed text-content-faint">
-					Janela: {behavioral.windowStart} a {behavioral.windowEnd} ·{" "}
+					Janela: {behavioral.windowStart} a {behavioral.windowEnd}.{" "}
 					{behavioral.sessionsFiltered.toLocaleString("pt-BR")} sessões após excluir{" "}
 					{behavioral.sessionsExcluded.toLocaleString("pt-BR")} sem comportamento (filtro de
 					bot mínimo). {behavioral.scrollNote} Diferente do restante do plano, estes números

@@ -67,7 +67,7 @@ export async function generateValuePreview(
 		: (pt ? "dados de pagamento e anúncio refinam as estimativas" : "payment and ad data sharpen the estimates");
 	return {
 		currentMonth: {
-			label: pt ? "Hoje · M1" : "Today · M1",
+			label: pt ? "Hoje, mês 1" : "Today, month 1",
 			unlocked: pt
 				? ["análise contínua do site", "comportamento real medido pelo pixel", "plano mensal com prioridades"]
 				: ["continuous site analysis", "real behavior measured by the pixel", "monthly plan with priorities"],

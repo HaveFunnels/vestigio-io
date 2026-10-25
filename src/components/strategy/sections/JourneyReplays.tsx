@@ -7,6 +7,7 @@ import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
 import SideDrawer from "@/components/console/SideDrawer";
 import { humanizePath } from "@/lib/humanize-path";
+import Sep from "../Sep";
 
 // ──────────────────────────────────────────────
 // Bundle D — Journey Replays section
@@ -32,7 +33,7 @@ interface TimelineEvent {
 		| "exit";
 	label: string;
 	path: string | null;
-	// Wave 22.9 · Onda 1 — enriched context. Rendered on hover so
+	// Wave 22.9, Onda 1 — enriched context. Rendered on hover so
 	// the customer can drill from the summary label into the specific
 	// CTA text / near_cta / cluster range without leaving the card.
 	cta_label?: string;
@@ -69,7 +70,7 @@ interface Journey {
 	estimated_lost_brl_cents: number;
 	timeline: TimelineEvent[];
 	session_hash: string;
-	// Wave 22.9 · Onda 2 — 4-block narrative + confidence tier.
+	// Wave 22.9, Onda 2 — 4-block narrative + confidence tier.
 	// The old 3-block shape (headline/diagnosis/pattern_attribution)
 	// is defense-in-depth for cached plans — UI falls back if the
 	// legacy fields are all we have.
@@ -127,7 +128,7 @@ interface Props {
 	month: string;
 }
 
-// Wave 22.9 · Onda 1 — dropped the emoji-adjacent `icon` field
+// Wave 22.9, Onda 1 — dropped the emoji-adjacent `icon` field
 // (council flagged: unicode glyphs violate the "no emojis" brand
 // rule). Dot color alone carries the signal now — quiet events stay
 // muted, money-relevant events warm up (amber = friction, rose = exit).
@@ -193,7 +194,7 @@ export default function JourneyReplays({ envId, month }: Props) {
 					Jornadas que custaram dinheiro
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					{data.journeys.length} sessões reais reconstituídas · de {data.session_count_this_month.toLocaleString("pt-BR")}{" "}
+					{data.journeys.length} sessões reais reconstituídas, de {data.session_count_this_month.toLocaleString("pt-BR")}{" "}
 					{data.window_start && data.window_end
 						? `entre ${fmtDay(data.window_start)} e ${fmtDay(data.window_end)}`
 						: "nos últimos 30 dias"}
@@ -221,7 +222,7 @@ export default function JourneyReplays({ envId, month }: Props) {
 function JourneyCard({ journey, currency }: { journey: Journey; currency: string }) {
 	const lostBrl = Math.round(journey.estimated_lost_brl_cents / 100);
 	const minutes = Math.round((journey.metrics.duration_ms / 60000) * 10) / 10;
-	// Wave 22.9 · Onda 1 — replaces the truncation-at-12 + "+N eventos"
+	// Wave 22.9, Onda 1 — replaces the truncation-at-12 + "+N eventos"
 	// UI that broke the customer's analysis chain. Now the customer
 	// sees the FULL sequence on demand via a card-local expand toggle.
 	const INITIAL_VISIBLE = 12;
@@ -242,9 +243,9 @@ function JourneyCard({ journey, currency }: { journey: Journey; currency: string
 						</div>
 						<div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[11px] text-content-muted">
 							<span>{minutes} min de sessão</span>
-							<span className="text-content-faint">·</span>
+							<Sep />
 							<span>{journey.metrics.surface_count} páginas visitadas</span>
-							<span className="text-content-faint">·</span>
+							<Sep />
 							<span>{journey.metrics.intent_label}</span>
 						</div>
 					</div>
@@ -308,7 +309,7 @@ function JourneyCard({ journey, currency }: { journey: Journey; currency: string
 					</div>
 				</div>
 
-				{/* Narrative — 4-block structure per Wave 22.9 · Onda 2.
+				{/* Narrative — 4-block structure per Wave 22.9, Onda 2.
 				    Legacy 3-block plans fall through to compatibility
 				    render at the bottom of this branch. */}
 				<div className="p-5 sm:p-6">
@@ -393,7 +394,7 @@ function JourneyCard({ journey, currency }: { journey: Journey; currency: string
 }
 
 // ──────────────────────────────────────────────
-// TimelineRow — Wave 22.9 · Onda 1
+// TimelineRow — Wave 22.9, Onda 1
 //
 // Progressive disclosure per row. Primary label always visible; a
 // secondary line with the enriched context (CTA text, pause duration,
@@ -432,7 +433,7 @@ function TimelineRow({ ev }: { ev: TimelineEvent }) {
 						<div className="px-1 pt-0.5 text-[10px] leading-tight text-content-faint">
 							{meta.map((chunk, i) => (
 								<span key={i}>
-									{i > 0 && <span className="mx-1.5 text-content-faint/60">·</span>}
+									{i > 0 && <span className="mx-1.5 text-content-faint/60"></span>}
 									{chunk}
 								</span>
 							))}
@@ -539,7 +540,7 @@ function PixelInstallHero({ envId, sessionCount }: { envId: string; sessionCount
 						</p>
 						{sessionCount > 0 && (
 							<p className="mt-2 text-[11.5px] text-content-muted">
-								{sessionCount} {sessionCount === 1 ? "sessão coletada" : "sessões coletadas"} este mês · mínimo 5 para destravar análise.
+								{sessionCount} {sessionCount === 1 ? "sessão coletada" : "sessões coletadas"} este mês, mínimo 5 para destravar análise.
 							</p>
 						)}
 					</div>

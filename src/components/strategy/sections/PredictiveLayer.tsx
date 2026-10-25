@@ -5,6 +5,7 @@ import { planSectionQuery } from "../section-query";
 import { motion } from "framer-motion";
 import { fmtCurrencyUnits } from "@/lib/format-currency";
 import { useMcpData } from "@/components/app/McpDataProvider";
+import Sep from "../Sep";
 
 // ──────────────────────────────────────────────
 // Bundle E — Predictive Layer
@@ -238,7 +239,7 @@ function TrendRow({ trend, currency }: { trend: PackTrend; currency: string }) {
 					{trend.display_label}
 				</div>
 				<div className="mt-0.5 text-[10.5px] text-content-muted">
-					Agora: <span className="text-content-secondary">{trend.current_count}</span> · {fmtCurrencyUnits(exposureBrl, currency)}
+					Agora: <span className="text-content-secondary">{trend.current_count}</span>, {fmtCurrencyUnits(exposureBrl, currency)}
 				</div>
 			</div>
 			<MiniSparkline values={counts} />
@@ -299,9 +300,9 @@ function ChronicRow({ chronic, currency }: { chronic: ChronicFinding; currency: 
 				</div>
 				<div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[10.5px] text-content-muted">
 					<span className="font-mono">{chronic.surface}</span>
-					<span className="text-content-faint">·</span>
+					<Sep />
 					<span>Aberto há {chronic.weeks_open} semanas</span>
-					<span className="text-content-faint">·</span>
+					<Sep />
 					<span className="uppercase tracking-wide">{chronic.severity}</span>
 				</div>
 			</div>

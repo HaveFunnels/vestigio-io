@@ -35,6 +35,7 @@ import PlanTOCRail, { type TocItem } from "./PlanTOCRail";
 import MonthPicker from "./MonthPicker";
 import { PlanScreenshotProvider } from "./PlanScreenshotContext";
 import { PlanPeerProvider } from "./PlanPeerContext";
+import Sep from "./Sep";
 
 /*
  * StrategyPlanPanel — top-level composition of the 6 plan sections
@@ -93,7 +94,7 @@ function formatTimestamp(date: Date): string {
 	const mmName = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"][date.getMonth()];
 	const hh = String(date.getHours()).padStart(2, "0");
 	const min = String(date.getMinutes()).padStart(2, "0");
-	return `${dd} ${mmName} · ${hh}:${min}`;
+	return `${dd} ${mmName}, ${hh}:${min}`;
 }
 
 /** Plan view mode.
@@ -265,13 +266,12 @@ function StickyHeader({
 			<div className="mx-auto flex max-w-[1100px] flex-wrap items-center justify-between gap-x-3 gap-y-1.5 px-4 py-2.5 sm:px-6 sm:py-3">
 				<div className="order-2 flex items-center gap-2 text-[11.5px] text-content-muted sm:order-1 sm:gap-3 sm:text-[12px]">
 					<span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-					<span className="truncate" suppressHydrationWarning>
-						<span className="hidden sm:inline">Plano publicado · </span>
-						<span className="sm:hidden">Publicado </span>
-						{formatTimestamp(plan.generatedAt)}
-					</span>
+					{/* The timestamp is the document's byline and lives in
+					    the header, above the fold. Repeating it here gave
+					    the reader the same fact twice before scrolling. */}
+					<span className="truncate">Plano publicado</span>
 					{exportError && (
-						<span className="ml-1 text-rose-700 dark:text-rose-300/90">· {exportError}</span>
+						<span className="ml-1 text-rose-700 dark:text-rose-300/90">{exportError}</span>
 					)}
 				</div>
 				<div className="order-1 flex items-center gap-1.5 sm:order-2 sm:gap-2">
@@ -477,15 +477,16 @@ function PlanHeader({ plan }: { plan: StrategyPlan }) {
 			<div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-content-faint">
 				<span>Vestigio</span>
 				<span className="text-edge">/</span>
+				{/* "Ciclo #8737" was internal bookkeeping on the reader's
+				    first line. It says nothing they can act on. */}
 				<span>Plano de Estratégia</span>
-				<span className="text-edge">/</span>
-				<span>Ciclo #{plan.cycleNumber}</span>
 			</div>
 
+			{/* The month lived here AND in the MonthPicker directly
+			    below, which is also the control for changing it. One
+			    statement of the period, on the control that owns it. */}
 			<h1 className="mb-3 font-serif text-[44px] font-medium leading-[1.05] tracking-tight text-content sm:text-[56px]">
 				Plano de Estratégia
-				<br />
-				<span className="text-content-secondary">· {monthLabel}</span>
 			</h1>
 
 			<div className="flex flex-wrap items-center gap-3 text-[12px] text-content-muted">
@@ -496,14 +497,14 @@ function PlanHeader({ plan }: { plan: StrategyPlan }) {
 				    dropdown chevron baked into the header reads as broken. */}
 				<span data-vsgp-print-hide className="contents">
 					<MonthPicker envId={plan.environmentId} currentMonth={plan.month} />
-					<span className="text-edge">·</span>
+					<Sep />
 				</span>
 				<span className="font-mono">{plan.envDomain}</span>
-				<span className="text-edge">·</span>
+				<Sep />
 				<span suppressHydrationWarning>Gerado {formatTimestamp(plan.generatedAt)}</span>
 				{plan.lastRegenerated.getTime() !== plan.generatedAt.getTime() && (
 					<>
-						<span className="text-edge">·</span>
+						<Sep />
 						<span suppressHydrationWarning>Revisão semanal {formatTimestamp(plan.lastRegenerated)}</span>
 					</>
 				)}

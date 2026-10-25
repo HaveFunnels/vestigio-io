@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import type { ValuePreview as ValuePreviewType, ValuePreviewMarker } from "../types";
+import Sep from "../Sep";
 
 /*
  * Value Preview — "O que você ganha continuando"
@@ -125,7 +126,7 @@ function Marker({
 						<ul className="space-y-1 text-[12px] leading-snug text-content-secondary">
 							{marker.unlocked.map((u, i) => (
 								<li key={i} className="flex gap-1.5">
-									<span className="text-content-faint">·</span>
+									<Sep />
 									<span>{u}</span>
 								</li>
 							))}
@@ -154,7 +155,7 @@ export default function ValuePreview({ preview, narrative }: Props) {
 					O que o próximo mês destrava
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					Projeção acumulada · 1º ao 12º mês
+					Projeção acumulada, 1º ao 12º mês
 				</div>
 			</div>
 

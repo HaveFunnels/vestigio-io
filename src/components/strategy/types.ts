@@ -460,7 +460,7 @@ export interface StrategyPlan {
 	 *  regenerou — UI usa esse total como número primário. */
 	attributionTotal?: number;
 	/**
-	 * Reta-final · visual proof: map of normalized surface path
+	 * Reta-final, visual proof: map of normalized surface path
 	 * (e.g. "/", "/precos") → 1h-presigned R2 URL of the last captured
 	 * screenshot for that path in this environment. Consumed by the
 	 * PlanScreenshotContext + FindingCard so every finding whose
@@ -470,7 +470,7 @@ export interface StrategyPlan {
 	 */
 	screenshotUrlByPath?: Record<string, string>;
 	/**
-	 * Reta-final · peer prevalence: map of inference_key → peer contrast
+	 * Reta-final, peer prevalence: map of inference_key → peer contrast
 	 * line, resolved server-side from the Vestigio Index cohort matching
 	 * the org's businessModel + locale. The FindingCard consumes this
 	 * via <PlanPeerProvider> to render "X% of peers do this. You don't."

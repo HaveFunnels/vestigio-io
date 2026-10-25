@@ -110,7 +110,7 @@ function OpenCriticalKpiComponent({ data, editing }: WidgetProps) {
 								type='button'
 								onClick={() => goToItem(item.inferenceKey)}
 								disabled={editing}
-								title={`${item.title} · ${item.surface}`}
+								title={`${item.title}, ${item.surface}`}
 								className='group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-red-500/10 disabled:cursor-default disabled:hover:bg-transparent'
 							>
 								<span

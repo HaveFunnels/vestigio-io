@@ -18,6 +18,7 @@ import { usePlanScreenshotForUrl, usePlanShotDecoration } from "./PlanScreenshot
 import AnnotatedScreenshot from "./AnnotatedScreenshot";
 import BasisChip from "./BasisChip";
 import { usePeerLineForInference } from "./PlanPeerContext";
+import Sep from "./Sep";
 
 // ──────────────────────────────────────────────
 // Drawer content bodies — composable inside PlanSideDrawer.
@@ -112,14 +113,14 @@ function composePeerLineCopy(
 	const footer = (() => {
 		switch (locale) {
 			case "en":
-				return `Vestigio Index · ${line.cohortSampleSize} sites analyzed in ${line.cohortPeriod}`;
+				return `Vestigio Index, ${line.cohortSampleSize} sites analyzed in ${line.cohortPeriod}`;
 			case "es":
-				return `Vestigio Index · ${line.cohortSampleSize} sitios analizados en ${line.cohortPeriod}`;
+				return `Vestigio Index, ${line.cohortSampleSize} sitios analizados en ${line.cohortPeriod}`;
 			case "de":
-				return `Vestigio Index · ${line.cohortSampleSize} Seiten analysiert im ${line.cohortPeriod}`;
+				return `Vestigio Index, ${line.cohortSampleSize} Seiten analysiert im ${line.cohortPeriod}`;
 			case "pt-BR":
 			default:
-				return `Vestigio Index · ${line.cohortSampleSize} sites analisados em ${line.cohortPeriod}`;
+				return `Vestigio Index, ${line.cohortSampleSize} sites analisados em ${line.cohortPeriod}`;
 		}
 	})();
 	return { sentence, footer };
@@ -219,7 +220,7 @@ export function ActionListBody({ linkedActions, actionIds }: ActionListProps) {
 							</h3>
 							<div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[12px] text-content-muted">
 								<span className="capitalize">{SEVERITY_LABEL[action.severity] ?? action.severity}</span>
-								<span className="text-content-faint">·</span>
+								<Sep />
 								<span>{action.category}</span>
 							</div>
 							{action.impactMidpoint > 0 && (
@@ -523,7 +524,7 @@ function FindingCard({
 									</span>
 									{finding.surface && (
 										<>
-											<span className="text-content-faint">·</span>
+											<Sep />
 											<span className="truncate text-[10.5px]">
 												{humanizeSurfaceLabel(finding.surface)}
 											</span>
@@ -531,14 +532,14 @@ function FindingCard({
 									)}
 									{impactLabel && (
 										<>
-											<span className="text-content-faint">·</span>
+											<Sep />
 											<span className={`font-mono tabular-nums ${impactTone}`}>
 												{impactLabel}/mês
 											</span>
 										</>
 									)}
 								</div>
-								{/* Wave 22.9 · Bloco 1.4 — 1-line description on
+								{/* Wave 22.9, Bloco 1.4 — 1-line description on
 								    the collapsed card. Tester flagged: "os
 								    findings não tem explicação ou descrição,
 								    somente título." rootCause is the shortest
@@ -594,7 +595,7 @@ function FindingCard({
 													? `Captura de ${humanizeSurfaceLabel(finding.surface)}`
 													: "Captura da página"
 											}
-											caption={`Sua página${finding.surface ? ` · ${humanizeSurfaceLabel(finding.surface)}` : ""}`}
+											caption={`Sua página${finding.surface ? `, ${humanizeSurfaceLabel(finding.surface)}` : ""}`}
 											meta={shotDecoration.meta}
 											measuredNote={shotDecoration.note}
 											collapsedMaxH={220}
@@ -696,7 +697,7 @@ function FindingCard({
 											<ul className="space-y-1 text-[12px] text-content-secondary">
 												{linkedActions.slice(0, 3).map((a) => (
 													<li key={a.id} className="flex items-baseline gap-2">
-														<span className="text-content-faint">·</span>
+														<Sep />
 														<span className="flex-1 truncate">{a.title}</span>
 														{a.status && (
 															<span className="rounded-md bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-content-muted">

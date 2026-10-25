@@ -157,7 +157,7 @@ export default function SpofMap() {
 													{tech.display_name}
 													{tech.detected_on.length > 1 && (
 														<span className="text-content-faint">
-															·{" "}
+															,{" "}
 															{t(tech.detected_on.length === 1 ? "detected_on" : "detected_on_plural", {
 																count: tech.detected_on.length,
 															})}

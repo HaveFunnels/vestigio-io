@@ -54,7 +54,7 @@ export default function CrossCustomerPattern({ pattern }: Props) {
 					Padrão na carteira
 				</h2>
 				<div className="text-[11px] text-content-faint">
-					exclusivo Vestigio · {segmentLabel}
+					exclusivo Vestigio, {segmentLabel}
 				</div>
 			</div>
 

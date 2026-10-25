@@ -150,7 +150,7 @@ export default function MonthPicker({ envId, currentMonth }: Props) {
 												</div>
 												<div className="text-[10.5px] text-content-muted">
 													Gerado {formatTimestamp(p.generatedAt)}
-													{isCurrent ? " · este mês" : ""}
+													{isCurrent ? " (este mês)" : ""}
 												</div>
 											</div>
 											{p.status === "generating" && (

@@ -1,5 +1,7 @@
 "use client";
 
+import Sep from "./Sep";
+
 /*
  * Layout-true skeleton for the Strategy Plan page (and the standalone
  * Copy Lens / Maps pages). Each shape mirrors the real component the
@@ -85,9 +87,9 @@ function PlanSkeleton() {
 					<Bar className="mb-6 h-12 w-[55%] sm:h-16" />
 					<div className="flex flex-wrap items-center gap-3">
 						<Bar className="h-6 w-28" />
-						<span className="text-edge">·</span>
+						<Sep />
 						<Bar className="h-4 w-40" />
-						<span className="text-edge">·</span>
+						<Sep />
 						<Bar className="h-4 w-32" />
 					</div>
 				</div>
@@ -221,7 +223,7 @@ function PlanSkeleton() {
 									{/* Effort + owner row */}
 									<div className="mb-4 flex items-center gap-2">
 										<Bar className="h-3 w-20" />
-										<span className="text-content-faint">·</span>
+										<Sep />
 										<Bar className="h-3 w-24" />
 									</div>
 								</div>

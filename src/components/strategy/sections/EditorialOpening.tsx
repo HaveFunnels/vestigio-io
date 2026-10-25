@@ -66,7 +66,7 @@ export default function EditorialOpening({ thesis, monthLabel, envDomain }: Prop
 					<div className="mt-5 flex items-center gap-2 text-[11px] text-content-faint">
 						<span className="h-px w-8 bg-edge" aria-hidden />
 						<span>
-							Vestigio · análise contínua de {envDomain}
+							Vestigio, análise contínua de {envDomain}
 						</span>
 					</div>
 				</div>

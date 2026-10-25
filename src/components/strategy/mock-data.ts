@@ -95,7 +95,7 @@ Comparado ao mês anterior, você cresceu valor capturado em **78%**, mas o núm
 
 	valuePreview: {
 		currentMonth: {
-			label: "Hoje · M1",
+			label: "Hoje, M1",
 			unlocked: ["surfaces visíveis", "findings públicos", "memory rollups"],
 			icon: "check",
 		},

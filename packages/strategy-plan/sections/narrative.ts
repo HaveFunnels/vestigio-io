@@ -416,12 +416,12 @@ Regras estritas:
 	if (i.resolvedCount > 0) {
 		data.push(`- Valor recuperado: R$ ${i.resolvedCapturedTotal.toLocaleString("pt-BR")}`);
 		data.push(`- Exemplos de resolvidos:`);
-		i.resolvedSampleTitles.forEach((t) => data.push(`  · ${t}`));
+		i.resolvedSampleTitles.forEach((t) => data.push(`  - ${t}`));
 	}
 	data.push(`- Problemas críticos novos: ${i.newCriticalCount}`);
 	if (i.newCriticalCount > 0) {
 		data.push(`- Exemplos críticos novos:`);
-		i.newCriticalSamples.forEach((t) => data.push(`  · ${t}`));
+		i.newCriticalSamples.forEach((t) => data.push(`  - ${t}`));
 	}
 	data.push(`- Regressões detectadas: ${i.regressionCount}`);
 	data.push("");
@@ -451,7 +451,7 @@ Regras estritas:
 		data.push(`- Maiores vazamentos individuais:`);
 		i.topOpenFindings.forEach((f) => {
 			const where = f.surface ? ` em ${humanizeSurfaceCustomerFacing(f.surface)}` : "";
-			data.push(`  · ${f.title}${where}. R$ ${f.impactMid.toLocaleString("pt-BR")}/mês`);
+			data.push(`  - ${f.title}${where}. R$ ${f.impactMid.toLocaleString("pt-BR")}/mês`);
 		});
 	}
 	data.push("");

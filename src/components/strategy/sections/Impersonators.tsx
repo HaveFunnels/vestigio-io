@@ -106,7 +106,7 @@ export default function Impersonators({ impersonators, embedded = false }: Props
 					<StatTile
 						label="Alta confiança"
 						value={impersonators.highConfidenceCount}
-						subline={`${impersonators.mediumConfidenceCount} médios · ${impersonators.lowConfidenceCount} baixos`}
+						subline={`${impersonators.mediumConfidenceCount} médios, ${impersonators.lowConfidenceCount} baixos`}
 						tone={impersonators.highConfidenceCount > 0 ? "rose" : "neutral"}
 					/>
 					<StatTile
@@ -117,7 +117,7 @@ export default function Impersonators({ impersonators, embedded = false }: Props
 					<StatTile
 						label="Captura sensível"
 						value={impersonators.withPaymentCount + impersonators.withCredentialCount}
-						subline={`${impersonators.withPaymentCount} pagamento · ${impersonators.withCredentialCount} credencial`}
+						subline={`${impersonators.withPaymentCount} pagamento, ${impersonators.withCredentialCount} credencial`}
 						tone={impersonators.withPaymentCount + impersonators.withCredentialCount > 0 ? "rose" : "neutral"}
 					/>
 				</div>
@@ -172,7 +172,7 @@ export default function Impersonators({ impersonators, embedded = false }: Props
 													{m.domain}
 												</div>
 												<div className="truncate text-[10.5px] text-content-muted">
-													{THREAT_LABEL_PT[m.threatType]} · {m.isActive ? "ativo" : "inativo"}
+													{THREAT_LABEL_PT[m.threatType]}, {m.isActive ? "ativo" : "inativo"}
 												</div>
 											</div>
 										</div>

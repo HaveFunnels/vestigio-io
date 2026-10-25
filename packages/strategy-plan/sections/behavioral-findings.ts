@@ -153,16 +153,33 @@ function countFor(pg: FrictionPageStats, kind: FrictionKind): number {
 /**
  * Build findings from measured friction.
  *
- * Deduplication: one finding per (friction kind, page). The same page
- * with four kinds of friction yields four findings, each independently
- * trackable, rather than one blended "this page is bad" claim that
- * cannot be resolved kind by kind.
+ * Deduplication: one finding per friction KIND, not per (kind, page).
+ *
+ * That is forced by storage, and I had it wrong first. Finding is
+ * unique on (cycleId, inferenceKey) — surface is NOT part of the
+ * constraint — so three pages sharing a kind collapsed into one row
+ * whose surface became the comma-joined string
+ * "/c/NX-…, /products/vedaplus-kit, /". Nine projections became five
+ * rows with corrupted identity, which also breaks the lifecycle, whose
+ * identity is (environmentId, inferenceKey, surface).
+ *
+ * Encoding the page into the inference key would restore per-page
+ * granularity, but it makes key cardinality unbounded and
+ * INFERENCE_TO_PACK cannot enumerate them, which an invariant checks.
+ * Widening the unique index is a migration on the largest related
+ * table and is not a Phase 1 change.
+ *
+ * So: one finding per kind, surface = the page carrying the most of
+ * it, and every page's numbers preserved in the evidence array. The
+ * per-page detail survives; only the ability to resolve one page
+ * independently of another is deferred.
  */
 export function buildBehavioralFindings(
 	input: BehavioralFindingInput,
 ): BehavioralFindingsResult {
 	const out: BehavioralFindingsResult = { findings: [], rejections: [] };
 	const pages = input.friction?.pages ?? [];
+	const qualified: FrictionPageStats[] = [];
 
 	for (const pg of pages) {
 		if (pg.sessions < MIN_SESSIONS_FOR_FINDING) {
@@ -187,59 +204,64 @@ export function buildBehavioralFindings(
 			continue;
 		}
 
-		const kinds = Object.keys(FRICTION_INFERENCE_KEYS) as FrictionKind[];
-		let emitted = 0;
-		for (const kind of kinds) {
-			const count = countFor(pg, kind);
-			if (count <= 0) continue;
-			if (count < MIN_COUNT_PER_KIND) {
+		qualified.push(pg);
+	}
+
+	// Group by kind across the qualified pages.
+	const kinds = Object.keys(FRICTION_INFERENCE_KEYS) as FrictionKind[];
+	for (const kind of kinds) {
+		const counted = qualified.map((pg) => ({ pg, count: countFor(pg, kind) }));
+		// Record why a page's contribution was dropped, so the dry run
+		// can explain itself rather than showing a silently shorter list.
+		for (const x of counted) {
+			if (x.count > 0 && x.count < MIN_COUNT_PER_KIND) {
 				out.rejections.push({
-					path: pg.path,
-					reason: `${kind}=${count} < ${MIN_COUNT_PER_KIND} occurrences`,
+					path: x.pg.path,
+					reason: `${kind}=${x.count} < ${MIN_COUNT_PER_KIND} occurrences`,
 				});
-				continue;
 			}
-			emitted++;
-			out.findings.push({
-				inference_key: FRICTION_INFERENCE_KEYS[kind],
-				pack: "behavioral",
-				severity: severityFor(pg.frictionRatePct, pg.sessionsWithFriction),
-				polarity: "negative",
-				confidence: confidenceFor(pg.sessions),
-				// Zero means NOT MODELLED. These are counts, and the plan
-				// is not allowed to attach fabricated revenue to them.
-				impact: { monthly_range: { min: 0, max: 0 }, midpoint: 0 },
-				surface: pg.path,
-				surface_kind: "public",
-				origin: "pixel",
-				claim_type: "behavioral",
-				root_cause: null,
-				change_class: null,
-				verification_maturity: "verified",
-				// The evidence IS the count, and it travels with the
-				// finding so nothing downstream has to re-derive it or
-				// guess the sample it came from.
-				evidence: [
-					{
-						kind: "measured_count",
-						label: pg.label,
-						friction_kind: kind,
-						count,
-						sessions: pg.sessions,
-						sessions_with_friction: pg.sessionsWithFriction,
-						friction_rate_pct: pg.frictionRatePct,
-						window_start: input.windowStart,
-						window_end: input.windowEnd,
-					},
-				],
-			} as unknown as FindingProjection);
 		}
-		if (emitted === 0) {
-			out.rejections.push({
-				path: pg.path,
-				reason: "no friction kind reached its own occurrence floor",
-			});
-		}
+		const contributing = counted
+			.filter((x) => x.count >= MIN_COUNT_PER_KIND)
+			.sort((a, b) => b.count - a.count);
+		if (contributing.length === 0) continue;
+
+		// Surface is the page carrying the most of this friction. It is
+		// the lifecycle identity, so it has to be deterministic.
+		const lead = contributing[0];
+		const totalSessions = contributing.reduce((n, x) => n + x.pg.sessions, 0);
+
+		out.findings.push({
+			inference_key: FRICTION_INFERENCE_KEYS[kind],
+			pack: "behavioral",
+			severity: severityFor(lead.pg.frictionRatePct, lead.pg.sessionsWithFriction),
+			polarity: "negative",
+			confidence: confidenceFor(totalSessions),
+			// Zero means NOT MODELLED. These are counts, and the plan is
+			// not allowed to attach fabricated revenue to them.
+			impact: { monthly_range: { min: 0, max: 0 }, midpoint: 0 },
+			surface: lead.pg.path,
+			surface_kind: "public",
+			origin: "pixel",
+			claim_type: "behavioral",
+			root_cause: null,
+			change_class: null,
+			verification_maturity: "verified",
+			// Every contributing page keeps its own numbers, so the
+			// per-page detail is not lost by grouping.
+			evidence: contributing.map((x) => ({
+				kind: "measured_count",
+				path: x.pg.path,
+				label: x.pg.label,
+				friction_kind: kind,
+				count: x.count,
+				sessions: x.pg.sessions,
+				sessions_with_friction: x.pg.sessionsWithFriction,
+				friction_rate_pct: x.pg.frictionRatePct,
+				window_start: input.windowStart,
+				window_end: input.windowEnd,
+			})),
+		} as unknown as FindingProjection);
 	}
 
 	return out;

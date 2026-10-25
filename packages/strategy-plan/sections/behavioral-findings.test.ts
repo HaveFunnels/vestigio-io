@@ -85,6 +85,7 @@ describe("what a measurement is allowed to claim", () => {
 	it("carries the sample the percentage came from", () => {
 		const { findings } = build([page()]);
 		const ev = (findings[0] as unknown as { evidence: Record<string, unknown>[] }).evidence[0];
+		expect(ev.path).toBe("/c/NX-1");
 		expect(ev.sessions).toBe(10_546);
 		expect(ev.sessions_with_friction).toBe(4_052);
 		expect(ev.friction_rate_pct).toBe(37.5);
@@ -155,17 +156,50 @@ describe("severity and confidence", () => {
 });
 
 describe("deduplication", () => {
-	it("emits one finding per friction kind per page, not a blended claim", () => {
-		// Four kinds on one page gives four independently resolvable
-		// findings rather than one "this page is bad".
-		const { findings } = build([page({ backtracks: 0 })]);
+	it("emits one finding per friction kind, never two with the same key", () => {
+		// Finding is unique on (cycleId, inferenceKey) — surface is NOT
+		// in the constraint. Emitting per (kind, page) collapsed three
+		// pages into one row whose surface became the comma-joined
+		// "/c/NX-…, /products/vedaplus-kit, /", corrupting the lifecycle
+		// identity. Found by running it against production.
+		const { findings } = build([
+			page({ path: "/c/NX-1", backtracks: 0 }),
+			page({ path: "/", sessions: 2338, deadClicks: 44, hesitationsNearCta: 384,
+				inputAbandons: 7, formRetries: 0, backtracks: 0,
+				sessionsWithFriction: 304, frictionRatePct: 13 }),
+		]);
 		const keys = findings.map((f) => f.inference_key);
-		expect(new Set(keys).size).toBe(keys.length);
-		expect(keys).toContain("measured_dead_clicks");
-		expect(keys).toContain("measured_hesitation_near_cta");
-		// backtracks is zero, so no finding for it.
-		expect(keys).not.toContain("measured_immediate_backtrack");
-		for (const f of findings) expect(f.surface).toBe("/c/NX-1");
+		expect(new Set(keys).size, "duplicate inference keys").toBe(keys.length);
+		for (const f of findings) {
+			expect(String(f.surface)).not.toContain(",");
+		}
+	});
+
+	it("points surface at the page carrying the most of that friction", () => {
+		const { findings } = build([
+			page({ path: "/small", sessions: 2338, deadClicks: 44, hesitationsNearCta: 0,
+				inputAbandons: 0, formRetries: 0, backtracks: 0,
+				sessionsWithFriction: 304, frictionRatePct: 13 }),
+			page({ path: "/big", deadClicks: 1656, hesitationsNearCta: 0,
+				inputAbandons: 0, formRetries: 0, backtracks: 0 }),
+		]);
+		const dead = findings.find((f) => f.inference_key === "measured_dead_clicks")!;
+		expect(dead.surface).toBe("/big");
+	});
+
+	it("keeps every contributing page's numbers in the evidence", () => {
+		// Grouping by kind must not lose the per-page detail.
+		const { findings } = build([
+			page({ path: "/a", deadClicks: 100, hesitationsNearCta: 0, inputAbandons: 0,
+				formRetries: 0, backtracks: 0 }),
+			page({ path: "/b", deadClicks: 50, hesitationsNearCta: 0, inputAbandons: 0,
+				formRetries: 0, backtracks: 0 }),
+		]);
+		const dead = findings.find((f) => f.inference_key === "measured_dead_clicks")!;
+		const ev = (dead as unknown as { evidence: Record<string, unknown>[] }).evidence;
+		expect(ev).toHaveLength(2);
+		expect(ev.map((e) => e.path).sort()).toEqual(["/a", "/b"]);
+		expect(ev.map((e) => e.count)).toEqual([100, 50]);
 	});
 
 	it("keeps the lifecycle identity free of counts and page labels", () => {

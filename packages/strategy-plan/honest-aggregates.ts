@@ -187,6 +187,23 @@ export async function openLossExposure(
 				cycleId,
 				polarity: { in: ["negative", "neutral"] },
 				status: { in: ["created", "confirmed", "regressed"] },
+				// A finding that contributes nothing to the exposure does
+				// not belong in the exposure's finding COUNT either.
+				//
+				// Behavioural findings carry impactMidpoint = 0, meaning
+				// "not modelled" — they are counts, and the plan may not
+				// attach fabricated revenue to them. Without this filter
+				// they still matched on polarity and status, so the plan
+				// would say "exposure of R$ 58,752 across 14 findings"
+				// while five of those fourteen added nothing to the
+				// number. The money and the count have to describe the
+				// same set.
+				//
+				// Measured before changing: on the only environment with
+				// data, every zero-impact row is a pixel finding and no
+				// pre-existing finding has impact 0, so this removes
+				// exactly those and nothing else.
+				impactMidpoint: { gt: 0 },
 			},
 			select: {
 				inferenceKey: true,

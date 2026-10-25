@@ -195,7 +195,7 @@ function trimUrl(url: string, max = 50): string {
 	return `${stripped.slice(0, max - 1)}…`;
 }
 
-export default function MapsRich({ maps, month: _month }: Props) {
+export default function MapsRich({ maps, month }: Props) {
 	const [defs, setDefs] = useState<MapDefinition[]>([]);
 	const [loadingMaps, setLoadingMaps] = useState(true);
 
@@ -276,7 +276,11 @@ export default function MapsRich({ maps, month: _month }: Props) {
 							return (
 								<Link
 									key={m.id}
-									href={`/app/maps/${encodeURIComponent(m.id)}`}
+									// Carries where the reader came from, so the map's back
+								// control returns to the plan instead of dropping them
+								// into the map gallery — a screen the plan never meant
+								// to expose.
+								href={`/app/maps/${encodeURIComponent(m.id)}?from=plan&month=${encodeURIComponent(month)}`}
 									className="group flex flex-col overflow-hidden rounded-2xl border border-edge bg-surface-card transition-all hover:-translate-y-0.5 hover:border-edge-focus hover:shadow-lg hover:shadow-black/5"
 								>
 									<div

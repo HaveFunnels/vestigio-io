@@ -225,11 +225,21 @@ function MapCanvasHeader({
 }) {
   const copilot = useCopilot();
   const tp = useTranslations("console.copilot.shared_prompts");
+  // Back goes where the reader came from. Opening a map from the plan
+  // and pressing back used to land on /app/maps, the map gallery —
+  // a screen the plan never meant to expose and which the reader has
+  // no reason to be in. Falls back to the gallery for direct
+  // navigation, which is the only case where it is the right answer.
+  const searchParams = useSearchParams();
+  const backHref =
+    searchParams.get("from") === "plan" && searchParams.get("month")
+      ? `/app/library/strategy/${searchParams.get("month")}`
+      : "/app/maps";
   return (
     <div className="flex items-center justify-between gap-3 border-b border-edge px-3 py-3 sm:gap-4 sm:px-6 sm:py-4">
       <div className="flex min-w-0 items-center gap-3">
         <Link
-          href="/app/maps"
+          href={backHref}
           className="shrink-0 rounded-md border border-edge p-1.5 text-content-muted transition-colors hover:border-edge-strong hover:text-content-secondary"
           aria-label={t("back_to_gallery")}
         >

@@ -98,8 +98,25 @@ export async function GET(request: Request) {
     const env = { id: orgCtx.envId };
 
     // Fetch page inventory (including multi-signal classification fields)
+    // A page that does not answer is not part of a journey.
+    //
+    // The inventory contains URLs the crawler GUESSES — common cart
+    // and checkout paths in pt/es/en — so a store that does not use
+    // them keeps 404 rows. On Casa Montelle that is 11 of 62 pages,
+    // and two of them (/carrinho and /payment, both 404) are typed
+    // `checkout`. They were drawn as checkout-stage nodes AND counted
+    // into stageCounts, so they corrupted the percentages as well as
+    // the picture. "Several pages on the map that don't exist on the
+    // domain" was the report; this is why.
+    //
+    // removedAt is excluded for the same reason: a page the inventory
+    // has retired is not somewhere a visitor can be.
     const pages = await prisma.pageInventoryItem.findMany({
-      where: { environmentRef: env.id },
+      where: {
+        environmentRef: env.id,
+        removedAt: null,
+        OR: [{ statusCode: null }, { statusCode: { lt: 400 } }],
+      },
       select: {
         id: true,
         normalizedUrl: true,
@@ -461,10 +478,29 @@ export async function GET(request: Request) {
             const srcNode = nodes.find((n) => n.id === edge.source);
             const tgtNode = nodes.find((n) => n.id === edge.target);
             if (!srcNode || !tgtNode) continue;
-            const srcRate = (srcNode.metadata.conversionRate as number) ?? 0;
-            const tgtRate = (tgtNode.metadata.conversionRate as number) ?? 0;
-            if (srcRate > 0) {
-              edge.label = `${Math.round((tgtRate / srcRate) * 100)}%`;
+            // Keep-rate from COUNTS, not from a ratio of two
+            // percentages.
+            //
+            // conversionRate is already a percentage of the anchor
+            // stage, so dividing one by the other and multiplying by
+            // 100 compounds the scaling: a source at 2% and a target
+            // at 51% produced "2555%", which is what the customer
+            // saw.
+            //
+            // Clamped at 100 because this funnel is not monotonic by
+            // nature — the NX4 checkout goes product -> /c/ directly,
+            // so a later stage can legitimately hold more sessions
+            // than an earlier one. behavioral-measurement.ts already
+            // solved this for the plan's funnel by counting a
+            // session's FURTHEST stage; the map never got that fix.
+            // Clamping is the honest minimum: a keep-rate above 100%
+            // is not a measurement, it is an artefact of stages that
+            // can be skipped.
+            const srcCount = stageCounts.get(srcNode.metadata.stage as number) ?? 0;
+            const tgtCount = stageCounts.get(tgtNode.metadata.stage as number) ?? 0;
+            if (srcCount > 0) {
+              const keepPct = Math.min(100, Math.round((tgtCount / srcCount) * 100));
+              edge.label = `${keepPct}%`;
             }
           }
 

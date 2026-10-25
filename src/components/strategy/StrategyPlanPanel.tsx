@@ -247,7 +247,7 @@ function StickyHeader({
 							Gerando PDF do plano
 						</span>
 						<span className="hidden text-[11.5px] text-emerald-300/60 sm:inline">
-							· renderiza o plano inteiro no formato impresso — costuma levar 20–40 segundos
+							renderiza o plano inteiro no formato impresso, e costuma levar 20 a 40 segundos
 						</span>
 					</div>
 					{/* Calm shimmer bar — skeleton-over-spinner per house rule.

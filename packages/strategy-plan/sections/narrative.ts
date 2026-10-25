@@ -380,7 +380,7 @@ Regras estritas:
 8. PROIBIDO travessão (—) em qualquer parágrafo. Use ponto, vírgula, dois pontos, ou parênteses. Travessão é tic de LLM e identifica o texto como gerado.
 9. PROIBIDO usar a palavra "exposição" em qualquer parágrafo. Substituir por "vazamento", "perda potencial" ou "receita em risco" conforme o contexto.
 10. HONESTIDADE DE MEDIÇÃO (regra absoluta, vence qualquer outra): os valores em R$ deste plano são ESTIMATIVAS calculadas por severidade sobre a receita informada pelo cliente — não são medições. PROIBIDO afirmar ou insinuar que foram medidos: nada de "não é projeção", "medido", "comprovado", "observado no seu checkout", "calibrado". Enquadrar sempre como "estimativa" ou "perda potencial estimada". A palavra "medido" é reservada para dados que o pixel de fato coletou (sessões, permanência, cliques, scroll). O bloco "MEDIDO PELO PIXEL" abaixo, quando presente, é a ÚNICA fonte que pode ser citada como medição — cite os números dele literalmente, sem arredondar para cima nem extrapolar. Um cliente que conhece a própria receita compara — e uma única afirmação de medição falsa custa a credibilidade do documento inteiro.
-11. FOCO ÚNICO (EXAME P3): o foco nomeado no Parágrafo 2 e o movimento do Parágrafo 4 são a MESMA página/área — a "Surface dominante" dos dados abaixo. Se os maiores vazamentos individuais estiverem em OUTRA página, cite-os dizendo explicitamente que estão fora do foco; NUNCA troque o foco no meio do texto.
+11. FOCO ÚNICO (EXAME P3): o foco nomeado no Parágrafo 2 e o movimento do Parágrafo 4 são a MESMA página/área, a "Surface dominante" dos dados abaixo. Se os maiores vazamentos individuais estiverem em OUTRA página, cite-os dizendo explicitamente que estão fora do foco; NUNCA troque o foco no meio do texto.
 12. NUNCA funda o título de um achado com o nome de outra página (EXAME P9): "o checkout da página inicial" é defeito. Cite o achado como está e a página dele separadamente.
 13. PROIBIDO EXPLICAR UM ZERO (regra absoluta): se algum número abaixo vier zerado, você pode REPORTAR o zero, mas NUNCA inventar a causa dele. Proibido atribuir um zero a falta de informação do cliente, a configuração pendente, a dado não fornecido, ou a qualquer motivo que não esteja escrito literalmente nos dados abaixo. Não existe "porque X não foi informado" a menos que os dados digam isso com todas as letras. Um zero mal explicado é a única falha deste documento que o cliente desmente em dez segundos na própria tela de configurações, e ela derruba a credibilidade de todos os outros números do plano. Na dúvida, descreva o que está aberto e siga para o movimento do mês sem justificar o zero.`;
 
@@ -520,7 +520,7 @@ export async function generateNarrativeWhatHappened(
 			`[strategy-plan] INCOHERENT narrative input for ${inputs.envDomain}: ` +
 				`chronic=${inputs.chronicCount} newCritical=${inputs.newCriticalCount} ` +
 				`regression=${inputs.regressionCount} but exposureTotal=0 and ` +
-				`distinctExposurePoints=0. Exposure aggregate read nothing — check ` +
+				`distinctExposurePoints=0. Exposure aggregate read nothing, check ` +
 				`finding retention (pruneOlderThan) and latestComprehensiveCycleId.`,
 		);
 		return {

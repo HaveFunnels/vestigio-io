@@ -85,7 +85,7 @@ function ActionQueueHeroComponent({ data }: WidgetProps) {
 					</div>
 					<div className="mt-1 text-[12px] text-content-secondary">
 						{empty
-							? "Sem ações abertas — comece pelos Findings."
+							? "Sem ações abertas. Comece pelos Findings."
 							: caption || `${totalOpen} ações abertas`}
 					</div>
 				</div>

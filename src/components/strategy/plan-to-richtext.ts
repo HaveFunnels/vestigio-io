@@ -221,7 +221,7 @@ export function planToNotesHtml(plan: StrategyPlan, planUrl: string): { html: st
 		parts.push(`<ol>`);
 		for (const step of s.topSteps) {
 			parts.push(`<li>`);
-			parts.push(`<strong>${escapeHtml(step.title)}</strong> — ${escapeHtml(step.range)}`);
+			parts.push(`<strong>${escapeHtml(step.title)}</strong> (${escapeHtml(step.range)})`);
 			if (step.reasoning) {
 				parts.push(`<br><em>${escapeHtml(step.reasoning)}</em>`);
 			}
@@ -275,7 +275,7 @@ export function planToWhatsApp(plan: StrategyPlan, planUrl: string): string {
 	if (s.topSteps.length > 0) {
 		lines.push(`*PRÓXIMOS PASSOS*`);
 		s.topSteps.forEach((step, i) => {
-			lines.push(`${i + 1}. *${step.title}* — ${step.range}`);
+			lines.push(`${i + 1}. *${step.title}* (${step.range})`);
 			if (step.reasoning) {
 				// Reasoning em italic — distingue visualmente do title bold
 				// no app sem competir por peso visual.
@@ -323,7 +323,7 @@ export function planToMarkdown(plan: StrategyPlan, planUrl: string): string {
 		lines.push("");
 		lines.push(`### Próximos passos`);
 		s.topSteps.forEach((step, i) => {
-			lines.push(`${i + 1}. **${step.title}** — ${step.range}`);
+			lines.push(`${i + 1}. **${step.title}** (${step.range})`);
 			if (step.reasoning) {
 				// Reasoning em italic — distingue do título bold.
 				lines.push(`   *${step.reasoning}*`);
@@ -361,7 +361,7 @@ export function planToPlainText(plan: StrategyPlan, planUrl: string): string {
 	if (s.topSteps.length > 0) {
 		lines.push(`PRÓXIMOS PASSOS`);
 		s.topSteps.forEach((step, i) => {
-			lines.push(`${i + 1}. ${step.title} — ${step.range}`);
+			lines.push(`${i + 1}. ${step.title} (${step.range})`);
 			if (step.reasoning) {
 				lines.push(`   ${step.reasoning}`);
 			}

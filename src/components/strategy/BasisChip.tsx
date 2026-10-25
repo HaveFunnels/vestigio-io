@@ -20,17 +20,17 @@ const STYLE: Record<ClaimBasis, { label: string; cls: string; title: string }> =
 	measured: {
 		label: "MEDIDO",
 		cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
-		title: "Contagem direta (pixel ou verificação de página) — não é estimativa.",
+		title: "Contagem direta (pixel ou verificação de página). Não é estimativa.",
 	},
 	estimated: {
 		label: "ESTIMADO",
 		cls: "border-sky-500/25 bg-sky-500/10 text-sky-300",
-		title: "Estimativa por severidade sobre a receita informada — leia como ordem de grandeza, não como medição.",
+		title: "Estimativa por severidade sobre a receita informada. Leia como ordem de grandeza, não como medição.",
 	},
 	verify: {
 		label: "VERIFICAR",
 		cls: "border-amber-500/30 bg-amber-500/10 text-amber-300",
-		title: "Sinal de confiança baixa — confirme antes de agir sobre o número.",
+		title: "Sinal de confiança baixa. Confirme antes de agir sobre o número.",
 	},
 };
 

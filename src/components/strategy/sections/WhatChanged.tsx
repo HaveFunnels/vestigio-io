@@ -70,7 +70,7 @@ export default function WhatChanged({ whatChanged, pageLabelByPath }: Props) {
 							{whatChanged.probedPages}{" "}
 							{whatChanged.probedPages === 1 ? "página monitorada" : "páginas monitoradas"}
 						</span>{" "}
-						diariamente no período — nenhuma queda, mudança de conteúdo ou degradação de
+						diariamente no período, sem nenhuma queda, mudança de conteúdo ou degradação de
 						velocidade detectada. Estabilidade também é informação.
 					</p>
 				) : (

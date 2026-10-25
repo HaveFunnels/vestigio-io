@@ -157,7 +157,7 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 				{behavioral.funnel && behavioral.funnel.stages.length > 0 && (
 					<div className="mb-6">
 						<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-							Seu funil, medido — sessões que chegaram em cada etapa
+							Seu funil, medido: sessões que chegaram em cada etapa
 						</div>
 						{/* ONDA 4.5 — o funil como desenho: fluxo afunilando de
 						    verdade, maior estreitamento anotado no traço. */}
@@ -239,7 +239,7 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 				{behavioral.friction && behavioral.friction.pages.length > 0 && (
 					<div className="mb-6">
 						<div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-content-faint">
-							Onde a fricção acontece — amostra de {behavioral.friction.sampleSessions.toLocaleString("pt-BR")} sessões
+							Onde a fricção acontece, em uma amostra de {behavioral.friction.sampleSessions.toLocaleString("pt-BR")} sessões
 						</div>
 						<div className="space-y-2">
 							{behavioral.friction.pages.map((pg) => {

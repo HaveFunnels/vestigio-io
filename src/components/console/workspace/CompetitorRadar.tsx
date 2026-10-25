@@ -289,7 +289,7 @@ export function CompetitorRadar() {
 
 			<div className="mt-4 border-t border-edge pt-3 text-[11px] text-zinc-500">
 				A cada audit cycle full, capturamos a homepage dos {Math.min(10, activeCap)} competidores
-				ativos mais recentes — fetch educado equivalente a abrir o site num navegador. Sem
+				ativos mais recentes, com fetch educado equivalente a abrir o site num navegador. Sem
 				autenticação, sem crawl, sem scanners pesados. Com SERP provider configurado,
 				também observamos SERPs da sua marca e da categoria pra detectar concorrência
 				orgânica e sugerir candidatos.

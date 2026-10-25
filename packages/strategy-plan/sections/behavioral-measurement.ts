@@ -296,7 +296,7 @@ export async function generateBehavioralMeasurement(
 		sessionsFiltered: parsed.length,
 		sessionsExcluded: excluded,
 		scrollNote:
-			"Scroll é medido em marcos de 25/50/75/90% — 'sem rolar' significa que o marco de 25% nunca disparou.",
+			"Scroll é medido em marcos de 25/50/75/90%, e 'sem rolar' significa que o marco de 25% nunca disparou.",
 		sources,
 		alerts,
 		funnel,
@@ -394,13 +394,13 @@ export function computeMeasuredFunnel(
 			sessions = allSessions.filter((s) => s.startedAt >= first);
 			instrumentedSince = first.toISOString().slice(0, 10);
 			note = pt0
-				? `Funil computado desde ${instrumentedSince}, quando a medição do checkout começou — todos os degraus na mesma janela.`
-				: `Funnel computed since ${instrumentedSince}, when checkout measurement began — every stage over the same window.`;
+				? `Funil computado desde ${instrumentedSince}, quando a medição do checkout começou. Todos os degraus na mesma janela.`
+				: `Funnel computed since ${instrumentedSince}, when checkout measurement began. Every stage over the same window.`;
 		}
 	} else {
 		note = pt0
-			? "Pagamento e compra ainda não são medidos (pixel não instalado no checkout) — os degraus vão até o checkout."
-			: "Payment and purchase are not yet measured (pixel not installed on the checkout) — stages go up to checkout.";
+			? "Pagamento e compra ainda não são medidos (pixel não instalado no checkout), então os degraus vão até o checkout."
+			: "Payment and purchase are not yet measured (pixel not installed on the checkout), so stages go up to checkout.";
 	}
 	const arrived = sessions.length;
 	if (arrived === 0) return null;

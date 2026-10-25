@@ -373,7 +373,7 @@ export default function FindingDetailPanel({
 										})}
 										{finding.data_freshness === "stale" && (
 											<span className='ml-2 text-amber-500'>
-												— {td("stale_warning")}
+												{td("stale_warning")}
 											</span>
 										)}
 									</span>

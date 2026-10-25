@@ -34,6 +34,70 @@ function walkDir(dir: string, predicate: (filePath: string) => boolean, out: str
 
 const INVARIANTS: Invariant[] = [
   {
+    name: "no em-dash in customer-visible prose",
+    check: () => {
+      // House style, stated more than once: no em-dashes. The LLM
+      // prompts already forbid them ("travessão é tic de LLM"), so
+      // generated prose was clean while HARDCODED strings kept
+      // shipping them — "Seu funil, medido — sessões que chegaram em
+      // cada etapa" is the one the founder quoted back.
+      //
+      // Scoped to prose. A lone "—" is the conventional "no value"
+      // glyph in a data cell, not punctuation, and the prompt rules
+      // have to name the character in order to forbid it.
+      const roots = [
+        path.join(ROOT, "src", "components", "strategy"),
+        path.join(ROOT, "src", "components", "console"),
+        path.join(ROOT, "packages", "strategy-plan", "sections"),
+      ];
+      const offenders: string[] = [];
+      for (const root of roots) {
+        for (const f of walkDir(root, (x) => /\.(ts|tsx)$/.test(x) && !/\.test\./.test(x))) {
+          const rel = path.relative(ROOT, f);
+          // mock-data is fixtures, never rendered to a customer.
+          if (/mock-data/.test(rel)) continue;
+          const lines = fs.readFileSync(f, "utf8").split("\n");
+          // Block-comment state, tracked across lines. Checking only
+          // whether a line STARTS with a marker misses the
+          // continuation lines of a /* ... */ or {/* ... */} block,
+          // which is most of this codebase's commentary and produced
+          // 50 false positives on the first run.
+          let inBlock = false;
+          lines.forEach((line, i) => {
+            const opens = line.includes("/*");
+            const closes = line.includes("*/");
+            const wasInBlock = inBlock;
+            if (opens && !closes) inBlock = true;
+            else if (closes) inBlock = false;
+            if (wasInBlock || opens) return;
+
+            if (!line.includes("\u2014")) return;
+            // Strip a trailing line comment before judging: an em-dash
+            // in "// 112 — a shorter, calmer funnel" is commentary,
+            // not copy.
+            const code = line.split("//")[0];
+            if (!code.includes("\u2014")) return;
+            const t = code.trim();
+            if (t.startsWith("*")) return;
+            // A line that is nothing but the glyph is the "no value"
+            // placeholder, rendered in a data cell.
+            if (t === "\u2014" || t === "{\"\u2014\"}") return;
+            // The prompt rules that forbid the character by naming it.
+            if (/PROIBIDO|TRAVESS|forbidden/i.test(t)) return;
+            // A lone glyph standing in for "no value".
+            if (/["'\`>]\s*\u2014\s*["'\`<]/.test(t)) return;
+            offenders.push(`${rel}:${i + 1}  ${t.slice(0, 90)}`);
+          });
+        }
+      }
+      if (offenders.length === 0) return null;
+      return (
+        `${offenders.length} em-dash(es) in customer-visible prose:\n  ` +
+        offenders.slice(0, 15).join("\n  ")
+      );
+    },
+  },
+  {
     name: "every NEXT_PUBLIC_* the code reads is a Dockerfile ARG",
     check: () => {
       // Next.js inlines NEXT_PUBLIC_* at BUILD time. A Dockerfile

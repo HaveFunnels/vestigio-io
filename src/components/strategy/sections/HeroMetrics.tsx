@@ -346,7 +346,7 @@ export default function HeroMetrics({ hero, monthLabel, behavioral }: Props) {
 						delta={0}
 						captionWhenStatic="pelo pixel, no seu site"
 						staticTone="neutral"
-						methodologyDescription="Sessões reais dos seus visitantes, medidas pelo pixel — contagem direta, não estimativa. O cartão 'Recuperado/mês' assume este lugar quando o primeiro passo do plano for concluído e verificado."
+						methodologyDescription="Sessões reais dos seus visitantes, medidas pelo pixel. Contagem direta, não estimativa. O cartão 'Recuperado/mês' assume este lugar quando o primeiro passo do plano for concluído e verificado."
 						methodologyDrillHref="/app/maps"
 					/>
 				)}

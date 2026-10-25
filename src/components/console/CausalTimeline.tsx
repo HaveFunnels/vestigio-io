@@ -175,7 +175,7 @@ export default function CausalTimeline({ findingId, envId: explicitEnvId }: Prop
 				<div className="rounded-xl border border-dashed border-edge bg-surface-inset/20 p-4 text-[12px] leading-relaxed text-content-muted">
 					{data.prior_state.label === "first_env_cycle" ? (
 						<>
-							Este é o primeiro ciclo deste ambiente — não há janela anterior pra comparar. A finding pode ser pré-existente do site ou ter sido criada junto com o setup.
+							Este é o primeiro ciclo deste ambiente, então não há janela anterior pra comparar. A finding pode ser pré-existente do site ou ter sido criada junto com o setup.
 						</>
 					) : data.prior_state.label === "unknown" ? (
 						<>

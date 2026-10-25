@@ -161,8 +161,8 @@ export function computeWhatChanged(
 				weight: 4,
 				observedAt: last.observedAt.toISOString().slice(0, 10),
 				detail: pt
-					? `${path} tem conteúdo dinâmico (muda na maior parte das verificações — banners/vitrine rotativos). Mudanças estruturais nesta página não são distinguíveis por comparação de conteúdo.`
-					: `${path} has dynamic content (changes on most checks — rotating banners/grids). Structural changes on this page are not distinguishable by content comparison.`,
+					? `${path} tem conteúdo dinâmico (muda na maior parte das verificações, por banners ou vitrine rotativos). Mudanças estruturais nesta página não são distinguíveis por comparação de conteúdo.`
+					: `${path} has dynamic content (changes on most checks, from rotating banners or grids). Structural changes on this page are not distinguishable by content comparison.`,
 			});
 		}
 

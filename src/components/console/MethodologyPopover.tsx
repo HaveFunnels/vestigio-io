@@ -41,7 +41,7 @@ const BASIS_LABELS: Record<string, { label_pt: string; explain_pt: string }> = {
 	heuristic: {
 		label_pt: "Heurístico",
 		explain_pt:
-			"Onboarding incompleto — usando perfil SMB padrão (R$ 50k/mês, AOV R$ 80, 625 transações). Atualize o perfil em Configurações para subir a confiança.",
+			"Onboarding incompleto, usando perfil SMB padrão (R$ 50k/mês, AOV R$ 80, 625 transações). Atualize o perfil em Configurações para subir a confiança.",
 	},
 };
 
@@ -171,7 +171,7 @@ export default function MethodologyPopover(props: MethodologyPopoverProps) {
 							Intervalo estimado
 						</div>
 						<div className="mt-0.5 font-mono text-[13px] text-content">
-							{formatMoney(props.min, sym)} — {formatMoney(props.max, sym)}
+							{formatMoney(props.min, sym)} a {formatMoney(props.max, sym)}
 							<span className="ml-1 text-[10px] text-content-muted">/mês</span>
 						</div>
 						<div className="mt-0.5 text-[10px] text-content-muted">
@@ -205,7 +205,7 @@ export default function MethodologyPopover(props: MethodologyPopoverProps) {
 								Regra base
 							</div>
 							<div className="mt-0.5 text-[11px] text-content">
-								{formatPct(props.baseline_pct_range.min)} —{" "}
+								{formatPct(props.baseline_pct_range.min)} a{" "}
 								{formatPct(props.baseline_pct_range.max)} de{" "}
 								<span className="font-medium">
 									{props.baseline_metric === "revenue"
@@ -361,7 +361,7 @@ export function AggregateMethodologyPopover(
 										Intervalo agregado
 									</div>
 									<div className="mt-0.5 font-mono text-[12px] text-content">
-										{formatMoney(props.aggregateRange.min, sym)} —{" "}
+										{formatMoney(props.aggregateRange.min, sym)} a{" "}
 										{formatMoney(props.aggregateRange.max, sym)}
 										<span className="ml-1 text-[10px] text-content-muted">
 											/mês

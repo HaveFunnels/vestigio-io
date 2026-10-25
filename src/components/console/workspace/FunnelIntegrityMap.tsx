@@ -155,7 +155,7 @@ export default function FunnelIntegrityMap({ findings, onFindingClick }: Props) 
 			{expandedStage && expandedItems.length > 0 && expandedColors && (
 				<div className={`mt-3 rounded-lg border ${expandedColors.negativeBorder} ${expandedColors.negativeBg} p-3`}>
 					<div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-content-muted">
-						{t(`detail.enrichment.funnel_stages.${expandedStage}`)} — {expandedItems.length} {expandedItems.length === 1 ? t("detail.enrichment.findings_singular") : t("detail.enrichment.findings_plural")}
+						{t(`detail.enrichment.funnel_stages.${expandedStage}`)}: {expandedItems.length} {expandedItems.length === 1 ? t("detail.enrichment.findings_singular") : t("detail.enrichment.findings_plural")}
 					</div>
 					<div className="space-y-1.5">
 						{expandedItems.map((f) => (

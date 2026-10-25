@@ -851,13 +851,13 @@ Regras:
 5. Primeiro parágrafo: por que este vazamento merece a posição ${order} DESTE mês. Lidere com o **valor financeiro** ("R$ X.XXX/mês de vazamento") e a causa concreta. Não com "severidade alta" abstrato.
 6. Segundo parágrafo: o que está em jogo se não fizer, terminando na ação concreta na página nomeada.
 7. ${voiceLine}
-8. Cada passo tem uma justificativa única — não repita chavões entre passos. Se este passo tem que citar o Passo 1, faça pela mecânica (mesma causa, outro ponto), nunca pela posição na fila.
+8. Cada passo tem uma justificativa única, então não repita chavões entre passos. Se este passo tem que citar o Passo 1, faça pela mecânica (mesma causa, outro ponto), nunca pela posição na fila.
 9. Voz ativa, primeira pessoa do plural ("Vestigio observou", "Detectamos") quando precisar atribuir.
 10. PROIBIDO travessão (—). Use ponto, vírgula, dois pontos, ou parênteses.
 11. PROIBIDO exclamação. PROIBIDO emoji. PROIBIDO link.
 12. COERÊNCIA (regra absoluta): o texto trata EXCLUSIVAMENTE do problema do título deste passo, na superfície deste passo. PROIBIDO discorrer sobre outra página ou outro problema como assunto principal. Mencionar outra superfície só é permitido em UMA frase de contraste explícito com o Passo 1. Um passo cujo título fala de uma coisa e cujo corpo fala de outra é defeito, não estilo.
 13. HONESTIDADE (regra absoluta): descreva riscos como AUSÊNCIA de proteção, nunca como ataque em andamento. PROIBIDO afirmar que dados/sessões "estão sendo roubados", que o site "está sob ataque" ou que invasores "estão explorando" algo — nada disso foi observado; o que existe é uma proteção faltando.
-14. Zero menção literal a "Passo 1", "Passo 2", "próximo passo", "primeiro/segundo/terceiro" — a UI mostra a numeração.`;
+14. Zero menção literal a "Passo 1", "Passo 2", "próximo passo", "primeiro/segundo/terceiro", porque a UI mostra a numeração.`;
 
 	// Resolve inference keys to friendly names so the LLM has no
 	// raw snake_case to echo. Falls back to mechanical humanize when
@@ -921,7 +921,7 @@ function frictionPromptLines(pg: FrictionPage): string[] {
 	if (pg.backtracks > 0) bits.push(`${pg.backtracks} entradas com volta imediata`);
 	if (bits.length === 0) return [];
 	return [
-		`- COMPORTAMENTO MEDIDO NESTA PÁGINA — "${pg.label}" (pixel, ${pg.sessions.toLocaleString("pt-BR")} sessões da amostra): ${bits.join("; ")}. ${pg.sessionsWithFriction.toLocaleString("pt-BR")} sessões tiveram pelo menos um desses atritos.`,
+		`- COMPORTAMENTO MEDIDO NESTA PÁGINA, em "${pg.label}" (pixel, ${pg.sessions.toLocaleString("pt-BR")} sessões da amostra): ${bits.join("; ")}. ${pg.sessionsWithFriction.toLocaleString("pt-BR")} sessões tiveram pelo menos um desses atritos.`,
 		`- OBRIGATÓRIO: cite pelo menos UM desses números medidos no texto, com a palavra "medido"/"medidas". Números medidos são contagem real, os únicos que podem ser chamados assim.`,
 	];
 }
@@ -1012,7 +1012,7 @@ async function generateArtifact(args: {
 	const common = `Você é Vestigio, escrevendo um ARTEFATO PRONTO PARA USAR para ${args.envDomain} (${vertical}).
 Responda em ${rules.language_name}. Entregue SOMENTE o artefato, sem preâmbulo, sem explicação, sem markdown de cabeçalho.
 PROIBIDO: travessão (—), emoji, placeholders vazios tipo [NOME] sem instrução curta entre colchetes.
-REGRA ABSOLUTA — NÃO INVENTE FATOS DO NEGÓCIO: nomes de produto, preços, prazos, percentuais de desconto e condições comerciais só podem aparecer se estiverem escritos no contexto abaixo. Não existindo, escreva um campo entre colchetes com instrução curta (ex.: "[nome do produto mais vendido]", "[preço]"). Um produto inventado num documento que o cliente vai usar com a própria agência destrói a credibilidade do plano inteiro, e o cliente percebe na primeira linha.
+REGRA ABSOLUTA, NÃO INVENTE FATOS DO NEGÓCIO: nomes de produto, preços, prazos, percentuais de desconto e condições comerciais só podem aparecer se estiverem escritos no contexto abaixo. Não existindo, escreva um campo entre colchetes com instrução curta (ex.: "[nome do produto mais vendido]", "[preço]"). Um produto inventado num documento que o cliente vai usar com a própria agência destrói a credibilidade do plano inteiro, e o cliente percebe na primeira linha.
 ${entitiesBlock}
 ${args.measuredContext ? `CONTEXTO MEDIDO (use para tornar o texto específico): ${args.measuredContext}` : ""}
 ${args.entityLabel ? `A página/produto em questão: "${args.entityLabel}".` : ""}`;

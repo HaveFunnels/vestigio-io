@@ -90,6 +90,36 @@ export const FRICTION_INFERENCE_KEYS = {
 
 type FrictionKind = keyof typeof FRICTION_INFERENCE_KEYS;
 
+/**
+ * What the reader is told this finding is, in their own words.
+ *
+ * Without these the plan printed the raw inference key
+ * ("measured_dead_clicks") as the headline. Caught by the dry run:
+ * five priorities in a row named after machine identifiers.
+ */
+const FRICTION_TITLES: Record<FrictionKind, (entity: string) => string> = {
+	deadClicks: (e) => `Cliques que não respondem em "${e}"`,
+	hesitationsNearCta: (e) => `Hesitação na frente do botão de compra em "${e}"`,
+	inputAbandons: (e) => `Campos de formulário abandonados em "${e}"`,
+	formRetries: (e) => `Tentativas repetidas de formulário em "${e}"`,
+	backtracks: (e) => `Entradas com saída imediata em "${e}"`,
+};
+
+/** The concrete thing to look at, per kind. Generic advice would be
+ *  the catalogue slop this product exists to avoid. */
+const FRICTION_ACTIONS: Record<FrictionKind, string> = {
+	deadClicks:
+		"Encontre o elemento que parece clicável e não faz nada: imagem, ícone ou texto com estilo de link sem destino.",
+	hesitationsNearCta:
+		"Leia o que está ao redor do botão de compra. Pausa longa ali costuma ser dúvida de preço, frete ou segurança não respondida na tela.",
+	inputAbandons:
+		"Percorra o formulário campo a campo e veja qual exige informação que o comprador não tem em mãos ou não entende por que você pede.",
+	formRetries:
+		"Submeta o formulário de propósito com erros comuns e veja se a mensagem diz o que corrigir e onde.",
+	backtracks:
+		"Abra a página pelo mesmo caminho do anúncio e compare a primeira tela com o que o anúncio prometeu.",
+};
+
 export interface BehavioralFindingInput {
 	friction: MeasuredFrictionOutput | null | undefined;
 	windowStart: string;
@@ -233,6 +263,8 @@ export function buildBehavioralFindings(
 
 		out.findings.push({
 			inference_key: FRICTION_INFERENCE_KEYS[kind],
+			title: FRICTION_TITLES[kind](lead.pg.label || lead.pg.path),
+			root_cause: FRICTION_ACTIONS[kind],
 			pack: "behavioral",
 			severity: severityFor(lead.pg.frictionRatePct, lead.pg.sessionsWithFriction),
 			polarity: "negative",
@@ -244,7 +276,6 @@ export function buildBehavioralFindings(
 			surface_kind: "public",
 			origin: "pixel",
 			claim_type: "behavioral",
-			root_cause: null,
 			change_class: null,
 			verification_maturity: "verified",
 			// Every contributing page keeps its own numbers, so the

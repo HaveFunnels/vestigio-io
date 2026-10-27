@@ -853,6 +853,9 @@ export async function GET(request: Request, { params }: RouteParams) {
 		behavioral: (plan as any).behavioralJson ?? null,
 		adLedger: (plan as any).adLedgerJson ?? null,
 		whatChanged: (plan as any).whatChangedJson ?? null,
+		// Fase 2: null until ADAPTIVE_PLAN_ENABLED produced one, so the
+		// renderer simply skips the block on every existing plan.
+		adaptive: (plan as any).adaptiveJson ?? null,
 		packDistribution,
 		attributionTimeline,
 		attributionTotal,

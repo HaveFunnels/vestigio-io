@@ -318,6 +318,39 @@ export async function generatePlan(
 		// their own output regardless of whether the findings landed.
 		console.warn("[strategy-plan] behavioral findings emission skipped:", err);
 	}
+
+	// Fase 2 — the adaptive four-part plan.
+	//
+	// Assembled from Finding rows, which is the whole point: the 19
+	// sections each owned a pipeline, and this one owns none. It is
+	// computed AFTER the behavioural emission above so it can see
+	// those findings in the same run.
+	//
+	// Flag-gated and additive. It is stored alongside the existing
+	// sections rather than replacing them, because buildAdaptivePlan
+	// reads only findings and a wholesale swap would silently drop
+	// copyLens (the one section present in 14 of 14 plans), the
+	// narrative, the hero metrics and what-changed. Rendering it ABOVE
+	// the existing document answers the ordering complaints without
+	// losing anything.
+	let adaptive: unknown = null;
+	try {
+		const { adaptivePlanEnabled } = await import("./sections/adaptive-plan-flag");
+		if (adaptivePlanEnabled()) {
+			const { buildAdaptivePlan, loadPlanFindings } = await import(
+				"./sections/adaptive-plan"
+			);
+			const { latestComprehensiveCycleId } = await import("./honest-aggregates");
+			const cycleId = await latestComprehensiveCycleId(prisma, ctx.environmentId, ctx.monthEnd);
+			if (cycleId) {
+				const { findings, resolved } = await loadPlanFindings(prisma, ctx.environmentId, cycleId);
+				adaptive = buildAdaptivePlan({ findings, resolved, locale: ctx.locale });
+			}
+		}
+	} catch (err) {
+		// A failure here must never cost the customer their plan.
+		console.warn("[strategy-plan] adaptive plan skipped:", err);
+	}
 	// The funnel says where people leave; friction is the only measured
 	// evidence of why. They are produced independently, so the
 	// comparison happens here, once both exist. Without it the document
@@ -393,6 +426,7 @@ export async function generatePlan(
 		behavioral,
 		adLedger,
 		whatChanged,
+		adaptive: adaptive as import("./sections/adaptive-plan").AdaptivePlan | null,
 		cost: { llmCallsCount, llmCostCents },
 		cycleNumber,
 		regenScope: scope,
@@ -510,6 +544,9 @@ export async function generateAndPersistPlan(
 				behavioralJson: output.behavioral as any,
 				adLedgerJson: output.adLedger as any,
 				whatChangedJson: output.whatChanged as any,
+				// null when the flag is off, which is how an existing plan
+				// keeps rendering exactly as before.
+				adaptiveJson: output.adaptive as any,
 				llmCallsCount: { increment: output.cost.llmCallsCount },
 				llmCostCents: { increment: output.cost.llmCostCents },
 			};

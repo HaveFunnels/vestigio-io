@@ -1,0 +1,11 @@
+-- The adaptive four-part plan, stored like every other section.
+--
+-- Nullable and additive: it is written only when ADAPTIVE_PLAN_ENABLED
+-- is set, so every existing plan keeps rendering exactly as before and
+-- the column reads null until the flag is turned on.
+--
+-- Stored rather than fetched client-side because the plan page is
+-- server-rendered from this row, and introducing a second data path
+-- for the same findings is precisely the duplication this phase
+-- exists to remove.
+ALTER TABLE "MonthlyStrategyPlan" ADD COLUMN "adaptiveJson" JSONB;

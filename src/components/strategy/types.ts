@@ -425,6 +425,10 @@ export interface StrategyPlan {
 	adLedger?: import("./sections/AdLedger").AdLedgerUI | null;
 	/** ONDA 2.3 — probe diff since the previous plan. */
 	whatChanged?: import("./sections/WhatChanged").WhatChangedUI | null;
+	/** Fase 2: the adaptive four-part plan. Absent on every plan
+	 *  generated before the flag, which is why the renderer treats
+	 *  null as "skip the block". */
+	adaptive?: import("./sections/PlanPriorities").AdaptivePlanUI | null;
 	/** ONDA 4.1 — path → entity label (cleaned crawl title). */
 	pageLabelByPath?: Record<string, string>;
 	/** ONDA 4.3 — capture dimensions + located regions per path. */

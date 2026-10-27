@@ -648,7 +648,18 @@ model MonthlyStrategyPlan {
   /// ONDA 2.3 — longitudinal probe diff ("o que mudou no site desde o
   /// último plano"). Null when the env has no probes in the window.
   whatChangedJson          Json?
-  mapsJson                 Json?
+
+  /// Fase 2: the adaptive four-part plan (resumo, prioridades, ações,
+  /// evolução), assembled from Finding rows rather than from its own
+  /// pipeline.
+  ///
+  /// Nullable and computed only when ADAPTIVE_PLAN_ENABLED is set, so
+  /// an existing plan keeps rendering exactly as before. It is stored
+  /// like every other section instead of being fetched client-side,
+  /// because the plan page is server-rendered from this row and a
+  /// second data path would be the thing this phase is removing.
+  adaptiveJson Json?
+  mapsJson     Json?
 
   // ── Generation cost telemetry ──
   llmCostCents  Int     @default(0)

@@ -8,6 +8,7 @@ import "@/styles/strategy.css";
 import type { StrategyPlan } from "./types";
 import { buildCopyPayload, COPY_FORMATS, type CopyFormat } from "./plan-to-richtext";
 import HeroMetrics from "./sections/HeroMetrics";
+import PlanPriorities from "./sections/PlanPriorities";
 import BuyerSegments from "./sections/BuyerSegments";
 import WhatHappenedNarrative from "./sections/WhatHappenedNarrative";
 import NextSteps from "./sections/NextSteps";
@@ -767,6 +768,13 @@ export default function StrategyPlanPanel({ plan, showStickyHeader = true, onClo
 						envDomain={plan.envDomain}
 					/>
 				</div>
+
+				{/* Fase 2 — the prioritised summary opens the document.
+				    Renders nothing when the flag never produced one, so
+				    an existing plan is byte-identical. Above the hero on
+				    purpose: the founder's note was that the two most
+				    actionable blocks sat at the bottom. */}
+				<PlanPriorities adaptive={plan.adaptive} month={plan.month} />
 
 				<div data-toc-id="hero">
 					<HeroMetrics hero={plan.heroMetrics} monthLabel={monthLabel} behavioral={plan.behavioral} />

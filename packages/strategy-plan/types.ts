@@ -433,6 +433,10 @@ export interface PlanGeneratorOutput {
 	adLedger: import("./sections/ad-ledger").AdLedgerOutput | null;
 	/** ONDA 2.3 — probe diff since the previous plan; null without probes. */
 	whatChanged: import("./sections/what-changed").WhatChangedOutput | null;
+	/** Fase 2: the adaptive four-part plan. Null when the flag is off,
+	 *  which is the normal state while the current document is still
+	 *  the deliverable. */
+	adaptive: import("./sections/adaptive-plan").AdaptivePlan | null;
 	cost: GenerationCost;
 	cycleNumber: number;
 }

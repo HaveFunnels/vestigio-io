@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { sourceIdentity } from "../../../../packages/behavioral/source-identity";
+import SourceReadings from "./SourceReadings";
 import BasisChip from "../BasisChip";
 import MeasuredFunnelViz from "./MeasuredFunnelViz";
 
@@ -114,11 +114,6 @@ function fmtPct(n: number): string {
 	return `${n.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
 }
 
-function fmtDuration(s: number): string {
-	if (s < 60) return `${s}s`;
-	return `${Math.floor(s / 60)}m${String(s % 60).padStart(2, "0")}s`;
-}
-
 export default function BehavioralMeasurement({ behavioral }: Props) {
 	if (!behavioral || behavioral.sources.length === 0) return null;
 
@@ -142,14 +137,9 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 					O que seus visitantes fizeram, por origem
 				</h2>
 
-				{behavioral.alerts.map((alert) => (
-					<div
-						key={`${alert.kind}-${alert.source}`}
-						className="mb-4 rounded-xl border border-amber-500/25 bg-amber-500/[0.06] px-4 py-3 text-[13px] leading-relaxed text-content"
-					>
-						{alert.text}
-					</div>
-				))}
+				{/* The alert used to be a loose paragraph here, repeating
+				    numbers the table below already carried. It is now the
+				    affected origin's own row state, in SourceReadings. */}
 
 				{/* ONDA 2.1 — o funil MEDIDO da loja: chegou → pagou, com
 				    contagem direta de sessões por degrau. A pergunta nº 1 de
@@ -276,47 +266,10 @@ export default function BehavioralMeasurement({ behavioral }: Props) {
 					</div>
 				)}
 
-				<div className="overflow-x-auto">
-					<table className="w-full text-[13px]">
-						<thead>
-							<tr className="border-b border-edge text-left text-content-faint">
-								<th className="py-2 pr-4 font-medium">Origem</th>
-								<th className="py-2 pr-4 font-medium">Sessões</th>
-								<th className="py-2 pr-4 font-medium">Permanência (mediana)</th>
-								<th className="py-2 pr-4 font-medium">Sai sem rolar</th>
-								<th className="py-2 font-medium">Interage com formulário</th>
-							</tr>
-						</thead>
-						<tbody>
-							{behavioral.sources.map((s) => {
-								// EXAME A2 — shared identity: proper label + brand
-								// dot instead of the raw lowercase utm token.
-								const id = sourceIdentity(s.source);
-								return (
-								<tr key={s.source} className="border-b border-edge/50 text-content">
-									<td className="py-2.5 pr-4 font-medium">
-										<span className="inline-flex items-center gap-2">
-											<span
-												aria-hidden
-												className="inline-block h-2 w-2 shrink-0 rounded-full"
-												style={{ backgroundColor: id.color }}
-											/>
-											{id.label}
-										</span>
-									</td>
-									<td className="py-2.5 pr-4 tabular-nums">
-										{s.sessions.toLocaleString("pt-BR")}
-										<span className="text-content-faint">, {s.sharePct}%</span>
-									</td>
-									<td className="py-2.5 pr-4 tabular-nums">{fmtDuration(s.medianDurationS)}</td>
-									<td className="py-2.5 pr-4 tabular-nums">{s.pctNoScroll}%</td>
-									<td className="py-2.5 tabular-nums">{s.pctFormStarted}%</td>
-								</tr>
-								);
-							})}
-						</tbody>
-					</table>
-				</div>
+				<SourceReadings
+					sources={behavioral.sources}
+					alerts={behavioral.alerts.map((a) => ({ source: a.source, text: a.text }))}
+				/>
 
 				<p className="mt-4 text-[11px] leading-relaxed text-content-faint">
 					Janela: {behavioral.windowStart} a {behavioral.windowEnd}.{" "}

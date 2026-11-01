@@ -107,23 +107,25 @@ const INVARIANTS: Invariant[] = [
       // survived every pass of this rule because the rule could not
       // see them.
       //
-      // Scoped to reasoning_templates, which is what this pass
-      // actually cleaned and verified.
+      // Scoped to `engine`, the subtree the plan prints: finding
+      // titles, effects, actions, root-cause descriptions, reasoning
+      // templates. 286 strings in here carried the glyph and none of
+      // them were ever checked, because this invariant walked
+      // .ts/.tsx only and the copy that reaches the customer lives in
+      // JSON.
       //
-      // The rest of the file is NOT clean: a full walk turns up 424
-      // more strings, 286 of them under `engine` in the prose the
-      // plan prints as finding titles, effects, actions and
-      // root-cause descriptions. Those are real violations of the
-      // same rule, not exceptions. They are held back from this
-      // invariant only because rewriting them is a prose job, not a
-      // glyph swap: splitting on the dash mechanically produced
-      // sentence fragments ("Expondo dados pessoais em escala.") when
-      // the dash introduced a dependent clause. Widen this scan to
-      // the whole file as that sweep lands.
+      // Deliberately NOT the whole file yet. 138 strings remain
+      // outside: 114 under `console` (same product voice, same rule,
+      // a separate prose pass) and the rest under `homepage` / `lp`,
+      // where the interpunct is a typographic separator in
+      // attribution and metadata lines ("Vestigio . analise do
+      // ciclo") rather than punctuation in prose. Widening to those
+      // is a founder call, not a mechanical one.
       const dictPath = path.join(ROOT, "dictionary", "pt-BR.json");
       if (fs.existsSync(dictPath)) {
         const walkJson = (node: unknown, at: string) => {
           if (typeof node === "string") {
+            if (node.trim() === "\u2014") return;
             if (node.includes("\u2014") || node.includes("\u00b7")) {
               offenders.push(`dictionary/pt-BR.json ${at}  ${node.slice(0, 80)}`);
             }
@@ -136,7 +138,7 @@ const INVARIANTS: Invariant[] = [
           }
         };
         const dict = JSON.parse(fs.readFileSync(dictPath, "utf8"));
-        walkJson(dict?.engine?.reasoning_templates ?? {}, "engine.reasoning_templates");
+        walkJson(dict?.engine ?? {}, "engine");
       }
       if (offenders.length === 0) return null;
       return (

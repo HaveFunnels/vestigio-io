@@ -100,10 +100,87 @@ const INVARIANTS: Invariant[] = [
           });
         }
       }
+      // The pt-BR dictionary is customer-visible prose too, and until
+      // now nothing checked it: this invariant walked .ts/.tsx only.
+      // Ten engine reasoning_templates carried an em-dash, which is
+      // the text the plan prints as a finding's reasoning. They
+      // survived every pass of this rule because the rule could not
+      // see them.
+      //
+      // Scoped to reasoning_templates, which is what this pass
+      // actually cleaned and verified.
+      //
+      // The rest of the file is NOT clean: a full walk turns up 424
+      // more strings, 286 of them under `engine` in the prose the
+      // plan prints as finding titles, effects, actions and
+      // root-cause descriptions. Those are real violations of the
+      // same rule, not exceptions. They are held back from this
+      // invariant only because rewriting them is a prose job, not a
+      // glyph swap: splitting on the dash mechanically produced
+      // sentence fragments ("Expondo dados pessoais em escala.") when
+      // the dash introduced a dependent clause. Widen this scan to
+      // the whole file as that sweep lands.
+      const dictPath = path.join(ROOT, "dictionary", "pt-BR.json");
+      if (fs.existsSync(dictPath)) {
+        const walkJson = (node: unknown, at: string) => {
+          if (typeof node === "string") {
+            if (node.includes("\u2014") || node.includes("\u00b7")) {
+              offenders.push(`dictionary/pt-BR.json ${at}  ${node.slice(0, 80)}`);
+            }
+          } else if (Array.isArray(node)) {
+            node.forEach((v, i) => walkJson(v, `${at}[${i}]`));
+          } else if (node && typeof node === "object") {
+            for (const [k, v] of Object.entries(node)) {
+              walkJson(v, at ? `${at}.${k}` : k);
+            }
+          }
+        };
+        const dict = JSON.parse(fs.readFileSync(dictPath, "utf8"));
+        walkJson(dict?.engine?.reasoning_templates ?? {}, "engine.reasoning_templates");
+      }
       if (offenders.length === 0) return null;
       return (
         `${offenders.length} em-dash/interpunct in customer-visible prose:\n  ` +
         offenders.slice(0, 15).join("\n  ")
+      );
+    },
+  },
+  {
+    name: "reasoning templates never splice an untranslated slot value",
+    check: () => {
+      // `severity` arrives from the packs as 'high' / 'medium' /
+      // 'critical'. 25 of the 38 reasoning templates interpolate it,
+      // so a fully translated Portuguese template still rendered
+      // "Severidade do vazamento de receita: high." The fix is a
+      // value lookup (engine.reasoning_slot_values), and this keeps it
+      // complete: any slot a template interpolates whose values are
+      // known English tokens must have a translation for each one.
+      const SEVERITY_TOKENS = ["critical", "high", "medium", "low", "none", "info"];
+      const offenders: string[] = [];
+      for (const loc of ["pt-BR", "es", "de"]) {
+        const f = path.join(ROOT, "dictionary", `${loc}.json`);
+        if (!fs.existsSync(f)) continue;
+        const engine = JSON.parse(fs.readFileSync(f, "utf8")).engine ?? {};
+        const templates: Record<string, string> = engine.reasoning_templates ?? {};
+        const usesSeverity = Object.entries(templates).filter(([, v]) =>
+          v.includes("{severity}"),
+        );
+        if (usesSeverity.length === 0) continue;
+        const mapped: Record<string, string> =
+          engine.reasoning_slot_values?.severity ?? {};
+        const missing = SEVERITY_TOKENS.filter((t) => !mapped[t]);
+        if (missing.length > 0) {
+          offenders.push(
+            `${loc}: ${usesSeverity.length} template(s) interpolate {severity} but ` +
+              `reasoning_slot_values.severity lacks ${missing.join(", ")}`,
+          );
+        }
+      }
+      if (offenders.length === 0) return null;
+      return (
+        `untranslated slot values would reach the customer:\n  ` +
+        offenders.join("\n  ") +
+        `\n  Add the missing words under engine.reasoning_slot_values in each dictionary.`
       );
     },
   },

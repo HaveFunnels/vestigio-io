@@ -829,6 +829,22 @@ export interface EngineTranslations {
    */
   reasoning_templates?: Record<string, string>;
   /**
+   * Locale-native wording for the slot VALUES the packs emit, keyed by
+   * slot name then by the raw value.
+   *
+   * Without this, 25 of the 38 reasoning templates interpolated an
+   * English word into Portuguese prose: `severity` carries 'high' /
+   * 'medium' / 'critical' straight from the packs, so the plan read
+   * "Severidade do vazamento de receita: high." Translating the
+   * template was never enough, because the value arrives from the
+   * inference layer and not from the dictionary.
+   *
+   * Only values present here are substituted. An unmapped value
+   * passes through unchanged, so a new severity level degrades to the
+   * raw token rather than to an empty string.
+   */
+  reasoning_slot_values?: Record<string, Record<string, string>>;
+  /**
    * Human-readable titles for compound finding types (security_revenue_chain,
    * ad_promise_reality_behavior, etc.). Optional — falls back to the English
    * constants in COMPOUND_TYPE_TITLES when missing.

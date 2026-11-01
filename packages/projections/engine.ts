@@ -861,12 +861,31 @@ function resolveReasoning(
   translations?: EngineTranslations,
 ): string {
   const template = translations?.reasoning_templates?.[inferenceKey];
-  if (!template || !inf.reasoning_slots) return fallbackReasoning;
+  if (!template) return fallbackReasoning;
 
-  // Simple {key} interpolation — no ICU complexity needed here
+  // Slots are optional.
+  //
+  // This used to require BOTH a template and reasoning_slots, which
+  // locked the translation layer shut for most of the engine: 33 of
+  // the 37 inference keys that actually fire carry no slots, so a
+  // Portuguese template for any of them was looked up, found, and
+  // then discarded in favour of the English fallback. A template with
+  // no placeholders has nothing to interpolate and needs no slots.
   let result = template;
-  for (const [key, value] of Object.entries(inf.reasoning_slots)) {
-    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), String(value));
+  if (inf.reasoning_slots) {
+    // Simple {key} interpolation, no ICU complexity needed here
+    for (const [key, value] of Object.entries(inf.reasoning_slots)) {
+      // Translate the VALUE too, where the dictionary has a word for
+      // it. The packs emit severity as 'high' / 'medium' / 'critical',
+      // so a Portuguese template carrying {severity} still rendered
+      // "Severidade do vazamento de receita: high." The template was
+      // translated; the value spliced into it never was. 25 of the 38
+      // templates interpolate severity, which is why this is a lookup
+      // rather than 25 rewrites.
+      const localized =
+        translations?.reasoning_slot_values?.[key]?.[String(value)] ?? String(value);
+      result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), localized);
+    }
   }
   return result;
 }

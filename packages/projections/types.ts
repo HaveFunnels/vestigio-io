@@ -758,6 +758,15 @@ export interface EngineTranslations {
    * are the locale-native names ("Awareness" → "Conscientização" etc.).
    */
   funnel_stage_names?: Record<string, string>;
+  /**
+   * Same templates as dynamic_titles, for the other two fields the
+   * plan renders off a runtime-constructed funnel key. `cause` backs
+   * the headline and `effect` backs the "why" line, so leaving them
+   * out meant a pt-BR plan printed "No link or CTA connects browse to
+   * decision" under a Portuguese title.
+   */
+  dynamic_causes?: Record<string, string>;
+  dynamic_effects?: Record<string, string>;
   actions: {
     default_primary: string;
     default_verification: string;

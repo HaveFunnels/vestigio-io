@@ -104,3 +104,55 @@ describe("pt-BR reasoning templates", () => {
 		}
 	});
 });
+
+describe("dynamic funnel keys", () => {
+	// funnel_broken_path_browse_to_decision and friends are built at
+	// runtime, so they can never appear as dictionary keys. Only the
+	// title had a template path; cause and effect fell through to the
+	// English literals the pack builds. The plan renders both (headline
+	// falls back to cause, the "why" line to effect), so a pt-BR plan
+	// printed "No link or CTA connects browse to decision" under a
+	// Portuguese title. Measured on the customer's 2026-11-01 cycle:
+	// 3 English causes, 5 English effects out of 21 findings.
+	const SECTIONS = ["dynamic_titles", "dynamic_causes", "dynamic_effects"] as const;
+	const NAMES = [
+		"funnel_missing_stage",
+		"funnel_broken_path",
+		"funnel_weak_connection",
+		"funnel_dead_end_page",
+	];
+
+	it("resolves cause and effect, not only the title", () => {
+		expect(ENGINE).toContain("'dynamic_causes', translations)");
+		expect(ENGINE).toContain("'dynamic_effects', translations)");
+	});
+
+	it("has pt-BR copy for every template in every section", () => {
+		const d = JSON.parse(
+			fs.readFileSync(path.join(ROOT, "dictionary", "pt-BR.json"), "utf8"),
+		);
+		for (const section of SECTIONS) {
+			for (const name of NAMES) {
+				const v = d.engine[section]?.[name];
+				expect(v, `${section}.${name} missing`).toBeTruthy();
+				expect(v, `${section}.${name} has an em-dash`).not.toContain("—");
+			}
+		}
+	});
+
+	it("keeps the placeholders the engine substitutes", () => {
+		const d = JSON.parse(
+			fs.readFileSync(path.join(ROOT, "dictionary", "pt-BR.json"), "utf8"),
+		);
+		// A translation that drops {from}/{to} would render a sentence
+		// with no stage names in it at all, which reads as a generic
+		// claim rather than a measurement.
+		for (const section of ["dynamic_causes", "dynamic_effects"] as const) {
+			expect(d.engine[section].funnel_missing_stage).toContain("{stage}");
+			for (const name of ["funnel_broken_path", "funnel_weak_connection"]) {
+				expect(d.engine[section][name]).toContain("{from}");
+				expect(d.engine[section][name]).toContain("{to}");
+			}
+		}
+	});
+});

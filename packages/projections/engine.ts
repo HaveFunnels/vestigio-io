@@ -787,35 +787,82 @@ const FIELD_KIND_LABELS: Record<string, string> = {
 };
 
 /** Resolve titles for dynamic inference keys (funnel-gap, etc.) */
-function resolveDynamicTitle(key: string, translations?: EngineTranslations): string | null {
-  const dt = translations?.dynamic_titles;
+/**
+ * Resolve the locale copy for a funnel key the engine CONSTRUCTS at
+ * runtime (funnel_broken_path_browse_to_decision and friends). Those
+ * keys cannot be listed in the dictionary, so the lookup is a template
+ * plus the stage names.
+ *
+ * Parameterised by section because title was not the only field that
+ * needed it: `cause` and `effect` fell through to the English literals
+ * built in the pack, and the plan renders both (headline falls back to
+ * cause, the "why" line falls back to effect). On the customer's
+ * 2026-11-01 cycle that was 3 English causes and 5 English effects out
+ * of 21 findings.
+ */
+type DynamicSection = 'dynamic_titles' | 'dynamic_causes' | 'dynamic_effects';
+
+const DYNAMIC_FALLBACKS: Record<DynamicSection, Record<string, string>> = {
+  dynamic_titles: {
+    funnel_missing_stage: 'Missing funnel stage: {stage}',
+    funnel_broken_path: 'No CTA path: {from} \u2192 {to}',
+    funnel_weak_connection: 'Weak connection: {from} \u2192 {to}',
+    funnel_dead_end_page: 'Dead-end commercial page (no CTA to next stage)',
+  },
+  dynamic_causes: {
+    funnel_missing_stage: 'The {stage} stage has no page of its own',
+    funnel_broken_path: 'No link or CTA connects {from} to {to}',
+    funnel_weak_connection: 'The path from {from} to {to} is weak',
+    funnel_dead_end_page: 'A commercial page offers no way forward',
+  },
+  dynamic_effects: {
+    funnel_missing_stage:
+      'Buyers who need the {stage} step have nowhere to go and leave instead',
+    funnel_broken_path:
+      'Buyers ready to move from {from} to {to} have to find the way themselves, and most do not',
+    funnel_weak_connection:
+      'Buyers moving from {from} to {to} lose momentum at the handover',
+    funnel_dead_end_page:
+      'Buyers arrive with intent and the page gives them nothing to act on',
+  },
+};
+
+function resolveDynamicText(
+  key: string,
+  section: DynamicSection,
+  translations?: EngineTranslations,
+): string | null {
+  const dict = translations?.[section] as Record<string, string> | undefined;
+  const fb = DYNAMIC_FALLBACKS[section];
   const stageNames = translations?.funnel_stage_names;
   const friendly = (token: string): string =>
     stageNames?.[token] ?? token.replace(/_/g, ' ');
+  const tpl = (name: string): string => dict?.[name] ?? fb[name];
 
   if (key.startsWith('funnel_missing_stage_')) {
     const stage = friendly(key.replace('funnel_missing_stage_', ''));
-    const tpl = dt?.funnel_missing_stage ?? 'Missing funnel stage: {stage}';
-    return tpl.replace('{stage}', stage);
+    return tpl('funnel_missing_stage').replace(/\{stage\}/g, stage);
   }
   if (key.startsWith('funnel_broken_path_')) {
     const parts = key.replace('funnel_broken_path_', '').split('_to_');
-    const from = friendly(parts[0] ?? '');
-    const to = friendly(parts[1] ?? '');
-    const tpl = dt?.funnel_broken_path ?? 'No CTA path: {from} → {to}';
-    return tpl.replace('{from}', from).replace('{to}', to);
+    return tpl('funnel_broken_path')
+      .replace(/\{from\}/g, friendly(parts[0] ?? ''))
+      .replace(/\{to\}/g, friendly(parts[1] ?? ''));
   }
   if (key.startsWith('funnel_weak_connection_')) {
     const parts = key.replace('funnel_weak_connection_', '').split('_to_');
-    const from = friendly(parts[0] ?? '');
-    const to = friendly(parts[1] ?? '');
-    const tpl = dt?.funnel_weak_connection ?? 'Weak connection: {from} → {to}';
-    return tpl.replace('{from}', from).replace('{to}', to);
+    return tpl('funnel_weak_connection')
+      .replace(/\{from\}/g, friendly(parts[0] ?? ''))
+      .replace(/\{to\}/g, friendly(parts[1] ?? ''));
   }
   if (key === 'funnel_dead_end_page') {
-    return dt?.funnel_dead_end_page ?? 'Dead-end commercial page (no CTA to next stage)';
+    return tpl('funnel_dead_end_page');
   }
   return null;
+}
+
+function resolveDynamicTitle(key: string, translations?: EngineTranslations): string | null {
+  return resolveDynamicText(key, 'dynamic_titles', translations);
 }
 
 function resolveParameterizedTitle(inferenceKey: string, conclusionValue: string, fallback: string, translations?: EngineTranslations): string {
@@ -1402,8 +1449,14 @@ export function projectFindings(
       freshness: inf.freshness.freshness_state,
       inference_key: vc.inference_key,
       reasoning: resolveReasoning(vc.inference_key, inf, vc.reasoning, translations),
-      cause: translations?.inference_causes?.[vc.inference_key] ?? vc.cause,
-      effect: translations?.inference_effects?.[vc.inference_key] ?? vc.effect,
+      cause:
+        translations?.inference_causes?.[vc.inference_key] ??
+        resolveDynamicText(vc.inference_key, 'dynamic_causes', translations) ??
+        vc.cause,
+      effect:
+        translations?.inference_effects?.[vc.inference_key] ??
+        resolveDynamicText(vc.inference_key, 'dynamic_effects', translations) ??
+        vc.effect,
       basis_type: vc.basis_type,
       eligibility: {
         eligible: findingEligible,

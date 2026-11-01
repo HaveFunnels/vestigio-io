@@ -6671,7 +6671,9 @@
       "success_story_feedback_loop_broken": "Histórias de sucesso de clientes não são capturadas nem publicadas como prova social",
       "tone_shift_across_journey": "Tom de voz da marca inconsistente entre páginas e estágios da jornada",
       "mobile_journey_friction_compound": "Múltiplos problemas pequenos no mobile se acumulando na jornada de compra",
-      "trust_gradient_inverted": "Sinais de confiança concentrados na homepage, ausentes nas páginas de decisão"
+      "trust_gradient_inverted": "Sinais de confiança concentrados na homepage, ausentes nas páginas de decisão",
+      "script_supply_chain_risk": "Scripts de terceiros carregam nas páginas de pagamento sem verificação de integridade",
+      "oscillation_clustering": "Compradores ficam alternando entre as mesmas páginas antes de decidir"
     },
     "inference_effects": {
       "trust_boundary_crossed": "Compradores abandonam a conversão quando redirecionados para domínios desconhecidos. A quebra de confiança no momento da compra reduz diretamente a conclusão do checkout",
@@ -6975,7 +6977,9 @@
       "success_story_feedback_loop_broken": "Vitórias reais de clientes acontecem todo dia mas nunca viram depoimentos ou cases: seu melhor ativo de marketing evapora sem uso",
       "tone_shift_across_journey": "Quando cada página parece de uma empresa diferente, comprador perde confiança acumulativamente. A inconsistência sinaliza desorganização e faz cada promessa parecer menos confiável",
       "mobile_journey_friction_compound": "Cada problema individual no mobile é tolerável, mas juntos criam uma experiência insuportável. Toques pequenos, carregamento lento e mudanças de layout se multiplicam em abandono total",
-      "trust_gradient_inverted": "Selos de confiança e garantias se acumulam na homepage mas somem no checkout e pricing. O gradiente está invertido, mais forte onde o comprador já confia e ausente onde ele duvida"
+      "trust_gradient_inverted": "Selos de confiança e garantias se acumulam na homepage mas somem no checkout e pricing. O gradiente está invertido, mais forte onde o comprador já confia e ausente onde ele duvida",
+      "script_supply_chain_risk": "Se qualquer CDN ou provedor terceiro for comprometido, código malicioso roda com acesso total à página, lendo dados de pagamento, redirecionando compradores ou injetando formulários de checkout falsos",
+      "oscillation_clustering": "O vai e volta mostra que a informação necessária pra decidir está numa página e a decisão está em outra, e cada volta gasta a paciência que faltava pra fechar"
     },
     "reasoning_templates": {
       "security_header_weakness": "Sinais de confiança do navegador {severity}. {factors}. Navegadores mostram avisos de \"Não seguro\" e removem o cadeado quando esses headers estão ausentes. Compradores veem esses sinais e abandonam.",
@@ -7036,6 +7040,18 @@
         "none": "nenhuma",
         "info": "informativa"
       }
+    },
+    "dynamic_causes": {
+      "funnel_missing_stage": "A etapa de {stage} não tem página própria",
+      "funnel_broken_path": "Nenhum link ou botão liga {from} a {to}",
+      "funnel_weak_connection": "O caminho de {from} para {to} é frágil",
+      "funnel_dead_end_page": "Uma página comercial não oferece próximo passo"
+    },
+    "dynamic_effects": {
+      "funnel_missing_stage": "Quem precisa da etapa de {stage} não tem pra onde ir e sai",
+      "funnel_broken_path": "O comprador pronto pra sair de {from} e ir pra {to} tem que achar o caminho sozinho, e a maioria não acha",
+      "funnel_weak_connection": "O comprador que vem de {from} pra {to} perde o embalo na passagem",
+      "funnel_dead_end_page": "O comprador chega com intenção e a página não dá nada pra ele fazer"
     }
   },
   "privacy_policy": {

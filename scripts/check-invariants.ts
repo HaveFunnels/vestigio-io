@@ -107,20 +107,18 @@ const INVARIANTS: Invariant[] = [
       // survived every pass of this rule because the rule could not
       // see them.
       //
-      // Scoped to `engine`, the subtree the plan prints: finding
-      // titles, effects, actions, root-cause descriptions, reasoning
-      // templates. 286 strings in here carried the glyph and none of
-      // them were ever checked, because this invariant walked
-      // .ts/.tsx only and the copy that reaches the customer lives in
-      // JSON.
+      // Covers `engine` (the prose the plan prints: finding titles,
+      // effects, actions, root-cause descriptions, reasoning
+      // templates) and `console` (the dashboard's own copy). 286 + 114
+      // strings carried the glyph and none were ever checked, because
+      // this invariant walked .ts/.tsx only and the copy that reaches
+      // the customer lives in JSON.
       //
-      // Deliberately NOT the whole file yet. 138 strings remain
-      // outside: 114 under `console` (same product voice, same rule,
-      // a separate prose pass) and the rest under `homepage` / `lp`,
-      // where the interpunct is a typographic separator in
-      // attribution and metadata lines ("Vestigio . analise do
-      // ciclo") rather than punctuation in prose. Widening to those
-      // is a founder call, not a mechanical one.
+      // Still excluded: `homepage` and `lp`, where the interpunct is a
+      // typographic separator in attribution and metadata lines
+      // ("Vestigio . analise do ciclo", "R$ 99/mes . Garantia 4x")
+      // rather than punctuation in prose. Those are a design decision,
+      // not a copy defect.
       const dictPath = path.join(ROOT, "dictionary", "pt-BR.json");
       if (fs.existsSync(dictPath)) {
         const walkJson = (node: unknown, at: string) => {
@@ -139,6 +137,7 @@ const INVARIANTS: Invariant[] = [
         };
         const dict = JSON.parse(fs.readFileSync(dictPath, "utf8"));
         walkJson(dict?.engine ?? {}, "engine");
+        walkJson(dict?.console ?? {}, "console");
       }
       if (offenders.length === 0) return null;
       return (

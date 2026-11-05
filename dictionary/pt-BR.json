@@ -1225,7 +1225,7 @@
         "maps": "Cadeias visuais de causa e efeito das descobertas às ações.",
         "knowledge_base": "Documentação sobre descobertas, packs e conceitos da plataforma.",
         "data_sources": "Configure integrações e fontes de acesso para análise da Vestigio.",
-        "cross_signals": "Superfícies onde findings de múltiplas perspectivas convergem na mesma página — a correlação multi-domínio exclusiva da Vestigio."
+        "cross_signals": "Superfícies onde findings de múltiplas perspectivas convergem na mesma página: a correlação multi-domínio exclusiva da Vestigio."
       }
     },
     "verification_badge": {
@@ -1842,7 +1842,7 @@
           "page_hint_label": "Página alvo:"
         },
         "persona_rewrite": {
-          "label": "Persona rewrite — homepage",
+          "label": "Persona rewrite: homepage",
           "subtitle": "Como sua copy ficaria reescrita pra 3 personas distintas",
           "loading": "Gerando variantes por persona...",
           "empty_title": "Sem H1 ou meta description detectados",
@@ -1880,14 +1880,14 @@
           "loading": "Compilando advisories...",
           "empty_title": "Sem vendors com feed de advisory mapeados",
           "empty_description": "Conforme o próximo ciclo detectar Stripe, Cloudflare, Sentry, etc, os feeds aparecem aqui.",
-          "caveat": "Sem detecção de versão automática — confirme se a versão que você roda é afetada antes de tomar ação.",
+          "caveat": "Sem detecção de versão automática: confirme se a versão que você roda é afetada antes de tomar ação.",
           "view_feed": "Ver feed completo",
           "severity_critical": "Crítica",
           "severity_high": "Alta",
           "severity_medium": "Média",
           "mitigation_label": "Mitigação:",
           "notable_label": "Alertas críticos recentes ({count})",
-          "no_notable": "Sem alertas críticos curados no momento — consulte o feed oficial."
+          "no_notable": "Sem alertas críticos curados no momento: consulte o feed oficial."
         },
         "phishing_surface": {
           "label": "Superfície de phishing",
@@ -1896,7 +1896,7 @@
           "empty_title": "Sem typo-squats ativos detectados",
           "empty_description": "Verificamos {checked} variantes do seu domínio e nenhuma resolve. Mantenha o monitoramento ativo.",
           "hits_label": "{count} variantes registradas de {total} testadas",
-          "caveat": "Resolução DNS apenas — para confirmar phishing ativo, verifique whois + conteúdo da página manualmente.",
+          "caveat": "Resolução DNS apenas: para confirmar phishing ativo, verifique whois + conteúdo da página manualmente.",
           "patterns": {
             "typo": "Typo de teclado",
             "visual_swap": "Substituição visual (0/o, 1/i)",
@@ -1912,7 +1912,7 @@
           "loading": "Avaliando conformidade...",
           "empty_title": "Sem dados de conformidade ainda",
           "empty_description": "Após o próximo ciclo, gaps de cybersecurity + detecção de stack alimentam essa análise.",
-          "caveat": "Análise mecânica — auditoria legal completa exige revisão por especialista jurídico.",
+          "caveat": "Análise mecânica: auditoria legal completa exige revisão por especialista jurídico.",
           "passed_label": "{passed} de {total} requisitos",
           "not_evaluated_label": "{count} não avaliados",
           "frameworks": {
@@ -1941,7 +1941,7 @@
           "label": "O que um pentester acharia em 1 hora",
           "subtitle": "Vetores de ataque expostos no seu site, ordenados por velocidade de exploit",
           "empty_title": "Nenhum vetor de ataque óbvio detectado",
-          "empty_description": "Sem brechas de cybersecurity ativas no momento. Continue monitorando — novos findings aparecem aqui.",
+          "empty_description": "Sem brechas de cybersecurity ativas no momento. Continue monitorando: novos findings aparecem aqui.",
           "exploit_time_label": "Tempo pra exploit",
           "exploit_time_minutes": "≈ {minutes} min",
           "target_surface": "Alvo:",
@@ -2029,7 +2029,7 @@
           "subtitle": "Pontos conhecidos de saturação para os vendors detectados no seu stack",
           "loading": "Carregando concerns de escala...",
           "empty_title": "Sem concerns de escala mapeados",
-          "empty_description": "Nenhum vendor com limites documentados detectado ainda — o próximo ciclo deve preencher.",
+          "empty_description": "Nenhum vendor com limites documentados detectado ainda: o próximo ciclo deve preencher.",
           "severity": {
             "critical": "Crítico",
             "high": "Alto",
@@ -2037,12 +2037,12 @@
             "low": "Baixo"
           },
           "points": {
-            "vercel_hobby_bandwidth": "Tier Hobby tem limite de 100GB de bandwidth/mês. Crescimento moderado estoura — migre pra Pro antes da próxima campanha.",
+            "vercel_hobby_bandwidth": "Tier Hobby tem limite de 100GB de bandwidth/mês. Crescimento moderado estoura: migre pra Pro antes da próxima campanha.",
             "vercel_edge_timeout": "Edge functions têm timeout de 25s. Tarefas longas começam a falhar conforme volume cresce.",
             "vercel_function_cold_starts": "Serverless functions sofrem cold start sob carga sustentada. Aceitável hoje, problemático a 10x.",
             "netlify_starter_bandwidth": "Plano Starter tem limite de 100GB de bandwidth/mês. Reservado pra estático + dinâmico leve.",
             "netlify_build_minutes": "Starter inclui 300 minutos de build/mês. Workflows CI pesados batem nisso rápido.",
-            "heroku_dyno_sleep": "Dynos Free/Eco hibernam após 30min sem uso — próxima requisição leva 5-10s pra responder.",
+            "heroku_dyno_sleep": "Dynos Free/Eco hibernam após 30min sem uso: próxima requisição leva 5-10s pra responder.",
             "shopify_api_rate_limit": "API Admin do Shopify limita a 2 req/seg em planos padrão. Operações em massa precisam de batching.",
             "shopify_checkout_extensibility": "Customização do checkout só no Shopify Plus. Checkout padrão tem controle limitado.",
             "wordpress_plugin_bloat": "Cada plugin ativo adiciona queries + JS. Acima de 30 plugins, page weight + TTFB degradam.",
@@ -2056,20 +2056,20 @@
             "cloudflare_worker_cpu": "Workers free limitam a 10ms de CPU por requisição. Código pesado bate rápido em escala.",
             "cloudflare_free_unmetered": "Bandwidth é unmetered no free, mas proteção DDoS e rate limits são essenciais.",
             "fastly_request_rate": "Fastly cobra por requisição após quota incluída. Previsível mas observe a conta.",
-            "sendgrid_free_daily": "Tier free limita a 100 emails/dia. Qualquer atividade comercial estoura — upgrade obrigatório.",
+            "sendgrid_free_daily": "Tier free limita a 100 emails/dia. Qualquer atividade comercial estoura: upgrade obrigatório.",
             "sendgrid_ip_reputation": "IPs compartilhados compartilham reputação. Alto volume ou bounce pode throttle pra todo mundo no pool.",
             "mailgun_flex_limit": "Free trial só envia via domínio sandbox. Produção exige plano Flex no mínimo.",
             "klaviyo_active_profiles": "Preço escala pelo número de active profiles. Limpeza de inativos é essencial pra controlar custo.",
             "mailchimp_contact_pricing": "Tiers de preço por contagem de contatos. Limpeza de audience te mantém em tier menor.",
             "hubspot_marketing_contacts": "Quantidade de marketing contacts dirige preço por tier. Contatos service-only são grátis.",
-            "sentry_event_quota": "Plano free limita 5K eventos/mês. Apps com muitos erros estouram em horas — adicione rate limiters ou faça upgrade.",
+            "sentry_event_quota": "Plano free limita 5K eventos/mês. Apps com muitos erros estouram em horas: adicione rate limiters ou faça upgrade.",
             "sentry_replay_pricing": "Session Replay é cobrado separadamente. Sample rate importa conforme DAU cresce.",
             "datadog_host_pricing": "Preço por host. Densidade de containers e rightsizing afetam a conta mensal materialmente em escala.",
             "ga4_event_cap": "GA4 free lida com 10M eventos/mês. Maioria dos SaaS não bate.",
             "ga4_sampling_threshold": "GA4 começa a samplear a 10M eventos em explorations. Use export pra BigQuery pra dados não-sampleados.",
             "facebook_pixel_match_quality": "Match quality cai conforme cookie blocking cresce. Implemente Conversions API server-side conforme escala spend.",
             "hotjar_session_cap": "Tiers limitam sessões diárias. Tráfego pesado consome a allowance cedo no dia, perdendo a tarde.",
-            "intercom_active_people_pricing": "Preço por active person/mês. Contatos inativos geram custo sem valor — purga regular.",
+            "intercom_active_people_pricing": "Preço por active person/mês. Contatos inativos geram custo sem valor: purga regular.",
             "zendesk_agent_seat_pricing": "Preço por seat de agente escala com time de suporte. Self-service deflection vira chave.",
             "optimizely_mau_pricing": "Preço por MAU exposto a experimentos. Cap pra traffic de teste conforme volume cresce.",
             "launchdarkly_mau_pricing": "Preço por MAU. Use targeting rules pra limitar exposição durante scale-up."
@@ -2128,10 +2128,10 @@
             "email_marketing": "Confirmações de compra, reset de senha e nurturing param. Aumenta CSAT e chargebacks.",
             "error_tracking": "Você perde visibilidade sobre erros novos em produção até voltar.",
             "tag_manager": "Mudanças em pixels e tracking ficam congeladas. Não impacta o site direto.",
-            "consent_manager": "Banner de consentimento some — risco regulatório imediato.",
+            "consent_manager": "Banner de consentimento some: risco regulatório imediato.",
             "analytics": "Você perde dados do período de queda, mas funcionalidade do site segue.",
             "ab_testing": "Testes ativos pausam. Visitantes podem ver versão default inesperada.",
-            "support_widget": "Chat de suporte some — fricção em tickets, mas resolução por e-mail continua."
+            "support_widget": "Chat de suporte some. Fricção em tickets, mas resolução por e-mail continua."
           }
         }
       },
@@ -2218,7 +2218,7 @@
       "widgets": {
         "action_queue_hero": {
           "name": "Fila de Decisões",
-          "description": "Top 5 ações priorizadas — entrega a promessa do landing \"fila de decisões, não dashboard\"."
+          "description": "Top 5 ações priorizadas: entrega a promessa do landing \"fila de decisões, não dashboard\"."
         },
         "money_recovered": {
           "name": "Dinheiro Recuperado",
@@ -2273,7 +2273,7 @@
         },
         "verification_rate_card": {
           "label": "Taxa de Verificação",
-          "caption_strong": "Evidência forte — a maioria das descobertas está confirmada",
+          "caption_strong": "Evidência forte: a maioria das descobertas está confirmada",
           "caption_healthy": "A fila de confirmação está saudável",
           "caption_waiting": "Algumas descobertas ainda aguardam verificação",
           "caption_backing_up": "A fila de verificação está acumulando"
@@ -2281,20 +2281,20 @@
         "open_critical_card": {
           "label": "Críticos abertos",
           "cycle_delta": "{count, plural, one {# ciclo} other {# ciclos}}",
-          "caption_clear": "Tudo limpo — nenhuma descoberta crítica aberta",
-          "caption_added": "{count, plural, one {# entrou neste ciclo — exige atenção imediata} other {# entraram neste ciclo — exigem atenção imediata}}",
-          "caption_cleared": "{count, plural, one {# saiu neste ciclo — mantenha a pressão} other {# saíram neste ciclo — mantenha a pressão}}",
+          "caption_clear": "Tudo limpo: nenhuma descoberta crítica aberta",
+          "caption_added": "{count, plural, one {# entrou neste ciclo: exige atenção imediata} other {# entraram neste ciclo: exigem atenção imediata}}",
+          "caption_cleared": "{count, plural, one {# saiu neste ciclo: mantenha a pressão} other {# saíram neste ciclo: mantenha a pressão}}",
           "caption_open": "{count, plural, one {# crítico aberto desde o último ciclo} other {# críticos abertos desde o último ciclo}}"
         },
         "streak_card": {
           "label": "Sequência",
           "day_singular": "dia",
           "day_plural": "dias",
-          "caption_no_activity": "Sem atividade na última semana — suas auditorias vão preencher isso aqui",
-          "caption_broken": "A sequência foi quebrada — retome amanhã",
-          "caption_long": "Sequência de {count} dias — sua melhor fase em um bom tempo",
-          "caption_building": "{count} dias seguidos — o ritmo está crescendo",
-          "caption_keep_going": "Sequência de {count} dias — continue assim"
+          "caption_no_activity": "Sem atividade na última semana: suas auditorias vão preencher isso aqui",
+          "caption_broken": "A sequência foi quebrada: retome amanhã",
+          "caption_long": "Sequência de {count} dias: sua melhor fase em um bom tempo",
+          "caption_building": "{count} dias seguidos: o ritmo está crescendo",
+          "caption_keep_going": "Sequência de {count} dias: continue assim"
         },
         "what_changed_card": {
           "title": "O que mudou desde o último ciclo",
@@ -2329,10 +2329,10 @@
         },
         "trend_analysis": {
           "name": "Análise de Tendências",
-          "description": "Padrões multi-ciclo — regressões consecutivas, picos repentinos, degradação gradual.",
+          "description": "Padrões multi-ciclo: regressões consecutivas, picos repentinos, degradação gradual.",
           "eyebrow": "Tendências Multi-Ciclo",
           "cycles_count": "{count} ciclos",
-          "cycles_analyzed": "{count} ciclos analisados — todos os findings estáveis",
+          "cycles_analyzed": "{count} ciclos analisados: todos os findings estáveis",
           "needs_cycles": "Precisa de pelo menos 3 ciclos de auditoria para detectar tendências",
           "no_alerts": "Nenhum padrão de tendência acionável",
           "load_failed": "Não foi possível carregar tendências. Recarregue a página.",
@@ -2388,12 +2388,12 @@
       },
       "captions": {
         "money_recovered": {
-          "first_cycle": "Primeiro ciclo ainda processando — recuperações aparecerão aqui",
-          "claimed_pending": "{amount} marcados como resolvidos — próximo ciclo vai confirmar",
+          "first_cycle": "Primeiro ciclo ainda processando: recuperações aparecerão aqui",
+          "claimed_pending": "{amount} marcados como resolvidos: próximo ciclo vai confirmar",
           "claimed_and_confirmed": "{confirmed} confirmados, {claimed} aguardando verificação",
-          "quiet_month": "{amount} limpos ao todo — mês tranquilo até agora",
-          "strong_week": "Semana forte — {amount} recuperados nos últimos 7 dias",
-          "quiet_week": "Semana tranquila — {amount} limpos neste mês no total",
+          "quiet_month": "{amount} limpos ao todo: mês tranquilo até agora",
+          "strong_week": "Semana forte: {amount} recuperados nos últimos 7 dias",
+          "quiet_week": "Semana tranquila: {amount} limpos neste mês no total",
           "last_30d": "{amount} recuperados nos últimos 30 dias"
         },
         "health_score": {
@@ -2401,14 +2401,14 @@
           "component_structural": "estrutural",
           "component_action_quality": "qualidade das ações",
           "component_verification": "verificação",
-          "climbing": "Subindo {delta} pontos — {component} está ganhando terreno",
-          "falling": "Caiu {delta} pontos — {component} está puxando pra baixo",
-          "strong": "Forte em torno de {score} — {component} liderando o composto",
-          "steady": "Estável em {score} — {component} é o próximo a corrigir",
-          "low": "Em {score} — comece por {component} para o maior ganho"
+          "climbing": "Subindo {delta} pontos: {component} está ganhando terreno",
+          "falling": "Caiu {delta} pontos: {component} está puxando pra baixo",
+          "strong": "Forte em torno de {score}: {component} liderando o composto",
+          "steady": "Estável em {score}: {component} é o próximo a corrigir",
+          "low": "Em {score}: comece por {component} para o maior ganho"
         },
         "exposure": {
-          "no_exposure": "Sem exposição aberta — primeira análise ainda em andamento",
+          "no_exposure": "Sem exposição aberta: primeira análise ainda em andamento",
           "down": "Caiu {amount} neste ciclo",
           "led_drop": "liderou a queda",
           "up": "Subiu {amount} neste ciclo",
@@ -2417,11 +2417,11 @@
           "at_risk": "{amount} em risco este mês"
         },
         "change_report": {
-          "quiet": "Ciclo tranquilo — sem movimentação desde a última análise",
-          "regressions": "{count} {label} neste ciclo — vale investigar",
+          "quiet": "Ciclo tranquilo: sem movimentação desde a última análise",
+          "regressions": "{count} {label} neste ciclo: vale investigar",
           "regression_singular": "regressão",
           "regression_plural": "regressões",
-          "net_improvement": "Saldo de {net} {label} — {resolved} resolvidas, {new} novas",
+          "net_improvement": "Saldo de {net} {label}: {resolved} resolvidas, {new} novas",
           "improvement_singular": "melhoria",
           "improvement_plural": "melhorias",
           "new_findings": "{new} {new_label} novas, {resolved} resolvidas neste ciclo",
@@ -2435,11 +2435,11 @@
           "change_plural": "mudanças"
         },
         "activity_heatmap": {
-          "no_activity": "Sem atividade na última semana — suas auditorias vão preencher isso",
-          "broken": "Sequência interrompida — retome amanhã",
-          "longest": "Sequência de {count} dias — sua melhor fase em um bom tempo",
-          "building": "{count} dias seguidos — o ritmo está crescendo",
-          "keep_going": "Sequência de {count} dias — continue assim"
+          "no_activity": "Sem atividade na última semana: suas auditorias vão preencher isso",
+          "broken": "Sequência interrompida: retome amanhã",
+          "longest": "Sequência de {count} dias: sua melhor fase em um bom tempo",
+          "building": "{count} dias seguidos: o ritmo está crescendo",
+          "keep_going": "Sequência de {count} dias: continue assim"
         },
         "cross_signal": {
           "detected": "{count} {label} cross-domain detectados no seu site",
@@ -2448,7 +2448,7 @@
           "none": "Nenhum padrão cross-domain detectado ainda",
           "narrative_two": "Sua {surface} tem um problema cross-domain: {first_title} ({first_pack}) contribui para {second_title} ({second_pack}), com ~{impact}/mês em risco.",
           "narrative_multi": "Sua {surface} tem {count} problemas cross-domain: {links}, resultando em ~{impact}/mês de exposição combinada.",
-          "narrative_causal": " Cadeia de causa-efeito — findings de {first_pack} precederam findings de {last_pack}."
+          "narrative_causal": "Cadeia de causa-efeito: findings de {first_pack} precederam findings de {last_pack}."
         }
       },
       "mock_data": {
@@ -2497,7 +2497,7 @@
         "playbooksHint": "Abra Playbooks para prompts de análise especializada",
         "tips_toggle": "Como aproveitar melhor o chat da Vestigio",
         "tips": {
-          "natural": "Pergunte em linguagem natural — sem formatação especial. Cite descobertas, ações, superfícies ou workspaces pelo nome.",
+          "natural": "Pergunte em linguagem natural: sem formatação especial. Cite descobertas, ações, superfícies ou workspaces pelo nome.",
           "context": "Clique em \"Discutir\" ou \"Usar como contexto\" em qualquer descoberta/ação para começar um chat com o item já anexado.",
           "playbooks": "Use Playbooks (canto superior direito) para análises curadas multi-step como auditorias completas de faturamento ou trust scores.",
           "files": "Arraste um CSV / JSON / TXT / PDF para o chat para anexá-lo como contexto da próxima mensagem.",
@@ -2522,7 +2522,7 @@
       "validation": {
         "accidental": "Isso parece um envio acidental.",
         "too_short": "A entrada é curta demais para ser útil.",
-        "too_vague": "Muito vago — tente perguntar sobre faturamento, escala ou o que corrigir.",
+        "too_vague": "Muito vago: tente perguntar sobre faturamento, escala ou o que corrigir.",
         "too_broad": "Essa pergunta é ampla. Uma versão específica traz melhores resultados.",
         "try_specific": "Tente uma pergunta mais específica para melhores resultados.",
         "asked_recently": "Você perguntou isso recentemente. Tente uma pergunta complementar."
@@ -2614,7 +2614,7 @@
         },
         "conversion_bottleneck": {
           "title": "Mapa de Gargalos de Conversão",
-          "description": "Onde os visitantes desistem e por quê — com a única correção de maior alavancagem.",
+          "description": "Onde os visitantes desistem e por quê: com a única correção de maior alavancagem.",
           "category": "Conversão"
         },
         "trust_signal_audit": {
@@ -2671,7 +2671,7 @@
           "up_next": "A seguir",
           "create_action_cta": "Criar Action a partir desta verificação",
           "creating_action": "Criando Action…",
-          "create_action_success": "Action criada — remediação em acompanhamento.",
+          "create_action_success": "Action criada: remediação em acompanhamento.",
           "create_action_failed": "Não foi possível criar a Action. Tente novamente.",
           "dismiss_aria": "Fechar plano de verificação",
           "goals": {
@@ -2726,7 +2726,7 @@
       "jump_to_latest": "Ir para a última",
       "session_downgraded": {
         "title": "Estamos com algumas dificuldades",
-        "body": "As respostas podem ficar um pouco mais lentas ou curtas por um tempo. Pode continuar — vai voltar ao normal sozinho."
+        "body": "As respostas podem ficar um pouco mais lentas ou curtas por um tempo. Pode continuar: vai voltar ao normal sozinho."
       }
     },
     "organization_selector": {
@@ -2832,7 +2832,7 @@
       "placeholder": "Pergunte à Vestigio...",
       "stop": "Parar",
       "used": "{used}/{limit} usados",
-      "hint_send": "Enter envia · Shift+Enter nova linha",
+      "hint_send": "Enter envia, Shift+Enter nova linha",
       "attach_file": "Anexar arquivo",
       "cycling_placeholders": [
         "Pergunte qualquer coisa à Vestigio...",
@@ -2851,7 +2851,7 @@
     },
     "upgrade_moments": {
       "unlock_integration": "Conecte uma integração para desbloquear esses dados",
-      "ai_pro": "Insights de IA disponíveis no Pro — análise mais profunda, playbooks e mais consultas",
+      "ai_pro": "Insights de IA disponíveis no Pro: análise mais profunda, playbooks e mais consultas",
       "cadence_weekly": "Atualizado semanalmente.",
       "cadence_daily_upgrade": "Upgrade pro Pro para insights diários",
       "more_patterns": "{count} padrões adicionais detectados",
@@ -2872,7 +2872,7 @@
     },
     "cross_signals": {
       "title": "Insights Cruzados",
-      "subtitle": "Superfícies onde descobertas de múltiplas perspectivas convergem — a correlação exclusiva da Vestigio.",
+      "subtitle": "Superfícies onde descobertas de múltiplas perspectivas convergem: a correlação exclusiva da Vestigio.",
       "hero_chains": "Cadeias Cruzadas",
       "hero_at_risk": "Exposição Mensal",
       "hero_sequential": "Padrões Causais",
@@ -2912,15 +2912,15 @@
         }
       },
       "narrative_summary": "<strong>{count}</strong> {count, plural, one {achado cruzado converge} other {achados cruzados convergem}} em <mono>{surface}</mono>",
-      "narrative_causal": "Cadeia causal — achados de <strong>{first}</strong> precederam <strong>{last}</strong>.",
+      "narrative_causal": "Cadeia causal: achados de <strong>{first}</strong> precederam <strong>{last}</strong>.",
       "narrative_combined_exposure": "Exposição combinada: <strong>{impact}{per_month}</strong>"
     },
     "activity_heatmap": {
-      "eyebrow": "Atividade · 90 dias",
+      "eyebrow": "Atividade dos últimos 90 dias",
       "day_streak": "dias seguidos",
       "less": "menos",
       "more": "mais",
-      "day_tooltip": "{date} · {cycles} {cycles, plural, one {ciclo} other {ciclos}} · {actions} {actions, plural, one {ação} other {ações}} resolvidas"
+      "day_tooltip": "{date}, {cycles} {cycles, plural, one {ciclo} other {ciclos}}, {actions} {actions, plural, one {ação} other {ações}} resolvidas"
     },
     "money_recovered": {
       "eyebrow": "Total recuperado com a Vestigio",
@@ -2930,7 +2930,7 @@
     },
     "cycle_banner": {
       "queued": "Auditoria na fila",
-      "running": "Auditando seu site — ao vivo",
+      "running": "Auditando seu site: ao vivo",
       "complete": "Auditoria concluída",
       "failed": "Auditoria falhou",
       "pages_one": "1 página descoberta",
@@ -2944,7 +2944,7 @@
     },
     "paused_banner": {
       "title": "Auditorias pausadas após 14 dias sem acesso.",
-      "body": "Retomando agora — uma auditoria de recuperação está rodando no seu site. Os findings atualizados aparecem em instantes."
+      "body": "Retomando agora: uma auditoria de recuperação está rodando no seu site. Os findings atualizados aparecem em instantes."
     },
     "first_audit": {
       "title": "Executando sua primeira análise",
@@ -2979,9 +2979,9 @@
       "identity_pending": "Aguardando análise inicial...",
       "conf": "Confiança {value}%",
       "findings_live": "Em tempo real",
-      "findings_pending": "Nada ainda — vai chegar logo",
+      "findings_pending": "Nada ainda: vai chegar logo",
       "healing_stuck": "Recuperando a etapa atual ({phase})...",
-      "healing_heartbeat": "Reconectando ao worker — vamos retomar de onde paramos.",
+      "healing_heartbeat": "Reconectando ao worker: vamos retomar de onde paramos.",
       "failed": "A auditoria falhou. O sistema vai tentar novamente automaticamente em alguns minutos.",
       "phase_narrative": {
         "pipeline_bootstrap": "Mapeando seu domínio",
@@ -3008,7 +3008,7 @@
       },
       "preview": {
         "heading": "Com base no seu site de {businessType}, aqui está o que normalmente encontramos:",
-        "disclaimer": "Prévia — resultados completos em poucos minutos",
+        "disclaimer": "Prévia: resultados completos em poucos minutos",
         "business_types": {
           "ecommerce": "e-commerce",
           "saas": "SaaS",
@@ -3052,7 +3052,7 @@
       },
       "workspaces": {
         "title": "Seus Workspaces vão ser montados",
-        "pre_audit_body": "Workspaces agrupam findings por lente — Receita, Confiança, Copy, Comportamento. Eles são preenchidos quando o engine roda pela primeira vez.",
+        "pre_audit_body": "Workspaces agrupam findings por lente: Receita, Confiança, Copy, Comportamento. Eles são preenchidos quando o engine roda pela primeira vez.",
         "empty_body": "Nenhuma lente apresentou resultados ainda. Você verá conforme o próximo audit gerar findings."
       },
       "findings": {
@@ -3062,7 +3062,7 @@
       },
       "actions": {
         "title": "Sua fila de Ações vai aparecer aqui",
-        "pre_audit_body": "Ações são fixes priorizados por impacto financeiro. Elas são derivadas dos findings — então primeiro o audit, depois a fila.",
+        "pre_audit_body": "Ações são fixes priorizados por impacto financeiro. Elas são derivadas dos findings: então primeiro o audit, depois a fila.",
         "empty_body": "Sua fila está vazia. Marque um finding como acionável pra começar."
       },
       "inventory": {
@@ -3277,7 +3277,7 @@
       "stage_audit": "Iniciando seu primeiro diagnóstico",
       "stage_inventory": "Abrindo seu inventário",
       "title": "Você está dentro.",
-      "description": "A Vestigio já está escaneando seu site. Você verá as páginas aparecerem conforme forem descobertas — não precisa atualizar.",
+      "description": "A Vestigio já está escaneando seu site. Você verá as páginas aparecerem conforme forem descobertas: não precisa atualizar.",
       "redirecting": "Redirecionando em {countdown}s…",
       "skip": "Pular e ir para o inventário agora"
     },
@@ -3430,7 +3430,7 @@
       },
       "explainer": "Ações são próximos passos priorizados derivados de decisões. Cada ação pode abordar múltiplas descobertas. As descobertas fornecem a evidência de suporte.",
       "changeBanner": {
-        "firstAnalysis": "Primeira análise — sem histórico de mudanças",
+        "firstAnalysis": "Primeira análise: sem histórico de mudanças",
         "regression": "regressão(ões)",
         "improvement": "melhoria(s)",
         "resolved": "resolvido(s)",
@@ -3449,10 +3449,10 @@
         "midpoint": "Ponto Médio",
         "confidence": "Confiança",
         "priorityScore": "Prioridade",
-        "priority_critical": "Crítica — resolver imediatamente",
-        "priority_high": "Alta — resolver esta semana",
-        "priority_medium": "Média — planejar correção",
-        "priority_low": "Baixa — monitorar",
+        "priority_critical": "Crítica: resolver imediatamente",
+        "priority_high": "Alta: resolver esta semana",
+        "priority_medium": "Média: planejar correção",
+        "priority_low": "Baixa: monitorar",
         "rootCause": "Causa Raiz",
         "operationalStatus": "Status Operacional",
         "linkedFindings": "Findings que justificam esta ação",
@@ -3477,16 +3477,16 @@
         "crossPackBoost": " × 1.5 (cross-pack)",
         "contextTitle": "Contexto",
         "changeNarrative": {
-          "new_issue": "Apareceu pela primeira vez neste audit — atue antes que vire crônico",
-          "regression": "Piorou desde o audit anterior — algo regrediu",
-          "stable_risk": "Persistente nas últimas análises — não vai sumir sozinho",
-          "improvement": "Melhorou desde o audit anterior — mantenha o curso",
-          "resolved": "Resolvido neste ciclo — referência histórica"
+          "new_issue": "Apareceu pela primeira vez neste audit: atue antes que vire crônico",
+          "regression": "Piorou desde o audit anterior: algo regrediu",
+          "stable_risk": "Persistente nas últimas análises: não vai sumir sozinho",
+          "improvement": "Melhorou desde o audit anterior: mantenha o curso",
+          "resolved": "Resolvido neste ciclo: referência histórica"
         },
-        "clusterText": "Parte de um cluster de {count} findings com causa raiz comum — resolver juntos amplifica o resultado",
+        "clusterText": "Parte de um cluster de {count} findings com causa raiz comum: resolver juntos amplifica o resultado",
         "basis": {
-          "data_driven": "Baseado em dados quantitativos coletados — confiança alta",
-          "heuristic": "Análise estrutural via heurísticas — confiança direcional",
+          "data_driven": "Baseado em dados quantitativos coletados: confiança alta",
+          "heuristic": "Análise estrutural via heurísticas: confiança direcional",
           "mixed": "Mistura de sinais quantitativos e heurísticas estruturais"
         },
         "remediation": "Como corrigir",
@@ -3532,14 +3532,14 @@
           "reopenConversationHint": "Volta pro chat onde isto foi verificado.",
           "runVerificationTitle": "Validar sua correção",
           "runVerificationCta": "Validar correção agora",
-          "runVerificationHint": "Marca como feita e dispara uma auditoria prioritária pra confirmar que sua correção pegou — attribution cai em minutos em vez de esperar o próximo cycle agendado. Custa 5 créditos.",
+          "runVerificationHint": "Marca como feita e dispara uma auditoria prioritária pra confirmar que sua correção pegou. Attribution cai em minutos em vez de esperar o próximo cycle agendado. Custa 5 créditos.",
           "triggeringCycle": "Iniciando validação…",
-          "cycleQueued": "Validação na fila — vamos te avisar por email quando a attribution cair ({credits} créditos cobrados).",
-          "cycleAlreadyRunning": "Um cycle já está rodando — a attribution cai automaticamente quando terminar.",
+          "cycleQueued": "Validação na fila: vamos te avisar por email quando a attribution cair ({credits} créditos cobrados).",
+          "cycleAlreadyRunning": "Um cycle já está rodando. A attribution cai automaticamente quando terminar.",
           "cycleTriggerFailed": "Não foi possível iniciar a validação. Tente de novo em instantes.",
-          "insufficientCredits": "Créditos insuficientes — faça upgrade ou compre mais pra validar correções on-demand.",
+          "insufficientCredits": "Créditos insuficientes: faça upgrade ou compre mais pra validar correções on-demand.",
           "confirmedTitle": "Recuperação confirmada",
-          "confirmedBody": "Um cycle posterior confirmou que a correção funcionou — attribution caiu em {when}."
+          "confirmedBody": "Um cycle posterior confirmou que a correção funcionou: attribution caiu em {when}."
         }
       },
       "fix_with_ai": {
@@ -3643,9 +3643,9 @@
       "clear_filters": "Limpar filtros",
       "n_of_total": "{filtered} de {total} superfícies",
       "audit_banner": {
-        "queued": "Auditoria na fila — começando em instantes…",
-        "running": "Auditoria em progresso — descobrindo páginas ao vivo",
-        "live_updates": "· novas páginas aparecerão aqui automaticamente"
+        "queued": "Auditoria na fila: começando em instantes…",
+        "running": "Auditoria em progresso: descobrindo páginas ao vivo",
+        "live_updates": "novas páginas aparecerão aqui automaticamente"
       },
       "lookup_warning": {
         "findings_failed": "Não foi possível carregar as descobertas por página. Tente atualizar a página.",
@@ -3806,7 +3806,7 @@
     },
     "maps": {
       "title": "Mapas",
-      "subtitle": "Visualização causal — veja as relações entre problemas, causas raiz e ações.",
+      "subtitle": "Visualização causal: veja as relações entre problemas, causas raiz e ações.",
       "loading": "Gerando mapas...",
       "empty": "Execute uma análise para gerar mapas causais.",
       "useAsContext": "Usar como Contexto",
@@ -3917,7 +3917,7 @@
       "impact_unlocks": "desbloqueia {amount}/mês",
       "back_to_gallery": "Voltar aos mapas",
       "descriptions": {
-        "user_journey": "O funil comercial do seu site — como os visitantes passam da home pelos produtos, preços, carrinho e checkout até a confirmação.",
+        "user_journey": "O funil comercial do seu site: como os visitantes passam da home pelos produtos, preços, carrinho e checkout até a confirmação.",
         "revenue_leakage": "Descobertas ligadas a perda de receita ou risco de escala, agrupadas pela causa raiz que compartilham.",
         "chargeback_risk": "Superfícies de política, suporte e confiança que geram disputas, com as descobertas que produzem.",
         "root_cause": "Toda causa raiz que o motor inferiu, com as descobertas que contribuem pra ela e as ações que endereçam."
@@ -3936,7 +3936,7 @@
       },
       "not_found": {
         "title": "Mapa não encontrado",
-        "body": "Este mapa ainda não está disponível — a análise pode estar rodando ou a URL pode estar desatualizada."
+        "body": "Este mapa ainda não está disponível. A análise pode estar rodando ou a URL pode estar desatualizada."
       },
       "insights": {
         "finding_count": "{count, plural, one {# descoberta afetando} other {# descobertas afetando}} este passo",
@@ -3961,7 +3961,7 @@
         "empty_title": "Sem jornada para esta janela",
         "empty_body": "Nenhuma página cai dentro dos filtros selecionados. Tente abrir mais o recorte ou voltar ao funil completo.",
         "reset_filters": "Resetar filtros",
-        "inferred_notice": "Funil estrutural — instale o pixel de tracking para desbloquear taxas de conversão.",
+        "inferred_notice": "Funil estrutural: instale o pixel de tracking para desbloquear taxas de conversão.",
         "demo_notice": "Dados de demo",
         "cohorts": {
           "all": "Todos os usuários",
@@ -4002,7 +4002,7 @@
       },
       "current_method": {
         "title": "Como você sabe o que otimizar hoje?",
-        "subtitle": "Sem julgamento — só queremos entender de onde a Vestigio está chegando.",
+        "subtitle": "Sem julgamento: só queremos entender de onde a Vestigio está chegando.",
         "options": {
           "analytics_tools": "Olhando GA/Mixpanel/Amplitude",
           "session_replay": "Hotjar, FullStory ou outro session replay",
@@ -4021,22 +4021,22 @@
           "prove_roi": "Preciso provar ROI / justificar investimento",
           "competitive_pressure": "Concorrente está crescendo mais que a gente",
           "chronic_pain": "Dor crônica que nunca foi resolvida",
-          "exploring": "Curiosidade — explorando opções"
+          "exploring": "Curiosidade: explorando opções"
         }
       },
       "mirror": {
         "continue": "Entendi",
         "business_type": {
           "headline": "Vamos analisar {domain} como {answer}.",
-          "body": "Agora preciso entender seu cenário em ~3 perguntas rápidas — o que tá te incomodando, como você se vira hoje sem a Vestigio, e por que agora. Isso é o que vai pintar seu Plano Mensal e priorizar a fila no jeito certo."
+          "body": "Agora preciso entender seu cenário em ~3 perguntas rápidas: o que tá te incomodando, como você se vira hoje sem a Vestigio, e por que agora. Isso é o que vai pintar seu Plano Mensal e priorizar a fila no jeito certo."
         },
         "why_now": {
-          "headline": "Recebido — temos a história completa.",
+          "headline": "Recebido: temos a história completa.",
           "body": "Você quer resolver o seu incômodo principal, hoje se vira de um jeito, e agora é a hora. Vamos priorizar findings desse ângulo + escrever seu Plano Mensal já com esse contexto + alimentar a Vestigio AI pra te responder direto, sem rodeio. Falta só calibrar os valores em reais."
         },
         "revenue": {
           "headline": "Agora podemos quantificar o que está em jogo.",
-          "body": "Com sua receita como base, cada finding traz um intervalo em reais — não 'severity high' genérico. Você vê quanto cada problema custa."
+          "body": "Com sua receita como base, cada finding traz um intervalo em reais: não 'severity high' genérico. Você vê quanto cada problema custa."
         },
         "industry": {
           "headline": "Vamos comparar com benchmarks do seu setor.",
@@ -4061,14 +4061,14 @@
         "subtitle": "Isso normalmente leva alguns segundos."
       },
       "org_name": {
-        "title": "Vamos começar — nomeie sua organização",
+        "title": "Vamos começar: nomeie sua organização",
         "subtitle": "Este é o nome da sua equipe ou empresa na Vestigio.",
         "label": "Nome da organização",
         "placeholder": "Acme Corp"
       },
       "domain": {
         "title": "Vamos a fundo.",
-        "subtitle": "Confirme o domínio. A análise vai a fundo — páginas comerciais, jornadas de compra, sinais de risco. Os primeiros vestígios aparecem em tempo real, e seu primeiro Plano de Estratégia começa a ser escrito.",
+        "subtitle": "Confirme o domínio. A análise vai a fundo: páginas comerciais, jornadas de compra, sinais de risco. Os primeiros vestígios aparecem em tempo real, e seu primeiro Plano de Estratégia começa a ser escrito.",
         "label": "Domínio",
         "placeholder": "https://exemplo.com",
         "validation_error": "Digite um domínio válido (ex.: exemplo.com ou https://exemplo.com)",
@@ -4112,7 +4112,7 @@
       },
       "saas_access": {
         "title": "Acesso autenticado ao app",
-        "subtitle": "Como você opera um SaaS, a Vestigio pode analisar seu app por trás da tela de login.\nIsso é opcional — você pode configurar depois em Configurações.",
+        "subtitle": "Como você opera um SaaS, a Vestigio pode analisar seu app por trás da tela de login. Isso é opcional. Você pode configurar depois em Configurações.",
         "login_url": "URL de login do app",
         "login_url_placeholder": "https://app.exemplo.com/login",
         "email": "E-mail da conta de teste",
@@ -4160,7 +4160,7 @@
         }
       },
       "review": {
-        "title": "Quase lá — revise sua configuração",
+        "title": "Quase lá: revise sua configuração",
         "subtitle": "Aqui está um resumo de tudo que você informou. Confirme seus dados antes de escolher um plano.",
         "organization": "Organização",
         "domain": "Domínio",
@@ -4171,8 +4171,8 @@
         "saas_access": "Acesso SaaS",
         "notifications": "Notificações",
         "not_provided": "Não informado",
-        "saas_skipped": "Pulado — configure depois em Fontes de Dados",
-        "saas_not_configured": "Não configurado — configure depois em Fontes de Dados",
+        "saas_skipped": "Pulado: configure depois em Fontes de Dados",
+        "saas_not_configured": "Não configurado: configure depois em Fontes de Dados",
         "no_email_yet": "sem e-mail ainda",
         "email_only": "Somente e-mail",
         "activate_environment": "Ativar ambiente",
@@ -4185,7 +4185,7 @@
         "per_month": "/mês",
         "opening_checkout": "Abrindo checkout...",
         "redirecting": "Redirecionando para o checkout...",
-        "activate": "Ativar {plan} — {price}/mês",
+        "activate": "Ativar {plan} por {price}/mês",
         "secure_payment": "Pagamento seguro via Paddle.",
         "stripe_note": "Você será redirecionado ao Stripe para pagamento seguro.",
         "features": {
@@ -4325,7 +4325,7 @@
       },
       "crawl_exclusions": {
         "title": "Exclusões de Crawl",
-        "description": "Diga ao nosso crawler para pular caminhos específicos durante os ciclos de auditoria — áreas de admin, subrotas de staging ou extensões de arquivo que você não quer analisadas.",
+        "description": "Diga ao nosso crawler para pular caminhos específicos durante os ciclos de auditoria: áreas de admin, subrotas de staging ou extensões de arquivo que você não quer analisadas.",
         "label": "Padrões de caminhos excluídos",
         "help": "Um padrão por linha. Use * como coringa (ex.: /admin/* exclui tudo sob /admin).",
         "syntax_hint": "Sintaxe glob: * combina qualquer caractere, ? combina um.",
@@ -4477,9 +4477,9 @@
       "title": "Convidar Membro",
       "email_label": "Endereço de email",
       "role_label": "Função",
-      "role_admin": "Admin — pode gerenciar membros e configurações",
-      "role_member": "Membro — pode visualizar e editar dados",
-      "role_viewer": "Visualizador — acesso somente leitura",
+      "role_admin": "Admin: pode gerenciar membros e configurações",
+      "role_member": "Membro: pode visualizar e editar dados",
+      "role_viewer": "Visualizador: acesso somente leitura",
       "error_send": "Falha ao enviar convite",
       "error_network": "Erro de rede. Tente novamente.",
       "upgrade_plan": "Fazer upgrade",
@@ -4497,7 +4497,7 @@
       "close": "Fechar",
       "greeting_title": "Vestigio AI",
       "greeting_subtitle": "Descubra o que está custando dinheiro",
-      "greeting_description": "Vazamentos de receita, gaps de confiança, riscos de segurança — pergunte qualquer coisa.",
+      "greeting_description": "Vazamentos de receita, gaps de confiança, riscos de segurança: pergunte qualquer coisa.",
       "input_placeholder": "Pergunte à Vestigio AI...",
       "budget_exhausted_title": "Você usou todas as consultas de AI de hoje",
       "budget_exhausted_description": "Faça upgrade para mais consultas diárias e análises mais profundas.",
@@ -4656,7 +4656,7 @@
         "saving": "Salvando...",
         "trial_end_required": "A data de término do trial é obrigatória para orgs em trial",
         "failed_to_update": "Falha ao atualizar organização",
-        "confirm_plan_change": "Esta org tem uma assinatura ativa ({subscriptionId}). Mudar o plano aqui atualiza apenas Organization.plan — NÃO migra a assinatura no paddle/stripe. O cliente continuará sendo cobrado por \"{currentPlan}\" até que a assinatura seja alterada no provedor de cobrança. Continuar?",
+        "confirm_plan_change": "Esta org tem uma assinatura ativa ({subscriptionId}). Mudar o plano aqui atualiza apenas Organization.plan: NÃO migra a assinatura no paddle/stripe. O cliente continuará sendo cobrado por \"{currentPlan}\" até que a assinatura seja alterada no provedor de cobrança. Continuar?",
         "stat_members": "Membros",
         "stat_members_sub": "{owners} dono, {admins} admin",
         "stat_environments": "Ambientes",
@@ -5171,7 +5171,7 @@
       "new_organization": {
         "back_to_orgs": "Voltar para Organizações",
         "title": "Nova organização",
-        "subtitle": "Provisione uma organização manualmente — para demos, trials ou contas de cortesia que pulam o fluxo de checkout do Stripe/Paddle.",
+        "subtitle": "Provisione uma organização manualmente: para demos, trials ou contas de cortesia que pulam o fluxo de checkout do Stripe/Paddle.",
         "organization": "Organização",
         "name_required": "Nome *",
         "name_placeholder": "Acme Commerce",
@@ -5194,7 +5194,7 @@
         "name": "Nome",
         "owner_name_placeholder": "João Silva",
         "provision_env_label": "Provisionar ambiente e perfil do negócio agora",
-        "provision_env_help": "Desligado por padrão. O dono preenche o domínio + faturamento mensal + ticket médio + modelo de negócio durante o onboarding após a personificação — ele tem os números reais que calibram os achados de impacto. Ative apenas quando você já tem dados confiáveis (ex: de uma sales call) e quer um setup de uma vez.",
+        "provision_env_help": "Desligado por padrão. O dono preenche o domínio + faturamento mensal + ticket médio + modelo de negócio durante o onboarding após a personificação: ele tem os números reais que calibram os achados de impacto. Ative apenas quando você já tem dados confiáveis (ex: de uma sales call) e quer um setup de uma vez.",
         "initial_environment": "Ambiente inicial",
         "domain_required": "Domínio *",
         "domain_placeholder": "acme.com",
@@ -5226,8 +5226,8 @@
         "err_domain_required": "O domínio é obrigatório ao provisionar o ambiente inline",
         "err_create_failed": "Falha ao criar organização",
         "org_created": "Organização criada",
-        "owner_created_msg": "está pronta. Um e-mail de ativação foi enviado para {email} — eles têm 7 dias para ativar. Você também pode entrar como eles via personificação.",
-        "owner_existing_msg": "está pronta. O dono {email} já tinha uma conta — pode entrar normalmente.",
+        "owner_created_msg": "está pronta. Um e-mail de ativação foi enviado para {email}. Eles têm 7 dias para ativar. Você também pode entrar como eles via personificação.",
+        "owner_existing_msg": "está pronta. O dono {email} já tinha uma conta: pode entrar normalmente.",
         "sign_in_as_owner": "Entrar como dono",
         "resend_activation": "Reenviar e-mail de ativação",
         "activation_resent": "E-mail de ativação reenviado ✓",

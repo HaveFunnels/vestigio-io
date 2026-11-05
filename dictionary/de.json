@@ -4750,7 +4750,7 @@
       "cookie_consent_missing": "DSGVO-/ePrivacy-Verstoß für Besucher aus der EU."
     },
     "reasoning_templates": {
-      "security_header_weakness": "Browser-Vertrauenssignale {severity}. {factors}. Browser zeigen Warnungen wie ‚Nicht sicher' und entfernen das Schlosssymbol, wenn diese Header fehlen — Käufer sehen diese Signale und brechen ab.",
+      "security_header_weakness": "Defence-in-Depth-Header {severity}. {factors}. Diese Header ändern nichts an der Anzeige im Browser: sie sind die Schutzschranke. Ohne CSP läuft ein kompromittiertes Drittanbieter-Skript uneingeschränkt auf der Zahlungsseite und kann Kartenfelder auslesen. Ohne HSTS kann ein Käufer in einem unsicheren Netz die Seite über HTTP erhalten, bevor die Umleitung greift.",
       "mixed_content_exposure": "Risiko eines Checkout-Ausfalls {severity}. {factors}. Zahlungsskripte, Formulare und Vertrauenssiegel, die über HTTP geladen werden, werden auf HTTPS-Seiten stillschweigend blockiert — der Käufer klickt auf Bezahlen und nichts passiert.",
       "open_redirect_indicator": "Phishing-Risiko über Domain {severity}. {factors}. Angreifer erstellen legitime Links auf Ihrer Domain, die Käufer auf gefälschte Checkouts weiterleiten — echte Kunden verlieren Geld in dem Glauben, auf Ihrer Website zu sein.",
       "sensitive_endpoint_exposed": "Infrastruktur-Exposition {severity}. {factors}. Öffentlich zugängliche Zugangsdaten und Admin-Panels bedeuten, dass ein einziger Einbruch den gesamten Handel lahmlegen kann — der Umsatz geht auf null.",

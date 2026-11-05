@@ -40,6 +40,11 @@ export interface PlanFinding {
 	confidence: number;
 	status: string;
 	cyclesSeen: number;
+	/** Distinct UTC days this identity has been observed on. The plan
+	 *  renders THIS, not cyclesSeen: cycles are hourly, so "por 495
+	 *  ciclos" was three months of a worker loop, not a duration a
+	 *  reader can use. */
+	daysSeen: number;
 	changeClass: string | null;
 	origin: string | null;
 	claimType: string | null;
@@ -75,7 +80,8 @@ export interface Priority {
 	measured: unknown[] | null;
 	/** new | persistent | returned */
 	lifecycle: "new" | "persistent" | "returned";
-	cyclesSeen: number;
+	/** Days, not cycles. See PlanFinding.daysSeen. */
+	daysSeen: number;
 }
 
 export interface AdaptivePlan {
@@ -137,7 +143,7 @@ export function classifyClaim(f: PlanFinding): ClaimClass {
 
 function lifecycleOf(f: PlanFinding): Priority["lifecycle"] {
 	if (f.status === "regressed" || f.changeClass === "regression") return "returned";
-	if (f.cyclesSeen > 1 || f.status === "confirmed") return "persistent";
+	if (f.daysSeen > 1 || f.status === "confirmed") return "persistent";
 	return "new";
 }
 
@@ -232,7 +238,7 @@ export function buildAdaptivePlan(input: BuildInput): AdaptivePlan {
 			estimatedMonthlyLossBrl: money,
 			measured: claim === "behavioral" ? (f.evidence ?? []) : null,
 			lifecycle: lifecycleOf(f),
-			cyclesSeen: f.cyclesSeen,
+			daysSeen: f.daysSeen,
 		};
 	});
 
@@ -323,7 +329,16 @@ export async function loadPlanFindings(
 	prisma: import("@prisma/client").PrismaClient,
 	environmentId: string,
 	cycleId: string,
+	/** End of the plan window, for the day-distinct lookup. Defaults to
+	 *  now so existing callers keep working. */
+	end: Date = new Date(),
 ): Promise<{ findings: PlanFinding[]; resolved: PlanFinding[] }> {
+	// Days each identity has been seen on. Separate query rather than a
+	// column because the data is already there: one row per cycle per
+	// identity, so the distinct-day count is a group-by away and needs
+	// no migration or carry-over to go stale.
+	const { distinctDaysSeenByIdentity } = await import("../honest-aggregates");
+	const daysByIdentity = await distinctDaysSeenByIdentity(prisma, environmentId, end);
 	const rows = await prisma.finding.findMany({
 		where: { environmentId, cycleId },
 		select: {
@@ -359,6 +374,7 @@ export async function loadPlanFindings(
 			confidence: r.confidence,
 			status: r.status,
 			cyclesSeen: r.cyclesSeen,
+			daysSeen: daysByIdentity.get(`${r.inferenceKey}::${r.surface}`)?.days ?? 1,
 			changeClass: r.changeClass,
 			origin: r.origin,
 			claimType: r.claimType,

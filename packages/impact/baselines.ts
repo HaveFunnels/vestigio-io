@@ -1397,7 +1397,10 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
   security_header_weakness: {
     inference_key: 'security_header_weakness', impact_category: 'conversion_loss',
     cause: 'Browsers signal your site as unsafe to buyers',
-    effect: 'Without HSTS and CSP, browsers show "Not Secure" warnings, remove the padlock icon, and allow script injection — buyers see these signals and abandon before purchasing',
+    // Corrected: browsers do not change the padlock or the "Not
+    // Secure" label over missing HSTS/CSP. That is TLS. Claiming
+    // otherwise put a falsifiable error in front of a customer.
+    effect: 'Without CSP, a compromised third-party script runs unrestricted on the payment page and can read card fields. Without HSTS, a buyer on a hostile network can be served the page over HTTP before the redirect happens.',
     high: { min: 0.03, max: 0.08 }, medium: { min: 0.01, max: 0.03 }, low: { min: 0.005, max: 0.01 },
     base_metric: 'revenue',
   },

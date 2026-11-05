@@ -6177,7 +6177,7 @@
       "cookie_consent_missing": "Violación de GDPR/ePrivacy para visitantes de la UE."
     },
     "reasoning_templates": {
-      "security_header_weakness": "Señales de confianza del navegador {severity}. {factors}. Los navegadores muestran avisos de \"No seguro\" y eliminan el candado cuando estos headers están ausentes — los compradores ven estas señales y abandonan.",
+      "security_header_weakness": "Headers de defensa en profundidad {severity}. {factors}. Estos headers no cambian lo que el navegador muestra: son la barrera. Sin CSP, un script de terceros comprometido corre sin restricción en la página de pago y puede leer los campos de la tarjeta. Sin HSTS, un comprador en una red hostil puede recibir la página por HTTP antes del redireccionamiento.",
       "mixed_content_exposure": "Riesgo de ruptura del checkout {severity}. {factors}. Scripts de pago, formularios y sellos de confianza cargados por HTTP se bloquean silenciosamente en páginas HTTPS — el comprador hace clic en Pagar y no pasa nada.",
       "open_redirect_indicator": "Riesgo de phishing vía dominio {severity}. {factors}. Los atacantes crean enlaces legítimos en tu dominio que redirigen a compradores hacia checkouts falsos — clientes reales pierden dinero creyendo que están en tu sitio.",
       "sensitive_endpoint_exposed": "Exposición de infraestructura {severity}. {factors}. Credenciales y paneles de admin accesibles públicamente significan que una sola intrusión puede apagar todo el comercio — la facturación se va a cero.",

@@ -63,7 +63,16 @@ function inferSecurityHeaderWeakness(
     scoping, cycle_ref, ids,
     signal_refs: relevant.map(s => makeRef('signal', s.id)),
     evidence_refs: relevant.flatMap(s => s.evidence_refs),
-    reasoning: `Browser trust signals ${severity}. ${factors.join('; ')}. Browsers show "Not Secure" warnings and remove the padlock when these headers are missing. Buyers see these signals and abandon.`,
+    // The old copy claimed browsers show "Not Secure" and remove the
+    // padlock when these headers are missing. That is false: the lock
+    // and the "Not Secure" label are a function of TLS, and no browser
+    // changes either one over a missing HSTS or CSP. It shipped to a
+    // paying customer, and a security consultant reading the plan
+    // caught it immediately, which costs more trust than the finding
+    // was worth. These are defence-in-depth headers: their absence
+    // does not change what the buyer SEES, it removes the guardrail
+    // that would contain an injected or downgraded page.
+    reasoning: `Defence-in-depth headers ${severity}. ${factors.join('; ')}. These headers do not change what the browser displays: they are the guardrail. Without CSP, a third-party script that gets compromised runs unrestricted on the payment page and can read card fields. Without HSTS, a buyer on a hostile network can be served the page over HTTP before the redirect happens.`,
     reasoning_slots: { severity, factors: factors.join('; ') },
   })];
 }

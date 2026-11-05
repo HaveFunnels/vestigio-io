@@ -40,7 +40,7 @@ interface Priority {
 	estimatedMonthlyLossBrl: { min: number; mid: number; max: number } | null;
 	measured: Record<string, unknown>[] | null;
 	lifecycle: "new" | "persistent" | "returned";
-	cyclesSeen: number;
+	daysSeen: number;
 }
 
 export interface AdaptivePlanUI {
@@ -173,7 +173,7 @@ export default function PlanPriorities({
 										<Sep />
 										<span className="text-[11px] text-content-muted">
 											{LIFECYCLE[p.lifecycle]}
-											{p.cyclesSeen > 1 ? ` por ${p.cyclesSeen} ciclos` : ""}
+											{p.daysSeen > 1 ? ` por ${p.daysSeen} dias` : ""}
 										</span>
 									</div>
 									<h3 className="mb-1 font-serif text-[18px] font-medium leading-snug tracking-tight text-content">

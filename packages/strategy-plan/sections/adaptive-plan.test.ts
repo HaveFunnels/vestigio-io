@@ -14,6 +14,9 @@ function f(over: Partial<PlanFinding> = {}): PlanFinding {
 		confidence: 42,
 		status: "confirmed",
 		cyclesSeen: 254,
+		// 254 hourly cycles is ~10 days of a worker loop, which is the
+		// whole point of the distinction.
+		daysSeen: 10,
 		changeClass: "stable_risk",
 		origin: null,
 		claimType: null,
@@ -177,9 +180,12 @@ describe("evolution", () => {
 	it("separates new from persistent from returned", () => {
 		const p = buildAdaptivePlan({
 			findings: [
-				f({ inferenceKey: "new1", surface: "/a", cyclesSeen: 1, status: "created" }),
-				f({ inferenceKey: "persist1", surface: "/b", cyclesSeen: 254, status: "confirmed" }),
-				f({ inferenceKey: "back1", surface: "/c", status: "regressed", cyclesSeen: 1 }),
+				// Lifecycle keys off daysSeen now, not the hourly cycle
+				// count: "persistent" has to mean the problem survived
+				// separate days, not that the worker ran twice.
+				f({ inferenceKey: "new1", surface: "/a", cyclesSeen: 1, daysSeen: 1, status: "created" }),
+				f({ inferenceKey: "persist1", surface: "/b", cyclesSeen: 254, daysSeen: 10, status: "confirmed" }),
+				f({ inferenceKey: "back1", surface: "/c", status: "regressed", cyclesSeen: 1, daysSeen: 1 }),
 			],
 			resolved: [],
 		});
@@ -206,5 +212,31 @@ describe("part C", () => {
 	it("emits one action per priority, in the same order", () => {
 		const p = buildAdaptivePlan({ findings: [f(), pixel()], resolved: [] });
 		expect(p.actions.map((a) => a.rank)).toEqual([1, 2]);
+	});
+});
+
+describe("chronicity is measured in days, not cycles", () => {
+	it("a finding seen 254 times in one day is not persistent", () => {
+		// Cycles are hourly. cyclesSeen=254 on the customer's account
+		// was ~10 days of a worker loop, and security_header_weakness
+		// reached 495, so the plan was prepared to say "persistente por
+		// 495 ciclos". A reader cannot use that, and "chronic at 3
+		// cycles" meant three hours.
+		const p = buildAdaptivePlan({
+			findings: [
+				f({ inferenceKey: "burst", surface: "/a", cyclesSeen: 254, daysSeen: 1, status: "created" }),
+			],
+			resolved: [],
+		});
+		expect(p.priorities[0].lifecycle).toBe("new");
+	});
+
+	it("exposes daysSeen to the renderer and not the cycle count", () => {
+		const p = buildAdaptivePlan({
+			findings: [f({ daysSeen: 12, cyclesSeen: 495 })],
+			resolved: [],
+		});
+		expect(p.priorities[0].daysSeen).toBe(12);
+		expect(p.priorities[0]).not.toHaveProperty("cyclesSeen");
 	});
 });

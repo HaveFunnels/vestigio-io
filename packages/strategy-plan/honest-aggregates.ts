@@ -246,3 +246,74 @@ export async function openLossExposure(
 	};
 }
 
+
+// ──────────────────────────────────────────────
+// Chronicity in days, not in cycles.
+//
+// Finding.cyclesSeen is carried across cycles by applyLifecycle, and
+// the plan treated it as a duration: narrative.ts and monthly-thesis.ts
+// both counted `cyclesSeen >= 3` as "chronic", and PlanPriorities
+// rendered it verbatim as "por N ciclos".
+//
+// Cycles are hourly. On the customer's account, open since 2026-09,
+// security_header_weakness carried cyclesSeen=495, so the plan was
+// prepared to tell them a problem had persisted "por 495 ciclos", and
+// "chronic" meant "detected three hours running" — which every finding
+// becomes before lunch.
+//
+// The honest unit is the distinct DAY. It keeps what the original
+// threshold was reaching for (the same problem observed on separate
+// occasions, not the same scan repeated) while being independent of
+// how often the worker happens to run.
+// ──────────────────────────────────────────────
+
+/** Distinct UTC days a finding identity has been observed on, keyed by
+ *  `inferenceKey::surface`. */
+export async function distinctDaysSeenByIdentity(
+	prisma: PrismaClient,
+	environmentId: string,
+	end: Date,
+): Promise<Map<string, { days: number; firstSeen: Date }>> {
+	const rows = await prisma.$queryRaw<
+		{ inferenceKey: string; surface: string; days: bigint; firstSeen: Date }[]
+	>`
+		SELECT "inferenceKey",
+		       "surface",
+		       COUNT(DISTINCT date_trunc('day', "createdAt")) AS "days",
+		       MIN("createdAt") AS "firstSeen"
+		FROM "Finding"
+		WHERE "environmentId" = ${environmentId}
+		  AND "createdAt" < ${end}
+		GROUP BY 1, 2
+	`;
+	const out = new Map<string, { days: number; firstSeen: Date }>();
+	for (const r of rows) {
+		out.set(`${r.inferenceKey}::${r.surface}`, {
+			days: Number(r.days),
+			firstSeen: r.firstSeen,
+		});
+	}
+	return out;
+}
+
+/** How many open findings have been seen on at least `minDays`
+ *  separate days. Replaces the `cyclesSeen >= 3` chronic count. */
+export async function chronicFindingCount(
+	prisma: PrismaClient,
+	environmentId: string,
+	end: Date,
+	minDays = 3,
+): Promise<number> {
+	const rows = await prisma.$queryRaw<{ n: bigint }[]>`
+		SELECT COUNT(*)::bigint AS n FROM (
+			SELECT "inferenceKey", "surface"
+			FROM "Finding"
+			WHERE "environmentId" = ${environmentId}
+			  AND "createdAt" < ${end}
+			  AND "status" IN ('created', 'confirmed')
+			GROUP BY 1, 2
+			HAVING COUNT(DISTINCT date_trunc('day', "createdAt")) >= ${minDays}
+		) t
+	`;
+	return Number(rows[0]?.n ?? 0);
+}

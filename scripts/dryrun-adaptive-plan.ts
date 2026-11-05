@@ -45,7 +45,7 @@ async function main() {
 			? `estimativa ${brl(p.estimatedMonthlyLossBrl.mid)}/mês (${brl(p.estimatedMonthlyLossBrl.min)}–${brl(p.estimatedMonthlyLossBrl.max)})`
 			: "sem valor atribuído (medição, não estimativa)";
 		console.log(`\n${p.rank}. [${p.claim}] ${p.headline}`);
-		console.log(`   ${p.surface} · ${p.severity} · confiança ${p.confidence} (${p.confidenceTier}) · ${p.lifecycle}, ${p.cyclesSeen} ciclos`);
+		console.log(`   ${p.surface} · ${p.severity} · confiança ${p.confidence} (${p.confidenceTier}) · ${p.lifecycle}, ${p.daysSeen} dias`);
 		console.log(`   ${money}`);
 		if (p.measured?.length) {
 			const m = p.measured[0] as Record<string, unknown>;

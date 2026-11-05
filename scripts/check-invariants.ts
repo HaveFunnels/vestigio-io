@@ -186,6 +186,58 @@ const INVARIANTS: Invariant[] = [
     },
   },
   {
+    name: "every finding emission declares origin and claim_type",
+    check: () => {
+      // Measured on the customer's 2026-11-05 cycle: all 22 findings
+      // carried origin=null and claimType=null. The columns existed and
+      // the store persisted them; no emission path ever set them.
+      //
+      // That is not a cosmetic null. classifyClaim in the adaptive plan
+      // reads exactly those two fields to separate a counted session
+      // from a detector's guess, so its discriminator was dead and
+      // every finding read as 'inference'. Two emission sites existed
+      // and fixing only the first left strong_cta_clarity unclassified,
+      // which is why this is enforced structurally instead of by
+      // remembering.
+      const f = path.join(ROOT, "packages/projections/engine.ts");
+      const src = fs.readFileSync(f, "utf8");
+      const offenders: string[] = [];
+      let idx = 0;
+      let seen = 0;
+      while (true) {
+        const at = src.indexOf("findings.push({", idx);
+        if (at === -1) break;
+        idx = at + 1;
+        seen++;
+        // Walk to the matching brace so nested objects do not end it early.
+        let depth = 0;
+        let end = at + "findings.push(".length;
+        for (; end < src.length; end++) {
+          if (src[end] === "{") depth++;
+          else if (src[end] === "}") {
+            depth--;
+            if (depth === 0) break;
+          }
+        }
+        const literal = src.slice(at, end);
+        const line = src.slice(0, at).split("\n").length;
+        for (const field of ["origin:", "claim_type:"]) {
+          if (!literal.includes(field)) {
+            offenders.push(`engine.ts:${line} omits ${field}`);
+          }
+        }
+      }
+      if (seen === 0) return "found no findings.push() site in engine.ts to check";
+      if (offenders.length === 0) return null;
+      return (
+        `${offenders.length} finding emission(s) without provenance:\n  ` +
+        offenders.join("\n  ") +
+        `\n  Set origin (crawler|pixel|integration|inference) and claim_type.` +
+        `\n  Derive from the cited evidence; a default is an invented provenance.`
+      );
+    },
+  },
+  {
     name: "every funnel stage and dynamic template has locale copy",
     check: () => {
       // The funnel keys the engine builds at runtime splice stage

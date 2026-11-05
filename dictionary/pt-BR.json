@@ -6996,7 +6996,7 @@
       "oscillation_clustering": "O vai e volta mostra que a informação necessária pra decidir está numa página e a decisão está em outra, e cada volta gasta a paciência que faltava pra fechar"
     },
     "reasoning_templates": {
-      "security_header_weakness": "Sinais de confiança do navegador {severity}. {factors}. Navegadores mostram avisos de \"Não seguro\" e removem o cadeado quando esses headers estão ausentes. Compradores veem esses sinais e abandonam.",
+      "security_header_weakness": "Headers de defesa em profundidade {severity}. {factors}. Esses headers não mudam o que o navegador mostra: eles são a trava. Sem CSP, um script de terceiro que for comprometido roda sem restrição na página de pagamento e consegue ler os campos do cartão. Sem HSTS, um comprador numa rede hostil pode receber a página em HTTP antes do redirecionamento acontecer.",
       "mixed_content_exposure": "Risco de quebra do checkout {severity}. {factors}. Scripts de pagamento, formulários e selos de confiança carregados via HTTP são bloqueados silenciosamente em páginas HTTPS. O comprador clica Pagar e nada acontece.",
       "open_redirect_indicator": "Risco de phishing via domínio {severity}. {factors}. Atacantes criam links legítimos no seu domínio que redirecionam compradores para checkouts falsos. Clientes reais perdem dinheiro achando que estão no seu site.",
       "sensitive_endpoint_exposed": "Exposição de infraestrutura {severity}. {factors}. Credenciais e painéis admin acessíveis publicamente significam que uma única invasão pode desligar todo o comércio. Faturamento vai a zero.",

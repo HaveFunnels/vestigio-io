@@ -909,6 +909,73 @@ function resolveParameterizedTitle(inferenceKey: string, conclusionValue: string
 }
 
 /**
+ * Provenance of a finding, read off the evidence it actually cites.
+ *
+ * This was the hole under the whole "measured vs inferred" promise.
+ * FindingProjection has declared `origin` and `claim_type` for a while
+ * and the store persists both, but NOTHING on the projection path ever
+ * set them: measured on the customer's 2026-11-05 cycle, all 22
+ * findings carried origin=null and claimType=null. classifyClaim in
+ * the adaptive plan reads exactly those two fields, so its primary
+ * discriminator was dead and every finding fell through to
+ * 'inference'. The plan could not tell the customer which of its
+ * claims were counted and which were guessed.
+ *
+ * Derived, never guessed: Evidence carries source_kind and
+ * collection_method, so the answer is in the data. The counts in
+ * production are http_fetch 216,774 / behavioral_snippet 2,538 /
+ * dns_lookup 2,018 / browser_verification 50 / subdomain_enum 24, and
+ * collection_method api_call 22,413 / passive_collection 2,538.
+ *
+ * An inference citing no evidence at all gets 'inference', which is
+ * the honest answer rather than a default.
+ */
+function deriveOrigin(
+  inf: Inference,
+  evidenceById: Map<string, { source_kind?: string; collection_method?: string }>,
+): 'crawler' | 'pixel' | 'integration' | 'inference' {
+  let sawPixel = false;
+  let sawIntegration = false;
+  let sawFetch = false;
+
+  for (const evRef of inf.evidence_refs ?? []) {
+    let ev: { source_kind?: string; collection_method?: string } | undefined;
+    try {
+      ev = evidenceById.get(parseRef(evRef).id);
+    } catch {
+      continue;
+    }
+    if (!ev) continue;
+    const kind = String(ev.source_kind ?? '');
+    const method = String(ev.collection_method ?? '');
+    if (kind === 'behavioral_snippet' || method === 'passive_collection') sawPixel = true;
+    else if (method === 'api_call') sawIntegration = true;
+    else if (kind) sawFetch = true;
+  }
+
+  // Ordered by how strong the claim the origin licenses: a counted
+  // session outranks a third-party report, which outranks a fetch.
+  if (sawPixel) return 'pixel';
+  if (sawIntegration) return 'integration';
+  if (sawFetch) return 'crawler';
+  return 'inference';
+}
+
+/**
+ * Claim class, from provenance.
+ *
+ * Deliberately never returns 'defect' or 'anomaly'. A detector firing
+ * is not a reproducible defect, and promoting it to one is the exact
+ * overclaim this field exists to prevent. Only a counted measurement
+ * earns 'behavioral', and even then the cause stays unknown.
+ */
+function deriveClaimType(
+  origin: 'crawler' | 'pixel' | 'integration' | 'inference',
+): 'behavioral' | 'inference' {
+  return origin === 'pixel' ? 'behavioral' : 'inference';
+}
+
+/**
  * Resolve translated reasoning using templates + slots.
  * Template format: "Frame text {severity}. {factors}. Explanation."
  * Slots come from Inference.reasoning_slots (set at inference time).
@@ -1448,6 +1515,7 @@ export function projectFindings(
       }
       return '';
     })();
+    const findingOrigin = deriveOrigin(inf, evidenceById);
     findings.push({
       id: `finding_${vc.inference_key}${idSuffix}`,
       title,
@@ -1480,6 +1548,8 @@ export function projectFindings(
         resolveDynamicText(vc.inference_key, 'dynamic_effects', translations) ??
         vc.effect,
       basis_type: vc.basis_type,
+      origin: findingOrigin,
+      claim_type: deriveClaimType(findingOrigin),
       eligibility: {
         eligible: findingEligible,
         confidence: findingEligConf,
@@ -2870,6 +2940,13 @@ function addPositiveFindings(findings: FindingProjection[], inferences: Inferenc
         id: `positive_${check.key}`,
         title,
         root_cause: null,
+        // A positive check cites no evidence of its own: it is a
+        // statement about the ABSENCE of problem inferences. So its
+        // honest provenance is 'inference', not the 'crawler' of the
+        // pages that happened to be fetched. Leaving these two null
+        // was the gap that let strong_cta_clarity ship unclassified.
+        origin: 'inference',
+        claim_type: 'inference',
         severity: 'none',
         source_url: null,
         source_url_observed_at: null,

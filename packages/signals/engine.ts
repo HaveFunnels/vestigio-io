@@ -4826,7 +4826,16 @@ function extractSecurityPostureSignals(
 
   // ── Finding: Predictable Data URL Patterns ──
   if (httpResponses.length > 0) {
-    const PREDICTABLE_URL_PATTERN = /\/(order|invoice|user|account|customer|receipt|booking|ticket|reservation)\/\d+/i;
+    // The numeric id must be the WHOLE segment. Without the trailing
+    // boundary, \d+ matched the first digit of anything, so
+    // /order/4bba96a3-305d-4bcb-823b-abefafdb48bd was reported as a
+    // "sequential pattern" because the UUID happens to start with a 4.
+    // That shipped to a paying customer as "URLs sequenciais permitem
+    // que qualquer pessoa enumere pedidos", about an identifier that is
+    // not enumerable at all. A UUID in this position is the FIX for
+    // this class of exposure, not an instance of it.
+    const PREDICTABLE_URL_PATTERN =
+      /\/(order|invoice|user|account|customer|receipt|booking|ticket|reservation)\/\d+(?=$|[/?#])/i;
     const predictableEvidence: Evidence[] = [];
 
     for (const e of httpResponses) {

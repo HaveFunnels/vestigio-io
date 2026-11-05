@@ -15,6 +15,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { chronicFindingCount } from "../honest-aggregates";
 import { voiceRulesFor } from "../voice-rules";
 import { verifiedCaptured, openLossExposure } from "../honest-aggregates";
 import type { GenerateContext } from "../types";
@@ -61,14 +62,11 @@ async function gatherInputs(
 				statusChangedAt: { gte: ctx.monthStart, lt: ctx.monthEnd },
 			},
 		}),
-		prisma.finding.count({
-			where: {
-				environmentId: ctx.environmentId,
-				cyclesSeen: { gte: 3 },
-				status: { in: ["created", "confirmed"] },
-				statusChangedAt: { lt: ctx.monthEnd },
-			},
-		}),
+		// Chronic in DAYS, not cycles. Cycles are hourly, so
+		// `cyclesSeen >= 3` meant "detected three hours running",
+		// which every finding becomes before lunch. See
+		// chronicFindingCount.
+		chronicFindingCount(prisma, ctx.environmentId, ctx.monthEnd),
 		prisma.finding.count({
 			where: {
 				environmentId: ctx.environmentId,

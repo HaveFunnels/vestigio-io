@@ -19,6 +19,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { chronicFindingCount } from "../honest-aggregates";
 import { voiceRulesFor } from "../voice-rules";
 import { verifiedCaptured, openLossExposure } from "../honest-aggregates";
 import type { GenerateContext } from "../types";
@@ -69,6 +70,10 @@ interface NarrativeInputs {
 async function gatherInputs(
 	prisma: PrismaClient,
 	ctx: GenerateContext,
+	// Passed in rather than assigned after the fact: the positive-check
+	// gate below needs the measured friction BEFORE positiveSample is
+	// built, and the caller used to set inputs.behavioral afterwards.
+	behavioral?: import("./behavioral-measurement").BehavioralMeasurementOutput | null,
 ): Promise<NarrativeInputs> {
 	// "Resolvido/recuperado" comes from verified customer actions, never
 	// from Finding.status="resolved" — lifecycle marks a finding resolved
@@ -98,14 +103,11 @@ async function gatherInputs(
 			orderBy: { impactMidpoint: "desc" },
 			take: 4,
 		}),
-		prisma.finding.count({
-			where: {
-				environmentId: ctx.environmentId,
-				cyclesSeen: { gte: 3 },
-				status: { in: ["created", "confirmed"] },
-				statusChangedAt: { lt: ctx.monthEnd },
-			},
-		}),
+		// Chronic in DAYS, not cycles. Cycles are hourly, so
+		// `cyclesSeen >= 3` meant "detected three hours running",
+		// which every finding becomes before lunch. See
+		// chronicFindingCount.
+		chronicFindingCount(prisma, ctx.environmentId, ctx.monthEnd),
 		prisma.finding.count({
 			where: {
 				environmentId: ctx.environmentId,
@@ -168,7 +170,22 @@ async function gatherInputs(
 		surface: f.surface,
 	}));
 
-	const positiveTop = positives[0];
+	// A compliment may not contradict a measurement. The engine computes
+	// positive checks from the ABSENCE of problem inferences and cannot
+	// see the session data, so low_friction_checkout ("Seu caminho de
+	// compra está livre de fricção") led the 2026-11 narrative of a
+	// customer whose checkout measured 37.7% of sessions with friction.
+	//
+	// Only the friction rule is wired here: narrative.ts does not load
+	// sibling findings' source URLs, so the host rule has no evidence to
+	// work with at this call site and is left to callers that do. Note
+	// the customer's own payment subdomain is NOT a contradiction, which
+	// is why that rule is narrow by design.
+	const { suppressContradictedPositives } = await import("../contradicted-positives");
+	const { kept: honestPositives } = suppressContradictedPositives(positives, {
+		frictionPages: behavioral?.friction?.pages ?? null,
+	});
+	const positiveTop = honestPositives[0];
 	const positiveSample = positiveTop
 		? {
 			title:
@@ -466,7 +483,7 @@ export async function generateNarrativeWhatHappened(
 	organizationId: string | null,
 	behavioral?: import("./behavioral-measurement").BehavioralMeasurementOutput | null,
 ): Promise<LlmTextResult> {
-	const inputs = await gatherInputs(prisma, ctx);
+	const inputs = await gatherInputs(prisma, ctx, behavioral);
 	inputs.behavioral = behavioral ?? null;
 
 	// T8 — only skip the LLM when the env truly has nothing to talk about

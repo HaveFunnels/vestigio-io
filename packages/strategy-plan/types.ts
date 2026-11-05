@@ -437,6 +437,13 @@ export interface PlanGeneratorOutput {
 	 *  which is the normal state while the current document is still
 	 *  the deliverable. */
 	adaptive: import("./sections/adaptive-plan").AdaptivePlan | null;
+	/** Whether the adaptive section was COMPUTED this run, which is not
+	 *  the same as whether it came out empty. The flag that gates it
+	 *  lives on the web service and regens also run in audit-worker,
+	 *  where it is unset, so a worker regen computed nothing and then
+	 *  overwrote the stored section with null. The persist step now
+	 *  writes the column only when this is true. */
+	adaptiveComputed: boolean;
 	cost: GenerationCost;
 	cycleNumber: number;
 }

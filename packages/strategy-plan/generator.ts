@@ -334,9 +334,18 @@ export async function generatePlan(
 	// the existing document answers the ordering complaints without
 	// losing anything.
 	let adaptive: unknown = null;
+	// Whether the adaptive section was COMPUTED, which is not the same
+	// as whether it came out empty. The flag lives on the web service
+	// and plan regens also run in audit-worker, where it is unset, so a
+	// worker-triggered regen computed nothing and then wrote
+	// `adaptiveJson: null` over a section the customer already had. The
+	// comment at that write claimed null "is how an existing plan keeps
+	// rendering exactly as before"; writing null does the opposite.
+	let adaptiveComputed = false;
 	try {
 		const { adaptivePlanEnabled } = await import("./sections/adaptive-plan-flag");
 		if (adaptivePlanEnabled()) {
+			adaptiveComputed = true;
 			const { buildAdaptivePlan, loadPlanFindings } = await import(
 				"./sections/adaptive-plan"
 			);
@@ -427,6 +436,7 @@ export async function generatePlan(
 		adLedger,
 		whatChanged,
 		adaptive: adaptive as import("./sections/adaptive-plan").AdaptivePlan | null,
+		adaptiveComputed,
 		cost: { llmCallsCount, llmCostCents },
 		cycleNumber,
 		regenScope: scope,
@@ -544,12 +554,19 @@ export async function generateAndPersistPlan(
 				behavioralJson: output.behavioral as any,
 				adLedgerJson: output.adLedger as any,
 				whatChangedJson: output.whatChanged as any,
-				// null when the flag is off, which is how an existing plan
-				// keeps rendering exactly as before.
-				adaptiveJson: output.adaptive as any,
+				// adaptiveJson is deliberately NOT here: a regen that did
+				// not compute the section must leave the stored one
+				// alone. Assigned below, only when it was computed.
+
 				llmCallsCount: { increment: output.cost.llmCallsCount },
 				llmCostCents: { increment: output.cost.llmCostCents },
 			};
+			// Flag-gated section: null means "not computed", never "no
+			// data", so writing it unconditionally wipes a section the
+			// customer already has.
+			if (output.adaptiveComputed) {
+				updateData.adaptiveJson = output.adaptive as never;
+			}
 			if (!output.skipped.narrative) {
 				updateData.narrativeWhatHappened = output.narrativeWhatHappened;
 			}

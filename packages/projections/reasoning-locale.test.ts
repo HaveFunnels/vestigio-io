@@ -114,7 +114,12 @@ describe("dynamic funnel keys", () => {
 	// printed "No link or CTA connects browse to decision" under a
 	// Portuguese title. Measured on the customer's 2026-11-01 cycle:
 	// 3 English causes, 5 English effects out of 21 findings.
-	const SECTIONS = ["dynamic_titles", "dynamic_causes", "dynamic_effects"] as const;
+	const SECTIONS = [
+		"dynamic_titles",
+		"dynamic_causes",
+		"dynamic_effects",
+		"dynamic_reasoning",
+	] as const;
 	const NAMES = [
 		"funnel_missing_stage",
 		"funnel_broken_path",
@@ -122,9 +127,15 @@ describe("dynamic funnel keys", () => {
 		"funnel_dead_end_page",
 	];
 
-	it("resolves cause and effect, not only the title", () => {
+	it("resolves cause, effect AND reasoning, not only the title", () => {
 		expect(ENGINE).toContain("'dynamic_causes', translations)");
 		expect(ENGINE).toContain("'dynamic_effects', translations)");
+		// reasoning_templates is keyed by inference_key, which a
+		// runtime-built funnel key can never match, so resolveReasoning
+		// needs the dynamic section as its second lookup.
+		expect(ENGINE).toContain("'dynamic_reasoning', translations)");
+		const fn = ENGINE.slice(ENGINE.indexOf("function resolveReasoning"));
+		expect(fn.slice(0, fn.indexOf("\n}"))).toContain("dynamic_reasoning");
 	});
 
 	it("has pt-BR copy for every template in every section", () => {
@@ -147,11 +158,46 @@ describe("dynamic funnel keys", () => {
 		// A translation that drops {from}/{to} would render a sentence
 		// with no stage names in it at all, which reads as a generic
 		// claim rather than a measurement.
-		for (const section of ["dynamic_causes", "dynamic_effects"] as const) {
+		for (const section of [
+			"dynamic_causes",
+			"dynamic_effects",
+			"dynamic_reasoning",
+		] as const) {
 			expect(d.engine[section].funnel_missing_stage).toContain("{stage}");
 			for (const name of ["funnel_broken_path", "funnel_weak_connection"]) {
 				expect(d.engine[section][name]).toContain("{from}");
 				expect(d.engine[section][name]).toContain("{to}");
+			}
+		}
+	});
+});
+
+describe("funnel stage names", () => {
+	// funnel-resolver.ts defines the stage keys across four
+	// business-model templates. engine.funnel_stage_names carried 4 of
+	// the 18, so the rest fell through to token.replace(/_/g, " ") and
+	// the customer's plan read "Sem caminho de CTA: browse -> Decisao".
+	// Localizing cause and effect then repeated the raw token in three
+	// fields instead of one.
+	it("covers every stage key the resolver can emit, in every locale", () => {
+		const resolver = fs.readFileSync(
+			path.join(ROOT, "packages", "classification", "funnel-resolver.ts"),
+			"utf8",
+		);
+		const stages = [
+			...resolver.matchAll(/\{\s*key:\s*'([a-z_]+)',\s*label:\s*'[^']+'/g),
+		].map((m) => m[1]);
+		expect(stages.length).toBeGreaterThan(10);
+
+		for (const loc of ["pt-BR", "es", "de"]) {
+			const d = JSON.parse(
+				fs.readFileSync(path.join(ROOT, "dictionary", `${loc}.json`), "utf8"),
+			);
+			const names = d.engine.funnel_stage_names ?? {};
+			for (const stage of stages) {
+				expect(names[stage], `${loc} has no name for stage '${stage}'`).toBeTruthy();
+				// The English label must not be the translation.
+				expect(names[stage].toLowerCase()).not.toBe(stage);
 			}
 		}
 	});

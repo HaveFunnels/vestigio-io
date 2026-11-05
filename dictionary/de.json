@@ -3715,7 +3715,33 @@
       "account": "Mein Konto",
       "support": "Support",
       "policy": "Richtlinie",
-      "onboarding": "Onboarding"
+      "onboarding": "Onboarding",
+      "activation": "Aktivierung",
+      "browse": "Stöbern",
+      "capture": "Erfassung",
+      "contact": "Kontakt",
+      "discover": "Entdecken",
+      "education": "Information",
+      "evaluate": "Bewertung",
+      "evaluation": "Bewertung",
+      "intent": "Kaufabsicht",
+      "learn": "Kennenlernen",
+      "nurture": "Betreuung",
+      "purchase": "Kauf",
+      "retain": "Bindung",
+      "retention": "Bindung"
+    },
+    "dynamic_causes": {
+      "funnel_missing_stage": "Für die Phase {stage} gibt es keine eigene Seite",
+      "funnel_broken_path": "Kein Link und kein Button verbindet {from} mit {to}",
+      "funnel_weak_connection": "Der Weg von {from} nach {to} ist schwach",
+      "funnel_dead_end_page": "Eine kommerzielle Seite bietet keinen nächsten Schritt"
+    },
+    "dynamic_effects": {
+      "funnel_missing_stage": "Wer die Phase {stage} braucht, findet kein Ziel und geht",
+      "funnel_broken_path": "Käufer, die von {from} nach {to} wollen, müssen den Weg selbst finden, und die meisten finden ihn nicht",
+      "funnel_weak_connection": "Käufer auf dem Weg von {from} nach {to} verlieren beim Übergang den Schwung",
+      "funnel_dead_end_page": "Käufer kommen mit Absicht an und die Seite gibt ihnen nichts zu tun"
     },
     "inference_titles": {
       "trust_boundary_crossed": "Käufer landen beim Checkout auf einer anderen Domain",
@@ -7475,6 +7501,12 @@
         ],
         "verification_notes": "Wir starten einen Headless-Browser auf jeder als fehlend markierten Seite und prüfen, ob das Pixel-Snippet vorhanden ist und das page_view-Event feuert."
       }
+    },
+    "dynamic_reasoning": {
+      "funnel_missing_stage": "Für die Phase {stage} gibt es keine eigene Seite.",
+      "funnel_broken_path": "Die Phase {from} verlinkt nicht auf die Phase {to}. Besucher kommen von {from} nicht nach {to}, ohne selbst zu navigieren.",
+      "funnel_weak_connection": "Die Phase {from} ist mit {to} nur über Navigations- oder Footer-Links verbunden, ohne CTA. Besucher müssen den nächsten Schritt selbst suchen, statt dorthin geführt zu werden.",
+      "funnel_dead_end_page": "Diese kommerzielle Seite hat keinen CTA zu einer späteren Phase des Funnels. Wer hier landet, hat keinen geführten Weg zum Kauf."
     }
   },
   "privacy_policy": {

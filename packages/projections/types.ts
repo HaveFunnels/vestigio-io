@@ -767,6 +767,12 @@ export interface EngineTranslations {
    */
   dynamic_causes?: Record<string, string>;
   dynamic_effects?: Record<string, string>;
+  /**
+   * And the reasoning. reasoning_templates is keyed by inference_key,
+   * which a runtime-built funnel key can never match, so this was the
+   * last of the four fields still printing English on a pt-BR plan.
+   */
+  dynamic_reasoning?: Record<string, string>;
   actions: {
     default_primary: string;
     default_verification: string;

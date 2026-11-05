@@ -800,7 +800,11 @@ const FIELD_KIND_LABELS: Record<string, string> = {
  * 2026-11-01 cycle that was 3 English causes and 5 English effects out
  * of 21 findings.
  */
-type DynamicSection = 'dynamic_titles' | 'dynamic_causes' | 'dynamic_effects';
+type DynamicSection =
+  | 'dynamic_titles'
+  | 'dynamic_causes'
+  | 'dynamic_effects'
+  | 'dynamic_reasoning';
 
 const DYNAMIC_FALLBACKS: Record<DynamicSection, Record<string, string>> = {
   dynamic_titles: {
@@ -814,6 +818,15 @@ const DYNAMIC_FALLBACKS: Record<DynamicSection, Record<string, string>> = {
     funnel_broken_path: 'No link or CTA connects {from} to {to}',
     funnel_weak_connection: 'The path from {from} to {to} is weak',
     funnel_dead_end_page: 'A commercial page offers no way forward',
+  },
+  dynamic_reasoning: {
+    funnel_missing_stage: 'The {stage} stage has no page of its own on the site.',
+    funnel_broken_path:
+      'The {from} stage has NO link to the {to} stage. Visitors cannot progress from {from} to {to} without manually navigating.',
+    funnel_weak_connection:
+      'The {from} stage links to {to} only via navigation or footer links, with no CTA. Visitors must search for the next step instead of being guided there.',
+    funnel_dead_end_page:
+      'This commercial page has no CTA linking to any later funnel stage. Visitors who land here have no guided path toward conversion.',
   },
   dynamic_effects: {
     funnel_missing_stage:
@@ -907,7 +920,16 @@ function resolveReasoning(
   fallbackReasoning: string,
   translations?: EngineTranslations,
 ): string {
-  const template = translations?.reasoning_templates?.[inferenceKey];
+  // reasoning_templates is keyed by inference_key, so a key the engine
+  // BUILDS at runtime (funnel_broken_path_browse_to_decision) can
+  // never appear there. Those fell through to the English literal the
+  // pack composes, which is how a pt-BR plan printed 'The "Browse"
+  // stage has NO link to the "Decision" stage' under a Portuguese
+  // title. The dynamic section resolves the stage names itself, so
+  // what comes back has no placeholders left for the slot loop.
+  const template =
+    translations?.reasoning_templates?.[inferenceKey] ??
+    resolveDynamicText(inferenceKey, 'dynamic_reasoning', translations);
   if (!template) return fallbackReasoning;
 
   // Slots are optional.

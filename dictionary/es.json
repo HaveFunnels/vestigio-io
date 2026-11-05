@@ -4946,7 +4946,33 @@
       "account": "Mi cuenta",
       "support": "Soporte",
       "policy": "Política",
-      "onboarding": "Onboarding"
+      "onboarding": "Onboarding",
+      "activation": "Activación",
+      "browse": "Navegación",
+      "capture": "Captura",
+      "contact": "Contacto",
+      "discover": "Descubrimiento",
+      "education": "Educación",
+      "evaluate": "Evaluación",
+      "evaluation": "Evaluación",
+      "intent": "Intención",
+      "learn": "Aprendizaje",
+      "nurture": "Seguimiento",
+      "purchase": "Compra",
+      "retain": "Retención",
+      "retention": "Retención"
+    },
+    "dynamic_causes": {
+      "funnel_missing_stage": "La etapa de {stage} no tiene página propia",
+      "funnel_broken_path": "Ningún enlace ni botón conecta {from} con {to}",
+      "funnel_weak_connection": "El camino de {from} a {to} es frágil",
+      "funnel_dead_end_page": "Una página comercial no ofrece siguiente paso"
+    },
+    "dynamic_effects": {
+      "funnel_missing_stage": "Quien necesita la etapa de {stage} no tiene a dónde ir y se va",
+      "funnel_broken_path": "El comprador listo para pasar de {from} a {to} tiene que encontrar el camino solo, y la mayoría no lo encuentra",
+      "funnel_weak_connection": "El comprador que va de {from} a {to} pierde impulso en el traspaso",
+      "funnel_dead_end_page": "El comprador llega con intención y la página no le da nada que hacer"
     },
     "inference_titles": {
       "trust_boundary_crossed": "Los compradores son enviados a otro dominio en el checkout",
@@ -8902,6 +8928,12 @@
         ],
         "verification_notes": "Ejecutaremos un navegador headless en cada página marcada como faltante y verificaremos si el snippet del pixel está presente + dispara el evento page_view."
       }
+    },
+    "dynamic_reasoning": {
+      "funnel_missing_stage": "La etapa de {stage} no tiene ninguna página propia en el sitio.",
+      "funnel_broken_path": "La etapa de {from} no tiene ningún enlace a la etapa de {to}. El visitante no puede avanzar de {from} a {to} sin navegar por su cuenta.",
+      "funnel_weak_connection": "La etapa de {from} solo conecta con {to} mediante enlaces de navegación o pie de página, sin ningún CTA. El visitante tiene que buscar el siguiente paso en vez de ser guiado hasta él.",
+      "funnel_dead_end_page": "Esta página comercial no tiene ningún CTA que lleve a una etapa posterior del embudo. Quien llega aquí no tiene camino guiado hacia la compra."
     }
   },
   "privacy_policy": {

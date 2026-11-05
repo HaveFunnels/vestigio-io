@@ -187,6 +187,94 @@ const INVARIANTS: Invariant[] = [
     },
   },
   {
+    name: "every funnel stage and dynamic template has locale copy",
+    check: () => {
+      // The funnel keys the engine builds at runtime splice stage
+      // names into four fields, and the names come from
+      // engine.funnel_stage_names. funnel-resolver.ts defines 18
+      // stage keys across its four business-model templates; the
+      // pt-BR dictionary carried 4 of them. Everything else fell
+      // through to `token.replace(/_/g, " ")`, so the customer's plan
+      // read "Sem caminho de CTA: browse -> Decisao" and, after
+      // cause/effect were localized, repeated the raw token in three
+      // fields instead of one.
+      const resolver = fs.readFileSync(
+        path.join(ROOT, "packages/classification/funnel-resolver.ts"),
+        "utf8",
+      );
+      const stageKeys = new Set<string>();
+      for (const m of resolver.matchAll(
+        /\{\s*key:\s*'([a-z_]+)',\s*label:\s*'[^']+'/g,
+      )) {
+        stageKeys.add(m[1]);
+      }
+      if (stageKeys.size === 0) {
+        return "could not parse any stage key out of funnel-resolver.ts";
+      }
+
+      // Each dynamic section must cover every template name the
+      // resolver can emit, or that locale silently serves English.
+      const SECTIONS = [
+        "dynamic_titles",
+        "dynamic_causes",
+        "dynamic_effects",
+        "dynamic_reasoning",
+      ];
+      const TEMPLATES = [
+        "funnel_missing_stage",
+        "funnel_broken_path",
+        "funnel_weak_connection",
+        "funnel_dead_end_page",
+      ];
+
+      const offenders: string[] = [];
+      for (const loc of ["pt-BR", "es", "de"]) {
+        const f = path.join(ROOT, "dictionary", `${loc}.json`);
+        if (!fs.existsSync(f)) continue;
+        const engine = JSON.parse(fs.readFileSync(f, "utf8")).engine ?? {};
+        const names: Record<string, string> = engine.funnel_stage_names ?? {};
+        const missing = [...stageKeys].filter((k) => !names[k]).sort();
+        if (missing.length > 0) {
+          offenders.push(
+            `${loc}: funnel_stage_names lacks ${missing.length} stage(s): ${missing.join(", ")}`,
+          );
+        }
+        for (const section of SECTIONS) {
+          const dict: Record<string, string> = engine[section] ?? {};
+          const gaps = TEMPLATES.filter((t) => !dict[t]);
+          if (gaps.length > 0) {
+            offenders.push(`${loc}: ${section} lacks ${gaps.join(", ")}`);
+          }
+          // A translation that drops the placeholder renders a
+          // sentence with no stage name in it, which reads as a
+          // generic claim rather than a measurement.
+          for (const t of TEMPLATES) {
+            const v = dict[t];
+            if (!v) continue;
+            const needs =
+              t === "funnel_missing_stage"
+                ? ["{stage}"]
+                : t === "funnel_dead_end_page"
+                  ? []
+                  : ["{from}", "{to}"];
+            for (const ph of needs) {
+              if (!v.includes(ph)) {
+                offenders.push(`${loc}: ${section}.${t} dropped ${ph}`);
+              }
+            }
+          }
+        }
+      }
+      if (offenders.length === 0) return null;
+      return (
+        `untranslated funnel copy would reach the customer:\n  ` +
+        offenders.join("\n  ") +
+        `\n  Stage names go under engine.funnel_stage_names; templates under` +
+        ` engine.dynamic_{titles,causes,effects,reasoning}.`
+      );
+    },
+  },
+  {
     name: "every NEXT_PUBLIC_* the code reads is a Dockerfile ARG",
     check: () => {
       // Next.js inlines NEXT_PUBLIC_* at BUILD time. A Dockerfile

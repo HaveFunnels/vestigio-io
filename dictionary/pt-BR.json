@@ -5414,7 +5414,21 @@
       "account": "Minha conta",
       "support": "Suporte",
       "policy": "Política",
-      "onboarding": "Onboarding"
+      "onboarding": "Onboarding",
+      "activation": "Ativação",
+      "browse": "Navegação",
+      "capture": "Captura",
+      "contact": "Contato",
+      "discover": "Descoberta",
+      "education": "Educação",
+      "evaluate": "Avaliação",
+      "evaluation": "Avaliação",
+      "intent": "Intenção",
+      "learn": "Aprendizado",
+      "nurture": "Nutrição",
+      "purchase": "Compra",
+      "retain": "Retenção",
+      "retention": "Retenção"
     },
     "inference_titles": {
       "trust_hesitation_revenue": "Comprador hesita na hora de pagar",
@@ -7052,6 +7066,12 @@
       "funnel_broken_path": "O comprador pronto pra sair de {from} e ir pra {to} tem que achar o caminho sozinho, e a maioria não acha",
       "funnel_weak_connection": "O comprador que vem de {from} pra {to} perde o embalo na passagem",
       "funnel_dead_end_page": "O comprador chega com intenção e a página não dá nada pra ele fazer"
+    },
+    "dynamic_reasoning": {
+      "funnel_missing_stage": "A etapa de {stage} não tem nenhuma página própria no site.",
+      "funnel_broken_path": "A etapa de {from} não tem nenhum link para a etapa de {to}. O visitante não consegue avançar de {from} para {to} sem navegar por conta própria.",
+      "funnel_weak_connection": "A etapa de {from} só se liga a {to} por links de navegação ou rodapé, sem nenhum CTA. O visitante tem que procurar o próximo passo em vez de ser levado até ele.",
+      "funnel_dead_end_page": "Esta página comercial não tem nenhum CTA que leve a uma etapa posterior do funil. Quem cai nela não tem caminho guiado até a compra."
     }
   },
   "privacy_policy": {

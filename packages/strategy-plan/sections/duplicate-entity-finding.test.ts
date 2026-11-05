@@ -126,3 +126,117 @@ describe("duplicate entity splitting traffic", () => {
 		expect(findings.find((x) => x.inference_key === "duplicate_entity_splits_traffic")).toBeFalsy();
 	});
 });
+
+describe("measured findings arrive with text, not undefined", () => {
+	// The findings with the highest confidence in the whole plan (80 to
+	// 90, the only ones actually counted) reached the customer rendering
+	// "causa: undefined efeito: undefined razao: undefined base=undefined
+	// fonte=undefined". Three independent reviewers of the same document
+	// caught it, including the least technical of them, who said it made
+	// her doubt everything else. The heuristic half was well written.
+	const WIN = { windowStart: "2026-10-06", windowEnd: "2026-11-05" };
+
+	function input(extra: Record<string, unknown>) {
+		return {
+			friction: {
+				basis: "pixel_measured",
+				windowStart: WIN.windowStart,
+				windowEnd: WIN.windowEnd,
+				sampleSessions: 65_196,
+				pages: [],
+				duplicateEntities: [],
+				...extra,
+			},
+			...WIN,
+		} as unknown as Parameters<typeof buildBehavioralFindings>[0];
+	}
+
+	const REQUIRED = ["cause", "effect", "reasoning", "basis_type", "source_url"] as const;
+
+	it("fills every text field on a friction finding", () => {
+		const { findings } = buildBehavioralFindings(
+			input({
+				pages: [
+					{
+						path: "/c/NX-1",
+						label: "Checkout",
+						sessions: 7_167,
+						sessionsWithFriction: 2_710,
+						frictionRatePct: 37.8,
+						deadClicks: 1_289,
+						hesitationsNearCta: 2_984,
+						inputAbandons: 2_382,
+						formRetries: 88,
+						backtracks: 32,
+					},
+				],
+			}),
+		);
+		expect(findings.length).toBeGreaterThan(0);
+		for (const f of findings) {
+			const r = f as unknown as Record<string, unknown>;
+			for (const field of REQUIRED) {
+				expect(r[field], `${f.inference_key} has no ${field}`).toBeTruthy();
+			}
+			// 'measured' is the value the plan's language rules key off.
+			expect(r.basis_type).toBe("measured");
+			// The reasoning has to carry the count, or it is not a
+			// measurement, it is an adjective.
+			expect(String(r.reasoning)).toMatch(/\d/);
+		}
+	});
+
+	it("fills every text field on the duplicate-entity finding", () => {
+		const { findings } = buildBehavioralFindings(
+			input({
+				duplicateEntities: [
+					{
+						label: "Kit Potes Herméticos",
+						totalSessions: 37_506,
+						paths: [
+							{ path: "/products/a", sessions: 25_581 },
+							{ path: "/products/b", sessions: 9_643 },
+						],
+					},
+				],
+			}),
+		);
+		const f = findings.find((x) => x.inference_key === "duplicate_entity_splits_traffic")!;
+		const r = f as unknown as Record<string, unknown>;
+		for (const field of REQUIRED) {
+			expect(r[field], `no ${field}`).toBeTruthy();
+		}
+		// Every URL and its count belong in the reasoning: that is the
+		// whole evidence, and it is what made four reviewers stop.
+		expect(String(r.reasoning)).toContain("/products/a");
+		expect(String(r.reasoning)).toContain("25581");
+		expect(String(r.effect)).not.toContain("—");
+	});
+
+	it("never asserts a cause for something it only counted", () => {
+		const { findings } = buildBehavioralFindings(
+			input({
+				pages: [
+					{
+						path: "/c/NX-1",
+						label: "Checkout",
+						sessions: 7_167,
+						sessionsWithFriction: 2_710,
+						frictionRatePct: 37.8,
+						deadClicks: 1_289,
+						hesitationsNearCta: 0,
+						inputAbandons: 0,
+						formRetries: 0,
+						backtracks: 0,
+					},
+				],
+			}),
+		);
+		for (const f of findings) {
+			const r = f as unknown as Record<string, unknown>;
+			// A count says WHERE the buyer stopped, never WHY. The cause
+			// text must describe the observation, not diagnose it.
+			expect(String(r.cause)).not.toMatch(/porque|por causa|devido/i);
+		}
+	});
+});

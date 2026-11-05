@@ -186,6 +186,75 @@ const INVARIANTS: Invariant[] = [
     },
   },
   {
+    name: "every reasoning template interpolates a slot the pack emits",
+    check: () => {
+      // I shipped "principalmente entre {pairLabel}" to a paying
+      // customer. The pack emits reasoning_slots: { severity, pair,
+      // count }, so the slot is named `pair`; {pairLabel} matched
+      // nothing and the literal brace text went into the document.
+      // Three independent reviewers of that plan caught it, including
+      // the least technical one.
+      //
+      // resolveReasoning substitutes only the keys present in
+      // reasoning_slots, so any other placeholder survives into the
+      // rendered prose. That makes a name mismatch invisible in code
+      // review and visible to the customer, which is the wrong way
+      // round.
+      const packsDir = path.join(ROOT, "packages/inference/packs");
+      const emitted = new Map<string, Set<string>>();
+      for (const file of fs.readdirSync(packsDir)) {
+        if (!file.endsWith(".ts") || file.includes(".test.")) continue;
+        const src = fs.readFileSync(path.join(packsDir, file), "utf8");
+        // Each createInference carries both the key and its slots.
+        for (const m of src.matchAll(
+          /inference_key:\s*'([a-z0-9_]+)'([\s\S]{0,4000}?)reasoning_slots:\s*\{([^}]*)\}/g,
+        )) {
+          const key = m[1];
+          // Slot names are the object's own keys, before any colon.
+          const names = [...m[3].matchAll(/([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g)].map((x) => x[1]);
+          const bare = [...m[3].matchAll(/(?:^|,)\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*(?=,|$)/g)].map(
+            (x) => x[1],
+          );
+          const set = emitted.get(key) ?? new Set<string>();
+          for (const n of [...names, ...bare]) set.add(n);
+          emitted.set(key, set);
+        }
+      }
+      if (emitted.size === 0) {
+        return "could not parse any reasoning_slots out of packages/inference/packs";
+      }
+
+      const offenders: string[] = [];
+      for (const loc of ["pt-BR", "es", "de"]) {
+        const f = path.join(ROOT, "dictionary", `${loc}.json`);
+        if (!fs.existsSync(f)) continue;
+        const templates: Record<string, string> =
+          JSON.parse(fs.readFileSync(f, "utf8")).engine?.reasoning_templates ?? {};
+        for (const [key, tpl] of Object.entries(templates)) {
+          const slots = emitted.get(key);
+          // No slots parsed for this key means the engine interpolates
+          // nothing, so a placeholder would also survive; but a key the
+          // packs build dynamically has no literal to find, so only
+          // check keys we positively know the slots for.
+          if (!slots) continue;
+          for (const m of tpl.matchAll(/\{([a-zA-Z_][a-zA-Z0-9_]*)\}/g)) {
+            if (!slots.has(m[1])) {
+              offenders.push(
+                `${loc}: ${key} uses {${m[1]}}, pack emits ${[...slots].sort().join(", ")}`,
+              );
+            }
+          }
+        }
+      }
+      if (offenders.length === 0) return null;
+      return (
+        `${offenders.length} template placeholder(s) no pack fills:\n  ` +
+        offenders.join("\n  ") +
+        `\n  An unmatched placeholder renders as literal braces to the customer.`
+      );
+    },
+  },
+  {
     name: "every finding emission declares origin and claim_type",
     check: () => {
       // Measured on the customer's 2026-11-05 cycle: all 22 findings

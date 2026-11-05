@@ -105,6 +105,39 @@ const FRICTION_TITLES: Record<FrictionKind, (entity: string) => string> = {
 	backtracks: (e) => `Entradas com saída imediata em "${e}"`,
 };
 
+/** What was COUNTED, per kind. Not a cause: a count.
+ *
+ *  These five fields were absent entirely, so the findings with the
+ *  highest confidence in the whole document (conf 80 to 90, the only
+ *  ones actually measured) reached the customer rendering "causa:
+ *  undefined efeito: undefined razao: undefined". Three independent
+ *  reviewers caught it in the same plan, and one of them put it
+ *  exactly right: the metade of the plan with the most confidence
+ *  arrives with undefined fields while the heuristic half is well
+ *  written. */
+const FRICTION_CAUSES: Record<FrictionKind, string> = {
+	deadClicks: "O comprador clicou em algo que não respondeu",
+	hesitationsNearCta: "O comprador parou em frente ao botão de compra sem clicar",
+	inputAbandons: "O comprador começou a preencher um campo e desistiu dele",
+	formRetries: "O comprador enviou o mesmo formulário várias vezes",
+	backtracks: "O comprador entrou na página e saiu imediatamente",
+};
+
+/** What it costs. Stated as consequence, never as diagnosis: a count
+ *  tells you WHERE the buyer stopped, never WHY. */
+const FRICTION_EFFECTS: Record<FrictionKind, string> = {
+	deadClicks:
+		"Cada clique sem resposta ensina o comprador que a página não funciona, e ele para de tentar antes de chegar ao que funciona",
+	hesitationsNearCta:
+		"A pausa na frente do botão é dúvida não respondida na tela, e dúvida no momento do pagamento vira aba fechada",
+	inputAbandons:
+		"Campo abandonado é compra abandonada: quem para de preencher no meio raramente volta e começa de novo",
+	formRetries:
+		"Reenviar o mesmo formulário significa que o erro não disse o que corrigir, e a paciência acaba antes do acerto",
+	backtracks:
+		"Entrar e sair na hora significa que a página não era o que o comprador esperava encontrar ali",
+};
+
 /** The concrete thing to look at, per kind. Generic advice would be
  *  the catalogue slop this product exists to avoid. */
 const FRICTION_ACTIONS: Record<FrictionKind, string> = {
@@ -265,6 +298,18 @@ export function buildBehavioralFindings(
 			inference_key: FRICTION_INFERENCE_KEYS[kind],
 			title: FRICTION_TITLES[kind](lead.pg.label || lead.pg.path),
 			root_cause: FRICTION_ACTIONS[kind],
+			cause: FRICTION_CAUSES[kind],
+			effect: FRICTION_EFFECTS[kind],
+			reasoning:
+				`${lead.count} ocorrências em ${lead.pg.sessions} sessões de ` +
+				`"${lead.pg.label || lead.pg.path}", ou seja ${lead.pg.frictionRatePct}% ` +
+				`das sessões com atrito nesta página. Contagem direta do pixel, ` +
+				`não estimativa.`,
+			// 'measured' is the honest value and the one the plan's
+			// language rules key off: a count may describe what happened
+			// and may never assert why.
+			basis_type: "measured",
+			source_url: lead.pg.path,
 			pack: "behavioral",
 			severity: severityFor(lead.pg.frictionRatePct, lead.pg.sessionsWithFriction),
 			polarity: "negative",
@@ -322,6 +367,18 @@ export function buildBehavioralFindings(
 		out.findings.push({
 			inference_key: "duplicate_entity_splits_traffic",
 			title: `Um produto seu atende em ${dup.paths.length} endereços diferentes`,
+			cause: `"${dup.label}" está publicado em ${dup.paths.length} endereços diferentes`,
+			effect:
+				`O tráfego, as avaliações e o sinal de busca desse produto estão ` +
+				`divididos em ${dup.paths.length}, então nenhum dos endereços acumula ` +
+				`a reputação que o produto já ganhou`,
+			reasoning:
+				`${dup.totalSessions} sessões medidas chegaram a "${dup.label}" ` +
+				`repartidas assim: ${dup.paths
+					.map((x) => `${x.path} (${x.sessions})`)
+					.join(", ")}. Contagem direta do pixel, não estimativa.`,
+			basis_type: "measured",
+			source_url: lead.path,
 			root_cause:
 				`Escolha um endereço como o oficial para "${dup.label}", aponte os outros ` +
 				`${others} para ele com redirecionamento permanente e atualize os links de ` +

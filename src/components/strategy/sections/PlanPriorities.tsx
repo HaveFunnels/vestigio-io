@@ -56,9 +56,9 @@ export interface AdaptivePlanUI {
 	evolution: {
 		newCount: number;
 		persistentCount: number;
-		resolvedCount: number;
+		undetectedCount: number;
 		inconclusiveCount: number;
-		resolved: { headline: string; surface: string }[];
+		undetected: { headline: string; surface: string }[];
 	};
 }
 
@@ -252,14 +252,19 @@ export default function PlanPriorities({
 				<div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-content-secondary">
 					<Stat n={evolution.newCount} label="novos" />
 					<Stat n={evolution.persistentCount} label="persistem" />
-					<Stat n={evolution.resolvedCount} label="resolvidos" />
+					{/* Not "resolvidos": this counts detectors that stopped
+					    firing, which includes the engine being fixed that
+					    morning. The narrative reserves "resolvido" for
+					    verified customer actions, and the two numbers used
+					    to contradict each other on the same page. */}
+					<Stat n={evolution.undetectedCount} label="não mais detectados" />
 					{evolution.inconclusiveCount > 0 && (
 						<Stat n={evolution.inconclusiveCount} label="inconclusivos" />
 					)}
 				</div>
-				{evolution.resolved.length > 0 && (
+				{evolution.undetected.length > 0 && (
 					<ul className="mt-3 space-y-1">
-						{evolution.resolved.map((r) => (
+						{evolution.undetected.map((r) => (
 							<li key={`${r.headline}-${r.surface}`} className="text-[12.5px] text-content-muted">
 								{r.headline}{" "}
 								<span className="font-mono text-[11px] text-content-faint">{r.surface}</span>

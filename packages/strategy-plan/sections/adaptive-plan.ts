@@ -103,9 +103,25 @@ export interface AdaptivePlan {
 	evolution: {
 		newCount: number;
 		persistentCount: number;
-		resolvedCount: number;
+		/**
+		 * Findings whose detector STOPPED FIRING this cycle. Deliberately
+		 * not called "resolved" any more.
+		 *
+		 * narrative.ts refuses Finding.status="resolved" on purpose, with
+		 * the reason stated there: lifecycle marks a finding resolved
+		 * whenever detection stops, which includes the engine being fixed
+		 * that morning. So the 2026-11 plan told one customer "nenhum
+		 * problema anterior foi resolvido" in the narrative and showed
+		 * "5 resolvidos" in this block, on the same page. Two definitions
+		 * of the same word, one document.
+		 *
+		 * The honest claim for this number is that detection stopped.
+		 * "Resolvido" stays reserved for verified customer actions, which
+		 * is what the narrative counts.
+		 */
+		undetectedCount: number;
 		inconclusiveCount: number;
-		resolved: { headline: string; surface: string }[];
+		undetected: { headline: string; surface: string }[];
 	};
 }
 
@@ -289,7 +305,12 @@ export function buildAdaptivePlan(input: BuildInput): AdaptivePlan {
 					? `O pixel confere no próximo plano: a mesma contagem em ${p.surface}.`
 					: `The pixel re-checks next plan: the same count on ${p.surface}.`
 				: pt
-					? `Confirmar na própria página: ${p.sourceUrl ?? p.surface}.`
+					// Second line of defence: even with the boundary check in
+					// extractEvidenceUrl, never print something that is not
+					// a page reference as one.
+					? `Confirmar na própria página: ${
+						p.sourceUrl && /^(https?:\/\/|\/)/.test(p.sourceUrl) ? p.sourceUrl : p.surface
+					}.`
 					: `Confirm on the page itself: ${p.sourceUrl ?? p.surface}.`,
 	}));
 
@@ -308,9 +329,9 @@ export function buildAdaptivePlan(input: BuildInput): AdaptivePlan {
 		evolution: {
 			newCount: priorities.filter((p) => p.lifecycle === "new").length,
 			persistentCount: priorities.filter((p) => p.lifecycle === "persistent").length,
-			resolvedCount: input.resolved.length,
+			undetectedCount: input.resolved.length,
 			inconclusiveCount: input.findings.filter((f) => f.status === "stale").length,
-			resolved: input.resolved.slice(0, 10).map((f) => ({
+			undetected: input.resolved.slice(0, 10).map((f) => ({
 				headline: f.title?.trim() || f.inferenceKey,
 				surface: f.surface,
 			})),

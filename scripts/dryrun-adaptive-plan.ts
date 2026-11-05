@@ -63,7 +63,7 @@ async function main() {
 	console.log("\n── D. EVOLUÇÃO ────────────────────────────────");
 	console.log(
 		`novos=${plan.evolution.newCount} persistentes=${plan.evolution.persistentCount} ` +
-			`resolvidos=${plan.evolution.resolvedCount} inconclusivos=${plan.evolution.inconclusiveCount}`,
+			`nao-mais-detectados=${plan.evolution.undetectedCount} inconclusivos=${plan.evolution.inconclusiveCount}`,
 	);
 
 	console.log("\n(nada foi gravado)");

@@ -171,8 +171,12 @@ describe("an empty month is a valid plan", () => {
 			findings: [],
 			resolved: [f({ title: "Checkout sem HTTPS", status: "resolved" })],
 		});
-		expect(p.evolution.resolvedCount).toBe(1);
-		expect(p.evolution.resolved[0].headline).toBe("Checkout sem HTTPS");
+		// Counted as "stopped being detected", never as "resolved": the
+		// narrative reserves that word for verified customer actions, and
+		// the two used to contradict each other in one document.
+		expect(p.evolution.undetectedCount).toBe(1);
+		expect(p.evolution.undetected[0].headline).toBe("Checkout sem HTTPS");
+		expect(p.evolution).not.toHaveProperty("resolvedCount");
 	});
 });
 

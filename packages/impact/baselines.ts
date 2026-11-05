@@ -1494,6 +1494,13 @@ export const IMPACT_BASELINES: Record<string, BaselineEntry> = {
   },
   script_supply_chain_risk: {
     inference_key: 'script_supply_chain_risk', impact_category: 'revenue_loss',
+    // The remedy is not one thing. SRI pins a hash, which works for a
+    // versioned static file and BREAKS a tag manager, a pixel or a
+    // chat widget: those are mutable by the vendor's design and would
+    // fail on every publish. Worse, SRI on a loader covers nothing,
+    // because GTM injects children at runtime that no hash sees. The
+    // control for those is CSP with a nonce plus strict-dynamic, and
+    // isolating the card field in the payment provider's iframe.
     cause: 'External scripts on payment pages load without integrity verification',
     effect: 'If any CDN or third-party host is compromised, malicious code executes with full page access — silently skimming payment data, redirecting buyers, or injecting fake checkout forms',
     high: { min: 0.08, max: 0.20 }, medium: { min: 0.03, max: 0.08 }, low: { min: 0.01, max: 0.03 },

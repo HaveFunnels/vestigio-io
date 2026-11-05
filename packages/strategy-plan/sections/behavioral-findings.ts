@@ -295,5 +295,62 @@ export function buildBehavioralFindings(
 		} as unknown as FindingProjection);
 	}
 
+	// ── One product, several URLs ──
+	//
+	// measured-friction already finds this and the plan already shows it
+	// in behavioralJson, and it never became a finding. On the 2026-11
+	// plan of a paying customer that meant the single most valuable
+	// number in the document had no title, no priority and no step:
+	// 37,506 measured sessions split across four URLs serving the same
+	// product. Four independent reviewers reading the plan picked it out
+	// as the best datum in it and asked why it was not step one.
+	//
+	// Emitted here rather than in a pack because it rests on counted
+	// sessions per URL, which only the pixel has. Impact stays 0: this
+	// is a count, and the plan may not attach a modelled loss to it.
+	for (const dup of input.friction?.duplicateEntities ?? []) {
+		if (dup.paths.length < 2) continue;
+		if (dup.totalSessions < MIN_SESSIONS_FOR_FINDING) {
+			out.rejections.push({
+				path: dup.paths[0]?.path ?? dup.label,
+				reason: `duplicate entity ${dup.totalSessions} sessions < ${MIN_SESSIONS_FOR_FINDING} floor`,
+			});
+			continue;
+		}
+		const lead = dup.paths[0];
+		const others = dup.paths.length - 1;
+		out.findings.push({
+			inference_key: "duplicate_entity_splits_traffic",
+			title: `Um produto seu atende em ${dup.paths.length} endereços diferentes`,
+			root_cause:
+				`Escolha um endereço como o oficial para "${dup.label}", aponte os outros ` +
+				`${others} para ele com redirecionamento permanente e atualize os links de ` +
+				`anúncio e de catálogo. Hoje review, prova social e sinal de busca estão ` +
+				`divididos em ${dup.paths.length}.`,
+			pack: "behavioral",
+			// Severity from how much traffic is being split, not from a
+			// guess: a product with most of the store's sessions spread
+			// over several URLs is a different problem from a long tail.
+			severity: dup.totalSessions >= 10_000 ? "high" : "medium",
+			polarity: "negative",
+			confidence: confidenceFor(dup.totalSessions),
+			impact: { monthly_range: { min: 0, max: 0 }, midpoint: 0 },
+			surface: lead.path,
+			surface_kind: "public",
+			origin: "pixel",
+			claim_type: "behavioral",
+			change_class: null,
+			verification_maturity: "verified",
+			evidence: dup.paths.map((x) => ({
+				kind: "measured_count",
+				path: x.path,
+				label: dup.label,
+				sessions: x.sessions,
+				window_start: input.windowStart,
+				window_end: input.windowEnd,
+			})),
+		} as unknown as FindingProjection);
+	}
+
 	return out;
 }

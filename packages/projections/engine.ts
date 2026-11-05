@@ -1668,15 +1668,40 @@ function decisionKeyToPackName(decisionKey: string | null | undefined): string |
  * we try them in order. Returns null for payloads with no surface URL
  * (e.g. behavioral session aggregates, integration snapshots).
  */
+/**
+ * A page reference the plan may show a customer, or null.
+ *
+ * This used to accept ANY non-empty string found under one of the
+ * candidate keys. One of them is `source_url`, and some payloads carry
+ * an evidence id there, so a cuid flowed all the way into the
+ * customer's document: copy_cross_page_inconsistent shipped with
+ * "Confirmar na própria página: cmqxwsfvr094boop1bwojyqg4", which is a
+ * database row id presented as a link to go and check.
+ *
+ * Validated here rather than at the two display sites because this is
+ * the single boundary every producer passes through, and a new payload
+ * shape would otherwise reintroduce it.
+ */
+function isPageReference(v: string): boolean {
+  if (v.startsWith('/')) return true;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    // A bare host ("shop.com") is a legitimate off-site recon value.
+    return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(v);
+  }
+}
+
 function extractEvidenceUrl(ev: { payload?: unknown; url?: string }): string | null {
   // Some evidence shapes carry url at the top level (off-site recon does).
-  if (typeof ev.url === 'string' && ev.url) return ev.url;
+  if (typeof ev.url === 'string' && isPageReference(ev.url)) return ev.url;
   const p = ev.payload as Record<string, unknown> | undefined;
   if (!p) return null;
   const candidates = ['url', 'page_url', 'fetched_url', 'source_url', 'target_url', 'host'];
   for (const k of candidates) {
     const v = p[k];
-    if (typeof v === 'string' && v) return v;
+    if (typeof v === 'string' && v && isPageReference(v)) return v;
   }
   return null;
 }

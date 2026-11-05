@@ -91,7 +91,16 @@ function inferScriptSupplyChainRisk(
     scoping, cycle_ref, ids,
     signal_refs: [makeRef('signal', noSri.id)],
     evidence_refs: noSri.evidence_refs,
-    reasoning: `Script supply chain risk ${severity}. ${count} external script(s) load on commercial pages without Subresource Integrity (SRI) protection. If any CDN or third-party host is compromised, attackers inject malicious code that executes with full page access. Silently skimming payment data, redirecting buyers, or injecting fake forms. SRI ensures that only the exact expected file version loads.`,
+    // The closing sentence used to be "SRI ensures that only the exact
+    // expected file version loads", offered as THE remedy. That is
+    // wrong for most of what this detector finds. SRI pins a hash,
+    // which fits a versioned static file and breaks a tag manager, a
+    // pixel or a chat widget: those are mutable by the vendor's design
+    // and would fail on every publish. And SRI on a loader covers
+    // nothing, because GTM injects children at runtime that no hash
+    // sees. Prescribing the wrong control with a specialist's
+    // confidence is worse than describing the risk and stopping.
+    reasoning: `Script supply chain risk ${severity}. ${count} external script(s) load on commercial pages without Subresource Integrity (SRI) protection. If any CDN or third-party host is compromised, attackers inject malicious code that executes with full page access. Silently skimming payment data, redirecting buyers, or injecting fake forms. The control depends on the script: a version-pinned file can carry an integrity hash, but tag managers, pixels and chat widgets change at the vendor's discretion and would break on every publish, so those need CSP with a nonce and strict-dynamic, plus isolating the card field in the payment provider's iframe.`,
     reasoning_slots: { severity, count },
   })];
 }

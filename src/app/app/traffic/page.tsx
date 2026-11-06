@@ -406,6 +406,36 @@ export default function TrafficStatementPage() {
 											{c.source}
 											{c.topLandingPath ? ` cai em ${c.topLandingPath}` : ""}
 										</div>
+										{/* The month-over-month move, back in the row after
+										    the column was cut for width. The replicability
+										    auditor called this the one thing nobody
+										    reproduces in a weekend with GA4, because it
+										    needs 30 days of the event already existing, so
+										    it is the last thing that should disappear. It
+										    reads "sem base anterior" rather than "nova":
+										    three of these campaigns are dated 29/08 and
+										    calling an August campaign new was simply the
+										    wrong word. */}
+										{c.deltaPoints !== null ? (
+											<div
+												className={`mt-1 text-[11px] ${
+													c.deltaPoints > 2
+														? "text-red-700 dark:text-red-400"
+														: c.deltaPoints < -2
+															? "text-emerald-700 dark:text-emerald-400"
+															: "text-content-muted"
+												}`}
+											>
+												era {c.previousBlindPct}% na janela anterior, agora{" "}
+												{c.arrivedBlindPct}%
+												{c.deltaPoints > 2 && ", piorou"}
+												{c.deltaPoints < -2 && ", melhorou"}
+											</div>
+										) : (
+											<div className="mt-1 text-[11px] text-content-faint">
+												sem base anterior para comparar
+											</div>
+										)}
 										<div className="mt-1 text-[11px] text-content-muted">
 											{n(c.sessions)} acessos, {c.medianDurationS}s de mediana,{" "}
 											{/* Device on every row, not one of fifteen. When one

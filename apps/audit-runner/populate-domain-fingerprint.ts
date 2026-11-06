@@ -135,10 +135,26 @@ export async function populateDomainFingerprint(input: PopulateInput): Promise<{
     where: { environmentId: envId },
   }).catch(() => null);
 
+  // The 90-day gate exists to avoid re-paying for the Haiku industry
+  // call. It used to return HERE, which also skipped the deterministic
+  // snapshot below, and that snapshot is a database read of evidence
+  // this cycle already produced. Cost nothing, skipped anyway.
+  //
+  // Consequence, measured 2026-11-05: detectedPlatforms was [] on every
+  // environment including the one whose evidence says
+  // platform_name="shopify" with pattern "cdn\.shopify\.com",
+  // collected the same day. The industry was classified on 2026-10-15,
+  // so every cold cycle since then skipped the whole populator, and the
+  // platform-risk branch in signals/engine.ts that reads
+  // detectedPlatforms has never fired for anyone.
+  //
+  // Knowing the platform is not cosmetic: it decides whether a
+  // customer's checkout can be measured at all, since a DOM snippet
+  // cannot run inside a Shopify-hosted checkout.
   const cutoff = new Date(Date.now() - REFRESH_AFTER_DAYS * 24 * 60 * 60 * 1000);
-  if (existing && existing.industryClassifiedAt && existing.industryClassifiedAt > cutoff) {
-    return { skipped: true, reason: "still-fresh", classified: false };
-  }
+  const industryStillFresh = Boolean(
+    existing?.industryClassifiedAt && existing.industryClassifiedAt > cutoff,
+  );
 
   // Snapshot the deterministic bits from the current cycle's evidence.
   // These are cheap — string regex matches against PlatformIndicator
@@ -206,7 +222,7 @@ export async function populateDomainFingerprint(input: PopulateInput): Promise<{
   let industryConfidence: number | null = null;
   let industryClassifiedAt: Date | null = null;
 
-  if (isLlmEnabled() && homepagePayload) {
+  if (!industryStillFresh && isLlmEnabled() && homepagePayload) {
     const h1 = (homepagePayload.h1 || "").slice(0, 200);
     const meta = (homepagePayload.meta_description || "").slice(0, 300);
     const aboveFold = (homepagePayload.body_text_snippet || "").slice(0, 1000);

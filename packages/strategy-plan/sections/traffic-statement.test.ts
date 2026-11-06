@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
 	buildTrafficStatement,
+	decodeCampaignName,
 	deviceOf,
 	splitCampaignRef,
 	MIN_SESSIONS_PER_CAMPAIGN,
@@ -481,3 +482,39 @@ describe("comparison with the previous window", () => {
 		expect(st.campaigns[0].deltaPoints).toBe(0);
 	});
 });
+
+describe("campaign names arrive percent-encoded", () => {
+	it("decodes the name the operator typed in the ad platform", () => {
+		// 85% of the campaigns on the instrumented account came through
+		// encoded, because the pixel reads the campaign from the landing
+		// URL's query string. Four of five reviewers flagged it, and one
+		// named the cost: a product selling "contagem direta" cannot
+		// hand over a name the operator will not find in their own ad
+		// manager, because then they stop trusting the number next to it.
+		const raw = "%281-1-X+%7C+H1-H4%2FC1+%7C+POTE%29+aberto+adv%2B+%2827%2F10%29|120252961272760114";
+		const { name, platformId } = splitCampaignRef(raw);
+		expect(name).toBe("(1-1-X | H1-H4/C1 | POTE) aberto adv+ (27/10)");
+		expect(platformId).toBe("120252961272760114");
+	});
+
+	it("turns plus into space, which decodeURIComponent does not", () => {
+		expect(decodeCampaignName("ABERTO+35%2B+FEM")).toBe("ABERTO 35+ FEM");
+	});
+
+	it("decodes accents, which is most of a Brazilian campaign name", () => {
+		expect(decodeCampaignName("%E2%80%94+C%C3%B3pia")).toBe("— Cópia");
+	});
+
+	it("returns a stray percent sign untouched", () => {
+		// "100%+off" has a '%' but no valid escape, so it is not encoded
+		// text and the '+' is a literal the operator typed.
+		expect(decodeCampaignName("100%+off")).toBe("100%+off");
+	});
+
+	it("leaves an already-clean name alone", () => {
+		expect(decodeCampaignName("(1-3-X | H1-H6/C1 | RBO) ABERTO 35+")).toBe(
+			"(1-3-X | H1-H6/C1 | RBO) ABERTO 35+",
+		);
+	});
+});
+

@@ -382,15 +382,23 @@ export default function TrafficStatementPage() {
 					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						Anúncio ou página
 					</div>
-					{sharedPages.map(([path, list]) => (
-						<p key={path} className="mb-2 text-[13.5px] leading-relaxed text-content">
-							<strong>{list.length} campanhas</strong> com desperdício acima do normal caem
-							na mesma página,{" "}
-							<span className="font-mono text-[12px] text-content-secondary">{path}</span>.
-							Quando campanhas diferentes morrem no mesmo lugar, o problema tende a ser a
-							página, não os anúncios.
-						</p>
-					))}
+					{/* One sentence for the rule, then the list. Printing the
+					    explanation once per path repeated the same sentence
+					    verbatim three times, which three reviewers read as
+					    template rather than analysis. */}
+					<p className="mb-2 text-[13.5px] leading-relaxed text-content">
+						Quando campanhas diferentes morrem no mesmo lugar, o problema tende a ser a
+						página, não os anúncios. Acontece{" "}
+						{sharedPages.length === 1 ? "em uma página" : `em ${sharedPages.length} páginas`}:
+					</p>
+					<ul className="mb-2 space-y-1">
+						{sharedPages.map(([path, list]) => (
+							<li key={path} className="text-[13px] text-content-secondary">
+								<span className="font-mono text-[12px]">{path}</span>, com{" "}
+								<strong>{list.length} campanhas</strong> acima do normal
+							</li>
+						))}
+					</ul>
 					{needsDecision
 						.filter(
 							(c) =>

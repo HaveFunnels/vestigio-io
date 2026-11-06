@@ -1,0 +1,276 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import PageHeader from "@/components/console/PageHeader";
+
+// ──────────────────────────────────────────────
+// Extrato de tráfego pago. The first v2 surface.
+//
+// Reads /api/traffic-statement, which groups months of already
+// collected session data by campaign for the first time.
+//
+// Rendered as a statement, not a dashboard: one page, ordered by how
+// many paid arrivals each campaign wasted, with the account's own
+// median as the comparison. Twenty reviewers of the previous product
+// scored its clarity at 4.8 and one of them, the least technical, gave
+// it a 2 and said it made her feel stupid. So: no JSON, no charts, no
+// estimates. Counts and one verdict per line.
+// ──────────────────────────────────────────────
+
+interface CampaignRow {
+	name: string;
+	platformId: string | null;
+	source: string;
+	sessions: number;
+	arrivedBlind: number;
+	arrivedBlindPct: number;
+	medianDurationS: number;
+	reachedAction: number;
+	reachedActionPct: number;
+	completed: number;
+	topLandingPath: string | null;
+	verdict: "desperdicio" | "observar" | "entregando";
+	pointsAboveAccount: number;
+	excessBlind: number;
+}
+
+interface Statement {
+	windowStart: string;
+	windowEnd: string;
+	attributedSessions: number;
+	measuredSessions: number;
+	attributionCoveragePct: number;
+	accountMedianBlindPct: number;
+	campaigns: CampaignRow[];
+	totals: { campaignsAboveFloor: number; arrivedBlind: number; sessions: number };
+	belowFloor: { campaigns: number; sessions: number };
+}
+
+const VERDICT: Record<CampaignRow["verdict"], { label: string; cls: string }> = {
+	desperdicio: {
+		label: "desperdício",
+		cls: "bg-red-500/[0.08] text-red-700 dark:text-red-400 border-red-500/20",
+	},
+	observar: {
+		label: "observar",
+		cls: "bg-amber-500/[0.08] text-amber-700 dark:text-amber-400 border-amber-500/20",
+	},
+	entregando: {
+		label: "entregando",
+		cls: "bg-emerald-500/[0.08] text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
+	},
+};
+
+function n(v: number): string {
+	return v.toLocaleString("pt-BR");
+}
+
+export default function TrafficStatementPage() {
+	const [data, setData] = useState<Statement | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let alive = true;
+		fetch("/api/traffic-statement")
+			.then((r) => r.json())
+			.then((body) => {
+				if (!alive) return;
+				if (body.statement) setData(body.statement);
+				else setError(body.reason ?? "sem dados");
+			})
+			.catch(() => alive && setError("falha ao carregar"))
+			.finally(() => alive && setLoading(false));
+		return () => {
+			alive = false;
+		};
+	}, []);
+
+	if (loading) {
+		// Shimmer, never a spinner. House rule.
+		return (
+			<div className="p-6">
+				<PageHeader title="Extrato de tráfego pago" />
+				<div className="space-y-2">
+					{Array.from({ length: 6 }).map((_, i) => (
+						<div key={i} className="h-14 animate-pulse rounded-xl bg-surface-inset" />
+					))}
+				</div>
+			</div>
+		);
+	}
+
+	if (error || !data) {
+		return (
+			<div className="p-6">
+				<PageHeader title="Extrato de tráfego pago" />
+				<div className="rounded-2xl border border-edge bg-surface-card p-6 text-[13.5px] text-content-secondary">
+					Ainda não há sessões medidas com campanha identificada nesta janela. O extrato
+					aparece quando o pixel registra tráfego vindo de anúncio.
+				</div>
+			</div>
+		);
+	}
+
+	const wasted = data.totals.arrivedBlind;
+	// 31 of 47 campaigns came back "entregando" on the real account.
+	// Listing them is noise on a page that has to read in 30 seconds, so
+	// they collapse into one line and the table carries only what needs
+	// a decision.
+	const needsDecision = data.campaigns.filter((c) => c.verdict !== "entregando");
+	const fine = data.campaigns.length - needsDecision.length;
+
+	// The ad-or-page question, answered by the data rather than by a
+	// separate feature: when several wasteful campaigns land on the SAME
+	// page, the page is implicated. When one wastes alone at 5 seconds,
+	// the ad is. On the live account three of the six worst campaigns
+	// land on the same product page.
+	const byLanding = new Map<string, CampaignRow[]>();
+	for (const c of needsDecision) {
+		if (!c.topLandingPath) continue;
+		const list = byLanding.get(c.topLandingPath) ?? [];
+		list.push(c);
+		byLanding.set(c.topLandingPath, list);
+	}
+	const sharedPages = [...byLanding.entries()]
+		.filter(([, list]) => list.length >= 2)
+		.sort((a, b) => b[1].length - a[1].length);
+
+	return (
+		<div className="p-6">
+			<PageHeader
+				title="Extrato de tráfego pago"
+				subtitle={`${data.windowStart} a ${data.windowEnd}`}
+				tooltip={
+					"Uma sessão conta como 'chegou e não viu nada' quando o marco de 25% de " +
+					"scroll nunca disparou. Sessões com menos de 3 eventos são descartadas. " +
+					"Tudo nesta página é contagem direta, não estimativa."
+				}
+			/>
+
+			{/* The one sentence the operator needs. Written as a sentence
+			    because every reviewer who disliked the old product
+			    disliked it for being a grid of numbers. */}
+			<div className="mb-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
+				<p className="text-[15px] leading-relaxed text-content">
+					Dos <strong>{n(data.totals.sessions)}</strong> acessos que você comprou em{" "}
+					<strong>{data.totals.campaignsAboveFloor}</strong> campanhas,{" "}
+					<strong>{n(wasted)}</strong> chegaram e foram embora sem ver nada.
+				</p>
+				<p className="mt-2 text-[12.5px] text-content-muted">
+					A mediana desta conta é {data.accountMedianBlindPct}% sem ver nada. As campanhas
+					marcadas como desperdício estão pelo menos 10 pontos acima dela.
+				</p>
+			</div>
+
+			<div className="overflow-x-auto rounded-2xl border border-edge">
+				<table className="w-full min-w-[760px] border-collapse text-[13px]">
+					<thead>
+						<tr className="bg-surface-inset text-left text-[11px] uppercase tracking-[0.08em] text-content-muted">
+							<th className="px-4 py-3 font-semibold">campanha</th>
+							<th className="px-3 py-3 text-right font-semibold">comprou</th>
+							<th className="px-3 py-3 text-right font-semibold">não viu nada</th>
+							<th className="px-3 py-3 text-right font-semibold">acima do normal</th>
+							<th className="px-3 py-3 text-right font-semibold">tempo</th>
+							<th className="px-3 py-3 text-right font-semibold">chegou à ação</th>
+							<th className="px-3 py-3 font-semibold">veredito</th>
+						</tr>
+					</thead>
+					<tbody>
+						{needsDecision.map((c) => (
+							<tr
+								key={c.platformId ?? c.name}
+								className="border-t border-edge align-top hover:bg-surface-card-hover"
+							>
+								<td className="px-4 py-3">
+									<div className="max-w-[360px] text-content">{c.name}</div>
+									<div className="mt-0.5 font-mono text-[11px] text-content-faint">
+										{c.source}
+										{c.topLandingPath ? ` cai em ${c.topLandingPath}` : ""}
+									</div>
+								</td>
+								<td className="px-3 py-3 text-right tabular-nums text-content-secondary">
+									{n(c.sessions)}
+								</td>
+								<td className="px-3 py-3 text-right tabular-nums">
+									<div className="text-content">{n(c.arrivedBlind)}</div>
+									<div className="text-[11px] text-content-muted">{c.arrivedBlindPct}%</div>
+								</td>
+								<td className="px-3 py-3 text-right tabular-nums">
+									<div className="text-content">{n(c.excessBlind)}</div>
+									<div className="text-[11px] text-content-muted">
+										{c.pointsAboveAccount > 0 ? "+" : ""}
+										{c.pointsAboveAccount}pt
+									</div>
+								</td>
+								<td className="px-3 py-3 text-right tabular-nums text-content-secondary">
+									{c.medianDurationS}s
+								</td>
+								<td className="px-3 py-3 text-right tabular-nums">
+									<div className="text-content">{n(c.reachedAction)}</div>
+									<div className="text-[11px] text-content-muted">{c.reachedActionPct}%</div>
+								</td>
+								<td className="px-3 py-3">
+									<span
+										className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${VERDICT[c.verdict].cls}`}
+									>
+										{VERDICT[c.verdict].label}
+									</span>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+
+			{sharedPages.length > 0 && (
+				<div className="mt-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
+					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+						Anúncio ou página
+					</div>
+					{sharedPages.map(([path, list]) => (
+						<p key={path} className="mb-2 text-[13.5px] leading-relaxed text-content">
+							<strong>{list.length} campanhas</strong> com desperdício acima do normal caem
+							na mesma página,{" "}
+							<span className="font-mono text-[12px] text-content-secondary">{path}</span>.
+							Quando campanhas diferentes morrem no mesmo lugar, o problema tende a ser a
+							página, não os anúncios.
+						</p>
+					))}
+					{needsDecision
+						.filter(
+							(c) =>
+								c.medianDurationS <= 8 &&
+								c.arrivedBlindPct >= 90 &&
+								(!c.topLandingPath || (byLanding.get(c.topLandingPath)?.length ?? 0) < 2),
+						)
+						.map((c) => (
+							<p key={c.name} className="mb-2 text-[13.5px] leading-relaxed text-content">
+								<span className="font-mono text-[12px]">{c.name.slice(0, 48)}</span> perde{" "}
+								{c.arrivedBlindPct}% em {c.medianDurationS} segundos e é a única nessa
+								página. Aqui o problema tende a ser o anúncio.
+							</p>
+						))}
+				</div>
+			)}
+
+			{fine > 0 && (
+				<p className="mt-4 text-[12.5px] text-content-secondary">
+					Outras {fine} campanhas estão dentro do normal desta conta e não aparecem acima.
+				</p>
+			)}
+
+			<p className="mt-4 text-[12px] text-content-muted">
+				{data.attributionCoveragePct}% das {n(data.measuredSessions)} sessões medidas trazem
+				campanha identificada.
+				{data.belowFloor.campaigns > 0 && (
+					<>
+						{" "}
+						{data.belowFloor.campaigns} campanhas com menos de 300 sessões ficaram fora do
+						extrato, porque abaixo disso a taxa é ruído.
+					</>
+				)}
+			</p>
+		</div>
+	);
+}

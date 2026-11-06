@@ -276,14 +276,33 @@ describe("measured magnitude, and where it must not go", () => {
 		backtracks: 32,
 	};
 
-	it("prices the measured checkout friction the plan published at R$ 0", () => {
+	it("gives each friction KIND its own magnitude, not one shared number", () => {
+		// First attempt used the page's friction sessions for every kind
+		// and produced the identical R$ 7,887 five times on the live
+		// cycle. 88 form retries cannot weigh the same as 2,382 abandoned
+		// fields, and a reader spots that immediately.
 		const { findings } = buildBehavioralFindings(input({ pages: [page] }));
-		const f = findings[0] as unknown as Record<string, unknown>;
-		const m = f.measured_magnitude as { revenueAtStakeBrl: number; share: number };
-		expect(m).toBeTruthy();
-		// 2,710 of 65,190 sessions at 198,000/65,190 per session.
-		expect(m.revenueAtStakeBrl).toBe(8_231);
-		expect(m.share).toBeCloseTo(0.0416, 3);
+		const byKey = new Map(
+			findings.map((f) => [
+				f.inference_key,
+				(f as unknown as Record<string, unknown>).measured_magnitude as {
+					revenueAtStakeBrl: number;
+					affectedSessions: number;
+				} | null,
+			]),
+		);
+		const values = [...byKey.values()].filter(Boolean).map((m) => m!.revenueAtStakeBrl);
+		expect(values.length).toBeGreaterThan(1);
+		expect(new Set(values).size).toBeGreaterThan(1);
+
+		// Bounded by both counts, because sessions-per-kind is unknown.
+		for (const m of byKey.values()) {
+			if (!m) continue;
+			expect(m.affectedSessions).toBeLessThanOrEqual(page.sessionsWithFriction);
+		}
+		// Form retries are the rarest kind, so the smallest magnitude.
+		const retry = byKey.get("measured_form_retry");
+		if (retry) expect(retry.affectedSessions).toBe(88);
 	});
 
 	it("NEVER writes the magnitude into impact.midpoint", () => {
@@ -315,14 +334,26 @@ describe("measured magnitude, and where it must not go", () => {
 		}
 	});
 
-	it("uses the affected population, not every session on the page", () => {
+	it("uses the affected population, never every session on the page", () => {
 		const { findings } = buildBehavioralFindings(input({ pages: [page] }));
-		const m = (findings[0] as unknown as Record<string, unknown>).measured_magnitude as {
+		for (const f of findings) {
+			const m = (f as unknown as Record<string, unknown>).measured_magnitude as {
+				affectedSessions: number;
+			} | null;
+			if (!m) continue;
+			// 7,167 merely visited the page. Pricing against that would
+			// charge the whole page for one kind of friction.
+			expect(m.affectedSessions).toBeLessThan(page.sessions);
+			expect(m.affectedSessions).toBeLessThanOrEqual(page.sessionsWithFriction);
+		}
+		// The lead kind on this fixture is dead clicks, 1,289 occurrences,
+		// which is below the page's 2,710 friction sessions and is
+		// therefore the binding bound.
+		const dead = findings.find((f) => f.inference_key === "measured_dead_clicks");
+		const m = (dead as unknown as Record<string, unknown>).measured_magnitude as {
 			affectedSessions: number;
 		};
-		// 2,710 sessions hit friction; 7,167 merely visited.
-		expect(m.affectedSessions).toBe(2_710);
-		expect(m.affectedSessions).not.toBe(7_167);
+		expect(m.affectedSessions).toBe(1_289);
 	});
 
 	it("omits the magnitude when revenue was never declared", () => {

@@ -334,10 +334,23 @@ export function buildBehavioralFindings(
 			// and may never assert why.
 			basis_type: "measured",
 			source_url: lead.pg.path,
-			// Sessions that actually hit this friction, not every session
-			// on the page: the magnitude has to describe the measured
-			// population and nothing wider.
-			measured_magnitude: magnitudeFor(input, lead.pg.sessionsWithFriction),
+			// Upper bound on the sessions this KIND of friction touched.
+			//
+			// The aggregates give occurrences per kind and friction
+			// sessions per page, never sessions per kind: one session can
+			// dead-click five times. So the true figure is unknown and
+			// bounded by both, and min() is the only honest statement
+			// available.
+			//
+			// Using the page's friction sessions alone was the first
+			// attempt and it gave all five kinds the IDENTICAL magnitude
+			// (R$ 7,887 each on the live cycle), which a reader spots
+			// instantly and which is false: 88 form retries and 2,382
+			// abandoned fields cannot carry the same weight.
+			measured_magnitude: magnitudeFor(
+				input,
+				Math.min(lead.count, lead.pg.sessionsWithFriction),
+			),
 			pack: "behavioral",
 			severity: severityFor(lead.pg.frictionRatePct, lead.pg.sessionsWithFriction),
 			polarity: "negative",

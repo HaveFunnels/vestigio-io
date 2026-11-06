@@ -72,7 +72,10 @@ export function sessionShare(
 }
 
 export interface MeasuredMagnitude {
-	/** Revenue flowing through the affected sessions. Never a loss. */
+	/** Revenue flowing through the affected sessions. Never a loss, and
+	 *  for per-kind friction an upper bound: the aggregates give
+	 *  occurrences per kind and friction sessions per page, never
+	 *  sessions per kind, so the affected count is bounded by both. */
 	revenueAtStakeBrl: number;
 	affectedSessions: number;
 	measuredSessions: number;

@@ -61,7 +61,12 @@ interface Statement {
 		spendWastedBrl: number | null;
 	};
 	belowFloor: { campaigns: number; sessions: number };
-	control: { sessions: number; blind: number; blindPct: number } | null;
+	control: {
+		sessions: number;
+		blind: number;
+		blindPct: number;
+		excludedPaidMarker: number;
+	} | null;
 }
 
 const VERDICT: Record<CampaignRow["verdict"], { label: string; cls: string }> = {
@@ -234,6 +239,14 @@ export default function TrafficStatementPage() {
 						quem chega direto costuma já conhecer a marca. O que isso estabelece é que as
 						suas páginas conseguem segurar atenção, e é por isso que dá para separar
 						problema de anúncio de problema de página.
+						{data.control.excludedPaidMarker > 0 && (
+							<>
+								{" "}
+								Outras {n(data.control.excludedPaidMarker)} visitas chegaram sem nome de
+								campanha mas com marca de clique pago, e ficaram fora desta comparação para
+								não contaminá-la.
+							</>
+						)}
 					</p>
 				</div>
 			)}

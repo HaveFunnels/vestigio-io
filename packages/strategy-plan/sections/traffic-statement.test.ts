@@ -320,6 +320,68 @@ describe("the internal control group", () => {
 		expect(st.control?.sessions).toBe(400);
 		expect(st.attributedSessions).toBe(0);
 	});
+
+	it("keeps a paid click out of the control when its campaign tag broke", () => {
+		// The objection that forced this, from a reviewer who checked
+		// the arithmetic: "o seu grupo de controle e um residuo, nao uma
+		// populacao medida". Correct. An ad click whose tag is stripped
+		// by an in-app browser arrives with no campaign, and counting it
+		// as organic contaminates the one comparison the page rests on.
+		//
+		// On the instrumented account 489 of 3.909 untagged sessions
+		// still carried a paid marker, and they ran 65.0% no-scroll
+		// against 19.6% for the rest. The residue was inflating the
+		// control and understating the gap, so the fix widens the
+		// finding rather than softening it.
+		const clean = many(400, {
+			max_scroll_depth: 80,
+			attribution: { first_touch: { source: "direct" } },
+		});
+		const leaked = many(100, {
+			max_scroll_depth: 0,
+			attribution: { first_touch: { source: "direct", fbclid: "IwAR-abc" } },
+		});
+		const st = buildTrafficStatement([...clean, ...leaked], WIN);
+		expect(st.control!.sessions).toBe(400);
+		expect(st.control!.blindPct).toBe(0);
+		expect(st.control!.excludedPaidMarker).toBe(100);
+		// And it is not silently reclassified as a campaign either.
+		expect(st.campaigns).toHaveLength(0);
+	});
+
+	it("reads the paid marker from the landing URL as well as the field", () => {
+		const st = buildTrafficStatement(
+			[
+				...many(400, { attribution: { first_touch: { source: "direct" } } }),
+				...many(60, {
+					attribution: {
+						first_touch: { source: "direct", landing_url: "https://x.com/p?gclid=Cj0KC" },
+					},
+				}),
+				...many(40, {
+					attribution: { first_touch: { source: "newsletter", medium: "cpc" } },
+				}),
+			],
+			WIN,
+		);
+		expect(st.control!.sessions).toBe(400);
+		expect(st.control!.excludedPaidMarker).toBe(100);
+	});
+
+	it("keeps genuine organic social in the control", () => {
+		// A person arriving from an unpaid Instagram post is organic.
+		// Only the bare platform name as source is treated as paid, so
+		// a referral host is not swept up with it.
+		const st = buildTrafficStatement(
+			many(400, {
+				max_scroll_depth: 80,
+				attribution: { first_touch: { source: "instagram.com", medium: "referral" } },
+			}),
+			WIN,
+		);
+		expect(st.control!.sessions).toBe(400);
+		expect(st.control!.excludedPaidMarker).toBe(0);
+	});
 });
 
 describe("spend, when an ad account is connected", () => {

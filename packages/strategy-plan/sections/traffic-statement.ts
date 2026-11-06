@@ -179,17 +179,31 @@ export interface TrafficStatement {
 	 *
 	 * Answers the question the account median cannot: is this rate bad,
 	 * or is it what paid traffic does? Same site, same pages, same
-	 * period, so the gap cannot be blamed on the pages. On the live
-	 * account paid runs 72.1% no-scroll against direct at 25.2%.
+	 * period, so the gap cannot be blamed on the pages.
 	 *
-	 * Declared honestly rather than sold as a control group: direct
-	 * traffic includes returning visitors who already know the brand,
-	 * so part of any gap is warmth, not quality. What it does establish
-	 * is that the pages CAN hold attention, which is what makes the
-	 * ad-or-page verdict defensible. Null when there is too little
-	 * non-paid traffic to say anything.
+	 * This used to be "every session with no campaign", which is not a
+	 * population, it is a residue: a paid session whose campaign tag
+	 * broke lands in it. Measured on the instrumented account, 489 of
+	 * 3.909 such sessions (12.5%) still carried a paid marker, and
+	 * those ran 65.0% no-scroll against 19.6% for the rest. So the
+	 * residue was inflating the control and understating the gap. The
+	 * paid-marked ones are now excluded and counted separately, which
+	 * moved the control from 25.2% to 19.6%.
+	 *
+	 * Still declared honestly rather than sold as a clean experiment:
+	 * non-paid traffic includes returning visitors who already know the
+	 * brand, so part of any gap is warmth, not quality. What it does
+	 * establish is that the pages CAN hold attention, which is what
+	 * makes the ad-or-page verdict defensible. Null when there is too
+	 * little non-paid traffic to say anything.
 	 */
-	control: { sessions: number; blind: number; blindPct: number } | null;
+	control: {
+		sessions: number;
+		blind: number;
+		blindPct: number;
+		/** Sessions excluded for carrying a paid marker without a campaign. */
+		excludedPaidMarker: number;
+	} | null;
 }
 
 function num(v: unknown): number {
@@ -252,6 +266,30 @@ export function decodeCampaignName(raw: string): string {
 		// recognise a mangled name, not a missing row.
 		return raw.trim();
 	}
+}
+
+/**
+ * Does an untagged session still smell like a paid click?
+ *
+ * The click ids are the strongest evidence: a human typing the address
+ * does not bring an fbclid. Source and medium are weaker, because a
+ * person can arrive from an organic Instagram post, but on the
+ * instrumented account they agreed with the click ids rather than
+ * contradicting them, so they stay in. Erring toward exclusion is the
+ * right asymmetry: a genuine organic session wrongly dropped only
+ * costs sample size, while a paid session wrongly kept corrupts the
+ * comparison the page is built on.
+ */
+function hasPaidMarker(ft: Record<string, unknown> | undefined): boolean {
+	if (!ft) return false;
+	if (ft.fbclid || ft.gclid || ft.ttclid || ft.msclkid) return true;
+	const landing = typeof ft.landing_url === "string" ? ft.landing_url : "";
+	if (/[?&](fbclid|gclid|ttclid|msclkid)=/i.test(landing)) return true;
+	if (/[?&]utm_medium=(cpc|paid|ppc)/i.test(landing)) return true;
+	const medium = typeof ft.medium === "string" ? ft.medium : "";
+	if (/^(cpc|paid|ppc|paid_social)/i.test(medium)) return true;
+	const source = typeof ft.source === "string" ? ft.source : "";
+	return /^(fb|ig|facebook|instagram|tiktok)$/i.test(source.trim());
 }
 
 export function splitCampaignRef(raw: string): { name: string; platformId: string | null } {
@@ -317,6 +355,7 @@ export function buildTrafficStatement(
 	let attributed = 0;
 	let controlSessions = 0;
 	let controlBlind = 0;
+	let controlExcluded = 0;
 
 	for (const row of rows) {
 		// Bot gate, same floor the friction measurement already uses: a
@@ -329,7 +368,16 @@ export function buildTrafficStatement(
 			?.first_touch;
 		const campaignRaw = typeof ft?.campaign === "string" ? ft.campaign : null;
 		if (!campaignRaw) {
-			// No campaign means it was not bought. Counted as the control.
+			// Absent campaign does NOT mean the session was not bought.
+			// An ad click whose tag was stripped (in-app browser, iOS,
+			// a redirect that drops the query string) arrives with no
+			// campaign and would be counted as organic, contaminating
+			// the one comparison the whole page rests on. Anything
+			// still carrying a paid fingerprint is set aside.
+			if (hasPaidMarker(ft)) {
+				controlExcluded++;
+				continue;
+			}
 			controlSessions++;
 			if (num(a.max_scroll_depth) < SAW_SOMETHING_MILESTONE) controlBlind++;
 			continue;
@@ -489,6 +537,7 @@ export function buildTrafficStatement(
 						sessions: controlSessions,
 						blind: controlBlind,
 						blindPct: Math.round((1000 * controlBlind) / controlSessions) / 10,
+						excludedPaidMarker: controlExcluded,
 					}
 				: null,
 	};

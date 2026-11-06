@@ -151,6 +151,19 @@ export function deviceOf(userAgent: string | null | undefined): "mobile" | "desk
 export interface CampaignRow {
 	/** Campaign name as the operator wrote it in the ad platform. */
 	name: string;
+	/**
+	 * The label to print: the name shortened, and disambiguated when
+	 * another campaign in this window carries the same one.
+	 *
+	 * Two rows on the instrumented account are not merely similar, they
+	 * are byte-identical: "(1-3-X | H1-H4/C1 | POTE) aberto adv+
+	 * (29/08) — Cópia" six times over, twice, under different campaign
+	 * ids. Printing that label twice hands the operator two rows they
+	 * cannot tell apart, which is worse than a long name. The id tail
+	 * is what the ad manager itself shows, so it is what lets them find
+	 * the right one.
+	 */
+	displayName: string;
 	/** The platform's own campaign id, when present. Joins to spend. */
 	platformId: string | null;
 	source: string;
@@ -437,7 +450,14 @@ export function shortCampaignName(raw: string): string {
 	// missed: the copies then survived into the truncation and came out
 	// as "(21/09)… (cópia 3)".
 	let base = raw.replace(/(\s*[-–—,]?\s*C[oó]pia)+\s*$/gi, "").trim();
-	if (base.length > 46) base = base.slice(0, 45).trimEnd() + "…";
+	// Truncate the MIDDLE, not the tail. The distinguishing part of
+	// these names is the date at the end: cutting from the right turned
+	// "...aberto adv+ (29/08)" and "...aberto adv+ (21/09)" into the
+	// same label. A reviewer proposed exactly this, "corta no meio,
+	// mostra o começo e o fim".
+	if (base.length > 46) {
+		base = base.slice(0, 30).trimEnd() + "…" + base.slice(-14).trimStart();
+	}
 	return copies > 0 ? `${base} (cópia ${copies})` : base;
 }
 
@@ -687,6 +707,8 @@ export function buildTrafficStatement(
 				pauseCostPurchases: c.completed,
 				excessBlind: Math.max(0, Math.round((c.sessions * points) / 100)),
 				name: c.name,
+				// Overwritten below, once every row is known.
+				displayName: "",
 				platformId: c.platformId,
 				source: c.source,
 				sessions: c.sessions,
@@ -703,6 +725,20 @@ export function buildTrafficStatement(
 		})
 		// Excess waste, not raw volume and not rate. See decision 1.
 		.sort((a, b) => b.excessBlind - a.excessBlind || b.arrivedBlind - a.arrivedBlind);
+
+	// Labels last, because disambiguation needs every row to be known.
+	const labelCount = new Map<string, number>();
+	for (const c of campaigns) {
+		const short = shortCampaignName(c.name);
+		labelCount.set(short, (labelCount.get(short) ?? 0) + 1);
+	}
+	for (const c of campaigns) {
+		const short = shortCampaignName(c.name);
+		c.displayName =
+			(labelCount.get(short) ?? 0) > 1 && c.platformId
+				? `${short} [id ${c.platformId.slice(-6)}]`
+				: short;
+	}
 
 	return {
 		windowStart: options.windowStart,

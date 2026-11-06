@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/console/PageHeader";
 import { useActiveEnvId } from "@/components/app/McpDataProvider";
-import { shortCampaignName } from "../../../../packages/strategy-plan/sections/traffic-statement";
 
 // ──────────────────────────────────────────────
 // Extrato de tráfego pago. The first v2 surface.
@@ -21,6 +20,7 @@ import { shortCampaignName } from "../../../../packages/strategy-plan/sections/t
 
 interface CampaignRow {
 	name: string;
+	displayName: string;
 	platformId: string | null;
 	source: string;
 	sessions: number;
@@ -109,6 +109,15 @@ const VERDICT: Record<CampaignRow["verdict"], { label: string; cls: string }> = 
 
 function n(v: number): string {
 	return v.toLocaleString("pt-BR");
+}
+
+/** A percentage in pt-BR, which uses a comma. Every rate on this page
+ *  was printing "36.1%", and the reviewer most qualified to judge
+ *  presentation said she audits a digital product the way she audits a
+ *  drawing, by the consistency of its details. A decimal point in a
+ *  Brazilian document is one of those details. */
+function pct(v: number): string {
+	return v.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 }
 
 function brl(v: number): string {
@@ -233,7 +242,7 @@ export default function TrafficStatementPage() {
 				<p className="text-[15px] leading-relaxed text-content">
 					{worstPage ? (
 						<>
-							<strong>{worstPage.arrivedBlindPct}%</strong> de quem você levou para{" "}
+							<strong>{pct(worstPage.arrivedBlindPct)}%</strong> de quem você levou para{" "}
 							<span className="font-mono text-[13px]">{worstPage.path}</span> não fez
 							absolutamente nada: nem rolou, nem clicou, nem viu um botão. São{" "}
 							<strong>{n(worstPage.arrivedBlind)}</strong> acessos comprados, vindos de{" "}
@@ -247,9 +256,9 @@ export default function TrafficStatementPage() {
 					)}
 				</p>
 				<p className="mt-2 text-[12.5px] text-content-muted">
-					Na conta inteira, {data.accountMedianBlindPct}% dos acessos pagos não fazem nada.
+					Na conta inteira, {pct(data.accountMedianBlindPct)}% dos acessos pagos não fazem nada.
 					Quem chega sem anúncio:{" "}
-					{data.control ? `${data.control.blindPct}%` : "sem base para comparar"}.
+					{data.control ? `${pct(data.control.blindPct)}%` : "sem base para comparar"}.
 					<button
 						type="button"
 						onClick={() => setShowMethod((v) => !v)}
@@ -273,7 +282,7 @@ export default function TrafficStatementPage() {
 						</p>
 						<p>
 							<strong className="text-content-secondary">acima do padrão:</strong> a taxa
-							da campanha menos a mediana da conta ({data.accountMedianBlindPct}%),
+							da campanha menos a mediana da conta ({pct(data.accountMedianBlindPct)}%),
 							aplicada sobre os acessos dela. Em acessos, não em pontos.
 						</p>
 						<p>
@@ -332,7 +341,7 @@ export default function TrafficStatementPage() {
 												/>
 											</div>
 											<div className="w-[108px] text-right tabular-nums text-[12.5px] text-content">
-												<strong>{pg.arrivedBlindPct}%</strong>{" "}
+												<strong>{pct(pg.arrivedBlindPct)}%</strong>{" "}
 												<span className="text-content-muted">
 													de {n(pg.sessions)}
 												</span>
@@ -353,9 +362,9 @@ export default function TrafficStatementPage() {
 					</div>
 					<p className="text-[14px] leading-relaxed text-content">
 						Quem chega ao site <strong>sem anúncio</strong> não faz nada em{" "}
-						<strong>{data.control.blindPct}%</strong> das {n(data.control.sessions)} visitas.
+						<strong>{pct(data.control.blindPct)}%</strong> das {n(data.control.sessions)} visitas.
 						Quem você <strong>pagou</strong>, em{" "}
-						<strong>{data.accountMedianBlindPct}%</strong>.
+						<strong>{pct(data.accountMedianBlindPct)}%</strong>.
 					</p>
 					<p className="mt-2 text-[12.5px] text-content-muted">
 						Mesmo site, mesmas páginas, mesmo período. Parte da diferença é esperada, porque
@@ -400,7 +409,7 @@ export default function TrafficStatementPage() {
 								>
 									<td className="px-4 py-3">
 										<div className="max-w-[300px] text-content" title={c.name}>
-											{shortCampaignName(c.name)}
+											{c.displayName}
 										</div>
 										<div className="mt-0.5 font-mono text-[11px] text-content-faint">
 											{c.source}
@@ -426,8 +435,8 @@ export default function TrafficStatementPage() {
 															: "text-content-muted"
 												}`}
 											>
-												era {c.previousBlindPct}% na janela anterior, agora{" "}
-												{c.arrivedBlindPct}%
+												era {pct(c.previousBlindPct ?? 0)}% na janela anterior, agora{" "}
+												{pct(c.arrivedBlindPct)}%
 												{c.deltaPoints > 2 && ", piorou"}
 												{c.deltaPoints < -2 && ", melhorou"}
 											</div>
@@ -443,18 +452,18 @@ export default function TrafficStatementPage() {
 											    still says something true. */}
 											{c.byDevice.mobile && c.byDevice.desktop ? (
 												<>
-													celular {c.byDevice.mobile.blindPct}%, computador{" "}
-													{c.byDevice.desktop.blindPct}%
+													celular {pct(c.byDevice.mobile.blindPct)}%, computador{" "}
+													{pct(c.byDevice.desktop.blindPct)}%
 												</>
 											) : (
-												<>{c.mobileSharePct}% celular</>
+												<>{pct(c.mobileSharePct)}% celular</>
 											)}
 										</div>
 									</td>
 									<td className="px-3 py-3 text-right tabular-nums">
 										<div className="text-content">{n(c.arrivedBlind)}</div>
 										<div className="text-[11px] text-content-muted">
-											{c.arrivedBlindPct}%
+											{pct(c.arrivedBlindPct)}%
 										</div>
 									</td>
 									<td className="px-3 py-3 text-right tabular-nums">
@@ -527,7 +536,7 @@ export default function TrafficStatementPage() {
 						nada hoje. E perde <strong>{n(cutPurchases)}</strong>{" "}
 						{cutPurchases === 1 ? "compra" : "compras"} de {n(data.totals.purchases)}
 						{data.totals.purchases > 0 && (
-							<> , ou {((100 * cutPurchases) / data.totals.purchases).toFixed(1)}% do total</>
+							<> , ou {pct(Math.round((1000 * cutPurchases) / data.totals.purchases) / 10)}% do total</>
 						)}
 						.
 					</p>
@@ -556,7 +565,7 @@ export default function TrafficStatementPage() {
 			</p>
 
 			<p className="mt-2 text-[12px] leading-relaxed text-content-muted">
-				{data.attributionCoveragePct}% das {n(data.measuredSessions)} sessões medidas trazem
+				{pct(data.attributionCoveragePct)}% das {n(data.measuredSessions)} sessões medidas trazem
 				campanha identificada.
 				{data.belowFloor.campaigns > 0 && (
 					<>
@@ -564,7 +573,7 @@ export default function TrafficStatementPage() {
 						{data.belowFloor.campaigns} campanhas com menos de 300 acessos ficaram fora da
 						tabela de campanha, porque abaixo disso a taxa é ruído. Elas somam{" "}
 						{n(data.belowFloor.sessions)} acessos, ou{" "}
-						{Math.round((data.belowFloor.sessions / data.attributedSessions) * 100)}% do
+						{pct(Math.round((data.belowFloor.sessions / data.attributedSessions) * 100))}% do
 						tráfego com campanha identificada, e aparecem somadas na visão por página de
 						destino acima, que é onde conta pequena consegue ser medida.
 					</>

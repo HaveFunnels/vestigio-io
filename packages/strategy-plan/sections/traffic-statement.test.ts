@@ -904,3 +904,50 @@ describe("the purchases denominator is stated, not implied", () => {
 		expect(st.totals.purchases).toBe(42);
 	});
 });
+
+describe("two campaigns with the same name must still be tellable apart", () => {
+	it("appends the id tail when a label repeats", () => {
+		// Not a hypothetical. Two rows on the instrumented account are
+		// byte-identical, "(1-3-X | H1-H4/C1 | POTE) aberto adv+ (29/08)"
+		// with Cópia six times, under two different campaign ids. The
+		// first version of the shortener printed the same label twice.
+		const of = (id: string) =>
+			many(400, {
+				max_scroll_depth: 0,
+				surface_progression: ["a"],
+				attribution: {
+					first_touch: {
+						source: "FB",
+						campaign: `(1-3-X | H1-H4/C1 | POTE) aberto adv+ (29/08) — Cópia — Cópia|${id}`,
+					},
+				},
+			});
+		const st = buildTrafficStatement([...of("120252961272760114"), ...of("120253034545540114")], WIN);
+		expect(st.campaigns).toHaveLength(2);
+		const labels = st.campaigns.map((c) => c.displayName);
+		expect(new Set(labels).size).toBe(2);
+		expect(labels[0]).toContain("[id 760114]");
+		expect(labels[1]).toContain("[id 540114]");
+	});
+
+	it("leaves a unique label clean", () => {
+		const st = buildTrafficStatement(
+			many(400, {
+				attribution: { first_touch: { source: "FB", campaign: "Promo de maio|111111111111" } },
+			}),
+			WIN,
+		);
+		expect(st.campaigns[0].displayName).toBe("Promo de maio");
+	});
+
+	it("truncates the middle so the date at the end survives", () => {
+		// Cutting from the right collapsed "(29/08)" and "(21/09)" into
+		// the same label, which is the very thing that distinguishes two
+		// otherwise identical campaigns.
+		const a = shortCampaignName("(1-3-X | H1-H4/C1 | POTE) aberto adv+        (29/08)");
+		const b = shortCampaignName("(1-3-X | H1-H4/C1 | POTE) aberto adv+        (21/09)");
+		expect(a).not.toBe(b);
+		expect(a).toContain("(29/08)");
+		expect(b).toContain("(21/09)");
+	});
+});

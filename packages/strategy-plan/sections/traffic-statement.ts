@@ -91,6 +91,15 @@ export interface CampaignRow {
 	verdict: "desperdicio" | "observar" | "entregando";
 	/** Percentage points above the account median. Negative is better. */
 	pointsAboveAccount: number;
+	/** What pausing this campaign costs: the action-reaches and the
+	 *  purchases it still produced. The statement's only suggested
+	 *  action is to pause, and it used to not price that action, so the
+	 *  operator had to trust a verdict blind. On the live account the
+	 *  six waste campaigns together carry 4% of all purchases against
+	 *  13% of all sessions, which is a good trade, but it is only a
+	 *  good trade because the numbers are on the page. */
+	pauseCostActions: number;
+	pauseCostPurchases: number;
 	/** Arrivals wasted ABOVE what this account wastes normally. The
 	 *  ranking key: combines how big the campaign is with how much
 	 *  worse than normal it behaves. Zero or negative when at or
@@ -117,6 +126,22 @@ export interface TrafficStatement {
 	};
 	/** Campaigns dropped for being below the floor, and their sessions. */
 	belowFloor: { campaigns: number; sessions: number };
+	/**
+	 * Non-paid sessions in the same window, as an internal control.
+	 *
+	 * Answers the question the account median cannot: is this rate bad,
+	 * or is it what paid traffic does? Same site, same pages, same
+	 * period, so the gap cannot be blamed on the pages. On the live
+	 * account paid runs 72.1% no-scroll against direct at 25.2%.
+	 *
+	 * Declared honestly rather than sold as a control group: direct
+	 * traffic includes returning visitors who already know the brand,
+	 * so part of any gap is warmth, not quality. What it does establish
+	 * is that the pages CAN hold attention, which is what makes the
+	 * ad-or-page verdict defensible. Null when there is too little
+	 * non-paid traffic to say anything.
+	 */
+	control: { sessions: number; blind: number; blindPct: number } | null;
 }
 
 function num(v: unknown): number {
@@ -191,6 +216,8 @@ export function buildTrafficStatement(
 	const byCampaign = new Map<string, Acc>();
 	let measured = 0;
 	let attributed = 0;
+	let controlSessions = 0;
+	let controlBlind = 0;
 
 	for (const row of rows) {
 		// Bot gate, same floor the friction measurement already uses: a
@@ -202,7 +229,12 @@ export function buildTrafficStatement(
 		const ft = (a.attribution as { first_touch?: Record<string, unknown> } | undefined)
 			?.first_touch;
 		const campaignRaw = typeof ft?.campaign === "string" ? ft.campaign : null;
-		if (!campaignRaw) continue;
+		if (!campaignRaw) {
+			// No campaign means it was not bought. Counted as the control.
+			controlSessions++;
+			if (num(a.max_scroll_depth) < SAW_SOMETHING_MILESTONE) controlBlind++;
+			continue;
+		}
 		attributed++;
 
 		const { name, platformId } = splitCampaignRef(campaignRaw);
@@ -259,6 +291,8 @@ export function buildTrafficStatement(
 			const topLanding =
 				[...c.landing.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 			return {
+				pauseCostActions: c.action,
+				pauseCostPurchases: c.completed,
 				excessBlind: Math.max(0, Math.round((c.sessions * points) / 100)),
 				name: c.name,
 				platformId: c.platformId,
@@ -295,5 +329,15 @@ export function buildTrafficStatement(
 			campaigns: below.length,
 			sessions: below.reduce((n, c) => n + c.sessions, 0),
 		},
+		// 300 to match the per-campaign floor: below it the rate is noise
+		// and a noisy control is worse than none.
+		control:
+			controlSessions >= 300
+				? {
+						sessions: controlSessions,
+						blind: controlBlind,
+						blindPct: Math.round((1000 * controlBlind) / controlSessions) / 10,
+					}
+				: null,
 	};
 }

@@ -33,6 +33,8 @@ interface CampaignRow {
 	verdict: "desperdicio" | "observar" | "entregando";
 	pointsAboveAccount: number;
 	excessBlind: number;
+	pauseCostActions: number;
+	pauseCostPurchases: number;
 }
 
 interface Statement {
@@ -45,6 +47,7 @@ interface Statement {
 	campaigns: CampaignRow[];
 	totals: { campaignsAboveFloor: number; arrivedBlind: number; sessions: number };
 	belowFloor: { campaigns: number; sessions: number };
+	control: { sessions: number; blind: number; blindPct: number } | null;
 }
 
 const VERDICT: Record<CampaignRow["verdict"], { label: string; cls: string }> = {
@@ -128,6 +131,10 @@ export default function TrafficStatementPage() {
 	// they collapse into one line and the table carries only what needs
 	// a decision.
 	const needsDecision = data.campaigns.filter((c) => c.verdict !== "entregando");
+	const wasteRows = data.campaigns.filter((c) => c.verdict === "desperdicio");
+	const wasteSessions = wasteRows.reduce((n, c) => n + c.sessions, 0);
+	const pausePurchases = wasteRows.reduce((n, c) => n + c.pauseCostPurchases, 0);
+	const totalPurchases = data.campaigns.reduce((n, c) => n + c.pauseCostPurchases, 0);
 	const fine = data.campaigns.length - needsDecision.length;
 
 	// The ad-or-page question, answered by the data rather than by a
@@ -158,20 +165,55 @@ export default function TrafficStatementPage() {
 				}
 			/>
 
-			{/* The one sentence the operator needs. Written as a sentence
-			    because every reviewer who disliked the old product
-			    disliked it for being a grid of numbers. */}
+			{/* Leads with what is actionable, not with the dramatic total.
+			    The previous version opened with "21.389 chegaram e foram
+			    embora sem ver nada", which is true and implies a problem
+			    this page cannot yet establish: without a market
+			    comparison, a high no-scroll rate on cold paid traffic may
+			    be ordinary advertising physics. Stating the outliers
+			    first says only what the data supports. */}
 			<div className="mb-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
 				<p className="text-[15px] leading-relaxed text-content">
-					Dos <strong>{n(data.totals.sessions)}</strong> acessos que você comprou em{" "}
-					<strong>{data.totals.campaignsAboveFloor}</strong> campanhas,{" "}
-					<strong>{n(wasted)}</strong> chegaram e foram embora sem ver nada.
+					{needsDecision.length > 0 ? (
+						<>
+							<strong>{wasteRows.length}</strong> das{" "}
+							<strong>{data.totals.campaignsAboveFloor}</strong> campanhas desperdiçam acima
+							do normal desta conta, e somam{" "}
+							<strong>{n(wasteSessions)}</strong> acessos comprados.
+						</>
+					) : (
+						<>
+							Nenhuma das {data.totals.campaignsAboveFloor} campanhas está fora do padrão
+							desta conta nesta janela.
+						</>
+					)}
 				</p>
 				<p className="mt-2 text-[12.5px] text-content-muted">
-					A mediana desta conta é {data.accountMedianBlindPct}% sem ver nada. As campanhas
-					marcadas como desperdício estão pelo menos 10 pontos acima dela.
+					Nesta conta, {data.accountMedianBlindPct}% dos acessos pagos não passam da primeira
+					tela. Esse número descreve o seu padrão, não um problema: ainda não há comparação
+					de mercado. A comparação que existe está abaixo.
 				</p>
 			</div>
+
+			{data.control && (
+				<div className="mb-6 rounded-2xl border border-edge bg-surface-inset/40 px-5 py-4">
+					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+						A sua própria base de comparação
+					</div>
+					<p className="text-[14px] leading-relaxed text-content">
+						Quem chega ao site <strong>sem anúncio</strong> não passa da primeira tela em{" "}
+						<strong>{data.control.blindPct}%</strong> das {n(data.control.sessions)} visitas.
+						Quem você <strong>pagou</strong>, em{" "}
+						<strong>{data.accountMedianBlindPct}%</strong>.
+					</p>
+					<p className="mt-2 text-[12.5px] text-content-muted">
+						Mesmo site, mesmas páginas, mesmo período. Parte da diferença é esperada, porque
+						quem chega direto costuma já conhecer a marca. O que isso estabelece é que as
+						suas páginas conseguem segurar atenção, e é por isso que dá para separar
+						problema de anúncio de problema de página.
+					</p>
+				</div>
+			)}
 
 			<div className="overflow-x-auto rounded-2xl border border-edge">
 				<table className="w-full min-w-[760px] border-collapse text-[13px]">
@@ -183,6 +225,7 @@ export default function TrafficStatementPage() {
 							<th className="px-3 py-3 text-right font-semibold">acima do normal</th>
 							<th className="px-3 py-3 text-right font-semibold">tempo</th>
 							<th className="px-3 py-3 text-right font-semibold">chegou à ação</th>
+							<th className="px-3 py-3 text-right font-semibold">pausar custa</th>
 							<th className="px-3 py-3 font-semibold">veredito</th>
 						</tr>
 					</thead>
@@ -220,6 +263,12 @@ export default function TrafficStatementPage() {
 									<div className="text-content">{n(c.reachedAction)}</div>
 									<div className="text-[11px] text-content-muted">{c.reachedActionPct}%</div>
 								</td>
+								<td className="px-3 py-3 text-right tabular-nums">
+									<div className="text-content">{n(c.pauseCostPurchases)}</div>
+									<div className="text-[11px] text-content-muted">
+										{c.pauseCostPurchases === 1 ? "compra" : "compras"}
+									</div>
+								</td>
 								<td className="px-3 py-3">
 									<span
 										className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${VERDICT[c.verdict].cls}`}
@@ -232,6 +281,29 @@ export default function TrafficStatementPage() {
 					</tbody>
 				</table>
 			</div>
+
+			{wasteRows.length > 0 && (
+				<div className="mt-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
+					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+						A troca, se você pausar as {wasteRows.length}
+					</div>
+					<p className="text-[14px] leading-relaxed text-content">
+						Você deixa de comprar <strong>{n(wasteSessions)}</strong> acessos, dos quais{" "}
+						<strong>{n(wasteRows.reduce((x, c) => x + c.arrivedBlind, 0))}</strong> não veem
+						nada hoje. E perde <strong>{n(pausePurchases)}</strong>{" "}
+						{pausePurchases === 1 ? "compra" : "compras"}
+						{totalPurchases > 0 && (
+							<> de {n(totalPurchases)}, ou {((100 * pausePurchases) / totalPurchases).toFixed(1)}% do total</>
+						)}
+						.
+					</p>
+					<p className="mt-2 text-[12.5px] text-content-muted">
+						A recomendação desta página é pausar, então o custo de pausar fica junto dela.
+						Se a troca não te parecer boa, não pause: o número está aí para você decidir,
+						não para te convencer.
+					</p>
+				</div>
+			)}
 
 			{sharedPages.length > 0 && (
 				<div className="mt-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">

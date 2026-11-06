@@ -235,3 +235,83 @@ describe("the statement as a whole", () => {
 		expect(sighted.campaigns[0].arrivedBlind).toBe(0);
 	});
 });
+
+describe("the cost of pausing", () => {
+	it("states what each waste campaign still produces", () => {
+		// The statement's only suggested action is to pause, and it used
+		// to not price that action. On the live account the six waste
+		// campaigns carry 4% of purchases against 13% of sessions: a good
+		// trade, but only verifiable because the numbers are shown.
+		const bad = many(500, {
+			max_scroll_depth: 0,
+			checkout_reached: false,
+			attribution: { first_touch: { source: "FB", campaign: "Ruim|111111111111" } },
+		}).concat(
+			many(10, {
+				max_scroll_depth: 50,
+				checkout_reached: true,
+				reached_thank_you: true,
+				attribution: { first_touch: { source: "FB", campaign: "Ruim|111111111111" } },
+			}),
+		);
+		const good = many(300, {
+			max_scroll_depth: 50,
+			checkout_reached: true,
+			attribution: { first_touch: { source: "FB", campaign: "Bom|222222222222" } },
+		});
+		const st = buildTrafficStatement([...bad, ...good], WIN);
+		const ruim = st.campaigns.find((c) => c.name === "Ruim")!;
+		expect(ruim.verdict).toBe("desperdicio");
+		// Pausing it costs the ten that converted, and that has to be
+		// visible next to the recommendation.
+		expect(ruim.pauseCostActions).toBe(10);
+		expect(ruim.pauseCostPurchases).toBe(10);
+	});
+
+	it("is zero for a campaign that produced nothing", () => {
+		const st = buildTrafficStatement(many(400, { max_scroll_depth: 0 }), WIN);
+		expect(st.campaigns[0].pauseCostActions).toBe(0);
+		expect(st.campaigns[0].pauseCostPurchases).toBe(0);
+	});
+});
+
+describe("the internal control group", () => {
+	it("measures non-paid sessions on the same pages in the same window", () => {
+		// Answers what the account median cannot: whether the rate is
+		// bad or is simply what paid traffic does. Same site, same
+		// period, so the gap cannot be blamed on the pages.
+		const paid = many(1_000, {
+			max_scroll_depth: 0,
+			attribution: { first_touch: { source: "FB", campaign: "C|111111111111" } },
+		});
+		const direct = many(400, {
+			max_scroll_depth: 50,
+			attribution: { first_touch: { source: "direct" } },
+		});
+		const st = buildTrafficStatement([...paid, ...direct], WIN);
+		expect(st.control).not.toBeNull();
+		expect(st.control!.sessions).toBe(400);
+		expect(st.control!.blindPct).toBe(0);
+		// And the paid side is unaffected by it.
+		expect(st.campaigns[0].arrivedBlindPct).toBe(100);
+	});
+
+	it("is null when there is too little non-paid traffic to say anything", () => {
+		const st = buildTrafficStatement(
+			[
+				...many(400, { attribution: { first_touch: { source: "FB", campaign: "C|111111111111" } } }),
+				...many(50, { attribution: { first_touch: { source: "direct" } } }),
+			],
+			WIN,
+		);
+		// A noisy control is worse than none, so it says nothing.
+		expect(st.control).toBeNull();
+	});
+
+	it("counts a session with no campaign as control, not as waste", () => {
+		const st = buildTrafficStatement(many(400, { attribution: { first_touch: {} } }), WIN);
+		expect(st.campaigns).toHaveLength(0);
+		expect(st.control?.sessions).toBe(400);
+		expect(st.attributedSessions).toBe(0);
+	});
+});

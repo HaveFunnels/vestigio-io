@@ -97,22 +97,43 @@ export async function GET(request: Request) {
 		// poller caches it in syncMetadata, so this is a cheap read and
 		// not a Graph call on every page load. Null when nothing is
 		// connected, and the statement then reports counts only.
+		// Both ad platforms, not just Meta. Three of the twenty reviewers
+		// spend their entire budget on Google search, and one of them
+		// put it plainly: "todo o meu dinheiro está no Google, e o
+		// Google não aparece na peça". The poller already collected it.
+		//
+		// Keyed twice on purpose. Meta passes a numeric campaign id in
+		// the landing URL and the pixel captures it; Google Ads passes
+		// the campaign NAME in utm_campaign and no id, so an id-only
+		// join could never match a Google campaign.
 		let spendByCampaignId: Map<string, number> | null = null;
 		try {
-			const conn = await prisma.integrationConnection.findFirst({
-				where: { environmentId: orgCtx.envId, provider: "meta_ads", status: "connected" },
+			const conns = await prisma.integrationConnection.findMany({
+				where: {
+					environmentId: orgCtx.envId,
+					provider: { in: ["meta_ads", "google_ads"] },
+					status: "connected",
+				},
 				select: { syncMetadata: true },
 			});
-			if (conn?.syncMetadata) {
-				const meta = JSON.parse(conn.syncMetadata) as {
-					campaigns?: { id: string; spend_30d: number }[];
-				};
-				if (Array.isArray(meta.campaigns) && meta.campaigns.length > 0) {
-					spendByCampaignId = new Map(
-						meta.campaigns.map((c) => [String(c.id), Number(c.spend_30d) || 0]),
-					);
+			const merged = new Map<string, number>();
+			for (const conn of conns) {
+				if (!conn.syncMetadata) continue;
+				let parsed: { campaigns?: { id?: string; name?: string; spend_30d?: number }[] };
+				try {
+					parsed = JSON.parse(conn.syncMetadata);
+				} catch {
+					// One malformed snapshot must not cost the other's spend.
+					continue;
+				}
+				if (!Array.isArray(parsed.campaigns)) continue;
+				for (const c of parsed.campaigns) {
+					const spend = Number(c.spend_30d) || 0;
+					if (c.id) merged.set(String(c.id), spend);
+					if (c.name) merged.set(String(c.name).trim().toLowerCase(), spend);
 				}
 			}
+			if (merged.size > 0) spendByCampaignId = merged;
 		} catch {
 			// A malformed or absent snapshot drops the money, never the
 			// statement. Counts are the product; spend is the upgrade.

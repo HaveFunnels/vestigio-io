@@ -337,6 +337,13 @@ export const POST = withErrorTracking(async function POST(request: Request) {
           ad_spend_30d: googlePollResult.data.ad_spend_30d,
           currency: googlePollResult.data.currency,
           campaign_count: googlePollResult.data.campaigns.length,
+          // Spend per campaign, same as Meta. Only the three fields the
+          // traffic statement joins on: the creative text the poller
+          // also returns is for a different consumer and would bloat
+          // the cached blob. Capped at 200.
+          campaigns: googlePollResult.data.campaigns
+            .slice(0, 200)
+            .map((c) => ({ id: c.id, name: c.name, spend_30d: c.spend_30d })),
           synced_at: new Date().toISOString(),
         },
         error: googlePollResult.errors[0] || undefined,

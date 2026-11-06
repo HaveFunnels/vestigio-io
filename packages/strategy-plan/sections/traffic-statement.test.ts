@@ -951,3 +951,54 @@ describe("two campaigns with the same name must still be tellable apart", () => 
 		expect(b).toContain("(21/09)");
 	});
 });
+
+describe("spend joins by name as well as by id", () => {
+	const row = (campaign: string) =>
+		many(400, {
+			max_scroll_depth: 0,
+			surface_progression: ["a"],
+			attribution: { first_touch: { source: "google", campaign } },
+		});
+
+	it("matches a Google campaign, which arrives as a name and no id", () => {
+		// Google Ads puts the campaign name in utm_campaign and no
+		// numeric id, so an id-only join could never price a Google
+		// advertiser's traffic. Three reviewers spend their whole
+		// budget there.
+		const st = buildTrafficStatement(row("Advogado Trabalhista BH"), {
+			...WIN,
+			spendByCampaignId: new Map([["advogado trabalhista bh", 5000]]),
+		});
+		expect(st.campaigns[0].spendBrl).toBe(5000);
+		// And the wasted share is apportioned by sessions.
+		expect(st.campaigns[0].spendWastedBrl).toBe(5000);
+	});
+
+	it("still prefers the platform id when there is one", () => {
+		const st = buildTrafficStatement(row("Promo|111111111111"), {
+			...WIN,
+			spendByCampaignId: new Map([
+				["111111111111", 900],
+				["promo", 111],
+			]),
+		});
+		expect(st.campaigns[0].spendBrl).toBe(900);
+	});
+
+	it("falls back to the name when the id is not in the snapshot", () => {
+		const st = buildTrafficStatement(row("Promo|111111111111"), {
+			...WIN,
+			spendByCampaignId: new Map([["promo", 111]]),
+		});
+		expect(st.campaigns[0].spendBrl).toBe(111);
+	});
+
+	it("stays null when neither key matches", () => {
+		const st = buildTrafficStatement(row("Promo|111111111111"), {
+			...WIN,
+			spendByCampaignId: new Map([["outra coisa", 50]]),
+		});
+		expect(st.campaigns[0].spendBrl).toBeNull();
+		expect(st.campaigns[0].spendWastedBrl).toBeNull();
+	});
+});

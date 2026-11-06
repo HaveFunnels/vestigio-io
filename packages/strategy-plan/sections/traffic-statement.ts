@@ -496,8 +496,17 @@ export function buildTrafficStatement(
 		 *  means, so a service business is not judged on checkouts. */
 		conversionModel?: string | null;
 		minSessions?: number;
-		/** Spend per platform campaign id, from a connected ad account.
-		 *  Omitted when nothing is connected. */
+		/**
+		 * Spend per campaign, from a connected ad account.
+		 *
+		 * Keyed by the platform's campaign id AND by the lowercased
+		 * campaign name, because the two platforms identify a campaign
+		 * differently in the landing URL: Meta passes a numeric id that
+		 * the pixel captures, Google Ads passes the name in utm_campaign
+		 * and no id at all. Joining on the id alone meant spend could
+		 * never appear for a Google advertiser, which is the entire
+		 * budget of three of the twenty reviewers.
+		 */
 		spendByCampaignId?: Map<string, number> | null;
 		/** Sessions from the previous window of equal length, for the
 		 *  month-over-month comparison. Omitted on a first run. */
@@ -670,10 +679,12 @@ export function buildTrafficStatement(
 							: "entregando";
 			const topLanding =
 				[...c.landing.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-			const spend =
-				c.platformId && options.spendByCampaignId
-					? options.spendByCampaignId.get(c.platformId) ?? null
-					: null;
+			const spendMap = options.spendByCampaignId;
+			const spend = !spendMap
+				? null
+				: (c.platformId ? spendMap.get(c.platformId) : undefined) ??
+					spendMap.get(c.name.trim().toLowerCase()) ??
+					null;
 			const devRow = (k: "mobile" | "desktop") => {
 				const d = c.dev.get(k);
 				// Was 50, which is why the split showed on one row of

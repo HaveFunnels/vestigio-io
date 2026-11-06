@@ -2,6 +2,8 @@ import { describe, it, expect } from "vitest";
 import {
 	buildTrafficStatement,
 	decodeCampaignName,
+	sawNothing,
+	shortCampaignName,
 	deviceOf,
 	splitCampaignRef,
 	MIN_SESSIONS_PER_CAMPAIGN,
@@ -102,10 +104,19 @@ describe("ranking", () => {
 				attribution: { first_touch: { source: "FB", campaign: "Normal|222222222222" } },
 			}),
 		);
+		// 812 of 950 is 85.5%: past the absolute floor and 10.5 points
+		// above this account's median, without being the implausible
+		// 100% that now reads as broken measurement rather than waste.
 		const outlier = many(812, {
 			max_scroll_depth: 0,
+			surface_progression: ["a"],
 			attribution: { first_touch: { source: "FB", campaign: "Fora|333333333333" } },
-		});
+		}).concat(
+			many(138, {
+				max_scroll_depth: 50,
+				attribution: { first_touch: { source: "FB", campaign: "Fora|333333333333" } },
+			}),
+		);
 
 		const st = buildTrafficStatement([...huge, ...normal, ...outlier], WIN);
 		const first = st.campaigns[0];
@@ -114,7 +125,9 @@ describe("ranking", () => {
 		// 812. Excess puts "Fora" first because its rate is far above the
 		// account's own normal.
 		expect(first.name).toBe("Fora");
-		expect(first.verdict).toBe("desperdicio");
+		// Nothing converted on it, so cutting is free and the page says
+		// cut rather than fix.
+		expect(first.verdict).toBe("cortar");
 
 		const grande = st.campaigns.find((c) => c.name === "Grande")!;
 		expect(grande.arrivedBlind).toBeGreaterThan(first.arrivedBlind);
@@ -122,23 +135,30 @@ describe("ranking", () => {
 	});
 
 	it("gives a campaign at or below the median zero excess", () => {
-		const a = many(1_000, {
-			max_scroll_depth: 0,
-			attribution: { first_touch: { source: "FB", campaign: "A|111111111111" } },
-		});
-		const b = many(1_000, {
-			max_scroll_depth: 0,
-			attribution: { first_touch: { source: "FB", campaign: "B|222222222222" } },
-		});
-		const st = buildTrafficStatement([...a, ...b], WIN);
-		// Both at 100%, so both ARE the median. Neither is an outlier,
-		// however bad the absolute number looks.
+		const half = (name: string, id: string) =>
+			many(700, {
+				max_scroll_depth: 0,
+				surface_progression: ["a"],
+				attribution: { first_touch: { source: "FB", campaign: `${name}|${id}` } },
+			}).concat(
+				many(300, {
+					max_scroll_depth: 50,
+					attribution: { first_touch: { source: "FB", campaign: `${name}|${id}` } },
+				}),
+			);
+		const st = buildTrafficStatement(
+			[...half("A", "111111111111"), ...half("B", "222222222222")],
+			WIN,
+		);
+		// Both at 70%, so both ARE the median. Neither is an outlier,
+		// however bad the absolute number looks, and the absolute floor
+		// does not fire on its own.
 		for (const c of st.campaigns) {
 			expect(c.excessBlind).toBe(0);
 			expect(c.verdict).toBe("entregando");
 		}
 		// And the account-level truth is still stated.
-		expect(st.totals.arrivedBlind).toBe(2_000);
+		expect(st.totals.arrivedBlind).toBe(1_400);
 	});
 });
 
@@ -167,15 +187,21 @@ describe("verdict", () => {
 		);
 		const outlier = many(500, {
 			max_scroll_depth: 0,
+			surface_progression: ["a"],
 			attribution: { first_touch: { source: "FB", campaign: "C|333333333333" } },
-		});
+		}).concat(
+			many(68, {
+				max_scroll_depth: 50,
+				attribution: { first_touch: { source: "FB", campaign: "C|333333333333" } },
+			}),
+		);
 
 		const st = buildTrafficStatement([...normalA, ...normalB, ...outlier], WIN);
-		// A is 77%, B is 70%, C is 100%. Median of the three is 77%.
+		// A is 77%, B is 70%, C is 88%. Median of the three is 77%.
 		expect(st.accountMedianBlindPct).toBeCloseTo(76.9, 0);
 
 		const byName = new Map(st.campaigns.map((c) => [c.name, c]));
-		expect(byName.get("C")!.verdict).toBe("desperdicio");
+		expect(byName.get("C")!.verdict).toBe("cortar");
 		expect(byName.get("A")!.verdict).toBe("entregando");
 		expect(byName.get("C")!.pointsAboveAccount).toBeGreaterThan(10);
 	});
@@ -248,18 +274,29 @@ describe("the cost of pausing", () => {
 		// to not price that action. On the live account the six waste
 		// campaigns carry 4% of purchases against 13% of sessions: a good
 		// trade, but only verifiable because the numbers are shown.
-		const bad = many(500, {
+		// 300 of 510 blind is 58.8%: past the absolute floor without
+		// being the implausible 100% that now reads as broken
+		// measurement instead of waste.
+		const bad = many(300, {
 			max_scroll_depth: 0,
+			surface_progression: ["a"],
 			checkout_reached: false,
 			attribution: { first_touch: { source: "FB", campaign: "Ruim|111111111111" } },
-		}).concat(
-			many(10, {
-				max_scroll_depth: 50,
-				checkout_reached: true,
-				reached_thank_you: true,
-				attribution: { first_touch: { source: "FB", campaign: "Ruim|111111111111" } },
-			}),
-		);
+		})
+			.concat(
+				many(200, {
+					max_scroll_depth: 50,
+					attribution: { first_touch: { source: "FB", campaign: "Ruim|111111111111" } },
+				}),
+			)
+			.concat(
+				many(10, {
+					max_scroll_depth: 50,
+					checkout_reached: true,
+					reached_thank_you: true,
+					attribution: { first_touch: { source: "FB", campaign: "Ruim|111111111111" } },
+				}),
+			);
 		const good = many(300, {
 			max_scroll_depth: 50,
 			checkout_reached: true,
@@ -267,7 +304,8 @@ describe("the cost of pausing", () => {
 		});
 		const st = buildTrafficStatement([...bad, ...good], WIN);
 		const ruim = st.campaigns.find((c) => c.name === "Ruim")!;
-		expect(ruim.verdict).toBe("desperdicio");
+		// It still sells, so it is told to be fixed rather than cut.
+		expect(ruim.verdict).toBe("corrigir");
 		// Pausing it costs the ten that converted, and that has to be
 		// visible next to the recommendation.
 		expect(ruim.pauseCostActions).toBe(10);
@@ -580,3 +618,289 @@ describe("campaign names arrive percent-encoded", () => {
 	});
 });
 
+describe("'saw nothing' means no interaction, not just no scroll", () => {
+	// Six reviewers from service businesses raised this independently,
+	// and the measurement vindicated all six. On 50.304 paid sessions,
+	// scroll alone condemned 36.277 (72.1%); of those, 23.147 carried
+	// positive evidence of engagement, 63.8% of everything the page
+	// called waste. The honest figure is 26.1%.
+	it("clears a session whose CTA entered the viewport without a scroll", () => {
+		// The lawyer, the dentist and the esthetician all described the
+		// same visitor: arrives, reads the headline, taps WhatsApp, never
+		// scrolls. The old rule called that visitor waste.
+		expect(sawNothing({ max_scroll_depth: 0, cta_viewed_count: 2 })).toBe(false);
+	});
+
+	it("clears a session that started a form", () => {
+		expect(sawNothing({ max_scroll_depth: 0, form_started: true })).toBe(false);
+	});
+
+	it("clears a session that reached the checkout", () => {
+		// 12 sessions on the live account reached checkout and were still
+		// being counted as having seen nothing.
+		expect(sawNothing({ max_scroll_depth: 0, checkout_reached: true })).toBe(false);
+	});
+
+	it("clears a session that opened support or handed off", () => {
+		expect(sawNothing({ max_scroll_depth: 0, support_opened: true })).toBe(false);
+		expect(sawNothing({ max_scroll_depth: 0, handoff_started: true })).toBe(false);
+	});
+
+	it("clears a session that clicked, even uselessly", () => {
+		// A dead click is a click. The person was there.
+		expect(sawNothing({ max_scroll_depth: 0, dead_click_count: 1 })).toBe(false);
+		expect(sawNothing({ max_scroll_depth: 0, input_focus_abandon_count: 1 })).toBe(false);
+		expect(sawNothing({ max_scroll_depth: 0, hesitation_pause_count: 1 })).toBe(false);
+	});
+
+	it("clears a session that opened a second page", () => {
+		expect(
+			sawNothing({ max_scroll_depth: 0, surface_progression: ["a", "b"] }),
+		).toBe(false);
+		// One page is not navigation.
+		expect(sawNothing({ max_scroll_depth: 0, surface_progression: ["a"] })).toBe(true);
+	});
+
+	it("still counts a session that truly did nothing", () => {
+		expect(
+			sawNothing({
+				max_scroll_depth: 0,
+				cta_viewed_count: 0,
+				dead_click_count: 0,
+				surface_progression: ["a"],
+			}),
+		).toBe(true);
+	});
+
+	it("clears anything that passed the scroll milestone outright", () => {
+		expect(sawNothing({ max_scroll_depth: 25 })).toBe(false);
+		expect(sawNothing({ max_scroll_depth: 90 })).toBe(false);
+	});
+
+	it("applies the same rule to the control as to paid", () => {
+		// The two windows and the two populations must never disagree
+		// about what a blind session is, or the comparison is rigged.
+		const paid = many(400, {
+			max_scroll_depth: 0,
+			cta_viewed_count: 1,
+			attribution: { first_touch: { source: "FB", campaign: "C|111111111111" } },
+		});
+		const organic = many(400, {
+			max_scroll_depth: 0,
+			cta_viewed_count: 1,
+			attribution: { first_touch: { source: "direct" } },
+		});
+		const st = buildTrafficStatement([...paid, ...organic], WIN);
+		expect(st.campaigns[0].arrivedBlindPct).toBe(0);
+		expect(st.control!.blindPct).toBe(0);
+	});
+});
+
+describe("the verdict says what to do and never contradicts the row", () => {
+	const campaignOf = (
+		n_: number,
+		blind: number,
+		purchases: number,
+		id = "111111111111",
+	) => [
+		...many(blind, {
+			max_scroll_depth: 0,
+			surface_progression: ["a"],
+			attribution: { first_touch: { source: "FB", campaign: `C|${id}` } },
+		}),
+		...many(n_ - blind - purchases, {
+			max_scroll_depth: 90,
+			attribution: { first_touch: { source: "FB", campaign: `C|${id}` } },
+		}),
+		...many(purchases, {
+			max_scroll_depth: 90,
+			reached_thank_you: true,
+			attribution: { first_touch: { source: "FB", campaign: `C|${id}` } },
+		}),
+	];
+
+	it("never tells you to cut a campaign that still sells", () => {
+		// The defect five reviewers found by reading line by line: one
+		// row with 12 purchases marked desperdicio while another with
+		// the same 12 was marked observar. "Ele acha esse par em 40
+		// segundos e mata a ferramenta na frente de todo mundo."
+		const st = buildTrafficStatement(
+			[
+				...campaignOf(1000, 600, 40, "111111111111"),
+				...campaignOf(1000, 100, 40, "222222222222"),
+				...campaignOf(1000, 150, 40, "333333333333"),
+			],
+			WIN,
+		);
+		const row = st.campaigns.find((c) => c.platformId === "111111111111")!;
+		expect(row.arrivedBlindPct).toBeGreaterThanOrEqual(45);
+		expect(row.pauseCostPurchases).toBe(40);
+		expect(row.verdict).toBe("corrigir");
+	});
+
+	it("says cut only when cutting is free", () => {
+		const st = buildTrafficStatement(
+			[
+				...campaignOf(1000, 600, 0, "111111111111"),
+				...campaignOf(1000, 100, 40, "222222222222"),
+				...campaignOf(1000, 150, 40, "333333333333"),
+			],
+			WIN,
+		);
+		const row = st.campaigns.find((c) => c.platformId === "111111111111")!;
+		expect(row.pauseCostPurchases).toBe(0);
+		expect(row.verdict).toBe("cortar");
+	});
+
+	it("leaves a healthy account with nothing to decide", () => {
+		// The circularity objection: "sempre vai ter alguem acima da
+		// propria media. Uma conta impecavel ainda vai gerar cinco
+		// linhas de desperdicio aqui." With an absolute floor it does
+		// not, and that is the correct behaviour.
+		const st = buildTrafficStatement(
+			[
+				...campaignOf(1000, 50, 40, "111111111111"),
+				...campaignOf(1000, 150, 40, "222222222222"),
+				...campaignOf(1000, 250, 40, "333333333333"),
+			],
+			WIN,
+		);
+		expect(st.campaigns.every((c) => c.verdict !== "cortar")).toBe(true);
+		expect(st.campaigns.every((c) => c.verdict !== "corrigir")).toBe(true);
+	});
+
+	it("calls an implausible rate suspect measurement, not waste", () => {
+		// Four reviewers read 99.8% and 100% as broken instrumentation
+		// rather than waste, and they were right.
+		const st = buildTrafficStatement(
+			[
+				...campaignOf(1000, 1000, 0, "111111111111"),
+				...campaignOf(1000, 100, 40, "222222222222"),
+				...campaignOf(1000, 150, 40, "333333333333"),
+			],
+			WIN,
+		);
+		const row = st.campaigns.find((c) => c.platformId === "111111111111")!;
+		expect(row.arrivedBlindPct).toBe(100);
+		expect(row.verdict).toBe("medicao_suspeita");
+	});
+});
+
+describe("the landing-page view, for accounts the campaign floor excludes", () => {
+	it("aggregates campaigns too small to judge one by one", () => {
+		// The lawyer, dentist, architect and esthetician each worked out
+		// that no campaign of theirs clears 300 sessions, and the
+		// dropshipper found the inverse: the campaigns he tests and
+		// kills never clear it either. Thirty campaigns of 150 sessions
+		// on one page are 4.500 sessions, which is not noise.
+		const rows = [];
+		for (let i = 0; i < 10; i++) {
+			rows.push(
+				...many(100, {
+					max_scroll_depth: 0,
+					surface_progression: ["a"],
+					attribution: {
+						first_touch: {
+							source: "FB",
+							campaign: `c${i}|${String(100000000000 + i)}`,
+							landing_url: "https://x.com/lp/implante",
+						},
+					},
+				}),
+			);
+		}
+		const st = buildTrafficStatement(rows, WIN);
+		// Not a single campaign qualifies.
+		expect(st.campaigns).toHaveLength(0);
+		expect(st.belowFloor.campaigns).toBe(10);
+		// But the page does, and it carries the whole account.
+		expect(st.landingPages).toHaveLength(1);
+		expect(st.landingPages[0]).toMatchObject({
+			path: "/lp/implante",
+			sessions: 1000,
+			arrivedBlind: 1000,
+			arrivedBlindPct: 100,
+			campaigns: 10,
+		});
+	});
+
+	it("ranks pages by wasted arrivals, and counts purchases per page", () => {
+		const page = (path: string, n_: number, blind: number, buys: number, id: string) => [
+			...many(blind, {
+				max_scroll_depth: 0,
+				surface_progression: ["a"],
+				attribution: { first_touch: { source: "FB", campaign: `c|${id}`, landing_url: `https://x.com${path}` } },
+			}),
+			...many(n_ - blind - buys, {
+				max_scroll_depth: 90,
+				attribution: { first_touch: { source: "FB", campaign: `c|${id}`, landing_url: `https://x.com${path}` } },
+			}),
+			...many(buys, {
+				max_scroll_depth: 90,
+				reached_thank_you: true,
+				attribution: { first_touch: { source: "FB", campaign: `c|${id}`, landing_url: `https://x.com${path}` } },
+			}),
+		];
+		const st = buildTrafficStatement(
+			[...page("/a", 1000, 300, 20, "111111111111"), ...page("/b", 1000, 500, 10, "222222222222")],
+			WIN,
+		);
+		expect(st.landingPages.map((p) => p.path)).toEqual(["/b", "/a"]);
+		expect(st.landingPages[0].purchases).toBe(10);
+		expect(st.landingPages[1].purchases).toBe(20);
+	});
+
+	it("keeps a page below the floor out, same as a campaign", () => {
+		const st = buildTrafficStatement(
+			many(100, {
+				attribution: {
+					first_touch: { source: "FB", campaign: "c|111111111111", landing_url: "https://x.com/tiny" },
+				},
+			}),
+			WIN,
+		);
+		expect(st.landingPages).toHaveLength(0);
+	});
+});
+
+describe("the campaign name the operator has to recognise", () => {
+	it("folds a pile of copies into a count", () => {
+		expect(
+			shortCampaignName(
+				"(1-1-X | H1-H4/C1 | POTE) aberto adv+ (21/09) — Cópia — Cópia — Cópia",
+			),
+		).toBe("(1-1-X | H1-H4/C1 | POTE) aberto adv+ (21/09) (cópia 3)");
+	});
+
+	it("leaves a name with no copies alone", () => {
+		expect(shortCampaignName("(CBO | H1-H10 | PT) ABERTO 35+ FEM (21/09)")).toBe(
+			"(CBO | H1-H10 | PT) ABERTO 35+ FEM (21/09)",
+		);
+	});
+
+	it("truncates a long base but keeps the copy count visible", () => {
+		const out = shortCampaignName(
+			"(1-3-X | V1-V10/C1 | POTE) aberto adv+ 55+ all (11/09) — Cópia",
+		);
+		expect(out).toContain("(cópia 1)");
+		expect(out).toContain("…");
+	});
+});
+
+describe("the purchases denominator is stated, not implied", () => {
+	it("totals purchases across every campaign above the floor", () => {
+		// A reviewer summed the visible rows, got a different number
+		// from the one in the trade paragraph, and asked for the bridge.
+		const c = (id: string, buys: number) => [
+			...many(400 - buys, {
+				attribution: { first_touch: { source: "FB", campaign: `c|${id}` } },
+			}),
+			...many(buys, {
+				reached_thank_you: true,
+				attribution: { first_touch: { source: "FB", campaign: `c|${id}` } },
+			}),
+		];
+		const st = buildTrafficStatement([...c("111111111111", 30), ...c("222222222222", 12)], WIN);
+		expect(st.totals.purchases).toBe(42);
+	});
+});

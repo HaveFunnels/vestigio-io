@@ -59,10 +59,76 @@ import { MIN_EVENTS_INTERACTIVE } from "./measured-friction";
  *  friction findings already use for a page. */
 export const MIN_SESSIONS_PER_CAMPAIGN = 300;
 
+function num(v: unknown): number {
+	return typeof v === "number" && Number.isFinite(v) ? v : 0;
+}
+
 /** The scroll milestone that separates "arrived" from "saw something".
  *  The pixel records 25/50/75/90; 25 is the first one, so failing it
  *  means the first screen was never passed. */
 export const SAW_SOMETHING_MILESTONE = 25;
+
+/**
+ * Did this session arrive and do nothing at all?
+ *
+ * Scroll alone was wrong, and wrong by a factor of 2.8. Six reviewers
+ * from service businesses raised the same objection independently: my
+ * best visitor converts above the fold and never scrolls 25%. The
+ * sharpest version came from a parts distributor whose mechanic reads
+ * the part number, confirms stock and PHONES, and who is 60% of R$ 2M
+ * a month. The page was telling him to pause the campaign that
+ * brought that person.
+ *
+ * Measured on 50.304 paid sessions in a 30-day window: scroll alone
+ * condemned 36.277 of them (72.1%). Of those, 23.147 carried a
+ * positive signal of having seen or done something, 63.8% of
+ * everything the page was calling waste. 20.584 had a CTA enter the
+ * viewport, 1.977 started a form, 1.984 performed a commercial
+ * action, and 12 reached the checkout and were still counted as
+ * having seen nothing. Honestly measured, the real figure is 13.130,
+ * or 26.1%.
+ *
+ * This is the stronger claim, not the weaker one. 72% strained
+ * belief, and four reviewers said so in the same words: it reads as
+ * instrumentation error, not waste. 26% of bought traffic doing
+ * literally nothing is specific, credible and still worth acting on.
+ *
+ * Every signal here is positive evidence of engagement, never an
+ * inference from absence. `cta_viewed_count` is the load-bearing one
+ * and it discriminates rather than firing for everyone: it is absent
+ * in just over half of all sessions, so it is not a proxy for "the
+ * page rendered".
+ */
+export const ABSOLUTE_BLIND_FLOOR = 45;
+
+/** Above this a rate stops being plausible behaviour and starts
+ *  looking like broken measurement, so the row says so instead of
+ *  recommending a cut. Four reviewers read the old 99.8% and 100%
+ *  rows as instrumentation error rather than waste, and they were
+ *  right: both were desktop sessions whose scroll never fired. */
+export const IMPLAUSIBLE_BLIND_PCT = 90;
+
+export function sawNothing(a: Record<string, unknown>): boolean {
+	if (num(a.max_scroll_depth) >= SAW_SOMETHING_MILESTONE) return false;
+	// A call to action entered the viewport. On a page whose CTA sits
+	// above the fold, this is exactly what a converting visit looks
+	// like without a single scroll event.
+	if (num(a.cta_viewed_count) > 0) return false;
+	// Reached the action that matters, by any of the models.
+	if (a.form_started || a.checkout_reached || a.support_opened) return false;
+	if (a.handoff_started || a.reached_thank_you || a.form_completed) return false;
+	if (a.time_to_first_commercial_action_ms != null) return false;
+	// Interacted, even unsuccessfully. A dead click is a click.
+	if (num(a.dead_click_count) > 0) return false;
+	if (num(a.input_focus_abandon_count) > 0) return false;
+	if (num(a.hesitation_pause_count) > 0) return false;
+	if (num(a.backtrack_count) > 0 || num(a.rapid_backtrack_count) > 0) return false;
+	// Went somewhere else on the site, so the first screen was not the
+	// end of the visit.
+	const prog = a.surface_progression;
+	if (Array.isArray(prog) && prog.length > 1) return false;
+	return true;
+}
 
 export interface StatementSessionInput {
 	/** Parsed SessionAggregate. */
@@ -99,7 +165,28 @@ export interface CampaignRow {
 	completed: number;
 	/** Where this campaign's traffic landed most often. */
 	topLandingPath: string | null;
-	verdict: "desperdicio" | "observar" | "entregando";
+	/**
+	 * What to do, not how bad it is.
+	 *
+	 * The old scheme was `desperdicio | observar | entregando` and it
+	 * had two defects that six reviewers found, five of them by
+	 * reading the table line by line.
+	 *
+	 * First, "desperdicio" is a money word on a page that confesses in
+	 * its last line that it does not know what anything cost. Nineteen
+	 * of twenty reviewers asked for spend, and three independently
+	 * said the missing column does not weaken the verdict, it dismantles
+	 * it. So the label no longer claims a loss it cannot price.
+	 *
+	 * Second, the verdict ignored the one column that priced the
+	 * recommendation. A row with 12 purchases was marked desperdicio
+	 * while another row with the same 12 purchases was marked observar,
+	 * and one with 22 purchases was also observar. "Se eu levo essa
+	 * tabela pro meu gestor, ele acha esse par em 40 segundos e mata a
+	 * ferramenta na frente de todo mundo." Now a campaign that still
+	 * sells is never told to be cut: it is told to be fixed.
+	 */
+	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita";
 	/** Percentage points above the account median. Negative is better. */
 	pointsAboveAccount: number;
 	/** What pausing this campaign costs: the action-reaches and the
@@ -135,6 +222,10 @@ export interface CampaignRow {
 	previousBlindPct: number | null;
 	/** Points worse than the previous window. Negative is improvement. */
 	deltaPoints: number | null;
+	/** Share of this campaign's sessions that came from a phone.
+	 *  Always present, so a row whose device split is too thin to
+	 *  state still says something true about where its traffic is. */
+	mobileSharePct: number;
 	/** Per device, so a campaign that only fails on one is visible. */
 	byDevice: {
 		mobile: { sessions: number; blind: number; blindPct: number } | null;
@@ -168,12 +259,48 @@ export interface TrafficStatement {
 		campaignsAboveFloor: number;
 		arrivedBlind: number;
 		sessions: number;
+		/** Completed purchases across every campaign above the floor.
+		 *  This is the denominator the trade paragraph uses, and it used
+		 *  to appear as a bare number the reader could not reconcile: a
+		 *  reviewer summed the visible rows, got a different total and
+		 *  asked for the bridge. Stated explicitly now. */
+		purchases: number;
 		/** Null when no ad account is connected. */
 		spendBrl: number | null;
 		spendWastedBrl: number | null;
 	};
 	/** Campaigns dropped for being below the floor, and their sessions. */
 	belowFloor: { campaigns: number; sessions: number };
+	/**
+	 * Paid traffic grouped by the page it landed on, over EVERY
+	 * attributed session rather than only the campaigns that cleared
+	 * the floor.
+	 *
+	 * This exists because the floor excludes the buyer. Seven
+	 * reviewers in the second cohort worked out their own volume and
+	 * concluded their statement would come back empty: a lawyer with
+	 * ~1.100 visits across 6 campaigns, a dentist with 900 across 8, an
+	 * architect with 2 campaigns, an esthetician with 3. A dropshipper
+	 * found the inverse failure, that the campaigns he tests and kills
+	 * never reach 300, so the page is blind exactly where he burns
+	 * money and visible only where he already knows the answer.
+	 *
+	 * Both ends proposed the same way out, independently: group by
+	 * landing page, because the page has volume when no single
+	 * campaign does. Thirty campaigns of 150 sessions landing on one
+	 * page are 4.500 sessions, which is not noise. The page-level
+	 * section was also the part three reviewers named as the best
+	 * thing on the statement, so this promotes what already worked.
+	 */
+	landingPages: {
+		path: string;
+		sessions: number;
+		arrivedBlind: number;
+		arrivedBlindPct: number;
+		/** How many distinct campaigns sent traffic here. */
+		campaigns: number;
+		purchases: number;
+	}[];
 	/**
 	 * Non-paid sessions in the same window, as an internal control.
 	 *
@@ -204,10 +331,6 @@ export interface TrafficStatement {
 		/** Sessions excluded for carrying a paid marker without a campaign. */
 		excludedPaidMarker: number;
 	} | null;
-}
-
-function num(v: unknown): number {
-	return typeof v === "number" && Number.isFinite(v) ? v : 0;
 }
 
 function median(values: number[]): number {
@@ -292,6 +415,32 @@ function hasPaidMarker(ft: Record<string, unknown> | undefined): boolean {
 	return /^(fb|ig|facebook|instagram|tiktok)$/i.test(source.trim());
 }
 
+/**
+ * The campaign name trimmed to what the operator can recognise.
+ *
+ * Names arrive with their own bookkeeping attached: one row on the
+ * instrumented account reads "aberto adv+ (21/09) - Cópia - Cópia -
+ * Cópia - Cópia - Cópia - Cópia - Cópia - Cópia - Cópia". Eight
+ * reviewers raised it, and all eight said the same thing: the mess is
+ * the customer's, the cleanup is the product's. One counted the copies
+ * with a finger on the screen to tell two rows apart, and another
+ * noted the name column was wider than every number on the row
+ * combined.
+ *
+ * The copy count is kept rather than discarded, because it is the only
+ * thing distinguishing six otherwise identical rows.
+ */
+export function shortCampaignName(raw: string): string {
+	const copies = raw.match(/C[oó]pia/gi)?.length ?? 0;
+	// The separator is whatever the ad platform used, and on the live
+	// account it is an em dash, which an earlier hyphen-only pattern
+	// missed: the copies then survived into the truncation and came out
+	// as "(21/09)… (cópia 3)".
+	let base = raw.replace(/(\s*[-–—,]?\s*C[oó]pia)+\s*$/gi, "").trim();
+	if (base.length > 46) base = base.slice(0, 45).trimEnd() + "…";
+	return copies > 0 ? `${base} (cópia ${copies})` : base;
+}
+
 export function splitCampaignRef(raw: string): { name: string; platformId: string | null } {
 	const at = raw.lastIndexOf("|");
 	if (at < 0) return { name: decodeCampaignName(raw), platformId: null };
@@ -356,6 +505,13 @@ export function buildTrafficStatement(
 	let controlSessions = 0;
 	let controlBlind = 0;
 	let controlExcluded = 0;
+	interface PageAcc {
+		sessions: number;
+		blind: number;
+		purchases: number;
+		campaigns: Set<string>;
+	}
+	const byPage = new Map<string, PageAcc>();
 
 	for (const row of rows) {
 		// Bot gate, same floor the friction measurement already uses: a
@@ -379,7 +535,7 @@ export function buildTrafficStatement(
 				continue;
 			}
 			controlSessions++;
-			if (num(a.max_scroll_depth) < SAW_SOMETHING_MILESTONE) controlBlind++;
+			if (sawNothing(a)) controlBlind++;
 			continue;
 		}
 		attributed++;
@@ -402,7 +558,7 @@ export function buildTrafficStatement(
 			};
 
 		acc.sessions++;
-		const blind = num(a.max_scroll_depth) < SAW_SOMETHING_MILESTONE;
+		const blind = sawNothing(a);
 		if (blind) acc.blind++;
 		const dev = deviceOf(row.userAgent);
 		const dv = acc.dev.get(dev) ?? { n: 0, blind: 0 };
@@ -421,6 +577,20 @@ export function buildTrafficStatement(
 				// keep the raw value; a malformed URL is still a label
 			}
 			acc.landing.set(path, (acc.landing.get(path) ?? 0) + 1);
+			// Accumulated outside the floor on purpose: this is the view
+			// that has to work for an account whose campaigns are all
+			// too small to judge one by one.
+			const pg = byPage.get(path) ?? {
+				sessions: 0,
+				blind: 0,
+				purchases: 0,
+				campaigns: new Set<string>(),
+			};
+			pg.sessions++;
+			if (blind) pg.blind++;
+			if (a.reached_thank_you) pg.purchases++;
+			pg.campaigns.add(key);
+			byPage.set(path, pg);
 		}
 		byCampaign.set(key, acc);
 	}
@@ -454,11 +624,30 @@ export function buildTrafficStatement(
 		.map((c) => {
 			const blindPct = (100 * c.blind) / c.sessions;
 			const points = blindPct - accountMedian;
-			// Verdict bands, in points above the account's own median.
-			// Deliberately wide: the point is to separate the outliers
-			// from the normal state of this account, not to grade.
+			// Two gates, not one. The relative gate alone was circular,
+			// and a reviewer who audits financial statements for a
+			// living named it as the weakest sentence on the page:
+			// "sempre vai ter alguem acima da propria media. Uma conta
+			// impecavel, com 60% de abandono em tudo, ainda vai gerar
+			// cinco linhas de desperdicio aqui." Correct. So a row must
+			// now be bad in absolute terms AND unusual for this
+			// account, which means a healthy account can and should
+			// produce an empty table.
+			const unusual = points >= 10;
+			const bad = blindPct >= ABSOLUTE_BLIND_FLOOR;
 			const verdict: CampaignRow["verdict"] =
-				points >= 10 ? "desperdicio" : points >= 3 ? "observar" : "entregando";
+				blindPct >= IMPLAUSIBLE_BLIND_PCT
+					? "medicao_suspeita"
+					: unusual && bad
+						? // Pausing is only advice when pausing is free. A
+							// campaign that still completes purchases gets
+							// told to be fixed, never cut.
+							c.completed > 0
+							? "corrigir"
+							: "cortar"
+						: points >= 3
+							? "observar"
+							: "entregando";
 			const topLanding =
 				[...c.landing.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 			const spend =
@@ -467,9 +656,15 @@ export function buildTrafficStatement(
 					: null;
 			const devRow = (k: "mobile" | "desktop") => {
 				const d = c.dev.get(k);
-				// Below 50 the rate is noise and a noisy split invites a
-				// wrong conclusion about a device.
-				if (!d || d.n < 50) return null;
+				// Was 50, which is why the split showed on one row of
+				// fifteen: nearly all this traffic is mobile, so desktop
+				// almost never cleared it. Eight reviewers asked for the
+				// split on every row and three called it the most
+				// actionable thing on the page. 30 is still enough to
+				// avoid a wrong conclusion about a device, and the
+				// session count travels with the rate so the reader can
+				// discount a thin one.
+				if (!d || d.n < 30) return null;
 				return {
 					sessions: d.n,
 					blind: d.blind,
@@ -481,6 +676,9 @@ export function buildTrafficStatement(
 				previousBlindPct: prevPct,
 				deltaPoints:
 					prevPct === null ? null : Math.round((blindPct - prevPct) * 10) / 10,
+				mobileSharePct: Math.round(
+					(1000 * (c.dev.get("mobile")?.n ?? 0)) / c.sessions,
+				) / 10,
 				byDevice: { mobile: devRow("mobile"), desktop: devRow("desktop") },
 				spendBrl: spend,
 				spendWastedBrl:
@@ -518,6 +716,7 @@ export function buildTrafficStatement(
 			campaignsAboveFloor: above.length,
 			arrivedBlind: above.reduce((n, c) => n + c.blind, 0),
 			sessions: above.reduce((n, c) => n + c.sessions, 0),
+			purchases: above.reduce((n, c) => n + c.completed, 0),
 			spendBrl: campaigns.some((c) => c.spendBrl !== null)
 				? campaigns.reduce((n, c) => n + (c.spendBrl ?? 0), 0)
 				: null,
@@ -529,6 +728,17 @@ export function buildTrafficStatement(
 			campaigns: below.length,
 			sessions: below.reduce((n, c) => n + c.sessions, 0),
 		},
+		landingPages: [...byPage.entries()]
+			.filter(([, p]) => p.sessions >= floor)
+			.map(([path, p]) => ({
+				path,
+				sessions: p.sessions,
+				arrivedBlind: p.blind,
+				arrivedBlindPct: Math.round((1000 * p.blind) / p.sessions) / 10,
+				campaigns: p.campaigns.size,
+				purchases: p.purchases,
+			}))
+			.sort((a, b) => b.arrivedBlind - a.arrivedBlind),
 		// 300 to match the per-campaign floor: below it the rate is noise
 		// and a noisy control is worse than none.
 		control:

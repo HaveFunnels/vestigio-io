@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/console/PageHeader";
 import { useActiveEnvId } from "@/components/app/McpDataProvider";
+import { shortCampaignName } from "../../../../packages/strategy-plan/sections/traffic-statement";
 
 // ──────────────────────────────────────────────
 // Extrato de tráfego pago. The first v2 surface.
@@ -30,13 +31,14 @@ interface CampaignRow {
 	reachedActionPct: number;
 	completed: number;
 	topLandingPath: string | null;
-	verdict: "desperdicio" | "observar" | "entregando";
+	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita";
 	pointsAboveAccount: number;
 	excessBlind: number;
 	pauseCostActions: number;
 	pauseCostPurchases: number;
 	previousBlindPct: number | null;
 	deltaPoints: number | null;
+	mobileSharePct: number;
 	byDevice: {
 		mobile: { sessions: number; blind: number; blindPct: number } | null;
 		desktop: { sessions: number; blind: number; blindPct: number } | null;
@@ -57,10 +59,19 @@ interface Statement {
 		campaignsAboveFloor: number;
 		arrivedBlind: number;
 		sessions: number;
+		purchases: number;
 		spendBrl: number | null;
 		spendWastedBrl: number | null;
 	};
 	belowFloor: { campaigns: number; sessions: number };
+	landingPages: {
+		path: string;
+		sessions: number;
+		arrivedBlind: number;
+		arrivedBlindPct: number;
+		campaigns: number;
+		purchases: number;
+	}[];
 	control: {
 		sessions: number;
 		blind: number;
@@ -70,19 +81,31 @@ interface Statement {
 }
 
 const VERDICT: Record<CampaignRow["verdict"], { label: string; cls: string }> = {
-	desperdicio: {
-		label: "desperdício",
+	// Labels say what to do. "desperdício" was a money word on a page
+	// that cannot price anything yet, and it contradicted the purchases
+	// column on its own rows.
+	cortar: {
+		label: "cortar",
 		cls: "bg-red-500/[0.08] text-red-700 dark:text-red-400 border-red-500/20",
+	},
+	corrigir: {
+		label: "corrigir, não cortar",
+		cls: "bg-amber-500/[0.10] text-amber-700 dark:text-amber-400 border-amber-500/25",
+	},
+	medicao_suspeita: {
+		label: "medição suspeita",
+		cls: "bg-violet-500/[0.08] text-violet-700 dark:text-violet-300 border-violet-500/20",
 	},
 	observar: {
 		label: "observar",
-		cls: "bg-amber-500/[0.08] text-amber-700 dark:text-amber-400 border-amber-500/20",
+		cls: "bg-surface-inset text-content-secondary border-edge",
 	},
 	entregando: {
 		label: "entregando",
 		cls: "bg-emerald-500/[0.08] text-emerald-700 dark:text-emerald-400 border-emerald-500/20",
 	},
 };
+
 
 function n(v: number): string {
 	return v.toLocaleString("pt-BR");
@@ -152,76 +175,176 @@ export default function TrafficStatementPage() {
 		);
 	}
 
-	const wasted = data.totals.arrivedBlind;
-	// 31 of 47 campaigns came back "entregando" on the real account.
-	// Listing them is noise on a page that has to read in 30 seconds, so
-	// they collapse into one line and the table carries only what needs
-	// a decision.
-	const needsDecision = data.campaigns.filter((c) => c.verdict !== "entregando");
-	const wasteRows = data.campaigns.filter((c) => c.verdict === "desperdicio");
-	const wasteSessions = wasteRows.reduce((n, c) => n + c.sessions, 0);
-	const pausePurchases = wasteRows.reduce((n, c) => n + c.pauseCostPurchases, 0);
-	const totalPurchases = data.campaigns.reduce((n, c) => n + c.pauseCostPurchases, 0);
-	const fine = data.campaigns.length - needsDecision.length;
+	// 27 of 46 campaigns came back "entregando" on the real account and
+	// another 14 "observar". Nine reviewers said the same thing about
+	// those: "observar não é instrução", and one who reads bank
+	// statements for a living put it best, that he tolerates density
+	// because every line of a statement is an entry, and observar is
+	// not an entry. So the table carries only what asks for a decision.
+	const needsDecision = data.campaigns.filter(
+		(c) => c.verdict === "cortar" || c.verdict === "corrigir" || c.verdict === "medicao_suspeita",
+	);
+	const cutRows = data.campaigns.filter((c) => c.verdict === "cortar");
+	const fixRows = data.campaigns.filter((c) => c.verdict === "corrigir");
+	const cutSessions = cutRows.reduce((n, c) => n + c.sessions, 0);
+	const cutPurchases = cutRows.reduce((n, c) => n + c.pauseCostPurchases, 0);
+	const watching = data.campaigns.filter((c) => c.verdict === "observar").length;
+	const fine = data.campaigns.filter((c) => c.verdict === "entregando").length;
 	const hasSpend = data.totals.spendBrl !== null;
+	const [showMethod, setShowMethod] = useState(false);
 
-	// The ad-or-page question, answered by the data rather than by a
-	// separate feature: when several wasteful campaigns land on the SAME
-	// page, the page is implicated. When one wastes alone at 5 seconds,
-	// the ad is. On the live account three of the six worst campaigns
-	// land on the same product page.
-	const byLanding = new Map<string, CampaignRow[]>();
-	for (const c of needsDecision) {
-		if (!c.topLandingPath) continue;
-		const list = byLanding.get(c.topLandingPath) ?? [];
-		list.push(c);
-		byLanding.set(c.topLandingPath, list);
-	}
-	const sharedPages = [...byLanding.entries()]
-		.filter(([, list]) => list.length >= 2)
-		.sort((a, b) => b[1].length - a[1].length);
+	// The page view, promoted from a footnote to the lead. It is the
+	// only view that works for an account whose campaigns are each too
+	// small to judge, and on the live account it says something the
+	// campaign table cannot: one product page runs 36% across 155
+	// campaigns while another runs 9%.
+	const pages = data.landingPages;
+	const worstPage = pages[0] ?? null;
 
 	return (
 		<div className="p-6">
 			<PageHeader
 				title="Extrato de tráfego pago"
 				subtitle={`${data.windowStart} a ${data.windowEnd}`}
-				tooltip={
-					"Uma sessão conta como 'chegou e não viu nada' quando o marco de 25% de " +
-					"scroll nunca disparou. Sessões com menos de 3 eventos são descartadas. " +
-					"Tudo nesta página é contagem direta, não estimativa."
-				}
 			/>
 
-			{/* Leads with what is actionable, not with the dramatic total.
-			    The previous version opened with "21.389 chegaram e foram
-			    embora sem ver nada", which is true and implies a problem
-			    this page cannot yet establish: without a market
-			    comparison, a high no-scroll rate on cold paid traffic may
-			    be ordinary advertising physics. Stating the outliers
-			    first says only what the data supports. */}
+			{/* Spend is the single most requested thing in the review, 19
+			    of 20, and its absence used to be a parenthesis in the
+			    last line. Three reviewers independently said the same
+			    thing: buried there, it does not weaken the verdict, it
+			    dismantles it. So it leads, and it asks. */}
+			{!hasSpend && (
+				<div className="mb-5 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] px-5 py-4">
+					<p className="text-[13.5px] leading-relaxed text-content">
+						<strong>Este extrato conta acessos, não reais.</strong> Conecte a conta de
+						anúncio e cada linha passa a mostrar quanto custou e quanto do custo comprou
+						acesso que não fez nada.
+					</p>
+					<a
+						href="/app/integrations"
+						className="mt-2 inline-flex rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-[12.5px] font-medium text-content hover:bg-surface-card-hover"
+					>
+						Conectar conta de anúncio
+					</a>
+				</div>
+			)}
+
 			<div className="mb-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
 				<p className="text-[15px] leading-relaxed text-content">
-					{needsDecision.length > 0 ? (
+					{worstPage ? (
 						<>
-							<strong>{wasteRows.length}</strong> das{" "}
-							<strong>{data.totals.campaignsAboveFloor}</strong> campanhas desperdiçam acima
-							do normal desta conta, e somam{" "}
-							<strong>{n(wasteSessions)}</strong> acessos comprados.
+							<strong>{worstPage.arrivedBlindPct}%</strong> de quem você levou para{" "}
+							<span className="font-mono text-[13px]">{worstPage.path}</span> não fez
+							absolutamente nada: nem rolou, nem clicou, nem viu um botão. São{" "}
+							<strong>{n(worstPage.arrivedBlind)}</strong> acessos comprados, vindos de{" "}
+							{worstPage.campaigns} campanhas diferentes.
 						</>
 					) : (
 						<>
-							Nenhuma das {data.totals.campaignsAboveFloor} campanhas está fora do padrão
-							desta conta nesta janela.
+							Nenhuma página de destino tem volume suficiente nesta janela para medir com
+							confiança.
 						</>
 					)}
 				</p>
 				<p className="mt-2 text-[12.5px] text-content-muted">
-					Nesta conta, {data.accountMedianBlindPct}% dos acessos pagos não passam da primeira
-					tela. Esse número descreve o seu padrão, não um problema: ainda não há comparação
-					de mercado. A comparação que existe está abaixo.
+					Na conta inteira, {data.accountMedianBlindPct}% dos acessos pagos não fazem nada.
+					Quem chega sem anúncio:{" "}
+					{data.control ? `${data.control.blindPct}%` : "sem base para comparar"}.
+					<button
+						type="button"
+						onClick={() => setShowMethod((v) => !v)}
+						className="ml-1 underline decoration-dotted underline-offset-2 hover:text-content"
+					>
+						{showMethod ? "esconder como isso é contado" : "como isso é contado"}
+					</button>
 				</p>
+				{showMethod && (
+					// Four definitions were load-bearing and undeclared, and
+					// the reviewer who audits statements for a living
+					// returned the document over exactly that: "demonstrativo
+					// que não declara o critério de cálculo da própria coluna
+					// é demonstrativo que eu devolvo".
+					<div className="mt-3 space-y-1.5 border-t border-edge pt-3 text-[12px] leading-relaxed text-content-muted">
+						<p>
+							<strong className="text-content-secondary">não fez nada:</strong> não passou
+							de 25% da página, não teve nenhum botão entrando na tela, não começou
+							formulário, não abriu suporte nem WhatsApp, não clicou, não voltou e não
+							abriu uma segunda página. Qualquer um desses sinais tira a sessão da conta.
+						</p>
+						<p>
+							<strong className="text-content-secondary">acima do padrão:</strong> a taxa
+							da campanha menos a mediana da conta ({data.accountMedianBlindPct}%),
+							aplicada sobre os acessos dela. Em acessos, não em pontos.
+						</p>
+						<p>
+							<strong className="text-content-secondary">chegou à ação:</strong> a sessão
+							alcançou o que conta como conversão neste negócio, que é diferente de ter
+							comprado. A coluna de compras é a venda concluída.
+						</p>
+						<p>
+							<strong className="text-content-secondary">cortar ou corrigir:</strong> uma
+							campanha precisa estar acima de 45% em termos absolutos E 10 pontos acima da
+							mediana da conta. Se ainda produz compra, o veredito é corrigir, nunca
+							cortar. Conta saudável sai daqui sem nenhuma linha, e isso é o
+							comportamento correto.
+						</p>
+						<p>
+							<strong className="text-content-secondary">o que não é medido:</strong>{" "}
+							ligação telefônica, venda por DM e conversa que começa fora do site. Se o
+							seu negócio fecha por telefone, este extrato mede a parte menor dele.
+						</p>
+						<p>
+							Sessões com menos de 3 eventos são descartadas. Campanha com menos de 300
+							acessos não entra, porque abaixo disso a taxa é ruído. Tudo aqui é contagem
+							direta, não estimativa.
+						</p>
+					</div>
+				)}
 			</div>
+
+			{/* The page view. Promoted because the campaign floor excludes
+			    the small advertiser and the fast tester alike, and both
+			    ends of the review proposed this same way out. */}
+			{pages.length > 0 && (
+				<div className="mb-6 overflow-hidden rounded-2xl border border-edge">
+					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+						Por página de destino
+					</div>
+					<table className="w-full border-collapse text-[13px]">
+						<tbody>
+							{pages.map((pg) => (
+								<tr key={pg.path} className="border-t border-edge first:border-t-0">
+									<td className="px-4 py-2.5">
+										<div className="font-mono text-[12px] text-content">{pg.path}</div>
+										<div className="text-[11px] text-content-muted">
+											{pg.campaigns} campanhas, {n(pg.purchases)}{" "}
+											{pg.purchases === 1 ? "compra" : "compras"}
+										</div>
+									</td>
+									<td className="w-[38%] px-4 py-2.5">
+										<div className="flex items-center gap-2">
+											<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-inset">
+												<div
+													className={`h-full rounded-full ${
+														pg.arrivedBlindPct >= 30 ? "bg-red-500/60" : "bg-emerald-500/50"
+													}`}
+													style={{ width: `${Math.min(100, pg.arrivedBlindPct)}%` }}
+												/>
+											</div>
+											<div className="w-[108px] text-right tabular-nums text-[12.5px] text-content">
+												<strong>{pg.arrivedBlindPct}%</strong>{" "}
+												<span className="text-content-muted">
+													de {n(pg.sessions)}
+												</span>
+											</div>
+										</div>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
 
 			{data.control && (
 				<div className="mb-6 rounded-2xl border border-edge bg-surface-inset/40 px-5 py-4">
@@ -229,7 +352,7 @@ export default function TrafficStatementPage() {
 						A sua própria base de comparação
 					</div>
 					<p className="text-[14px] leading-relaxed text-content">
-						Quem chega ao site <strong>sem anúncio</strong> não passa da primeira tela em{" "}
+						Quem chega ao site <strong>sem anúncio</strong> não faz nada em{" "}
 						<strong>{data.control.blindPct}%</strong> das {n(data.control.sessions)} visitas.
 						Quem você <strong>pagou</strong>, em{" "}
 						<strong>{data.accountMedianBlindPct}%</strong>.
@@ -251,201 +374,169 @@ export default function TrafficStatementPage() {
 				</div>
 			)}
 
-			<div className="overflow-x-auto rounded-2xl border border-edge">
-				<table className="w-full min-w-[760px] border-collapse text-[13px]">
-					<thead>
-						<tr className="bg-surface-inset text-left text-[11px] uppercase tracking-[0.08em] text-content-muted">
-							<th className="px-4 py-3 font-semibold">campanha</th>
-							<th className="px-3 py-3 text-right font-semibold">comprou</th>
-							<th className="px-3 py-3 text-right font-semibold">não viu nada</th>
-							<th className="px-3 py-3 text-right font-semibold">acima do normal</th>
-							<th className="px-3 py-3 text-right font-semibold">vs janela anterior</th>
-							<th className="px-3 py-3 text-right font-semibold">tempo</th>
-							<th className="px-3 py-3 text-right font-semibold">chegou à ação</th>
-							<th className="px-3 py-3 text-right font-semibold">pausar custa</th>
-							{hasSpend && (
-								<th className="px-3 py-3 text-right font-semibold">gasto perdido</th>
-							)}
-							<th className="px-3 py-3 font-semibold">veredito</th>
-						</tr>
-					</thead>
-					<tbody>
-						{needsDecision.map((c) => (
-							<tr
-								key={c.platformId ?? c.name}
-								className="border-t border-edge align-top hover:bg-surface-card-hover"
-							>
-								<td className="px-4 py-3">
-									<div className="max-w-[360px] text-content">{c.name}</div>
-									<div className="mt-0.5 font-mono text-[11px] text-content-faint">
-										{c.source}
-										{c.topLandingPath ? ` cai em ${c.topLandingPath}` : ""}
-									</div>
-									{c.byDevice.mobile && c.byDevice.desktop && (
-										<div className="mt-1 text-[11px] text-content-muted">
-											celular {c.byDevice.mobile.blindPct}%, computador{" "}
-											{c.byDevice.desktop.blindPct}%
-										</div>
-									)}
-								</td>
-								<td className="px-3 py-3 text-right tabular-nums text-content-secondary">
-									{n(c.sessions)}
-								</td>
-								<td className="px-3 py-3 text-right tabular-nums">
-									<div className="text-content">{n(c.arrivedBlind)}</div>
-									<div className="text-[11px] text-content-muted">{c.arrivedBlindPct}%</div>
-								</td>
-								<td className="px-3 py-3 text-right tabular-nums">
-									<div className="text-content">{n(c.excessBlind)}</div>
-									<div className="text-[11px] text-content-muted">
-										{c.pointsAboveAccount > 0 ? "+" : ""}
-										{c.pointsAboveAccount}pt
-									</div>
-								</td>
-								<td className="px-3 py-3 text-right tabular-nums">
-									{c.deltaPoints === null ? (
-										<span className="text-[11px] text-content-faint">nova</span>
-									) : (
-										<>
-											<div
-												className={
-													c.deltaPoints > 2
-														? "text-red-700 dark:text-red-400"
-														: c.deltaPoints < -2
-															? "text-emerald-700 dark:text-emerald-400"
-															: "text-content-secondary"
-												}
-											>
-												{c.deltaPoints > 0 ? "+" : ""}
-												{c.deltaPoints}pt
-											</div>
-											<div className="text-[11px] text-content-muted">
-												era {c.previousBlindPct}%
-											</div>
-										</>
-									)}
-								</td>
-								<td className="px-3 py-3 text-right tabular-nums text-content-secondary">
-									{c.medianDurationS}s
-								</td>
-								<td className="px-3 py-3 text-right tabular-nums">
-									<div className="text-content">{n(c.reachedAction)}</div>
-									<div className="text-[11px] text-content-muted">{c.reachedActionPct}%</div>
-								</td>
-								<td className="px-3 py-3 text-right tabular-nums">
-									<div className="text-content">{n(c.pauseCostPurchases)}</div>
-									<div className="text-[11px] text-content-muted">
-										{c.pauseCostPurchases === 1 ? "compra" : "compras"}
-									</div>
-								</td>
+			{needsDecision.length > 0 ? (
+				<div className="overflow-x-auto rounded-2xl border border-edge">
+					{/* Was nine columns, which ten reviewers said is
+					    unusable on the phone they all read this on. The
+					    secondary numbers moved into the campaign cell. */}
+					<table className="w-full min-w-[620px] border-collapse text-[13px]">
+						<thead>
+							<tr className="bg-surface-inset text-left text-[11px] uppercase tracking-[0.08em] text-content-muted">
+								<th className="px-4 py-3 font-semibold">campanha</th>
+								<th className="px-3 py-3 text-right font-semibold">não fez nada</th>
+								<th className="px-3 py-3 text-right font-semibold">acima do padrão</th>
+								<th className="px-3 py-3 text-right font-semibold">pausar custa</th>
 								{hasSpend && (
-									<td className="px-3 py-3 text-right tabular-nums">
-										<div className="text-content">
-											{c.spendWastedBrl === null ? "sem dado" : brl(c.spendWastedBrl)}
+									<th className="px-3 py-3 text-right font-semibold">gasto perdido</th>
+								)}
+								<th className="px-3 py-3 font-semibold">veredito</th>
+							</tr>
+						</thead>
+						<tbody>
+							{needsDecision.map((c) => (
+								<tr
+									key={c.platformId ?? c.name}
+									className="border-t border-edge align-top hover:bg-surface-card-hover"
+								>
+									<td className="px-4 py-3">
+										<div className="max-w-[300px] text-content" title={c.name}>
+											{shortCampaignName(c.name)}
 										</div>
-										<div className="text-[11px] text-content-muted">
-											{c.spendBrl === null ? "campanha nova" : `de ${brl(c.spendBrl)}`}
+										<div className="mt-0.5 font-mono text-[11px] text-content-faint">
+											{c.source}
+											{c.topLandingPath ? ` cai em ${c.topLandingPath}` : ""}
+										</div>
+										<div className="mt-1 text-[11px] text-content-muted">
+											{n(c.sessions)} acessos, {c.medianDurationS}s de mediana,{" "}
+											{/* Device on every row, not one of fifteen. When one
+											    side is too thin to state a rate, the traffic mix
+											    still says something true. */}
+											{c.byDevice.mobile && c.byDevice.desktop ? (
+												<>
+													celular {c.byDevice.mobile.blindPct}%, computador{" "}
+													{c.byDevice.desktop.blindPct}%
+												</>
+											) : (
+												<>{c.mobileSharePct}% celular</>
+											)}
 										</div>
 									</td>
-								)}
-								<td className="px-3 py-3">
-									<span
-										className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${VERDICT[c.verdict].cls}`}
-									>
-										{VERDICT[c.verdict].label}
-									</span>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+									<td className="px-3 py-3 text-right tabular-nums">
+										<div className="text-content">{n(c.arrivedBlind)}</div>
+										<div className="text-[11px] text-content-muted">
+											{c.arrivedBlindPct}%
+										</div>
+									</td>
+									<td className="px-3 py-3 text-right tabular-nums">
+										<div className="text-content">{n(c.excessBlind)}</div>
+										<div className="text-[11px] text-content-muted">acessos</div>
+									</td>
+									<td className="px-3 py-3 text-right tabular-nums">
+										<div className="text-content">{n(c.pauseCostPurchases)}</div>
+										<div className="text-[11px] text-content-muted">
+											{c.pauseCostPurchases === 1 ? "compra" : "compras"}
+										</div>
+									</td>
+									{hasSpend && (
+										<td className="px-3 py-3 text-right tabular-nums">
+											<div className="text-content">
+												{c.spendWastedBrl === null ? "sem dado" : brl(c.spendWastedBrl)}
+											</div>
+											<div className="text-[11px] text-content-muted">
+												{c.spendBrl === null ? "campanha nova" : `de ${brl(c.spendBrl)}`}
+											</div>
+										</td>
+									)}
+									<td className="px-3 py-3">
+										<span
+											className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${VERDICT[c.verdict].cls}`}
+										>
+											{VERDICT[c.verdict].label}
+										</span>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			) : (
+				<div className="rounded-2xl border border-edge bg-surface-card px-5 py-4 text-[13.5px] leading-relaxed text-content">
+					Nenhuma campanha desta janela está ao mesmo tempo acima de 45% de acessos que não
+					fazem nada e 10 pontos acima da sua mediana. Nada a cortar nem a corrigir no nível
+					da campanha.
+				</div>
+			)}
 
-			{wasteRows.length > 0 && (
+			{fixRows.length > 0 && (
 				<div className="mt-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
 					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						A troca, se você pausar as {wasteRows.length}
+						Por que corrigir e não cortar
 					</div>
 					<p className="text-[14px] leading-relaxed text-content">
-						Você deixa de comprar <strong>{n(wasteSessions)}</strong> acessos, dos quais{" "}
-						<strong>{n(wasteRows.reduce((x, c) => x + c.arrivedBlind, 0))}</strong> não veem
-						nada hoje. E perde <strong>{n(pausePurchases)}</strong>{" "}
-						{pausePurchases === 1 ? "compra" : "compras"}
-						{totalPurchases > 0 && (
-							<> de {n(totalPurchases)}, ou {((100 * pausePurchases) / totalPurchases).toFixed(1)}% do total</>
+						{fixRows.length === 1 ? "Essa campanha" : `Essas ${fixRows.length} campanhas`}{" "}
+						perde muita gente na entrada, mas ainda{" "}
+						{fixRows.length === 1 ? "produz" : "produzem"}{" "}
+						<strong>
+							{n(fixRows.reduce((x, c) => x + c.pauseCostPurchases, 0))} compras
+						</strong>{" "}
+						de {n(data.totals.purchases)} do total das {data.totals.campaignsAboveFloor}{" "}
+						campanhas medidas. Pausar resolve o desperdício e joga a venda fora junto. O
+						alvo é a página onde elas caem.
+					</p>
+				</div>
+			)}
+
+			{cutRows.length > 0 && (
+				<div className="mt-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
+					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+						A troca, se você cortar {cutRows.length === 1 ? "essa" : `essas ${cutRows.length}`}
+					</div>
+					<p className="text-[14px] leading-relaxed text-content">
+						Você deixa de comprar <strong>{n(cutSessions)}</strong> acessos, dos quais{" "}
+						<strong>{n(cutRows.reduce((x, c) => x + c.arrivedBlind, 0))}</strong> não fazem
+						nada hoje. E perde <strong>{n(cutPurchases)}</strong>{" "}
+						{cutPurchases === 1 ? "compra" : "compras"} de {n(data.totals.purchases)}
+						{data.totals.purchases > 0 && (
+							<> , ou {((100 * cutPurchases) / data.totals.purchases).toFixed(1)}% do total</>
 						)}
 						.
 					</p>
 					{hasSpend && data.totals.spendWastedBrl !== null && (
 						<p className="mt-2 text-[14px] leading-relaxed text-content">
 							No período, <strong>{brl(data.totals.spendWastedBrl)}</strong> do que você
-							pagou comprou acesso que não viu nada.
+							pagou comprou acesso que não fez nada.
 						</p>
 					)}
 					<p className="mt-2 text-[12.5px] text-content-muted">
-						A recomendação desta página é pausar, então o custo de pausar fica junto dela.
-						Se a troca não te parecer boa, não pause: o número está aí para você decidir,
+						A recomendação desta página é cortar, então o custo de cortar fica junto dela.
+						Se a troca não te parecer boa, não corte: o número está aí para você decidir,
 						não para te convencer.
 					</p>
 				</div>
 			)}
 
-			{sharedPages.length > 0 && (
-				<div className="mt-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
-					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						Anúncio ou página
-					</div>
-					{/* One sentence for the rule, then the list. Printing the
-					    explanation once per path repeated the same sentence
-					    verbatim three times, which three reviewers read as
-					    template rather than analysis. */}
-					<p className="mb-2 text-[13.5px] leading-relaxed text-content">
-						Quando campanhas diferentes morrem no mesmo lugar, o problema tende a ser a
-						página, não os anúncios. Acontece{" "}
-						{sharedPages.length === 1 ? "em uma página" : `em ${sharedPages.length} páginas`}:
-					</p>
-					<ul className="mb-2 space-y-1">
-						{sharedPages.map(([path, list]) => (
-							<li key={path} className="text-[13px] text-content-secondary">
-								<span className="font-mono text-[12px]">{path}</span>, com{" "}
-								<strong>{list.length} campanhas</strong> acima do normal
-							</li>
-						))}
-					</ul>
-					{needsDecision
-						.filter(
-							(c) =>
-								c.medianDurationS <= 8 &&
-								c.arrivedBlindPct >= 90 &&
-								(!c.topLandingPath || (byLanding.get(c.topLandingPath)?.length ?? 0) < 2),
-						)
-						.map((c) => (
-							<p key={c.name} className="mb-2 text-[13.5px] leading-relaxed text-content">
-								<span className="font-mono text-[12px]">{c.name.slice(0, 48)}</span> perde{" "}
-								{c.arrivedBlindPct}% em {c.medianDurationS} segundos e é a única nessa
-								página. Aqui o problema tende a ser o anúncio.
-							</p>
-						))}
-				</div>
-			)}
+			<p className="mt-5 text-[12.5px] leading-relaxed text-content-secondary">
+				{watching > 0 && (
+					<>
+						Outras {watching} campanhas estão acima do seu padrão mas abaixo de 45%, então
+						não pedem decisão agora.{" "}
+					</>
+				)}
+				{fine > 0 && <>{fine} estão dentro do padrão da conta. </>}
+			</p>
 
-			{fine > 0 && (
-				<p className="mt-4 text-[12.5px] text-content-secondary">
-					Outras {fine} campanhas estão dentro do normal desta conta e não aparecem acima.
-				</p>
-			)}
-
-			<p className="mt-4 text-[12px] text-content-muted">
+			<p className="mt-2 text-[12px] leading-relaxed text-content-muted">
 				{data.attributionCoveragePct}% das {n(data.measuredSessions)} sessões medidas trazem
 				campanha identificada.
 				{data.belowFloor.campaigns > 0 && (
 					<>
 						{" "}
-						{data.belowFloor.campaigns} campanhas com menos de 300 sessões ficaram fora do
-						extrato, porque abaixo disso a taxa é ruído. Elas somam{" "}
+						{data.belowFloor.campaigns} campanhas com menos de 300 acessos ficaram fora da
+						tabela de campanha, porque abaixo disso a taxa é ruído. Elas somam{" "}
 						{n(data.belowFloor.sessions)} acessos, ou{" "}
 						{Math.round((data.belowFloor.sessions / data.attributedSessions) * 100)}% do
-						tráfego com campanha identificada.
+						tráfego com campanha identificada, e aparecem somadas na visão por página de
+						destino acima, que é onde conta pequena consegue ser medida.
 					</>
 				)}
 			</p>

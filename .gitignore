@@ -57,3 +57,4 @@ scripts/_dev-*.mjs
 # desloppify state
 .desloppify/
 scorecard.png
+.scratch/

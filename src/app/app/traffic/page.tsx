@@ -429,7 +429,10 @@ export default function TrafficStatementPage() {
 					<>
 						{" "}
 						{data.belowFloor.campaigns} campanhas com menos de 300 sessões ficaram fora do
-						extrato, porque abaixo disso a taxa é ruído.
+						extrato, porque abaixo disso a taxa é ruído. Elas somam{" "}
+						{n(data.belowFloor.sessions)} acessos, ou{" "}
+						{Math.round((data.belowFloor.sessions / data.attributedSessions) * 100)}% do
+						tráfego com campanha identificada.
 					</>
 				)}
 			</p>

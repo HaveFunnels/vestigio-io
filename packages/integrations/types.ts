@@ -93,6 +93,20 @@ export interface StripeSnapshotData {
 export interface MetaAdsSnapshotData {
   ad_spend_30d: number;
   currency: string;
+  /**
+   * Spend per campaign, mirroring GoogleAdsSnapshotData.campaigns.
+   *
+   * The poller fetched insights at `level=account` only, so the product
+   * knew the total and not where it went. The pixel records Meta's own
+   * campaign id on every paid session (attribution.first_touch.campaign
+   * carries "name|id"), so this is the key that turns "494 arrivals saw
+   * nothing" into "you paid X for 494 arrivals that saw nothing".
+   *
+   * Empty when the account-level call succeeded and the campaign-level
+   * one did not, so a partial failure degrades the statement to counts
+   * rather than taking the whole snapshot down.
+   */
+  campaigns: { id: string; name: string; spend_30d: number }[];
   creatives: { id: string; headline: string; body: string; cta: string; destination_url: string; status: string; spend_30d: number }[];
   // Wave 6.1 — Revenue Attribution Integrity. Total platform-reported
   // attributed revenue over the trailing 30d window. Used to cross-check

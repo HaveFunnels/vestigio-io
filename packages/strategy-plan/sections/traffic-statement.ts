@@ -69,6 +69,17 @@ export interface StatementSessionInput {
 	aggregate: Record<string, unknown>;
 	/** Raw event count, for the bot gate. */
 	eventCount: number;
+	/** For the device split. Two reviewers asked for it by name, one
+	 *  calling its absence unforgivable on an account whose traffic is
+	 *  88% Facebook and therefore overwhelmingly mobile. */
+	userAgent?: string | null;
+}
+
+/** Coarse on purpose. The useful question is whether the phone and the
+ *  desktop behave differently, not which browser version. */
+export function deviceOf(userAgent: string | null | undefined): "mobile" | "desktop" | "unknown" {
+	if (!userAgent) return "unknown";
+	return /Mobile|Android|iPhone|iPad|iPod/i.test(userAgent) ? "mobile" : "desktop";
 }
 
 export interface CampaignRow {
@@ -100,6 +111,40 @@ export interface CampaignRow {
 	 *  good trade because the numbers are on the page. */
 	pauseCostActions: number;
 	pauseCostPurchases: number;
+	/**
+	 * What this campaign cost in the window, joined by the platform's
+	 * own campaign id. Null when no ad account is connected or the id
+	 * did not match, and the statement then reports counts only.
+	 *
+	 * This is SPEND, never revenue. A wasted arrival cost money that
+	 * left the account; it did not lose a sale that was never going to
+	 * happen. The previous money model conflated the two and scored 3.6
+	 * out of 10 on trust.
+	 */
+	/**
+	 * The same campaign in the previous window of equal length, when it
+	 * ran then. Null for a campaign that is new.
+	 *
+	 * This is what makes the statement a subscription rather than a
+	 * one-off diagnosis: a rate on its own is a photograph, and the
+	 * operator's real question is whether it is getting worse. The
+	 * investor reviewer put it as the thing that creates switching
+	 * cost, and it costs nothing to compute because it is a second
+	 * window over the same table.
+	 */
+	previousBlindPct: number | null;
+	/** Points worse than the previous window. Negative is improvement. */
+	deltaPoints: number | null;
+	/** Per device, so a campaign that only fails on one is visible. */
+	byDevice: {
+		mobile: { sessions: number; blind: number; blindPct: number } | null;
+		desktop: { sessions: number; blind: number; blindPct: number } | null;
+	};
+	spendBrl: number | null;
+	/** Of that spend, the share that bought arrivals which saw nothing.
+	 *  Proportional to sessions, which is the honest apportionment: the
+	 *  platform charges per click, not per scroll. */
+	spendWastedBrl: number | null;
 	/** Arrivals wasted ABOVE what this account wastes normally. The
 	 *  ranking key: combines how big the campaign is with how much
 	 *  worse than normal it behaves. Zero or negative when at or
@@ -123,6 +168,9 @@ export interface TrafficStatement {
 		campaignsAboveFloor: number;
 		arrivedBlind: number;
 		sessions: number;
+		/** Null when no ad account is connected. */
+		spendBrl: number | null;
+		spendWastedBrl: number | null;
 	};
 	/** Campaigns dropped for being below the floor, and their sessions. */
 	belowFloor: { campaigns: number; sessions: number };
@@ -197,6 +245,12 @@ export function buildTrafficStatement(
 		 *  means, so a service business is not judged on checkouts. */
 		conversionModel?: string | null;
 		minSessions?: number;
+		/** Spend per platform campaign id, from a connected ad account.
+		 *  Omitted when nothing is connected. */
+		spendByCampaignId?: Map<string, number> | null;
+		/** Sessions from the previous window of equal length, for the
+		 *  month-over-month comparison. Omitted on a first run. */
+		previous?: StatementSessionInput[] | null;
 	},
 ): TrafficStatement {
 	const model = options.conversionModel ?? "checkout";
@@ -212,6 +266,7 @@ export function buildTrafficStatement(
 		action: number;
 		completed: number;
 		landing: Map<string, number>;
+		dev: Map<"mobile" | "desktop" | "unknown", { n: number; blind: number }>;
 	}
 	const byCampaign = new Map<string, Acc>();
 	let measured = 0;
@@ -251,10 +306,17 @@ export function buildTrafficStatement(
 				action: 0,
 				completed: 0,
 				landing: new Map(),
+				dev: new Map(),
 			};
 
 		acc.sessions++;
-		if (num(a.max_scroll_depth) < SAW_SOMETHING_MILESTONE) acc.blind++;
+		const blind = num(a.max_scroll_depth) < SAW_SOMETHING_MILESTONE;
+		if (blind) acc.blind++;
+		const dev = deviceOf(row.userAgent);
+		const dv = acc.dev.get(dev) ?? { n: 0, blind: 0 };
+		dv.n++;
+		if (blind) dv.blind++;
+		acc.dev.set(dev, dv);
 		acc.durations.push(num(a.session_duration_ms));
 		if (reachedAction(a, model)) acc.action++;
 		if (a.reached_thank_you) acc.completed++;
@@ -269,6 +331,23 @@ export function buildTrafficStatement(
 			acc.landing.set(path, (acc.landing.get(path) ?? 0) + 1);
 		}
 		byCampaign.set(key, acc);
+	}
+
+	// Previous window, reduced to just the rate per identity. Computed
+	// with the same code path rather than a parallel one, so the two
+	// windows cannot disagree about what a blind session is.
+	const previousRate = new Map<string, number>();
+	if (options.previous && options.previous.length > 0) {
+		const prev = buildTrafficStatement(options.previous, {
+			...options,
+			previous: null,
+			// Same floor, so a campaign too small to judge now is also
+			// too small to have been judged then.
+			minSessions: floor,
+		});
+		for (const c of prev.campaigns) {
+			previousRate.set(c.platformId ?? c.name, c.arrivedBlindPct);
+		}
 	}
 
 	const all = [...byCampaign.values()];
@@ -290,7 +369,30 @@ export function buildTrafficStatement(
 				points >= 10 ? "desperdicio" : points >= 3 ? "observar" : "entregando";
 			const topLanding =
 				[...c.landing.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+			const spend =
+				c.platformId && options.spendByCampaignId
+					? options.spendByCampaignId.get(c.platformId) ?? null
+					: null;
+			const devRow = (k: "mobile" | "desktop") => {
+				const d = c.dev.get(k);
+				// Below 50 the rate is noise and a noisy split invites a
+				// wrong conclusion about a device.
+				if (!d || d.n < 50) return null;
+				return {
+					sessions: d.n,
+					blind: d.blind,
+					blindPct: Math.round((1000 * d.blind) / d.n) / 10,
+				};
+			};
+			const prevPct = previousRate.get(c.platformId ?? c.name) ?? null;
 			return {
+				previousBlindPct: prevPct,
+				deltaPoints:
+					prevPct === null ? null : Math.round((blindPct - prevPct) * 10) / 10,
+				byDevice: { mobile: devRow("mobile"), desktop: devRow("desktop") },
+				spendBrl: spend,
+				spendWastedBrl:
+					spend === null ? null : Math.round((spend * c.blind) / c.sessions),
 				pauseCostActions: c.action,
 				pauseCostPurchases: c.completed,
 				excessBlind: Math.max(0, Math.round((c.sessions * points) / 100)),
@@ -324,6 +426,12 @@ export function buildTrafficStatement(
 			campaignsAboveFloor: above.length,
 			arrivedBlind: above.reduce((n, c) => n + c.blind, 0),
 			sessions: above.reduce((n, c) => n + c.sessions, 0),
+			spendBrl: campaigns.some((c) => c.spendBrl !== null)
+				? campaigns.reduce((n, c) => n + (c.spendBrl ?? 0), 0)
+				: null,
+			spendWastedBrl: campaigns.some((c) => c.spendWastedBrl !== null)
+				? campaigns.reduce((n, c) => n + (c.spendWastedBrl ?? 0), 0)
+				: null,
 		},
 		belowFloor: {
 			campaigns: below.length,

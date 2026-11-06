@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
 	buildTrafficStatement,
+	deviceOf,
 	splitCampaignRef,
 	MIN_SESSIONS_PER_CAMPAIGN,
 	SAW_SOMETHING_MILESTONE,
@@ -215,13 +216,17 @@ describe("the action that matters", () => {
 });
 
 describe("the statement as a whole", () => {
-	it("carries no money, deliberately", () => {
+	it("carries no revenue, ever, and no spend unless it is real", () => {
 		const st = buildTrafficStatement(many(400), WIN);
 		const asText = JSON.stringify(st);
-		// The money model computes every R$ from a constant, and twenty
-		// reviewers scored confidence in the numbers at 3.6. Counting is
-		// not contestable. Spend belongs here when it is real.
-		expect(asText).not.toMatch(/brl|revenue|R\$/i);
+		// Revenue is out permanently: the old money model derived every
+		// R$ from a constant and scored 3.6 out of 10 on trust. Spend is
+		// in, because it is a number the ad platform charged, but only
+		// when an account is connected. With nothing connected the
+		// statement is counts and nulls.
+		expect(asText).not.toMatch(/revenue/i);
+		expect(st.totals.spendBrl).toBeNull();
+		expect(st.campaigns[0].spendBrl).toBeNull();
 	});
 
 	it("names where the traffic landed, for the ad-or-page question", () => {
@@ -313,5 +318,166 @@ describe("the internal control group", () => {
 		expect(st.campaigns).toHaveLength(0);
 		expect(st.control?.sessions).toBe(400);
 		expect(st.attributedSessions).toBe(0);
+	});
+});
+
+describe("spend, when an ad account is connected", () => {
+	const paid = (campaign: string, blind: number, sighted: number) =>
+		many(blind, {
+			max_scroll_depth: 0,
+			attribution: { first_touch: { source: "FB", campaign } },
+		}).concat(
+			many(sighted, {
+				max_scroll_depth: 50,
+				attribution: { first_touch: { source: "FB", campaign } },
+			}),
+		);
+
+	it("joins on the platform campaign id the pixel already records", () => {
+		const st = buildTrafficStatement(paid("Campanha X|120253133140740114", 400, 100), {
+			...WIN,
+			spendByCampaignId: new Map([["120253133140740114", 1_000]]),
+		});
+		expect(st.campaigns[0].spendBrl).toBe(1_000);
+		// 400 of 500 sessions saw nothing, so 80% of the spend bought
+		// arrivals that saw nothing. Apportioned by sessions because the
+		// platform charges per click, not per scroll.
+		expect(st.campaigns[0].spendWastedBrl).toBe(800);
+	});
+
+	it("reports counts only when nothing is connected", () => {
+		const st = buildTrafficStatement(paid("Campanha X|120253133140740114", 400, 100), WIN);
+		expect(st.campaigns[0].spendBrl).toBeNull();
+		expect(st.campaigns[0].spendWastedBrl).toBeNull();
+		expect(st.totals.spendBrl).toBeNull();
+	});
+
+	it("leaves a campaign null when its id is not in the snapshot", () => {
+		// A campaign created after the last sync, or one from another ad
+		// account. Null is honest; zero would read as "cost nothing".
+		const st = buildTrafficStatement(paid("Nova|999999999999", 400, 100), {
+			...WIN,
+			spendByCampaignId: new Map([["120253133140740114", 1_000]]),
+		});
+		expect(st.campaigns[0].spendBrl).toBeNull();
+	});
+
+	it("never calls spend revenue", () => {
+		const st = buildTrafficStatement(paid("X|120253133140740114", 400, 100), {
+			...WIN,
+			spendByCampaignId: new Map([["120253133140740114", 1_000]]),
+		});
+		const keys = Object.keys(st.campaigns[0]);
+		// A wasted arrival cost money that left the account. It did not
+		// lose a sale that was never going to happen, and the earlier
+		// money model conflated the two.
+		expect(keys.filter((k) => /revenue/i.test(k))).toEqual([]);
+		expect(keys).toContain("spendBrl");
+	});
+});
+
+describe("device split", () => {
+	function withUa(n: number, ua: string, blind: boolean, campaign: string) {
+		return Array.from({ length: n }, () => ({
+			eventCount: 5,
+			userAgent: ua,
+			aggregate: {
+				max_scroll_depth: blind ? 0 : 50,
+				session_duration_ms: 5_000,
+				attribution: { first_touch: { source: "FB", campaign } },
+			} as Record<string, unknown>,
+		}));
+	}
+
+	it("classifies the coarse device, not the browser version", () => {
+		expect(deviceOf("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)")).toBe("mobile");
+		expect(deviceOf("Mozilla/5.0 (Linux; Android 14)")).toBe("mobile");
+		expect(deviceOf("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15)")).toBe("desktop");
+		expect(deviceOf(null)).toBe("unknown");
+	});
+
+	it("separates a campaign that only fails on one device", () => {
+		// Measured on the live account: paid desktop runs 92.5% no-scroll
+		// against 71.3% on mobile. Without the split that is one number
+		// hiding two very different problems.
+		const C = "X|111111111111";
+		const st = buildTrafficStatement(
+			[
+				...withUa(300, "Android 14 Mobile", false, C),
+				...withUa(100, "Macintosh Intel", true, C),
+			],
+			WIN,
+		);
+		const row = st.campaigns[0];
+		expect(row.byDevice.mobile!.blindPct).toBe(0);
+		expect(row.byDevice.desktop!.blindPct).toBe(100);
+	});
+
+	it("says nothing about a device below 50 sessions", () => {
+		const C = "X|111111111111";
+		const st = buildTrafficStatement(
+			[...withUa(390, "Android Mobile", false, C), ...withUa(20, "Macintosh", true, C)],
+			WIN,
+		);
+		// A noisy split invites a wrong conclusion about a whole device.
+		expect(st.campaigns[0].byDevice.desktop).toBeNull();
+		expect(st.campaigns[0].byDevice.mobile).not.toBeNull();
+	});
+});
+
+describe("comparison with the previous window", () => {
+	const run = (campaign: string, blind: number, sighted: number) =>
+		many(blind, {
+			max_scroll_depth: 0,
+			attribution: { first_touch: { source: "FB", campaign } },
+		}).concat(
+			many(sighted, {
+				max_scroll_depth: 50,
+				attribution: { first_touch: { source: "FB", campaign } },
+			}),
+		);
+
+	it("reports how many points worse a campaign got", () => {
+		const C = "X|111111111111";
+		const st = buildTrafficStatement(run(C, 400, 100), {
+			...WIN,
+			previous: run(C, 300, 200),
+		});
+		// 60% then, 80% now.
+		expect(st.campaigns[0].previousBlindPct).toBe(60);
+		expect(st.campaigns[0].deltaPoints).toBe(20);
+	});
+
+	it("reports improvement as a negative delta", () => {
+		const C = "X|111111111111";
+		const st = buildTrafficStatement(run(C, 200, 300), {
+			...WIN,
+			previous: run(C, 400, 100),
+		});
+		expect(st.campaigns[0].deltaPoints).toBe(-40);
+	});
+
+	it("leaves a new campaign null rather than calling it a change", () => {
+		const st = buildTrafficStatement(run("Nova|222222222222", 400, 100), {
+			...WIN,
+			previous: run("Antiga|111111111111", 400, 100),
+		});
+		expect(st.campaigns[0].previousBlindPct).toBeNull();
+		expect(st.campaigns[0].deltaPoints).toBeNull();
+	});
+
+	it("is null on a first run, with no previous window", () => {
+		const st = buildTrafficStatement(run("X|111111111111", 400, 100), WIN);
+		expect(st.campaigns[0].deltaPoints).toBeNull();
+	});
+
+	it("uses the same code path for both windows", () => {
+		// Computed by recursing into buildTrafficStatement rather than a
+		// parallel reducer, so the two windows cannot disagree about what
+		// a blind session is. Identical input must give a zero delta.
+		const C = "X|111111111111";
+		const rows = run(C, 400, 100);
+		const st = buildTrafficStatement(rows, { ...WIN, previous: rows });
+		expect(st.campaigns[0].deltaPoints).toBe(0);
 	});
 });

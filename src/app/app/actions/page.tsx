@@ -969,7 +969,7 @@ function ActionsContent({
 							? "1 próximo passo identificado"
 							: `${actions.length} próximos passos identificados`;
 				const impactCopy = totalImpact > 0
-					? ` · ${currSym} ${(totalImpact / 1000).toFixed(1).replace(".", ",")}k em foco`
+					? `, ${currSym} ${(totalImpact / 1000).toFixed(1).replace(".", ",")}k em foco`
 					: "";
 				return (
 					<Link
@@ -1174,7 +1174,7 @@ function ActionsContent({
 							? "Nenhuma ação com esses filtros"
 							: "Sua fila está vazia";
 						const body = hasActiveFilter
-							? "Tente afrouxar os filtros — ou limpe tudo pra ver o quadro completo."
+							? "Tente afrouxar os filtros, ou limpe tudo pra ver o quadro completo."
 							: "Quando o próximo ciclo identificar algo pra agir, aparece aqui.";
 						return (
 							<div className="rounded-2xl border border-edge bg-surface-card p-8 text-center">

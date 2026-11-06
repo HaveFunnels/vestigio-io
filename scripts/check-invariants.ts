@@ -55,6 +55,11 @@ const INVARIANTS: Invariant[] = [
         path.join(ROOT, "src", "components", "strategy"),
         path.join(ROOT, "src", "components", "console"),
         path.join(ROOT, "packages", "strategy-plan", "sections"),
+        // src/app/app is where the pages themselves live, and it was
+        // missing. Caught by writing "celular 71% . computador 92%"
+        // into the new traffic page and having the invariant pass: the
+        // rule covered the components a page composes and not the page.
+        path.join(ROOT, "src", "app", "app"),
       ];
       const offenders: string[] = [];
       for (const root of roots) {
@@ -62,6 +67,11 @@ const INVARIANTS: Invariant[] = [
           const rel = path.relative(ROOT, f);
           // mock-data is fixtures, never rendered to a customer.
           if (/mock-data/.test(rel)) continue;
+          // /app/admin is the internal ops console. The rule is about
+          // prose a CUSTOMER reads, and widening to it turned up 40-odd
+          // hits in tooling nobody outside the company opens. Scoping
+          // it out keeps the rule meaningful instead of noisy.
+          if (/src\/app\/app\/admin\//.test(rel)) continue;
           const lines = fs.readFileSync(f, "utf8").split("\n");
           // Block-comment state, tracked across lines. Checking only
           // whether a line STARTS with a marker misses the
@@ -96,6 +106,16 @@ const INVARIANTS: Invariant[] = [
             if (/PROIBIDO|TRAVESS|forbidden/i.test(t)) return;
             // A lone glyph standing in for "no value".
             if (/["'\`>]\s*\u2014\s*["'\`<]/.test(t)) return;
+            // The same allowance for the interpunct, plus the JSX form
+            // `>` glyph `<`. Both are STRUCTURE: a divider between two
+            // data cells, not punctuation inside a sentence. The plan
+            // replaced those with components/strategy/Sep.tsx, and the
+            // rule should name what it is actually against, which is
+            // prose that reads as machine-written.
+            if (/["'\`>]\s*\u00b7\s*["'\`<]/.test(t)) return;
+            // A browser tab title. "Plano de Outubro . Vestigio" is the
+            // conventional separator for a <title>, not a sentence.
+            if (/document\.title\s*=/.test(t)) return;
             offenders.push(`${rel}:${i + 1}  ${t.slice(0, 90)}`);
           });
         }

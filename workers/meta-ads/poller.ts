@@ -39,6 +39,10 @@ export interface MetaAdsPollResult {
 	};
 }
 
+interface CampaignInsightsResponse {
+	data?: { campaign_id?: string; campaign_name?: string; spend?: string }[];
+}
+
 interface InsightsResponse {
 	data?: {
 		spend?: string;
@@ -237,6 +241,35 @@ export async function pollMetaAdsData(
 		}
 	}
 
+	// 1b. Campaign-level spend.
+	//
+	// The account total above says how much was spent and nothing about
+	// where. The pixel stamps Meta's own campaign id on every paid
+	// session, so this call is the join key between money and behaviour:
+	// it is what turns "494 arrivals saw nothing" into "you paid R$ 740
+	// for 494 arrivals that saw nothing".
+	//
+	// Failures here are collected and do not abort: the statement
+	// degrades to counts, which is still useful, rather than losing the
+	// whole snapshot over a permissions edge case on one endpoint.
+	const campaigns: MetaAdsSnapshotData["campaigns"] = [];
+	const campaignRes = await graphGet<CampaignInsightsResponse>(
+		`/${accountId}/insights?fields=campaign_id,campaign_name,spend&date_preset=last_30d&level=campaign&limit=500`,
+		activeToken,
+	);
+	if (!campaignRes.ok) {
+		errors.push(`campaign_insights: ${campaignRes.error ?? "unknown"}`);
+	} else {
+		for (const rec of campaignRes.data?.data ?? []) {
+			if (!rec.campaign_id) continue;
+			campaigns.push({
+				id: rec.campaign_id,
+				name: rec.campaign_name ?? rec.campaign_id,
+				spend_30d: parseFloat(rec.spend ?? "0") || 0,
+			});
+		}
+	}
+
 	// 2. Top ads with creative + per-ad spend. Cap at 20 to keep payload
 	//    small; the engine only needs a representative sample.
 	const adsFields = [
@@ -288,6 +321,7 @@ export async function pollMetaAdsData(
 			ad_spend_30d: adSpend30d,
 			attributed_revenue_30d: attributedRevenue30d,
 			currency,
+			campaigns,
 			creatives,
 		},
 		errors,

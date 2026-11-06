@@ -148,7 +148,7 @@ export default function OnboardThankYouPage() {
 
 				{orgId && (
 					<p className="mt-4 text-[10px] text-zinc-700 font-mono">
-						org · {orgId}
+						org {orgId}
 					</p>
 				)}
 			</div>

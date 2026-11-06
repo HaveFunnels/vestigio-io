@@ -309,7 +309,7 @@ export default function CancelFlowPage() {
 						)}
 						{offer.primary === "pause" && provider === "mercadopago" && (
 							<p className="mb-4 rounded-md border border-edge bg-surface-inset/60 px-3 py-2 text-[12px] text-content-secondary">
-								No Mercado Pago, a assinatura fica pausada até você reativar manualmente — nenhuma cobrança roda enquanto pausada.
+								No Mercado Pago, a assinatura fica pausada até você reativar manualmente, sem nenhuma cobrança roda enquanto pausada.
 							</p>
 						)}
 

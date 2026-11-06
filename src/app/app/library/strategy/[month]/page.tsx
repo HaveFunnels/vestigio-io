@@ -352,7 +352,7 @@ export default function StrategyPlanPage() {
 				</h1>
 				<p className="mb-6 max-w-md text-[14.5px] leading-relaxed text-content-secondary">
 					A primeira análise costuma demorar entre <strong className="text-content">30 e 90 minutos</strong>.
-					Você recebe um email assim que o seu plano de <strong className="text-content">{month}</strong> ficar pronto — pode fechar essa página sem perder nada.
+					Você recebe um email assim que o seu plano de <strong className="text-content">{month}</strong> ficar pronto. Pode fechar essa página sem perder nada.
 				</p>
 				<div className="mb-8 grid max-w-md grid-cols-1 gap-2 text-left text-[13px] text-content-muted">
 					<div className="flex items-start gap-2">

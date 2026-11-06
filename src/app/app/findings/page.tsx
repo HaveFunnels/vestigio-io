@@ -1017,7 +1017,7 @@ export default function FindingsPage() {
 						<>
 							<span className="truncate font-medium text-content">{stepContext.title}</span>
 							{stepContext.findingIds.length === 0 && (
-								<span className="text-content-faint">(passo sem findings linkados — mostrando todos)</span>
+								<span className="text-content-faint">(passo sem findings linkados, mostrando todos)</span>
 							)}
 						</>
 					) : (
@@ -1035,7 +1035,7 @@ export default function FindingsPage() {
 						Comece pelos 3 maiores vazamentos
 					</h3>
 					<p className="mt-1.5 text-[13px] leading-relaxed text-content-muted">
-						Os findings estão ranqueados por impacto financeiro — os mais caros estão no topo. Clique em um para ver causa, remediação e R$ exposto.
+						Os findings estão ranqueados por impacto financeiro: os mais caros estão no topo. Clique em um para ver causa, remediação e R$ exposto.
 					</p>
 				</div>
 			)}
@@ -1208,7 +1208,7 @@ export default function FindingsPage() {
 						const body = stepDrift
 							? "Provavelmente foram resolvidos ou regrediram entre o plano e o ciclo mais recente. Volte ao plano pra ver o status."
 							: hasActiveFilter
-								? "Tente afrouxar os filtros — ou limpe tudo pra ver o quadro completo."
+								? "Tente afrouxar os filtros, ou limpe tudo pra ver o quadro completo."
 								: "Quando o próximo ciclo rodar, qualquer vazamento que aparecer cai aqui.";
 						return (
 							<div className="rounded-2xl border border-edge bg-surface-card p-8 text-center">

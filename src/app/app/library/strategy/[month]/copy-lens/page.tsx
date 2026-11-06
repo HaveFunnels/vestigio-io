@@ -22,7 +22,7 @@ function pageTitle(month: string | undefined): string {
 		"Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 	];
 	if (!y || !m || m < 1 || m > 12) return "Lente de Framework de Copy";
-	return `Lente de Framework de Copy · ${monthNames[m - 1]} de ${y}`;
+	return `Lente de Framework de Copy de ${monthNames[m - 1]} de ${y}`;
 }
 
 export default function CopyLensStandalonePage() {

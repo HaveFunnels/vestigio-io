@@ -22,7 +22,7 @@ function pageTitle(month: string | undefined): string {
 		"Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 	];
 	if (!y || !m || m < 1 || m > 12) return "Mapa do mês";
-	return `Mapa do mês · ${monthNames[m - 1]} de ${y}`;
+	return `Mapa de ${monthNames[m - 1]} de ${y}`;
 }
 
 export default function MapsStandalonePage() {

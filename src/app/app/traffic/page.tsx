@@ -35,6 +35,14 @@ interface CampaignRow {
 	excessBlind: number;
 	pauseCostActions: number;
 	pauseCostPurchases: number;
+	previousBlindPct: number | null;
+	deltaPoints: number | null;
+	byDevice: {
+		mobile: { sessions: number; blind: number; blindPct: number } | null;
+		desktop: { sessions: number; blind: number; blindPct: number } | null;
+	};
+	spendBrl: number | null;
+	spendWastedBrl: number | null;
 }
 
 interface Statement {
@@ -45,7 +53,13 @@ interface Statement {
 	attributionCoveragePct: number;
 	accountMedianBlindPct: number;
 	campaigns: CampaignRow[];
-	totals: { campaignsAboveFloor: number; arrivedBlind: number; sessions: number };
+	totals: {
+		campaignsAboveFloor: number;
+		arrivedBlind: number;
+		sessions: number;
+		spendBrl: number | null;
+		spendWastedBrl: number | null;
+	};
 	belowFloor: { campaigns: number; sessions: number };
 	control: { sessions: number; blind: number; blindPct: number } | null;
 }
@@ -67,6 +81,14 @@ const VERDICT: Record<CampaignRow["verdict"], { label: string; cls: string }> = 
 
 function n(v: number): string {
 	return v.toLocaleString("pt-BR");
+}
+
+function brl(v: number): string {
+	return v.toLocaleString("pt-BR", {
+		style: "currency",
+		currency: "BRL",
+		maximumFractionDigits: 0,
+	});
 }
 
 export default function TrafficStatementPage() {
@@ -136,6 +158,7 @@ export default function TrafficStatementPage() {
 	const pausePurchases = wasteRows.reduce((n, c) => n + c.pauseCostPurchases, 0);
 	const totalPurchases = data.campaigns.reduce((n, c) => n + c.pauseCostPurchases, 0);
 	const fine = data.campaigns.length - needsDecision.length;
+	const hasSpend = data.totals.spendBrl !== null;
 
 	// The ad-or-page question, answered by the data rather than by a
 	// separate feature: when several wasteful campaigns land on the SAME
@@ -223,9 +246,13 @@ export default function TrafficStatementPage() {
 							<th className="px-3 py-3 text-right font-semibold">comprou</th>
 							<th className="px-3 py-3 text-right font-semibold">não viu nada</th>
 							<th className="px-3 py-3 text-right font-semibold">acima do normal</th>
+							<th className="px-3 py-3 text-right font-semibold">vs janela anterior</th>
 							<th className="px-3 py-3 text-right font-semibold">tempo</th>
 							<th className="px-3 py-3 text-right font-semibold">chegou à ação</th>
 							<th className="px-3 py-3 text-right font-semibold">pausar custa</th>
+							{hasSpend && (
+								<th className="px-3 py-3 text-right font-semibold">gasto perdido</th>
+							)}
 							<th className="px-3 py-3 font-semibold">veredito</th>
 						</tr>
 					</thead>
@@ -241,6 +268,12 @@ export default function TrafficStatementPage() {
 										{c.source}
 										{c.topLandingPath ? ` cai em ${c.topLandingPath}` : ""}
 									</div>
+									{c.byDevice.mobile && c.byDevice.desktop && (
+										<div className="mt-1 text-[11px] text-content-muted">
+											celular {c.byDevice.mobile.blindPct}%, computador{" "}
+											{c.byDevice.desktop.blindPct}%
+										</div>
+									)}
 								</td>
 								<td className="px-3 py-3 text-right tabular-nums text-content-secondary">
 									{n(c.sessions)}
@@ -256,6 +289,29 @@ export default function TrafficStatementPage() {
 										{c.pointsAboveAccount}pt
 									</div>
 								</td>
+								<td className="px-3 py-3 text-right tabular-nums">
+									{c.deltaPoints === null ? (
+										<span className="text-[11px] text-content-faint">nova</span>
+									) : (
+										<>
+											<div
+												className={
+													c.deltaPoints > 2
+														? "text-red-700 dark:text-red-400"
+														: c.deltaPoints < -2
+															? "text-emerald-700 dark:text-emerald-400"
+															: "text-content-secondary"
+												}
+											>
+												{c.deltaPoints > 0 ? "+" : ""}
+												{c.deltaPoints}pt
+											</div>
+											<div className="text-[11px] text-content-muted">
+												era {c.previousBlindPct}%
+											</div>
+										</>
+									)}
+								</td>
 								<td className="px-3 py-3 text-right tabular-nums text-content-secondary">
 									{c.medianDurationS}s
 								</td>
@@ -269,6 +325,16 @@ export default function TrafficStatementPage() {
 										{c.pauseCostPurchases === 1 ? "compra" : "compras"}
 									</div>
 								</td>
+								{hasSpend && (
+									<td className="px-3 py-3 text-right tabular-nums">
+										<div className="text-content">
+											{c.spendWastedBrl === null ? "sem dado" : brl(c.spendWastedBrl)}
+										</div>
+										<div className="text-[11px] text-content-muted">
+											{c.spendBrl === null ? "campanha nova" : `de ${brl(c.spendBrl)}`}
+										</div>
+									</td>
+								)}
 								<td className="px-3 py-3">
 									<span
 										className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${VERDICT[c.verdict].cls}`}
@@ -297,6 +363,12 @@ export default function TrafficStatementPage() {
 						)}
 						.
 					</p>
+					{hasSpend && data.totals.spendWastedBrl !== null && (
+						<p className="mt-2 text-[14px] leading-relaxed text-content">
+							No período, <strong>{brl(data.totals.spendWastedBrl)}</strong> do que você
+							pagou comprou acesso que não viu nada.
+						</p>
+					)}
 					<p className="mt-2 text-[12.5px] text-content-muted">
 						A recomendação desta página é pausar, então o custo de pausar fica junto dela.
 						Se a troca não te parecer boa, não pause: o número está aí para você decidir,

@@ -55,29 +55,75 @@ export async function GET(request: Request) {
 			})
 			.catch(() => null);
 
-		const rows = await prisma.behavioralSessionAggregate.findMany({
-			where: { envId: orgCtx.envId, startedAt: { gte: start, lt: end } },
-			select: { aggregate: true, eventCount: true },
-			take: MAX_ROWS,
-		});
+		// Two windows of equal length: the current one and the one before
+		// it, for the month-over-month comparison. Fetched together
+		// because the second is the same query with a shifted bound.
+		const prevStart = new Date(start.getTime() - days * 24 * 60 * 60 * 1000);
+		const [rows, prevRows] = await Promise.all([
+			prisma.behavioralSessionAggregate.findMany({
+				where: { envId: orgCtx.envId, startedAt: { gte: start, lt: end } },
+				select: { aggregate: true, eventCount: true, userAgent: true },
+				take: MAX_ROWS,
+			}),
+			prisma.behavioralSessionAggregate.findMany({
+				where: { envId: orgCtx.envId, startedAt: { gte: prevStart, lt: start } },
+				select: { aggregate: true, eventCount: true, userAgent: true },
+				take: MAX_ROWS,
+			}),
+		]);
 
-		const parsed: StatementSessionInput[] = [];
-		for (const r of rows) {
-			try {
-				parsed.push({
-					aggregate: JSON.parse(r.aggregate) as Record<string, unknown>,
-					eventCount: r.eventCount,
-				});
-			} catch {
-				// A malformed aggregate drops the session rather than the
-				// request. One bad row must not blank the statement.
+		const parse = (
+			list: { aggregate: string; eventCount: number; userAgent: string | null }[],
+		): StatementSessionInput[] => {
+			const out: StatementSessionInput[] = [];
+			for (const r of list) {
+				try {
+					out.push({
+						aggregate: JSON.parse(r.aggregate) as Record<string, unknown>,
+						eventCount: r.eventCount,
+						userAgent: r.userAgent,
+					});
+				} catch {
+					// A malformed aggregate drops the session rather than the
+					// request. One bad row must not blank the statement.
+				}
 			}
+			return out;
+		};
+		const parsed = parse(rows);
+		const parsedPrev = parse(prevRows);
+
+		// Spend per campaign, when an ad account is connected. The
+		// poller caches it in syncMetadata, so this is a cheap read and
+		// not a Graph call on every page load. Null when nothing is
+		// connected, and the statement then reports counts only.
+		let spendByCampaignId: Map<string, number> | null = null;
+		try {
+			const conn = await prisma.integrationConnection.findFirst({
+				where: { environmentId: orgCtx.envId, provider: "meta_ads", status: "connected" },
+				select: { syncMetadata: true },
+			});
+			if (conn?.syncMetadata) {
+				const meta = JSON.parse(conn.syncMetadata) as {
+					campaigns?: { id: string; spend_30d: number }[];
+				};
+				if (Array.isArray(meta.campaigns) && meta.campaigns.length > 0) {
+					spendByCampaignId = new Map(
+						meta.campaigns.map((c) => [String(c.id), Number(c.spend_30d) || 0]),
+					);
+				}
+			}
+		} catch {
+			// A malformed or absent snapshot drops the money, never the
+			// statement. Counts are the product; spend is the upgrade.
 		}
 
 		const statement = buildTrafficStatement(parsed, {
 			windowStart: start.toISOString().slice(0, 10),
 			windowEnd: end.toISOString().slice(0, 10),
 			conversionModel: profile?.conversionModel ?? null,
+			spendByCampaignId,
+			previous: parsedPrev.length > 0 ? parsedPrev : null,
 		});
 
 		return NextResponse.json({ statement });

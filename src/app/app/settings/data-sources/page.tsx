@@ -758,7 +758,7 @@ export default function DataSourcesPage() {
 		{
 			id: "stripe",
 			title: "Stripe",
-			description: "Revenue intelligence via Stripe Connect — MRR, churn, disputes, refunds, and failed payments.",
+			description: "Revenue intelligence via Stripe Connect: MRR, churn, disputes, refunds, and failed payments.",
 			status: stripeStatus,
 			configurable: true,
 			unlocks: "Revenue data, MRR, churn rate, dispute rate, refund tracking",
@@ -930,7 +930,7 @@ export default function DataSourcesPage() {
 											sessão chega em <span className="font-semibold text-content-secondary">segundos</span>.
 											A camada behavioral (heatmap de jornada, sinais de
 											atrito, drop-off por superfície) começa a aparecer no
-											próximo ciclo de auditoria — <span className="font-semibold text-content-secondary">a cada 6 horas</span>.
+											próximo ciclo de auditoria, <span className="font-semibold text-content-secondary">a cada 6 horas</span>.
 											Se em 24h o status continuar como "a configurar", verifique se o snippet está carregando em todas as páginas (View Source → procure por <code className="rounded bg-surface-inset px-1 font-mono text-[11px]">vestigio.js</code>).
 										</p>
 									</div>
@@ -1049,7 +1049,7 @@ export default function DataSourcesPage() {
 											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Como obter as credenciais Nuvemshop:</p>
 											<ol style={{ color: "#71717a", fontSize: 12, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
 												<li>Acesse o link de instalação do app Vestigio na sua loja Nuvemshop</li>
-												<li>Autorize o app — você será redirecionado de volta com um código de autorização</li>
+												<li>Autorize o app, e você será redirecionado de volta com um código de autorização</li>
 												<li>O sistema troca o código por um <strong style={{ color: "#a1a1aa" }}>access_token</strong> e <strong style={{ color: "#a1a1aa" }}>store_id</strong></li>
 												<li>Copie o <strong style={{ color: "#a1a1aa" }}>Store ID</strong> e o <strong style={{ color: "#a1a1aa" }}>Access Token</strong> nos campos abaixo</li>
 											</ol>
@@ -1187,13 +1187,13 @@ export default function DataSourcesPage() {
 										{metaAdsTokenType === "short_lived" && (
 											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #7f1d1d", backgroundColor: "#450a0a30", color: "#fca5a5", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
 												<svg style={{ width: 14, height: 14, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
-												<span>Limited access — token expires in 1 hour. Please try reconnecting.</span>
+												<span>Limited access: the token expires in 1 hour. Please try reconnecting.</span>
 											</div>
 										)}
 										{metaAdsTokenDaysLeft !== null && metaAdsTokenDaysLeft < 7 && metaAdsTokenType !== "short_lived" && (
 											<div style={{ padding: "8px 12px", borderRadius: 6, border: "1px solid #92400e", backgroundColor: "#78350f30", color: "#fbbf24", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
 												<svg style={{ width: 14, height: 14, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
-												<span>Token expires in {metaAdsTokenDaysLeft} day{metaAdsTokenDaysLeft !== 1 ? "s" : ""} — reconnect to refresh</span>
+												<span>Token expires in {metaAdsTokenDaysLeft} day{metaAdsTokenDaysLeft !== 1 ? "s" : ""}, reconnect to refresh</span>
 											</div>
 										)}
 										{metaAdsError && (
@@ -1231,7 +1231,7 @@ export default function DataSourcesPage() {
 								) : (
 									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
 										<div style={{ padding: "12px 14px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
-											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Manual (System User token) — for technical users:</p>
+											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Manual (System User token), for technical users:</p>
 											<ol style={{ color: "#71717a", fontSize: 12, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
 												<li>Em <a href="https://business.facebook.com/settings" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">Business Settings</a> &rarr; <strong style={{ color: "#a1a1aa" }}>Users &rarr; System Users</strong>, crie um System User</li>
 												<li>Assign o System User ao seu <strong style={{ color: "#a1a1aa" }}>Ad Account</strong> com permissão <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>ads_read</code></li>
@@ -1240,7 +1240,7 @@ export default function DataSourcesPage() {
 											</ol>
 										</div>
 
-										<Field label="Ad Account ID" hint="act_XXXXXXXXXXXXX — o 'act_' é opcional, a gente normaliza">
+										<Field label="Ad Account ID" hint="act_XXXXXXXXXXXXX, e o 'act_' é opcional, a gente normaliza">
 											<input type="text" value={metaAdsAccountId} onChange={(e) => setMetaAdsAccountId(e.target.value)} placeholder="act_123456789012345" style={inputStyle} />
 										</Field>
 										<Field label="System User Access Token" hint="Permanente pra business assets (ou long-lived user token)">
@@ -1328,12 +1328,12 @@ export default function DataSourcesPage() {
 								) : (
 									<div style={{ paddingTop: 16, display: "flex", flexDirection: "column", gap: 14 }}>
 										<div style={{ padding: "12px 14px", borderRadius: 8, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
-											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Manual (own developer token) — for technical users:</p>
+											<p style={{ color: "#a1a1aa", fontSize: 12, fontWeight: 600, marginBottom: 6 }}>Manual (own developer token), for technical users:</p>
 											<ol style={{ color: "#71717a", fontSize: 12, lineHeight: 1.7, margin: 0, paddingLeft: 18 }}>
 												<li>Apply for a <strong style={{ color: "#a1a1aa" }}>Developer Token</strong> em <a href="https://ads.google.com/aw/apicenter" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">Google Ads API Center</a> (basic access serve)</li>
 												<li>Em <a href="https://console.cloud.google.com/apis/credentials" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">Google Cloud Console</a> crie um <strong style={{ color: "#a1a1aa" }}>OAuth 2.0 Client ID</strong> do tipo Desktop App</li>
 												<li>Gere um <strong style={{ color: "#a1a1aa" }}>Refresh Token</strong> via <a href="https://developers.google.com/oauthplayground" style={{ color: "#6366f1" }} target="_blank" rel="noreferrer">OAuth Playground</a> com scope <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>https://www.googleapis.com/auth/adwords</code></li>
-												<li>Pegue o <strong style={{ color: "#a1a1aa" }}>Customer ID</strong> em Google Ads (formato <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>123-456-7890</code> — remova os hífens)</li>
+												<li>Pegue o <strong style={{ color: "#a1a1aa" }}>Customer ID</strong> em Google Ads (formato <code style={{ backgroundColor: "#27272a", padding: "1px 4px", borderRadius: 3, fontSize: 11 }}>123-456-7890</code> , remova os hífens)</li>
 												<li>Se você usa MCC, preencha também o <strong style={{ color: "#a1a1aa" }}>Login Customer ID</strong> (o id da MCC manager)</li>
 											</ol>
 										</div>
@@ -1363,7 +1363,7 @@ export default function DataSourcesPage() {
 
 										<div style={{ padding: "8px 12px", borderRadius: 6, backgroundColor: "#09090b", border: "1px solid #27272a" }}>
 											<p style={{ color: "#71717a", fontSize: 11, lineHeight: 1.5 }}>
-												Apenas leitura — scope <strong style={{ color: "#a1a1aa" }}>adwords</strong>. Vestigio nunca modifica campanhas. Credenciais criptografadas com AES-256-GCM.
+												Apenas leitura, scope <strong style={{ color: "#a1a1aa" }}>adwords</strong>. Vestigio nunca modifica campanhas. Credenciais criptografadas com AES-256-GCM.
 											</p>
 										</div>
 

@@ -310,6 +310,11 @@ export const POST = withErrorTracking(async function POST(request: Request) {
           ad_spend_30d: metaPollResult.data.ad_spend_30d,
           currency: metaPollResult.data.currency,
           creative_count: metaPollResult.data.creatives.length,
+          // Spend per campaign, which the traffic statement joins to the
+          // pixel's own campaign id. Capped at 200 so a large account
+          // cannot bloat the cached blob; the statement only reports
+          // campaigns above its session floor anyway.
+          campaigns: metaPollResult.data.campaigns.slice(0, 200),
           synced_at: new Date().toISOString(),
         },
         error: metaPollResult.errors[0] || undefined,
@@ -352,6 +357,17 @@ export const POST = withErrorTracking(async function POST(request: Request) {
       status: syncResult.ok ? "connected" : "error",
       syncError: syncResult.ok ? null : syncResult.error,
       lastSyncedAt: syncResult.ok ? new Date() : connection.lastSyncedAt,
+      // The summary was being returned to the caller and thrown away.
+      // syncMetadata was written once at the OAuth callback and never
+      // again, so anything reading it saw the state of the account on
+      // the day it was connected. The column's own comment says it is
+      // "cached by poller", which is what this makes true.
+      //
+      // Only on success: a failed sync must not overwrite good cached
+      // data with nothing.
+      ...(syncResult.ok && syncResult.summary
+        ? { syncMetadata: JSON.stringify(syncResult.summary) }
+        : {}),
     },
   });
 

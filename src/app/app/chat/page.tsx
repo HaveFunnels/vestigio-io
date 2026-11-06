@@ -2066,7 +2066,7 @@ function buildVerifyPrompt(item: ChatContextItem, t: any): string {
 	const strategy = item.verification_strategy || "unclassified";
 	const steps = Array.isArray(item.remediation_steps) && item.remediation_steps.length > 0
 		? item.remediation_steps.map((s, i) => `  ${i + 1}. ${s}`).join("\n")
-		: "  (none authored yet — propose remediation from first principles)";
+		: "  (none authored yet, propose remediation from first principles)";
 	return t("verify.prompts.seed", {
 		title: item.title,
 		id: item.id,

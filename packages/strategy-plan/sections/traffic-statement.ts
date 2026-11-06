@@ -101,6 +101,10 @@ export const SAW_SOMETHING_MILESTONE = 25;
  */
 export const ABSOLUTE_BLIND_FLOOR = 45;
 
+/** How far above the account's own median a row has to sit before it
+ *  counts as unusual for this account rather than ordinary for it. */
+export const POINTS_ABOVE_MEDIAN = 10;
+
 /** Above this a rate stops being plausible behaviour and starts
  *  looking like broken measurement, so the row says so instead of
  *  recommending a cut. Four reviewers read the old 99.8% and 100%
@@ -266,6 +270,22 @@ export interface TrafficStatement {
 	attributionCoveragePct: number;
 	/** The account's own median no-scroll rate, the comparison basis. */
 	accountMedianBlindPct: number;
+	/**
+	 * The numbers the verdict actually used, so the page can declare
+	 * its method without the text drifting from the behaviour.
+	 *
+	 * A reviewer who audits financial statements returned the document
+	 * over undeclared criteria, and the same reviewer would have
+	 * returned it again over a declaration that no longer matched the
+	 * code. Shipping the thresholds makes that impossible.
+	 */
+	thresholds: {
+		absoluteBlindPct: number;
+		pointsAboveMedian: number;
+		implausibleBlindPct: number;
+		minSessions: number;
+		minEvents: number;
+	};
 	campaigns: CampaignRow[];
 	/** Totals across campaigns above the session floor. */
 	totals: {
@@ -662,7 +682,7 @@ export function buildTrafficStatement(
 			// now be bad in absolute terms AND unusual for this
 			// account, which means a healthy account can and should
 			// produce an empty table.
-			const unusual = points >= 10;
+			const unusual = points >= POINTS_ABOVE_MEDIAN;
 			const bad = blindPct >= ABSOLUTE_BLIND_FLOOR;
 			const verdict: CampaignRow["verdict"] =
 				blindPct >= IMPLAUSIBLE_BLIND_PCT
@@ -758,6 +778,13 @@ export function buildTrafficStatement(
 		measuredSessions: measured,
 		attributionCoveragePct: measured > 0 ? Math.round((1000 * attributed) / measured) / 10 : 0,
 		accountMedianBlindPct: Math.round(accountMedian * 10) / 10,
+		thresholds: {
+			absoluteBlindPct: ABSOLUTE_BLIND_FLOOR,
+			pointsAboveMedian: POINTS_ABOVE_MEDIAN,
+			implausibleBlindPct: IMPLAUSIBLE_BLIND_PCT,
+			minSessions: floor,
+			minEvents: MIN_EVENTS_INTERACTIVE,
+		},
 		campaigns,
 		totals: {
 			campaignsAboveFloor: above.length,

@@ -54,6 +54,13 @@ interface Statement {
 	measuredSessions: number;
 	attributionCoveragePct: number;
 	accountMedianBlindPct: number;
+	thresholds: {
+		absoluteBlindPct: number;
+		pointsAboveMedian: number;
+		implausibleBlindPct: number;
+		minSessions: number;
+		minEvents: number;
+	};
 	campaigns: CampaignRow[];
 	totals: {
 		campaignsAboveFloor: number;
@@ -292,20 +299,26 @@ export default function TrafficStatementPage() {
 						</p>
 						<p>
 							<strong className="text-content-secondary">cortar ou corrigir:</strong> uma
-							campanha precisa estar acima de 45% em termos absolutos E 10 pontos acima da
+							campanha precisa estar acima de {pct(data.thresholds.absoluteBlindPct)}% em
+							termos absolutos E {pct(data.thresholds.pointsAboveMedian)} pontos acima da
 							mediana da conta. Se ainda produz compra, o veredito é corrigir, nunca
-							cortar. Conta saudável sai daqui sem nenhuma linha, e isso é o
-							comportamento correto.
+							cortar. Conta saudável sai daqui sem nenhuma linha, e isso é o comportamento
+							correto. Acima de {pct(data.thresholds.implausibleBlindPct)}% a linha vira
+							"medição suspeita" em vez de recomendação, porque taxa tão alta costuma ser
+							instrumento quebrado, não desperdício.
 						</p>
 						<p>
 							<strong className="text-content-secondary">o que não é medido:</strong>{" "}
 							ligação telefônica, venda por DM e conversa que começa fora do site. Se o
-							seu negócio fecha por telefone, este extrato mede a parte menor dele.
+							seu negócio fecha por telefone, este extrato mede a parte menor dele. No
+							Google, a linha é a campanha e não o termo de busca, então cliente e
+							curioso aparecem somados dentro da mesma campanha.
 						</p>
 						<p>
-							Sessões com menos de 3 eventos são descartadas. Campanha com menos de 300
-							acessos não entra, porque abaixo disso a taxa é ruído. Tudo aqui é contagem
-							direta, não estimativa.
+							Sessões com menos de {data.thresholds.minEvents} eventos são descartadas.
+							Campanha com menos de {n(data.thresholds.minSessions)} acessos não entra na
+							tabela de campanha, porque abaixo disso a taxa é ruído, e aparece somada na
+							visão por página. Tudo aqui é contagem direta, não estimativa.
 						</p>
 					</div>
 				)}

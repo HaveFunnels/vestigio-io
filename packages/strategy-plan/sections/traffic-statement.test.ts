@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
 	buildTrafficStatement,
 	decodeCampaignName,
+	ABSOLUTE_BLIND_FLOOR,
+	IMPLAUSIBLE_BLIND_PCT,
+	POINTS_ABOVE_MEDIAN,
 	sawNothing,
 	shortCampaignName,
 	deviceOf,
@@ -1000,5 +1003,28 @@ describe("spend joins by name as well as by id", () => {
 		});
 		expect(st.campaigns[0].spendBrl).toBeNull();
 		expect(st.campaigns[0].spendWastedBrl).toBeNull();
+	});
+});
+
+describe("the declared method cannot drift from the behaviour", () => {
+	it("ships the thresholds the verdict actually used", () => {
+		// The page prints these numbers as its declaration of method.
+		// Hardcoding them in the copy meant the declaration could
+		// silently stop being true, which is the same class of defect
+		// as not declaring them at all.
+		const st = buildTrafficStatement(many(400), WIN);
+		expect(st.thresholds).toEqual({
+			absoluteBlindPct: ABSOLUTE_BLIND_FLOOR,
+			pointsAboveMedian: POINTS_ABOVE_MEDIAN,
+			implausibleBlindPct: IMPLAUSIBLE_BLIND_PCT,
+			minSessions: MIN_SESSIONS_PER_CAMPAIGN,
+			// 3, the same bot gate the friction measurement uses.
+			minEvents: 3,
+		});
+	});
+
+	it("reports the floor actually in force, not the default", () => {
+		const st = buildTrafficStatement(many(400), { ...WIN, minSessions: 120 });
+		expect(st.thresholds.minSessions).toBe(120);
 	});
 });

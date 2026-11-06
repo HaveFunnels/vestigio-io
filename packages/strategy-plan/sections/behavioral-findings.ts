@@ -39,6 +39,7 @@
 // ──────────────────────────────────────────────
 
 import type { FindingProjection } from "../../projections/types";
+import { measuredMagnitude, type MeasuredMagnitude } from "../measured-magnitude";
 import type { FrictionPageStats, MeasuredFrictionOutput } from "./measured-friction";
 
 /**
@@ -157,6 +158,14 @@ export interface BehavioralFindingInput {
 	friction: MeasuredFrictionOutput | null | undefined;
 	windowStart: string;
 	windowEnd: string;
+	/** Declared monthly revenue for THIS environment, not the
+	 *  organization's. BusinessProfile is per-org and one org here owns
+	 *  both a store and a SaaS, so an org-scoped figure would price the
+	 *  store with the SaaS's numbers. Null when undeclared, and the
+	 *  magnitude is then omitted rather than invented. */
+	monthlyRevenueBrl?: number | null;
+	/** Total sessions the window measured, the denominator. */
+	measuredSessions?: number | null;
 }
 
 /** Why a page produced no finding — returned so a dry run can explain
@@ -237,6 +246,21 @@ function countFor(pg: FrictionPageStats, kind: FrictionKind): number {
  * per-page detail survives; only the ability to resolve one page
  * independently of another is deferred.
  */
+/** Magnitude for a measured finding, or null. Deliberately NOT written
+ *  into impact.midpoint: openLossExposure sums that column, and mixing
+ *  a measured magnitude into a heuristic sum would double-count the
+ *  revenue that overlapping findings each describe. */
+function magnitudeFor(
+	input: BehavioralFindingInput,
+	affectedSessions: number,
+): MeasuredMagnitude | null {
+	return measuredMagnitude(
+		affectedSessions,
+		input.measuredSessions ?? input.friction?.sampleSessions ?? null,
+		input.monthlyRevenueBrl ?? null,
+	);
+}
+
 export function buildBehavioralFindings(
 	input: BehavioralFindingInput,
 ): BehavioralFindingsResult {
@@ -310,6 +334,10 @@ export function buildBehavioralFindings(
 			// and may never assert why.
 			basis_type: "measured",
 			source_url: lead.pg.path,
+			// Sessions that actually hit this friction, not every session
+			// on the page: the magnitude has to describe the measured
+			// population and nothing wider.
+			measured_magnitude: magnitudeFor(input, lead.pg.sessionsWithFriction),
 			pack: "behavioral",
 			severity: severityFor(lead.pg.frictionRatePct, lead.pg.sessionsWithFriction),
 			polarity: "negative",
@@ -379,6 +407,7 @@ export function buildBehavioralFindings(
 					.join(", ")}. Contagem direta do pixel, não estimativa.`,
 			basis_type: "measured",
 			source_url: lead.path,
+			measured_magnitude: magnitudeFor(input, dup.totalSessions),
 			root_cause:
 				`Escolha um endereço como o oficial para "${dup.label}", aponte os outros ` +
 				`${others} para ele com redirecionamento permanente e atualize os links de ` +

@@ -240,3 +240,99 @@ describe("measured findings arrive with text, not undefined", () => {
 		}
 	});
 });
+
+describe("measured magnitude, and where it must not go", () => {
+	const WIN = { windowStart: "2026-10-06", windowEnd: "2026-11-05" };
+	const REV = 198_000;
+	const SESS = 65_190;
+
+	function input(extra: Record<string, unknown>) {
+		return {
+			friction: {
+				basis: "pixel_measured",
+				windowStart: WIN.windowStart,
+				windowEnd: WIN.windowEnd,
+				sampleSessions: 55_015,
+				pages: [],
+				duplicateEntities: [],
+				...extra,
+			},
+			monthlyRevenueBrl: REV,
+			measuredSessions: SESS,
+			...WIN,
+		} as unknown as Parameters<typeof buildBehavioralFindings>[0];
+	}
+
+	const page = {
+		path: "/c/NX-1",
+		label: "Checkout",
+		sessions: 7_167,
+		sessionsWithFriction: 2_710,
+		frictionRatePct: 37.8,
+		deadClicks: 1_289,
+		hesitationsNearCta: 2_984,
+		inputAbandons: 2_382,
+		formRetries: 88,
+		backtracks: 32,
+	};
+
+	it("prices the measured checkout friction the plan published at R$ 0", () => {
+		const { findings } = buildBehavioralFindings(input({ pages: [page] }));
+		const f = findings[0] as unknown as Record<string, unknown>;
+		const m = f.measured_magnitude as { revenueAtStakeBrl: number; share: number };
+		expect(m).toBeTruthy();
+		// 2,710 of 65,190 sessions at 198,000/65,190 per session.
+		expect(m.revenueAtStakeBrl).toBe(8_231);
+		expect(m.share).toBeCloseTo(0.0416, 3);
+	});
+
+	it("NEVER writes the magnitude into impact.midpoint", () => {
+		// openLossExposure sums impactMidpoint. Putting a measured
+		// magnitude there would mix it into a heuristic total and
+		// double-count revenue that overlapping findings each describe.
+		// It would also push the capped exposure straight to the 40%
+		// ceiling, which is the failure this whole approach avoids.
+		const { findings } = buildBehavioralFindings(
+			input({
+				pages: [page],
+				duplicateEntities: [
+					{
+						label: "Kit",
+						totalSessions: 37_590,
+						paths: [
+							{ path: "/products/a", sessions: 25_665 },
+							{ path: "/products/b", sessions: 9_643 },
+						],
+					},
+				],
+			}),
+		);
+		expect(findings.length).toBeGreaterThan(1);
+		for (const f of findings) {
+			expect(f.impact.midpoint, `${f.inference_key} leaked into the exposure sum`).toBe(0);
+			expect(f.impact.monthly_range.min).toBe(0);
+			expect(f.impact.monthly_range.max).toBe(0);
+		}
+	});
+
+	it("uses the affected population, not every session on the page", () => {
+		const { findings } = buildBehavioralFindings(input({ pages: [page] }));
+		const m = (findings[0] as unknown as Record<string, unknown>).measured_magnitude as {
+			affectedSessions: number;
+		};
+		// 2,710 sessions hit friction; 7,167 merely visited.
+		expect(m.affectedSessions).toBe(2_710);
+		expect(m.affectedSessions).not.toBe(7_167);
+	});
+
+	it("omits the magnitude when revenue was never declared", () => {
+		const { findings } = buildBehavioralFindings({
+			...input({ pages: [page] }),
+			monthlyRevenueBrl: null,
+		} as unknown as Parameters<typeof buildBehavioralFindings>[0]);
+		const f = findings[0] as unknown as Record<string, unknown>;
+		// Null, not a fallback. A magnitude built on a constant is the
+		// defect this replaces.
+		expect(f.measured_magnitude).toBeNull();
+	});
+});

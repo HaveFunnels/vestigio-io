@@ -288,10 +288,22 @@ export async function generatePlan(
 			const { latestComprehensiveCycleId } = await import("./honest-aggregates");
 			const cycleId = await latestComprehensiveCycleId(prisma, ctx.environmentId, ctx.monthEnd);
 			if (cycleId) {
+				// Env-scoped, not org-scoped. declaredMonthlyRevenue
+				// already guards the sibling case: this org owns both a
+				// store and a SaaS, and the org figure would price the
+				// store with the SaaS's revenue.
+				const { declaredMonthlyRevenue } = await import("./honest-aggregates");
+				const monthlyRevenueBrl = await declaredMonthlyRevenue(prisma, ctx.environmentId);
 				const { findings } = buildBehavioralFindings({
 					friction,
 					windowStart: friction.windowStart,
 					windowEnd: friction.windowEnd,
+					monthlyRevenueBrl,
+					// sessionsConsidered is the funnel's own denominator, so the
+					// share a finding touches is computed against the same
+					// population the funnel reports.
+					measuredSessions:
+						behavioral?.funnel?.sessionsConsidered ?? friction.sampleSessions,
 				});
 				if (findings.length > 0) {
 					const { PrismaFindingStore } = await import("../projections/prisma-finding-store");

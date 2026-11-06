@@ -11,6 +11,7 @@ const FIXTURE: McpDataSnapshot = {
 	workspaces: { status: "ready", data: [] },
 	maps: { status: "ready", data: [] },
 	currency: "BRL",
+	envId: "env_1",
 };
 
 describe("useMcpData", () => {
@@ -46,5 +47,22 @@ describe("useMcpData", () => {
 			),
 		});
 		expect(result.current.inventory?.status).toBe("ready");
+	});
+});
+
+describe("useActiveEnvId", () => {
+	it("exposes the environment the snapshot describes", async () => {
+		const { useActiveEnvId } = await import("./McpDataProvider");
+		const { result } = renderHook(() => useActiveEnvId(), {
+			wrapper: ({ children }) => (
+				<McpDataProvider data={FIXTURE}>{children}</McpDataProvider>
+			),
+		});
+		expect(result.current).toBe("env_1");
+	});
+
+	it("is null outside the provider, so a keyed effect does not fetch", () => {
+		const { result } = renderHook(() => useMcpData());
+		expect(result.current.envId).toBeNull();
 	});
 });

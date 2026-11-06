@@ -126,6 +126,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 				workspaces: cached.workspaces.length === 0 ? { status: "empty" } : { status: "ready", data: cached.workspaces },
 				maps: cached.maps.length === 0 ? { status: "empty" } : { status: "ready", data: cached.maps },
 				currency: orgCtx.currency,
+			envId: orgCtx.envId ?? null,
 			};
 		} else if (
 			orgCtx.envId &&
@@ -151,6 +152,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 				workspaces: { status: "loading" },
 				maps: { status: "loading" },
 				currency: orgCtx.currency,
+			envId: orgCtx.envId ?? null,
 			};
 		} else {
 			// Legacy path: bootstrap MCP from evidence (slow but works for
@@ -204,6 +206,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 						workspaces: { status: "loading" },
 						maps: { status: "loading" },
 						currency: orgCtx.currency,
+			envId: orgCtx.envId ?? null,
 					};
 				} else {
 					mcpData = {
@@ -213,6 +216,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 						workspaces: loadWorkspaces(),
 						maps: loadAllMaps(),
 						currency: orgCtx.currency,
+			envId: orgCtx.envId ?? null,
 					};
 				}
 			} catch (err) {
@@ -226,6 +230,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 					workspaces: { status: "error", message: reason },
 					maps: { status: "error", message: reason },
 					currency: orgCtx.currency,
+			envId: orgCtx.envId ?? null,
 				};
 			}
 		}
@@ -253,6 +258,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 			workspaces: { status: "not_ready", reason: "Admin route — no MCP context." },
 			maps: { status: "not_ready", reason: "Admin route — no MCP context." },
 			currency: orgCtx.currency,
+			envId: orgCtx.envId ?? null,
 		};
 	}
 

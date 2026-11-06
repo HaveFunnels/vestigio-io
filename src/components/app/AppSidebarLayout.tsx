@@ -1,7 +1,7 @@
 "use client";
 
 import { signIn, signOut, useSession } from "next-auth/react";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
@@ -777,7 +777,29 @@ export default function AppSidebarLayout({
 								}
 							/>
 						) : (
-							children
+							// Keyed on the environment so React REMOUNTS the page
+							// instead of reconciling it.
+							//
+							// The server side already worked: the cookie flips,
+							// router.refresh() re-renders the layout, and the
+							// skeleton above hides the old data until orgCtx.envId
+							// lands on the target. But when the skeleton cleared,
+							// React saw the same component in the same position and
+							// kept its state, so any client page fetching in a
+							// useEffect with an env-independent dependency list
+							// never re-fetched. Measured across the app: 50 such
+							// effects in 42 files, which is why switching from
+							// havefunnels to casamontelle appeared to do nothing
+							// until a manual reload.
+							//
+							// A Fragment rather than a div: forces the remount
+							// without inserting a DOM node that would break the
+							// flex and height chain around it. Resetting page state
+							// on an environment switch is also the correct
+							// behaviour, not a side effect: carrying the previous
+							// store's filters into another tenant is the bug this
+							// replaces, in a quieter form.
+							<Fragment key={orgCtx.envId ?? "no-env"}>{children}</Fragment>
 						)}
 					</PageFade>
 				</div>

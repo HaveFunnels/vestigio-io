@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/console/PageHeader";
+import { useActiveEnvId } from "@/components/app/McpDataProvider";
 
 // ──────────────────────────────────────────────
 // Extrato de tráfego pago. The first v2 surface.
@@ -70,8 +71,17 @@ export default function TrafficStatementPage() {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
+	// Keyed on the active environment, not on []. Switching environments
+	// sets a cookie and calls router.refresh(), which re-renders the
+	// server layout and delivers a new envId here; an effect with an
+	// empty dependency list would keep showing the previous store's
+	// statement until a manual reload.
+	const envId = useActiveEnvId();
+
 	useEffect(() => {
 		let alive = true;
+		setLoading(true);
+		setError(null);
 		fetch("/api/traffic-statement")
 			.then((r) => r.json())
 			.then((body) => {
@@ -84,7 +94,7 @@ export default function TrafficStatementPage() {
 		return () => {
 			alive = false;
 		};
-	}, []);
+	}, [envId]);
 
 	if (loading) {
 		// Shimmer, never a spinner. House rule.

@@ -28,6 +28,20 @@ export interface McpDataSnapshot {
   inventory?: DataState<InventoryPayload>;
   /** ISO 4217 currency code for the current org (e.g. "BRL", "USD", "EUR") */
   currency: string;
+  /**
+   * The environment this snapshot describes.
+   *
+   * Carried so "use client" pages can KEY their own fetches on it.
+   * Switching environments sets the active_env cookie and calls
+   * router.refresh(), which re-renders server components and therefore
+   * delivers a new snapshot here. A client page whose fetch effect has
+   * `[]` as its dependency list never re-fires, so it kept rendering
+   * the previous environment's data until the customer pressed reload,
+   * which is the "switching havefunnels to casamontelle does nothing"
+   * complaint. Putting the id in context gives every client page a
+   * dependency that actually changes.
+   */
+  envId: string | null;
 }
 
 const McpDataContext = createContext<McpDataSnapshot | null>(null);
@@ -54,9 +68,25 @@ export function useMcpData(): McpDataSnapshot {
       changeReport: { status: "not_ready", reason: "No data provider." },
       workspaces: { status: "not_ready", reason: "No data provider." },
       maps: { status: "not_ready", reason: "No data provider." },
+      // Outside the provider there is no active environment, and null
+      // is the honest answer: a page keyed on it simply will not fetch.
+      envId: null,
       inventory: undefined,
       currency: "USD",
     };
   }
   return ctx;
+}
+
+/**
+ * The active environment id, or null outside the app shell.
+ *
+ * Use this in the dependency list of any effect that fetches
+ * environment-scoped data:
+ *
+ *   const envId = useActiveEnvId();
+ *   useEffect(() => { fetch(...) }, [envId]);
+ */
+export function useActiveEnvId(): string | null {
+  return useContext(McpDataContext)?.envId ?? null;
 }

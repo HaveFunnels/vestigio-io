@@ -1319,4 +1319,36 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	// Don't run on boot — first digest fires after 24h
 	setInterval(runDigest, DIGEST_INTERVAL_MS);
 	console.log("✓ Daily digest cron registered (24h interval)");
+
+	// ── Weekly traffic-move alert ──
+	//
+	// The twenty-persona review scored "would you pay again in month
+	// two" lowest in sixteen of twenty responses, and every one of them
+	// gave the same reason: month two shows the same table. This is the
+	// part that is only true this week.
+	//
+	// Monday because that is literally what was asked for: the operator
+	// with the biggest spend of the twenty described his own ritual as a
+	// Monday traffic meeting and said a monthly page "não chega na hora
+	// da decisão". Checked hourly and gated on the weekday, the same
+	// shape the monthly strategy-plan cron uses, so a deploy at any hour
+	// of Monday still catches it. The dedupe tag carries the ISO week,
+	// so it fires once per environment per week regardless of ticks.
+	const { sendTrafficMoveAlerts } = await import("./libs/traffic-move-alert");
+	const runTrafficMoves = async () => {
+		// 1 = Monday, in the server's local zone, which is America/Sao_Paulo
+		// for this deployment.
+		if (new Date().getDay() !== 1) return;
+		await withLeadership("traffic-move-alert", { ttlSec: 600 }, async () => {
+			try {
+				const { sent, skipped } = await sendTrafficMoveAlerts();
+				console.log(`[traffic-move] sent=${sent} skipped=${skipped}`);
+			} catch (err) {
+				console.error("[traffic-move] pass failed:", err);
+			}
+		});
+	};
+	const TRAFFIC_MOVE_INTERVAL_MS = 60 * 60 * 1000;
+	setInterval(runTrafficMoves, TRAFFIC_MOVE_INTERVAL_MS);
+	console.log("✓ Weekly traffic-move cron registered (hourly tick, fires Mondays)");
 }

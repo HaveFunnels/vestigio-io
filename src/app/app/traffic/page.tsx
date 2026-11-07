@@ -71,6 +71,15 @@ interface Statement {
 		spendWastedBrl: number | null;
 	};
 	belowFloor: { campaigns: number; sessions: number };
+	searchTerms: {
+		term: string;
+		sessions: number;
+		arrivedBlind: number;
+		arrivedBlindPct: number;
+		reachedAction: number;
+		purchases: number;
+		campaigns: number;
+	}[];
 	landingPages: {
 		path: string;
 		sessions: number;
@@ -135,8 +144,50 @@ function brl(v: number): string {
 	});
 }
 
+interface TrafficMove {
+	kind: "campaign" | "page" | "term";
+	label: string;
+	nowPct: number;
+	beforePct: number;
+	deltaPoints: number;
+	nowSessions: number;
+	beforeSessions: number;
+	direction: "worse" | "better";
+	samePage: boolean;
+	purchases: number;
+	path: string | null;
+}
+
+/** Several campaigns moving the same way on one page is one fact. The
+ *  same rule the statement already applies to levels, applied to
+ *  changes. Mirrors sharedPageMove() in the package; kept local so the
+ *  client bundle does not pull the engine. */
+function sharedPath(moves: TrafficMove[]): { path: string; count: number } | null {
+	const byPath = new Map<string, TrafficMove[]>();
+	for (const m of moves) {
+		if (m.kind !== "campaign" || !m.path) continue;
+		const list = byPath.get(m.path) ?? [];
+		list.push(m);
+		byPath.set(m.path, list);
+	}
+	let best: { path: string; count: number } | null = null;
+	for (const [path, list] of byPath) {
+		const worse = list.filter((m) => m.direction === "worse").length;
+		if (list.length < 2 || (worse !== list.length && worse !== 0)) continue;
+		if (!best || list.length > best.count) best = { path, count: list.length };
+	}
+	return best;
+}
+
+const MOVE_KIND: Record<TrafficMove["kind"], string> = {
+	campaign: "campanha",
+	page: "página",
+	term: "termo",
+};
+
 export default function TrafficStatementPage() {
 	const [data, setData] = useState<Statement | null>(null);
+	const [moves, setMoves] = useState<TrafficMove[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -155,8 +206,10 @@ export default function TrafficStatementPage() {
 			.then((r) => r.json())
 			.then((body) => {
 				if (!alive) return;
-				if (body.statement) setData(body.statement);
-				else setError(body.reason ?? "sem dados");
+				if (body.statement) {
+					setData(body.statement);
+					setMoves(Array.isArray(body.moves) ? body.moves : []);
+				} else setError(body.reason ?? "sem dados");
 			})
 			.catch(() => alive && setError("falha ao carregar"))
 			.finally(() => alive && setLoading(false));
@@ -242,6 +295,71 @@ export default function TrafficStatementPage() {
 					>
 						Conectar conta de anúncio
 					</a>
+				</div>
+			)}
+
+			{/* What moved, above the statement. Sixteen of twenty reviewers
+			    scored "would you pay again in month two" lowest, for one
+			    reason they all gave in the same words: month two shows
+			    the same table. This is the part that is only true this
+			    week. */}
+			{moves.length > 0 && (
+				<div className="mb-6 overflow-hidden rounded-2xl border border-edge">
+					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+						O que mudou nos últimos 7 dias
+					</div>
+					{/* The conclusion before its evidence. Three campaigns
+					    worsening on one page is what the live account
+					    produced, and listing them as three problems invites
+					    three investigations of one cause. */}
+					{(() => {
+						const grouped = sharedPath(moves);
+						if (!grouped) return null;
+						return (
+							<p className="border-b border-edge bg-amber-500/[0.05] px-4 py-3 text-[13.5px] leading-relaxed text-content">
+								<strong>{grouped.count} campanhas</strong> que caem em{" "}
+								<span className="font-mono text-[12px]">{grouped.path}</span> mudaram na
+								mesma direção nesta semana. Quando campanhas diferentes se movem no mesmo
+								lugar, o problema tende a ser a página, não os anúncios.
+							</p>
+						);
+					})()}
+					<ul className="divide-y divide-edge">
+						{moves.slice(0, 6).map((m) => (
+							<li key={`${m.kind}:${m.label}`} className="px-4 py-3">
+								<p className="text-[13.5px] leading-relaxed text-content">
+									<span
+										className={
+											m.direction === "worse"
+												? "font-semibold text-red-700 dark:text-red-400"
+												: "font-semibold text-emerald-700 dark:text-emerald-400"
+										}
+									>
+										{m.direction === "worse" ? "piorou" : "melhorou"}{" "}
+										{pct(Math.abs(m.deltaPoints))} pontos
+									</span>
+									{" na "}
+									{MOVE_KIND[m.kind]}{" "}
+									<span className={m.kind === "campaign" ? "" : "font-mono text-[12px]"}>
+										{m.label}
+									</span>
+									{": estava em "}
+									{pct(m.beforePct)}% e está em {pct(m.nowPct)}%.
+								</p>
+								<p className="mt-0.5 text-[11.5px] text-content-muted">
+									{n(m.nowSessions)} acessos nesta semana contra {n(m.beforeSessions)} na
+									anterior
+									{m.kind === "campaign" && m.samePage && ", e cai na mesma página de antes"}
+									{m.purchases > 0 && `, com ${n(m.purchases)} compras`}.
+								</p>
+							</li>
+						))}
+					</ul>
+					{moves.length > 6 && (
+						<div className="border-t border-edge px-4 py-2 text-[11.5px] text-content-muted">
+							Outros {moves.length - 6} movimentos menores não estão listados.
+						</div>
+					)}
 				</div>
 			)}
 
@@ -359,6 +477,42 @@ export default function TrafficStatementPage() {
 													de {n(pg.sessions)}
 												</span>
 											</div>
+										</div>
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
+
+			{/* The term view. Empty for a feed advertiser, which is every
+			    account measured so far, so it simply does not render.
+			    Two reviewers whose whole budget is search named this as
+			    the question they arrived with, and a campaign row
+			    averages a buyer and a browser into nothing. */}
+			{data.searchTerms.length > 0 && (
+				<div className="mb-6 overflow-hidden rounded-2xl border border-edge">
+					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+						Por termo de busca
+					</div>
+					<table className="w-full border-collapse text-[13px]">
+						<tbody>
+							{data.searchTerms.slice(0, 12).map((t) => (
+								<tr key={t.term} className="border-t border-edge first:border-t-0">
+									<td className="px-4 py-2.5">
+										<div className="text-content">{t.term}</div>
+										<div className="text-[11px] text-content-muted">
+											{n(t.sessions)} acessos, {n(t.reachedAction)} chegaram à ação,{" "}
+											{n(t.purchases)} {t.purchases === 1 ? "compra" : "compras"}
+										</div>
+									</td>
+									<td className="w-[30%] px-4 py-2.5 text-right tabular-nums">
+										<div className="text-content">
+											<strong>{pct(t.arrivedBlindPct)}%</strong> não fez nada
+										</div>
+										<div className="text-[11px] text-content-muted">
+											{t.campaigns === 1 ? "1 campanha" : `${t.campaigns} campanhas`}
 										</div>
 									</td>
 								</tr>

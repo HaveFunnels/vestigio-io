@@ -105,6 +105,11 @@ export const ABSOLUTE_BLIND_FLOOR = 45;
  *  counts as unusual for this account rather than ordinary for it. */
 export const POINTS_ABOVE_MEDIAN = 10;
 
+/** Session floor for a search term. Lower than a campaign's, because a
+ *  term is long-tail by nature and the campaign floor would empty the
+ *  view entirely. */
+export const MIN_SESSIONS_PER_TERM = 60;
+
 /** Above this a rate stops being plausible behaviour and starts
  *  looking like broken measurement, so the row says so instead of
  *  recommending a cut. Four reviewers read the old 99.8% and 100%
@@ -325,6 +330,22 @@ export interface TrafficStatement {
 	 * section was also the part three reviewers named as the best
 	 * thing on the statement, so this promotes what already worked.
 	 */
+	/**
+	 * Paid traffic grouped by the search term, when the platform passes
+	 * one. Empty for a feed advertiser, which is every account measured
+	 * so far. This is the line that separates a buyer from a browser
+	 * inside a single campaign, and it is the question the two
+	 * search-only reviewers arrived with.
+	 */
+	searchTerms: {
+		term: string;
+		sessions: number;
+		arrivedBlind: number;
+		arrivedBlindPct: number;
+		reachedAction: number;
+		purchases: number;
+		campaigns: number;
+	}[];
 	landingPages: {
 		path: string;
 		sessions: number;
@@ -481,6 +502,301 @@ export function shortCampaignName(raw: string): string {
 	return copies > 0 ? `${base} (cópia ${copies})` : base;
 }
 
+/**
+ * The search term the visitor typed, when the ad platform passes it.
+ *
+ * Two reviewers whose entire budget is Google search named the same
+ * question as the one they came with, and neither could answer it from
+ * a campaign-level table. The lawyer: someone searching "calculo de
+ * rescisao gratis" becomes a free consultation and never a contract,
+ * while someone searching "entrar com acao contra empresa" signs. The
+ * parts distributor: a mechanic searches the exact part number, a
+ * browser searches "pastilha de freio preco". In both cases the two
+ * live inside ONE campaign and cancel each other out when aggregated,
+ * which is why the campaign row could not answer it.
+ *
+ * No pixel change is needed. Google Ads' own ValueTrack convention
+ * puts the keyword in utm_term, and the pixel already stores the whole
+ * landing URL, query string included. So the term is read out of data
+ * that has been collected all along.
+ *
+ * Returns null when the URL carries no term, which is every session on
+ * the only instrumented account today: it runs Meta and TikTok, and
+ * neither passes one. Verified against 3.000 real landing URLs from
+ * that account, where the parser correctly finds nothing rather than
+ * inventing a term from the path.
+ */
+export function searchTermOf(landingUrl: unknown): string | null {
+	if (typeof landingUrl !== "string" || landingUrl.length === 0) return null;
+	const q = landingUrl.indexOf("?");
+	if (q < 0) return null;
+	let params: URLSearchParams;
+	try {
+		params = new URLSearchParams(landingUrl.slice(q + 1));
+	} catch {
+		return null;
+	}
+	// Deliberately NOT "q". A Shopify storefront puts its own site
+	// search in ?q=, and it is present in this account's real URLs.
+	// Reading it as an ad keyword would invent search terms for a
+	// store that buys no search traffic at all.
+	for (const key of ["utm_term", "utm_keyword", "keyword"]) {
+		const raw = params.get(key);
+		if (!raw) continue;
+		// ValueTrack leaves the macro literal in place when the account
+		// is misconfigured, and "{keyword}" is not a term anyone typed.
+		if (/^\{.*\}$/.test(raw.trim())) return null;
+		const term = decodeCampaignName(raw).toLowerCase().replace(/\s+/g, " ").trim();
+		if (term.length === 0) return null;
+		return term;
+	}
+	return null;
+}
+
+// ──────────────────────────────────────────────
+// What moved.
+//
+// The lowest score in sixteen of the twenty reviews was
+// `pagaria_de_novo_mes2`, and the reason was identical every time:
+// month one hands over an architectural finding, month two hands over
+// the same table. "Não porque é ruim. Porque não chega na hora da
+// decisão."
+//
+// They did not ask for more analysis. They asked for the one sentence
+// a snapshot cannot say. The supplements founder wrote the spec
+// himself: "a campanha X estava em 83% e está em 91%, nada mudou no
+// criativo". He also noticed the data was already there, in the
+// month-over-month column, "só está no lugar errado, no formato errado
+// e na frequência errada".
+//
+// So this is the same measurement read over a shorter stride and
+// filtered down to what actually changed. A week against the week
+// before, which is short enough to act on and long enough to clear
+// the noise a 48-hour window carries.
+// ──────────────────────────────────────────────
+
+/** Session floor for one side of a week-over-week comparison. Lower
+ *  than a campaign's monthly floor because the window is a quarter as
+ *  long; a move is only reported when BOTH weeks clear it, so the
+ *  comparison always rests on two real samples. */
+export const MIN_SESSIONS_PER_MOVE = 100;
+
+/**
+ * The smallest move worth a message, in points, regardless of how
+ * certain it is.
+ *
+ * A fixed threshold alone was wrong in both directions and the test
+ * suite caught it with the reviewer's own example. He asked for "a
+ * campanha X estava em 83% e está em 91%", which is 8 points, and a
+ * flat 10-point gate would have missed the exact case he specified.
+ * Meanwhile at the 100-session floor a 10-point move is barely one
+ * standard error and reporting it would be noise.
+ *
+ * So a move has to be both SIGNIFICANT and MATERIAL. Significance
+ * comes from the two sample sizes; this constant is the materiality
+ * floor, so a very large account does not get told about a 1-point
+ * drift that happens to be statistically certain.
+ */
+export const MOVE_POINTS = 5;
+
+/** How many standard errors of the difference a move must clear.
+ *  2.5 is roughly a 99% two-sided interval, which is the right
+ *  asymmetry for something that interrupts someone's week. */
+export const MOVE_SIGMA = 2.5;
+
+/**
+ * Standard error of the difference between two proportions, in points.
+ *
+ * Why this and not a fixed gate: at 400 sessions a week an 8-point
+ * move is 3.4 standard errors and real; at 100 sessions the same 8
+ * points is 1.4 and indistinguishable from chance. One threshold
+ * cannot serve both, and the operator of a small account is exactly
+ * the person who cannot afford a false alarm.
+ */
+export function moveStandardError(
+	pctA: number,
+	nA: number,
+	pctB: number,
+	nB: number,
+): number {
+	if (nA <= 0 || nB <= 0) return Number.POSITIVE_INFINITY;
+	const a = (pctA / 100) * (1 - pctA / 100);
+	const b = (pctB / 100) * (1 - pctB / 100);
+	return 100 * Math.sqrt(a / nA + b / nB);
+}
+
+export interface TrafficMove {
+	kind: "campaign" | "page" | "term";
+	/** Already display-ready: the shortened campaign label, the path,
+	 *  or the term as typed. */
+	label: string;
+	nowPct: number;
+	beforePct: number;
+	/** Positive is worse, because the metric counts people who did
+	 *  nothing. */
+	deltaPoints: number;
+	nowSessions: number;
+	beforeSessions: number;
+	direction: "worse" | "better";
+	/**
+	 * The campaign still lands on the same page it landed on last week.
+	 *
+	 * This is what makes "nothing changed but the number" a statement
+	 * the operator can check rather than a claim they have to take on
+	 * faith. Only meaningful for a campaign move.
+	 */
+	samePage: boolean;
+	/** Purchases in the current week, so a message never recommends
+	 *  touching something without saying what it still earns. */
+	purchases: number;
+	/**
+	 * Where this landed, for a campaign move. Carried so a caller can
+	 * notice that several campaigns moved the same way on the same
+	 * page, which is the ad-or-page question asked of a change instead
+	 * of a level. Three reviewers named that section the best thing on
+	 * the statement.
+	 */
+	path: string | null;
+}
+
+/**
+ * Several campaigns moving the same way on the same page is one fact,
+ * not several.
+ *
+ * Measured on the live account: the three moves detected in a real
+ * week were three members of one campaign family, all worsening, all
+ * landing on the same product page. Reporting them as three
+ * independent problems invites three investigations of one cause.
+ */
+export function sharedPageMove(
+	moves: TrafficMove[],
+): { path: string; count: number; direction: "worse" | "better" } | null {
+	const byPath = new Map<string, TrafficMove[]>();
+	for (const m of moves) {
+		if (m.kind !== "campaign" || !m.path) continue;
+		const list = byPath.get(m.path) ?? [];
+		list.push(m);
+		byPath.set(m.path, list);
+	}
+	let best: { path: string; count: number; direction: "worse" | "better" } | null = null;
+	for (const [path, list] of byPath) {
+		if (list.length < 2) continue;
+		// Only when they agree. Two campaigns moving in opposite
+		// directions on one page is not a page story.
+		const worse = list.filter((m) => m.direction === "worse").length;
+		if (worse !== list.length && worse !== 0) continue;
+		if (!best || list.length > best.count) {
+			best = { path, count: list.length, direction: worse === list.length ? "worse" : "better" };
+		}
+	}
+	return best;
+}
+
+/**
+ * Diff two statements built over adjacent windows of equal length.
+ *
+ * Pure: takes the two results, never the sessions. That keeps it
+ * testable and keeps the one definition of a blind session in one
+ * place, since both sides came through `buildTrafficStatement`.
+ */
+export function detectTrafficMoves(
+	now: TrafficStatement,
+	before: TrafficStatement,
+	options?: { minSessions?: number; minPoints?: number; sigma?: number },
+): TrafficMove[] {
+	const minSessions = options?.minSessions ?? MIN_SESSIONS_PER_MOVE;
+	const minPoints = options?.minPoints ?? MOVE_POINTS;
+	const sigma = options?.sigma ?? MOVE_SIGMA;
+	const moves: TrafficMove[] = [];
+
+	const push = (
+		kind: TrafficMove["kind"],
+		label: string,
+		a: { pct: number; sessions: number },
+		b: { pct: number; sessions: number },
+		extra: { samePage: boolean; purchases: number; path: string | null },
+	) => {
+		if (a.sessions < minSessions || b.sessions < minSessions) return;
+		const delta = Math.round((a.pct - b.pct) * 10) / 10;
+		// Material, then significant. Both gates, in that order,
+		// because the cheap check is the one that rejects most rows.
+		if (Math.abs(delta) < minPoints) return;
+		const se = moveStandardError(a.pct, a.sessions, b.pct, b.sessions);
+		if (Math.abs(delta) < sigma * se) return;
+		moves.push({
+			kind,
+			label,
+			nowPct: a.pct,
+			beforePct: b.pct,
+			deltaPoints: delta,
+			nowSessions: a.sessions,
+			beforeSessions: b.sessions,
+			direction: delta > 0 ? "worse" : "better",
+			...extra,
+		});
+	};
+
+	const beforeCampaigns = new Map(before.campaigns.map((c) => [c.platformId ?? c.name, c]));
+	for (const c of now.campaigns) {
+		const was = beforeCampaigns.get(c.platformId ?? c.name);
+		if (!was) continue;
+		push(
+			"campaign",
+			c.displayName,
+			{ pct: c.arrivedBlindPct, sessions: c.sessions },
+			{ pct: was.arrivedBlindPct, sessions: was.sessions },
+			{
+				samePage:
+					c.topLandingPath !== null && c.topLandingPath === was.topLandingPath,
+				purchases: c.pauseCostPurchases,
+				path: c.topLandingPath,
+			},
+		);
+	}
+
+	// A page carrying exactly one campaign that already moved is the
+	// same fact stated twice. Three reviewers read a sentence repeated
+	// verbatim as template rather than analysis, and this would be the
+	// same mistake in a new place.
+	const movedCampaignPaths = new Set(
+		now.campaigns
+			.filter((c) => moves.some((m) => m.kind === "campaign" && m.label === c.displayName))
+			.map((c) => c.topLandingPath)
+			.filter((p): p is string => p !== null),
+	);
+	const beforePages = new Map(before.landingPages.map((p) => [p.path, p]));
+	for (const p of now.landingPages) {
+		const was = beforePages.get(p.path);
+		if (!was) continue;
+		if (p.campaigns === 1 && movedCampaignPaths.has(p.path)) continue;
+		push(
+			"page",
+			p.path,
+			{ pct: p.arrivedBlindPct, sessions: p.sessions },
+			{ pct: was.arrivedBlindPct, sessions: was.sessions },
+			{ samePage: true, purchases: p.purchases, path: p.path },
+		);
+	}
+
+	const beforeTerms = new Map(before.searchTerms.map((t) => [t.term, t]));
+	for (const t of now.searchTerms) {
+		const was = beforeTerms.get(t.term);
+		if (!was) continue;
+		push(
+			"term",
+			t.term,
+			{ pct: t.arrivedBlindPct, sessions: t.sessions },
+			{ pct: was.arrivedBlindPct, sessions: was.sessions },
+			{ samePage: true, purchases: t.purchases, path: null },
+		);
+	}
+
+	// Worst first, and a worsening always outranks an equal-sized
+	// improvement: the message exists to catch a leak, and the good
+	// news is there so the page is not only ever bad news.
+	return moves.sort((a, b) => b.deltaPoints - a.deltaPoints);
+}
+
 export function splitCampaignRef(raw: string): { name: string; platformId: string | null } {
 	const at = raw.lastIndexOf("|");
 	if (at < 0) return { name: decodeCampaignName(raw), platformId: null };
@@ -561,6 +877,14 @@ export function buildTrafficStatement(
 		campaigns: Set<string>;
 	}
 	const byPage = new Map<string, PageAcc>();
+	interface TermAcc {
+		sessions: number;
+		blind: number;
+		action: number;
+		purchases: number;
+		campaigns: Set<string>;
+	}
+	const byTerm = new Map<string, TermAcc>();
 
 	for (const row of rows) {
 		// Bot gate, same floor the friction measurement already uses: a
@@ -640,6 +964,26 @@ export function buildTrafficStatement(
 			if (a.reached_thank_you) pg.purchases++;
 			pg.campaigns.add(key);
 			byPage.set(path, pg);
+		}
+
+		// Term level, independent of the landing path: a search
+		// advertiser can send twenty terms to one page, and the page
+		// view would hide exactly the distinction they need.
+		const term = searchTermOf(ft?.landing_url);
+		if (term) {
+			const tm = byTerm.get(term) ?? {
+				sessions: 0,
+				blind: 0,
+				action: 0,
+				purchases: 0,
+				campaigns: new Set<string>(),
+			};
+			tm.sessions++;
+			if (blind) tm.blind++;
+			if (reachedAction(a, model)) tm.action++;
+			if (a.reached_thank_you) tm.purchases++;
+			tm.campaigns.add(key);
+			byTerm.set(term, tm);
 		}
 		byCampaign.set(key, acc);
 	}
@@ -802,6 +1146,23 @@ export function buildTrafficStatement(
 			campaigns: below.length,
 			sessions: below.reduce((n, c) => n + c.sessions, 0),
 		},
+		// A lower floor than a campaign's, because a search term is
+		// long-tail by nature: the part number a mechanic types will
+		// never see 300 sessions in a month, and holding it to the
+		// campaign floor would empty the view it exists to fill. 60 is
+		// still enough that a rate is not one visit's worth of noise.
+		searchTerms: [...byTerm.entries()]
+			.filter(([, t]) => t.sessions >= Math.min(floor, MIN_SESSIONS_PER_TERM))
+			.map(([term, t]) => ({
+				term,
+				sessions: t.sessions,
+				arrivedBlind: t.blind,
+				arrivedBlindPct: Math.round((1000 * t.blind) / t.sessions) / 10,
+				reachedAction: t.action,
+				purchases: t.purchases,
+				campaigns: t.campaigns.size,
+			}))
+			.sort((a, b) => b.arrivedBlind - a.arrivedBlind),
 		landingPages: [...byPage.entries()]
 			.filter(([, p]) => p.sessions >= floor)
 			.map(([path, p]) => ({

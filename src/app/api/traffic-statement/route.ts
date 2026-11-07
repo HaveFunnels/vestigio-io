@@ -4,6 +4,8 @@ import { authOptions } from "@/libs/auth";
 import { resolveOrgContext } from "@/libs/resolve-org";
 import {
 	buildTrafficStatement,
+	detectTrafficMoves,
+	MIN_SESSIONS_PER_MOVE,
 	type StatementSessionInput,
 } from "../../../../packages/strategy-plan/sections/traffic-statement";
 
@@ -62,26 +64,45 @@ export async function GET(request: Request) {
 		const [rows, prevRows] = await Promise.all([
 			prisma.behavioralSessionAggregate.findMany({
 				where: { envId: orgCtx.envId, startedAt: { gte: start, lt: end } },
-				select: { aggregate: true, eventCount: true, userAgent: true },
+				// startedAt comes along so the last two weeks can be
+				// partitioned out of these same rows. The week-over-week
+				// comparison therefore costs no extra query: both weeks
+				// are already inside the 30-day window.
+				select: {
+					aggregate: true,
+					eventCount: true,
+					userAgent: true,
+					startedAt: true,
+				},
 				take: MAX_ROWS,
 			}),
 			prisma.behavioralSessionAggregate.findMany({
 				where: { envId: orgCtx.envId, startedAt: { gte: prevStart, lt: start } },
-				select: { aggregate: true, eventCount: true, userAgent: true },
+				select: {
+					aggregate: true,
+					eventCount: true,
+					userAgent: true,
+					startedAt: true,
+				},
 				take: MAX_ROWS,
 			}),
 		]);
 
-		const parse = (
-			list: { aggregate: string; eventCount: number; userAgent: string | null }[],
-		): StatementSessionInput[] => {
-			const out: StatementSessionInput[] = [];
+		type Row = {
+			aggregate: string;
+			eventCount: number;
+			userAgent: string | null;
+			startedAt: Date;
+		};
+		const parse = (list: Row[]): (StatementSessionInput & { startedAt: Date })[] => {
+			const out: (StatementSessionInput & { startedAt: Date })[] = [];
 			for (const r of list) {
 				try {
 					out.push({
 						aggregate: JSON.parse(r.aggregate) as Record<string, unknown>,
 						eventCount: r.eventCount,
 						userAgent: r.userAgent,
+						startedAt: r.startedAt,
 					});
 				} catch {
 					// A malformed aggregate drops the session rather than the
@@ -147,7 +168,42 @@ export async function GET(request: Request) {
 			previous: parsedPrev.length > 0 ? parsedPrev : null,
 		});
 
-		return NextResponse.json({ statement });
+		// What moved, from the same rows. The statement on its own is a
+		// photograph, and the review's lowest score in sixteen of twenty
+		// responses was "would you pay again in month two", for one
+		// reason: month two shows the same table. A week against the
+		// week before is the cheapest thing that answers it.
+		const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+		const lastWeekStart = new Date(end.getTime() - WEEK_MS);
+		const priorWeekStart = new Date(end.getTime() - 2 * WEEK_MS);
+		const inRange = (r: { startedAt: Date }, from: Date, to: Date) =>
+			r.startedAt >= from && r.startedAt < to;
+		const weekOpts = {
+			windowStart: lastWeekStart.toISOString().slice(0, 10),
+			windowEnd: end.toISOString().slice(0, 10),
+			conversionModel: profile?.conversionModel ?? null,
+			spendByCampaignId,
+			previous: null,
+			minSessions: MIN_SESSIONS_PER_MOVE,
+		};
+		const thisWeek = buildTrafficStatement(
+			parsed.filter((r) => inRange(r, lastWeekStart, end)),
+			weekOpts,
+		);
+		const lastWeek = buildTrafficStatement(
+			parsed.filter((r) => inRange(r, priorWeekStart, lastWeekStart)),
+			{ ...weekOpts, windowStart: priorWeekStart.toISOString().slice(0, 10) },
+		);
+		const moves = detectTrafficMoves(thisWeek, lastWeek);
+
+		return NextResponse.json({
+			statement,
+			moves,
+			moveWindow: {
+				start: lastWeekStart.toISOString().slice(0, 10),
+				end: end.toISOString().slice(0, 10),
+			},
+		});
 	} catch (err) {
 		console.error("[traffic-statement]", err);
 		return NextResponse.json({ message: "Failed to build statement" }, { status: 500 });

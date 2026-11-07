@@ -3,10 +3,15 @@ import {
 	buildTrafficStatement,
 	decodeCampaignName,
 	ABSOLUTE_BLIND_FLOOR,
+	detectTrafficMoves,
+	moveStandardError,
+	sharedPageMove,
+	searchTermOf,
 	IMPLAUSIBLE_BLIND_PCT,
 	POINTS_ABOVE_MEDIAN,
 	sawNothing,
 	shortCampaignName,
+	type TrafficMove,
 	deviceOf,
 	splitCampaignRef,
 	MIN_SESSIONS_PER_CAMPAIGN,
@@ -1026,5 +1031,307 @@ describe("the declared method cannot drift from the behaviour", () => {
 	it("reports the floor actually in force, not the default", () => {
 		const st = buildTrafficStatement(many(400), { ...WIN, minSessions: 120 });
 		expect(st.thresholds.minSessions).toBe(120);
+	});
+});
+
+describe("the search term, for the advertiser who buys intent", () => {
+	it("reads the keyword Google Ads puts in utm_term", () => {
+		expect(
+			searchTermOf("https://x.com/lp?utm_source=google&utm_term=advogado+trabalhista+bh"),
+		).toBe("advogado trabalhista bh");
+	});
+
+	it("decodes and normalises it", () => {
+		expect(searchTermOf("https://x.com/lp?utm_term=C%C3%A1lculo+de+RESCIS%C3%83O")).toBe(
+			"cálculo de rescisão",
+		);
+	});
+
+	it("ignores ?q=, which is the store's own site search", () => {
+		// Present in this account's real URLs. Reading it as a keyword
+		// would invent search terms for a store that buys none.
+		expect(searchTermOf("https://casamontelle.com/search?q=pote+hermetico")).toBeNull();
+	});
+
+	it("ignores an unexpanded ValueTrack macro", () => {
+		// A misconfigured account passes the literal, and "{keyword}" is
+		// not something anyone typed.
+		expect(searchTermOf("https://x.com/lp?utm_term={keyword}")).toBeNull();
+	});
+
+	it("returns null for the URLs a feed advertiser actually sends", () => {
+		// Verified against 3.000 real landing URLs from the instrumented
+		// account: zero terms found, zero exceptions thrown.
+		expect(searchTermOf("https://casamontelle.com/products/vedaplus-kit")).toBeNull();
+		expect(searchTermOf("https://casamontelle.com/cart?cart=1&nx4_sid=abc")).toBeNull();
+		expect(searchTermOf("")).toBeNull();
+		expect(searchTermOf(null)).toBeNull();
+		expect(searchTermOf(undefined)).toBeNull();
+	});
+
+	it("groups sessions by term, with a lower floor than a campaign", () => {
+		// A part number will never see 300 sessions in a month, and
+		// holding a term to the campaign floor empties the view it
+		// exists to fill.
+		const term = (t: string, n_: number, blind: number) => [
+			...many(blind, {
+				max_scroll_depth: 0,
+				surface_progression: ["a"],
+				attribution: {
+					first_touch: {
+						source: "google",
+						campaign: "Busca|111111111111",
+						landing_url: `https://x.com/lp?utm_term=${encodeURIComponent(t)}`,
+					},
+				},
+			}),
+			...many(n_ - blind, {
+				max_scroll_depth: 90,
+				attribution: {
+					first_touch: {
+						source: "google",
+						campaign: "Busca|111111111111",
+						landing_url: `https://x.com/lp?utm_term=${encodeURIComponent(t)}`,
+					},
+				},
+			}),
+		];
+		const st = buildTrafficStatement(
+			[...term("rescisao gratis", 200, 180), ...term("entrar com acao", 200, 20)],
+			WIN,
+		);
+		expect(st.searchTerms.map((t) => t.term)).toEqual([
+			"rescisao gratis",
+			"entrar com acao",
+		]);
+		expect(st.searchTerms[0].arrivedBlindPct).toBe(90);
+		expect(st.searchTerms[1].arrivedBlindPct).toBe(10);
+		// Both inside ONE campaign, which is the whole point: the
+		// campaign row averages them into nothing.
+		expect(st.campaigns).toHaveLength(1);
+		expect(st.campaigns[0].arrivedBlindPct).toBe(50);
+	});
+
+	it("is empty for a feed advertiser", () => {
+		const st = buildTrafficStatement(many(400), WIN);
+		expect(st.searchTerms).toEqual([]);
+	});
+});
+
+describe("what moved, week against week", () => {
+	const camp = (id: string, n_: number, blind: number, buys = 0, path = "/lp") => [
+		...many(blind, {
+			max_scroll_depth: 0,
+			surface_progression: ["a"],
+			attribution: {
+				first_touch: { source: "FB", campaign: `C|${id}`, landing_url: `https://x.com${path}` },
+			},
+		}),
+		...many(n_ - blind - buys, {
+			max_scroll_depth: 90,
+			attribution: {
+				first_touch: { source: "FB", campaign: `C|${id}`, landing_url: `https://x.com${path}` },
+			},
+		}),
+		...many(buys, {
+			max_scroll_depth: 90,
+			reached_thank_you: true,
+			attribution: {
+				first_touch: { source: "FB", campaign: `C|${id}`, landing_url: `https://x.com${path}` },
+			},
+		}),
+	];
+	const week = (rows: ReturnType<typeof camp>) =>
+		buildTrafficStatement(rows, { ...WIN, minSessions: 100 });
+
+	it("reports the sentence a snapshot cannot say", () => {
+		// The supplements founder's own spec: "a campanha X estava em
+		// 83% e está em 91%, nada mudou no criativo".
+		const now = week(camp("111111111111", 400, 364, 10));
+		const before = week(camp("111111111111", 400, 332, 10));
+		const moves = detectTrafficMoves(now, before);
+		expect(moves).toHaveLength(1);
+		expect(moves[0]).toMatchObject({
+			kind: "campaign",
+			nowPct: 91,
+			beforePct: 83,
+			deltaPoints: 8,
+			direction: "worse",
+		});
+	});
+
+	it("says whether the landing page stayed the same", () => {
+		// What turns "nothing changed but the number" from a claim into
+		// something the operator can check.
+		const same = detectTrafficMoves(
+			week(camp("111111111111", 400, 360, 0, "/lp")),
+			week(camp("111111111111", 400, 280, 0, "/lp")),
+		);
+		expect(same[0].samePage).toBe(true);
+		const moved = detectTrafficMoves(
+			week(camp("111111111111", 400, 360, 0, "/novo")),
+			week(camp("111111111111", 400, 280, 0, "/lp")),
+		);
+		expect(moved.find((m) => m.kind === "campaign")!.samePage).toBe(false);
+	});
+
+	it("ignores drift below the materiality floor", () => {
+		// 75% against 72.5% is 2.5 points. Statistically it may well be
+		// real at this volume; it is not worth interrupting anyone.
+		const moves = detectTrafficMoves(
+			week(camp("111111111111", 400, 300)),
+			week(camp("111111111111", 400, 290)),
+		);
+		expect(moves).toEqual([]);
+	});
+
+	it("ignores a move too small for the sample to support", () => {
+		// 8 points at 400 sessions a week is 3.4 standard errors and
+		// gets reported. The same 8 points at 110 sessions is 1.4 and
+		// does not, because the operator of a small account is exactly
+		// the person who cannot afford a false alarm.
+		const small = (n_: number, blind: number) =>
+			buildTrafficStatement(camp("111111111111", n_, blind), { ...WIN, minSessions: 100 });
+		const moves = detectTrafficMoves(small(110, 100), small(110, 91));
+		expect(moves).toEqual([]);
+	});
+
+	it("scales the bar with the sample, not with a constant", () => {
+		// Same 8-point move, two volumes, two answers.
+		expect(moveStandardError(91, 400, 83, 400)).toBeCloseTo(2.4, 0);
+		expect(moveStandardError(91, 100, 83, 100)).toBeCloseTo(4.7, 0);
+		// And an empty side is never comparable.
+		expect(moveStandardError(91, 0, 83, 400)).toBe(Number.POSITIVE_INFINITY);
+	});
+
+	it("needs both weeks to clear the floor, so a comparison is never half-real", () => {
+		const now = buildTrafficStatement(camp("111111111111", 400, 360), {
+			...WIN,
+			minSessions: 50,
+		});
+		const before = buildTrafficStatement(camp("111111111111", 60, 12), {
+			...WIN,
+			minSessions: 50,
+		});
+		// The campaign exists on both sides, but last week is 60
+		// sessions, which cannot carry a rate.
+		expect(before.campaigns).toHaveLength(1);
+		expect(detectTrafficMoves(now, before)).toEqual([]);
+	});
+
+	it("says nothing about a campaign that did not run last week", () => {
+		const moves = detectTrafficMoves(
+			week(camp("111111111111", 400, 360)),
+			week(camp("222222222222", 400, 100)),
+		);
+		expect(moves.filter((m) => m.kind === "campaign")).toEqual([]);
+	});
+
+	it("reports an improvement too, and ranks it below a worsening", () => {
+		const now = week([
+			...camp("111111111111", 400, 360, 0, "/a"),
+			...camp("222222222222", 400, 40, 0, "/b"),
+		]);
+		const before = week([
+			...camp("111111111111", 400, 280, 0, "/a"),
+			...camp("222222222222", 400, 200, 0, "/b"),
+		]);
+		const moves = detectTrafficMoves(now, before).filter((m) => m.kind === "campaign");
+		expect(moves[0].direction).toBe("worse");
+		expect(moves[1].direction).toBe("better");
+	});
+
+	it("carries what the campaign still earns, so no message is blind advice", () => {
+		const moves = detectTrafficMoves(
+			week(camp("111111111111", 400, 360, 12)),
+			week(camp("111111111111", 400, 280, 12)),
+		);
+		expect(moves[0].purchases).toBe(12);
+	});
+
+	it("moves a page too, which is where a small account has volume", () => {
+		const now = week([
+			...camp("111111111111", 300, 270, 0, "/potes"),
+			...camp("222222222222", 300, 260, 0, "/potes"),
+		]);
+		const before = week([
+			...camp("111111111111", 300, 210, 0, "/potes"),
+			...camp("222222222222", 300, 200, 0, "/potes"),
+		]);
+		const page = detectTrafficMoves(now, before).find((m) => m.kind === "page");
+		expect(page).toMatchObject({ label: "/potes", direction: "worse" });
+	});
+
+	it("does not state the same move twice for a one-campaign page", () => {
+		// The page and the campaign are the same fact when the page
+		// carries nothing else.
+		const moves = detectTrafficMoves(
+			week(camp("111111111111", 400, 360, 0, "/so-essa")),
+			week(camp("111111111111", 400, 280, 0, "/so-essa")),
+		);
+		expect(moves).toHaveLength(1);
+		expect(moves[0].kind).toBe("campaign");
+	});
+});
+
+describe("several campaigns moving on one page is one fact", () => {
+	const m = (over: Partial<TrafficMove>): TrafficMove => ({
+		kind: "campaign",
+		label: "c",
+		nowPct: 46,
+		beforePct: 33,
+		deltaPoints: 13,
+		nowSessions: 400,
+		beforeSessions: 400,
+		direction: "worse",
+		samePage: true,
+		purchases: 0,
+		path: "/products/potes",
+		...over,
+	});
+
+	it("finds the page when two or more campaigns agree", () => {
+		// What the live account actually produced in a real week: three
+		// members of one campaign family, all worsening, all on the same
+		// product page. Three investigations of one cause otherwise.
+		expect(
+			sharedPageMove([m({ label: "a" }), m({ label: "b" }), m({ label: "c" })]),
+		).toEqual({ path: "/products/potes", count: 3, direction: "worse" });
+	});
+
+	it("says nothing about a single campaign", () => {
+		expect(sharedPageMove([m({ label: "a" })])).toBeNull();
+	});
+
+	it("says nothing when the campaigns disagree", () => {
+		// Two campaigns moving in opposite directions on one page is not
+		// a page story, it is two campaign stories.
+		expect(
+			sharedPageMove([
+				m({ label: "a", direction: "worse" }),
+				m({ label: "b", direction: "better", deltaPoints: -13 }),
+			]),
+		).toBeNull();
+	});
+
+	it("ignores page and term moves, which have no ad to blame", () => {
+		expect(
+			sharedPageMove([
+				m({ kind: "page", label: "/products/potes" }),
+				m({ kind: "term", label: "pote", path: null }),
+			]),
+		).toBeNull();
+	});
+
+	it("picks the page with the most agreeing campaigns", () => {
+		expect(
+			sharedPageMove([
+				m({ label: "a", path: "/a" }),
+				m({ label: "b", path: "/a" }),
+				m({ label: "c", path: "/b" }),
+				m({ label: "d", path: "/b" }),
+				m({ label: "e", path: "/b" }),
+			]),
+		).toMatchObject({ path: "/b", count: 3 });
 	});
 });

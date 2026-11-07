@@ -45,6 +45,8 @@ function findingIdentity(f: FindingLike): string {
 /** Window during which the same finding event will not re-fire (24h) */
 const DEDUPE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+export { wasRecentlySent };
+
 // ──────────────────────────────────────────────
 // Critical finding (incident) trigger
 // ──────────────────────────────────────────────
@@ -851,9 +853,17 @@ export async function triggerActivationCelebratedEmail(args: {
  * not one-shot transactional mail. The one-shot cases — activation
  * links, password resets — do not route through here.
  */
-async function wasRecentlySent(tag: string, userId?: string): Promise<boolean> {
+async function wasRecentlySent(
+	tag: string,
+	userId?: string,
+	/** Override for events whose natural cadence is not daily. A weekly
+	 *  alert deduped on a 24h window re-fires six more times in the
+	 *  same week, which is the failure the whole feature exists to
+	 *  avoid. */
+	windowMs: number = DEDUPE_WINDOW_MS,
+): Promise<boolean> {
 	try {
-		const cutoff = new Date(Date.now() - DEDUPE_WINDOW_MS);
+		const cutoff = new Date(Date.now() - windowMs);
 		// Both terminal states count. See the note above.
 		const attempted = { in: ["sent", "failed"] };
 		// First, try the explicit tag column (Wave 22.6 — first-class

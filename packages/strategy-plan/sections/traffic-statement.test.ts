@@ -3,6 +3,7 @@ import {
 	buildTrafficStatement,
 	decodeCampaignName,
 	ABSOLUTE_BLIND_FLOOR,
+	marginOfError,
 	detectTrafficMoves,
 	moveStandardError,
 	sharedPageMove,
@@ -94,27 +95,30 @@ describe("ranking", () => {
 		// campaign on top even when it performs at the account median,
 		// which is what I shipped first and caught on the real account:
 		// the four top rows came back "entregando".
-		const huge = many(3_000, {
+		// Rates kept well clear of both the implausibility line and the
+		// margin discount, so the test measures ranking and nothing
+		// else. "Grande" wastes 1.600 arrivals, more than anyone;
+		// "Fora" wastes 812. Excess still puts Fora first.
+		const huge = many(1_600, {
 			max_scroll_depth: 0,
+			surface_progression: ["a"],
 			attribution: { first_touch: { source: "FB", campaign: "Grande|111111111111" } },
 		}).concat(
-			many(1_000, {
+			many(2_400, {
 				max_scroll_depth: 50,
 				attribution: { first_touch: { source: "FB", campaign: "Grande|111111111111" } },
 			}),
 		);
-		const normal = many(700, {
+		const normal = many(350, {
 			max_scroll_depth: 0,
+			surface_progression: ["a"],
 			attribution: { first_touch: { source: "FB", campaign: "Normal|222222222222" } },
 		}).concat(
-			many(300, {
+			many(650, {
 				max_scroll_depth: 50,
 				attribution: { first_touch: { source: "FB", campaign: "Normal|222222222222" } },
 			}),
 		);
-		// 812 of 950 is 85.5%: past the absolute floor and 10.5 points
-		// above this account's median, without being the implausible
-		// 100% that now reads as broken measurement rather than waste.
 		const outlier = many(812, {
 			max_scroll_depth: 0,
 			surface_progression: ["a"],
@@ -129,12 +133,9 @@ describe("ranking", () => {
 		const st = buildTrafficStatement([...huge, ...normal, ...outlier], WIN);
 		const first = st.campaigns[0];
 
-		// "Grande" wastes 3,000 arrivals, more than anyone. "Fora" wastes
-		// 812. Excess puts "Fora" first because its rate is far above the
-		// account's own normal.
+		// Grande is 40%, Normal 35%, Fora 85.5%. Median is 40, so Fora
+		// clears both gates even after the margin is discounted.
 		expect(first.name).toBe("Fora");
-		// Nothing converted on it, so cutting is free and the page says
-		// cut rather than fix.
 		expect(first.verdict).toBe("cortar");
 
 		const grande = st.campaigns.find((c) => c.name === "Grande")!;
@@ -175,20 +176,22 @@ describe("verdict", () => {
 		// Measured reality: across 35 campaigns the no-scroll rate runs
 		// 66% to 100% with a median of 77%. An absolute threshold would
 		// condemn the entire account or nothing in it.
-		const normalA = many(1_000, {
+		const normalA = many(300, {
 			max_scroll_depth: 0,
+			surface_progression: ["a"],
 			attribution: { first_touch: { source: "FB", campaign: "A|111111111111" } },
 		}).concat(
-			many(300, {
+			many(1_000, {
 				max_scroll_depth: 50,
 				attribution: { first_touch: { source: "FB", campaign: "A|111111111111" } },
 			}),
 		);
-		const normalB = many(700, {
+		const normalB = many(200, {
 			max_scroll_depth: 0,
+			surface_progression: ["a"],
 			attribution: { first_touch: { source: "FB", campaign: "B|222222222222" } },
 		}).concat(
-			many(300, {
+			many(800, {
 				max_scroll_depth: 50,
 				attribution: { first_touch: { source: "FB", campaign: "B|222222222222" } },
 			}),
@@ -198,15 +201,17 @@ describe("verdict", () => {
 			surface_progression: ["a"],
 			attribution: { first_touch: { source: "FB", campaign: "C|333333333333" } },
 		}).concat(
-			many(68, {
+			many(200, {
 				max_scroll_depth: 50,
 				attribution: { first_touch: { source: "FB", campaign: "C|333333333333" } },
 			}),
 		);
 
 		const st = buildTrafficStatement([...normalA, ...normalB, ...outlier], WIN);
-		// A is 77%, B is 70%, C is 88%. Median of the three is 77%.
-		expect(st.accountMedianBlindPct).toBeCloseTo(76.9, 0);
+		// A is 23%, B is 20%, C is 71%. The median of the three is 23%,
+		// which is the comparison basis: an absolute threshold would
+		// either condemn this whole account or none of it.
+		expect(st.accountMedianBlindPct).toBeCloseTo(23, 0);
 
 		const byName = new Map(st.campaigns.map((c) => [c.name, c]));
 		expect(byName.get("C")!.verdict).toBe("cortar");
@@ -804,7 +809,7 @@ describe("the landing-page view, for accounts the campaign floor excludes", () =
 		const rows = [];
 		for (let i = 0; i < 10; i++) {
 			rows.push(
-				...many(100, {
+				...many(60, {
 					max_scroll_depth: 0,
 					surface_progression: ["a"],
 					attribution: {
@@ -825,8 +830,8 @@ describe("the landing-page view, for accounts the campaign floor excludes", () =
 		expect(st.landingPages).toHaveLength(1);
 		expect(st.landingPages[0]).toMatchObject({
 			path: "/lp/implante",
-			sessions: 1000,
-			arrivedBlind: 1000,
+			sessions: 600,
+			arrivedBlind: 600,
 			arrivedBlindPct: 100,
 			campaigns: 10,
 		});
@@ -860,7 +865,7 @@ describe("the landing-page view, for accounts the campaign floor excludes", () =
 
 	it("keeps a page below the floor out, same as a campaign", () => {
 		const st = buildTrafficStatement(
-			many(100, {
+			many(40, {
 				attribution: {
 					first_touch: { source: "FB", campaign: "c|111111111111", landing_url: "https://x.com/tiny" },
 				},
@@ -1588,5 +1593,81 @@ describe("the cost of pausing is named in the unit the business earns in", () =>
 			const st = buildTrafficStatement(account, { ...WIN, conversionModel: model });
 			expect(st.campaigns[0].pauseCostUnit).toBe("contatos");
 		}
+	});
+});
+
+describe("the floor came down by carrying the uncertainty", () => {
+	const camp = (id: string, total: number, blind: number) => [
+		...many(blind, {
+			max_scroll_depth: 0,
+			surface_progression: ["a"],
+			attribution: { first_touch: { source: "FB", campaign: `C|${id}` } },
+		}),
+		...many(total - blind, {
+			max_scroll_depth: 90,
+			attribution: { first_touch: { source: "FB", campaign: `C|${id}` } },
+		}),
+	];
+
+	it("widens the margin as the sample shrinks", () => {
+		// Plain Wald on purpose: a cleverer interval nobody can
+		// reproduce on paper would trade the one property that makes
+		// this better than a generated paragraph.
+		expect(marginOfError(45, 80)).toBeCloseTo(10.9, 0);
+		expect(marginOfError(45, 300)).toBeCloseTo(5.6, 0);
+		expect(marginOfError(45, 2855)).toBeCloseTo(1.8, 0);
+		expect(marginOfError(45, 0)).toBe(100);
+	});
+
+	it("refuses to condemn a thin row on its point estimate alone", () => {
+		// The discipline that makes a lower floor honest rather than
+		// merely generous. 45% at n=80 has a pessimistic end of 34%,
+		// under the absolute gate, so it is not called out.
+		const st = buildTrafficStatement(
+			[
+				...camp("111111111111", 80, 36),
+				...camp("222222222222", 600, 120),
+				...camp("333333333333", 600, 110),
+				...camp("444444444444", 600, 130),
+			],
+			WIN,
+		);
+		const thin = st.campaigns.find((c) => c.sessions === 80)!;
+		expect(thin.arrivedBlindPct).toBe(45);
+		expect(thin.marginPoints).toBeGreaterThan(10);
+		expect(thin.blindPctLow).toBeLessThan(ABSOLUTE_BLIND_FLOOR);
+		expect(thin.verdict).not.toBe("cortar");
+		expect(thin.verdict).not.toBe("corrigir");
+	});
+
+	it("still condemns a thin row that is extreme enough", () => {
+		// Small is not a free pass. At 95% of 80 visits even the
+		// cautious reading is damning.
+		const st = buildTrafficStatement(
+			[
+				...camp("111111111111", 80, 76),
+				...camp("222222222222", 600, 120),
+				...camp("333333333333", 600, 110),
+				...camp("444444444444", 600, 130),
+			],
+			WIN,
+		);
+		const thin = st.campaigns.find((c) => c.sessions === 80)!;
+		expect(thin.blindPctLow).toBeGreaterThanOrEqual(ABSOLUTE_BLIND_FLOOR);
+		expect(["cortar", "corrigir", "medicao_suspeita"]).toContain(thin.verdict);
+	});
+
+	it("lets a campaign the old floor excluded into the table at all", () => {
+		// 120 sessions was invisible before and is 90% of what the
+		// accountant and the dentist actually run.
+		const st = buildTrafficStatement(camp("111111111111", 120, 60), WIN);
+		expect(st.campaigns).toHaveLength(1);
+		expect(st.belowFloor.campaigns).toBe(0);
+	});
+
+	it("still refuses a handful of visits", () => {
+		const st = buildTrafficStatement(camp("111111111111", 40, 20), WIN);
+		expect(st.campaigns).toHaveLength(0);
+		expect(st.belowFloor.campaigns).toBe(1);
 	});
 });

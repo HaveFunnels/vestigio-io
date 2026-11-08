@@ -55,9 +55,40 @@
 
 import { MIN_EVENTS_INTERACTIVE } from "./measured-friction";
 
-/** Below this, a campaign's rates are noise. Matches the floor the
- *  friction findings already use for a page. */
-export const MIN_SESSIONS_PER_CAMPAIGN = 300;
+/**
+ * Below this a rate is not a rate, it is a handful of visits.
+ *
+ * Was 300, and six of nine reviewers hit it in every round. It was not
+ * statistical rigour, it was a choice of customer wearing rigour as a
+ * costume: it left 42% of the measured account outside the campaign
+ * table, 100% of the accountant's campaigns, and all eight of the
+ * dentist's. "Vocês me dão certeza sobre o que eu já sabia e me deixam
+ * no escuro onde eu ainda não sei."
+ *
+ * The honest way to lower it is not to relax the gate, it is to carry
+ * the uncertainty. A small campaign still gets a rate, the rate still
+ * gets a margin, and the VERDICT requires the pessimistic end of that
+ * margin to clear the bar. A thin row can therefore still be called
+ * out, but only when it is extreme enough that even the cautious
+ * reading condemns it. The media buyer settled the trade: "prefiro
+ * número com aviso de incerteza do que ausência de número."
+ */
+export const MIN_SESSIONS_PER_CAMPAIGN = 80;
+
+/**
+ * Half-width of the 95% interval for a proportion, in points.
+ *
+ * Plain Wald, which is good enough at these sizes and, more
+ * importantly, is a formula the customer who audits statements can
+ * reproduce on paper. A cleverer interval that nobody can check would
+ * trade the one property that makes this better than a generated
+ * paragraph.
+ */
+export function marginOfError(pct: number, n: number): number {
+	if (n <= 0) return 100;
+	const p = Math.min(1, Math.max(0, pct / 100));
+	return Math.round(100 * 1.96 * Math.sqrt((p * (1 - p)) / n) * 10) / 10;
+}
 
 function num(v: unknown): number {
 	return typeof v === "number" && Number.isFinite(v) ? v : 0;
@@ -246,6 +277,17 @@ export interface CampaignRow {
 	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita";
 	/** Percentage points above the account median. Negative is better. */
 	pointsAboveAccount: number;
+	/**
+	 * Half-width of the 95% interval on `arrivedBlindPct`, in points.
+	 *
+	 * Shipped on every row, not only thin ones, because a reader who
+	 * sees it sometimes learns to distrust its absence. A campaign with
+	 * 2.000 sessions carries a small margin and says so.
+	 */
+	marginPoints: number;
+	/** The pessimistic end of the interval, which is what the verdict
+	 *  is allowed to act on. */
+	blindPctLow: number;
 	/**
 	 * What pausing costs, in the unit this business actually earns in.
 	 *
@@ -1182,8 +1224,15 @@ export function buildTrafficStatement(
 			// now be bad in absolute terms AND unusual for this
 			// account, which means a healthy account can and should
 			// produce an empty table.
-			const unusual = points >= POINTS_ABOVE_MEDIAN;
-			const bad = blindPct >= ABSOLUTE_BLIND_FLOOR;
+			const margin = marginOfError(blindPct, c.sessions);
+			// The verdict acts on the cautious end, never the point
+			// estimate. That is what makes a lower session floor honest
+			// rather than merely generous: a thin row can still be
+			// condemned, but only when even the pessimistic reading
+			// condemns it.
+			const blindLow = Math.round((blindPct - margin) * 10) / 10;
+			const unusual = points - margin >= POINTS_ABOVE_MEDIAN;
+			const bad = blindLow >= ABSOLUTE_BLIND_FLOOR;
 			const verdict: CampaignRow["verdict"] =
 				blindPct >= IMPLAUSIBLE_BLIND_PCT
 					? "medicao_suspeita"
@@ -1257,6 +1306,8 @@ export function buildTrafficStatement(
 				topLandingPath: topLanding,
 				verdict,
 				pointsAboveAccount: Math.round(points * 10) / 10,
+				marginPoints: margin,
+				blindPctLow: Math.max(0, blindLow),
 			};
 		})
 		// Excess waste, not raw volume and not rate. See decision 1.

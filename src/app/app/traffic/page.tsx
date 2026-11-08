@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import PageHeader from "@/components/console/PageHeader";
 import CampaignPill from "@/components/app/CampaignPill";
 import MetricInfo from "@/components/app/MetricInfo";
+import OpenTheCount from "@/components/app/OpenTheCount";
 import Sparkline from "@/components/app/Sparkline";
 import {
 	IconBetter,
@@ -51,6 +52,8 @@ interface CampaignRow {
 	topLandingPath: string | null;
 	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita";
 	pointsAboveAccount: number;
+	marginPoints: number;
+	blindPctLow: number;
 	excessBlind: number;
 	pauseCostActions: number;
 	pauseCostPurchases: number;
@@ -497,6 +500,11 @@ export default function TrafficStatementPage() {
 										<span className="text-[17px] font-semibold tabular-nums text-white">
 											{pct(c.arrivedBlindPct)}% {MUTE.many}
 										</span>
+										{c.marginPoints >= 5 && (
+											<span className="text-[12px] text-[#9ECFBC]">
+												±{pct(c.marginPoints)} pontos, {n(c.sessions)} acessos
+											</span>
+										)}
 										{mv && (
 											<span
 												className={`inline-flex items-center gap-1 text-[12.5px] font-semibold tabular-nums ${
@@ -725,6 +733,13 @@ export default function TrafficStatementPage() {
 								<tr key={pg.path} className="border-t border-edge first:border-t-0">
 									<td className="px-4 py-2.5">
 										<div className="font-mono text-[12px] text-content">{pg.path}</div>
+										<div className="mt-1">
+											<OpenTheCount
+												dimension="page"
+												keyValue={pg.path}
+												expected={pg.arrivedBlind}
+											/>
+										</div>
 										<div className="text-[11px] text-content-muted">
 											{pg.campaigns} campanhas, {n(pg.purchases)}{" "}
 											{pg.purchases === 1 ? "compra" : "compras"}, {pct(buyRate)}% de
@@ -924,6 +939,13 @@ export default function TrafficStatementPage() {
 												sem base anterior para comparar
 											</div>
 										)}
+										<div className="mt-1">
+											<OpenTheCount
+												dimension="campaign"
+												keyValue={c.platformId ?? c.name}
+												expected={c.arrivedBlind}
+											/>
+										</div>
 										{c.contactSessions > 0 && (
 											<div className="mt-1 text-[11px] text-content-secondary">
 												{n(c.contactSessions)}{" "}
@@ -950,6 +972,12 @@ export default function TrafficStatementPage() {
 										<div className="text-content">{n(c.arrivedBlind)}</div>
 										<div className="text-[11px] text-content-muted">
 											{pct(c.arrivedBlindPct)}%
+											{/* The margin rides on every row, not only the thin
+											    ones: a reader who sees it sometimes learns to
+											    distrust its absence. */}
+											<span className={c.marginPoints >= 5 ? "text-attention" : ""}>
+												{" "}±{pct(c.marginPoints)}
+											</span>
 										</div>
 									</td>
 									<td className="px-3 py-3 text-right tabular-nums">
@@ -1054,14 +1082,32 @@ export default function TrafficStatementPage() {
 				{fine > 0 && <>{fine} estão dentro do padrão da conta. </>}
 			</p>
 
+			{/* The history is the customer's. A paid tool that locks the
+			    series is strictly worse than an open source one on an
+			    axis the buyer already checks, and the CFO asked about it
+			    for three rounds before anyone answered. */}
+			{series && series.account.length > 0 && (
+				<p className="mt-5 text-[12.5px] text-content-secondary">
+					<a
+						href="/api/traffic-statement/export"
+						className="underline decoration-dotted underline-offset-2 hover:text-content"
+					>
+						Baixar a série inteira em CSV
+					</a>
+					, {series.account.length} semanas desde {series.since}. Os dados são seus, e a
+					régua usada vai no arquivo.
+				</p>
+			)}
+
 			<p className="mt-2 text-[12px] leading-relaxed text-content-muted">
 				{pct(data.attributionCoveragePct)}% das {n(data.measuredSessions)} sessões medidas trazem
 				campanha identificada.
 				{data.belowFloor.campaigns > 0 && (
 					<>
 						{" "}
-						{data.belowFloor.campaigns} campanhas com menos de 300 acessos ficaram fora da
-						tabela de campanha, porque abaixo disso a taxa é ruído. Elas somam{" "}
+						{data.belowFloor.campaigns} campanhas com menos de{" "}
+						{n(data.thresholds.minSessions)} acessos ficaram fora da tabela de campanha,
+						porque abaixo disso não há taxa, há um punhado de visitas. Elas somam{" "}
 						{n(data.belowFloor.sessions)} acessos, ou{" "}
 						{pct(Math.round((data.belowFloor.sessions / data.attributedSessions) * 100))}% do
 						tráfego com campanha identificada, e aparecem somadas na visão por página de

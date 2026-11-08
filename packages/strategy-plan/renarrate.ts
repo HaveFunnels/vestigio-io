@@ -26,6 +26,7 @@
 // ──────────────────────────────────────────────
 
 import type { PrismaClient } from "@prisma/client";
+import { isV1PlanEnabled } from "./v1-retired";
 import { generateAndPersistPlan } from "./generator";
 import type { RegenScope } from "./generator";
 
@@ -74,7 +75,13 @@ export interface MaybeTriggerArgs {
 
 export interface MaybeTriggerResult {
 	fired: boolean;
-	reason?: "cap_reached" | "no_plan_yet" | "plan_archived" | "plan_failed" | "error";
+	reason?:
+		| "cap_reached"
+		| "no_plan_yet"
+		| "plan_archived"
+		| "plan_failed"
+		| "error"
+		| "retired";
 	scope?: RegenScope;
 	regenCountAfter?: number;
 }
@@ -86,6 +93,10 @@ export interface MaybeTriggerResult {
 export async function maybeTriggerRenarrative(
 	args: MaybeTriggerArgs,
 ): Promise<MaybeTriggerResult> {
+	// Retired. This fired from inside the hourly cycle, independently
+	// of the monthly cron, which is why switching the cron off looked
+	// like it had stopped the spend and had not.
+	if (!isV1PlanEnabled()) return { fired: false, reason: "retired" };
 	const month = args.month ?? currentMonthYYYYMM();
 	const scope = TRIGGER_TO_SCOPE[args.trigger];
 

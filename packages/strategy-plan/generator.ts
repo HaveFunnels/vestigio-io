@@ -23,6 +23,7 @@
 
 import type { PrismaClient } from "@prisma/client";
 import type { GenerateContext, PlanGeneratorOutput } from "./types";
+import { isV1PlanEnabled } from "./v1-retired";
 import { getBusinessContext } from "../perception/business-context";
 import { generateHeroMetrics } from "./sections/hero-metrics";
 import { generateBuyerSegments } from "./sections/buyer-segments";
@@ -465,10 +466,27 @@ export async function generatePlan(
  * Run generatePlan and persist the result into MonthlyStrategyPlan
  * + PlanNextStep. Returns the planId. Idempotent on (envId, month).
  */
+/**
+ * Thrown instead of returning, because every caller already wraps this
+ * in a non-fatal try/catch and logs the reason. A silent no-op would
+ * have to invent a plan id for a plan that was never made.
+ */
+export class V1PlanRetiredError extends Error {
+	constructor() {
+		super("v1 plan retired; set V1_PLAN_ENABLED=true to re-enable");
+		this.name = "V1PlanRetiredError";
+	}
+}
+
 export async function generateAndPersistPlan(
 	prisma: PrismaClient,
 	args: GeneratePlanArgs,
 ): Promise<{ planId: string; output: PlanGeneratorOutput; regenScope: RegenScope }> {
+	// Retired. The caller inside the hourly audit cycle is the door the
+	// monthly cron gate did not cover, and it kept generating on day 8.
+	if (!isV1PlanEnabled()) {
+		throw new V1PlanRetiredError();
+	}
 	const scope: RegenScope = args.regenScope ?? "all";
 	// Keep persistence aligned with buildContext. Without this, a plan
 	// generated in the organization's language could be saved with the

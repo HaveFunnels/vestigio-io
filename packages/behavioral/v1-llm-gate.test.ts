@@ -70,4 +70,33 @@ describe("the v1 LLM gate still matches real passes", () => {
 		// per tick for work that will not happen.
 		expect(src.slice(i, j)).toContain("if (!isV1PlanEnabled()) return;");
 	});
+
+	it("gates the plan at the chokepoint, not only at the cron", () => {
+		// The correction that mattered. Gating the monthly cron and the
+		// enrichment passes looked like it had worked: semantic
+		// enrichment and micro_copy went to zero and stayed there, 91%
+		// of the bill. But strategy_plan.* kept firing at ~8 calls an
+		// hour on day 8 of the month, from two doors inside the hourly
+		// audit cycle that the cron gate never covered. The switch has
+		// to sit where every path converges.
+		const gen = read("packages/strategy-plan/generator.ts");
+		expect(gen).toContain("if (!isV1PlanEnabled()) {");
+		expect(gen).toContain("V1PlanRetiredError");
+
+		const ren = read("packages/strategy-plan/renarrate.ts");
+		expect(ren).toMatch(/if \(!isV1PlanEnabled\(\)\) return \{ fired: false/);
+	});
+
+	it("the package carries its own flag, since it cannot import from src", () => {
+		const flag = read("packages/strategy-plan/v1-retired.ts");
+		expect(flag).toMatch(/process\.env\.V1_PLAN_ENABLED === "true"/);
+	});
+
+	it("the audit cycle really does route through those two functions", () => {
+		// If a third door opens, this is the test that should start
+		// looking wrong.
+		const cycle = read("apps/audit-runner/run-cycle.ts");
+		expect(cycle).toContain("generateAndPersistPlan");
+		expect(cycle).toContain("maybeTriggerRenarrative");
+	});
 });

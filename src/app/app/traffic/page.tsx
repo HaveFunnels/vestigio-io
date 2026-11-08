@@ -2,6 +2,22 @@
 
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/console/PageHeader";
+import CampaignPill from "@/components/app/CampaignPill";
+import {
+	IconBetter,
+	IconChange,
+	IconCheck,
+	IconCompare,
+	IconFix,
+	IconMail,
+	IconMessage,
+	IconPage,
+	IconPhone,
+	IconSearch,
+	IconVerdict,
+	IconWhatsapp,
+	IconWorse,
+} from "@/components/app/traffic-icons";
 import { useActiveEnvId } from "@/components/app/McpDataProvider";
 
 // ──────────────────────────────────────────────
@@ -196,6 +212,20 @@ const CHANNEL_LABEL: Record<string, string> = {
 	email: "e-mail",
 };
 
+/** Each channel in its own colour, so the eye finds WhatsApp without
+ *  reading. Platform colours where they exist, because recognition is
+ *  the point. */
+const CHANNEL_TINT: Record<string, string> = {
+	whatsapp: "#25D366",
+	phone: "#3F5663",
+	phone_copy: "#6B7772",
+	email: "#A8490D",
+	instagram_dm: "#C13584",
+	messenger: "#0084FF",
+	telegram: "#229ED9",
+	sms: "#3F5663",
+};
+
 const MOVE_KIND: Record<TrafficMove["kind"], string> = {
 	campaign: "campanha",
 	page: "página",
@@ -326,10 +356,25 @@ export default function TrafficStatementPage() {
 			    reason they all gave in the same words: month two shows
 			    the same table. This is the part that is only true this
 			    week. */}
+			{/* The anchor. One dark card gives the panel a centre of
+			    gravity, and it is in our green rather than the black the
+			    reference used, so the one loud surface is still the
+			    brand. It holds what changed because that is the only
+			    part of this screen that is true only this week. */}
 			{moves.length > 0 && (
-				<div className="mb-6 overflow-hidden rounded-card border border-edge">
-					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						O que mudou nos últimos 7 dias
+				<div className="mb-6 overflow-hidden rounded-card bg-gradient-to-br from-[#0A5240] to-[#073A2D] text-[#D3EDE2]">
+					<div className="flex items-center gap-3 px-5 pb-1 pt-5">
+						<span className="grid h-8 w-8 place-items-center rounded-mid bg-white/15 text-white">
+							<IconChange />
+						</span>
+						<span>
+							<span className="block text-[14.5px] font-semibold text-white">
+								O que mudou
+							</span>
+							<span className="block text-[12.5px] text-[#9ECFBC]">
+								Esta semana contra a anterior
+							</span>
+						</span>
 					</div>
 					{/* The conclusion before its evidence. Three campaigns
 					    worsening on one page is what the live account
@@ -339,39 +384,39 @@ export default function TrafficStatementPage() {
 						const grouped = sharedPath(moves);
 						if (!grouped) return null;
 						return (
-							<p className="border-b border-edge bg-attention-bg/60 px-4 py-3 text-[13.5px] leading-relaxed text-content">
-								<strong>{grouped.count} campanhas</strong> que caem em{" "}
-								<span className="font-mono text-[12px]">{grouped.path}</span> mudaram na
-								mesma direção nesta semana. Quando campanhas diferentes se movem no mesmo
-								lugar, o problema tende a ser a página, não os anúncios.
+							<p className="mx-5 mt-4 flex gap-2.5 rounded-mid bg-white/10 px-4 py-3 text-[13.5px] leading-relaxed text-[#D3EDE2]">
+								<IconVerdict className="mt-0.5 shrink-0" />
+								<span>
+									<strong className="text-white">{grouped.count} campanhas</strong> que caem
+									em{" "}
+									<span className="font-mono text-[12px] text-white">{grouped.path}</span>{" "}
+									mudaram na mesma direção nesta semana. Quando campanhas diferentes se
+									movem no mesmo lugar, o problema tende a ser a página, não os anúncios.
+								</span>
 							</p>
 						);
 					})()}
-					<ul className="divide-y divide-edge">
+					<ul className="flex flex-col gap-2.5 px-5 pb-5 pt-3">
 						{moves.slice(0, 6).map((m) => (
-							<li key={`${m.kind}:${m.label}`} className="px-4 py-3">
-								<p className="text-[13.5px] leading-relaxed text-content">
-									<span
-										className={
-											m.direction === "worse"
-												? "font-semibold text-attention"
-												: "font-semibold text-emerald-700 dark:text-emerald-400"
-										}
-									>
-										{m.direction === "worse" ? "piorou" : "melhorou"}{" "}
+							<li
+								key={`${m.kind}:${m.label}`}
+								className="rounded-mid border border-white/[0.14] bg-white/10 px-4 py-3"
+							>
+								<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+									<span className="inline-flex items-center gap-1.5 text-[17px] font-semibold tabular-nums text-white">
+										{m.direction === "worse" ? <IconWorse size={15} /> : <IconBetter size={15} />}
 										{pct(Math.abs(m.deltaPoints))} pontos
 									</span>
-									{" na "}
-									{MOVE_KIND[m.kind]}{" "}
-									<span className={m.kind === "campaign" ? "" : "font-mono text-[12px]"}>
-										{m.label}
-									</span>
-									{": estava em "}
-									{pct(m.beforePct)}% e está em {pct(m.nowPct)}%.
-								</p>
-								<p className="mt-0.5 text-[11.5px] text-content-muted">
-									{n(m.nowSessions)} acessos nesta semana contra {n(m.beforeSessions)} na
-									anterior
+									{m.kind === "campaign" ? (
+										<CampaignPill name={m.label} label={m.label} tone="deep" />
+									) : (
+										<span className="font-mono text-[11.5px] text-[#D3EDE2]">{m.label}</span>
+									)}
+								</div>
+								<p className="mt-2 text-[13px] leading-relaxed text-[#D3EDE2]">
+									Estava em <strong className="font-semibold text-white">{pct(m.beforePct)}%</strong>
+									, está em <strong className="font-semibold text-white">{pct(m.nowPct)}%</strong>
+									. {n(m.nowSessions)} acessos contra {n(m.beforeSessions)} na semana anterior
 									{m.kind === "campaign" && m.samePage && ", e cai na mesma página de antes"}
 									{m.purchases > 0 && `, com ${n(m.purchases)} compras`}.
 								</p>
@@ -379,7 +424,7 @@ export default function TrafficStatementPage() {
 						))}
 					</ul>
 					{moves.length > 6 && (
-						<div className="border-t border-edge px-4 py-2 text-[11.5px] text-content-muted">
+						<div className="border-t border-white/[0.14] px-5 py-2.5 text-[11.5px] text-[#9ECFBC]">
 							Outros {moves.length - 6} movimentos menores não estão listados.
 						</div>
 					)}
@@ -482,15 +527,26 @@ export default function TrafficStatementPage() {
 			    about her business. */}
 			{data.contactsByChannel.length > 0 && (
 				<div className="mb-6 rounded-card border border-edge bg-surface-card px-5 py-4">
-					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						Quem saiu do site para falar com você
-					</div>
+					<div className="mb-4 flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-mid bg-surface-inset text-content-secondary"><IconMessage /></span><span className="text-[14.5px] font-semibold text-content">Quem saiu do site para falar com você</span></div>
 					<ul className="flex flex-wrap gap-x-6 gap-y-2">
 						{data.contactsByChannel.map((c) => (
-							<li key={c.channel} className="text-[13.5px] text-content">
-								<strong className="tabular-nums">{n(c.sessions)}</strong>{" "}
-								<span className="text-content-secondary">
-									{CHANNEL_LABEL[c.channel] ?? c.channel}
+							<li key={c.channel} className="flex items-center gap-2.5 text-[13.5px] text-content">
+								<span className="grid h-7 w-7 place-items-center rounded-mid text-white" style={{ background: CHANNEL_TINT[c.channel] ?? "#3F5663" }}>
+									{c.channel === "whatsapp" ? (
+										<IconWhatsapp size={15} />
+									) : c.channel.startsWith("phone") ? (
+										<IconPhone size={15} />
+									) : c.channel === "email" ? (
+										<IconMail size={15} />
+									) : (
+										<IconMessage size={15} />
+									)}
+								</span>
+								<span>
+									<strong className="tabular-nums">{n(c.sessions)}</strong>{" "}
+									<span className="text-content-secondary">
+										{CHANNEL_LABEL[c.channel] ?? c.channel}
+									</span>
 								</span>
 							</li>
 						))}
@@ -511,9 +567,7 @@ export default function TrafficStatementPage() {
 			    to exist. */}
 			{platformConversations !== null && (
 				<div className="mb-6 rounded-card border border-edge bg-surface-inset/40 px-5 py-4">
-					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						Conversas que nem passaram pelo site
-					</div>
+					<div className="mb-3 flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-mid bg-surface-inset text-content-secondary"><IconMessage /></span><span className="text-[14px] font-semibold text-content">Conversas que nem passaram pelo site</span></div>
 					<p className="text-[14px] leading-relaxed text-content">
 						O Meta diz ter iniciado{" "}
 						<strong>{n(platformConversations)}</strong>{" "}
@@ -534,9 +588,7 @@ export default function TrafficStatementPage() {
 			    ends of the review proposed this same way out. */}
 			{pages.length > 0 && (
 				<div className="mb-6 overflow-hidden rounded-card border border-edge">
-					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						Por página de destino, da que mais desperdiça acesso para a que menos
-					</div>
+					<div className="flex items-center gap-3 border-b border-edge px-4 py-3"><span className="grid h-8 w-8 place-items-center rounded-mid bg-surface-inset text-content-secondary"><IconPage /></span><span className="text-[14px] font-semibold text-content">Por página de destino, da que mais desperdiça acesso para a que menos</span></div>
 					<table className="w-full border-collapse text-[13px]">
 						<tbody>
 							{pages.map((pg) => {
@@ -609,9 +661,7 @@ export default function TrafficStatementPage() {
 			    averages a buyer and a browser into nothing. */}
 			{data.searchTerms.length > 0 && (
 				<div className="mb-6 overflow-hidden rounded-card border border-edge">
-					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						Por termo de busca
-					</div>
+					<div className="flex items-center gap-3 border-b border-edge px-4 py-3"><span className="grid h-8 w-8 place-items-center rounded-mid bg-surface-inset text-content-secondary"><IconSearch /></span><span className="text-[14px] font-semibold text-content">Por termo de busca</span></div>
 					<table className="w-full border-collapse text-[13px]">
 						<tbody>
 							{data.searchTerms.slice(0, 12).map((t) => (
@@ -640,9 +690,7 @@ export default function TrafficStatementPage() {
 
 			{data.control && (
 				<div className="mb-6 rounded-card border border-edge bg-surface-inset/40 px-5 py-4">
-					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						A sua própria base de comparação
-					</div>
+					<div className="mb-4 flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-mid bg-surface-inset text-content-secondary"><IconCompare /></span><span className="text-[14.5px] font-semibold text-content">A sua própria base de comparação</span></div>
 					<p className="text-[14px] leading-relaxed text-content">
 						Quem chega ao site <strong>sem anúncio</strong> não faz nada em{" "}
 						<strong>{pct(data.control.blindPct)}%</strong> das {n(data.control.sessions)} visitas.
@@ -691,9 +739,7 @@ export default function TrafficStatementPage() {
 									className="border-t border-edge align-top hover:bg-surface-card-hover"
 								>
 									<td className="px-4 py-3">
-										<div className="max-w-[300px] text-content" title={c.name}>
-											{c.displayName}
-										</div>
+										<CampaignPill name={c.name} label={c.displayName} />
 										<div className="mt-0.5 font-mono text-[11px] text-content-faint">
 											{c.source}
 											{c.topLandingPath ? ` cai em ${c.topLandingPath}` : ""}
@@ -778,8 +824,9 @@ export default function TrafficStatementPage() {
 									)}
 									<td className="px-3 py-3">
 										<span
-											className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] ${VERDICT[c.verdict].cls}`}
+											className={`inline-flex items-center gap-1.5 rounded-pill border px-2.5 py-1 text-[11.5px] font-medium ${VERDICT[c.verdict].cls}`}
 										>
+											{c.verdict === "entregando" ? <IconCheck size={12} /> : <IconFix size={12} />}
 											{VERDICT[c.verdict].label}
 										</span>
 									</td>
@@ -798,9 +845,7 @@ export default function TrafficStatementPage() {
 
 			{fixRows.length > 0 && (
 				<div className="mt-6 rounded-card border border-edge bg-surface-card px-5 py-4">
-					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						Por que corrigir e não cortar
-					</div>
+					<div className="mb-3 flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-mid bg-surface-inset text-content-secondary"><IconFix /></span><span className="text-[14px] font-semibold text-content">Por que corrigir e não cortar</span></div>
 					<p className="text-[14px] leading-relaxed text-content">
 						{fixRows.length === 1 ? "Essa campanha" : `Essas ${fixRows.length} campanhas`}{" "}
 						perde muita gente na entrada, mas ainda{" "}
@@ -817,9 +862,7 @@ export default function TrafficStatementPage() {
 
 			{cutRows.length > 0 && (
 				<div className="mt-6 rounded-card border border-edge bg-surface-card px-5 py-4">
-					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						A troca, se você cortar {cutRows.length === 1 ? "essa" : `essas ${cutRows.length}`}
-					</div>
+					<div className="mb-3 flex items-center gap-3"><span className="grid h-8 w-8 place-items-center rounded-mid bg-surface-inset text-content-secondary"><IconVerdict /></span><span className="text-[14px] font-semibold text-content">A troca, se você cortar {cutRows.length === 1 ? "essa" : `essas ${cutRows.length}`}</span></div>
 					<p className="text-[14px] leading-relaxed text-content">
 						Você deixa de comprar <strong>{n(cutSessions)}</strong> acessos, dos quais{" "}
 						<strong>{n(cutRows.reduce((x, c) => x + c.arrivedBlind, 0))}</strong> não fazem

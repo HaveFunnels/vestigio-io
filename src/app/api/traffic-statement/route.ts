@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { readTrafficSeries } from "../../../../packages/strategy-plan/sections/traffic-series";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { resolveOrgContext } from "@/libs/resolve-org";
@@ -209,9 +210,25 @@ export async function GET(request: Request) {
 		);
 		const moves = detectTrafficMoves(thisWeek, lastWeek);
 
+		// The memory, read for the first time. It has been accumulating
+		// since the backfill and nothing consumed it, which is the
+		// half-built shape this repo already names: collection shipped
+		// without consumption.
+		let series: Awaited<ReturnType<typeof readTrafficSeries>> | null = null;
+		try {
+			const { readTrafficSeries } = await import(
+				"../../../../packages/strategy-plan/sections/traffic-series"
+			);
+			series = await readTrafficSeries(prisma, orgCtx.envId);
+		} catch (err) {
+			// A missing series costs a sparkline, never the statement.
+			console.error("[traffic-statement] series", err);
+		}
+
 		return NextResponse.json({
 			statement,
 			platformConversations,
+			series,
 			moves,
 			moveWindow: {
 				start: lastWeekStart.toISOString().slice(0, 10),

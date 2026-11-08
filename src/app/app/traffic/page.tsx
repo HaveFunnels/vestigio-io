@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import PageHeader from "@/components/console/PageHeader";
 import CampaignPill from "@/components/app/CampaignPill";
 import MetricInfo from "@/components/app/MetricInfo";
+import Sparkline from "@/components/app/Sparkline";
 import {
 	IconBetter,
 	IconChange,
@@ -166,6 +167,20 @@ function brl(v: number): string {
 	});
 }
 
+interface SeriesPoint {
+	week: string;
+	sessions: number;
+	blind: number;
+	blindPct: number;
+}
+
+interface TrafficSeries {
+	account: SeriesPoint[];
+	byPage: Record<string, SeriesPoint[]>;
+	since: string | null;
+	driftPoints: number | null;
+}
+
 interface TrafficMove {
 	kind: "campaign" | "page" | "term";
 	label: string;
@@ -283,6 +298,7 @@ export default function TrafficStatementPage() {
 	const [data, setData] = useState<Statement | null>(null);
 	const [moves, setMoves] = useState<TrafficMove[]>([]);
 	const [platformConversations, setPlatformConversations] = useState<number | null>(null);
+	const [series, setSeries] = useState<TrafficSeries | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -309,6 +325,7 @@ export default function TrafficStatementPage() {
 							? body.platformConversations
 							: null,
 					);
+					setSeries(body.series ?? null);
 				} else setError(body.reason ?? "sem dados");
 			})
 			.catch(() => alive && setError("falha ao carregar"))
@@ -360,6 +377,10 @@ export default function TrafficStatementPage() {
 	const watching = data.campaigns.filter((c) => c.verdict === "observar").length;
 	const fine = data.campaigns.filter((c) => c.verdict === "entregando").length;
 	const hasSpend = data.totals.spendBrl !== null;
+	// No campaign has a previous baseline, so this account has not been
+	// measured for a full period yet. Used to show the connect-your-ad-
+	// account ask prominently once, instead of on every single load.
+	const isFirstWindow = data.campaigns.every((c) => c.deltaPoints === null);
 
 	// The page view, promoted from a footnote to the lead. It is the
 	// only view that works for an account whose campaigns are each too
@@ -390,16 +411,25 @@ export default function TrafficStatementPage() {
 			    last line. Three reviewers independently said the same
 			    thing: buried there, it does not weaken the verdict, it
 			    dismantles it. So it leads, and it asks. */}
-			{!hasSpend && (
+			{/* The spend ask, which used to be a banner on every visit.
+			    The content model said prominent in the first week and a
+			    quiet marker after that, because a request repeated daily
+			    becomes invisible and then becomes irritating. An audit
+			    found it still leading every load.
+
+			    First window is detectable without a new field: if no
+			    campaign has a previous baseline, the account has not
+			    been measured for a full period yet. */}
+			{!hasSpend && isFirstWindow && (
 				<div className="mb-5 rounded-card border border-attention/25 bg-attention-bg px-5 py-4">
 					<p className="text-[13.5px] leading-relaxed text-content">
 						<strong>Este extrato conta acessos, não reais.</strong> Conecte a conta de
-						anúncio e cada linha passa a mostrar quanto custou e quanto do custo comprou
-						acesso que não fez nada.
+						anúncio e cada linha passa a mostrar quanto custou e quanto do custo comprou{" "}
+						{MUTE.many}.
 					</p>
 					<a
 						href="/app/integrations"
-						className="mt-2 inline-flex rounded-lg border border-edge bg-surface-card px-3 py-1.5 text-[12.5px] font-medium text-content hover:bg-surface-card-hover"
+						className="mt-2 inline-flex rounded-mid border border-edge bg-surface-card px-3 py-1.5 text-[12.5px] font-medium text-content hover:bg-surface-card-hover"
 					>
 						Conectar conta de anúncio
 					</a>
@@ -554,9 +584,43 @@ export default function TrafficStatementPage() {
 					</MetricInfo>
 					. Quem chega sem anúncio:{" "}
 					{data.control ? `${pct(data.control.blindPct)}%` : "sem base para comparar"}.
-
 				</p>
-
+				{series && series.account.length >= 3 && (
+					// The memory, finally read. A rate that rots in 4 to 6
+					// point steps never trips the weekly alert, which is
+					// the failure the dentist on the council described and
+					// nobody else saw: "o meu CPL dobrou em seis meses e
+					// nunca cruzou nenhum limite. O padrão é que apodreceu."
+					<p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-edge pt-3 text-[12.5px] text-content-muted">
+						<Sparkline points={series.account} />
+						<span>
+							{series.driftPoints === null ? (
+								<>
+									Medindo há {series.account.length} semanas. A tendência aparece com mais
+									história.
+								</>
+							) : Math.abs(series.driftPoints) < 3 ? (
+								<>
+									Estável há {series.account.length} semanas, desde {series.since}.
+								</>
+							) : (
+								<>
+									<strong
+										className={
+											series.driftPoints > 0 ? "text-attention" : "text-accent-text"
+										}
+									>
+										{series.driftPoints > 0 ? "+" : ""}
+										{pct(series.driftPoints)} pontos
+									</strong>{" "}
+									em {series.account.length} semanas, desde {series.since}. Isso não
+									aparece no aviso semanal: a subida vem em passos pequenos demais para
+									cruzar limite.
+								</>
+							)}
+						</span>
+					</p>
+				)}
 			</div>
 
 			{/* Contact, for the businesses that close off the site. The
@@ -679,8 +743,13 @@ export default function TrafficStatementPage() {
 											</div>
 										)}
 									</td>
-									<td className="px-4 py-2.5 text-right">
-										<Delta move={moveOf.get(`page:${pg.path}`)} />
+									<td className="px-4 py-2.5">
+										<div className="flex items-center justify-end gap-3">
+											{series?.byPage?.[pg.path] && (
+												<Sparkline points={series.byPage[pg.path]} width={64} height={22} />
+											)}
+											<Delta move={moveOf.get(`page:${pg.path}`)} />
+										</div>
 									</td>
 									<td className="w-[38%] px-4 py-2.5">
 										<div className="flex items-center gap-2">
@@ -795,9 +864,19 @@ export default function TrafficStatementPage() {
 								</th>
 								<th className="px-3 py-3 text-right font-semibold">acima do padrão</th>
 								<th className="px-3 py-3 text-right font-semibold">pausar custa</th>
-								{hasSpend && (
-									<th className="px-3 py-3 text-right font-semibold">gasto perdido</th>
-								)}
+								<th className="px-3 py-3 text-right font-semibold">
+									{hasSpend ? (
+										"gasto perdido"
+									) : (
+										<a
+											href="/app/integrations"
+											className="font-normal text-content-muted underline decoration-dotted underline-offset-2 hover:text-content"
+											title="Conecte a conta de anúncio para ver quanto cada linha custou"
+										>
+											gasto perdido
+										</a>
+									)}
+								</th>
 								<th className="px-3 py-3 font-semibold">alerta</th>
 							</tr>
 						</thead>
@@ -884,7 +963,7 @@ export default function TrafficStatementPage() {
 											{c.pauseCostPurchases === 1 ? "compra" : "compras"}
 										</div>
 									</td>
-									{hasSpend && (
+									{hasSpend ? (
 										<td className="px-3 py-3 text-right tabular-nums">
 											<div className="text-content">
 												{c.spendWastedBrl === null ? "sem dado" : brl(c.spendWastedBrl)}
@@ -892,6 +971,10 @@ export default function TrafficStatementPage() {
 											<div className="text-[11px] text-content-muted">
 												{c.spendBrl === null ? "campanha nova" : `de ${brl(c.spendBrl)}`}
 											</div>
+										</td>
+									) : (
+										<td className="px-3 py-3 text-right">
+											<span className="text-[11px] text-content-faint">sem conexão</span>
 										</td>
 									)}
 									<td className="px-3 py-3">

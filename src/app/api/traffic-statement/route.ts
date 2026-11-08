@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { readTrafficSeries } from "../../../../packages/strategy-plan/sections/traffic-series";
 import type { scoreVerdicts } from "../../../../packages/strategy-plan/sections/traffic-scoreboard";
+import type { readStitch } from "../../../../packages/strategy-plan/sections/traffic-ground-truth";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { resolveOrgContext } from "@/libs/resolve-org";
@@ -249,11 +250,29 @@ export async function GET(request: Request) {
 			console.error("[traffic-statement] scoreboard", err);
 		}
 
+		// The human column, stitched onto the measured one. Only
+		// possible once there is a series to stitch to, which is why it
+		// reads from `series` rather than from the aggregates: the
+		// stitch is week against week, and the weekly rate is already
+		// gated on having enough sessions to mean anything.
+		let stitch: Awaited<ReturnType<typeof readStitch>> | null = null;
+		if (series && series.account.length >= 2) {
+			try {
+				const { readStitch } = await import(
+					"../../../../packages/strategy-plan/sections/traffic-ground-truth"
+				);
+				stitch = await readStitch(prisma, orgCtx.envId, series.account);
+			} catch (err) {
+				console.error("[traffic-statement] stitch", err);
+			}
+		}
+
 		return NextResponse.json({
 			statement,
 			platformConversations,
 			series,
 			scoreboard,
+			stitch,
 			moves,
 			moveWindow: {
 				start: lastWeekStart.toISOString().slice(0, 10),

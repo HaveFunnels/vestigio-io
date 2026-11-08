@@ -123,6 +123,22 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
 	},
 
 	{
+		model: "TrafficGroundTruth",
+		field: "week",
+		days: 1825,
+		reason:
+			"The two cells the operator types each week: who booked and who turned up. One row per week per environment, so 52 a year and ~260 over the window, which is the smallest table in this file by two orders of magnitude. It still gets a window because the invariant's test is the right one: an environment running forever would otherwise add rows forever, and 'it is small' is how RawBehavioralEvent started. Five years rather than two because the length IS the value here. This and TrafficChange are the only tables where deletion destroys something the customer made by hand rather than freeing space we generated, so the window is generous on purpose and the operator can export the history before it closes.",
+	},
+
+	{
+		model: "TrafficChange",
+		field: "happenedOn",
+		days: 1825,
+		reason:
+			"The operator's log of what they touched and when, written to answer the one question a drift in the series always raises. Append-only and human-paced: a busy account logs a few dozen entries a year, so the window is bounded by how often a person types rather than by traffic. Matched to TrafficGroundTruth at five years deliberately, because the two are read together and a change log that outlives or predeceases the numbers it explains is worse than either alone.",
+	},
+
+	{
 		model: "TrafficVerdict",
 		field: "issuedAt",
 		days: 730,

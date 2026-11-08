@@ -397,6 +397,8 @@ model Environment {
   frictionRollups        FrictionDailyRollup[]
   trafficRollups         TrafficDailyRollup[]
   trafficVerdicts        TrafficVerdict[]
+  trafficGroundTruth     TrafficGroundTruth[]
+  trafficChanges         TrafficChange[]
   userActions            UserAction[]
   opportunityTrackings   OpportunityTracking[]
   savedViews             SavedView[]
@@ -1512,6 +1514,90 @@ model TrafficVerdict {
   @@unique([envId, dimension, key, issuedAt])
   @@index([envId, issuedAt])
   @@index([envId, outcome])
+}
+
+/// The column we cannot measure, supplied by the person who can.
+///
+/// The dentist on the council drew the whole feature in one sentence:
+/// "eu preencho duas células por semana se vocês me devolverem a
+/// costura. Agendados e compareceram. O resto vocês medem."
+///
+/// That is the trade. We measure the site with a pixel and we will
+/// never see the chair, the phone call that closed, or the patient who
+/// booked and did not show. Those live in his head and in a notebook,
+/// and two numbers a week is a price he volunteered to pay.
+///
+/// What it buys is the only sentence in the product that connects the
+/// site to the business: the mute rate went up and the bookings went
+/// down in the same weeks. Neither number can say that alone.
+///
+/// Deliberately not a form with fourteen fields. Every field added
+/// here is a field that stops being filled, and a column filled three
+/// times and then abandoned is worse than an empty one because the
+/// series built on it looks continuous and is not.
+model TrafficGroundTruth {
+  id    String @id @default(cuid())
+  envId String
+
+  /// Monday of the week, matching date_trunc('week') in the series so
+  /// the two can be joined without a fuzzy date match.
+  week DateTime
+
+  /// How many people booked, and how many actually turned up. Both
+  /// nullable, because a week where he filled one and not the other is
+  /// still worth more than a week he skipped entirely.
+  booked     Int?
+  showed     Int?
+  /// For the businesses that earn in money rather than appointments.
+  revenueBrl Int?
+
+  /// Anything he wants to say about the week. Read by a human, never
+  /// parsed: the moment we parse it we start being wrong about it.
+  note String?
+
+  enteredBy String?
+  enteredAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  environment Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
+
+  @@unique([envId, week])
+  @@index([envId, week])
+}
+
+/// What the operator changed, and when.
+///
+/// The supplements seller asked for this from the other end: "o meu
+/// problema nao e nao saber a taxa, e nao saber o que eu mexi. Trocamos
+/// a foto do produto em algum momento de setembro e ninguem anotou."
+///
+/// A drift in the series is a question. This is where the candidate
+/// answers live, written by the people who caused them. It is a log,
+/// not an audit trail: we never infer it and we never correct it.
+model TrafficChange {
+  id    String @id @default(cuid())
+  envId String
+
+  /// The day it happened, as the person remembers it. Not the day they
+  /// wrote it down, which is almost never the same day and is kept
+  /// separately below.
+  happenedOn DateTime
+
+  /// In their words. "Trocamos a foto do produto", "subimos o preco",
+  /// "pausamos a campanha do TikTok".
+  what String
+
+  /// Which page or campaign it touched, when they know. Free text and
+  /// optional, because forcing a taxonomy here is how a log stops
+  /// being written.
+  scope String?
+
+  who       String?
+  createdAt DateTime @default(now())
+
+  environment Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
+
+  @@index([envId, happenedOn])
 }
 
 model CustomMap {

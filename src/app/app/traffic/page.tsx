@@ -6,6 +6,7 @@ import CampaignPill from "@/components/app/CampaignPill";
 import MetricInfo from "@/components/app/MetricInfo";
 import OpenTheCount from "@/components/app/OpenTheCount";
 import Scoreboard, { type ScoreboardData } from "@/components/app/Scoreboard";
+import GroundTruthColumn, { type StitchData } from "@/components/app/GroundTruthColumn";
 import Sparkline from "@/components/app/Sparkline";
 import {
 	IconBetter,
@@ -306,6 +307,10 @@ export default function TrafficStatementPage() {
 	const [platformConversations, setPlatformConversations] = useState<number | null>(null);
 	const [series, setSeries] = useState<TrafficSeries | null>(null);
 	const [scoreboard, setScoreboard] = useState<ScoreboardData | null>(null);
+	const [stitch, setStitch] = useState<StitchData | null>(null);
+	/** Bumped when the operator saves a week or logs a change, so the
+	 *  stitch they just fed comes back stitched. */
+	const [nonce, setNonce] = useState(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -318,7 +323,10 @@ export default function TrafficStatementPage() {
 
 	useEffect(() => {
 		let alive = true;
-		setLoading(true);
+		// The skeleton belongs to an empty screen, not to a refetch. A
+		// save that blanks the panel the operator is typing into reads
+		// as having lost their work.
+		if (data === null) setLoading(true);
 		setError(null);
 		fetch("/api/traffic-statement")
 			.then((r) => r.json())
@@ -334,6 +342,7 @@ export default function TrafficStatementPage() {
 					);
 					setSeries(body.series ?? null);
 					setScoreboard(body.scoreboard ?? null);
+					setStitch(body.stitch ?? null);
 				} else setError(body.reason ?? "sem dados");
 			})
 			.catch(() => alive && setError("falha ao carregar"))
@@ -341,7 +350,11 @@ export default function TrafficStatementPage() {
 		return () => {
 			alive = false;
 		};
-	}, [envId]);
+		// `data` is read above only to decide whether to show the
+		// skeleton, and including it here would refetch on every
+		// arrival. The nonce is the deliberate reload trigger.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [envId, nonce]);
 
 	if (loading) {
 		// Shimmer, never a spinner. House rule.
@@ -646,6 +659,19 @@ export default function TrafficStatementPage() {
 					</p>
 				)}
 			</div>
+
+			{/* The human column, placed right after the drift sentence
+			    because that paragraph ends on an open question. The
+			    account rate climbed 32 points over eleven weeks and the
+			    product cannot say why; the person reading it often can,
+			    and until now had nowhere to write it down.
+
+			    It is also the half of the trade we owe: "eu preencho
+			    duas células por semana SE vocês me devolverem a
+			    costura." A form that takes two numbers and returns
+			    nothing is data entry, and nobody does data entry for a
+			    vendor twice. */}
+			<GroundTruthColumn stitch={stitch} onSaved={() => setNonce((k) => k + 1)} />
 
 			{/* Contact, for the businesses that close off the site. The
 			    esthetician had exactly one question, "quantas mensagens

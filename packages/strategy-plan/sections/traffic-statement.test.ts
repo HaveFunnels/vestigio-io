@@ -1435,3 +1435,98 @@ describe("the contact a service business actually converts on", () => {
 		expect(st.campaigns[0].contactSessions).toBe(0);
 	});
 });
+
+describe("the headline number says what it is", () => {
+	it("reports the pooled rate and the median as two different numbers", () => {
+		// They are not the same and the page used to print one under
+		// words that name the other. On the instrumented account the
+		// median is 29.5% and the pooled rate 26.1%, and a reviewer who
+		// audits statements tried to reconcile the headline against the
+		// per-page table, failed, and reported it as arithmetic error.
+		// The number was right; the sentence was wrong.
+		const c = (id: string, n_: number, blind: number) => [
+			...many(blind, {
+				max_scroll_depth: 0,
+				surface_progression: ["a"],
+				attribution: { first_touch: { source: "FB", campaign: `C|${id}` } },
+			}),
+			...many(n_ - blind, {
+				max_scroll_depth: 90,
+				attribution: { first_touch: { source: "FB", campaign: `C|${id}` } },
+			}),
+		];
+		// One big clean campaign and two small dirty ones: the median
+		// sits with the small ones, the pooled rate with the big one.
+		const st = buildTrafficStatement(
+			[
+				...c("111111111111", 3000, 300),
+				...c("222222222222", 400, 320),
+				...c("333333333333", 400, 320),
+			],
+			WIN,
+		);
+		expect(st.accountMedianBlindPct).toBe(80);
+		// 940 blind over 3.800 sessions. The median says the typical
+		// campaign is terrible; the pooled rate says most of the traffic
+		// is fine. Both true, and they answer different questions.
+		expect(st.accountBlindPct).toBe(24.7);
+		expect(st.accountBlindPct).not.toBe(st.accountMedianBlindPct);
+	});
+});
+
+describe("blaming the page requires the campaigns to agree", () => {
+	const onPage = (id: string, path: string, n_: number, blind: number) => [
+		...many(blind, {
+			max_scroll_depth: 0,
+			surface_progression: ["a"],
+			attribution: {
+				first_touch: { source: "FB", campaign: `C|${id}`, landing_url: `https://x.com${path}` },
+			},
+		}),
+		...many(n_ - blind, {
+			max_scroll_depth: 90,
+			attribution: {
+				first_touch: { source: "FB", campaign: `C|${id}`, landing_url: `https://x.com${path}` },
+			},
+		}),
+	];
+
+	it("counts how many campaigns on a page sit above the account median", () => {
+		// The reviewer spending R$ 220k a month caught the statement
+		// contradicting its own control: it concluded "o alvo é a
+		// página" while printing that non-paid traffic does nothing only
+		// 4.4% of the time on those same pages. If the page were broken,
+		// organic would break too. So the page can only be blamed when
+		// the campaigns on it agree, and that has to be countable.
+		const st = buildTrafficStatement(
+			[
+				...onPage("111111111111", "/ruim", 400, 360),
+				...onPage("222222222222", "/ruim", 400, 350),
+				...onPage("333333333333", "/ruim", 400, 340),
+				...onPage("444444444444", "/misto", 400, 40),
+				...onPage("555555555555", "/misto", 400, 350),
+				// Three healthy pages, so the account median sits where a
+				// real account's would and not above the bad page itself.
+				...onPage("666666666666", "/ok1", 400, 44),
+				...onPage("777777777777", "/ok2", 400, 48),
+				...onPage("888888888888", "/ok3", 400, 40),
+			],
+			WIN,
+		);
+		const ruim = st.landingPages.find((p) => p.path === "/ruim")!;
+		const misto = st.landingPages.find((p) => p.path === "/misto")!;
+		// Everything on /ruim degrades: the page is the common factor.
+		expect(ruim.campaignsJudged).toBe(3);
+		expect(ruim.campaignsAboveMedian).toBe(3);
+		// On /misto one campaign converts fine, which proves the page
+		// works and moves the blame upstream.
+		expect(misto.campaignsJudged).toBe(2);
+		expect(misto.campaignsAboveMedian).toBeLessThan(misto.campaignsJudged);
+	});
+
+	it("says nothing about a page with a single campaign", () => {
+		// One campaign on a page is not evidence about the page.
+		const st = buildTrafficStatement(onPage("111111111111", "/so", 400, 360), WIN);
+		expect(st.landingPages[0].campaignsJudged).toBe(1);
+	});
+});

@@ -55,6 +55,7 @@ interface Statement {
 	measuredSessions: number;
 	attributionCoveragePct: number;
 	accountMedianBlindPct: number;
+	accountBlindPct: number;
 	thresholds: {
 		absoluteBlindPct: number;
 		pointsAboveMedian: number;
@@ -89,6 +90,8 @@ interface Statement {
 		arrivedBlindPct: number;
 		campaigns: number;
 		purchases: number;
+		campaignsAboveMedian: number;
+		campaignsJudged: number;
 	}[];
 	control: {
 		sessions: number;
@@ -401,8 +404,16 @@ export default function TrafficStatementPage() {
 					)}
 				</p>
 				<p className="mt-2 text-[12.5px] text-content-muted">
-					Na conta inteira, {pct(data.accountMedianBlindPct)}% dos acessos pagos não fazem nada.
-					Quem chega sem anúncio:{" "}
+					{/* Pooled, not the median. The page used to print the
+					    median under these words, which name a pooled rate,
+					    and a reviewer who audits statements tried to
+					    reconcile it against the per-page table and could
+					    not. The number was right and the sentence was
+					    wrong, which is the harder defect because checking
+					    the arithmetic cannot find it. */}
+					Na conta inteira, {pct(data.accountBlindPct)}% dos acessos pagos não fazem nada, e a
+					campanha típica fica em {pct(data.accountMedianBlindPct)}%, que é a régua usada para
+					comparar uma campanha com as outras. Quem chega sem anúncio:{" "}
 					{data.control ? `${pct(data.control.blindPct)}%` : "sem base para comparar"}.
 					<button
 						type="button"
@@ -524,18 +535,46 @@ export default function TrafficStatementPage() {
 			{pages.length > 0 && (
 				<div className="mb-6 overflow-hidden rounded-2xl border border-edge">
 					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
-						Por página de destino
+						Por página de destino, da que mais desperdiça acesso para a que menos
 					</div>
 					<table className="w-full border-collapse text-[13px]">
 						<tbody>
-							{pages.map((pg) => (
+							{pages.map((pg) => {
+								// Which half is to blame, instead of flatly saying
+								// "the page". If every campaign landing here
+								// degrades, the page is the common factor; if only
+								// some do, the others prove the page converts and
+								// the difference is in the ads. The flat version
+								// contradicted the control, which shows non-paid
+								// traffic doing fine on these same pages.
+								const agree =
+									pg.campaignsJudged >= 2
+										? pg.campaignsAboveMedian / pg.campaignsJudged
+										: null;
+								const buyRate = (100 * pg.purchases) / pg.sessions;
+								return (
 								<tr key={pg.path} className="border-t border-edge first:border-t-0">
 									<td className="px-4 py-2.5">
 										<div className="font-mono text-[12px] text-content">{pg.path}</div>
 										<div className="text-[11px] text-content-muted">
 											{pg.campaigns} campanhas, {n(pg.purchases)}{" "}
-											{pg.purchases === 1 ? "compra" : "compras"}
+											{pg.purchases === 1 ? "compra" : "compras"}, {pct(buyRate)}% de
+											quem chega
 										</div>
+										{agree !== null && agree >= 0.7 && (
+											<div className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">
+												{pg.campaignsAboveMedian} das {pg.campaignsJudged} campanhas
+												medidas aqui perdem acima do seu padrão. Quando quase todas
+												perdem no mesmo lugar, o alvo é a página.
+											</div>
+										)}
+										{agree !== null && agree <= 0.4 && pg.campaignsAboveMedian > 0 && (
+											<div className="mt-1 text-[11px] text-content-secondary">
+												Só {pg.campaignsAboveMedian} das {pg.campaignsJudged} campanhas
+												perdem acima do padrão. As outras convertem aqui, então o alvo
+												é o anúncio e não a página.
+											</div>
+										)}
 									</td>
 									<td className="w-[38%] px-4 py-2.5">
 										<div className="flex items-center gap-2">
@@ -556,7 +595,8 @@ export default function TrafficStatementPage() {
 										</div>
 									</td>
 								</tr>
-							))}
+								);
+							})}
 						</tbody>
 					</table>
 				</div>

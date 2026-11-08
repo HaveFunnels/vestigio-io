@@ -395,6 +395,7 @@ model Environment {
   behavioralEvents       RawBehavioralEvent[]
   behavioralSessions     BehavioralSessionAggregate[]
   frictionRollups        FrictionDailyRollup[]
+  trafficRollups         TrafficDailyRollup[]
   userActions            UserAction[]
   opportunityTrackings   OpportunityTracking[]
   savedViews             SavedView[]
@@ -1359,6 +1360,79 @@ model FrictionDailyRollup {
 
   @@unique([envId, day, path])
   @@index([envId, day])
+}
+
+/// Daily memory of paid traffic, per campaign, per landing page and
+/// per search term.
+///
+/// The council of nine reviewers was asked to choose between three
+/// delivery formats and refused the question. Five of them arrived,
+/// by five routes that do not touch, at the same missing thing: the
+/// product has no memory. The media buyer put it as "o mês 2 parecer
+/// igual não é problema de formato nem de frequência, é falta de
+/// memória". The dentist, who keeps 26 weeks by hand in a spreadsheet,
+/// put it as "a minha planilha, que é mais burra que o pixel de vocês,
+/// lembra de 26 semanas".
+///
+/// This is the one asset that cannot be bought later. A competitor can
+/// copy a layout in a weekend and a judgment in a prompt; nobody can
+/// copy six months of series that started in May.
+///
+/// It is also what unlocks the rest: slow drift (a rate that rots 12%
+/// a month and never trips a threshold), the receipt that proves the
+/// meter was running, the loop that says whether last month's
+/// recommendation worked, and the dissolution of the 300-session
+/// floor, since 90 days of accumulation lifts most of the 314
+/// excluded campaigns over it.
+model TrafficDailyRollup {
+  id    String   @id @default(cuid())
+  envId String
+  /// UTC day of the session's startedAt. Date, not timestamp.
+  day   DateTime @db.Date
+
+  /// What `key` names: campaign, page, term, or account.
+  ///
+  /// One table rather than three, because every consumer asks the same
+  /// question of all of them and a union of three tables is the same
+  /// query with more joins. 'account' is the day's totals, carried in
+  /// its own row rather than repeated on all 63 daily rows; unlike the
+  /// friction rollup's sentinel concern, an explicit dimension column
+  /// cannot be mistaken for a page and ranked.
+  dimension String
+  /// Campaign platform id (or name when there is none), landing path,
+  /// search term, or "_" for the account row.
+  key       String
+  /// The campaign name as the operator wrote it, kept so a series
+  /// survives a campaign being renamed. Null for other dimensions.
+  label     String?
+
+  sessions  Int @default(0)
+  /// Sessions that did nothing at all, by the ruler named in
+  /// `rulerVersion`.
+  blind     Int @default(0)
+  /// Sessions that reached the action for this business model.
+  action    Int @default(0)
+  purchases Int @default(0)
+  /// Sessions that left to talk to a human by any channel.
+  contacts  Int @default(0)
+
+  /// Which definition of "did nothing" produced `blind`.
+  ///
+  /// The CFO caught the reason this column has to exist: between two
+  /// editions the headline went from 70.1% to 29.5% and the verdict
+  /// inverted from pause to do-not-pause, on the same account, with no
+  /// line saying the ruler had changed. A delta only means something
+  /// if both sides were measured the same way, and that fact is
+  /// impossible to reconstruct after the fact. So it is stored, per
+  /// row, from the first row.
+  rulerVersion Int @default(1)
+
+  computedAt DateTime @default(now())
+
+  environment Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
+
+  @@unique([envId, day, dimension, key])
+  @@index([envId, dimension, day])
 }
 
 model CustomMap {

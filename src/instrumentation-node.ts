@@ -358,6 +358,65 @@ export async function registerNodeInstrumentation(): Promise<void> {
 				);
 			}
 
+			// Roll up traffic, for the same reason and in the same
+			// place: it reads BehavioralSessionAggregate, so it has to
+			// run before the day that just aged out is pruned.
+			//
+			// This one is the product's memory rather than a query
+			// optimisation. Nine reviewers were asked to choose between
+			// three delivery formats and five of them, independently,
+			// named the same missing thing instead: the product cannot
+			// remember what it said or what the number used to be.
+			//
+			// It starts today rather than when a screen needs it,
+			// because this is the one asset that cannot be bought later.
+			// Every day not stored is gone. 63 rows a day per
+			// environment, measured.
+			//
+			// Idempotent by (envId, day, dimension, key), so a double
+			// run from a lease handover costs duplicated work and never
+			// duplicated counts.
+			try {
+				const { rollUpTraffic } = await import(
+					"../packages/strategy-plan/sections/traffic-rollup"
+				);
+				const envs = await prisma.environment.findMany({
+					where: { activated: true },
+					select: { id: true, organizationId: true },
+				});
+				let rolled = 0;
+				for (const env of envs) {
+					try {
+						// conversionModel decides what counts as the action,
+						// so a lawyer's series is not judged on a checkout
+						// he does not have.
+						const profile = await prisma.businessProfile
+							.findUnique({
+								where: { organizationId: env.organizationId },
+								select: { conversionModel: true },
+							})
+							.catch(() => null);
+						const r = await rollUpTraffic(
+							prisma,
+							env.id,
+							undefined,
+							undefined,
+							profile?.conversionModel ?? null,
+						);
+						rolled += r.rowsWritten;
+					} catch (err) {
+						failures.push(
+							`traffic-rollup:${env.id}(${err instanceof Error ? err.message.split("\n")[0] : String(err)})`,
+						);
+					}
+				}
+				if (rolled > 0) pruned.push(`TrafficDailyRollup=${rolled}`);
+			} catch (err) {
+				failures.push(
+					`traffic-rollup(${err instanceof Error ? err.message.split("\n")[0] : String(err)})`,
+				);
+			}
+
 			// Drop payloads nothing can still read. Separate from
 			// NULLIFY_POLICIES because its bound is not an age: it is
 			// "not one of the recent cycles per environment", with an

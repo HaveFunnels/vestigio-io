@@ -99,6 +99,35 @@ export const SAW_SOMETHING_MILESTONE = 25;
  * in just over half of all sessions, so it is not a proxy for "the
  * page rendered".
  */
+/**
+ * Which definition of "did nothing" is in force.
+ *
+ * Bump this whenever `sawNothing` changes. It is stamped on every
+ * rollup row so a series never silently compares two rulers: the
+ * headline already moved from 70.1% to 29.5% once, with the verdict
+ * inverting on the same account, and nothing recorded that the
+ * measurement had changed underneath. The reviewer who audits
+ * financial statements caught exactly that and said a delta only means
+ * something if both sides used the same ruler. He is right, and it is
+ * impossible to reconstruct after the fact.
+ *
+ * 1 = no scroll past 25%.
+ * 2 = no interaction of any kind (current).
+ */
+export const RULER_VERSION = 2;
+
+/**
+ * The absolute gate, in points.
+ *
+ * Deliberately a constant and not a multiple of the account's own
+ * baseline, because the whole purpose of the second gate is to be
+ * independent of the first: a relative gate alone is circular, since
+ * someone is always above their own median. The CFO read 45 next to a
+ * baseline of 29.5 and asked where it came from, which was fair,
+ * because nothing on the page said it was a constant. It is now
+ * shipped in `thresholds` and printed, so the two rules in the same
+ * sentence are visibly two rules.
+ */
 export const ABSOLUTE_BLIND_FLOOR = 45;
 
 /** How far above the account's own median a row has to sit before it
@@ -284,8 +313,24 @@ export interface TrafficStatement {
 	/** Sessions that passed the bot gate at all, for coverage honesty. */
 	measuredSessions: number;
 	attributionCoveragePct: number;
-	/** The account's own median no-scroll rate, the comparison basis. */
+	/**
+	 * The account's own MEDIAN per-campaign rate. The comparison basis,
+	 * and the right one for "is this campaign unusual here".
+	 *
+	 * Not the same thing as the account's overall rate, and the page
+	 * used to describe it as if it were: it printed this number under
+	 * the words "na conta inteira", which names a pooled rate. On the
+	 * instrumented account the median is 29.5% and the pooled rate is
+	 * 26.1%. The CFO tried to reconcile the headline against the
+	 * per-page table, could not, and reported it as an arithmetic
+	 * error. It was not: the number was right and the sentence was
+	 * wrong, which is worse, because checking the arithmetic cannot
+	 * find it. That is exactly what happened to him.
+	 */
 	accountMedianBlindPct: number;
+	/** The account's pooled rate: blind sessions over all attributed
+	 *  sessions. This is what "na conta inteira" actually means. */
+	accountBlindPct: number;
 	/**
 	 * The numbers the verdict actually used, so the page can declare
 	 * its method without the text drifting from the behaviour.
@@ -379,6 +424,26 @@ export interface TrafficStatement {
 		/** How many distinct campaigns sent traffic here. */
 		campaigns: number;
 		purchases: number;
+		/**
+		 * Of the campaigns on this page that cleared the session floor,
+		 * how many sit above the account median.
+		 *
+		 * This is what separates "the page does not serve bought
+		 * traffic" from "one ad is lying". If every campaign landing
+		 * here degrades, the common factor is the page; if only some
+		 * do, the others prove the page can convert and the difference
+		 * is upstream.
+		 *
+		 * The distinction exists because the reviewer spending R$ 220k
+		 * a month caught the statement contradicting its own control:
+		 * it concluded "o alvo é a página" while printing that non-paid
+		 * traffic does nothing only 4.4% of the time on those same
+		 * pages. If the page were broken, organic would break too. What
+		 * is broken is the pairing, and the page cannot be blamed
+		 * without saying which half.
+		 */
+		campaignsAboveMedian: number;
+		campaignsJudged: number;
 	}[];
 	/**
 	 * Non-paid sessions in the same window, as an internal control.
@@ -1188,6 +1253,11 @@ export function buildTrafficStatement(
 		measuredSessions: measured,
 		attributionCoveragePct: measured > 0 ? Math.round((1000 * attributed) / measured) / 10 : 0,
 		accountMedianBlindPct: Math.round(accountMedian * 10) / 10,
+		accountBlindPct:
+			attributed > 0
+				? Math.round((1000 * [...byCampaign.values()].reduce((n, c) => n + c.blind, 0)) /
+						[...byCampaign.values()].reduce((n, c) => n + c.sessions, 0)) / 10
+				: 0,
 		thresholds: {
 			absoluteBlindPct: ABSOLUTE_BLIND_FLOOR,
 			pointsAboveMedian: POINTS_ABOVE_MEDIAN,
@@ -1234,14 +1304,22 @@ export function buildTrafficStatement(
 			.sort((a, b) => b.arrivedBlind - a.arrivedBlind),
 		landingPages: [...byPage.entries()]
 			.filter(([, p]) => p.sessions >= floor)
-			.map(([path, p]) => ({
-				path,
-				sessions: p.sessions,
-				arrivedBlind: p.blind,
-				arrivedBlindPct: Math.round((1000 * p.blind) / p.sessions) / 10,
-				campaigns: p.campaigns.size,
-				purchases: p.purchases,
-			}))
+			.map(([path, p]) => {
+				const judged = campaigns.filter((c) => c.topLandingPath === path);
+				return {
+					path,
+					sessions: p.sessions,
+					arrivedBlind: p.blind,
+					arrivedBlindPct: Math.round((1000 * p.blind) / p.sessions) / 10,
+					campaigns: p.campaigns.size,
+					purchases: p.purchases,
+					campaignsJudged: judged.length,
+					campaignsAboveMedian: judged.filter((c) => c.pointsAboveAccount > 0).length,
+				};
+			})
+			// Ranked by wasted arrivals in absolute terms. Stated on the
+			// page now: with no sort control, the sort key is not
+			// optional information.
 			.sort((a, b) => b.arrivedBlind - a.arrivedBlind),
 		// 300 to match the per-campaign floor: below it the rate is noise
 		// and a noisy control is worse than none.

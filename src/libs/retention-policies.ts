@@ -123,6 +123,14 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
 	},
 
 	{
+		model: "TrafficDailyRollup",
+		field: "day",
+		days: 400,
+		reason:
+			"The product's memory, and the one asset a competitor cannot buy later. Measured on Casa Montelle: 63 rows/day across campaign, page and term, so 400 days is ~25k rows and ~5 MB per environment, against the 670k raw sessions the same year produces. 400 rather than 180 because the window has to outlast a year: the dentist's whole complaint was a cost that doubled over six months without any single week looking abnormal, and seeing that needs more history than the drift itself. It is the cheapest table we keep and the only one whose value is strictly increasing with age.",
+	},
+
+	{
 		model: "FrictionDailyRollup",
 		field: "day",
 		days: 180,

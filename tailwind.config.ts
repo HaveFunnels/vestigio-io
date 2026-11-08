@@ -167,6 +167,13 @@ const config: Config = {
 					cta: "rgb(var(--accent-cta) / <alpha-value>)",
 					"cta-hover": "rgb(var(--accent-cta-hover) / <alpha-value>)",
 				},
+				// Attention, separate from the accent by design. See the
+				// note in globals.css: on a green brand a worsening
+				// cannot be rendered in the brand hue.
+				attention: {
+					DEFAULT: "rgb(var(--attention) / <alpha-value>)",
+					bg: "rgb(var(--attention-bg) / <alpha-value>)",
+				},
 				sidebar: {
 					bg: "rgb(var(--sidebar-bg) / <alpha-value>)",
 					"active-bg": "rgb(var(--sidebar-active-bg) / <alpha-value>)",
@@ -313,6 +320,13 @@ const config: Config = {
 			},
 			borderRadius: {
 				10: "10px",
+				// Identity radii, varied by role on purpose: outer cards
+				// get the big one, inner elements the middle, pills the
+				// full round. One radius stamped on everything flattens
+				// the hierarchy.
+				card: "var(--radius-card)",
+				mid: "var(--radius-mid)",
+				pill: "var(--radius-pill)",
 			},
 			zIndex: {
 				999999: "999999",

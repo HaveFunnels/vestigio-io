@@ -107,11 +107,11 @@ const VERDICT: Record<CampaignRow["verdict"], { label: string; cls: string }> = 
 	// column on its own rows.
 	cortar: {
 		label: "cortar",
-		cls: "bg-red-500/[0.08] text-red-700 dark:text-red-400 border-red-500/20",
+		cls: "bg-attention-bg text-attention border-attention/25",
 	},
 	corrigir: {
 		label: "corrigir, não cortar",
-		cls: "bg-amber-500/[0.10] text-amber-700 dark:text-amber-400 border-amber-500/25",
+		cls: "bg-attention-bg text-attention border-attention/25",
 	},
 	medicao_suspeita: {
 		label: "medição suspeita",
@@ -248,7 +248,7 @@ export default function TrafficStatementPage() {
 				<PageHeader title="Extrato de tráfego pago" />
 				<div className="space-y-2">
 					{Array.from({ length: 6 }).map((_, i) => (
-						<div key={i} className="h-14 animate-pulse rounded-xl bg-surface-inset" />
+						<div key={i} className="h-14 animate-pulse rounded-mid bg-surface-inset" />
 					))}
 				</div>
 			</div>
@@ -259,7 +259,7 @@ export default function TrafficStatementPage() {
 		return (
 			<div className="p-6">
 				<PageHeader title="Extrato de tráfego pago" />
-				<div className="rounded-2xl border border-edge bg-surface-card p-6 text-[13.5px] text-content-secondary">
+				<div className="rounded-card border border-edge bg-surface-card p-6 text-[13.5px] text-content-secondary">
 					Ainda não há sessões medidas com campanha identificada nesta janela. O extrato
 					aparece quando o pixel registra tráfego vindo de anúncio.
 				</div>
@@ -306,7 +306,7 @@ export default function TrafficStatementPage() {
 			    thing: buried there, it does not weaken the verdict, it
 			    dismantles it. So it leads, and it asks. */}
 			{!hasSpend && (
-				<div className="mb-5 rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] px-5 py-4">
+				<div className="mb-5 rounded-card border border-attention/25 bg-attention-bg px-5 py-4">
 					<p className="text-[13.5px] leading-relaxed text-content">
 						<strong>Este extrato conta acessos, não reais.</strong> Conecte a conta de
 						anúncio e cada linha passa a mostrar quanto custou e quanto do custo comprou
@@ -327,7 +327,7 @@ export default function TrafficStatementPage() {
 			    the same table. This is the part that is only true this
 			    week. */}
 			{moves.length > 0 && (
-				<div className="mb-6 overflow-hidden rounded-2xl border border-edge">
+				<div className="mb-6 overflow-hidden rounded-card border border-edge">
 					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						O que mudou nos últimos 7 dias
 					</div>
@@ -339,7 +339,7 @@ export default function TrafficStatementPage() {
 						const grouped = sharedPath(moves);
 						if (!grouped) return null;
 						return (
-							<p className="border-b border-edge bg-amber-500/[0.05] px-4 py-3 text-[13.5px] leading-relaxed text-content">
+							<p className="border-b border-edge bg-attention-bg/60 px-4 py-3 text-[13.5px] leading-relaxed text-content">
 								<strong>{grouped.count} campanhas</strong> que caem em{" "}
 								<span className="font-mono text-[12px]">{grouped.path}</span> mudaram na
 								mesma direção nesta semana. Quando campanhas diferentes se movem no mesmo
@@ -354,7 +354,7 @@ export default function TrafficStatementPage() {
 									<span
 										className={
 											m.direction === "worse"
-												? "font-semibold text-red-700 dark:text-red-400"
+												? "font-semibold text-attention"
 												: "font-semibold text-emerald-700 dark:text-emerald-400"
 										}
 									>
@@ -386,7 +386,7 @@ export default function TrafficStatementPage() {
 				</div>
 			)}
 
-			<div className="mb-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
+			<div className="mb-6 rounded-card border border-edge bg-surface-card px-5 py-4">
 				<p className="text-[15px] leading-relaxed text-content">
 					{worstPage ? (
 						<>
@@ -481,7 +481,7 @@ export default function TrafficStatementPage() {
 			    see a WhatsApp tap the statement could say nothing at all
 			    about her business. */}
 			{data.contactsByChannel.length > 0 && (
-				<div className="mb-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
+				<div className="mb-6 rounded-card border border-edge bg-surface-card px-5 py-4">
 					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						Quem saiu do site para falar com você
 					</div>
@@ -510,7 +510,7 @@ export default function TrafficStatementPage() {
 			    reducing exactly this dependency is the product's reason
 			    to exist. */}
 			{platformConversations !== null && (
-				<div className="mb-6 rounded-2xl border border-edge bg-surface-inset/40 px-5 py-4">
+				<div className="mb-6 rounded-card border border-edge bg-surface-inset/40 px-5 py-4">
 					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						Conversas que nem passaram pelo site
 					</div>
@@ -533,7 +533,7 @@ export default function TrafficStatementPage() {
 			    the small advertiser and the fast tester alike, and both
 			    ends of the review proposed this same way out. */}
 			{pages.length > 0 && (
-				<div className="mb-6 overflow-hidden rounded-2xl border border-edge">
+				<div className="mb-6 overflow-hidden rounded-card border border-edge">
 					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						Por página de destino, da que mais desperdiça acesso para a que menos
 					</div>
@@ -562,7 +562,7 @@ export default function TrafficStatementPage() {
 											quem chega
 										</div>
 										{agree !== null && agree >= 0.7 && (
-											<div className="mt-1 text-[11px] text-amber-700 dark:text-amber-400">
+											<div className="mt-1 text-[11px] text-attention">
 												{pg.campaignsAboveMedian} das {pg.campaignsJudged} campanhas
 												medidas aqui perdem acima do seu padrão. Quando quase todas
 												perdem no mesmo lugar, o alvo é a página.
@@ -581,7 +581,7 @@ export default function TrafficStatementPage() {
 											<div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-inset">
 												<div
 													className={`h-full rounded-full ${
-														pg.arrivedBlindPct >= 30 ? "bg-red-500/60" : "bg-emerald-500/50"
+														pg.arrivedBlindPct >= 30 ? "bg-attention/70" : "bg-accent/60"
 													}`}
 													style={{ width: `${Math.min(100, pg.arrivedBlindPct)}%` }}
 												/>
@@ -608,7 +608,7 @@ export default function TrafficStatementPage() {
 			    the question they arrived with, and a campaign row
 			    averages a buyer and a browser into nothing. */}
 			{data.searchTerms.length > 0 && (
-				<div className="mb-6 overflow-hidden rounded-2xl border border-edge">
+				<div className="mb-6 overflow-hidden rounded-card border border-edge">
 					<div className="border-b border-edge bg-surface-inset px-4 py-2.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						Por termo de busca
 					</div>
@@ -639,7 +639,7 @@ export default function TrafficStatementPage() {
 			)}
 
 			{data.control && (
-				<div className="mb-6 rounded-2xl border border-edge bg-surface-inset/40 px-5 py-4">
+				<div className="mb-6 rounded-card border border-edge bg-surface-inset/40 px-5 py-4">
 					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						A sua própria base de comparação
 					</div>
@@ -667,7 +667,7 @@ export default function TrafficStatementPage() {
 			)}
 
 			{needsDecision.length > 0 ? (
-				<div className="overflow-x-auto rounded-2xl border border-edge">
+				<div className="overflow-x-auto rounded-card border border-edge">
 					{/* Was nine columns, which ten reviewers said is
 					    unusable on the phone they all read this on. The
 					    secondary numbers moved into the campaign cell. */}
@@ -712,7 +712,7 @@ export default function TrafficStatementPage() {
 											<div
 												className={`mt-1 text-[11px] ${
 													c.deltaPoints > 2
-														? "text-red-700 dark:text-red-400"
+														? "text-attention"
 														: c.deltaPoints < -2
 															? "text-emerald-700 dark:text-emerald-400"
 															: "text-content-muted"
@@ -789,7 +789,7 @@ export default function TrafficStatementPage() {
 					</table>
 				</div>
 			) : (
-				<div className="rounded-2xl border border-edge bg-surface-card px-5 py-4 text-[13.5px] leading-relaxed text-content">
+				<div className="rounded-card border border-edge bg-surface-card px-5 py-4 text-[13.5px] leading-relaxed text-content">
 					Nenhuma campanha desta janela está ao mesmo tempo acima de 45% de acessos que não
 					fazem nada e 10 pontos acima da sua mediana. Nada a cortar nem a corrigir no nível
 					da campanha.
@@ -797,7 +797,7 @@ export default function TrafficStatementPage() {
 			)}
 
 			{fixRows.length > 0 && (
-				<div className="mt-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
+				<div className="mt-6 rounded-card border border-edge bg-surface-card px-5 py-4">
 					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						Por que corrigir e não cortar
 					</div>
@@ -816,7 +816,7 @@ export default function TrafficStatementPage() {
 			)}
 
 			{cutRows.length > 0 && (
-				<div className="mt-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
+				<div className="mt-6 rounded-card border border-edge bg-surface-card px-5 py-4">
 					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
 						A troca, se você cortar {cutRows.length === 1 ? "essa" : `essas ${cutRows.length}`}
 					</div>

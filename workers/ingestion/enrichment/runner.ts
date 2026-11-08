@@ -79,12 +79,48 @@ const PASS_REGISTRY: EnrichmentPass[] = [
  * `result.evidence_added` arrays to the cycle's evidence pool. The
  * runner does NOT mutate the context.
  */
+/**
+ * Passes that spend LLM money on evidence only the v1 plan reads.
+ *
+ * Gated in one place rather than inside each pass, so the bill has a
+ * single switch and the list of what costs money is readable at a
+ * glance instead of scattered across six files.
+ *
+ * Measured on the production ledger before switching off, because the
+ * assumption was wrong by a factor of twenty: the monthly plan's own
+ * generation is US$ 6.47 across its entire history, while the chain
+ * feeding it ran US$ 112.68 in sixty days, 76% of that in semantic
+ * enrichment alone. Still ~US$ 0.52/day at the time, for a document
+ * that is being retired.
+ *
+ * Nothing outside the plan chain consumes their evidence, which was
+ * checked rather than assumed. Everything that costs nothing stays on:
+ * the crawl, DNS, the probes and the behavioural aggregation all feed
+ * the pixel and the traffic statement, which is the product now.
+ */
+const V1_LLM_PASSES = new Set([
+  "semantic_enrichment",
+  "perception_classifier",
+  "surface_inventory",
+]);
+
 export async function runEnrichmentPasses(
   ctx: EnrichmentContext,
 ): Promise<EnrichmentResult[]> {
   const results: EnrichmentResult[] = [];
+  const { shouldSpendOnV1Llm } = await import("../../../src/libs/v1-plan-flag");
+  const spendOnV1 = shouldSpendOnV1Llm();
 
   for (const pass of PASS_REGISTRY) {
+    if (V1_LLM_PASSES.has(pass.name) && !spendOnV1) {
+      results.push(
+        buildSkippedResult(
+          pass.name,
+          "v1 plan retired; set V1_PLAN_ENABLED=true to re-enable",
+        ),
+      );
+      continue;
+    }
     const decision = pass.shouldRun(ctx);
     if (!decision.run) {
       results.push(buildSkippedResult(pass.name, decision.reason));

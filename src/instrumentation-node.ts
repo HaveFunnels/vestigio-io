@@ -1338,6 +1338,12 @@ export async function registerNodeInstrumentation(): Promise<void> {
 		"./libs/strategy-plan-monthly"
 	);
 	const runStrategyPlanMonthly = async () => {
+		// The v1 plan is retired. Measured before switching it off: the
+		// chain feeding it was still burning ~US$ 0.52/day for a
+		// document nobody will open again. Reversible with
+		// V1_PLAN_ENABLED=true.
+		const { isV1PlanEnabled } = await import("./libs/v1-plan-flag");
+		if (!isV1PlanEnabled()) return;
 		await withLeadership(
 			"strategy-plan-monthly",
 			{ ttlSec: 600 }, // generation runs LLM calls — 5min is too tight
@@ -1358,7 +1364,9 @@ export async function registerNodeInstrumentation(): Promise<void> {
 	const STRATEGY_PLAN_INTERVAL_MS = 24 * 60 * 60 * 1000;
 	runStrategyPlanMonthly();
 	setInterval(runStrategyPlanMonthly, STRATEGY_PLAN_INTERVAL_MS);
-	console.log("✓ Strategy-plan monthly cron registered (24h interval, fires days 1-7 of each month)");
+	console.log(
+		"✓ Strategy-plan monthly cron registered (24h interval; v1 plan retired, gated by V1_PLAN_ENABLED)",
+	);
 
 	// ── 3.13: Daily digest email ──
 	const { sendDailyDigests } = await import("./libs/cycle-digest");

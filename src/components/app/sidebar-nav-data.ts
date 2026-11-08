@@ -56,12 +56,21 @@ export interface NavItem {
 // declarative.
 export const productNav: NavItem[] = [
 	{
-		id: "plan",
-		href: "/app/library/strategy/current",
-		labelKey: "plan",
-		// Heroicons "document-text" — the plan reads as a written
-		// document, distinct from the dashboard grid metaphor.
-		icon: "M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9zm-1.5 6h6m-6 3h6m-6 3h3.75",
+		// O produto. Era a segunda entrada ao lado do Plano enquanto a
+		// morte do que não servia era medida por abertura em vez de
+		// decidida por opinião. Essa medição aconteceu: vinte personas
+		// avaliaram as duas versões e oito das dez que viram ambas
+		// subiram o preço, de média R$ 170 para R$ 348. O Plano saiu do
+		// menu junto com a cadeia de LLM que só existia para alimentá-lo.
+		//
+		// A rota do Plano continua de pé de propósito, para link salvo e
+		// histórico não darem 404. Ela simplesmente não é mais oferecida.
+		id: "traffic",
+		href: "/app/traffic",
+		labelKey: "traffic",
+		// Heroicons "receipt-percent" — a peça é um extrato, algo que se
+		// reconcilia, não um painel que se contempla.
+		icon: "M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z",
 		dividerAfter: true,
 	},
 	{
@@ -69,19 +78,6 @@ export const productNav: NavItem[] = [
 		href: "/app/actions",
 		labelKey: "actions",
 		icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z",
-	},
-	{
-		// v2, primeira superfície. Entra como rota nova em vez de atrás
-		// de um toggle: um modo obrigaria cada pedaço de código a
-		// perguntar em que modo está, e com as duas no menu a morte do
-		// que não serve é medível por abertura em vez de decidida por
-		// opinião.
-		id: "traffic",
-		href: "/app/traffic",
-		labelKey: "traffic",
-		// Heroicons "receipt-percent" — a peça é um extrato, algo que se
-		// reconcilia, não um painel que se contempla.
-		icon: "M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z",
 	},
 	{
 		id: "workspaces",

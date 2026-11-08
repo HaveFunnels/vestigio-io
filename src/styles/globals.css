@@ -49,42 +49,78 @@
 /* ========= Design System Variables ========== */
 
 :root {
+	/* ── Light identity, approved Nov 2026 ──
+	 *
+	 * The ground is not pure white any more. A panel reads as a panel
+	 * because the card sits ON something, and page and card were both
+	 * #FFF, which is why the old surface looked flat however much
+	 * radius it carried. The neutral is zinc biased a half step toward
+	 * the emerald, so it reads as chosen rather than inherited.
+	 *
+	 * The brand green is unchanged. What changed is where it is
+	 * allowed to be: emerald is a FILL colour. As text on a light
+	 * ground it measures 3.37 against the page, under the 4.5 floor,
+	 * so every place it becomes a word uses --accent-text instead.
+	 * That was a real defect found by measuring, not by looking.
+	 */
+
 	/* Backgrounds */
-	--bg-page: 255 255 255;
-	--bg-shell: 244 244 245;
+	--bg-page: 240 243 241;
+	--bg-shell: 240 243 241;
 	--bg-card: 255 255 255;
-	--bg-card-hover: 249 249 249;
-	--bg-inset: 244 244 245;
+	--bg-card-hover: 250 251 250;
+	--bg-inset: 245 247 246;
 	--bg-input: 255 255 255;
 	--bg-overlay: 0 0 0;
-	--bg-tooltip: 24 24 27;
+	--bg-tooltip: 11 15 13;
 
 	/* Borders */
-	--border-default: 212 212 216;
-	--border-subtle: 196 196 204;
+	--border-default: 226 231 228;
+	--border-subtle: 236 240 238;
 	--border-focus: 5 150 105;
 
 	/* Text */
-	--text-primary: 9 9 11;
-	--text-secondary: 24 24 27;
-	--text-tertiary: 63 63 70;
-	--text-muted: 82 82 91;
-	--text-faint: 161 161 170;
+	--text-primary: 11 15 13;
+	--text-secondary: 66 76 72;
+	--text-tertiary: 66 76 72;
+	--text-muted: 107 119 114;
+	--text-faint: 151 162 157;
 
-	/* Accent */
-	--accent: 16 185 129;
-	--accent-text: 4 120 87;
-	--accent-subtle-bg: 16 185 129;
+	/* Accent. --accent fills, --accent-text speaks. */
+	--accent: 5 150 105;
+	--accent-text: 4 96 74;
+	--accent-subtle-bg: 230 245 239;
 	--accent-cta: 5 150 105;
-	--accent-cta-hover: 4 120 87;
+	--accent-cta-hover: 4 96 74;
+
+	/* Attention. Deliberately not a red and deliberately not the
+	 * brand hue: on a green brand, "got worse" cannot fight with the
+	 * green of "got better", nor with the green of the product
+	 * itself. */
+	--attention: 168 73 13;
+	--attention-bg: 250 238 229;
 
 	/* Sidebar */
-	--sidebar-bg: 244 244 245;
+	--sidebar-bg: 255 255 255;
 	--sidebar-active-bg: 5 150 105;
 	--sidebar-active-text: 255 255 255;
+
+	/* Radius. Outer cards get the big one, inner elements the middle,
+	 * pills the full round. Varied by role on purpose: one radius
+	 * stamped on everything flattens the hierarchy. */
+	--radius-card: 22px;
+	--radius-mid: 14px;
+	--radius-pill: 999px;
 }
 
 .dark {
+	/* Dark is secondary by decision: the identity is a light one and
+	 * dark gets its own pass rather than an inversion done in passing.
+	 * These two exist here so no component resolves to an empty value
+	 * in the meantime. */
+	--attention: 224 138 78;
+	--attention-bg: 42 29 18;
+
 	/* Backgrounds */
 	--bg-page: 22 22 26;
 	--bg-shell: 16 16 20;

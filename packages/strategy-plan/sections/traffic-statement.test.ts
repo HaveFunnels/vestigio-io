@@ -1530,3 +1530,63 @@ describe("blaming the page requires the campaigns to agree", () => {
 		expect(st.landingPages[0].campaignsJudged).toBe(1);
 	});
 });
+
+describe("the cost of pausing is named in the unit the business earns in", () => {
+	const camp = (id: string, total: number, blind: number, contacts: number) => [
+		...many(blind, {
+			max_scroll_depth: 0,
+			surface_progression: ["a"],
+			attribution: { first_touch: { source: "google", campaign: `C|${id}` } },
+		}),
+		...many(contacts, {
+			max_scroll_depth: 0,
+			contact_channels: ["whatsapp"],
+			contact_started: true,
+			attribution: { first_touch: { source: "google", campaign: `C|${id}` } },
+		}),
+		...many(total - blind - contacts, {
+			max_scroll_depth: 90,
+			attribution: { first_touch: { source: "google", campaign: `C|${id}` } },
+		}),
+	];
+	const account = [
+		...camp("111111111111", 500, 330, 40),
+		...camp("222222222222", 500, 120, 60),
+		...camp("333333333333", 500, 110, 55),
+		...camp("444444444444", 500, 130, 50),
+	];
+
+	it("never tells a service business to cut the campaign bringing its leads", () => {
+		// The bug this pins. Purchases means reached_thank_you, which a
+		// lawyer, an accountant and a dentist do not have, so the column
+		// read zero for every one of them, "pausar não custa compra
+		// nenhuma" was always true, and the verdict was always cortar.
+		// The accountant found it from the other end without seeing the
+		// code: "contar direito o proxy errado não é melhor que escrever
+		// com IA, é só errado com mais casas decimais."
+		const st = buildTrafficStatement(account, { ...WIN, conversionModel: "form" });
+		const worst = st.campaigns[0];
+		expect(worst.contactSessions).toBe(40);
+		expect(worst.pauseCostPurchases).toBe(0);
+		// The cost is real and named in contacts, and the verdict follows.
+		expect(worst.pauseCostUnit).toBe("contatos");
+		expect(worst.pauseCost).toBe(40);
+		expect(worst.verdict).toBe("corrigir");
+	});
+
+	it("still counts a store in purchases, where the contact is support", () => {
+		const st = buildTrafficStatement(account, { ...WIN, conversionModel: "checkout" });
+		const worst = st.campaigns[0];
+		expect(worst.pauseCostUnit).toBe("compras");
+		expect(worst.pauseCost).toBe(0);
+		// Nothing was sold, so cutting really is free here.
+		expect(worst.verdict).toBe("cortar");
+	});
+
+	it("treats whatsapp and external like the service models they are", () => {
+		for (const model of ["whatsapp", "external"]) {
+			const st = buildTrafficStatement(account, { ...WIN, conversionModel: model });
+			expect(st.campaigns[0].pauseCostUnit).toBe("contatos");
+		}
+	});
+});

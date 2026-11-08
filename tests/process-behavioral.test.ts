@@ -43,6 +43,11 @@ function makeSession(overrides: Partial<SessionAggregate> = {}): SessionAggregat
     form_started: false,
     form_completed: false,
     support_opened: false,
+    // Added when the pixel learned to see a phone tap, a WhatsApp tap
+    // and a Direct message. Empty here because this fixture predates
+    // them and describes a session that reached none.
+    contact_channels: [],
+    contact_started: false,
     policy_opened: false,
     backtrack_count: 0,
     dead_click_count: 0,

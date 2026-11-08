@@ -246,6 +246,29 @@ export interface CampaignRow {
 	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita";
 	/** Percentage points above the account median. Negative is better. */
 	pointsAboveAccount: number;
+	/**
+	 * What pausing costs, in the unit this business actually earns in.
+	 *
+	 * This used to be purchases only, and purchases means
+	 * reached_thank_you, which a lawyer, an accountant and a dentist do
+	 * not have because they have no checkout. So for every service
+	 * business the column read zero, "pausar não custa compra nenhuma"
+	 * was always true, and the verdict was always "cortar". The product
+	 * told them to cut the campaign that brought their leads and
+	 * claimed it was free.
+	 *
+	 * The accountant on the council found it from the other end,
+	 * without seeing the code: "no meu escritório não existe compra.
+	 * Existe ligação, existe WhatsApp aberto, e existe contrato
+	 * assinado. Contar direito o proxy errado não é melhor que escrever
+	 * com IA, é só errado com mais casas decimais."
+	 *
+	 * So the cost is now named in the unit the model earns in, and the
+	 * verdict reads whichever one applies.
+	 */
+	pauseCostUnit: "compras" | "contatos";
+	/** The count in that unit. */
+	pauseCost: number;
 	/** What pausing this campaign costs: the action-reaches and the
 	 *  purchases it still produced. The statement's only suggested
 	 *  action is to pause, and it used to not price that action, so the
@@ -973,6 +996,9 @@ export function buildTrafficStatement(
 	},
 ): TrafficStatement {
 	const model = options.conversionModel ?? "checkout";
+	// A store earns in completed purchases. Everyone else earns in
+	// conversations that started, and has no thank-you page to fire.
+	const isCommerce = model === "checkout" || model === "purchase";
 	const floor = options.minSessions ?? MIN_SESSIONS_PER_CAMPAIGN;
 
 	interface Acc {
@@ -1162,10 +1188,12 @@ export function buildTrafficStatement(
 				blindPct >= IMPLAUSIBLE_BLIND_PCT
 					? "medicao_suspeita"
 					: unusual && bad
-						? // Pausing is only advice when pausing is free. A
-							// campaign that still completes purchases gets
-							// told to be fixed, never cut.
-							c.completed > 0
+						? // Pausing is only advice when pausing is free, and
+							// "free" has to be read in the unit this business
+							// earns in. Reading it as purchases told every
+							// service business to cut the campaign that
+							// brought its leads.
+							(isCommerce ? c.completed : c.contacts) > 0
 							? "corrigir"
 							: "cortar"
 						: points >= 3
@@ -1210,6 +1238,8 @@ export function buildTrafficStatement(
 					spend === null ? null : Math.round((spend * c.blind) / c.sessions),
 				pauseCostActions: c.action,
 				pauseCostPurchases: c.completed,
+				pauseCostUnit: (isCommerce ? "compras" : "contatos") as "compras" | "contatos",
+				pauseCost: isCommerce ? c.completed : c.contacts,
 				contactSessions: c.contacts,
 				excessBlind: Math.max(0, Math.round((c.sessions * points) / 100)),
 				name: c.name,

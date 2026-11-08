@@ -54,6 +54,8 @@ interface CampaignRow {
 	excessBlind: number;
 	pauseCostActions: number;
 	pauseCostPurchases: number;
+	pauseCostUnit: "compras" | "contatos";
+	pauseCost: number;
 	contactSessions: number;
 	previousBlindPct: number | null;
 	deltaPoints: number | null;
@@ -518,18 +520,18 @@ export default function TrafficStatementPage() {
 												Taxa alta demais para ser comportamento. Antes de mexer na verba,
 												vale conferir se a medição desta campanha está certa.
 											</>
-										) : c.pauseCostPurchases > 0 ? (
+										) : c.pauseCost > 0 ? (
 											<>
 												Pausar custa{" "}
 												<strong className="font-semibold text-white">
-													{n(c.pauseCostPurchases)}{" "}
-													{c.pauseCostPurchases === 1 ? "compra" : "compras"}
+													{n(c.pauseCost)}{" "}
+													{c.pauseCost === 1 ? c.pauseCostUnit.slice(0, -1) : c.pauseCostUnit}
 												</strong>
 												, então o alvo é a página onde ela cai, não o anúncio.
 											</>
 										) : (
 											<>
-												Pausar não custa compra nenhuma.{" "}
+												Pausar não custa {c.pauseCostUnit.slice(0, -1)} nenhuma.{" "}
 												<strong className="font-semibold text-white">
 													{n(c.sessions)} acessos
 												</strong>{" "}
@@ -958,9 +960,9 @@ export default function TrafficStatementPage() {
 										<div className="text-[11px] text-content-muted">acessos</div>
 									</td>
 									<td className="px-3 py-3 text-right tabular-nums">
-										<div className="text-content">{n(c.pauseCostPurchases)}</div>
+										<div className="text-content">{n(c.pauseCost)}</div>
 										<div className="text-[11px] text-content-muted">
-											{c.pauseCostPurchases === 1 ? "compra" : "compras"}
+											{c.pauseCost === 1 ? c.pauseCostUnit.slice(0, -1) : c.pauseCostUnit}
 										</div>
 									</td>
 									{hasSpend ? (

@@ -27,6 +27,10 @@ export default defineConfig({
 			// same shape as tests/** below: a file that looks like a test,
 			// passes review, and is never executed.
 			"apps/**/*.test.{ts,tsx}",
+			// workers/** had the same hole. The ad pollers decide what
+			// spend and what conversions the product reports, and until
+			// now a test placed beside them would never have run.
+			"workers/**/*.test.{ts,tsx}",
 		],
 		exclude: [
 			"node_modules/**",

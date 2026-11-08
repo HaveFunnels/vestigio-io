@@ -106,7 +106,32 @@ export interface MetaAdsSnapshotData {
    * one did not, so a partial failure degrades the statement to counts
    * rather than taking the whole snapshot down.
    */
-  campaigns: { id: string; name: string; spend_30d: number }[];
+  campaigns: {
+    id: string;
+    name: string;
+    spend_30d: number;
+    /**
+     * Messaging conversations the platform says this campaign started.
+     *
+     * The one case the pixel can never reach. An esthetician's ad opens
+     * a Direct message inside Instagram and the person never loads her
+     * site, so no pixel runs at any point. Two reviewers' entire
+     * businesses work that way, and for them the site-side measurement
+     * is not incomplete, it is absent.
+     *
+     * Read with the incentive gap stated rather than hidden: this is
+     * Meta reporting on Meta's own performance, which is precisely the
+     * dependency this product exists to reduce. It is kept anyway
+     * because a conversation count is a discrete event rather than an
+     * attributed revenue figure, and because there is no second
+     * source. It must never be presented as Vestigio having measured
+     * it.
+     *
+     * null when the account runs no click-to-message campaigns, which
+     * is the common case for a store.
+     */
+    messaging_conversations_30d: number | null;
+  }[];
   creatives: { id: string; headline: string; body: string; cta: string; destination_url: string; status: string; spend_30d: number }[];
   // Wave 6.1 — Revenue Attribution Integrity. Total platform-reported
   // attributed revenue over the trailing 30d window. Used to cross-check

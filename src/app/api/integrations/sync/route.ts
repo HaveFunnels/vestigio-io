@@ -315,6 +315,19 @@ export const POST = withErrorTracking(async function POST(request: Request) {
           // cannot bloat the cached blob; the statement only reports
           // campaigns above its session floor anyway.
           campaigns: metaPollResult.data.campaigns.slice(0, 200),
+          // Messaging conversations ride along: for a click-to-message
+          // campaign the visitor never loads the site, so the pixel
+          // records nothing and this is the only number that exists.
+          messaging_conversations_30d: metaPollResult.data.campaigns.reduce(
+            (n, c) =>
+              c.messaging_conversations_30d === null
+                ? n
+                : n + c.messaging_conversations_30d,
+            0,
+          ),
+          has_messaging_campaigns: metaPollResult.data.campaigns.some(
+            (c) => c.messaging_conversations_30d !== null,
+          ),
           synced_at: new Date().toISOString(),
         },
         error: metaPollResult.errors[0] || undefined,

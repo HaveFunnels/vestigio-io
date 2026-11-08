@@ -36,6 +36,7 @@ interface CampaignRow {
 	excessBlind: number;
 	pauseCostActions: number;
 	pauseCostPurchases: number;
+	contactSessions: number;
 	previousBlindPct: number | null;
 	deltaPoints: number | null;
 	mobileSharePct: number;
@@ -71,6 +72,7 @@ interface Statement {
 		spendWastedBrl: number | null;
 	};
 	belowFloor: { campaigns: number; sessions: number };
+	contactsByChannel: { channel: string; sessions: number }[];
 	searchTerms: {
 		term: string;
 		sessions: number;
@@ -179,6 +181,18 @@ function sharedPath(moves: TrafficMove[]): { path: string; count: number } | nul
 	return best;
 }
 
+/** Plain names, because nobody calls it an instagram_dm. */
+const CHANNEL_LABEL: Record<string, string> = {
+	whatsapp: "WhatsApp",
+	phone: "ligação (toque no telefone)",
+	phone_copy: "telefone copiado",
+	instagram_dm: "Direct do Instagram",
+	messenger: "Messenger",
+	telegram: "Telegram",
+	sms: "SMS",
+	email: "e-mail",
+};
+
 const MOVE_KIND: Record<TrafficMove["kind"], string> = {
 	campaign: "campanha",
 	page: "página",
@@ -188,6 +202,7 @@ const MOVE_KIND: Record<TrafficMove["kind"], string> = {
 export default function TrafficStatementPage() {
 	const [data, setData] = useState<Statement | null>(null);
 	const [moves, setMoves] = useState<TrafficMove[]>([]);
+	const [platformConversations, setPlatformConversations] = useState<number | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -209,6 +224,11 @@ export default function TrafficStatementPage() {
 				if (body.statement) {
 					setData(body.statement);
 					setMoves(Array.isArray(body.moves) ? body.moves : []);
+					setPlatformConversations(
+						typeof body.platformConversations === "number"
+							? body.platformConversations
+							: null,
+					);
 				} else setError(body.reason ?? "sem dados");
 			})
 			.catch(() => alive && setError("falha ao carregar"))
@@ -427,10 +447,12 @@ export default function TrafficStatementPage() {
 						</p>
 						<p>
 							<strong className="text-content-secondary">o que não é medido:</strong>{" "}
-							ligação telefônica, venda por DM e conversa que começa fora do site. Se o
-							seu negócio fecha por telefone, este extrato mede a parte menor dele. No
-							Google, a linha é a campanha e não o termo de busca, então cliente e
-							curioso aparecem somados dentro da mesma campanha.
+							se a conversa aconteceu. O toque no WhatsApp, no telefone e no Direct é
+							medido; se a mensagem foi enviada, se a ligação foi atendida e se virou
+							venda acontece fora do site. Também não é medido o número lido na tela e
+							discado num telefone fixo, que nenhum pixel alcança: para esse caso só
+							existe telefonia com número por campanha. E a venda que nasce e morre no
+							Direct, sem a pessoa abrir o site, não passa pelo pixel em nenhum momento.
 						</p>
 						<p>
 							Sessões com menos de {data.thresholds.minEvents} eventos são descartadas.
@@ -441,6 +463,60 @@ export default function TrafficStatementPage() {
 					</div>
 				)}
 			</div>
+
+			{/* Contact, for the businesses that close off the site. The
+			    esthetician had exactly one question, "quantas mensagens
+			    cada anúncio me trouxe", and until the pixel learned to
+			    see a WhatsApp tap the statement could say nothing at all
+			    about her business. */}
+			{data.contactsByChannel.length > 0 && (
+				<div className="mb-6 rounded-2xl border border-edge bg-surface-card px-5 py-4">
+					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+						Quem saiu do site para falar com você
+					</div>
+					<ul className="flex flex-wrap gap-x-6 gap-y-2">
+						{data.contactsByChannel.map((c) => (
+							<li key={c.channel} className="text-[13.5px] text-content">
+								<strong className="tabular-nums">{n(c.sessions)}</strong>{" "}
+								<span className="text-content-secondary">
+									{CHANNEL_LABEL[c.channel] ?? c.channel}
+								</span>
+							</li>
+						))}
+					</ul>
+					<p className="mt-2 text-[12px] leading-relaxed text-content-muted">
+						Contado por toque no link, uma vez por canal por visita. É a intenção de
+						falar, não a conversa: se a mensagem foi enviada ou se a ligação foi
+						atendida acontece fora do site e o pixel não vê.
+					</p>
+				</div>
+			)}
+
+			{/* The one case no pixel reaches. An ad that opens a Direct
+			    message never loads the site, so there is nothing to
+			    measure and the platform's own count is the only number
+			    that exists. Shown with the dependency named, because
+			    reducing exactly this dependency is the product's reason
+			    to exist. */}
+			{platformConversations !== null && (
+				<div className="mb-6 rounded-2xl border border-edge bg-surface-inset/40 px-5 py-4">
+					<div className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-content-muted">
+						Conversas que nem passaram pelo site
+					</div>
+					<p className="text-[14px] leading-relaxed text-content">
+						O Meta diz ter iniciado{" "}
+						<strong>{n(platformConversations)}</strong>{" "}
+						{platformConversations === 1 ? "conversa" : "conversas"} nos últimos 30 dias
+						em campanhas de clique para mensagem.
+					</p>
+					<p className="mt-2 text-[12px] leading-relaxed text-content-muted">
+						Esse número não é nosso e não temos como conferir: quem clica num anúncio de
+						mensagem não abre o seu site, então não existe nada para o pixel medir. É o
+						Meta avaliando o próprio trabalho, e está aqui porque é a única fonte que
+						existe, não porque é a melhor.
+					</p>
+				</div>
+			)}
 
 			{/* The page view. Promoted because the campaign floor excludes
 			    the small advertiser and the fast tester alike, and both
@@ -610,6 +686,13 @@ export default function TrafficStatementPage() {
 										) : (
 											<div className="mt-1 text-[11px] text-content-faint">
 												sem base anterior para comparar
+											</div>
+										)}
+										{c.contactSessions > 0 && (
+											<div className="mt-1 text-[11px] text-content-secondary">
+												{n(c.contactSessions)}{" "}
+												{c.contactSessions === 1 ? "visita saiu" : "visitas saíram"} para
+												falar com você
 											</div>
 										)}
 										<div className="mt-1 text-[11px] text-content-muted">

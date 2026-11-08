@@ -128,6 +128,10 @@ export async function GET(request: Request) {
 		// the campaign NAME in utm_campaign and no id, so an id-only
 		// join could never match a Google campaign.
 		let spendByCampaignId: Map<string, number> | null = null;
+		// Conversations the platform says it started. Declared out here
+		// because the response needs it; read inside the same try as
+		// spend, from the same cached snapshot.
+		let platformConversations: number | null = null;
 		try {
 			const conns = await prisma.integrationConnection.findMany({
 				where: {
@@ -138,14 +142,23 @@ export async function GET(request: Request) {
 				select: { syncMetadata: true },
 			});
 			const merged = new Map<string, number>();
+
 			for (const conn of conns) {
 				if (!conn.syncMetadata) continue;
-				let parsed: { campaigns?: { id?: string; name?: string; spend_30d?: number }[] };
+				let parsed: {
+					campaigns?: { id?: string; name?: string; spend_30d?: number }[];
+					messaging_conversations_30d?: number;
+					has_messaging_campaigns?: boolean;
+				};
 				try {
 					parsed = JSON.parse(conn.syncMetadata);
 				} catch {
 					// One malformed snapshot must not cost the other's spend.
 					continue;
+				}
+				if (typeof parsed.messaging_conversations_30d === "number" && parsed.has_messaging_campaigns) {
+					platformConversations =
+						(platformConversations ?? 0) + parsed.messaging_conversations_30d;
 				}
 				if (!Array.isArray(parsed.campaigns)) continue;
 				for (const c of parsed.campaigns) {
@@ -198,6 +211,7 @@ export async function GET(request: Request) {
 
 		return NextResponse.json({
 			statement,
+			platformConversations,
 			moves,
 			moveWindow: {
 				start: lastWeekStart.toISOString().slice(0, 10),

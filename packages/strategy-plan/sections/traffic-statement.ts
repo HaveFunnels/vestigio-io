@@ -126,6 +126,12 @@ export function sawNothing(a: Record<string, unknown>): boolean {
 	// Reached the action that matters, by any of the models.
 	if (a.form_started || a.checkout_reached || a.support_opened) return false;
 	if (a.handoff_started || a.reached_thank_you || a.form_completed) return false;
+	// Reached for the phone, WhatsApp or a Direct message. For the
+	// businesses that close off the site this is the ONLY thing a
+	// converting visit leaves behind, and counting it as "saw nothing"
+	// was the inversion six reviewers named.
+	if (a.contact_started) return false;
+	if (Array.isArray(a.contact_channels) && a.contact_channels.length > 0) return false;
 	if (a.time_to_first_commercial_action_ms != null) return false;
 	// Interacted, even unsuccessfully. A dead click is a click.
 	if (num(a.dead_click_count) > 0) return false;
@@ -220,6 +226,11 @@ export interface CampaignRow {
 	 *  good trade because the numbers are on the page. */
 	pauseCostActions: number;
 	pauseCostPurchases: number;
+	/** Sessions from this campaign that tried to reach a human. Counted
+	 *  for every business model, including a store's, where it is
+	 *  support rather than a sale and therefore worth seeing separately
+	 *  from the checkout number. */
+	contactSessions: number;
 	/**
 	 * What this campaign cost in the window, joined by the platform's
 	 * own campaign id. Null when no ad account is connected or the id
@@ -330,6 +341,20 @@ export interface TrafficStatement {
 	 * section was also the part three reviewers named as the best
 	 * thing on the statement, so this promotes what already worked.
 	 */
+	/**
+	 * Paid sessions that tried to reach a human, by channel.
+	 *
+	 * The esthetician's question verbatim, and she had exactly one:
+	 * "quantas mensagens cada anúncio me trouxe". Her conversion is
+	 * 100% WhatsApp and she does not really have a site, so until this
+	 * existed the statement could say nothing at all about her
+	 * business.
+	 *
+	 * phone_copy is listed separately and deliberately: it is weaker
+	 * evidence than a tap, because copying a number is intent to call
+	 * and not a call. See the note on what cannot be measured.
+	 */
+	contactsByChannel: { channel: string; sessions: number }[];
 	/**
 	 * Paid traffic grouped by the search term, when the platform passes
 	 * one. Empty for a feed advertiser, which is every account measured
@@ -809,15 +834,48 @@ export function splitCampaignRef(raw: string): { name: string; platformId: strin
 	return { name: decodeCampaignName(raw.slice(0, at)), platformId: tail };
 }
 
-/** Did this session reach the action that matters? */
+/** Which channels this session used to reach a human. */
+function channelsOf(a: Record<string, unknown>): string[] {
+	return Array.isArray(a.contact_channels)
+		? a.contact_channels.filter((c): c is string => typeof c === "string")
+		: [];
+}
+
+/** Did the visitor try to reach a human, by any channel? */
+function contacted(a: Record<string, unknown>): boolean {
+	if (a.contact_started) return true;
+	return Array.isArray(a.contact_channels) && a.contact_channels.length > 0;
+}
+
+/**
+ * Did this session reach the action that matters?
+ *
+ * The service models used to read `handoff_started || support_opened`,
+ * and both were wrong for the job. `handoff_started` means a CHECKOUT
+ * handoff, which a lawyer does not have, and it is false on every
+ * session ever measured. `support_opened` is classified off the label
+ * text, so it counts a FAQ link and misses a WhatsApp button whose
+ * label is the business's phone number.
+ *
+ * Six reviewers described the same visitor in six different
+ * businesses: arrives, reads the first screen, taps WhatsApp or the
+ * phone, and leaves. That visitor is the conversion, and the old
+ * definition scored them zero.
+ */
 function reachedAction(a: Record<string, unknown>, model: string): boolean {
 	switch (model) {
 		case "form":
-			return Boolean(a.form_started);
+			// A lawyer gets a form submission OR a WhatsApp tap, and the
+			// second is more common than the first. Both are the lead.
+			return Boolean(a.form_started) || contacted(a);
 		case "whatsapp":
 		case "external":
-			return Boolean(a.handoff_started) || Boolean(a.support_opened);
-		// 'checkout' and 'purchase' both mean the commerce path.
+			return (
+				contacted(a) || Boolean(a.handoff_started) || Boolean(a.support_opened)
+			);
+		// 'checkout' and 'purchase' both mean the commerce path. A
+		// store's contact click is support, not a sale, so it does not
+		// count here.
 		default:
 			return Boolean(a.checkout_reached);
 	}
@@ -863,6 +921,7 @@ export function buildTrafficStatement(
 		completed: number;
 		landing: Map<string, number>;
 		dev: Map<"mobile" | "desktop" | "unknown", { n: number; blind: number }>;
+		contacts: number;
 	}
 	const byCampaign = new Map<string, Acc>();
 	let measured = 0;
@@ -885,6 +944,7 @@ export function buildTrafficStatement(
 		campaigns: Set<string>;
 	}
 	const byTerm = new Map<string, TermAcc>();
+	const contactsByChannel = new Map<string, number>();
 
 	for (const row of rows) {
 		// Bot gate, same floor the friction measurement already uses: a
@@ -928,6 +988,7 @@ export function buildTrafficStatement(
 				completed: 0,
 				landing: new Map(),
 				dev: new Map(),
+				contacts: 0,
 			};
 
 		acc.sessions++;
@@ -940,7 +1001,11 @@ export function buildTrafficStatement(
 		acc.dev.set(dev, dv);
 		acc.durations.push(num(a.session_duration_ms));
 		if (reachedAction(a, model)) acc.action++;
+		if (contacted(a)) acc.contacts++;
 		if (a.reached_thank_you) acc.completed++;
+		for (const ch of channelsOf(a)) {
+			contactsByChannel.set(ch, (contactsByChannel.get(ch) ?? 0) + 1);
+		}
 		const landing = typeof ft?.landing_url === "string" ? ft.landing_url : null;
 		if (landing) {
 			let path = landing;
@@ -1080,6 +1145,7 @@ export function buildTrafficStatement(
 					spend === null ? null : Math.round((spend * c.blind) / c.sessions),
 				pauseCostActions: c.action,
 				pauseCostPurchases: c.completed,
+				contactSessions: c.contacts,
 				excessBlind: Math.max(0, Math.round((c.sessions * points) / 100)),
 				name: c.name,
 				// Overwritten below, once every row is known.
@@ -1146,6 +1212,9 @@ export function buildTrafficStatement(
 			campaigns: below.length,
 			sessions: below.reduce((n, c) => n + c.sessions, 0),
 		},
+		contactsByChannel: [...contactsByChannel.entries()]
+			.map(([channel, sessions]) => ({ channel, sessions }))
+			.sort((a, b) => b.sessions - a.sessions),
 		// A lower floor than a campaign's, because a search term is
 		// long-tail by nature: the part number a mechanic types will
 		// never see 300 sessions in a month, and holding it to the

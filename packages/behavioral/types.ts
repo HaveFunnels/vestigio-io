@@ -41,7 +41,14 @@ export type BehavioralEventType =
   | 'field_inventory'
   | 'input_focus_abandon'
   | 'form_retry'
-  | 'rapid_backtrack';
+  | 'rapid_backtrack'
+  // The visitor left to talk to a human: tapped tel:, WhatsApp, a
+  // Direct message, or copied a phone number. Classified by protocol
+  // and host rather than by label text, because support_open already
+  // classifies by label and therefore cannot tell a FAQ link from a
+  // tap on WhatsApp. For a lawyer, a dentist or an esthetician that
+  // distinction is the conversion itself.
+  | 'contact_handoff';
 
 export interface RawBehavioralEvent {
   type: BehavioralEventType;
@@ -223,6 +230,19 @@ export interface SessionAggregate {
   form_started: boolean;
   form_completed: boolean;
   support_opened: boolean;
+  /**
+   * Channels the visitor used to leave and talk to a human, deduped
+   * per session: phone, sms, email, whatsapp, messenger,
+   * instagram_dm, telegram, phone_copy.
+   *
+   * Separate from support_opened (which is label-classified and mixes
+   * FAQ links in) and from handoff_started (which means a CHECKOUT
+   * handoff and feeds trust-continuity). Overloading either would
+   * corrupt a consumer that already exists.
+   */
+  contact_channels: string[];
+  /** Did the visitor try to reach a human by any channel? */
+  contact_started: boolean;
   policy_opened: boolean;
   backtrack_count: number;
   dead_click_count: number;

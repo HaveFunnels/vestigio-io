@@ -40,7 +40,44 @@ export interface MetaAdsPollResult {
 }
 
 interface CampaignInsightsResponse {
-	data?: { campaign_id?: string; campaign_name?: string; spend?: string }[];
+	data?: {
+		campaign_id?: string;
+		campaign_name?: string;
+		spend?: string;
+		actions?: { action_type?: string; value?: string }[];
+	}[];
+}
+
+/**
+ * Messaging conversations started, from the campaign's action list.
+ *
+ * The only readable signal for a click-to-message campaign whose
+ * traffic never loads the site and therefore never runs the pixel. Two
+ * reviewers' entire businesses work that way: an ad opens a Direct
+ * message inside Instagram and the person never visits.
+ *
+ * Returns null when the campaign reports no messaging action at all,
+ * which keeps "runs no click-to-message campaigns" distinct from "ran
+ * them and got zero". That difference matters when the number is shown
+ * to an operator.
+ */
+export function messagingConversations(
+	actions: { action_type?: string; value?: string }[] | undefined,
+): number | null {
+	if (!Array.isArray(actions) || actions.length === 0) return null;
+	let total = 0;
+	let seen = false;
+	for (const a of actions) {
+		// Only the 7-day window, which is what Meta returns by default.
+		// Summing every window would count one conversation several
+		// times, since the 1d figure is a subset of the 7d.
+		if (a.action_type !== "onsite_conversion.messaging_conversation_started_7d") {
+			continue;
+		}
+		seen = true;
+		total += parseFloat(a.value ?? "0") || 0;
+	}
+	return seen ? total : null;
 }
 
 interface InsightsResponse {
@@ -254,7 +291,11 @@ export async function pollMetaAdsData(
 	// whole snapshot over a permissions edge case on one endpoint.
 	const campaigns: MetaAdsSnapshotData["campaigns"] = [];
 	const campaignRes = await graphGet<CampaignInsightsResponse>(
-		`/${accountId}/insights?fields=campaign_id,campaign_name,spend&date_preset=last_30d&level=campaign&limit=500`,
+		// actions comes along for messaging conversations, which is the
+		// only readable signal for a click-to-message campaign whose
+		// traffic never loads the site and therefore never runs the
+		// pixel. Same call, one more field, no extra request.
+		`/${accountId}/insights?fields=campaign_id,campaign_name,spend,actions&date_preset=last_30d&level=campaign&limit=500`,
 		activeToken,
 	);
 	if (!campaignRes.ok) {
@@ -266,6 +307,7 @@ export async function pollMetaAdsData(
 				id: rec.campaign_id,
 				name: rec.campaign_name ?? rec.campaign_id,
 				spend_30d: parseFloat(rec.spend ?? "0") || 0,
+				messaging_conversations_30d: messagingConversations(rec.actions),
 			});
 		}
 	}

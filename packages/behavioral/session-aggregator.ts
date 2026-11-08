@@ -91,6 +91,7 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
   let formStarted = false;
   let formCompleted = false;
   let supportOpened = false;
+  const contactChannels: string[] = [];
   let policyOpened = false;
   let backtrackCount = 0;
   let deadClickCount = 0;
@@ -326,6 +327,17 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
         });
         break;
       }
+      case 'contact_handoff': {
+        // The pixel already deduped per channel per session; this
+        // guards against a replayed batch doing it again.
+        const ch = typeof event.data.channel === "string" ? event.data.channel : null;
+        if (ch && contactChannels.indexOf(ch) === -1) contactChannels.push(ch);
+        // Reaching for the phone is a commercial action. Without this
+        // the time-to-first-commercial-action metric would skip the
+        // only action a service business has.
+        if (!firstCommercialActionTs) firstCommercialActionTs = event.ts;
+        break;
+      }
       case 'trusted_handoff': {
         handoffStarted = true;
         handoffTargetHost = (event.data.target_host as string) || null;
@@ -389,6 +401,8 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
     form_started: formStarted,
     form_completed: formCompleted,
     support_opened: supportOpened,
+    contact_channels: contactChannels,
+    contact_started: contactChannels.length > 0,
     policy_opened: policyOpened,
     backtrack_count: backtrackCount,
     dead_click_count: deadClickCount,

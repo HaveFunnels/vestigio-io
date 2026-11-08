@@ -1335,3 +1335,103 @@ describe("several campaigns moving on one page is one fact", () => {
 		).toMatchObject({ path: "/b", count: 3 });
 	});
 });
+
+describe("the contact a service business actually converts on", () => {
+	// Six of twenty reviewers described the same visitor in six
+	// different businesses: arrives, reads the first screen, taps
+	// WhatsApp or the phone, leaves. The old definition scored that
+	// visitor zero and then recommended pausing the campaign that
+	// brought them. The parts distributor's version costs the most:
+	// 60% of R$ 2M a month closes on a phone call.
+	const contacting = (channels: string[], n_ = 400) =>
+		many(n_, {
+			// No scroll, no CTA view: the visit a store would call dead.
+			max_scroll_depth: 0,
+			surface_progression: ["a"],
+			contact_channels: channels,
+			contact_started: channels.length > 0,
+		});
+
+	it("no longer counts a WhatsApp tap as having seen nothing", () => {
+		expect(sawNothing({ max_scroll_depth: 0, contact_started: true })).toBe(false);
+		expect(
+			sawNothing({ max_scroll_depth: 0, contact_channels: ["whatsapp"] }),
+		).toBe(false);
+	});
+
+	it("counts the phone tap as the conversion for a form business", () => {
+		// A lawyer gets a form submission OR a WhatsApp tap, and the
+		// second is more common. Both are the lead.
+		const st = buildTrafficStatement(contacting(["phone"]), {
+			...WIN,
+			conversionModel: "form",
+		});
+		expect(st.campaigns[0].reachedAction).toBe(400);
+		expect(st.campaigns[0].arrivedBlind).toBe(0);
+	});
+
+	it("counts it for a whatsapp business", () => {
+		const st = buildTrafficStatement(contacting(["whatsapp"]), {
+			...WIN,
+			conversionModel: "whatsapp",
+		});
+		expect(st.campaigns[0].reachedActionPct).toBe(100);
+	});
+
+	it("does not turn a store's support click into a sale", () => {
+		// A store's conversion is the checkout. A contact click there is
+		// support, and counting it would inflate the only number that
+		// business actually runs on.
+		const st = buildTrafficStatement(contacting(["whatsapp"]), {
+			...WIN,
+			conversionModel: "checkout",
+		});
+		expect(st.campaigns[0].reachedAction).toBe(0);
+		// But it is still reported, separately, because it is true.
+		expect(st.campaigns[0].contactSessions).toBe(400);
+	});
+
+	it("breaks the account down by channel", () => {
+		// The esthetician's only question: "quantas mensagens cada
+		// anúncio me trouxe".
+		const st = buildTrafficStatement(
+			[
+				...contacting(["whatsapp"], 300),
+				...contacting(["phone"], 120),
+				...contacting(["instagram_dm"], 60),
+			],
+			{ ...WIN, conversionModel: "whatsapp" },
+		);
+		expect(st.contactsByChannel).toEqual([
+			{ channel: "whatsapp", sessions: 300 },
+			{ channel: "phone", sessions: 120 },
+			{ channel: "instagram_dm", sessions: 60 },
+		]);
+	});
+
+	it("counts one session once per channel, not once per tap", () => {
+		const st = buildTrafficStatement(contacting(["whatsapp", "phone"], 400), {
+			...WIN,
+			conversionModel: "whatsapp",
+		});
+		expect(st.campaigns[0].contactSessions).toBe(400);
+		expect(st.contactsByChannel).toEqual([
+			{ channel: "whatsapp", sessions: 400 },
+			{ channel: "phone", sessions: 400 },
+		]);
+	});
+
+	it("is empty and harmless for an account with no contact links", () => {
+		const st = buildTrafficStatement(many(400), WIN);
+		expect(st.contactsByChannel).toEqual([]);
+		expect(st.campaigns[0].contactSessions).toBe(0);
+	});
+
+	it("ignores a malformed channel list instead of throwing", () => {
+		const st = buildTrafficStatement(
+			many(400, { contact_channels: "whatsapp" as unknown as string[] }),
+			{ ...WIN, conversionModel: "whatsapp" },
+		);
+		expect(st.campaigns[0].contactSessions).toBe(0);
+	});
+});

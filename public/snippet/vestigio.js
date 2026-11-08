@@ -76,6 +76,9 @@
   var trackedForms = {};       // forms already inventoried
   var handoffStarted = false;
   var handoffTarget = null;
+  // Channels the visitor used to leave and talk to a human. Deduped,
+  // because one person tapping WhatsApp three times is one intent.
+  var contactChannels = {};
   var intentTimestamp = null;   // when intent was first expressed
   var conversionStartTimestamp = null; // when conversion started
   var firstCommercialActionTimestamp = null;
@@ -1180,6 +1183,97 @@
         }, 1000);
       }
     });
+
+    bindContactDetection();
+  }
+
+  // ── Contact handoff: phone, WhatsApp, DM ──
+  //
+  // Six of twenty reviewers from service businesses said the same
+  // thing independently: the conversion this product measures is not
+  // the one their business has. The parts distributor's version is the
+  // costliest, because 60% of R$ 2M a month closes on the phone: the
+  // mechanic searches the part number, confirms stock and CALLS. The
+  // esthetician has no site at all, only a link in bio and a booking
+  // page, and every sale starts in a Direct message.
+  //
+  // The existing support_open event was no help here: it classifies by
+  // the LABEL text, so a FAQ link and a tap on WhatsApp are the same
+  // event. For these businesses that distinction is the whole thing.
+  //
+  // So this classifies by protocol and host, which is what the visitor
+  // actually did rather than what the button happened to be called.
+  function contactChannelOf(rawHref) {
+    var h = String(rawHref || '').trim();
+    if (!h) return null;
+    var lower = h.toLowerCase();
+    // Protocols first: unambiguous, and they carry no hostname, which
+    // is why the checkout-handoff branch above could never see them.
+    if (lower.indexOf('tel:') === 0) return 'phone';
+    if (lower.indexOf('sms:') === 0 || lower.indexOf('smsto:') === 0) return 'sms';
+    if (lower.indexOf('mailto:') === 0) return 'email';
+    if (lower.indexOf('whatsapp:') === 0) return 'whatsapp';
+    var host = '';
+    var path = '';
+    try {
+      var u = new URL(h, window.location.origin);
+      host = (u.hostname || '').toLowerCase().replace(/^www\./, '');
+      path = (u.pathname || '').toLowerCase();
+    } catch (ex) { return null; }
+    if (host === 'wa.me' || host === 'api.whatsapp.com' || host === 'web.whatsapp.com' ||
+        host === 'chat.whatsapp.com') return 'whatsapp';
+    if (host === 'm.me' || host === 'messenger.com') return 'messenger';
+    if (host === 'ig.me') return 'instagram_dm';
+    if (host === 'instagram.com' && path.indexOf('/direct') === 0) return 'instagram_dm';
+    if (host === 't.me' || host === 'telegram.me') return 'telegram';
+    return null;
+  }
+
+  function noteContact(channel, el) {
+    if (!channel) return;
+    // One intent per channel per session. A person tapping the same
+    // WhatsApp button three times did not want three conversations.
+    if (contactChannels[channel]) return;
+    contactChannels[channel] = true;
+    if (!intentTimestamp) intentTimestamp = Date.now();
+    emit('contact_handoff', {
+      url: canonicalUrl(),
+      channel: channel,
+      // How they found it, for the ad-or-page question. Truncated
+      // because a label is free text on someone else's site.
+      label: el ? String(semanticLabel(el) || '').slice(0, 60) : '',
+    });
+  }
+
+  function bindContactDetection() {
+    document.addEventListener('click', function(e) {
+      var el = e.target && e.target.closest && e.target.closest('a[href],[data-href],[onclick]');
+      if (!el) return;
+      // getAttribute, not .href: the DOM property resolves tel: and
+      // mailto: inconsistently across browsers, and for a non-anchor
+      // element it does not exist at all.
+      var raw = el.getAttribute && (el.getAttribute('href') || el.getAttribute('data-href'));
+      noteContact(contactChannelOf(raw), el);
+    }, true);
+
+    // A phone number copied off the page is the desktop version of
+    // tapping tel:. It is the only signal available for the visitor who
+    // reads the number and dials it on a desk phone, which is otherwise
+    // completely invisible to any pixel.
+    document.addEventListener('copy', function() {
+      try {
+        var sel = String(window.getSelection ? window.getSelection() : '');
+        if (!sel) return;
+        var digits = sel.replace(/[^0-9]/g, '');
+        // 8 to 15 digits covers a Brazilian landline through an
+        // international mobile, and the selection has to be mostly
+        // number so a copied paragraph that contains a year does not
+        // count.
+        if (digits.length < 8 || digits.length > 15) return;
+        if (digits.length / sel.replace(/\s/g, '').length < 0.6) return;
+        noteContact('phone_copy', null);
+      } catch (ex) {}
+    }, true);
   }
 
   function isCheckoutLikeUrl(path) {

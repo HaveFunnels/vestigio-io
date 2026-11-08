@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { readTrafficSeries } from "../../../../packages/strategy-plan/sections/traffic-series";
+import type { scoreVerdicts } from "../../../../packages/strategy-plan/sections/traffic-scoreboard";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/libs/auth";
 import { resolveOrgContext } from "@/libs/resolve-org";
@@ -225,10 +226,34 @@ export async function GET(request: Request) {
 			console.error("[traffic-statement] series", err);
 		}
 
+		// The loop closes here, because this is the moment the verdict
+		// exists. Writing on a read is deliberate and bounded: the
+		// insert is idempotent on (env, dimension, key, day), so a
+		// customer refreshing the page twenty times leaves one
+		// prediction, not twenty.
+		//
+		// Only verdicts that ask for an action are recorded. Scoring
+		// "entregando" would pad the hit rate with predictions nobody
+		// acted on.
+		let scoreboard: Awaited<ReturnType<typeof scoreVerdicts>> | null = null;
+		try {
+			const { recordVerdicts, scoreVerdicts } = await import(
+				"../../../../packages/strategy-plan/sections/traffic-scoreboard"
+			);
+			await recordVerdicts(prisma, orgCtx.envId, statement.campaigns);
+			scoreboard = await scoreVerdicts(prisma, orgCtx.envId);
+		} catch (err) {
+			// A broken scoreboard must never cost the statement. It is
+			// the surface that holds us to account, not the one the
+			// customer paid for.
+			console.error("[traffic-statement] scoreboard", err);
+		}
+
 		return NextResponse.json({
 			statement,
 			platformConversations,
 			series,
+			scoreboard,
 			moves,
 			moveWindow: {
 				start: lastWeekStart.toISOString().slice(0, 10),

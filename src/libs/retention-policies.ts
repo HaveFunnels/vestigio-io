@@ -123,6 +123,14 @@ export const RETENTION_POLICIES: RetentionPolicy[] = [
 	},
 
 	{
+		model: "TrafficVerdict",
+		field: "issuedAt",
+		days: 730,
+		reason:
+			"Our own recommendations and what happened to them. Bounded by how often we judge rather than by traffic: on the instrumented account about 9 action-verdicts a month, so two years is ~220 rows per environment and a rounding error in storage. Kept twice as long as the series it scores, because the scoreboard's whole value is that it accumulates: a hit rate over two years is an argument, a hit rate over one quarter is an anecdote. This is also the only table whose deletion destroys an asset rather than freeing space.",
+	},
+
+	{
 		model: "TrafficDailyRollup",
 		field: "day",
 		days: 400,

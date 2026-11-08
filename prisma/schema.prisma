@@ -396,6 +396,7 @@ model Environment {
   behavioralSessions     BehavioralSessionAggregate[]
   frictionRollups        FrictionDailyRollup[]
   trafficRollups         TrafficDailyRollup[]
+  trafficVerdicts        TrafficVerdict[]
   userActions            UserAction[]
   opportunityTrackings   OpportunityTracking[]
   savedViews             SavedView[]
@@ -1433,6 +1434,84 @@ model TrafficDailyRollup {
 
   @@unique([envId, day, dimension, key])
   @@index([envId, dimension, day])
+}
+
+/// A recommendation we made, and what happened to it.
+///
+/// Six of nine reviewers asked for this with six different names:
+/// contrapartida apurada, placar, prontuário, registro de mudança,
+/// documento datado, costura com a agenda. They are all the same
+/// thing: the consequence of what was said, recorded over time and
+/// attributable to someone.
+///
+/// It is the only category the two free competitors cannot enter, and
+/// the reason is incentive rather than difficulty. A generative
+/// product cannot publish its own error rate, because its own
+/// documentation already apologises in advance and because the
+/// incentive of a copilot is to produce output, not to audit itself.
+/// A reporting product has nothing to score, because it issues no
+/// judgement. The replicability auditor put it as the one durable
+/// moat: "dificuldade técnica a Microsoft resolve com dois
+/// engenheiros, incentivo contrário ela não resolve nunca."
+///
+/// It also fixes the month-two problem on its own, because a scoreboard
+/// changes every week even when the site does not: it is measuring us,
+/// not the customer's store. And it turns silence from an absence into
+/// an affirmation, which is what the same auditor said silence needs
+/// in order to be worth anything.
+model TrafficVerdict {
+  id    String @id @default(cuid())
+  envId String
+
+  /// Which thing was judged: campaign | page | term.
+  dimension String
+  /// Platform campaign id, landing path, or search term.
+  key       String
+  /// The campaign name as it read when we judged it, so the record
+  /// survives a rename.
+  label     String?
+
+  /// cortar | corrigir | medicao_suspeita. Only verdicts that ask for
+  /// an action are recorded: "observar" and "entregando" are not
+  /// recommendations and scoring them would inflate the hit rate with
+  /// predictions nobody acted on.
+  verdict  String
+  /// When we said it.
+  issuedAt DateTime @default(now())
+
+  /// The claim, frozen. These are what the outcome is judged against,
+  /// and they are copied rather than recomputed because the whole
+  /// point is that a later run cannot quietly rewrite what we said.
+  blindPct      Float
+  blindPctLow   Float
+  marginPoints  Float
+  sessions      Int
+  /// What we said pausing would cost, in the unit this business earns
+  /// in at the time of the verdict.
+  pauseCost     Int
+  pauseCostUnit String
+  /// Which definition of "did nothing" produced the claim. A verdict
+  /// measured under one ruler cannot be scored against an outcome
+  /// measured under another.
+  rulerVersion  Int    @default(1)
+
+  /// What happened, written by the evaluation pass once enough time
+  /// has passed. Null until then, and null is "not yet", never "no
+  /// change".
+  outcome         String? // melhorou | piorou | igual | sumiu | indefinido
+  outcomeAt       DateTime?
+  /// The rate when we looked again, and how long we waited.
+  outcomeBlindPct Float?
+  outcomeDays     Int?
+  /// Did the operator act? Set from the series, not from a checkbox:
+  /// a campaign whose sessions fell to near zero was paused.
+  acted           Boolean?
+
+  environment Environment @relation(fields: [envId], references: [id], onDelete: Cascade)
+
+  @@unique([envId, dimension, key, issuedAt])
+  @@index([envId, issuedAt])
+  @@index([envId, outcome])
 }
 
 model CustomMap {

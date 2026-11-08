@@ -5,6 +5,7 @@ import PageHeader from "@/components/console/PageHeader";
 import CampaignPill from "@/components/app/CampaignPill";
 import MetricInfo from "@/components/app/MetricInfo";
 import OpenTheCount from "@/components/app/OpenTheCount";
+import Scoreboard, { type ScoreboardData } from "@/components/app/Scoreboard";
 import Sparkline from "@/components/app/Sparkline";
 import {
 	IconBetter,
@@ -304,6 +305,7 @@ export default function TrafficStatementPage() {
 	const [moves, setMoves] = useState<TrafficMove[]>([]);
 	const [platformConversations, setPlatformConversations] = useState<number | null>(null);
 	const [series, setSeries] = useState<TrafficSeries | null>(null);
+	const [scoreboard, setScoreboard] = useState<ScoreboardData | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -331,6 +333,7 @@ export default function TrafficStatementPage() {
 							: null,
 					);
 					setSeries(body.series ?? null);
+					setScoreboard(body.scoreboard ?? null);
 				} else setError(body.reason ?? "sem dados");
 			})
 			.catch(() => alive && setError("falha ao carregar"))
@@ -559,6 +562,17 @@ export default function TrafficStatementPage() {
 					)}
 				</div>
 			)}
+
+			{/* Our own record, placed here on purpose. The card above
+			    tells the operator to cut something, and the next
+			    question a person actually has is whether to believe it.
+			    The answer belongs next to the claim, not in a footer.
+
+			    It is also the one section whose numbers change every
+			    week even when the customer's site does not, because it
+			    is measuring us rather than their store. That is the
+			    month-two problem solving itself. */}
+			{scoreboard && <Scoreboard data={scoreboard} />}
 
 			<div className="mb-6 rounded-card border border-edge bg-surface-card px-5 py-4">
 				<p className="text-[15px] leading-relaxed text-content">

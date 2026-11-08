@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import PageHeader from "@/components/console/PageHeader";
 import CampaignPill from "@/components/app/CampaignPill";
+import MetricInfo from "@/components/app/MetricInfo";
 import {
 	IconBetter,
 	IconChange,
@@ -200,6 +201,36 @@ function sharedPath(moves: TrafficMove[]): { path: string; count: number } | nul
 	return best;
 }
 
+// ──────────────────────────────────────────────
+// The vocabulary, in one place so it is one edit to change.
+//
+// Market research finding: products name the BEHAVIOUR, not the
+// measurement. Microsoft Clarity does not ship "taxa de engajamento
+// inverso", it ships Dead clicks, Rage clicks, Quick backs. A short
+// noun works as a column header, as a filter, inside an alert
+// sentence, and in the conversation between an owner and their media
+// buyer. "Acessos que não fizeram nada" is seven words and fits none
+// of those.
+//
+// "Visita muda" was chosen over "passou direto" (a verb phrase, bad as
+// a header) and over "visita morta" (collides with Clarity's dead
+// click, which means something else: a click that did nothing, not a
+// visit that did nothing).
+// ──────────────────────────────────────────────
+const MUTE = {
+	one: "visita muda",
+	many: "visitas mudas",
+	Many: "Visitas mudas",
+	/** Column header, where space is tightest. */
+	col: "Mudas",
+	/** The definition, shown in a tooltip on the number rather than in
+	 *  a section at the end. */
+	def:
+		"Entrou pelo anúncio e não deixou rastro nenhum: não rolou a página, " +
+		"não teve botão entrando na tela, não clicou, não abriu formulário, " +
+		"WhatsApp ou telefone, e não abriu uma segunda página.",
+} as const;
+
 /** Plain names, because nobody calls it an instagram_dm. */
 const CHANNEL_LABEL: Record<string, string> = {
 	whatsapp: "WhatsApp",
@@ -226,11 +257,27 @@ const CHANNEL_TINT: Record<string, string> = {
 	sms: "#3F5663",
 };
 
-const MOVE_KIND: Record<TrafficMove["kind"], string> = {
-	campaign: "campanha",
-	page: "página",
-	term: "termo",
-};
+/** The difference against the previous week, as a cell. Nothing when
+ *  there is no comparable week: an empty cell is honest, an invented
+ *  zero is not. */
+function Delta({ move }: { move?: TrafficMove }) {
+	if (!move) {
+		return <span className="text-[11px] text-content-faint">sem base</span>;
+	}
+	const worse = move.direction === "worse";
+	return (
+		<span
+			className={`inline-flex items-center gap-1 text-[12px] font-semibold tabular-nums ${
+				worse ? "text-attention" : "text-accent-text"
+			}`}
+			title={`Estava em ${move.beforePct.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`}
+		>
+			{worse ? <IconWorse size={12} /> : <IconBetter size={12} />}
+			{move.deltaPoints > 0 ? "+" : ""}
+			{move.deltaPoints.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}
+		</span>
+	);
+}
 
 export default function TrafficStatementPage() {
 	const [data, setData] = useState<Statement | null>(null);
@@ -313,7 +360,6 @@ export default function TrafficStatementPage() {
 	const watching = data.campaigns.filter((c) => c.verdict === "observar").length;
 	const fine = data.campaigns.filter((c) => c.verdict === "entregando").length;
 	const hasSpend = data.totals.spendBrl !== null;
-	const [showMethod, setShowMethod] = useState(false);
 
 	// The page view, promoted from a footnote to the lead. It is the
 	// only view that works for an account whose campaigns are each too
@@ -321,6 +367,15 @@ export default function TrafficStatementPage() {
 	// campaign table cannot: one product page runs 36% across 155
 	// campaigns while another runs 9%.
 	const pages = data.landingPages;
+
+	// Change as a COLUMN, which is the convention every mature dashboard
+	// uses and the one we were not using. Search Console puts a Compare
+	// toggle on the date picker and every row gains a difference; it has
+	// no "what changed" screen. We had the inverse: a chapter narrating
+	// three movements above a table that did not know anything had
+	// moved. That shape is what reads as a report.
+	const moveOf = new Map<string, TrafficMove>();
+	for (const m of moves) moveOf.set(`${m.kind}:${m.label}`, m);
 	const worstPage = pages[0] ?? null;
 
 	return (
@@ -361,7 +416,7 @@ export default function TrafficStatementPage() {
 			    reference used, so the one loud surface is still the
 			    brand. It holds what changed because that is the only
 			    part of this screen that is true only this week. */}
-			{moves.length > 0 && (
+			{needsDecision.length > 0 && (
 				<div className="mb-6 overflow-hidden rounded-card bg-gradient-to-br from-[#0A5240] to-[#073A2D] text-[#D3EDE2]">
 					<div className="flex items-center gap-3 px-5 pb-1 pt-5">
 						<span className="grid h-8 w-8 place-items-center rounded-mid bg-white/15 text-white">
@@ -369,10 +424,12 @@ export default function TrafficStatementPage() {
 						</span>
 						<span>
 							<span className="block text-[14.5px] font-semibold text-white">
-								O que mudou
+								O que pede decisão
 							</span>
 							<span className="block text-[12.5px] text-[#9ECFBC]">
-								Esta semana contra a anterior
+								{needsDecision.length}{" "}
+								{needsDecision.length === 1 ? "campanha" : "campanhas"} de{" "}
+								{data.totals.campaignsAboveFloor}, e o que muda se você mexer
 							</span>
 						</span>
 					</div>
@@ -397,35 +454,67 @@ export default function TrafficStatementPage() {
 						);
 					})()}
 					<ul className="flex flex-col gap-2.5 px-5 pb-5 pt-3">
-						{moves.slice(0, 6).map((m) => (
-							<li
-								key={`${m.kind}:${m.label}`}
-								className="rounded-mid border border-white/[0.14] bg-white/10 px-4 py-3"
-							>
-								<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-									<span className="inline-flex items-center gap-1.5 text-[17px] font-semibold tabular-nums text-white">
-										{m.direction === "worse" ? <IconWorse size={15} /> : <IconBetter size={15} />}
-										{pct(Math.abs(m.deltaPoints))} pontos
-									</span>
-									{m.kind === "campaign" ? (
-										<CampaignPill name={m.label} label={m.label} tone="deep" />
-									) : (
-										<span className="font-mono text-[11.5px] text-[#D3EDE2]">{m.label}</span>
-									)}
-								</div>
-								<p className="mt-2 text-[13px] leading-relaxed text-[#D3EDE2]">
-									Estava em <strong className="font-semibold text-white">{pct(m.beforePct)}%</strong>
-									, está em <strong className="font-semibold text-white">{pct(m.nowPct)}%</strong>
-									. {n(m.nowSessions)} acessos contra {n(m.beforeSessions)} na semana anterior
-									{m.kind === "campaign" && m.samePage && ", e cai na mesma página de antes"}
-									{m.purchases > 0 && `, com ${n(m.purchases)} compras`}.
-								</p>
-							</li>
-						))}
+						{needsDecision.slice(0, 5).map((c) => {
+							const mv = moveOf.get(`campaign:${c.displayName}`);
+							return (
+								<li
+									key={c.platformId ?? c.name}
+									className="rounded-mid border border-white/[0.14] bg-white/10 px-4 py-3"
+								>
+									<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+										<span className="text-[17px] font-semibold tabular-nums text-white">
+											{pct(c.arrivedBlindPct)}% {MUTE.many}
+										</span>
+										{mv && (
+											<span
+												className={`inline-flex items-center gap-1 text-[12.5px] font-semibold tabular-nums ${
+													mv.direction === "worse" ? "text-[#F7C9A4]" : "text-[#8FE3C0]"
+												}`}
+											>
+												{mv.direction === "worse" ? (
+													<IconWorse size={12} />
+												) : (
+													<IconBetter size={12} />
+												)}
+												{mv.deltaPoints > 0 ? "+" : ""}
+												{pct(mv.deltaPoints)} vs. semana
+											</span>
+										)}
+										<CampaignPill name={c.name} label={c.displayName} tone="deep" />
+									</div>
+									<p className="mt-2 text-[13px] leading-relaxed text-[#D3EDE2]">
+										{c.verdict === "medicao_suspeita" ? (
+											<>
+												Taxa alta demais para ser comportamento. Antes de mexer na verba,
+												vale conferir se a medição desta campanha está certa.
+											</>
+										) : c.pauseCostPurchases > 0 ? (
+											<>
+												Pausar custa{" "}
+												<strong className="font-semibold text-white">
+													{n(c.pauseCostPurchases)}{" "}
+													{c.pauseCostPurchases === 1 ? "compra" : "compras"}
+												</strong>
+												, então o alvo é a página onde ela cai, não o anúncio.
+											</>
+										) : (
+											<>
+												Pausar não custa compra nenhuma.{" "}
+												<strong className="font-semibold text-white">
+													{n(c.sessions)} acessos
+												</strong>{" "}
+												comprados nesta janela.
+											</>
+										)}
+									</p>
+								</li>
+							);
+						})}
 					</ul>
-					{moves.length > 6 && (
+					{needsDecision.length > 5 && (
 						<div className="border-t border-white/[0.14] px-5 py-2.5 text-[11.5px] text-[#9ECFBC]">
-							Outros {moves.length - 6} movimentos menores não estão listados.
+							Outras {needsDecision.length - 5} campanhas pedem decisão e estão na tabela
+							abaixo.
 						</div>
 					)}
 				</div>
@@ -456,68 +545,18 @@ export default function TrafficStatementPage() {
 					    not. The number was right and the sentence was
 					    wrong, which is the harder defect because checking
 					    the arithmetic cannot find it. */}
-					Na conta inteira, {pct(data.accountBlindPct)}% dos acessos pagos não fazem nada, e a
-					campanha típica fica em {pct(data.accountMedianBlindPct)}%, que é a régua usada para
-					comparar uma campanha com as outras. Quem chega sem anúncio:{" "}
+					Na conta inteira, {pct(data.accountBlindPct)}% dos acessos pagos são{" "}
+					{MUTE.many} <MetricInfo>{MUTE.def}</MetricInfo>, e a campanha típica fica em{" "}
+					{pct(data.accountMedianBlindPct)}%{" "}
+					<MetricInfo>
+						A mediana das campanhas desta conta. É a régua usada para dizer se uma campanha
+						está fora do padrão, e não a taxa da conta inteira, que é a de cima.
+					</MetricInfo>
+					. Quem chega sem anúncio:{" "}
 					{data.control ? `${pct(data.control.blindPct)}%` : "sem base para comparar"}.
-					<button
-						type="button"
-						onClick={() => setShowMethod((v) => !v)}
-						className="ml-1 underline decoration-dotted underline-offset-2 hover:text-content"
-					>
-						{showMethod ? "esconder como isso é contado" : "como isso é contado"}
-					</button>
+
 				</p>
-				{showMethod && (
-					// Four definitions were load-bearing and undeclared, and
-					// the reviewer who audits statements for a living
-					// returned the document over exactly that: "demonstrativo
-					// que não declara o critério de cálculo da própria coluna
-					// é demonstrativo que eu devolvo".
-					<div className="mt-3 space-y-1.5 border-t border-edge pt-3 text-[12px] leading-relaxed text-content-muted">
-						<p>
-							<strong className="text-content-secondary">não fez nada:</strong> não passou
-							de 25% da página, não teve nenhum botão entrando na tela, não começou
-							formulário, não abriu suporte nem WhatsApp, não clicou, não voltou e não
-							abriu uma segunda página. Qualquer um desses sinais tira a sessão da conta.
-						</p>
-						<p>
-							<strong className="text-content-secondary">acima do padrão:</strong> a taxa
-							da campanha menos a mediana da conta ({pct(data.accountMedianBlindPct)}%),
-							aplicada sobre os acessos dela. Em acessos, não em pontos.
-						</p>
-						<p>
-							<strong className="text-content-secondary">chegou à ação:</strong> a sessão
-							alcançou o que conta como conversão neste negócio, que é diferente de ter
-							comprado. A coluna de compras é a venda concluída.
-						</p>
-						<p>
-							<strong className="text-content-secondary">cortar ou corrigir:</strong> uma
-							campanha precisa estar acima de {pct(data.thresholds.absoluteBlindPct)}% em
-							termos absolutos E {pct(data.thresholds.pointsAboveMedian)} pontos acima da
-							mediana da conta. Se ainda produz compra, o veredito é corrigir, nunca
-							cortar. Conta saudável sai daqui sem nenhuma linha, e isso é o comportamento
-							correto. Acima de {pct(data.thresholds.implausibleBlindPct)}% a linha vira
-							"medição suspeita" em vez de recomendação, porque taxa tão alta costuma ser
-							instrumento quebrado, não desperdício.
-						</p>
-						<p>
-							<strong className="text-content-secondary">o que não é medido:</strong>{" "}
-							se a conversa aconteceu. O toque no WhatsApp, no telefone e no Direct é
-							medido; se a mensagem foi enviada, se a ligação foi atendida e se virou
-							venda acontece fora do site. Também não é medido o número lido na tela e
-							discado num telefone fixo, que nenhum pixel alcança: para esse caso só
-							existe telefonia com número por campanha. E a venda que nasce e morre no
-							Direct, sem a pessoa abrir o site, não passa pelo pixel em nenhum momento.
-						</p>
-						<p>
-							Sessões com menos de {data.thresholds.minEvents} eventos são descartadas.
-							Campanha com menos de {n(data.thresholds.minSessions)} acessos não entra na
-							tabela de campanha, porque abaixo disso a taxa é ruído, e aparece somada na
-							visão por página. Tudo aqui é contagem direta, não estimativa.
-						</p>
-					</div>
-				)}
+
 			</div>
 
 			{/* Contact, for the businesses that close off the site. The
@@ -590,6 +629,18 @@ export default function TrafficStatementPage() {
 				<div className="mb-6 overflow-hidden rounded-card border border-edge">
 					<div className="flex items-center gap-3 border-b border-edge px-4 py-3"><span className="grid h-8 w-8 place-items-center rounded-mid bg-surface-inset text-content-secondary"><IconPage /></span><span className="text-[14px] font-semibold text-content">Por página de destino, da que mais desperdiça acesso para a que menos</span></div>
 					<table className="w-full border-collapse text-[13px]">
+						<thead>
+							<tr className="text-left text-[11px] text-content-muted">
+								<th className="px-4 pb-2 pt-3 font-medium">Página</th>
+								<th className="px-4 pb-2 pt-3 text-right font-medium">vs. semana</th>
+								<th className="px-4 pb-2 pt-3 text-right font-medium">
+									<span className="inline-flex items-center gap-1.5">
+										{MUTE.Many}
+										<MetricInfo align="right">{MUTE.def}</MetricInfo>
+									</span>
+								</th>
+							</tr>
+						</thead>
 						<tbody>
 							{pages.map((pg) => {
 								// Which half is to blame, instead of flatly saying
@@ -627,6 +678,9 @@ export default function TrafficStatementPage() {
 												é o anúncio e não a página.
 											</div>
 										)}
+									</td>
+									<td className="px-4 py-2.5 text-right">
+										<Delta move={moveOf.get(`page:${pg.path}`)} />
 									</td>
 									<td className="w-[38%] px-4 py-2.5">
 										<div className="flex items-center gap-2">
@@ -723,13 +777,28 @@ export default function TrafficStatementPage() {
 						<thead>
 							<tr className="bg-surface-inset text-left text-[11px] uppercase tracking-[0.08em] text-content-muted">
 								<th className="px-4 py-3 font-semibold">campanha</th>
-								<th className="px-3 py-3 text-right font-semibold">não fez nada</th>
+								<th className="px-3 py-3 text-right font-semibold">
+									<span className="inline-flex items-center gap-1.5">
+										{MUTE.col}
+										<MetricInfo align="right">{MUTE.def}</MetricInfo>
+									</span>
+								</th>
+								<th className="px-3 py-3 text-right font-semibold">
+									<span className="inline-flex items-center gap-1.5">
+										vs. semana
+										<MetricInfo align="right">
+											Quanto a taxa se moveu contra a semana anterior, em pontos. Vazio
+											quando a campanha não rodou os dois períodos, porque comparar com
+											nada seria inventar.
+										</MetricInfo>
+									</span>
+								</th>
 								<th className="px-3 py-3 text-right font-semibold">acima do padrão</th>
 								<th className="px-3 py-3 text-right font-semibold">pausar custa</th>
 								{hasSpend && (
 									<th className="px-3 py-3 text-right font-semibold">gasto perdido</th>
 								)}
-								<th className="px-3 py-3 font-semibold">veredito</th>
+								<th className="px-3 py-3 font-semibold">alerta</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -801,6 +870,9 @@ export default function TrafficStatementPage() {
 										<div className="text-[11px] text-content-muted">
 											{pct(c.arrivedBlindPct)}%
 										</div>
+									</td>
+									<td className="px-3 py-3 text-right tabular-nums">
+										<Delta move={moveOf.get(`campaign:${c.displayName}`)} />
 									</td>
 									<td className="px-3 py-3 text-right tabular-nums">
 										<div className="text-content">{n(c.excessBlind)}</div>

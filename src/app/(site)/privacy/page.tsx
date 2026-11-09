@@ -93,7 +93,13 @@ const PrivacyPage = async () => {
 					{SECTION_IDS.map((id) => {
 						// Section 2 — subsections with unique shape
 						if (id === "s2") {
-							const subIds = ["s2_1", "s2_2", "s2_3", "s2_4", "s2_5"];
+							// 2.6 covers figures the operator types by hand: weekly
+							// booked/showed totals and the change log. It exists
+							// because a dentist supplying "compareceram" puts the
+							// word health into a contract that did not mention it,
+							// and the clause has to be in place before the first
+							// cell is filled rather than after.
+							const subIds = ["s2_1", "s2_2", "s2_3", "s2_4", "s2_5", "s2_6"];
 							return (
 								<section key={id}>
 									<h2 className='mb-4 text-lg font-semibold text-white'>

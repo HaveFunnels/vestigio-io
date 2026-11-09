@@ -200,7 +200,7 @@ export default function GroundTruthColumn({
 						type="text"
 						value={note}
 						onChange={(e) => setNote(e.target.value)}
-						placeholder="feriado na quinta, fechamos"
+						placeholder="feriado na quinta, fechamos mais cedo"
 						className="w-full rounded-mid border border-edge bg-surface-inset px-2.5 py-1.5 text-[13px] text-content placeholder:text-content-faint"
 					/>
 				</label>
@@ -224,6 +224,24 @@ export default function GroundTruthColumn({
 			    problema não é não saber a taxa, é não saber o que eu
 			    mexi. Trocamos a foto do produto em algum momento de
 			    setembro e ninguém anotou." */}
+			{/* The warning goes next to the field, not in the policy.
+			    The policy is what covers us; this is what actually
+			    prevents the thing. A dentist typing "Maria faltou" into
+			    a note is the realistic failure, and we cannot detect it:
+			    trying to would mean guessing at names and producing
+			    false confidence. So the only honest control is telling
+			    the person before they type.
+
+			    Asked for by the DPO on the second council, who did not
+			    evaluate whether the feature was useful: "voces acabaram
+			    de criar uma tabela que guarda quantos pacientes
+			    compareceram num consultorio odontologico." */}
+			<p className="mt-3 text-[11.5px] leading-relaxed text-content-muted">
+				Só totais da semana, por favor. Não escreva nome, telefone ou qualquer coisa que
+				identifique uma pessoa: a gente não precisa disso para costurar, e esses campos são
+				lidos por gente, não interpretados por máquina.
+			</p>
+
 			<div className="mt-5 border-t border-edge pt-4">
 				<div className="mb-2 text-[13px] font-semibold text-content">
 					Mexeu em alguma coisa? Anota aqui

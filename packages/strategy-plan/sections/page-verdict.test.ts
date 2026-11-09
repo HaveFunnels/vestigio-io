@@ -7,6 +7,7 @@ import {
 	PAGE_MIN_WASTE_SHARE,
 	PAGE_COMMON_FACTOR_SHARE,
 	MIN_CAMPAIGNS_FOR_PAGE_VERDICT,
+	MIN_SESSIONS_FOR_ACCOUNT_VERDICT,
 } from "./traffic-statement";
 
 // ──────────────────────────────────────────────
@@ -424,5 +425,63 @@ describe("the account as the defendant", () => {
 		expect(st.accountBlindPct).toBeGreaterThan(20);
 		expect(st.accountBlindPct).toBeLessThan(ABSOLUTE_BLIND_FLOOR);
 		expect(st.accountVerdict).toBe(null);
+	});
+});
+
+describe("how thin an account-wide condemnation may be", () => {
+	/** A uniformly bad account of a given size, with a usable control. */
+	function badAccountOf(total: number) {
+		const rows = [];
+		const perC = Math.floor(total / 3);
+		for (let i = 0; i < 3; i++) {
+			const mute = Math.round(perC * 0.6);
+			rows.push(...sess(mute, MUTE, `R${i}|1300000000${i}`, "/p"));
+			rows.push(...sess(perC - mute, LIVE, `R${i}|1300000000${i}`, "/p"));
+		}
+		rows.push(
+			...Array.from({ length: 380 }, () => ({
+				aggregate: { max_scroll_depth: 70, checkout_reached: true },
+				eventCount: 5,
+				userAgent: null,
+			})),
+			...Array.from({ length: 20 }, () => ({
+				aggregate: MUTE,
+				eventCount: 5,
+				userAgent: null,
+			})),
+		);
+		return buildTrafficStatement(rows, { ...WIN, minSessions: 80 });
+	}
+
+	it("refuses to condemn an account on a handful of visits", () => {
+		// Measured, not reasoned: the rule fired happily at 60 sessions
+		// before the floor existed. The margin of error protects the
+		// RATE, and at 60 sessions it still cleared, because 60% minus a
+		// 12 point half-width is 47,6. What it does not protect is
+		// whether the window represents anything.
+		const st = badAccountOf(60);
+		expect(st.accountVerdict).toBe(null);
+	});
+
+	it("condemns the same account once there is enough of it", () => {
+		const st = badAccountOf(600);
+		expect(st.accountVerdict).not.toBe(null);
+	});
+
+	it("holds an account to more than it holds one campaign", () => {
+		// Incoherent otherwise: we will not judge a single campaign on
+		// fewer than 80 sessions, and an account-wide figure pools every
+		// campaign by construction.
+		expect(MIN_SESSIONS_FOR_ACCOUNT_VERDICT).toBeGreaterThan(80);
+	});
+
+	it("still reaches small advertisers, which is the point", () => {
+		// 150 paid sessions a month is a tiny account. The relative
+		// rulers cannot say anything there, and this one can, which is
+		// the only part of the product that reaches the advertiser being
+		// wasted wholesale rather than in one line.
+		const st = badAccountOf(MIN_SESSIONS_FOR_ACCOUNT_VERDICT + 30);
+		expect(st.accountVerdict).not.toBe(null);
+		expect(st.campaigns.filter((c) => c.verdict === "cortar").length).toBe(0);
 	});
 });

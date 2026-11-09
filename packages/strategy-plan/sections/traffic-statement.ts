@@ -231,6 +231,27 @@ export const PAGE_POINTS_ABOVE_POOL = 5;
 export const PAGE_MIN_WASTE_SHARE = 15;
 
 /**
+ * The fewest paid sessions an account-wide condemnation can rest on.
+ *
+ * The margin of error already stops us overclaiming the RATE: at 60
+ * sessions the half-width is 12 points and the pessimistic end has to
+ * clear the floor anyway. What the margin does not protect is whether
+ * the window is REPRESENTATIVE at all, which is a different question
+ * and the one that matters when a handful of odd sessions is the whole
+ * sample.
+ *
+ * Set above MIN_SESSIONS_PER_CAMPAIGN on purpose. We refuse to judge a
+ * single campaign on fewer than 80 sessions, so condemning an entire
+ * account on 60 would be incoherent, and an account-level figure pools
+ * every campaign by construction and therefore should be held to more
+ * rather than less.
+ *
+ * Found by measuring the floor rather than by reasoning about it: the
+ * rule fired happily at 60 sessions until this existed.
+ */
+export const MIN_SESSIONS_FOR_ACCOUNT_VERDICT = 150;
+
+/**
  * Below this many judged campaigns on a page, the share above is one
  * or two campaigns wearing a percentage. 2 of 2 is 100% and means
  * nothing.
@@ -1649,7 +1670,9 @@ export function buildTrafficStatement(
 	// What makes this a finding is the account as a whole sitting in the
 	// territory that condemns an individual campaign.
 	const accountVerdict: TrafficStatement["accountVerdict"] =
-		!anyRelativeFinding && accountLow >= ABSOLUTE_BLIND_FLOOR
+		!anyRelativeFinding &&
+		accountSessionTotal >= MIN_SESSIONS_FOR_ACCOUNT_VERDICT &&
+		accountLow >= ABSOLUTE_BLIND_FLOOR
 			? {
 					blindPctLow: accountLow,
 					marginPoints: Math.round(accountMargin * 10) / 10,

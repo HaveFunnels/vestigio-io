@@ -322,3 +322,107 @@ describe("shortening a campaign name", () => {
 		expect(out.length).toBeLessThan(80);
 	});
 });
+
+describe("the account as the defendant", () => {
+	// The limitation this fixes, found by reading the rules rather than
+	// by a failing test: both verdicts are relative, so an account that
+	// is bad everywhere has no relative signal left to read. Every
+	// campaign sits at the median it is compared to and the page IS the
+	// account. The product went silent exactly when the customer was
+	// worst.
+
+	/** Bad everywhere, with no internal spread worth naming. */
+	function uniformlyBad() {
+		const rows = [];
+		for (let i = 0; i < 6; i++) {
+			const c = `RUIM${i}|11000000000${i}`;
+			const mute = 580 + i * 8;
+			rows.push(...sess(mute, MUTE, c, i < 3 ? "/pagina-a" : "/pagina-b"));
+			rows.push(...sess(1000 - mute, LIVE, c, i < 3 ? "/pagina-a" : "/pagina-b"));
+		}
+		// Non-paid traffic on the same site, behaving normally. This is
+		// the reference internal spread cannot hide from.
+		rows.push(
+			...Array.from({ length: 400 }, () => ({
+				aggregate: { max_scroll_depth: 70, checkout_reached: true },
+				eventCount: 5,
+				userAgent: null,
+			})),
+			...Array.from({ length: 30 }, () => ({
+				aggregate: { max_scroll_depth: 0, surface_progression: ["a"] },
+				eventCount: 5,
+				userAgent: null,
+			})),
+		);
+		return buildTrafficStatement(rows, { ...WIN, minSessions: 100 });
+	}
+
+	it("confirms the blind spot is real: no campaign and no page stands out", () => {
+		const st = uniformlyBad();
+		expect(
+			st.campaigns.filter(
+				(c) =>
+					c.verdict === "cortar" ||
+					c.verdict === "corrigir" ||
+					c.verdict === "medicao_suspeita",
+			).length,
+		).toBe(0);
+		expect(
+			st.landingPages.filter(
+				(g) => g.verdict === "corrigir" || g.verdict === "anuncio_errado",
+			).length,
+		).toBe(0);
+	});
+
+	it("names the account instead of going quiet", () => {
+		const st = uniformlyBad();
+		expect(st.accountVerdict).not.toBe(null);
+		expect(st.accountVerdict!.blindPctLow).toBeGreaterThanOrEqual(ABSOLUTE_BLIND_FLOOR);
+		expect(st.accountVerdict!.campaignsJudged).toBe(6);
+	});
+
+	it("carries the control gap as the evidence", () => {
+		const st = uniformlyBad();
+		// Non-paid on the same site is where the claim gets its force:
+		// if the pages were simply bad, traffic arriving without an ad
+		// would break on them too.
+		expect(st.accountVerdict!.controlPct).not.toBe(null);
+		expect(st.accountVerdict!.gapPoints!).toBeGreaterThan(40);
+	});
+
+	it("stays silent when a specific offender was already named", () => {
+		// Never a second opinion competing with a specific one. The
+		// account verdict exists for the case where nothing individual
+		// can be named, and on an account with a real offender it must
+		// not add a line.
+		const st = accountLikeTheRealOne();
+		expect(
+			st.landingPages.filter((g) => g.verdict === "corrigir").length,
+		).toBeGreaterThan(0);
+		expect(st.accountVerdict).toBe(null);
+	});
+
+	it("does not fire on a merely cold account", () => {
+		// A paid/organic gap alone would fire on nearly every account,
+		// because paid traffic is colder by nature and the statement
+		// already says so. The absolute component is what makes this a
+		// finding rather than a description of advertising.
+		const rows = [];
+		for (let i = 0; i < 6; i++) {
+			const c = `OK${i}|12000000000${i}`;
+			rows.push(...sess(220 + i * 5, MUTE, c, "/loja"));
+			rows.push(...sess(780 - i * 5, LIVE, c, "/loja"));
+		}
+		rows.push(
+			...Array.from({ length: 500 }, () => ({
+				aggregate: { max_scroll_depth: 70, checkout_reached: true },
+				eventCount: 5,
+				userAgent: null,
+			})),
+		);
+		const st = buildTrafficStatement(rows, { ...WIN, minSessions: 100 });
+		expect(st.accountBlindPct).toBeGreaterThan(20);
+		expect(st.accountBlindPct).toBeLessThan(ABSOLUTE_BLIND_FLOOR);
+		expect(st.accountVerdict).toBe(null);
+	});
+});

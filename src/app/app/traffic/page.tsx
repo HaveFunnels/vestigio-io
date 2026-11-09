@@ -81,6 +81,13 @@ interface Statement {
 	attributionCoveragePct: number;
 	accountMedianBlindPct: number;
 	accountBlindPct: number;
+	accountVerdict: {
+		blindPctLow: number;
+		marginPoints: number;
+		controlPct: number | null;
+		gapPoints: number | null;
+		campaignsJudged: number;
+	} | null;
 	thresholds: {
 		absoluteBlindPct: number;
 		pointsAboveMedian: number;
@@ -417,7 +424,15 @@ export default function TrafficStatementPage() {
 				c.verdict === "medicao_suspeita") &&
 			!(c.topLandingPath && flaggedPaths.has(c.topLandingPath)),
 	);
-	const decisionCount = pagesNeedingDecision.length + campaignsNeedingDecision.length;
+	// The account itself, when it is bad everywhere and so nothing
+	// individual stands out. Both other rulers are relative, which is
+	// what keeps them from producing noise and also what made the
+	// product go quiet exactly when the customer was worst.
+	const accountVerdict = data.accountVerdict;
+	const decisionCount =
+		pagesNeedingDecision.length +
+		campaignsNeedingDecision.length +
+		(accountVerdict ? 1 : 0);
 
 	// Kept for the sections below that are genuinely about campaigns:
 	// the cut trade, the fix explanation, the campaign table.
@@ -539,6 +554,43 @@ export default function TrafficStatementPage() {
 							</span>
 						</span>
 					</div>
+
+					{/* The account, when there is no single offender to name.
+					    Placed first because it reframes everything below it:
+					    reading a campaign table looking for the bad one is
+					    the wrong activity when they are all the bad one. */}
+					{accountVerdict && (
+						<div className="mx-5 mt-4 rounded-mid bg-white/10 px-4 py-3.5">
+							<p className="text-[13.5px] leading-relaxed text-[#D3EDE2]">
+								Não é uma campanha e não é uma página:{" "}
+								<strong className="text-white">
+									{pct(data.accountBlindPct)}% de todo o seu tráfego pago
+								</strong>{" "}
+								não faz nada, e isso vale para a conta inteira. Nenhuma das{" "}
+								{accountVerdict.campaignsJudged} campanhas medidas se destaca das outras,
+								porque todas estão no mesmo lugar.
+							</p>
+							{accountVerdict.controlPct !== null && (
+								<p className="mt-2 text-[12.5px] leading-relaxed text-[#9ECFBC]">
+									{/* The comparison internal spread cannot hide from. If
+									    the pages were simply broken, traffic arriving
+									    without an ad would break on them too. */}
+									Quem chega ao mesmo site sem anúncio não faz nada em apenas{" "}
+									<strong className="text-white">
+										{pct(accountVerdict.controlPct)}%
+									</strong>{" "}
+									das visitas, uma diferença de {pct(accountVerdict.gapPoints ?? 0)}{" "}
+									pontos. As suas páginas seguram atenção. O que você está comprando é
+									que não chega nelas disposto a nada.
+								</p>
+							)}
+							<p className="mt-2 text-[12.5px] leading-relaxed text-[#9ECFBC]">
+								Procurar a campanha ruim na tabela abaixo não vai levar a nada aqui. O
+								que pede decisão é de onde vem esse tráfego, antes de qual anúncio dentro
+								dele.
+							</p>
+						</div>
+					)}
 
 					{/* The page comes first because that is where the waste
 					    is. On the live account this single row covers 71,6%

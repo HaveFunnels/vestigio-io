@@ -457,6 +457,25 @@ export interface TrafficStatement {
 	 *  sessions. This is what "na conta inteira" actually means. */
 	accountBlindPct: number;
 	/**
+	 * Set only when the account is bad everywhere and therefore nothing
+	 * individual stands out.
+	 *
+	 * The honest output for an account whose every campaign sits at its
+	 * own median: the defendant is the account, not a line in it. Null
+	 * on any account where a campaign or a page was named, so this can
+	 * never be a second opinion competing with a specific one.
+	 */
+	accountVerdict: {
+		blindPctLow: number;
+		marginPoints: number;
+		/** Non-paid traffic on the same site, when there is enough of it
+		 *  to compare against. The one reference internal spread cannot
+		 *  hide anything from. */
+		controlPct: number | null;
+		gapPoints: number | null;
+		campaignsJudged: number;
+	} | null;
+	/**
 	 * The numbers the verdict actually used, so the page can declare
 	 * its method without the text drifting from the behaviour.
 	 *
@@ -1466,6 +1485,180 @@ export function buildTrafficStatement(
 				: short;
 	}
 
+	// Built before the statement object so the account-level verdict can
+	// read it. It used to be inline in the return literal, which is why
+	// nothing could look at the two dimensions together.
+	const landingPageRows = [...byPage.entries()]
+		.filter(([, p]) => p.sessions >= floor)
+		.map(([path, p]) => {
+			const judged = campaigns.filter((c) => c.topLandingPath === path);
+			// Still reported, because the table prints it and the
+			// account median is the right ruler for a CAMPAIGN. It
+			// just does not drive the page verdict, for the reason
+			// written at `elsewhere` below.
+			const aboveMedian = judged.filter((c) => c.pointsAboveAccount > 0).length;
+			const blindPct = Math.round((1000 * p.blind) / p.sessions) / 10;
+
+			// The same discipline the campaign verdict uses: act on
+			// the cautious end, never the point estimate. Pages
+			// carry far more sessions than campaigns, so the margin
+			// is usually small here, which is exactly why it has to
+			// be applied rather than assumed away.
+			const margin = marginOfError(blindPct, p.sessions);
+			const blindLow = Math.round((blindPct - margin) * 10) / 10;
+			const wasteShare =
+				accountBlindTotal > 0
+					? Math.round((1000 * p.blind) / accountBlindTotal) / 10
+					: 0;
+
+			// Two gates, and both have to hold. The page is worse
+			// than the account it belongs to by a margin that
+			// survives the cautious reading, AND it holds enough of
+			// the account's waste to be where the money is.
+			//
+			// Not ABSOLUTE_BLIND_FLOOR. See PAGE_POINTS_ABOVE_POOL
+			// for why the campaign floor silently disables this
+			// entire verdict.
+			const worseThanPool = blindLow - accountPooled >= PAGE_POINTS_ABOVE_POOL;
+			const bigEnough = wasteShare >= PAGE_MIN_WASTE_SHARE;
+			const bad = worseThanPool && bigEnough;
+
+			// Is the page the common factor, or is it one ad lying?
+			//
+			// The comparison is against campaigns that land
+			// SOMEWHERE ELSE, not against the account median, and
+			// that distinction is the whole correctness of this
+			// verdict. A page that holds most of the account's
+			// campaigns defines the account median itself, so all
+			// of its campaigns sit at it, none count as "above",
+			// and the verdict flips to "the page converts, the ads
+			// are wrong" on precisely the page that is the problem.
+			// On a single-page account it would be wrong every
+			// time. A test caught it; the live account could not
+			// have, because it has six pages.
+			//
+			// Comparing to elsewhere is also the honest question:
+			// the operator wants to know whether this traffic would
+			// do better landing somewhere else on their own site.
+			const elsewhere = campaigns.filter((c) => c.topLandingPath !== path);
+			const elsewhereMedian =
+				elsewhere.length > 0
+					? median(elsewhere.map((c) => c.arrivedBlindPct))
+					: null;
+			const degrading =
+				elsewhereMedian === null
+					? 0
+					: judged.filter((c) => c.arrivedBlindPct > elsewhereMedian).length;
+			const share = judged.length > 0 ? degrading / judged.length : 0;
+			// With nowhere to compare to, blame cannot be
+			// apportioned at all, and saying so beats guessing.
+			const canApportion =
+				elsewhereMedian !== null && judged.length >= MIN_CAMPAIGNS_FOR_PAGE_VERDICT;
+			const commonFactor = canApportion && share >= PAGE_COMMON_FACTOR_SHARE;
+
+			const verdict: TrafficStatement["landingPages"][number]["verdict"] =
+				blindPct >= IMPLAUSIBLE_BLIND_PCT
+					? "medicao_suspeita"
+					: bad
+						? // Both branches of a distinction the statement
+							// already printed in prose and refused to act
+							// on. If every campaign landing here degrades,
+							// the common factor is the page. If only some
+							// do, the others prove the page converts and
+							// the page is not the defendant.
+							commonFactor
+							? "corrigir"
+							: canApportion
+								? "anuncio_errado"
+								: // Over both gates with nothing to compare
+									// against. Honest answer is to watch it,
+									// not to pick a culprit.
+									"observar"
+						: // Worse than the account it belongs to, but not by
+							// enough to ask for a Monday. Named as watching
+							// rather than as fine, because it is the second one
+							// of these that becomes next quarter's worst page.
+							//
+							// Size alone is deliberately NOT a reason to watch.
+							// A page can hold every mute visit in the account
+							// simply by being the only page, and flagging that
+							// would make "observar" mean nothing but "big".
+							blindLow > accountPooled
+							? "observar"
+							: "entregando";
+
+			return {
+				path,
+				sessions: p.sessions,
+				arrivedBlind: p.blind,
+				arrivedBlindPct: blindPct,
+				campaigns: p.campaigns.size,
+				purchases: p.purchases,
+				campaignsJudged: judged.length,
+				campaignsAboveMedian: aboveMedian,
+				campaignsDegrading: degrading,
+				elsewhereMedianPct:
+					elsewhereMedian === null ? null : Math.round(elsewhereMedian * 10) / 10,
+				verdict,
+				marginPoints: Math.round(margin * 10) / 10,
+				blindPctLow: Math.max(0, blindLow),
+				wasteShare,
+			};
+		})
+		// Ranked by wasted arrivals in absolute terms. Stated on the
+		// page now: with no sort control, the sort key is not
+		// optional information.
+		.sort((a, b) => b.arrivedBlind - a.arrivedBlind);
+
+	// ──────────────────────────────────────────────
+	// The account itself as the defendant.
+	//
+	// Both verdicts above are RELATIVE: a campaign is judged against the
+	// median campaign, a page against the pooled account. That is what
+	// buys the property the second council's statistician approved us
+	// for, zero false positives in twenty shuffles, and it has an exact
+	// price. In an account that is bad everywhere, every campaign sits
+	// at the median it is compared to and the page IS the account, so
+	// nothing stands out and nothing is flagged. The product went quiet
+	// precisely when the customer was worst, which is the one moment it
+	// has to speak.
+	//
+	// The fix is the one comparison immune to uniformity, and it was
+	// already in the product: non-paid traffic on the same site, same
+	// pages, same period. Internal spread cannot hide anything from it,
+	// because it is not internal.
+	//
+	// It fires only when the two relative rulers found nothing, which
+	// keeps it a fallback rather than a second opinion. An account with
+	// a real offender gets that offender named; an account with no
+	// offender because everything offends gets told so.
+	const anyRelativeFinding =
+		campaigns.some(
+			(c) =>
+				c.verdict === "cortar" || c.verdict === "corrigir" || c.verdict === "medicao_suspeita",
+		) || landingPageRows.some((g) => g.verdict === "corrigir" || g.verdict === "anuncio_errado");
+
+	const accountMargin = marginOfError(accountPooled, accountSessionTotal);
+	const accountLow = Math.round((accountPooled - accountMargin) * 10) / 10;
+	const controlPct =
+		controlSessions >= 300 ? Math.round((1000 * controlBlind) / controlSessions) / 10 : null;
+
+	// The absolute component is deliberate. A paid/organic gap alone
+	// would fire on nearly every account, because paid traffic is colder
+	// by nature and the statement already says so in as many words.
+	// What makes this a finding is the account as a whole sitting in the
+	// territory that condemns an individual campaign.
+	const accountVerdict: TrafficStatement["accountVerdict"] =
+		!anyRelativeFinding && accountLow >= ABSOLUTE_BLIND_FLOOR
+			? {
+					blindPctLow: accountLow,
+					marginPoints: Math.round(accountMargin * 10) / 10,
+					controlPct,
+					gapPoints: controlPct === null ? null : Math.round((accountPooled - controlPct) * 10) / 10,
+					campaignsJudged: campaigns.length,
+				}
+			: null;
+
 	return {
 		windowStart: options.windowStart,
 		windowEnd: options.windowEnd,
@@ -1477,6 +1670,7 @@ export function buildTrafficStatement(
 		// once. It used to be recomputed inline here, which is how the
 		// two could have drifted apart.
 		accountBlindPct: attributed > 0 ? accountPooled : 0,
+		accountVerdict,
 		thresholds: {
 			absoluteBlindPct: ABSOLUTE_BLIND_FLOOR,
 			pointsAboveMedian: POINTS_ABOVE_MEDIAN,
@@ -1521,127 +1715,7 @@ export function buildTrafficStatement(
 				campaigns: t.campaigns.size,
 			}))
 			.sort((a, b) => b.arrivedBlind - a.arrivedBlind),
-		landingPages: [...byPage.entries()]
-			.filter(([, p]) => p.sessions >= floor)
-			.map(([path, p]) => {
-				const judged = campaigns.filter((c) => c.topLandingPath === path);
-				// Still reported, because the table prints it and the
-				// account median is the right ruler for a CAMPAIGN. It
-				// just does not drive the page verdict, for the reason
-				// written at `elsewhere` below.
-				const aboveMedian = judged.filter((c) => c.pointsAboveAccount > 0).length;
-				const blindPct = Math.round((1000 * p.blind) / p.sessions) / 10;
-
-				// The same discipline the campaign verdict uses: act on
-				// the cautious end, never the point estimate. Pages
-				// carry far more sessions than campaigns, so the margin
-				// is usually small here, which is exactly why it has to
-				// be applied rather than assumed away.
-				const margin = marginOfError(blindPct, p.sessions);
-				const blindLow = Math.round((blindPct - margin) * 10) / 10;
-				const wasteShare =
-					accountBlindTotal > 0
-						? Math.round((1000 * p.blind) / accountBlindTotal) / 10
-						: 0;
-
-				// Two gates, and both have to hold. The page is worse
-				// than the account it belongs to by a margin that
-				// survives the cautious reading, AND it holds enough of
-				// the account's waste to be where the money is.
-				//
-				// Not ABSOLUTE_BLIND_FLOOR. See PAGE_POINTS_ABOVE_POOL
-				// for why the campaign floor silently disables this
-				// entire verdict.
-				const worseThanPool = blindLow - accountPooled >= PAGE_POINTS_ABOVE_POOL;
-				const bigEnough = wasteShare >= PAGE_MIN_WASTE_SHARE;
-				const bad = worseThanPool && bigEnough;
-
-				// Is the page the common factor, or is it one ad lying?
-				//
-				// The comparison is against campaigns that land
-				// SOMEWHERE ELSE, not against the account median, and
-				// that distinction is the whole correctness of this
-				// verdict. A page that holds most of the account's
-				// campaigns defines the account median itself, so all
-				// of its campaigns sit at it, none count as "above",
-				// and the verdict flips to "the page converts, the ads
-				// are wrong" on precisely the page that is the problem.
-				// On a single-page account it would be wrong every
-				// time. A test caught it; the live account could not
-				// have, because it has six pages.
-				//
-				// Comparing to elsewhere is also the honest question:
-				// the operator wants to know whether this traffic would
-				// do better landing somewhere else on their own site.
-				const elsewhere = campaigns.filter((c) => c.topLandingPath !== path);
-				const elsewhereMedian =
-					elsewhere.length > 0
-						? median(elsewhere.map((c) => c.arrivedBlindPct))
-						: null;
-				const degrading =
-					elsewhereMedian === null
-						? 0
-						: judged.filter((c) => c.arrivedBlindPct > elsewhereMedian).length;
-				const share = judged.length > 0 ? degrading / judged.length : 0;
-				// With nowhere to compare to, blame cannot be
-				// apportioned at all, and saying so beats guessing.
-				const canApportion =
-					elsewhereMedian !== null && judged.length >= MIN_CAMPAIGNS_FOR_PAGE_VERDICT;
-				const commonFactor = canApportion && share >= PAGE_COMMON_FACTOR_SHARE;
-
-				const verdict: TrafficStatement["landingPages"][number]["verdict"] =
-					blindPct >= IMPLAUSIBLE_BLIND_PCT
-						? "medicao_suspeita"
-						: bad
-							? // Both branches of a distinction the statement
-								// already printed in prose and refused to act
-								// on. If every campaign landing here degrades,
-								// the common factor is the page. If only some
-								// do, the others prove the page converts and
-								// the page is not the defendant.
-								commonFactor
-								? "corrigir"
-								: canApportion
-									? "anuncio_errado"
-									: // Over both gates with nothing to compare
-										// against. Honest answer is to watch it,
-										// not to pick a culprit.
-										"observar"
-							: // Worse than the account it belongs to, but not by
-								// enough to ask for a Monday. Named as watching
-								// rather than as fine, because it is the second one
-								// of these that becomes next quarter's worst page.
-								//
-								// Size alone is deliberately NOT a reason to watch.
-								// A page can hold every mute visit in the account
-								// simply by being the only page, and flagging that
-								// would make "observar" mean nothing but "big".
-								blindLow > accountPooled
-								? "observar"
-								: "entregando";
-
-				return {
-					path,
-					sessions: p.sessions,
-					arrivedBlind: p.blind,
-					arrivedBlindPct: blindPct,
-					campaigns: p.campaigns.size,
-					purchases: p.purchases,
-					campaignsJudged: judged.length,
-					campaignsAboveMedian: aboveMedian,
-					campaignsDegrading: degrading,
-					elsewhereMedianPct:
-						elsewhereMedian === null ? null : Math.round(elsewhereMedian * 10) / 10,
-					verdict,
-					marginPoints: Math.round(margin * 10) / 10,
-					blindPctLow: Math.max(0, blindLow),
-					wasteShare,
-				};
-			})
-			// Ranked by wasted arrivals in absolute terms. Stated on the
-			// page now: with no sort control, the sort key is not
-			// optional information.
-			.sort((a, b) => b.arrivedBlind - a.arrivedBlind),
+		landingPages: landingPageRows,
 		// 300 to match the per-campaign floor: below it the rate is noise
 		// and a noisy control is worse than none.
 		control:

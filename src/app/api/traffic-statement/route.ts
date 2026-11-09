@@ -241,7 +241,7 @@ export async function GET(request: Request) {
 			const { recordVerdicts, scoreVerdicts } = await import(
 				"../../../../packages/strategy-plan/sections/traffic-scoreboard"
 			);
-			await recordVerdicts(prisma, orgCtx.envId, statement.campaigns);
+			await recordVerdicts(prisma, orgCtx.envId, statement);
 			scoreboard = await scoreVerdicts(prisma, orgCtx.envId);
 		} catch (err) {
 			// A broken scoreboard must never cost the statement. It is

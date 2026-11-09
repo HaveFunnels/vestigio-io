@@ -117,6 +117,12 @@ interface Statement {
 		purchases: number;
 		campaignsAboveMedian: number;
 		campaignsJudged: number;
+		campaignsDegrading: number;
+		elsewhereMedianPct: number | null;
+		verdict: "corrigir" | "anuncio_errado" | "observar" | "entregando" | "medicao_suspeita";
+		marginPoints: number;
+		blindPctLow: number;
+		wasteShare: number;
 	}[];
 	control: {
 		sessions: number;
@@ -388,6 +394,33 @@ export default function TrafficStatementPage() {
 	// statements for a living put it best, that he tolerates density
 	// because every line of a statement is an entry, and observar is
 	// not an entry. So the table carries only what asks for a decision.
+	// Pages first, and that ordering is the whole point of this release.
+	//
+	// Measured on the live account before changing anything: the
+	// campaign-only card pointed at 9,6% of the waste, because the eight
+	// campaigns it flagged are small and the waste is concentrated in one
+	// page that no verdict could reach. The same card drawing from both
+	// dimensions points at 76,8%, with one line instead of eight.
+	const pagesNeedingDecision = data.landingPages
+		.filter((g) => g.verdict === "corrigir" || g.verdict === "anuncio_errado")
+		.sort((a, b) => b.arrivedBlind - a.arrivedBlind);
+
+	// A campaign landing on a flagged page is already inside that page's
+	// number. Listing it again would double count the waste and, worse,
+	// would invite two investigations of one cause, which is the defect
+	// the shared-path grouping was added to prevent in the first place.
+	const flaggedPaths = new Set(pagesNeedingDecision.map((g) => g.path));
+	const campaignsNeedingDecision = data.campaigns.filter(
+		(c) =>
+			(c.verdict === "cortar" ||
+				c.verdict === "corrigir" ||
+				c.verdict === "medicao_suspeita") &&
+			!(c.topLandingPath && flaggedPaths.has(c.topLandingPath)),
+	);
+	const decisionCount = pagesNeedingDecision.length + campaignsNeedingDecision.length;
+
+	// Kept for the sections below that are genuinely about campaigns:
+	// the cut trade, the fix explanation, the campaign table.
 	const needsDecision = data.campaigns.filter(
 		(c) => c.verdict === "cortar" || c.verdict === "corrigir" || c.verdict === "medicao_suspeita",
 	);
@@ -395,7 +428,25 @@ export default function TrafficStatementPage() {
 	const fixRows = data.campaigns.filter((c) => c.verdict === "corrigir");
 	const cutSessions = cutRows.reduce((n, c) => n + c.sessions, 0);
 	const cutPurchases = cutRows.reduce((n, c) => n + c.pauseCostPurchases, 0);
-	const watching = data.campaigns.filter((c) => c.verdict === "observar").length;
+	const watchingRows = data.campaigns.filter((c) => c.verdict === "observar");
+	const watching = watchingRows.length;
+	/** What the watching bucket actually holds. Printed because calling
+	 *  it calm while it carries half the waste is the defect. */
+	const watchingBlind = watchingRows.reduce((n, c) => n + c.arrivedBlind, 0);
+
+	// The cut, and how much the list depends on it. Computed from the
+	// same cautious rate the verdict acts on, so these three numbers
+	// cannot drift from the verdict they describe.
+	const crossing = (floor: number) =>
+		data.campaigns.filter((c) => c.blindPctLow >= floor).length;
+	const atFloor = crossing(data.thresholds.absoluteBlindPct);
+	const atLower = crossing(data.thresholds.absoluteBlindPct - 5);
+	const atHigher = crossing(data.thresholds.absoluteBlindPct + 5);
+	const nearFloor = data.campaigns.filter(
+		(c) =>
+			c.blindPctLow >= data.thresholds.absoluteBlindPct &&
+			c.blindPctLow - data.thresholds.absoluteBlindPct < 2,
+	).length;
 	const fine = data.campaigns.filter((c) => c.verdict === "entregando").length;
 	const hasSpend = data.totals.spendBrl !== null;
 	// No campaign has a previous baseline, so this account has not been
@@ -467,7 +518,7 @@ export default function TrafficStatementPage() {
 			    reference used, so the one loud surface is still the
 			    brand. It holds what changed because that is the only
 			    part of this screen that is true only this week. */}
-			{needsDecision.length > 0 && (
+			{decisionCount > 0 && (
 				<div className="mb-6 overflow-hidden rounded-card bg-gradient-to-br from-[#0A5240] to-[#073A2D] text-[#D3EDE2]">
 					<div className="flex items-center gap-3 px-5 pb-1 pt-5">
 						<span className="grid h-8 w-8 place-items-center rounded-mid bg-white/15 text-white">
@@ -478,12 +529,77 @@ export default function TrafficStatementPage() {
 								O que pede decisão
 							</span>
 							<span className="block text-[12.5px] text-[#9ECFBC]">
-								{needsDecision.length}{" "}
-								{needsDecision.length === 1 ? "campanha" : "campanhas"} de{" "}
-								{data.totals.campaignsAboveFloor}, e o que muda se você mexer
+								{/* The subtitle counts what the card holds, which is
+								    no longer only campaigns. Saying "8 campanhas de
+								    140" while the first line is a page would be the
+								    kind of small lie that makes a reader stop
+								    trusting the big numbers. */}
+								{decisionCount === 1 ? "1 lugar" : `${decisionCount} lugares`} onde o
+								dinheiro está indo embora, e o que muda se você mexer
 							</span>
 						</span>
 					</div>
+
+					{/* The page comes first because that is where the waste
+					    is. On the live account this single row covers 71,6%
+					    of everything wasted in the month, which no campaign
+					    verdict could ever reach: a page pools good and bad
+					    campaigns, so its rate never crosses a floor built
+					    for campaigns. */}
+					{pagesNeedingDecision.length > 0 && (
+						<ul className="mt-4 divide-y divide-white/[0.14] border-y border-white/[0.14]">
+							{pagesNeedingDecision.map((g) => (
+								<li key={g.path} className="px-5 py-3.5">
+									<div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+										<span className="rounded-pill bg-white/15 px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wide text-white">
+											{g.verdict === "corrigir" ? "a página" : "os anúncios"}
+										</span>
+										<span className="font-mono text-[12.5px] text-white">{g.path}</span>
+									</div>
+									<p className="mt-1.5 text-[13.5px] leading-relaxed text-[#D3EDE2]">
+										<strong className="text-white">{pct(g.arrivedBlindPct)}%</strong> de
+										quem você manda para aqui não faz nada, e isso é{" "}
+										<strong className="text-white">{pct(g.wasteShare)}%</strong> de todo o
+										desperdício da conta no período.{" "}
+										{/* Justified with the number that produced the
+										    verdict, which is the comparison against
+										    campaigns landing elsewhere on this site, not
+										    the account median. Explaining a conclusion
+										    with a different statistic than the one that
+										    reached it is the defect that arithmetic
+										    checking cannot find. */}
+										{g.verdict === "corrigir" ? (
+											<>
+												{g.campaignsDegrading} das {g.campaignsJudged} campanhas que caem
+												aqui vão pior do que a campanha típica que cai em outra página
+												sua
+												{g.elsewhereMedianPct !== null && (
+													<> ({pct(g.elsewhereMedianPct)}%)</>
+												)}
+												, então o alvo é a página e não os anúncios.
+											</>
+										) : (
+											<>
+												Mas só {g.campaignsDegrading} das {g.campaignsJudged} campanhas
+												vão pior do que a campanha típica que cai em outra página sua
+												{g.elsewhereMedianPct !== null && (
+													<> ({pct(g.elsewhereMedianPct)}%)</>
+												)}
+												. As outras convertem nesta mesma página, então o alvo é o
+												anúncio e não a página.
+											</>
+										)}
+									</p>
+									<div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-[#9ECFBC]">
+										<span>
+											{n(g.arrivedBlind)} de {n(g.sessions)} acessos, ±
+											{pct(g.marginPoints)} pontos
+										</span>
+									</div>
+								</li>
+							))}
+						</ul>
+					)}
 					{/* The conclusion before its evidence. Three campaigns
 					    worsening on one page is what the live account
 					    produced, and listing them as three problems invites
@@ -504,8 +620,14 @@ export default function TrafficStatementPage() {
 							</p>
 						);
 					})()}
+					{/* Campaigns that are NOT already inside a flagged page.
+					    On the live account this list is empty, because all
+					    eight campaigns that asked for a decision land on the
+					    one page above. That is the correct outcome and the
+					    reason the empty state below says so out loud rather
+					    than rendering nothing. */}
 					<ul className="flex flex-col gap-2.5 px-5 pb-5 pt-3">
-						{needsDecision.slice(0, 5).map((c) => {
+						{campaignsNeedingDecision.slice(0, 5).map((c) => {
 							const mv = moveOf.get(`campaign:${c.displayName}`);
 							return (
 								<li
@@ -567,10 +689,32 @@ export default function TrafficStatementPage() {
 							);
 						})}
 					</ul>
-					{needsDecision.length > 5 && (
+					{campaignsNeedingDecision.length > 5 && (
 						<div className="border-t border-white/[0.14] px-5 py-2.5 text-[11.5px] text-[#9ECFBC]">
-							Outras {needsDecision.length - 5} campanhas pedem decisão e estão na tabela
-							abaixo.
+							Outras {campaignsNeedingDecision.length - 5} campanhas pedem decisão e estão
+							na tabela abaixo.
+						</div>
+					)}
+					{campaignsNeedingDecision.length === 0 && pagesNeedingDecision.length > 0 && (
+						// Not an empty state, a conclusion. Saying that every
+						// flagged campaign lands on the page above is the
+						// difference between one investigation and eight.
+						<div className="px-5 pb-5 pt-3 text-[12.5px] leading-relaxed text-[#9ECFBC]">
+							{needsDecision.length > 0 ? (
+								<>
+									As {needsDecision.length}{" "}
+									{needsDecision.length === 1 ? "campanha" : "campanhas"} que também
+									{needsDecision.length === 1 ? " pedia" : " pediam"} decisão{" "}
+									{needsDecision.length === 1 ? "cai" : "caem"} nessa mesma página, então{" "}
+									{needsDecision.length === 1 ? "ela já está" : "elas já estão"} contada
+									{needsDecision.length === 1 ? "" : "s"} acima. É um problema, não{" "}
+									{needsDecision.length + pagesNeedingDecision.length}.
+								</>
+							) : (
+								<>
+									Nenhuma campanha individual pede decisão fora dessa página.
+								</>
+							)}
 						</div>
 					)}
 				</div>
@@ -1112,14 +1256,47 @@ export default function TrafficStatementPage() {
 				</div>
 			)}
 
+			{/* Two findings from the second council live in this
+			    paragraph, and both were about honesty rather than
+			    arithmetic.
+
+			    It used to end on "não pedem decisão agora", which sells
+			    the watching bucket as tranquillity. Measured on the live
+			    account, those campaigns hold 52,7% of all the waste. A
+			    product that finds half the problem and files it under
+			    calm is doing the thing it accuses dashboards of doing.
+
+			    And the cut was invisible. The whole headline is a
+			    function of one constant nobody chose in front of the
+			    customer, so the sensitivity is now printed next to it,
+			    computed rather than written down: move the cut five
+			    points and the list changes size. */}
 			<p className="mt-5 text-[12.5px] leading-relaxed text-content-secondary">
 				{watching > 0 && (
 					<>
-						Outras {watching} campanhas estão acima do seu padrão mas abaixo de 45%, então
-						não pedem decisão agora.{" "}
+						Outras {watching} campanhas estão acima do seu padrão mas abaixo de{" "}
+						{pct(data.thresholds.absoluteBlindPct)}%, e somam{" "}
+						<strong className="text-content">{n(watchingBlind)}</strong> {MUTE.many}. Não
+						pedem decisão hoje porque o corte não as alcança, e não porque estejam bem.{" "}
 					</>
 				)}
 				{fine > 0 && <>{fine} estão dentro do padrão da conta. </>}
+			</p>
+
+			<p className="mt-2 text-[12.5px] leading-relaxed text-content-muted">
+				O corte é {pct(data.thresholds.absoluteBlindPct)}%, medido na ponta pessimista da
+				taxa.{" "}
+				<MetricInfo>
+					{`É uma escolha nossa, não um número da natureza. Com o corte em ${data.thresholds.absoluteBlindPct}% são ${atFloor} campanhas pedindo decisão; com 5 pontos menos seriam ${atLower}; com 5 pontos mais seriam ${atHigher}. Mostramos isso porque uma lista que muda de tamanho quando a régua anda é uma lista que você tem o direito de conferir.`}
+				</MetricInfo>{" "}
+				{nearFloor > 0 && (
+					<>
+						{nearFloor === 1
+							? "Uma delas está a menos de 2 pontos do corte"
+							: `${nearFloor} delas estão a menos de 2 pontos do corte`}
+						, então é das que mudam de lado se a régua andar.
+					</>
+				)}
 			</p>
 
 			{/* The history is the customer's. A paid tool that locks the

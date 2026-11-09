@@ -177,6 +177,66 @@ export const MIN_SESSIONS_PER_TERM = 60;
  *  right: both were desktop sessions whose scroll never fired. */
 export const IMPLAUSIBLE_BLIND_PCT = 90;
 
+/**
+ * How much of a page's judged traffic has to degrade before the page
+ * itself is the defendant.
+ *
+ * The statement already made this distinction in prose and refused to
+ * act on it: "quando quase todas perdem no mesmo lugar, o alvo e a
+ * pagina". Promoting it to a verdict is what the second council asked
+ * for, and it needed a number instead of "quase todas".
+ *
+ * Measured on the instrumented account, the three cases separate
+ * cleanly: 57 of 65 campaigns degrade on the worst page (88%), 11 of
+ * 27 on the second (41%), and 1 of 41 on a page that works (2%). Two
+ * thirds sits in the gap with room on both sides.
+ */
+export const PAGE_COMMON_FACTOR_SHARE = 0.66;
+
+/**
+ * How far above the pooled account rate a page has to sit, on the
+ * cautious end, before it is a defendant.
+ *
+ * A page does NOT get judged against ABSOLUTE_BLIND_FLOOR, and the
+ * reason is arithmetic rather than taste. A page pools every campaign
+ * that lands on it, good and bad, so its rate is dragged toward the
+ * account mean by construction. The worst page in the instrumented
+ * account carries 71.6% of all the waste in the account and still
+ * reads 36.3%, which never clears a floor of 45. Reusing the campaign
+ * floor here does not make the page verdict strict, it makes the page
+ * verdict never fire, which I shipped and caught only by running it
+ * against real data.
+ *
+ * That is the fourth time the same defect has appeared in this file:
+ * a threshold written for one unit applied to another. The first three
+ * were the scroll proxy, the service-business action, and the cost of
+ * pausing.
+ *
+ * 5 points matches the materiality floor the weekly alert and the
+ * scoreboard already use, so the three cannot disagree about what
+ * counts as a real difference.
+ */
+export const PAGE_POINTS_ABOVE_POOL = 5;
+
+/**
+ * How much of the account's total waste a page has to hold before it
+ * is worth a verdict.
+ *
+ * This is the gate that keeps the decision card pointed at money
+ * rather than at rates, which is the single thing the second council
+ * asked for. A page can be genuinely bad and still be irrelevant: the
+ * fix costs the same whether the page holds 2% or 70% of the waste,
+ * and only one of those is worth the operator's Monday.
+ */
+export const PAGE_MIN_WASTE_SHARE = 15;
+
+/**
+ * Below this many judged campaigns on a page, the share above is one
+ * or two campaigns wearing a percentage. 2 of 2 is 100% and means
+ * nothing.
+ */
+export const MIN_CAMPAIGNS_FOR_PAGE_VERDICT = 3;
+
 export function sawNothing(a: Record<string, unknown>): boolean {
 	if (num(a.max_scroll_depth) >= SAW_SOMETHING_MILESTONE) return false;
 	// A call to action entered the viewport. On a page whose CTA sits
@@ -509,6 +569,59 @@ export interface TrafficStatement {
 		 */
 		campaignsAboveMedian: number;
 		campaignsJudged: number;
+
+		/**
+		 * Of the campaigns on this page, how many do worse than the
+		 * typical campaign landing SOMEWHERE ELSE on this site.
+		 *
+		 * This is the number the page verdict is actually built on, and
+		 * it exists separately from campaignsAboveMedian because the
+		 * screen has to justify the verdict with the number that
+		 * produced it. Explaining a conclusion with a different
+		 * statistic than the one that reached it is the harder class of
+		 * defect, since checking the arithmetic cannot find it.
+		 */
+		campaignsDegrading: number;
+		/** Null when every judged campaign lands on this page, which is
+		 *  when blame cannot be apportioned at all. */
+		elsewhereMedianPct: number | null;
+
+		/**
+		 * What to do about this page.
+		 *
+		 * Deliberately NOT the campaign vocabulary. A page cannot be
+		 * cut, because there is nothing to pause: the traffic would
+		 * simply land somewhere else. Reusing "cortar" here would
+		 * recreate the defect that has now shipped three times in
+		 * different clothes, a verb written for a store applied to a
+		 * thing that does not work like one.
+		 *
+		 * "anuncio_errado" is the verdict that did not exist before and
+		 * is the most useful of the five: the page clears the floor on
+		 * waste, but only a minority of campaigns landing here degrade,
+		 * so the others prove the page converts and the defendant is
+		 * upstream.
+		 */
+		verdict: "corrigir" | "anuncio_errado" | "observar" | "entregando" | "medicao_suspeita";
+		/** 95% half-width on this page's rate. */
+		marginPoints: number;
+		/** The cautious end of the rate, which is what the verdict acts
+		 *  on, exactly as the campaign verdict does. */
+		blindPctLow: number;
+		/**
+		 * This page's mute visits as a share of every mute visit in the
+		 * account, 0 to 100.
+		 *
+		 * This is the page's magnitude, and it is deliberately NOT a
+		 * projection of recoverable purchases. Multiplying mute visits
+		 * by the rate at which engaged visits convert would assert that
+		 * a visitor who did nothing would have bought like a visitor
+		 * who did something, which is false by construction: the visit
+		 * is mute precisely because it did not engage. Every analytics
+		 * product makes that multiplication because it produces a
+		 * bigger number. This one states what was counted.
+		 */
+		wasteShare: number;
 	}[];
 	/**
 	 * Non-paid sessions in the same window, as an internal control.
@@ -652,7 +765,24 @@ export function shortCampaignName(raw: string): string {
 	// same label. A reviewer proposed exactly this, "corta no meio,
 	// mostra o começo e o fim".
 	if (base.length > 46) {
-		base = base.slice(0, 30).trimEnd() + "…" + base.slice(-14).trimStart();
+		// Cut at a word boundary, not mid-token. The second council
+		// read "(1-3-X | v1-v10/C1 | POTE) abe…v+ 55+ (21/09)" off the
+		// live account and could not tell five rows apart.
+		//
+		// Worth being precise about what was and was not wrong there,
+		// because the obvious fix is the wrong one. Truncating from the
+		// middle is CORRECT: the date at the tail is what distinguishes
+		// these names, and an earlier right-truncation collapsed
+		// "(29/08)" and "(21/09)" into the same label. And what the
+		// middle cut eats here, "aberto adv", is common to every row
+		// anyway. The only real defect is the ragged "abe", which costs
+		// nothing to fix and makes the label readable.
+		const head = base.slice(0, 30);
+		const cut = head.lastIndexOf(" ");
+		base =
+			(cut >= 18 ? head.slice(0, cut) : head.trimEnd()) +
+			"…" +
+			base.slice(-14).replace(/^\S*\s/, "").trimStart();
 	}
 	return copies > 0 ? `${base} (cópia ${copies})` : base;
 }
@@ -1211,6 +1341,15 @@ export function buildTrafficStatement(
 	// that cleared the floor. See decision 2 in the header.
 	const accountMedian = median(above.map((c) => (100 * c.blind) / c.sessions));
 
+	// The page's reference is the pooled account rate, not the campaign
+	// median. A page aggregates many campaigns, so comparing it to the
+	// typical campaign would be comparing a pool to a member of a
+	// different pool. The campaign median stays the campaign ruler.
+	const accountBlindTotal = [...byCampaign.values()].reduce((n, c) => n + c.blind, 0);
+	const accountSessionTotal = [...byCampaign.values()].reduce((n, c) => n + c.sessions, 0);
+	const accountPooled =
+		accountSessionTotal > 0 ? Math.round((1000 * accountBlindTotal) / accountSessionTotal) / 10 : 0;
+
 	const campaigns: CampaignRow[] = above
 		.map((c) => {
 			const blindPct = (100 * c.blind) / c.sessions;
@@ -1334,11 +1473,10 @@ export function buildTrafficStatement(
 		measuredSessions: measured,
 		attributionCoveragePct: measured > 0 ? Math.round((1000 * attributed) / measured) / 10 : 0,
 		accountMedianBlindPct: Math.round(accountMedian * 10) / 10,
-		accountBlindPct:
-			attributed > 0
-				? Math.round((1000 * [...byCampaign.values()].reduce((n, c) => n + c.blind, 0)) /
-						[...byCampaign.values()].reduce((n, c) => n + c.sessions, 0)) / 10
-				: 0,
+		// Same pooled figure the page verdicts compare against, computed
+		// once. It used to be recomputed inline here, which is how the
+		// two could have drifted apart.
+		accountBlindPct: attributed > 0 ? accountPooled : 0,
 		thresholds: {
 			absoluteBlindPct: ABSOLUTE_BLIND_FLOOR,
 			pointsAboveMedian: POINTS_ABOVE_MEDIAN,
@@ -1387,15 +1525,117 @@ export function buildTrafficStatement(
 			.filter(([, p]) => p.sessions >= floor)
 			.map(([path, p]) => {
 				const judged = campaigns.filter((c) => c.topLandingPath === path);
+				// Still reported, because the table prints it and the
+				// account median is the right ruler for a CAMPAIGN. It
+				// just does not drive the page verdict, for the reason
+				// written at `elsewhere` below.
+				const aboveMedian = judged.filter((c) => c.pointsAboveAccount > 0).length;
+				const blindPct = Math.round((1000 * p.blind) / p.sessions) / 10;
+
+				// The same discipline the campaign verdict uses: act on
+				// the cautious end, never the point estimate. Pages
+				// carry far more sessions than campaigns, so the margin
+				// is usually small here, which is exactly why it has to
+				// be applied rather than assumed away.
+				const margin = marginOfError(blindPct, p.sessions);
+				const blindLow = Math.round((blindPct - margin) * 10) / 10;
+				const wasteShare =
+					accountBlindTotal > 0
+						? Math.round((1000 * p.blind) / accountBlindTotal) / 10
+						: 0;
+
+				// Two gates, and both have to hold. The page is worse
+				// than the account it belongs to by a margin that
+				// survives the cautious reading, AND it holds enough of
+				// the account's waste to be where the money is.
+				//
+				// Not ABSOLUTE_BLIND_FLOOR. See PAGE_POINTS_ABOVE_POOL
+				// for why the campaign floor silently disables this
+				// entire verdict.
+				const worseThanPool = blindLow - accountPooled >= PAGE_POINTS_ABOVE_POOL;
+				const bigEnough = wasteShare >= PAGE_MIN_WASTE_SHARE;
+				const bad = worseThanPool && bigEnough;
+
+				// Is the page the common factor, or is it one ad lying?
+				//
+				// The comparison is against campaigns that land
+				// SOMEWHERE ELSE, not against the account median, and
+				// that distinction is the whole correctness of this
+				// verdict. A page that holds most of the account's
+				// campaigns defines the account median itself, so all
+				// of its campaigns sit at it, none count as "above",
+				// and the verdict flips to "the page converts, the ads
+				// are wrong" on precisely the page that is the problem.
+				// On a single-page account it would be wrong every
+				// time. A test caught it; the live account could not
+				// have, because it has six pages.
+				//
+				// Comparing to elsewhere is also the honest question:
+				// the operator wants to know whether this traffic would
+				// do better landing somewhere else on their own site.
+				const elsewhere = campaigns.filter((c) => c.topLandingPath !== path);
+				const elsewhereMedian =
+					elsewhere.length > 0
+						? median(elsewhere.map((c) => c.arrivedBlindPct))
+						: null;
+				const degrading =
+					elsewhereMedian === null
+						? 0
+						: judged.filter((c) => c.arrivedBlindPct > elsewhereMedian).length;
+				const share = judged.length > 0 ? degrading / judged.length : 0;
+				// With nowhere to compare to, blame cannot be
+				// apportioned at all, and saying so beats guessing.
+				const canApportion =
+					elsewhereMedian !== null && judged.length >= MIN_CAMPAIGNS_FOR_PAGE_VERDICT;
+				const commonFactor = canApportion && share >= PAGE_COMMON_FACTOR_SHARE;
+
+				const verdict: TrafficStatement["landingPages"][number]["verdict"] =
+					blindPct >= IMPLAUSIBLE_BLIND_PCT
+						? "medicao_suspeita"
+						: bad
+							? // Both branches of a distinction the statement
+								// already printed in prose and refused to act
+								// on. If every campaign landing here degrades,
+								// the common factor is the page. If only some
+								// do, the others prove the page converts and
+								// the page is not the defendant.
+								commonFactor
+								? "corrigir"
+								: canApportion
+									? "anuncio_errado"
+									: // Over both gates with nothing to compare
+										// against. Honest answer is to watch it,
+										// not to pick a culprit.
+										"observar"
+							: // Worse than the account it belongs to, but not by
+								// enough to ask for a Monday. Named as watching
+								// rather than as fine, because it is the second one
+								// of these that becomes next quarter's worst page.
+								//
+								// Size alone is deliberately NOT a reason to watch.
+								// A page can hold every mute visit in the account
+								// simply by being the only page, and flagging that
+								// would make "observar" mean nothing but "big".
+								blindLow > accountPooled
+								? "observar"
+								: "entregando";
+
 				return {
 					path,
 					sessions: p.sessions,
 					arrivedBlind: p.blind,
-					arrivedBlindPct: Math.round((1000 * p.blind) / p.sessions) / 10,
+					arrivedBlindPct: blindPct,
 					campaigns: p.campaigns.size,
 					purchases: p.purchases,
 					campaignsJudged: judged.length,
-					campaignsAboveMedian: judged.filter((c) => c.pointsAboveAccount > 0).length,
+					campaignsAboveMedian: aboveMedian,
+					campaignsDegrading: degrading,
+					elsewhereMedianPct:
+						elsewhereMedian === null ? null : Math.round(elsewhereMedian * 10) / 10,
+					verdict,
+					marginPoints: Math.round(margin * 10) / 10,
+					blindPctLow: Math.max(0, blindLow),
+					wasteShare,
 				};
 			})
 			// Ranked by wasted arrivals in absolute terms. Stated on the

@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { createHash } from "node:crypto";
-import { RULER_VERSION, type CampaignRow } from "./traffic-statement";
+import { RULER_VERSION, type TrafficStatement } from "./traffic-statement";
 
 // ──────────────────────────────────────────────
 // The scoreboard of our own recommendations.
@@ -38,7 +38,15 @@ import { RULER_VERSION, type CampaignRow } from "./traffic-statement";
 /** Only verdicts that ask for an action get scored. Scoring
  *  "entregando" would pad the hit rate with predictions nobody acted
  *  on, which is the oldest trick in performance reporting. */
-const SCORED: ReadonlySet<string> = new Set(["cortar", "corrigir", "medicao_suspeita"]);
+const SCORED: ReadonlySet<string> = new Set([
+	"cortar",
+	"corrigir",
+	"medicao_suspeita",
+	// The page verdict that says the page converts and the ads are
+	// wrong. Scored like the others, because it is just as much a claim
+	// about what will happen.
+	"anuncio_errado",
+]);
 
 /** How long before a verdict can be judged. Shorter than this and we
  *  are measuring noise; the operator has not had time to act. */
@@ -66,26 +74,75 @@ export type Outcome = "melhorou" | "piorou" | "igual" | "sumiu" | "indefinido";
 export async function recordVerdicts(
 	prisma: PrismaClient,
 	environmentId: string,
-	campaigns: CampaignRow[],
+	statement: Pick<TrafficStatement, "campaigns" | "landingPages">,
 	now: Date = new Date(),
 ): Promise<number> {
-	const rows = campaigns.filter((c) => SCORED.has(c.verdict));
+	// Both dimensions, because the decision card now draws from both and
+	// a scoreboard that only scores half the recommendations is a
+	// scoreboard that can be gamed by which half we record.
+	//
+	// A page verdict has no pause cost: there is nothing to pause, so
+	// the magnitude is the share of the account's waste the page holds.
+	// It rides in the same column with its own unit rather than getting
+	// a second column that is null for every campaign.
+	type Row = {
+		dimension: "campaign" | "page";
+		key: string;
+		label: string | null;
+		verdict: string;
+		blindPct: number;
+		blindPctLow: number;
+		marginPoints: number;
+		sessions: number;
+		cost: number;
+		costUnit: string;
+	};
+	const rows: Row[] = [
+		...statement.campaigns
+			.filter((c) => SCORED.has(c.verdict))
+			.map((c) => ({
+				dimension: "campaign" as const,
+				key: c.platformId ?? c.name,
+				label: c.displayName,
+				verdict: c.verdict,
+				blindPct: c.arrivedBlindPct,
+				blindPctLow: c.blindPctLow,
+				marginPoints: c.marginPoints,
+				sessions: c.sessions,
+				cost: c.pauseCost,
+				costUnit: c.pauseCostUnit,
+			})),
+		...statement.landingPages
+			.filter((g) => SCORED.has(g.verdict))
+			.map((g) => ({
+				dimension: "page" as const,
+				key: g.path,
+				label: g.path,
+				verdict: g.verdict,
+				blindPct: g.arrivedBlindPct,
+				blindPctLow: g.blindPctLow,
+				marginPoints: g.marginPoints,
+				sessions: g.sessions,
+				cost: Math.round(g.wasteShare),
+				costUnit: "pct_do_desperdicio",
+			})),
+	];
 	if (rows.length === 0) return 0;
 
 	const day = now.toISOString().slice(0, 10);
 	let written = 0;
 
 	for (const c of rows) {
-		const key = c.platformId ?? c.name;
+		const key = c.key;
 		const id = `tvd_${createHash("sha1")
-			.update(`${environmentId} ${day} campaign ${key}`)
+			.update(`${environmentId} ${day} ${c.dimension} ${key}`)
 			.digest("hex")}`;
 		await prisma.$executeRawUnsafe(
 			`INSERT INTO "TrafficVerdict"
 			 ("id","envId","dimension","key","label","verdict","issuedAt",
 			  "blindPct","blindPctLow","marginPoints","sessions",
 			  "pauseCost","pauseCostUnit","rulerVersion")
-			 VALUES ($1,$2,'campaign',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+			 VALUES ($1,$2,$14,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
 			 ON CONFLICT ("envId","dimension","key","issuedAt") DO UPDATE SET
 			   "label" = EXCLUDED."label",
 			   "verdict" = EXCLUDED."verdict",
@@ -99,16 +156,17 @@ export async function recordVerdicts(
 			id,
 			environmentId,
 			key,
-			c.displayName,
+			c.label,
 			c.verdict,
 			new Date(`${day}T00:00:00.000Z`),
-			c.arrivedBlindPct,
+			c.blindPct,
 			c.blindPctLow,
 			c.marginPoints,
 			c.sessions,
-			c.pauseCost,
-			c.pauseCostUnit,
+			c.cost,
+			c.costUnit,
 			RULER_VERSION,
+			c.dimension,
 		);
 		written++;
 	}
@@ -135,9 +193,12 @@ export function judge(args: {
 	// change what we count.
 	if (args.rulerThen !== args.rulerNow) return { outcome: "indefinido", acted: false };
 
-	// The traffic is gone. Almost always because the operator paused
-	// it, which is itself the action we recommended, so this is a
-	// followed recommendation rather than a missing one.
+	// The traffic is gone. For a campaign that is almost always a
+	// pause, which is itself the action we recommended. For a page it
+	// means the operator stopped sending traffic there, which is a
+	// different response to "this page wastes what you send it" but is
+	// still a response. Either way it is a recommendation acted on, not
+	// a recommendation missing.
 	const share = args.originalSessions > 0 ? args.laterSessions / args.originalSessions : 0;
 	if (args.laterPct === null || share < PAUSED_SHARE) {
 		return { outcome: "sumiu", acted: true };
@@ -149,6 +210,10 @@ export function judge(args: {
 }
 
 export interface ScoreboardRow {
+	/** campaign | page. The row says which, because "corrigir" means a
+	 *  different action on each and the reader needs to know which one
+	 *  we were judged on. */
+	dimension: string;
 	key: string;
 	label: string | null;
 	verdict: string;
@@ -189,6 +254,7 @@ export async function scoreVerdicts(
 	const open = await prisma.$queryRawUnsafe<
 		{
 			id: string;
+			dimension: string;
 			key: string;
 			issuedAt: Date;
 			blindPct: number;
@@ -196,7 +262,13 @@ export async function scoreVerdicts(
 			rulerVersion: number;
 		}[]
 	>(
-		`SELECT "id","key","issuedAt","blindPct","sessions","rulerVersion"
+		// The dimension comes out of the row. It used to be hardcoded to
+		// 'campaign' in the query below, which was correct while only
+		// campaigns were recorded and became a silent bug the moment
+		// page verdicts started being written: every page verdict would
+		// have looked for its history in the campaign rollups, found
+		// nothing, and scored itself "sumiu" forever.
+		`SELECT "id","dimension","key","issuedAt","blindPct","sessions","rulerVersion"
 		 FROM "TrafficVerdict"
 		 WHERE "envId" = $1 AND "outcome" IS NULL AND "issuedAt" <= $2`,
 		environmentId,
@@ -214,18 +286,20 @@ export async function scoreVerdicts(
 			// guarantee you have to reason about across two modules is
 			// a guarantee someone eventually breaks.
 			//
-			// The key is platformId ?? name on both sides, which is how
-			// the rollup groups campaigns, so a verdict can always find
-			// its own history.
+			// The key matches on both sides by dimension: platformId ??
+			// name for a campaign, the landing path for a page, which is
+			// exactly how the rollup groups each, so a verdict can always
+			// find its own history.
 			`SELECT COALESCE(SUM("sessions"),0)::bigint AS sessions,
 			        COALESCE(SUM("blind"),0)::bigint AS blind
 			 FROM "TrafficDailyRollup"
-			 WHERE "envId" = $1 AND "dimension" = 'campaign' AND "key" = $2
+			 WHERE "envId" = $1 AND "dimension" = $5 AND "key" = $2
 			   AND "day" > $3::date AND "rulerVersion" = $4`,
 			environmentId,
 			v.key,
 			v.issuedAt,
 			v.rulerVersion,
+			v.dimension,
 		);
 		const laterSessions = Number(after[0]?.sessions ?? 0);
 		const laterBlind = Number(after[0]?.blind ?? 0);
@@ -257,6 +331,7 @@ export async function scoreVerdicts(
 
 	const all = await prisma.$queryRawUnsafe<
 		{
+			dimension: string;
 			key: string;
 			label: string | null;
 			verdict: string;
@@ -270,7 +345,7 @@ export async function scoreVerdicts(
 			acted: boolean | null;
 		}[]
 	>(
-		`SELECT "key","label","verdict","issuedAt","blindPct","pauseCost",
+		`SELECT "dimension","key","label","verdict","issuedAt","blindPct","pauseCost",
 		        "pauseCostUnit","outcome","outcomeBlindPct","outcomeDays","acted"
 		 FROM "TrafficVerdict"
 		 WHERE "envId" = $1
@@ -280,6 +355,7 @@ export async function scoreVerdicts(
 	);
 
 	const rows: ScoreboardRow[] = all.map((r) => ({
+		dimension: r.dimension,
 		key: r.key,
 		label: r.label,
 		verdict: r.verdict,

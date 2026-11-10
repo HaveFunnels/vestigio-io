@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { createHash } from "node:crypto";
-import { RULER_VERSION, type TrafficStatement } from "./traffic-statement";
+import { RULER_VERSION, marginOfError, type TrafficStatement } from "./traffic-statement";
 
 // ──────────────────────────────────────────────
 // The scoreboard of our own recommendations.
@@ -57,9 +57,29 @@ export const DAYS_BEFORE_SCORING = 21;
  *  alert cannot disagree about what counts as a change. */
 export const OUTCOME_MATERIAL_POINTS = 5;
 
-/** Sessions falling below this share of the original is how we detect
- *  that the operator paused it, without asking them to tick a box. */
+/** Sessions falling below this share of the original means the traffic
+ *  stopped. It does NOT mean the operator acted: see judge(). */
 const PAUSED_SHARE = 0.2;
+
+/**
+ * Measured base rate of campaigns disappearing on their own, with no
+ * recommendation from us.
+ *
+ * On the instrumented account, 91 of the 111 campaigns that cleared the
+ * session floor fell below PAUSED_SHARE of their traffic within 21
+ * days, and nobody had advised anything about any of them. 82%.
+ *
+ * That number destroys the previous design. This file used to read
+ * vanished traffic as `acted: true`, "the operator followed our
+ * recommendation", so the self-reported adherence rate started at 82%
+ * for free and carried no information at all. It was also the number
+ * most likely to end up in a renewal conversation, which is the worst
+ * possible place for a metric inflated by construction.
+ *
+ * Kept as a constant so the screen can print it beside any adherence
+ * figure. A rate you cannot discount is a rate you should not believe.
+ */
+export const MEASURED_BASE_DISAPPEARANCE = 0.82;
 
 export type Outcome = "melhorou" | "piorou" | "igual" | "sumiu" | "indefinido";
 
@@ -186,12 +206,43 @@ export function judge(args: {
 	originalSessions: number;
 	rulerThen: number;
 	rulerNow: number;
-}): { outcome: Outcome; acted: boolean } {
+	/**
+	 * Did the operator log a change touching this campaign after we
+	 * spoke? The only evidence of adherence this product can actually
+	 * obtain, because it is the only one that comes from outside our
+	 * own measurement.
+	 */
+	loggedChange?: boolean;
+	/**
+	 * What the operator declared the business produced, before and
+	 * after. Null when they filled nothing, which is the state of
+	 * every account today.
+	 *
+	 * This is the money anchor. Without it the scoreboard compares our
+	 * own number to our own number, so it can declare victory in a week
+	 * the business earned less, and nothing in the code prevents that
+	 * sentence.
+	 */
+	declaredBefore?: number | null;
+	declaredAfter?: number | null;
+}): { outcome: Outcome; acted: boolean | null; moneyFell: boolean } {
 	// A verdict measured under one definition cannot be scored against
 	// an outcome measured under another. Saying "indefinido" is the
 	// honest answer and it is rare, since the ruler only moves when we
 	// change what we count.
-	if (args.rulerThen !== args.rulerNow) return { outcome: "indefinido", acted: false };
+	// Did the business earn less? Computed first, because it can veto a
+	// win no matter what our own number did.
+	const moneyFell =
+		args.declaredBefore !== null &&
+		args.declaredBefore !== undefined &&
+		args.declaredAfter !== null &&
+		args.declaredAfter !== undefined &&
+		args.declaredBefore > 0 &&
+		args.declaredAfter < args.declaredBefore;
+
+	if (args.rulerThen !== args.rulerNow) {
+		return { outcome: "indefinido", acted: null, moneyFell };
+	}
 
 	// The traffic is gone. For a campaign that is almost always a
 	// pause, which is itself the action we recommended. For a page it
@@ -201,12 +252,46 @@ export function judge(args: {
 	// a recommendation missing.
 	const share = args.originalSessions > 0 ? args.laterSessions / args.originalSessions : 0;
 	if (args.laterPct === null || share < PAUSED_SHARE) {
-		return { outcome: "sumiu", acted: true };
+		// The traffic stopped. It used to be recorded as `acted: true`,
+		// the operator following our advice, and the measurement showed
+		// that 82% of campaigns do this on their own with no advice at
+		// all. So traffic alone proves nothing and `acted` is null,
+		// which means unknown and never counts toward adherence.
+		//
+		// The one thing that does corroborate is the operator's own
+		// change log, because it is the only evidence that comes from
+		// outside our own measurement.
+		return { outcome: "sumiu", acted: args.loggedChange ? true : null, moneyFell };
 	}
 
 	const delta = args.laterPct - args.claimedPct;
-	if (Math.abs(delta) < OUTCOME_MATERIAL_POINTS) return { outcome: "igual", acted: false };
-	return { outcome: delta < 0 ? "melhorou" : "piorou", acted: false };
+
+	// Regression to the mean, which this design invites by construction:
+	// a campaign is recorded BECAUSE its rate was extreme, and an
+	// extreme rate comes back toward the middle on its own. The
+	// statistician on the council computed that at n=80 pure binomial
+	// noise moves the rate 5 or more points about 53% of the time, so a
+	// flat 5-point floor would hand "melhorou" or "piorou" to more than
+	// half the board for free, tilted toward "melhorou" by the
+	// selection.
+	//
+	// The movement now has to clear the combined uncertainty of BOTH
+	// measurements, not a fixed number of points. On a thin campaign
+	// that bar is high, which is correct: a thin campaign is exactly
+	// where the noise lives.
+	const combined =
+		marginOfError(args.claimedPct, args.originalSessions) +
+		marginOfError(args.laterPct, args.laterSessions);
+	const floor = Math.max(OUTCOME_MATERIAL_POINTS, combined);
+	if (Math.abs(delta) < floor) return { outcome: "igual", acted: null, moneyFell };
+
+	// And the veto: our own number improving while the business earned
+	// less is not a win. Calling it one is the single sentence that
+	// would prove to the operator that we optimise a metric which is
+	// not theirs.
+	if (delta < 0 && moneyFell) return { outcome: "igual", acted: null, moneyFell };
+
+	return { outcome: delta < 0 ? "melhorou" : "piorou", acted: null, moneyFell };
 }
 
 export interface ScoreboardRow {
@@ -238,6 +323,24 @@ export interface Scoreboard {
 	/** Still inside the waiting period. Shown as pending, never as a
 	 *  miss: a prediction nobody has had time to act on is not wrong. */
 	pending: number;
+	/**
+	 * How many of the judged verdicts have corroborated adherence, that
+	 * is the operator logged a change touching them.
+	 *
+	 * Reported separately from `sumiu` because traffic stopping is not
+	 * evidence: 82% of campaigns on the instrumented account stop on
+	 * their own within 21 days with no advice from anyone. Any adherence
+	 * figure has to be read against that, and a rate you cannot
+	 * discount is a rate you should not believe.
+	 */
+	corroborated: number;
+	/** The base rate above, carried to the screen so the reader can
+	 *  discount without having to know it. */
+	baseDisappearancePct: number;
+	/** Verdicts where our own number improved while the business earned
+	 *  less. Never counted as wins, and shown, because hiding them
+	 *  would be the exact dishonesty the scoreboard exists to prevent. */
+	moneyFellCount: number;
 }
 
 /**
@@ -275,6 +378,8 @@ export async function scoreVerdicts(
 		cutoff,
 	);
 
+	let moneyFellSeen = 0;
+
 	for (const v of open) {
 		// How the thing behaved AFTER we spoke, never including the
 		// window we judged on. Reading the same days back would score
@@ -306,7 +411,43 @@ export async function scoreVerdicts(
 		const laterPct =
 			laterSessions > 0 ? Math.round((1000 * laterBlind) / laterSessions) / 10 : null;
 
-		const { outcome, acted } = judge({
+		// Did the operator log a change touching this thing after we
+		// spoke? Free text, so the match is a containment test on the
+		// key and the label, which is deliberately loose: a false
+		// negative costs a row of adherence, a false positive would
+		// manufacture the very evidence this is meant to supply.
+		const logged = await prisma.$queryRawUnsafe<{ n: bigint }[]>(
+			`SELECT COUNT(*)::bigint AS n FROM "TrafficChange"
+			 WHERE "envId" = $1 AND "happenedOn" >= $2
+			   AND ("what" ILIKE '%' || $3 || '%' OR COALESCE("scope",'') ILIKE '%' || $3 || '%')`,
+			environmentId,
+			v.issuedAt,
+			v.key,
+		);
+		const loggedChange = Number(logged[0]?.n ?? 0) > 0;
+
+		// And what the operator declared the business produced, before
+		// and after we spoke. This is the money anchor: without it the
+		// scoreboard compares our own number to our own number and can
+		// call a week a win while the business earned less.
+		const declared = await prisma.$queryRawUnsafe<
+			{ before_v: number | null; after_v: number | null }[]
+		>(
+			`SELECT
+			   (SELECT SUM(COALESCE("showed", "booked", "revenueBrl"))::float
+			      FROM "TrafficGroundTruth"
+			      WHERE "envId" = $1 AND "week" < $2::date AND "week" >= $2::date - 28) AS before_v,
+			   (SELECT SUM(COALESCE("showed", "booked", "revenueBrl"))::float
+			      FROM "TrafficGroundTruth"
+			      WHERE "envId" = $1 AND "week" >= $2::date) AS after_v`,
+			environmentId,
+			v.issuedAt,
+		);
+
+		const { outcome, acted, moneyFell } = judge({
+			loggedChange,
+			declaredBefore: declared[0]?.before_v ?? null,
+			declaredAfter: declared[0]?.after_v ?? null,
 			claimedPct: v.blindPct,
 			laterPct,
 			laterSessions,
@@ -314,6 +455,7 @@ export async function scoreVerdicts(
 			rulerThen: v.rulerVersion,
 			rulerNow: RULER_VERSION,
 		});
+		if (moneyFell) moneyFellSeen++;
 		const days = Math.round((now.getTime() - v.issuedAt.getTime()) / 86400000);
 
 		await prisma.$executeRawUnsafe(
@@ -378,5 +520,8 @@ export async function scoreVerdicts(
 		igual: count("igual"),
 		sumiu: count("sumiu"),
 		pending: rows.filter((r) => r.outcome === null).length,
+		corroborated: rows.filter((r) => r.acted === true).length,
+		baseDisappearancePct: Math.round(MEASURED_BASE_DISAPPEARANCE * 1000) / 10,
+		moneyFellCount: moneyFellSeen,
 	};
 }

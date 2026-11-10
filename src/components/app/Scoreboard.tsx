@@ -1,6 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import MetricInfo from "@/components/app/MetricInfo";
+
+/** Local, because this component does not import the traffic page's
+ *  formatters and a one-decimal percentage does not warrant a shared
+ *  module. */
+function pct(v: number): string {
+	return String(Math.round(v * 10) / 10).replace(".", ",");
+}
 
 // ──────────────────────────────────────────────
 // Our own track record, printed where the customer can see it.
@@ -46,6 +54,9 @@ export interface ScoreboardData {
 	igual: number;
 	sumiu: number;
 	pending: number;
+	corroborated: number;
+	baseDisappearancePct: number;
+	moneyFellCount: number;
 }
 
 const VERDICT_LABEL: Record<string, string> = {
@@ -70,7 +81,7 @@ const OUTCOME: Record<string, { label: string; tone: string }> = {
 	melhorou: { label: "a perda caiu", tone: "text-accent-text" },
 	piorou: { label: "a perda subiu", tone: "text-attention" },
 	igual: { label: "ficou igual", tone: "text-content-secondary" },
-	sumiu: { label: "você pausou", tone: "text-content-secondary" },
+	sumiu: { label: "parou de rodar", tone: "text-content-secondary" },
 	indefinido: { label: "não dá para dizer", tone: "text-content-muted" },
 };
 
@@ -82,7 +93,13 @@ export default function Scoreboard({ data }: { data: ScoreboardData }) {
 	// can hold us to, and an empty section is just an absence.
 	if (data.rows.length === 0) return null;
 
-	const hits = data.melhorou + data.sumiu;
+	// "sumiu" is no longer counted as a hit. Measured on the live
+	// account: 82% of campaigns that cleared the session floor stopped
+	// within 21 days with nobody advising anything about them. Counting
+	// a stop as a hit meant the board started at 82% for free and
+	// carried no information, in the number most likely to end up in a
+	// renewal conversation.
+	const hits = data.melhorou;
 	const rate = data.judged > 0 ? Math.round((100 * hits) / data.judged) : null;
 	const oldest = data.rows[data.rows.length - 1]?.issuedAt ?? null;
 
@@ -126,10 +143,34 @@ export default function Scoreboard({ data }: { data: ScoreboardData }) {
 					    against a competitor's board, because nobody else
 					    publishes one. */}
 					<p className="mt-2 text-[12.5px] leading-relaxed text-content-muted">
-						Conta como certo quando a perda caiu depois que você agiu, ou quando você
-						pausou. Conta como errado quando subiu. Não escondemos o errado nem contamos
-						como acerto o que a gente não consegue medir.
+						Conta como certo só quando a perda caiu mais do que a margem das duas
+						medições. Conta como errado quando subiu. Campanha que simplesmente parou de
+						rodar não conta como acerto:{" "}
+						<strong className="text-content">
+							{pct(data.baseDisappearancePct)}% das suas campanhas param sozinhas
+						</strong>{" "}
+						em três semanas sem ninguém recomendar nada, então parar não prova nada.{" "}
+						<MetricInfo>
+							{`Medido na sua conta: de 111 campanhas que passaram o piso de acessos, 91 ficaram abaixo de um quinto do tráfego em 21 dias, e nenhuma delas tinha recomendação nossa. Se a gente contasse isso como "seguiu a recomendação", o placar começaria em ${data.baseDisappearancePct}% de graça e não diria nada. Só conta como seguido quando você anotou a mudança no registro.`}
+						</MetricInfo>
 					</p>
+					{data.corroborated > 0 && (
+						<p className="mt-1.5 text-[12.5px] leading-relaxed text-content-muted">
+							{data.corroborated}{" "}
+							{data.corroborated === 1 ? "recomendação tem" : "recomendações têm"} mudança
+							anotada por você no registro, que é a única prova de que foi seguida.
+						</p>
+					)}
+					{data.moneyFellCount > 0 && (
+						// Shown, never hidden. Our number improving while the
+						// business earned less is the one sentence that would
+						// prove we optimise a metric that is not theirs.
+						<p className="mt-1.5 text-[12.5px] leading-relaxed text-attention">
+							{data.moneyFellCount}{" "}
+							{data.moneyFellCount === 1 ? "vez a perda caiu" : "vezes a perda caiu"} e o
+							que você informou de resultado caiu junto. Isso não conta como acerto.
+						</p>
+					)}
 				</>
 			)}
 

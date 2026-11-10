@@ -147,11 +147,13 @@ describe("callers that supply no dates keep working exactly as before", () => {
 });
 
 describe("the scoreboard cannot be padded with campaigns that were already off", () => {
-	it("would score a dead campaign as a hit if one ever reached it", () => {
-		// Demonstrates the harm rather than asserting it away. judge()
-		// sees traffic gone and reads it as the operator acting, which
-		// is correct for a campaign that WAS running when we spoke and
-		// is a free win for one that was not.
+	it("no longer reads a dead campaign's silence as a hit", () => {
+		// This test used to demonstrate the harm by asserting the harm.
+		// It is now fixed at the source: traffic stopping yields
+		// `acted: null`, unknown, because 82% of campaigns on the live
+		// account stop on their own with no advice from anyone. The
+		// engine-side guard below is still the first line of defence,
+		// and this is the second.
 		const r = judge({
 			claimedPct: 62,
 			laterPct: null,
@@ -161,7 +163,7 @@ describe("the scoreboard cannot be padded with campaigns that were already off",
 			rulerNow: 2,
 		});
 		expect(r.outcome).toBe("sumiu");
-		expect(r.acted).toBe(true);
+		expect(r.acted).toBe(null);
 	});
 
 	it("so the engine never emits an action verdict for one to record", () => {

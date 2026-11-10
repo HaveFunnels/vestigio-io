@@ -86,8 +86,29 @@ export const MIN_SESSIONS_PER_CAMPAIGN = 80;
  */
 export function marginOfError(pct: number, n: number): number {
 	if (n <= 0) return 100;
-	const p = Math.min(1, Math.max(0, pct / 100));
-	return Math.round(100 * 1.96 * Math.sqrt((p * (1 - p)) / n) * 10) / 10;
+	// Agresti-Coull, which is literally "add 2 successes and 2
+	// failures, then do Wald". The previous version was plain Wald, and
+	// the comment defending it claimed a smarter interval would be one
+	// "nobody can check". That was false, and the statistician on the
+	// media-buying council said so: this is as reproducible on paper as
+	// Wald and its coverage is dramatically better in exactly the two
+	// regimes this product lives in.
+	//
+	// The failure that made it urgent: Wald's half-width collapses to
+	// zero at the extremes. A campaign with 0 mute visits in 80
+	// sessions got a reported margin of 0,0 points, which is perfect
+	// certainty from 80 observations, printed as the uncertainty
+	// warning that justified lowering the session floor from 300 to 80.
+	// The warning read 0,0 exactly where it should have been loudest.
+	//
+	// It also fixes the control group, where np is around 13 at the
+	// 300-session minimum with a 4,5% rate, the canonical regime where
+	// Wald stops working and where the account verdict's evidence
+	// lives.
+	const x = (Math.min(100, Math.max(0, pct)) / 100) * n;
+	const nTilde = n + 4;
+	const pTilde = (x + 2) / nTilde;
+	return Math.round(100 * 1.96 * Math.sqrt((pTilde * (1 - pTilde)) / nTilde) * 10) / 10;
 }
 
 function num(v: unknown): number {
@@ -1623,7 +1644,26 @@ export function buildTrafficStatement(
 	const campaigns: CampaignRow[] = above
 		.map((c) => {
 			const blindPct = (100 * c.blind) / c.sessions;
-			const points = blindPct - accountMedian;
+			// Leave-one-out: the campaign is judged against the median
+			// of the OTHER campaigns, never against a median it is part
+			// of. The page verdict already worked this way and the
+			// campaign verdict did not, which was an inconsistency
+			// inside the same engine.
+			//
+			// With 140 campaigns this changes almost nothing, which is
+			// why it survived. With five it changes everything: the
+			// judged campaign IS the median, or half of it, so `points`
+			// comes out near zero by construction and the detector goes
+			// structurally blind. Five campaigns is the dentist, the
+			// lawyer, the accountant, which is exactly the segment the
+			// product is trying to reach and the one it has no real
+			// data for yet.
+			const peers = above.filter((o) => o !== c);
+			const peerMedian =
+				peers.length > 0
+					? median(peers.map((o) => (100 * o.blind) / o.sessions))
+					: accountMedian;
+			const points = blindPct - peerMedian;
 			// Two gates, not one. The relative gate alone was circular,
 			// and a reviewer who audits financial statements for a
 			// living named it as the weakest sentence on the page:
@@ -1676,7 +1716,17 @@ export function buildTrafficStatement(
 					// because the honest statement about a campaign that
 					// has been off for two weeks is that it is off.
 					"parada"
-				: blindPct >= IMPLAUSIBLE_BLIND_PCT
+				: // The cautious end, like every other gate in this
+					// function. It used to compare the point estimate,
+					// which meant that at n=80, where the margin at p=0,9
+					// is about 7 points, two sessions decided whether the
+					// row was a recommendation or a shrug. And because a
+					// point estimate crosses 90 by noise far more often in
+					// a thin campaign, thin rows were disproportionately
+					// pushed into "we cannot measure this", so the
+					// operator learned the product goes quiet exactly on
+					// its smallest campaigns.
+					blindLow >= IMPLAUSIBLE_BLIND_PCT
 					? "medicao_suspeita"
 					: unusual && bad
 						? // Pausing is only advice when pausing is free, and

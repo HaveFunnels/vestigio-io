@@ -3,6 +3,7 @@ import {
 	buildTrafficStatement,
 	MAX_FALSE_ZERO_RISK,
 	CHECKOUT_REACH_BLOCKS_CUT,
+	marginOfError,
 } from "./traffic-statement";
 import { MIN_EVENTS_INTERACTIVE } from "./measured-friction";
 
@@ -79,7 +80,10 @@ describe("the gate no longer deletes paid clicks in silence", () => {
 
 describe("a cut needs more than a zero", () => {
 	/** A campaign bad enough to qualify, in an account with a sane median. */
-	function accountWith(offender: Record<string, unknown>[], convRate = 0.02) {
+	/** Typed from what sess() returns, so the compiler catches a bad
+	 *  fixture instead of vitest swallowing it. */
+	type Row = ReturnType<typeof sess>[number];
+	function accountWith(offender: Row[], convRate = 0.02) {
 		const rows = [...offender];
 		for (let i = 0; i < 5; i++) {
 			const buys = Math.round(1000 * convRate);
@@ -181,5 +185,115 @@ describe("a cut needs more than a zero", () => {
 		expect(CHECKOUT_REACH_BLOCKS_CUT).toBeGreaterThan(0);
 		expect(MAX_FALSE_ZERO_RISK).toBeGreaterThan(0);
 		expect(MAX_FALSE_ZERO_RISK).toBeLessThan(0.5);
+	});
+});
+
+describe("Agresti-Coull, and the margin that used to read zero", () => {
+	it("never reports perfect certainty from a finite sample", () => {
+		// The failure that made this urgent: plain Wald's half-width
+		// collapses to zero at the extremes, so a campaign with 0 mute
+		// visits in 80 sessions got a margin of 0,0 points. That number
+		// is printed as the uncertainty warning which justified lowering
+		// the session floor from 300 to 80, so it read loudest-is-zero
+		// exactly where the uncertainty was greatest.
+		expect(marginOfError(0, 80)).toBeGreaterThan(2);
+		expect(marginOfError(100, 80)).toBeGreaterThan(2);
+		expect(marginOfError(0, 5000)).toBeGreaterThan(0);
+	});
+
+	it("is widest in the middle and narrows with sample size", () => {
+		expect(marginOfError(50, 80)).toBeGreaterThan(marginOfError(5, 80));
+		expect(marginOfError(27, 80)).toBeGreaterThan(marginOfError(27, 300));
+		expect(marginOfError(27, 300)).toBeGreaterThan(marginOfError(27, 5000));
+	});
+
+	it("covers the control group's regime, which is where Wald broke", () => {
+		// np is about 13 at the 300-session control minimum with a 4,5%
+		// rate. That is the canonical regime where the normal
+		// approximation stops holding, and it is also where the account
+		// verdict's only external evidence lives.
+		expect(marginOfError(4.5, 300)).toBeGreaterThan(1.5);
+	});
+
+	it("stays reproducible on paper, which was the stated objection", () => {
+		// Agresti-Coull IS "add 2 successes and 2 failures, then do
+		// Wald". Asserted as arithmetic so the claim in the comment
+		// cannot rot: x=0, n=80 gives pTilde = 2/84.
+		const pTilde = 2 / 84;
+		const byHand = Math.round(100 * 1.96 * Math.sqrt((pTilde * (1 - pTilde)) / 84) * 10) / 10;
+		expect(marginOfError(0, 80)).toBe(byHand);
+	});
+});
+
+describe("a campaign is judged against the others, not against itself", () => {
+	it("still detects the outlier in a five-campaign account", () => {
+		// The dentist, the lawyer, the accountant. With five campaigns
+		// the judged campaign IS the median or half of it, so the old
+		// self-inclusive median produced `points` near zero by
+		// construction and the detector went structurally blind on the
+		// exact segment the product is trying to reach.
+		const rows = [
+			...sess(700, MUTE, "RUIM|700000000001"),
+			...sess(300, { max_scroll_depth: 60 }, "RUIM|700000000001"),
+		];
+		for (let i = 0; i < 4; i++) {
+			rows.push(...sess(120, MUTE, `BOA${i}|60000000000${i}`));
+			rows.push(...sess(880, BUYS, `BOA${i}|60000000000${i}`));
+		}
+		const st = buildTrafficStatement(rows, WIN);
+		const bad = st.campaigns.find((c) => c.platformId === "700000000001")!;
+		// 70% against peers at 12%: the gap has to survive.
+		expect(bad.pointsAboveAccount).toBeGreaterThan(40);
+		expect(["cortar", "corrigir"]).toContain(bad.verdict);
+	});
+
+	it("does not invent a gap when every campaign is identical", () => {
+		// Leave-one-out must not manufacture signal: with all campaigns
+		// at the same rate the peer median equals the campaign's own
+		// rate and points stays at zero.
+		const rows = [];
+		for (let i = 0; i < 5; i++) {
+			rows.push(...sess(300, MUTE, `IGUAL${i}|50000000000${i}`));
+			rows.push(...sess(700, { max_scroll_depth: 60 }, `IGUAL${i}|50000000000${i}`));
+		}
+		const st = buildTrafficStatement(rows, WIN);
+		for (const c of st.campaigns) {
+			expect(Math.abs(c.pointsAboveAccount)).toBeLessThan(1);
+		}
+	});
+});
+
+describe("implausibility is judged on the cautious end too", () => {
+	it("does not call a thin campaign unmeasurable on two sessions", () => {
+		// It used to compare the point estimate. At n=80 the margin
+		// around p=0,9 is about 7 points, so two sessions decided
+		// whether the row was a recommendation or a shrug, and because
+		// a point estimate crosses 90 by noise far more often in a thin
+		// campaign, thin rows were pushed into silence.
+		const rows = [
+			// 92% observed, but the cautious end is well under 90.
+			...sess(92, MUTE, "FINA|400000000001"),
+			...sess(8, { max_scroll_depth: 60 }, "FINA|400000000001"),
+		];
+		for (let i = 0; i < 4; i++) {
+			rows.push(...sess(150, MUTE, `OK${i}|30000000000${i}`));
+			rows.push(...sess(850, BUYS, `OK${i}|30000000000${i}`));
+		}
+		const st = buildTrafficStatement(rows, WIN);
+		const thin = st.campaigns.find((c) => c.platformId === "400000000001")!;
+		expect(thin.arrivedBlindPct).toBeGreaterThan(90);
+		expect(thin.blindPctLow).toBeLessThan(90);
+		expect(thin.verdict).not.toBe("medicao_suspeita");
+	});
+
+	it("still flags instrumentation failure when even the cautious end is absurd", () => {
+		const rows = [
+			...sess(1000, MUTE, "QUEBRADA|400000000002"),
+			...sess(1000, BUYS, "OK|300000000009"),
+		];
+		const st = buildTrafficStatement(rows, WIN);
+		const broken = st.campaigns.find((c) => c.platformId === "400000000002")!;
+		expect(broken.blindPctLow).toBeGreaterThanOrEqual(90);
+		expect(broken.verdict).toBe("medicao_suspeita");
 	});
 });

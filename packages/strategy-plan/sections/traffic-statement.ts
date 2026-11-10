@@ -810,6 +810,27 @@ export interface TrafficStatement {
 		 * defect, since checking the arithmetic cannot find it.
 		 */
 		campaignsDegrading: number;
+		/**
+		 * Median load time of arrivals on this page, or null until at
+		 * least 20 arrivals have reported one.
+		 *
+		 * This is the split the product could not make and three of
+		 * nine media-buying specialists called it out: without it,
+		 * "the visitor did not care" and "the page never painted" are
+		 * the same number, and a verdict of "corrigir" sends the
+		 * operator to rewrite copy when the fix is milliseconds. The
+		 * pixel has collected this since the beginning; nothing could
+		 * reach it.
+		 *
+		 * Null on anything measured before 2026-11-10, because the
+		 * session aggregate did not carry it. Null means unknown and is
+		 * never drawn as fast.
+		 */
+		medianLoadMs: number | null;
+		/** Share of arrivals that left before the load event fired.
+		 *  Counted apart from the median so a page cannot look fast
+		 *  because everyone gave up before the clock stopped. */
+		neverLoadedPct: number;
 		/** Null when every judged campaign lands on this page, which is
 		 *  when blame cannot be apportioned at all. */
 		elsewhereMedianPct: number | null;
@@ -1437,6 +1458,12 @@ export function buildTrafficStatement(
 		blind: number;
 		purchases: number;
 		campaigns: Set<string>;
+		/** Load times from arrivals on this page, for the one split the
+		 *  product could not make: slow page against wrong audience. */
+		loads: number[];
+		/** Sessions that left before the load event fired at all. */
+		neverLoaded: number;
+		jsErrors: number;
 	}
 	const byPage = new Map<string, PageAcc>();
 	interface TermAcc {
@@ -1580,11 +1607,22 @@ export function buildTrafficStatement(
 				blind: 0,
 				purchases: 0,
 				campaigns: new Set<string>(),
+				loads: [],
+				neverLoaded: 0,
+				jsErrors: 0,
 			};
 			pg.sessions++;
 			if (blind) pg.blind++;
 			if (a.reached_thank_you) pg.purchases++;
 			pg.campaigns.add(key);
+			// Null load time is information, not absence: it means the
+			// visitor left before the page finished. Counted separately
+			// from the median so a page cannot look fast by virtue of
+			// everyone giving up before the clock stopped.
+			const lm = num(a.load_ms);
+			if (lm > 0) pg.loads.push(lm);
+			else if (a.load_ms === null || a.load_ms === undefined) pg.neverLoaded++;
+			pg.jsErrors += num(a.js_error_count);
 			byPage.set(path, pg);
 		}
 
@@ -1984,6 +2022,9 @@ export function buildTrafficStatement(
 				campaignsJudged: judged.length,
 				campaignsAboveMedian: aboveMedian,
 				campaignsDegrading: degrading,
+				medianLoadMs: p.loads.length >= 20 ? Math.round(median(p.loads)) : null,
+				neverLoadedPct:
+					p.sessions > 0 ? Math.round((1000 * p.neverLoaded) / p.sessions) / 10 : 0,
 				elsewhereMedianPct:
 					elsewhereMedian === null ? null : Math.round(elsewhereMedian * 10) / 10,
 				verdict,

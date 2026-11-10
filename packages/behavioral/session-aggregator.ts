@@ -133,6 +133,26 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
   let formErrorCount = 0;
   let lastExitPage: string | undefined;
 
+  // ── Page delivery, which nothing consumed until now ──
+  //
+  // The pixel has been collecting navigation timing in every heartbeat
+  // since the beginning. It was aggregated per surface by a function
+  // that is referenced only inside its own file, so the number existed
+  // and nobody could reach it. Three of nine media-buying specialists
+  // landed on the same consequence: without it, "the visitor did not
+  // care" and "the page never finished painting" are the same number,
+  // and the product tells the operator to rewrite copy when the fix is
+  // milliseconds.
+  //
+  // Captured here, per session, which is the only place the traffic
+  // statement can see it. Earliest heartbeat wins: load time is a
+  // property of the arrival, and a later heartbeat on a slower second
+  // page would overwrite the thing being measured.
+  let loadMs: number | null = null;
+  let domReadyMs: number | null = null;
+  let jsErrorCount = 0;
+  let resourceErrorCount = 0;
+
   // ── Wave 22.9 · Fase 0 — Ecommerce-derived counters ──
   // Populated unconditionally; caller decides whether to expose them
   // via the vertical gate in ecommerce-semantics.shouldApplyEcommerceSemantics.
@@ -161,6 +181,17 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
   // - upsell_seen / upsell_accept: (future: post-purchase monetization analysis)
 
   for (const event of events) {
+    if (event.type === 'heartbeat') {
+      const t = (event.data?.timing as { load_ms?: number; dom_ready_ms?: number }) || {};
+      if (loadMs === null && typeof t.load_ms === 'number' && t.load_ms > 0) {
+        loadMs = Math.round(t.load_ms);
+      }
+      if (domReadyMs === null && typeof t.dom_ready_ms === 'number' && t.dom_ready_ms > 0) {
+        domReadyMs = Math.round(t.dom_ready_ms);
+      }
+      jsErrorCount += (event.data?.js_error_count as number) || 0;
+      resourceErrorCount += (event.data?.resource_error_count as number) || 0;
+    }
     const surface = normalizeSurface(event.url);
 
     switch (event.type) {
@@ -408,6 +439,10 @@ export function aggregateSession(batch: RawBehavioralBatch): SessionAggregate {
     dead_click_count: deadClickCount,
     max_scroll_depth: maxScrollDepth,
     session_duration_ms: endTs - startTs,
+    load_ms: loadMs,
+    dom_ready_ms: domReadyMs,
+    js_error_count: jsErrorCount,
+    resource_error_count: resourceErrorCount,
     reached_thank_you: reachedThankYou,
     started_at: new Date(startTs),
     ended_at: new Date(endTs),
@@ -494,15 +529,35 @@ export function extractVitalityFromEvents(
     const resourceErrors = (hb.data.resource_error_count as number) || 0;
     const sessions = sessionsBySurface.get(s.surface_id)?.size || 0;
 
+    // These are means now. They were not: `vitality.set` inside this
+    // loop meant the last heartbeat processed for a surface silently
+    // overwrote every earlier one, so a field named avg_load_ms held a
+    // single observation. Anyone who started consuming it would have
+    // consumed it wrong, and the field name would have told them they
+    // were safe.
+    const prev = vitality.get(s.surface_id);
+    const seen = (prev?.heartbeats_seen ?? 0) + 1;
+    const mean = (old: number | null | undefined, next: unknown): number | null => {
+      const v = typeof next === 'number' && next > 0 ? next : null;
+      if (v === null) return old ?? null;
+      if (old === null || old === undefined) return v;
+      // Running mean, so the whole series does not have to be held.
+      return old + (v - old) / seen;
+    };
+
     vitality.set(s.surface_id, {
       surface_id: s.surface_id,
       is_live: true,
       last_heartbeat_at: new Date(hb.ts),
-      avg_dom_ready_ms: timing.dom_ready_ms || null,
-      avg_load_ms: timing.load_ms || null,
-      js_error_rate: sessions > 0 ? jsErrors / sessions : 0,
-      resource_error_rate: sessions > 0 ? resourceErrors / sessions : 0,
+      avg_dom_ready_ms: mean(prev?.avg_dom_ready_ms, timing.dom_ready_ms),
+      avg_load_ms: mean(prev?.avg_load_ms, timing.load_ms),
+      js_error_rate: sessions > 0 ? ((prev?.js_error_rate ?? 0) * (seen - 1) + jsErrors / sessions) / seen : 0,
+      resource_error_rate:
+        sessions > 0
+          ? ((prev?.resource_error_rate ?? 0) * (seen - 1) + resourceErrors / sessions) / seen
+          : 0,
       session_count_24h: sessions,
+      heartbeats_seen: seen,
     });
   }
 

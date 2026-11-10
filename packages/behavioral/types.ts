@@ -249,6 +249,13 @@ export interface SessionAggregate {
   max_scroll_depth: number;
   /** Duration */
   session_duration_ms: number;
+  /** Navigation timing from the arrival's first heartbeat, or null when
+   *  the visitor left before the load event fired. Null is itself
+   *  information: it means the page never finished loading for them. */
+  load_ms?: number | null;
+  dom_ready_ms?: number | null;
+  js_error_count?: number;
+  resource_error_count?: number;
   /** Outcome */
   reached_thank_you: boolean;
   /** Timestamps */
@@ -370,6 +377,8 @@ export interface SurfaceVitality {
   js_error_rate: number;  // errors per session
   resource_error_rate: number;
   session_count_24h: number;
+  /** How many heartbeats the means above were computed from. */
+  heartbeats_seen?: number;
 }
 
 // ── Funnel Model ──

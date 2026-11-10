@@ -137,6 +137,8 @@ interface Statement {
 		campaignsJudged: number;
 		campaignsDegrading: number;
 		elsewhereMedianPct: number | null;
+		medianLoadMs: number | null;
+		neverLoadedPct: number;
 		verdict: "corrigir" | "anuncio_errado" | "observar" | "entregando" | "medicao_suspeita";
 		marginPoints: number;
 		blindPctLow: number;
@@ -689,6 +691,19 @@ export default function TrafficStatementPage() {
 											{n(g.arrivedBlind)} de {n(g.sessions)} acessos, ±
 											{pct(g.marginPoints)} pontos
 										</span>
+										{/* The split the product could not make. Without it,
+										    "corrigir" sends the operator to rewrite copy
+										    when the fix is milliseconds. Null until the
+										    new pixel accumulates, and null is never drawn
+										    as fast. */}
+										{g.medianLoadMs !== null && (
+											<span>
+												carrega em {(g.medianLoadMs / 1000).toFixed(1)}s
+												{g.medianLoadMs > 3000
+													? ", o que já explica parte da perda"
+													: ", então a perda não é lentidão"}
+											</span>
+										)}
 									</div>
 								</li>
 							))}

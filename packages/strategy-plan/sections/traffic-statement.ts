@@ -422,6 +422,38 @@ export function deviceOf(userAgent: string | null | undefined): "mobile" | "desk
 	return /Mobile|Android|iPhone|iPad|iPod/i.test(userAgent) ? "mobile" : "desktop";
 }
 
+/**
+ * Did this arrival happen inside an app's own browser, or in a real
+ * one?
+ *
+ * Four of nine media-buying specialists raised this, and the
+ * measurement made it urgent rather than interesting. The 9.406 paid
+ * sessions the event gate used to discard are 81% plain browser, while
+ * the counted population is 75% in-app webview. That inversion is the
+ * single strangest number in the account and nothing could even name
+ * it, because the user agent was already arriving and only mobile and
+ * desktop were being read out of it.
+ *
+ * Why it matters beyond curiosity: a tap on a Meta ad opens the
+ * Instagram or Facebook webview, which has a smaller usable viewport,
+ * a colder cache, slower paint and a swipe-back that costs nothing.
+ * Organic and direct traffic arrives in Chrome or Safari. So the
+ * paid-against-organic comparison was partly a comparison of two
+ * browsers, which is the strongest form of the objection five lenses
+ * made against using the control group as proof of level.
+ */
+export function browserKindOf(
+	userAgent: string | null | undefined,
+): "webview" | "browser" | "unknown" {
+	if (!userAgent) return "unknown";
+	// FBAN and FBAV are Facebook's app tokens, FB_IAB is its in-app
+	// browser, and Instagram ships its own token. These are the three
+	// that carry Brazilian Direct Response traffic.
+	return /FBAN|FBAV|FB_IAB|Instagram|GSA\/|Line\/|MicroMessenger/i.test(userAgent)
+		? "webview"
+		: "browser";
+}
+
 export interface CampaignRow {
 	/** Campaign name as the operator wrote it in the ad platform. */
 	name: string;
@@ -638,6 +670,16 @@ export interface TrafficStatement {
 	 * The honest reading: a separate finding, owned by page delivery
 	 * rather than by ad targeting.
 	 */
+	/**
+	 * Paid arrivals split by whether they happened inside an app's own
+	 * browser. The comparison that was impossible before: an in-app
+	 * webview and a real browser are not the same instrument, so a rate
+	 * difference between them is not a difference between visitors.
+	 */
+	byBrowserKind: {
+		webview: { sessions: number; blind: number; blindPct: number } | null;
+		browser: { sessions: number; blind: number; blindPct: number } | null;
+	};
 	notLoaded: {
 		sessions: number;
 		/** Of those, how many carry a paid click marker. */
@@ -1400,6 +1442,34 @@ export function buildTrafficStatement(
 		conversionModel?: string | null;
 		minSessions?: number;
 		/**
+		 * What the operator typed about their own business, from the
+		 * weekly ground-truth column.
+		 *
+		 * It is the only number in the product that did not come from
+		 * our own pixel, and until now no section read it. That matters
+		 * most in one specific place: it is the only thing that can
+		 * tell us our conversion measurement is broken.
+		 *
+		 * The account-level guard already catches a store with zero
+		 * measured purchases while sessions reach the checkout. It
+		 * cannot catch a service business at all, because a dentist has
+		 * no checkout to reach. If he declared 40 patients and we
+		 * measured zero contacts, the measurement is wrong and no
+		 * campaign may be told to cut. Nothing could see that before.
+		 *
+		 * Account level and weekly, never per campaign, so it is used
+		 * to audit the proxy rather than to price one campaign's pause.
+		 * Pricing a campaign from an account total would be the kind of
+		 * number that looks like money and is not.
+		 */
+		declared?: {
+			/** Weeks the operator actually filled. */
+			weeks: number;
+			booked: number;
+			showed: number;
+			revenueBrl: number;
+		} | null;
+		/**
 		 * Spend per campaign, from a connected ad account.
 		 *
 		 * Keyed by the platform's campaign id AND by the lowercased
@@ -1480,6 +1550,9 @@ export function buildTrafficStatement(
 	// below for why these are counted separately rather than folded in.
 	let notLoaded = 0;
 	let notLoadedPaid = 0;
+	/** Paid arrivals by browser kind, so webview and real browser are
+	 *  never averaged into one rate again. */
+	const byKind = new Map<string, { sessions: number; blind: number }>();
 	const notLoadedByCampaign = new Map<string, number>();
 
 	for (const row of rows) {
@@ -1585,6 +1658,13 @@ export function buildTrafficStatement(
 		acc.durations.push(num(a.session_duration_ms));
 		if (reachedAction(a, model)) acc.action++;
 		if (contacted(a)) acc.contacts++;
+		const kind = browserKindOf(row.userAgent);
+		if (kind !== "unknown") {
+			const k = byKind.get(kind) ?? { sessions: 0, blind: 0 };
+			k.sessions++;
+			if (blind) k.blind++;
+			byKind.set(kind, k);
+		}
 		if (a.checkout_reached) acc.checkout++;
 		if (a.reached_thank_you) acc.completed++;
 		for (const ch of channelsOf(a)) {
@@ -1677,6 +1757,16 @@ export function buildTrafficStatement(
 	const totalCompleted = [...byCampaign.values()].reduce((n, c) => n + c.completed, 0);
 	const totalCheckout = [...byCampaign.values()].reduce((n, c) => n + c.checkout, 0);
 	const totalActionSessions = [...byCampaign.values()].reduce((n, c) => n + c.sessions, 0);
+	const totalContacts = [...byCampaign.values()].reduce((n, c) => n + c.contacts, 0);
+	const declared = options.declared ?? null;
+	/** Did the operator tell us the business produced something? */
+	const declaredSomething =
+		declared !== null &&
+		declared.weeks > 0 &&
+		(declared.showed > 0 || declared.booked > 0 || declared.revenueBrl > 0);
+	/** What we measured in the unit this business earns in. */
+	const measuredOutcome = isCommerce ? totalCompleted : totalContacts;
+
 	const conversionSuspect: TrafficStatement["conversionSuspect"] =
 		isCommerce && totalCompleted === 0 && totalCheckout > 0
 			? {
@@ -1687,7 +1777,24 @@ export function buildTrafficStatement(
 					purchases: totalCompleted,
 					checkoutReached: totalCheckout,
 				}
-			: { blocked: false, reason: null, purchases: totalCompleted, checkoutReached: totalCheckout };
+			: declaredSomething && measuredOutcome === 0
+				? {
+						// The only guard that works for a service business.
+						// A dentist has no checkout to reach, so the
+						// commerce branch above can never fire for him. If
+						// he typed 40 patients and we counted zero
+						// contacts, our measurement is wrong, and every
+						// campaign would otherwise read "pausar nao custa
+						// nada" and be told to cut. That is the same defect
+						// this file has now shipped in four costumes.
+						blocked: true,
+						reason:
+							"voce informou resultado nas suas celulas semanais e a gente nao " +
+							"mediu nenhum, o que indica que o nosso lado esta perdendo a conversao",
+						purchases: totalCompleted,
+						checkoutReached: totalCheckout,
+					}
+				: { blocked: false, reason: null, purchases: totalCompleted, checkoutReached: totalCheckout };
 
 	/** Account conversion rate, used to ask whether a zero is evidence. */
 	const accountConvRate = totalActionSessions > 0 ? totalCompleted / totalActionSessions : 0;
@@ -2101,6 +2208,28 @@ export function buildTrafficStatement(
 		// two could have drifted apart.
 		accountBlindPct: attributed > 0 ? accountPooled : 0,
 		accountVerdict,
+		byBrowserKind: {
+			webview: (() => {
+				const k = byKind.get("webview");
+				return k && k.sessions > 0
+					? {
+							sessions: k.sessions,
+							blind: k.blind,
+							blindPct: Math.round((1000 * k.blind) / k.sessions) / 10,
+						}
+					: null;
+			})(),
+			browser: (() => {
+				const k = byKind.get("browser");
+				return k && k.sessions > 0
+					? {
+							sessions: k.sessions,
+							blind: k.blind,
+							blindPct: Math.round((1000 * k.blind) / k.sessions) / 10,
+						}
+					: null;
+			})(),
+		},
 		notLoaded: {
 			sessions: notLoaded,
 			withPaidMarker: notLoadedPaid,

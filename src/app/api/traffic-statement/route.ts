@@ -176,12 +176,52 @@ export async function GET(request: Request) {
 			// statement. Counts are the product; spend is the upgrade.
 		}
 
+		// The operator's own numbers, read for the first time by anything
+		// other than the screen that collects them. Used to audit our
+		// conversion measurement, which is the one job only an outside
+		// number can do: if they declared results and we measured none,
+		// our side is losing the conversion and no campaign may be told
+		// to cut.
+		let declared: {
+			weeks: number;
+			booked: number;
+			showed: number;
+			revenueBrl: number;
+		} | null = null;
+		try {
+			const gt = await prisma.$queryRawUnsafe<
+				{ weeks: bigint; booked: bigint; showed: bigint; revenue: bigint }[]
+			>(
+				`SELECT COUNT(*)::bigint AS weeks,
+				        COALESCE(SUM("booked"),0)::bigint AS booked,
+				        COALESCE(SUM("showed"),0)::bigint AS showed,
+				        COALESCE(SUM("revenueBrl"),0)::bigint AS revenue
+				 FROM "TrafficGroundTruth"
+				 WHERE "envId" = $1 AND "week" >= $2`,
+				orgCtx.envId,
+				start,
+			);
+			const row = gt[0];
+			if (row && Number(row.weeks) > 0) {
+				declared = {
+					weeks: Number(row.weeks),
+					booked: Number(row.booked),
+					showed: Number(row.showed),
+					revenueBrl: Number(row.revenue),
+				};
+			}
+		} catch (err) {
+			// A missing column costs the audit, never the statement.
+			console.error("[traffic-statement] declared", err);
+		}
+
 		const statement = buildTrafficStatement(parsed, {
 			windowStart: start.toISOString().slice(0, 10),
 			windowEnd: end.toISOString().slice(0, 10),
 			conversionModel: profile?.conversionModel ?? null,
 			spendByCampaignId,
 			previous: parsedPrev.length > 0 ? parsedPrev : null,
+			declared,
 		});
 
 		// What moved, from the same rows. The statement on its own is a

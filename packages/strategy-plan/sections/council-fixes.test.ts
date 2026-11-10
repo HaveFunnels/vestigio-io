@@ -4,6 +4,7 @@ import {
 	MAX_FALSE_ZERO_RISK,
 	CHECKOUT_REACH_BLOCKS_CUT,
 	marginOfError,
+	browserKindOf,
 } from "./traffic-statement";
 import { MIN_EVENTS_INTERACTIVE } from "./measured-friction";
 
@@ -295,5 +296,170 @@ describe("implausibility is judged on the cautious end too", () => {
 		const broken = st.campaigns.find((c) => c.platformId === "400000000002")!;
 		expect(broken.blindPctLow).toBeGreaterThanOrEqual(90);
 		expect(broken.verdict).toBe("medicao_suspeita");
+	});
+});
+
+describe("the operator's own numbers audit our measurement", () => {
+	/** A service account: WhatsApp business, no checkout anywhere. */
+	function dentistAccount(declared: {
+		weeks: number;
+		booked: number;
+		showed: number;
+		revenueBrl: number;
+	} | null) {
+		const rows = [];
+		for (let i = 0; i < 5; i++) {
+			// Every session mute, and crucially zero contacts measured.
+			rows.push(...sess(200, MUTE, `C${i}|20000000000${i}`));
+			rows.push(...sess(100, { max_scroll_depth: 60 }, `C${i}|20000000000${i}`));
+		}
+		return buildTrafficStatement(rows, {
+			...WIN,
+			conversionModel: "whatsapp",
+			declared,
+		});
+	}
+
+	it("blocks every cut when the operator declared results we did not measure", () => {
+		// The guard that only an outside number can provide. The
+		// commerce branch cannot fire for a dentist, because he has no
+		// checkout to reach. If he typed 40 patients and we counted zero
+		// contacts, our side is losing the conversion, and without this
+		// every campaign reads "pausing costs nothing" and gets cut.
+		// Same defect this file has now shipped in four costumes.
+		const st = dentistAccount({ weeks: 5, booked: 52, showed: 40, revenueBrl: 0 });
+		expect(st.conversionSuspect.blocked).toBe(true);
+		expect(st.conversionSuspect.reason).toContain("celulas semanais");
+		expect(st.campaigns.filter((c) => c.verdict === "cortar").length).toBe(0);
+	});
+
+	it("accepts declared revenue as evidence too, not only appointments", () => {
+		const st = dentistAccount({ weeks: 4, booked: 0, showed: 0, revenueBrl: 18000 });
+		expect(st.conversionSuspect.blocked).toBe(true);
+	});
+
+	it("stays out of the way when the operator filled nothing", () => {
+		// No declaration is not a declaration of zero. The product must
+		// not start blocking cuts just because the column is empty,
+		// which is its state on every account today.
+		const st = dentistAccount(null);
+		expect(st.conversionSuspect.blocked).toBe(false);
+	});
+
+	it("stays out of the way when the operator declared zero", () => {
+		// A week with zero patients declared is real information and it
+		// agrees with measuring zero. Nothing is broken.
+		const st = dentistAccount({ weeks: 5, booked: 0, showed: 0, revenueBrl: 0 });
+		expect(st.conversionSuspect.blocked).toBe(false);
+	});
+
+	it("does not fire when we measured what they declared", () => {
+		const rows = [];
+		for (let i = 0; i < 5; i++) {
+			rows.push(...sess(200, MUTE, `C${i}|20000000000${i}`));
+			rows.push(
+				...sess(
+					100,
+					{ max_scroll_depth: 60, contact_started: true, contact_channels: ["whatsapp"] },
+					`C${i}|20000000000${i}`,
+				),
+			);
+		}
+		const st = buildTrafficStatement(rows, {
+			...WIN,
+			conversionModel: "whatsapp",
+			declared: { weeks: 5, booked: 52, showed: 40, revenueBrl: 0 },
+		});
+		expect(st.conversionSuspect.blocked).toBe(false);
+	});
+});
+
+describe("webview against real browser", () => {
+	it("classifies the three tokens that carry Brazilian DR traffic", () => {
+		expect(browserKindOf("Mozilla/5.0 (iPhone) FBAN/FBIOS;FBAV/450")).toBe("webview");
+		expect(browserKindOf("Mozilla/5.0 (Linux; Android 13) Instagram 300.0")).toBe("webview");
+		expect(browserKindOf("Mozilla/5.0 (Android) FB_IAB/FB4A;FBAV/450")).toBe("webview");
+		expect(browserKindOf("Mozilla/5.0 (iPhone) Safari/604.1")).toBe("browser");
+		expect(browserKindOf("Mozilla/5.0 (Windows NT 10.0) Chrome/120")).toBe("browser");
+		expect(browserKindOf(null)).toBe("unknown");
+		expect(browserKindOf("")).toBe("unknown");
+	});
+
+	it("splits the paid rate by instrument, not by visitor", () => {
+		// The comparison that was impossible before. An in-app webview
+		// and a real browser are not the same instrument, so a rate
+		// difference between them is not a difference between visitors.
+		const rows = [
+			...sess(400, MUTE, "A|100000000001").map((r) => ({
+				...r,
+				userAgent: "Mozilla/5.0 (iPhone) FBAN/FBIOS",
+			})),
+			...sess(600, { max_scroll_depth: 60 }, "A|100000000001").map((r) => ({
+				...r,
+				userAgent: "Mozilla/5.0 (iPhone) FBAN/FBIOS",
+			})),
+			...sess(500, MUTE, "A|100000000001").map((r) => ({
+				...r,
+				userAgent: "Mozilla/5.0 (Windows NT 10.0) Chrome/120",
+			})),
+			...sess(500, { max_scroll_depth: 60 }, "A|100000000001").map((r) => ({
+				...r,
+				userAgent: "Mozilla/5.0 (Windows NT 10.0) Chrome/120",
+			})),
+		];
+		const st = buildTrafficStatement(rows, WIN);
+		expect(st.byBrowserKind.webview?.blindPct).toBe(40);
+		expect(st.byBrowserKind.browser?.blindPct).toBe(50);
+	});
+
+	it("reports null rather than zero when a kind never appeared", () => {
+		// Null is unknown. A zero would read as "no waste in that
+		// bucket", which is a different and false claim.
+		const st = buildTrafficStatement(
+			sess(200, MUTE, "A|100000000002").map((r) => ({
+				...r,
+				userAgent: "Mozilla/5.0 (iPhone) FBAN/FBIOS",
+			})),
+			WIN,
+		);
+		expect(st.byBrowserKind.webview).not.toBe(null);
+		expect(st.byBrowserKind.browser).toBe(null);
+	});
+
+	it("does not assume the webview is the worse instrument", () => {
+		// Four of nine specialists predicted the webview would inflate
+		// the mute rate: smaller viewport, colder cache, slower paint,
+		// a free swipe back. Measured on the live account it is the
+		// other way round, 25% in the webview against 34,2% in a plain
+		// browser, a 9,2 point gap pointing the opposite way.
+		//
+		// Which is why this is a reported split and not a correction
+		// factor. Had it shipped as a correction built on the predicted
+		// direction, it would have adjusted every rate the wrong way.
+		const st = buildTrafficStatement(
+			[
+				...sess(100, MUTE, "A|100000000003").map((r) => ({
+					...r,
+					userAgent: "Mozilla/5.0 (iPhone) FBAN/FBIOS",
+				})),
+				...sess(900, { max_scroll_depth: 60 }, "A|100000000003").map((r) => ({
+					...r,
+					userAgent: "Mozilla/5.0 (iPhone) FBAN/FBIOS",
+				})),
+				...sess(400, MUTE, "A|100000000003").map((r) => ({
+					...r,
+					userAgent: "Mozilla/5.0 (Windows) Chrome/120",
+				})),
+				...sess(600, { max_scroll_depth: 60 }, "A|100000000003").map((r) => ({
+					...r,
+					userAgent: "Mozilla/5.0 (Windows) Chrome/120",
+				})),
+			],
+			WIN,
+		);
+		// The engine reports whichever direction the data shows.
+		expect(st.byBrowserKind.webview!.blindPct).toBeLessThan(
+			st.byBrowserKind.browser!.blindPct,
+		);
 	});
 });

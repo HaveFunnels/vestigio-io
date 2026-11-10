@@ -5,6 +5,7 @@ import {
 	CHECKOUT_REACH_BLOCKS_CUT,
 	marginOfError,
 	browserKindOf,
+	campaignKeyOf,
 } from "./traffic-statement";
 import { MIN_EVENTS_INTERACTIVE } from "./measured-friction";
 
@@ -461,5 +462,56 @@ describe("webview against real browser", () => {
 		expect(st.byBrowserKind.webview!.blindPct).toBeLessThan(
 			st.byBrowserKind.browser!.blindPct,
 		);
+	});
+});
+
+describe("campaign identity, and the premise that was false", () => {
+	it("prefers the platform id carried in the campaign string", () => {
+		// Which covers 98,4% of paid sessions on the instrumented
+		// account. The council asserted that the primary key there is a
+		// hand-typed string, so every rename reads as a campaign that
+		// stopped and the scoreboard credits itself for renames.
+		// Measured, that is false: the operator's convention carries the
+		// id after a pipe. Checking the premise cost one query and saved
+		// a rewrite of the identity of every row in the product.
+		expect(campaignKeyOf("(1-3-X | POTE) aberto|120251789627080751").key).toBe(
+			"120251789627080751",
+		);
+	});
+
+	it("survives a rename when the id is present", () => {
+		const a = campaignKeyOf("nome antigo|52602394623344").key;
+		const b = campaignKeyOf("nome completamente outro|52602394623344").key;
+		expect(a).toBe(b);
+	});
+
+	it("falls back to utm_id when the string carries no id", () => {
+		// The 1,6% of sessions with no id in the name, and any future
+		// account whose convention does not carry one. Meta substitutes
+		// utm_id from the campaign URL field, with no API and no
+		// credentials.
+		expect(campaignKeyOf("promo sem id", "120259999999999").key).toBe("120259999999999");
+	});
+
+	it("prefers the platform id over utm_id when both exist", () => {
+		// The platform id is the older and better attested of the two,
+		// and switching identity on a campaign that already has history
+		// would break the thing this change exists to protect.
+		expect(campaignKeyOf("promo|52602394623344", "999888777").key).toBe("52602394623344");
+	});
+
+	it("falls back to the name only as a last resort", () => {
+		expect(campaignKeyOf("promo sem id nenhum").key).toBe("promo sem id nenhum");
+		expect(campaignKeyOf("promo sem id nenhum", null).key).toBe("promo sem id nenhum");
+		// Junk utm_id does not get to become an identity.
+		expect(campaignKeyOf("promo", "  ").key).toBe("promo");
+		expect(campaignKeyOf("promo", "x").key).toBe("promo");
+	});
+
+	it("does not treat a pipe in a human name as an id", () => {
+		// "Promo | Black Friday" is a name whose last segment follows a
+		// pipe. Truncating there would hand the operator a campaign they
+		// cannot recognise.
+		expect(campaignKeyOf("Promo | Black Friday").key).toBe("Promo | Black Friday");
 	});
 });

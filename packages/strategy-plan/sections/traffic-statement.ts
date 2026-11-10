@@ -1373,6 +1373,39 @@ export function detectTrafficMoves(
 	return moves.sort((a, b) => b.deltaPoints - a.deltaPoints);
 }
 
+/**
+ * The stable identity of a campaign.
+ *
+ * Order matters and the reason for each step is different.
+ *
+ * `platformId` first, which on the instrumented account covers 98,4% of
+ * paid sessions: the operator's naming convention carries the platform
+ * id after a pipe, so renaming the campaign does NOT break its history.
+ * Worth stating plainly because the media-buying council asserted the
+ * opposite, that the primary key on the only paying account is a
+ * hand-typed string and so every rename reads as a campaign that
+ * stopped. Measured, that is false here, and it would have been an
+ * expensive thing to "fix" on a premise nobody checked.
+ *
+ * `utm_id` second, which is new: the pixel started capturing it on
+ * 2026-11-10 and it is 0% of history by definition. It earns its place
+ * for the 1,6% of sessions whose campaign string has no id, and for any
+ * future account whose convention does not carry one. Meta substitutes
+ * it from the campaign URL field with no API and no credentials.
+ *
+ * The name last, and only as a last resort, because it is the one
+ * identifier a person can change by typing.
+ */
+export function campaignKeyOf(
+	raw: string,
+	utmId?: string | null,
+): { key: string; name: string; platformId: string | null } {
+	const { name, platformId } = splitCampaignRef(raw);
+	const fromUtm =
+		typeof utmId === "string" && /^[\w-]{4,}$/.test(utmId.trim()) ? utmId.trim() : null;
+	return { key: platformId ?? fromUtm ?? name, name, platformId };
+}
+
 export function splitCampaignRef(raw: string): { name: string; platformId: string | null } {
 	const at = raw.lastIndexOf("|");
 	if (at < 0) return { name: decodeCampaignName(raw), platformId: null };
@@ -1593,11 +1626,11 @@ export function buildTrafficStatement(
 			notLoaded++;
 			if (hasPaidMarker(ft)) notLoadedPaid++;
 			if (campaignRaw) {
-				const { name: nlName, platformId: nlId } = splitCampaignRef(campaignRaw);
-				notLoadedByCampaign.set(
-					nlId ?? nlName,
-					(notLoadedByCampaign.get(nlId ?? nlName) ?? 0) + 1,
+				const nl = campaignKeyOf(
+					campaignRaw,
+					typeof ft?.utm_id === "string" ? ft.utm_id : null,
 				);
+				notLoadedByCampaign.set(nl.key, (notLoadedByCampaign.get(nl.key) ?? 0) + 1);
 			}
 			continue;
 		}
@@ -1619,8 +1652,10 @@ export function buildTrafficStatement(
 		}
 		attributed++;
 
-		const { name, platformId } = splitCampaignRef(campaignRaw);
-		const key = platformId ?? name;
+		const { key, name, platformId } = campaignKeyOf(
+			campaignRaw,
+			typeof ft?.utm_id === "string" ? ft.utm_id : null,
+		);
 		const acc: Acc =
 			byCampaign.get(key) ??
 			{

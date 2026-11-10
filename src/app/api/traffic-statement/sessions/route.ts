@@ -4,7 +4,7 @@ import { authOptions } from "@/libs/auth";
 import { resolveOrgContext } from "@/libs/resolve-org";
 import {
 	sawNothing,
-	splitCampaignRef,
+	campaignKeyOf,
 } from "../../../../../packages/strategy-plan/sections/traffic-statement";
 
 // ──────────────────────────────────────────────
@@ -95,8 +95,14 @@ export async function GET(request: Request) {
 			// The same identity the statement groups by, so a row the
 			// table counted is a row this list can find.
 			if (dimension === "campaign") {
-				const { name, platformId } = splitCampaignRef(campaignRaw);
-				if ((platformId ?? name) !== key) continue;
+				// Same identity the statement groups by, including the
+				// utm_id fallback, or a row the table counted would not
+				// be findable here.
+				const ident = campaignKeyOf(
+					campaignRaw,
+					typeof ft?.utm_id === "string" ? ft.utm_id : null,
+				);
+				if (ident.key !== key) continue;
 			} else if (dimension === "page") {
 				const landing = typeof ft?.landing_url === "string" ? ft.landing_url : null;
 				if (!landing) continue;

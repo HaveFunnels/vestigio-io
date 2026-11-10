@@ -52,7 +52,15 @@ interface CampaignRow {
 	reachedActionPct: number;
 	completed: number;
 	topLandingPath: string | null;
-	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita" | "parada";
+	verdict:
+		| "cortar"
+		| "corrigir"
+		| "observar"
+		| "entregando"
+		| "medicao_suspeita"
+		| "parada"
+		| "escalar";
+	leakStep: "chegada" | "acao" | "checkout" | "pagamento" | null;
 	daysSinceLastSession: number | null;
 	activeDays: number;
 	cutUnsafeReason: string | null;
@@ -162,6 +170,16 @@ const VERDICT: Record<CampaignRow["verdict"], { label: string; cls: string }> = 
 	// about. Two of six action verdicts on the live account were
 	// telling the operator to cut campaigns already off for 18 and 20
 	// days.
+	// The verdict that did not exist. A product that only knows how to
+	// cut is a product the operator cancels the month revenue falls,
+	// and the Ads Manager ranks by cost, never by whether the traffic
+	// arrived willing. On the live account this fires on 14 campaigns
+	// that were previously indistinguishable from a campaign doing
+	// nothing.
+	escalar: {
+		label: "põe mais verba",
+		cls: "bg-accent/[0.10] text-accent-text border-accent/25",
+	},
 	parada: {
 		label: "já parou",
 		cls: "bg-surface-inset text-content-muted border-edge",

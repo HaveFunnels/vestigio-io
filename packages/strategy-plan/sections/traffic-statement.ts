@@ -360,6 +360,37 @@ export const MAX_FALSE_ZERO_RISK = 0.1;
 export const CHECKOUT_REACH_BLOCKS_CUT = 0.02;
 
 /**
+ * How far below the account's median a campaign has to sit, on waste,
+ * before the product says to put more money into it.
+ *
+ * A product that only knows how to cut is a product the operator
+ * cancels the month revenue falls, and that was the sales-funnel
+ * lens's sharpest point: of five verdicts, four were ways of saying
+ * "something is wrong" and none said "this is the one paying your
+ * rent". The operator has to hear that from us or they hear it from
+ * nobody, because the Ads Manager ranks by cost and not by whether the
+ * traffic arrived willing.
+ *
+ * Deliberately asymmetric against the condemnation gates: 10 points
+ * above the median condemns, 12 below recommends scaling. Telling
+ * someone to spend more is a claim about money, so it gets the higher
+ * bar, and the cautious end of the rate has to clear it the same way
+ * every other gate does.
+ */
+export const POINTS_BELOW_MEDIAN_TO_SCALE = 12;
+
+/**
+ * The smallest gap worth an operator's Monday, in points.
+ *
+ * Declared here rather than imported from the scoreboard, which owns
+ * OUTCOME_MATERIAL_POINTS, because the scoreboard imports this file and
+ * the other direction would be a cycle. A test asserts the two agree:
+ * the product must not tell a customer a 5 point move matters and then
+ * score itself as if it did not.
+ */
+export const MATERIAL_POINTS = 5;
+
+/**
  * Below this many judged campaigns on a page, the share above is one
  * or two campaigns wearing a percentage. 2 of 2 is 100% and means
  * nothing.
@@ -505,7 +536,32 @@ export interface CampaignRow {
 	 * ferramenta na frente de todo mundo." Now a campaign that still
 	 * sells is never told to be cut: it is told to be fixed.
 	 */
-	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita" | "parada";
+	verdict:
+		| "cortar"
+		| "corrigir"
+		| "observar"
+		| "entregando"
+		| "medicao_suspeita"
+		| "parada"
+		| "escalar";
+	/**
+	 * Which rung of the ladder this campaign loses most people on,
+	 * relative to the account's median at the same rung.
+	 *
+	 * The ladder was already in the accumulator: sessions, not-mute,
+	 * reached-action, checkout, completed. The verdict read only the
+	 * first rung and called everything below it "entregando", so a
+	 * campaign with a normal mute rate and a collapsed checkout came
+	 * back healthy. That is a false negative at the rung where the
+	 * money is.
+	 *
+	 * Named rather than scored, and added alongside the verdict instead
+	 * of replacing it: "corrigir" with a named rung tells the operator
+	 * which of four different jobs to do, and replacing the vocabulary
+	 * outright would have broken the scoreboard's frozen history, which
+	 * is the one artefact that must not be rewritten.
+	 */
+	leakStep: "chegada" | "acao" | "checkout" | "pagamento" | null;
 	/**
 	 * Days since this campaign last brought a session, or null when the
 	 * caller did not supply session dates.
@@ -1836,6 +1892,24 @@ export function buildTrafficStatement(
 
 		const accountMedian = median(above.map((c) => (100 * c.blind) / c.sessions));
 
+	// The ladder's median at each rung, so a campaign can be judged on
+	// the rung it loses people on rather than only on arrival. Each rate
+	// is conditional on having reached the rung above, which is what
+	// makes the comparison a drop and not a share of the whole.
+	const rungMedian = {
+		acao: median(
+			above
+				.filter((c) => c.sessions - c.blind > 0)
+				.map((c) => (100 * c.action) / (c.sessions - c.blind)),
+		),
+		checkout: median(
+			above.filter((c) => c.action > 0).map((c) => (100 * c.checkout) / c.action),
+		),
+		pagamento: median(
+			above.filter((c) => c.checkout > 0).map((c) => (100 * c.completed) / c.checkout),
+		),
+	};
+
 	// The page's reference is the pooled account rate, not the campaign
 	// median. A page aggregates many campaigns, so comparing it to the
 	// typical campaign would be comparing a pool to a member of a
@@ -1904,6 +1978,38 @@ export function buildTrafficStatement(
 				(isCommerce && checkoutShare >= CHECKOUT_REACH_BLOCKS_CUT) ||
 				falseZeroRisk > MAX_FALSE_ZERO_RISK;
 
+			// Which rung does this campaign lose most people on, measured
+			// against the account's own median at that rung? Only the
+			// rungs it actually reached are candidates: a campaign with
+			// nobody at the checkout has no checkout problem, it has an
+			// earlier one.
+			const engaged = c.sessions - c.blind;
+			const rungs: { step: NonNullable<CampaignRow["leakStep"]>; gap: number }[] = [];
+			if (points > 0) rungs.push({ step: "chegada", gap: points });
+			if (engaged > 0 && rungMedian.acao > 0) {
+				rungs.push({
+					step: "acao",
+					gap: rungMedian.acao - (100 * c.action) / engaged,
+				});
+			}
+			if (c.action > 0 && rungMedian.checkout > 0) {
+				rungs.push({
+					step: "checkout",
+					gap: rungMedian.checkout - (100 * c.checkout) / c.action,
+				});
+			}
+			if (c.checkout > 0 && rungMedian.pagamento > 0) {
+				rungs.push({
+					step: "pagamento",
+					gap: rungMedian.pagamento - (100 * c.completed) / c.checkout,
+				});
+			}
+			rungs.sort((x, y) => y.gap - x.gap);
+			// Only a gap worth a Monday gets named, using the same
+			// materiality floor the rest of the product uses.
+			const leakStep =
+				rungs.length > 0 && rungs[0].gap >= MATERIAL_POINTS ? rungs[0].step : null;
+
 			const margin = marginOfError(blindPct, c.sessions);
 			// The verdict acts on the cautious end, never the point
 			// estimate. That is what makes a lower session floor honest
@@ -1962,7 +2068,18 @@ export function buildTrafficStatement(
 							: "cortar"
 						: points >= 3
 							? "observar"
-							: "entregando";
+							: // The verdict that did not exist, and its absence was
+								// the reason a product that only knows how to cut is a
+								// product the operator cancels the month revenue
+								// falls. Three conditions, all required: the waste is
+								// materially BELOW the account's median on the
+								// cautious end, the campaign actually produces in the
+								// unit this business earns in, and it has enough
+								// volume for the claim to mean something.
+								peerMedian - (blindPct + margin) >= POINTS_BELOW_MEDIAN_TO_SCALE &&
+								  (isCommerce ? c.completed : c.contacts) > 0
+								? "escalar"
+								: "entregando";
 			const topLanding =
 				[...c.landing.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 			const spendMap = options.spendByCampaignId;
@@ -2025,6 +2142,7 @@ export function buildTrafficStatement(
 				blindPctLow: Math.max(0, blindLow),
 				daysSinceLastSession,
 				activeDays: c.days.size,
+				leakStep,
 				cutUnsafeReason: (!cutUnsafe
 					? null
 					: conversionSuspect.blocked

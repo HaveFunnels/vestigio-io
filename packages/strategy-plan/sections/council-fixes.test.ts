@@ -6,7 +6,11 @@ import {
 	marginOfError,
 	browserKindOf,
 	campaignKeyOf,
+	POINTS_BELOW_MEDIAN_TO_SCALE,
+	POINTS_ABOVE_MEDIAN,
+	MATERIAL_POINTS,
 } from "./traffic-statement";
+import { OUTCOME_MATERIAL_POINTS } from "./traffic-scoreboard";
 import { MIN_EVENTS_INTERACTIVE } from "./measured-friction";
 
 // ──────────────────────────────────────────────
@@ -513,5 +517,157 @@ describe("campaign identity, and the premise that was false", () => {
 		// pipe. Truncating there would hand the operator a campaign they
 		// cannot recognise.
 		expect(campaignKeyOf("Promo | Black Friday").key).toBe("Promo | Black Friday");
+	});
+});
+
+describe("the verdict that only knew how to cut", () => {
+	/** An account with a bad median and one clearly better campaign. */
+	function accountWithAWinner(winner: ReturnType<typeof sess>) {
+		const rows = [...winner];
+		for (let i = 0; i < 5; i++) {
+			rows.push(...sess(350, MUTE, `MEDIA${i}|90000000000${i}`));
+			rows.push(...sess(630, { max_scroll_depth: 60 }, `MEDIA${i}|90000000000${i}`));
+			rows.push(...sess(20, BUYS, `MEDIA${i}|90000000000${i}`));
+		}
+		return buildTrafficStatement(rows, WIN);
+	}
+
+	it("says to scale the campaign paying the rent", () => {
+		// On the live account this fires on 14 campaigns, 4,5% to 10,3%
+		// against a median of 30,4%, every one of them previously
+		// lumped into "entregando" with no distinction from a campaign
+		// doing nothing. A product that only knows how to cut is a
+		// product the operator cancels the month revenue falls.
+		const st = accountWithAWinner([
+			...sess(50, MUTE, "BOA|990000000001"),
+			...sess(900, { max_scroll_depth: 60 }, "BOA|990000000001"),
+			...sess(50, BUYS, "BOA|990000000001"),
+		]);
+		const w = st.campaigns.find((c) => c.platformId === "990000000001")!;
+		expect(w.verdict).toBe("escalar");
+	});
+
+	it("refuses to say scale when the campaign produces nothing", () => {
+		// Low waste is not the same as earning. A campaign where
+		// everyone scrolls and nobody buys is not where the next real
+		// belongs, and telling someone to spend more is a claim about
+		// money, so it gets the higher bar.
+		const st = accountWithAWinner([
+			...sess(50, MUTE, "QUIETA|990000000002"),
+			...sess(950, { max_scroll_depth: 60 }, "QUIETA|990000000002"),
+		]);
+		const q = st.campaigns.find((c) => c.platformId === "990000000002")!;
+		expect(q.verdict).not.toBe("escalar");
+	});
+
+	it("holds scaling to a higher bar than condemning", () => {
+		// Deliberately asymmetric: 10 points above the median condemns,
+		// 12 below recommends spending.
+		expect(POINTS_BELOW_MEDIAN_TO_SCALE).toBeGreaterThan(POINTS_ABOVE_MEDIAN);
+	});
+
+	it("acts on the cautious end for scaling too", () => {
+		// The gate adds the margin rather than subtracting it, so a thin
+		// campaign cannot be recommended for more money on a lucky
+		// sample.
+		// Calibrated so the point estimate clears and the cautious end
+		// does not. 90 sessions at 22,2% against a peer median of 35%
+		// is a 12,8 point gap, which passes the bar on the point
+		// estimate alone and fails once the margin of roughly 8,6
+		// points is added. My first attempt at this fixture used 14%,
+		// which is a 21 point gap and clears honestly: the engine was
+		// right and the test was wrong.
+		const st = accountWithAWinner([
+			...sess(20, MUTE, "FINA|990000000003"),
+			...sess(65, { max_scroll_depth: 60 }, "FINA|990000000003"),
+			...sess(5, BUYS, "FINA|990000000003"),
+		]);
+		const f = st.campaigns.find((c) => c.platformId === "990000000003")!;
+		// The premise, asserted so the test cannot quietly stop testing.
+		expect(st.accountMedianBlindPct - f.arrivedBlindPct).toBeGreaterThanOrEqual(
+			POINTS_BELOW_MEDIAN_TO_SCALE,
+		);
+		expect(f.verdict).not.toBe("escalar");
+	});
+});
+
+describe("naming the rung that leaks", () => {
+	it("names the payment rung when arrival is normal and payment collapses", () => {
+		// The false negative the sales-funnel lens predicted and the
+		// live account confirmed: 29 campaigns leak here, and every one
+		// of them used to come back "entregando" because the verdict
+		// read only the first rung. This is the rung where the money is.
+		const rows = [
+			// The offender: normal arrival, everyone reaches checkout,
+			// nobody pays.
+			...sess(300, MUTE, "PAGTO|980000000001"),
+			...sess(700, { max_scroll_depth: 60, checkout_reached: true }, "PAGTO|980000000001"),
+		];
+		for (let i = 0; i < 5; i++) {
+			rows.push(...sess(300, MUTE, `OK${i}|97000000000${i}`));
+			rows.push(
+				...sess(
+					350,
+					{ max_scroll_depth: 60, checkout_reached: true },
+					`OK${i}|97000000000${i}`,
+				),
+			);
+			rows.push(...sess(350, BUYS, `OK${i}|97000000000${i}`));
+		}
+		const st = buildTrafficStatement(rows, WIN);
+		const bad = st.campaigns.find((c) => c.platformId === "980000000001")!;
+		expect(bad.leakStep).toBe("pagamento");
+	});
+
+	it("names arrival when that is where the gap is", () => {
+		const rows = [
+			...sess(800, MUTE, "CHEG|960000000001"),
+			...sess(200, BUYS, "CHEG|960000000001"),
+		];
+		for (let i = 0; i < 5; i++) {
+			rows.push(...sess(150, MUTE, `OK${i}|95000000000${i}`));
+			rows.push(...sess(850, BUYS, `OK${i}|95000000000${i}`));
+		}
+		const st = buildTrafficStatement(rows, WIN);
+		const bad = st.campaigns.find((c) => c.platformId === "960000000001")!;
+		expect(bad.leakStep).toBe("chegada");
+	});
+
+	it("names no rung when nothing leaks materially", () => {
+		// Silence is the right answer for a campaign that matches the
+		// account at every rung, and it uses the same materiality floor
+		// as the rest of the product.
+		const rows = [];
+		for (let i = 0; i < 6; i++) {
+			rows.push(...sess(300, MUTE, `IGUAL${i}|94000000000${i}`));
+			rows.push(...sess(700, BUYS, `IGUAL${i}|94000000000${i}`));
+		}
+		const st = buildTrafficStatement(rows, WIN);
+		for (const c of st.campaigns) expect(c.leakStep).toBe(null);
+	});
+
+	it("never blames a rung the campaign never reached", () => {
+		// A campaign with nobody at the checkout does not have a
+		// checkout problem, it has an earlier one.
+		const rows = [
+			...sess(950, MUTE, "ZERO|930000000001"),
+			...sess(50, { max_scroll_depth: 60 }, "ZERO|930000000001"),
+		];
+		for (let i = 0; i < 5; i++) {
+			rows.push(...sess(200, MUTE, `OK${i}|92000000000${i}`));
+			rows.push(...sess(800, BUYS, `OK${i}|92000000000${i}`));
+		}
+		const st = buildTrafficStatement(rows, WIN);
+		const bad = st.campaigns.find((c) => c.platformId === "930000000001")!;
+		expect(bad.leakStep).not.toBe("checkout");
+		expect(bad.leakStep).not.toBe("pagamento");
+	});
+
+	it("agrees with the scoreboard about what counts as material", () => {
+		// The product must not tell a customer a 5 point move matters
+		// and then score itself as if it did not. Declared in two files
+		// because the scoreboard imports the engine and the reverse
+		// would be a cycle.
+		expect(MATERIAL_POINTS).toBe(OUTCOME_MATERIAL_POINTS);
 	});
 });

@@ -252,6 +252,38 @@ export const PAGE_MIN_WASTE_SHARE = 15;
 export const MIN_SESSIONS_FOR_ACCOUNT_VERDICT = 150;
 
 /**
+ * Days of silence after which a campaign is treated as no longer
+ * running, and therefore not something to recommend an action on.
+ *
+ * Found by checking the live account rather than by reasoning: 186 of
+ * 357 campaigns with traffic in a 28 day window had brought none for
+ * two weeks or more, and 123 of them had brought traffic on exactly
+ * one day, totalling 1.329 sessions between them. Those are shared
+ * links and residual fbclids, not campaigns.
+ *
+ * Two separate harms came out of treating them as live, and the second
+ * is worse than the first:
+ *
+ *   1. Two of six action verdicts on the real account told the
+ *      operator to cut campaigns that had already stopped 18 and 20
+ *      days earlier. Advice nobody can act on, about money nobody is
+ *      spending.
+ *   2. Three weeks later the scoreboard would have read the vanished
+ *      traffic as the operator following our advice and scored both as
+ *      hits. We would have taken credit for campaigns that were off
+ *      before we spoke, inflating our own published hit rate with free
+ *      wins. That is precisely the self-flattery the scoreboard exists
+ *      to prevent, and it would have been its most embarrassing
+ *      possible failure.
+ *
+ * 14 days rather than 7: a thin campaign can go quiet over a weekend
+ * or a slow week without being off, and the cost of waiting is one
+ * cycle of silence while the cost of being wrong is a false
+ * recommendation.
+ */
+export const DAYS_SILENT_BEFORE_STOPPED = 14;
+
+/**
  * Below this many judged campaigns on a page, the share above is one
  * or two campaigns wearing a percentage. 2 of 2 is 100% and means
  * nothing.
@@ -295,6 +327,16 @@ export interface StatementSessionInput {
 	 *  calling its absence unforgivable on an account whose traffic is
 	 *  88% Facebook and therefore overwhelmingly mobile. */
 	userAgent?: string | null;
+	/**
+	 * When the session started, used ONLY to tell whether a campaign is
+	 * still running.
+	 *
+	 * Optional because most callers and every older fixture do not
+	 * supply it. Without it a campaign is treated as running, which is
+	 * the safe default: it keeps the old behaviour rather than silently
+	 * marking every campaign stopped.
+	 */
+	startedAt?: Date;
 }
 
 /** Coarse on purpose. The useful question is whether the phone and the
@@ -355,7 +397,19 @@ export interface CampaignRow {
 	 * ferramenta na frente de todo mundo." Now a campaign that still
 	 * sells is never told to be cut: it is told to be fixed.
 	 */
-	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita";
+	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita" | "parada";
+	/**
+	 * Days since this campaign last brought a session, or null when the
+	 * caller did not supply session dates.
+	 *
+	 * A campaign silent for DAYS_SILENT_BEFORE_STOPPED days gets the
+	 * "parada" verdict instead of an action, because there is nothing
+	 * to act on and because scoring it later would hand us a free win.
+	 */
+	daysSinceLastSession: number | null;
+	/** Distinct days this campaign brought traffic in the window. One
+	 *  day and a handful of sessions is a shared link, not a campaign. */
+	activeDays: number;
 	/** Percentage points above the account median. Negative is better. */
 	pointsAboveAccount: number;
 	/**
@@ -1225,6 +1279,13 @@ export function buildTrafficStatement(
 		landing: Map<string, number>;
 		dev: Map<"mobile" | "desktop" | "unknown", { n: number; blind: number }>;
 		contacts: number;
+		/** Latest session seen for this campaign, or null when the
+		 *  caller supplied no dates. Decides whether the campaign is
+		 *  still running and therefore whether it can be recommended
+		 *  on at all. */
+		lastSeen: Date | null;
+		/** Distinct calendar days this campaign brought traffic. */
+		days: Set<string>;
 	}
 	const byCampaign = new Map<string, Acc>();
 	let measured = 0;
@@ -1292,9 +1353,18 @@ export function buildTrafficStatement(
 				landing: new Map(),
 				dev: new Map(),
 				contacts: 0,
+				// Liveness. Tracked here rather than derived later
+				// because the raw session dates are only in scope at
+				// this point.
+				lastSeen: null as Date | null,
+				days: new Set<string>(),
 			};
 
 		acc.sessions++;
+		if (row.startedAt instanceof Date && !Number.isNaN(row.startedAt.getTime())) {
+			if (!acc.lastSeen || row.startedAt > acc.lastSeen) acc.lastSeen = row.startedAt;
+			acc.days.add(row.startedAt.toISOString().slice(0, 10));
+		}
 		const blind = sawNothing(a);
 		if (blind) acc.blind++;
 		const dev = deviceOf(row.userAgent);
@@ -1403,6 +1473,20 @@ export function buildTrafficStatement(
 			// now be bad in absolute terms AND unusual for this
 			// account, which means a healthy account can and should
 			// produce an empty table.
+			// Is this campaign still running? Measured from the end of
+			// the window, not from today, so a statement regenerated a
+			// week later does not quietly change its own verdicts.
+			const windowEndMs = new Date(`${options.windowEnd}T23:59:59.999Z`).getTime();
+			const daysSinceLastSession = c.lastSeen
+				? Math.max(0, Math.floor((windowEndMs - c.lastSeen.getTime()) / 86400000))
+				: null;
+			// Null means the caller gave no dates, and then the campaign
+			// is treated as running. That keeps every existing caller and
+			// fixture behaving exactly as before instead of marking the
+			// whole account stopped.
+			const stopped =
+				daysSinceLastSession !== null && daysSinceLastSession >= DAYS_SILENT_BEFORE_STOPPED;
+
 			const margin = marginOfError(blindPct, c.sessions);
 			// The verdict acts on the cautious end, never the point
 			// estimate. That is what makes a lower session floor honest
@@ -1412,8 +1496,14 @@ export function buildTrafficStatement(
 			const blindLow = Math.round((blindPct - margin) * 10) / 10;
 			const unusual = points - margin >= POINTS_ABOVE_MEDIAN;
 			const bad = blindLow >= ABSOLUTE_BLIND_FLOOR;
-			const verdict: CampaignRow["verdict"] =
-				blindPct >= IMPLAUSIBLE_BLIND_PCT
+			const verdict: CampaignRow["verdict"] = stopped
+				? // Nothing to recommend about money nobody is spending.
+					// This branch is first on purpose: it has to win over
+					// every other verdict, including medicao_suspeita,
+					// because the honest statement about a campaign that
+					// has been off for two weeks is that it is off.
+					"parada"
+				: blindPct >= IMPLAUSIBLE_BLIND_PCT
 					? "medicao_suspeita"
 					: unusual && bad
 						? // Pausing is only advice when pausing is free, and
@@ -1487,6 +1577,8 @@ export function buildTrafficStatement(
 				pointsAboveAccount: Math.round(points * 10) / 10,
 				marginPoints: margin,
 				blindPctLow: Math.max(0, blindLow),
+				daysSinceLastSession,
+				activeDays: c.days.size,
 			};
 		})
 		// Excess waste, not raw volume and not rate. See decision 1.

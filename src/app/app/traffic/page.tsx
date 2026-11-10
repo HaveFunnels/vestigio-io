@@ -52,7 +52,9 @@ interface CampaignRow {
 	reachedActionPct: number;
 	completed: number;
 	topLandingPath: string | null;
-	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita";
+	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita" | "parada";
+	daysSinceLastSession: number | null;
+	activeDays: number;
 	pointsAboveAccount: number;
 	marginPoints: number;
 	blindPctLow: number;
@@ -143,6 +145,16 @@ const VERDICT: Record<CampaignRow["verdict"], { label: string; cls: string }> = 
 	// Labels say what to do. "desperdício" was a money word on a page
 	// that cannot price anything yet, and it contradicted the purchases
 	// column on its own rows.
+	// A campaign that has not run for two weeks. It stays in the
+	// statement because it spent money inside the window, and it is
+	// never an instruction, because there is nothing left to instruct
+	// about. Two of six action verdicts on the live account were
+	// telling the operator to cut campaigns already off for 18 and 20
+	// days.
+	parada: {
+		label: "já parou",
+		cls: "bg-surface-inset text-content-muted border-edge",
+	},
 	cortar: {
 		label: "cortar",
 		cls: "bg-attention-bg text-attention border-attention/25",

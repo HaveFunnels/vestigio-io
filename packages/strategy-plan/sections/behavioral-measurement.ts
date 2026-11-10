@@ -120,6 +120,17 @@ export interface MeasuredFunnelOutput {
 }
 
 export interface BehavioralMeasurementOutput {
+	/**
+	 * The funnel for paid traffic only.
+	 *
+	 * `funnel` is POOLED across every origin, including the control
+	 * group the traffic statement uses as its baseline. Any section
+	 * about paid traffic should read this one instead.
+	 */
+	funnelPaid: MeasuredFunnelOutput | null;
+	/** The same ladder for arrivals with no ad, so the two shapes can be
+	 *  compared step by step rather than only at the first step. */
+	funnelControl: MeasuredFunnelOutput | null;
 	basis: "pixel_measured";
 	windowStart: string;
 	windowEnd: string;
@@ -178,6 +189,10 @@ export async function generateBehavioralMeasurement(
 	if (rows.length === 0) return null;
 
 	type Parsed = {
+		/** Arrived through an ad: a campaign name, or a platform click
+		 *  marker. Same definition the traffic statement uses, so the
+		 *  two sections cannot disagree about who was paid for. */
+		isPaid: boolean;
 		source: string;
 		durationS: number;
 		noScroll: boolean;
@@ -195,7 +210,19 @@ export async function generateBehavioralMeasurement(
 		}
 		try {
 			const agg = JSON.parse(row.aggregate) as {
-				attribution?: { first_touch?: { source?: string | null } };
+				attribution?: {
+					first_touch?: {
+						source?: string | null;
+						// Needed to split the funnel by origin. "Paid" is
+						// defined exactly as the traffic statement defines
+						// it, by the presence of a campaign, so the two
+						// sections cannot disagree about who was paid for.
+						campaign?: string | null;
+						fbclid?: string | null;
+						gclid?: string | null;
+						ttclid?: string | null;
+					};
+				};
 				session_duration_ms?: number;
 				max_scroll_depth?: number;
 				form_started?: boolean;
@@ -207,7 +234,11 @@ export async function generateBehavioralMeasurement(
 				payment_step_reached?: boolean;
 				confirmation_seen?: boolean;
 			};
+			const ft0 = agg.attribution?.first_touch;
 			parsed.push({
+				isPaid: Boolean(
+					ft0?.campaign || ft0?.fbclid || ft0?.gclid || ft0?.ttclid,
+				),
 				source: normalizeSource(agg.attribution?.first_touch?.source),
 				durationS: Math.round((agg.session_duration_ms ?? 0) / 1000),
 				noScroll: (agg.max_scroll_depth ?? 0) === 0,
@@ -282,13 +313,43 @@ export async function generateBehavioralMeasurement(
 				`Esse tráfego está chegando e indo embora antes de ver a oferta. Se há verba nessa origem, ela está comprando chegadas, não visitas.`,
 		}));
 
+	// ── The funnel, split by origin ──
+	//
+	// It used to be computed once over `parsed`, which is every session:
+	// paid, organic, direct, and the 3.197 control sessions the traffic
+	// statement uses as its baseline, all in one ladder. So the only
+	// place in the product with named funnel stages did not separate
+	// traffic, while the only place that separates traffic had no
+	// stages. Two halves of the same feature in two files that never
+	// spoke.
+	//
+	// The pooled version is kept, because other callers read it and
+	// silently changing what a field means is the defect this codebase
+	// keeps catching. But it is now documented as pooled, and the paid
+	// funnel is what the paid-traffic sections should read.
 	const funnel = computeMeasuredFunnel(
 		parsed.map((p) => p.funnel),
+		ctx.locale ?? "pt-BR",
+	);
+	const funnelPaid = computeMeasuredFunnel(
+		parsed.filter((p) => p.isPaid).map((p) => p.funnel),
+		ctx.locale ?? "pt-BR",
+	);
+	// The same ladder for traffic that arrived without an ad. Comparing
+	// the SHAPE of the two drops is far more defensible than comparing
+	// the first step, because the intention gap compresses as you go
+	// down: organic against paid on the first screen is apples to
+	// oranges, organic against paid from cart to checkout is the same
+	// person looking at the same shipping cost.
+	const funnelControl = computeMeasuredFunnel(
+		parsed.filter((p) => !p.isPaid).map((p) => p.funnel),
 		ctx.locale ?? "pt-BR",
 	);
 
 	return {
 		basis: "pixel_measured",
+		funnelPaid,
+		funnelControl,
 		windowStart: windowStart.toISOString().slice(0, 10),
 		windowEnd: windowEnd.toISOString().slice(0, 10),
 		windowDays: WINDOW_DAYS,

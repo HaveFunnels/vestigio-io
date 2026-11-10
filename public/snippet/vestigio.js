@@ -488,6 +488,31 @@
       landing_url: canonicalUrl(),
       gclid: params.get('gclid') || null,
       fbclid: params.get('fbclid') || null,
+      // The ad-set and ad layer, which is where a Direct Response
+      // operator actually decides. Four of nine media-buying
+      // specialists named this the decisive gap, and the sharpest
+      // version of the complaint was that the pixel already read
+      // utm_content and read it ONLY to strip it from the URL.
+      //
+      // With Meta's dynamic parameters in the campaign URL field
+      // (utm_id={{campaign.id}}, utm_term={{adset.name}},
+      // utm_content={{ad.name}}) this arrives for free, with no API
+      // and no credentials, and duplicating a campaign carries the
+      // field along so the convention maintains itself.
+      //
+      // utm_id matters for a second reason: campaign identity today is
+      // a hand-typed name, so renaming or duplicating a campaign reads
+      // as a campaign that stopped. A stable id ends that.
+      utm_id: params.get('utm_id') || null,
+      utm_content: params.get('utm_content') || null,
+      utm_term: params.get('utm_term') || null,
+      // Tested by hasPaidMarker and never captured until now. The
+      // exclusion of TikTok paid traffic from the control group was
+      // working only by accident, on a query-string residue, which
+      // means a tidy-up of the strip list would have silently moved
+      // TikTok paid traffic into the control baseline.
+      ttclid: params.get('ttclid') || null,
+      msclkid: params.get('msclkid') || null,
     };
     try {
       // Only the first touch of the visitor's FIRST domain sets this;
@@ -523,7 +548,7 @@
     var url = new URL(window.location.href);
     // Strip acquisition params AND our own stitch params so the url field
     // is the clean page URL, not a query-polluted one.
-    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','gclid','fbclid','_ga','mc_cid','mc_eid',
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','utm_id','gclid','fbclid','ttclid','msclkid','_ga','mc_cid','mc_eid',
      STITCH_VID_PARAM, STITCH_SID_PARAM, STITCH_TS_PARAM].forEach(function(p) {
       url.searchParams.delete(p);
     });

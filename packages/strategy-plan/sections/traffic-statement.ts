@@ -284,6 +284,37 @@ export const MIN_SESSIONS_FOR_ACCOUNT_VERDICT = 150;
 export const DAYS_SILENT_BEFORE_STOPPED = 14;
 
 /**
+ * How likely a false zero has to be before a zero purchase count stops
+ * counting as evidence that pausing is free.
+ *
+ * Two council members computed this independently and both landed in
+ * the same place. The account converts at roughly 1,8% of paid
+ * sessions. At the 80 session floor the expected number of purchases
+ * is about 1,4, so the chance of observing zero by sampling alone is
+ * around 24%, and conditioned on a campaign also clearing both waste
+ * gates it rises further, because clearing them means most of its
+ * traffic did nothing and only the remainder could have converted.
+ *
+ * The product applies a 95% interval to the variable that decides
+ * nothing and a threshold of exactly zero to the variable that decides
+ * whether the operator kills or fixes the campaign. This is the fix:
+ * if a campaign converting at the account rate would show zero
+ * purchases this often, the zero is not evidence and the verdict
+ * degrades to "corrigir".
+ */
+export const MAX_FALSE_ZERO_RISK = 0.1;
+
+/**
+ * Checkout reach above this share makes "cortar" unavailable.
+ *
+ * A campaign that fills the checkout and closes nothing is not a
+ * traffic problem, it is a payment problem, and in Brazilian DR with
+ * Pix and boleto it is the largest recoverable cohort in the account.
+ * Cutting it discards qualified demand and hides a fixable leak.
+ */
+export const CHECKOUT_REACH_BLOCKS_CUT = 0.02;
+
+/**
  * Below this many judged campaigns on a page, the share above is one
  * or two campaigns wearing a percentage. 2 of 2 is 100% and means
  * nothing.
@@ -406,6 +437,21 @@ export interface CampaignRow {
 	 * "parada" verdict instead of an action, because there is nothing
 	 * to act on and because scoring it later would hand us a free win.
 	 */
+	/**
+	 * Why a cut was withheld, or null when a cut was available.
+	 *
+	 * Printed rather than kept internal, because "we are not telling
+	 * you to cut this, and here is why" is a more useful sentence than
+	 * a quieter verdict with no explanation.
+	 */
+	cutUnsafeReason:
+		| "medicao_de_compra_quebrada"
+		| "chega_ao_checkout"
+		| "zero_nao_e_evidencia"
+		| null;
+	/** How often a campaign converting at the account rate would show
+	 *  zero purchases at this sample size, as a percentage. */
+	falseZeroRiskPct: number;
 	daysSinceLastSession: number | null;
 	/** Distinct days this campaign brought traffic in the window. One
 	 *  day and a handful of sessions is a shared link, not a campaign. */
@@ -531,6 +577,49 @@ export interface TrafficStatement {
 	/** The account's pooled rate: blind sessions over all attributed
 	 *  sessions. This is what "na conta inteira" actually means. */
 	accountBlindPct: number;
+	/**
+	 * Paid clicks that never became a readable session: fewer than
+	 * MIN_EVENTS_INTERACTIVE events, so no scroll, no CTA on screen,
+	 * nothing. Counted and reported instead of silently dropped.
+	 *
+	 * Deliberately NOT part of accountBlindPct. On the live account
+	 * these are 18,3% of paid sessions and 93,9% of them carry an
+	 * fbclid, so they are real clicks the advertiser paid for. But
+	 * their device profile is inverted against the counted population
+	 * (81% plain browser against 24%, where Meta paid traffic is 75%
+	 * in-app webview), so folding them into the rate the verdicts are
+	 * calibrated on would move every threshold without a decision.
+	 *
+	 * The honest reading: a separate finding, owned by page delivery
+	 * rather than by ad targeting.
+	 */
+	notLoaded: {
+		sessions: number;
+		/** Of those, how many carry a paid click marker. */
+		withPaidMarker: number;
+		/** Share of all paid sessions, counted and uncounted. */
+		sharePct: number;
+	};
+	/**
+	 * Set when the conversion measurement itself looks broken, in which
+	 * case no campaign may be told to cut.
+	 *
+	 * The trigger that matters: the account records zero purchases
+	 * while sessions do reach the checkout. That is the signature of a
+	 * thank-you page the classifier cannot see, and the classifier is a
+	 * URL regex that does not match "sucesso", "pedido-realizado" or
+	 * "compra-aprovada". A store confirming at /sucesso measures zero
+	 * purchases, which makes the cost of pausing zero on every campaign,
+	 * which makes every qualifying campaign a cut. That is the same
+	 * defect already fixed once for service businesses, left open for
+	 * commerce by spelling, and nothing detected it.
+	 */
+	conversionSuspect: {
+		blocked: boolean;
+		reason: string | null;
+		purchases: number;
+		checkoutReached: number;
+	};
 	/**
 	 * Set only when the account is bad everywhere and therefore nothing
 	 * individual stands out.
@@ -1279,6 +1368,11 @@ export function buildTrafficStatement(
 		landing: Map<string, number>;
 		dev: Map<"mobile" | "desktop" | "unknown", { n: number; blind: number }>;
 		contacts: number;
+		/** Sessions that reached the checkout, which is what makes
+		 *  "pausar nao custa nada" unavailable: a campaign that fills
+		 *  the checkout and closes nothing is a payment problem, not a
+		 *  traffic problem. */
+		checkout: number;
 		/** Latest session seen for this campaign, or null when the
 		 *  caller supplied no dates. Decides whether the campaign is
 		 *  still running and therefore whether it can be recommended
@@ -1310,16 +1404,59 @@ export function buildTrafficStatement(
 	const byTerm = new Map<string, TermAcc>();
 	const contactsByChannel = new Map<string, number>();
 
+	// Paid clicks that never became a readable session. See the gate
+	// below for why these are counted separately rather than folded in.
+	let notLoaded = 0;
+	let notLoadedPaid = 0;
+	const notLoadedByCampaign = new Map<string, number>();
+
 	for (const row of rows) {
-		// Bot gate, same floor the friction measurement already uses: a
-		// session with fewer than three events did not interact.
-		if (row.eventCount < MIN_EVENTS_INTERACTIVE) continue;
-		measured++;
+		// The gate used to `continue` here, deleting the session from
+		// every count with no trace. Six of nine specialists on the
+		// media-buying council flagged that independently, and the
+		// measurement proved them right about the thing that matters:
+		// 9.406 of 51.364 paid sessions on the live account fall under
+		// the gate, and 93,9% of them carry an fbclid against 96,0% in
+		// the counted population. They are paid clicks. The advertiser
+		// paid for them and they produced a median of 1,9 second and
+		// zero scroll in 9.405 of 9.406 cases.
+		//
+		// They are NOT folded into the mute rate, and that is a
+		// deliberate choice rather than caution. Their device profile is
+		// inverted against the counted population, 81% plain browser
+		// against 24%, where real Meta paid traffic is 75% in-app
+		// webview. Something about that population differs beyond
+		// having done nothing, and silently averaging it into the rate
+		// the verdicts are calibrated on would move every threshold
+		// without anyone deciding to.
+		//
+		// So: counted, named, reported, and kept out of the ruler. The
+		// honest reading is that this is a separate finding with a
+		// different owner and a different fix, which is page delivery
+		// rather than ad targeting.
+		const tooFewEvents = row.eventCount < MIN_EVENTS_INTERACTIVE;
 
 		const a = row.aggregate;
 		const ft = (a.attribution as { first_touch?: Record<string, unknown> } | undefined)
 			?.first_touch;
 		const campaignRaw = typeof ft?.campaign === "string" ? ft.campaign : null;
+
+		// The gate, applied here rather than before the attribution is
+		// read, so a discarded session can still be attributed to the
+		// campaign that paid for it.
+		if (tooFewEvents) {
+			notLoaded++;
+			if (hasPaidMarker(ft)) notLoadedPaid++;
+			if (campaignRaw) {
+				const { name: nlName, platformId: nlId } = splitCampaignRef(campaignRaw);
+				notLoadedByCampaign.set(
+					nlId ?? nlName,
+					(notLoadedByCampaign.get(nlId ?? nlName) ?? 0) + 1,
+				);
+			}
+			continue;
+		}
+		measured++;
 		if (!campaignRaw) {
 			// Absent campaign does NOT mean the session was not bought.
 			// An ad click whose tag was stripped (in-app browser, iOS,
@@ -1353,6 +1490,7 @@ export function buildTrafficStatement(
 				landing: new Map(),
 				dev: new Map(),
 				contacts: 0,
+				checkout: 0,
 				// Liveness. Tracked here rather than derived later
 				// because the raw session dates are only in scope at
 				// this point.
@@ -1375,6 +1513,7 @@ export function buildTrafficStatement(
 		acc.durations.push(num(a.session_duration_ms));
 		if (reachedAction(a, model)) acc.action++;
 		if (contacted(a)) acc.contacts++;
+		if (a.checkout_reached) acc.checkout++;
 		if (a.reached_thank_you) acc.completed++;
 		for (const ch of channelsOf(a)) {
 			contactsByChannel.set(ch, (contactsByChannel.get(ch) ?? 0) + 1);
@@ -1449,7 +1588,28 @@ export function buildTrafficStatement(
 
 	// The comparison basis is this account's own median, over campaigns
 	// that cleared the floor. See decision 2 in the header.
-	const accountMedian = median(above.map((c) => (100 * c.blind) / c.sessions));
+	// The conversion measurement, audited before it is trusted. Zero
+	// purchases while sessions reach the checkout is the signature of a
+	// thank-you page the URL classifier cannot see.
+	const totalCompleted = [...byCampaign.values()].reduce((n, c) => n + c.completed, 0);
+	const totalCheckout = [...byCampaign.values()].reduce((n, c) => n + c.checkout, 0);
+	const totalActionSessions = [...byCampaign.values()].reduce((n, c) => n + c.sessions, 0);
+	const conversionSuspect: TrafficStatement["conversionSuspect"] =
+		isCommerce && totalCompleted === 0 && totalCheckout > 0
+			? {
+					blocked: true,
+					reason:
+						"nenhuma compra medida apesar de visitas chegarem ao checkout, " +
+						"o que indica que a pagina de confirmacao nao esta sendo reconhecida",
+					purchases: totalCompleted,
+					checkoutReached: totalCheckout,
+				}
+			: { blocked: false, reason: null, purchases: totalCompleted, checkoutReached: totalCheckout };
+
+	/** Account conversion rate, used to ask whether a zero is evidence. */
+	const accountConvRate = totalActionSessions > 0 ? totalCompleted / totalActionSessions : 0;
+
+		const accountMedian = median(above.map((c) => (100 * c.blind) / c.sessions));
 
 	// The page's reference is the pooled account rate, not the campaign
 	// median. A page aggregates many campaigns, so comparing it to the
@@ -1487,6 +1647,19 @@ export function buildTrafficStatement(
 			const stopped =
 				daysSinceLastSession !== null && daysSinceLastSession >= DAYS_SILENT_BEFORE_STOPPED;
 
+			// Is a cut defensible at all on this campaign?
+			const checkoutShare = c.sessions > 0 ? c.checkout / c.sessions : 0;
+			// How often a campaign converting at the account rate would
+			// show zero purchases purely by sampling. (1-p)^n.
+			const falseZeroRisk =
+				accountConvRate > 0 && accountConvRate < 1
+					? Math.pow(1 - accountConvRate, c.sessions)
+					: 0;
+			const cutUnsafe =
+				conversionSuspect.blocked ||
+				(isCommerce && checkoutShare >= CHECKOUT_REACH_BLOCKS_CUT) ||
+				falseZeroRisk > MAX_FALSE_ZERO_RISK;
+
 			const margin = marginOfError(blindPct, c.sessions);
 			// The verdict acts on the cautious end, never the point
 			// estimate. That is what makes a lower session floor honest
@@ -1511,7 +1684,26 @@ export function buildTrafficStatement(
 							// earns in. Reading it as purchases told every
 							// service business to cut the campaign that
 							// brought its leads.
-							(isCommerce ? c.completed : c.contacts) > 0
+							//
+							// Three guards now stand between a zero count and a
+							// cut, because the council showed that the zero was
+							// the only number in the pipeline with no interval
+							// around it:
+							//
+							//   1. the account's conversion measurement has to
+							//      be working at all,
+							//   2. a campaign that fills the checkout is a
+							//      payment problem, not a traffic problem,
+							//   3. the zero has to be unlikely enough to mean
+							//      something, given how often a campaign
+							//      converting at the account rate would show
+							//      zero anyway.
+							//
+							// Every guard fails toward "corrigir", never toward
+							// "cortar". Advice that costs the operator a
+							// winning campaign is the one error this product
+							// cannot afford.
+							(isCommerce ? c.completed : c.contacts) > 0 || cutUnsafe
 							? "corrigir"
 							: "cortar"
 						: points >= 3
@@ -1579,6 +1771,14 @@ export function buildTrafficStatement(
 				blindPctLow: Math.max(0, blindLow),
 				daysSinceLastSession,
 				activeDays: c.days.size,
+				cutUnsafeReason: (!cutUnsafe
+					? null
+					: conversionSuspect.blocked
+						? "medicao_de_compra_quebrada"
+						: isCommerce && checkoutShare >= CHECKOUT_REACH_BLOCKS_CUT
+							? "chega_ao_checkout"
+							: "zero_nao_e_evidencia") as CampaignRow["cutUnsafeReason"],
+				falseZeroRiskPct: Math.round(falseZeroRisk * 1000) / 10,
 			};
 		})
 		// Excess waste, not raw volume and not rate. See decision 1.
@@ -1786,6 +1986,15 @@ export function buildTrafficStatement(
 		// two could have drifted apart.
 		accountBlindPct: attributed > 0 ? accountPooled : 0,
 		accountVerdict,
+		notLoaded: {
+			sessions: notLoaded,
+			withPaidMarker: notLoadedPaid,
+			sharePct:
+				notLoaded + measured > 0
+					? Math.round((1000 * notLoaded) / (notLoaded + measured)) / 10
+					: 0,
+		},
+		conversionSuspect,
 		thresholds: {
 			absoluteBlindPct: ABSOLUTE_BLIND_FLOOR,
 			pointsAboveMedian: POINTS_ABOVE_MEDIAN,

@@ -55,6 +55,8 @@ interface CampaignRow {
 	verdict: "cortar" | "corrigir" | "observar" | "entregando" | "medicao_suspeita" | "parada";
 	daysSinceLastSession: number | null;
 	activeDays: number;
+	cutUnsafeReason: string | null;
+	falseZeroRiskPct: number;
 	pointsAboveAccount: number;
 	marginPoints: number;
 	blindPctLow: number;
@@ -83,6 +85,13 @@ interface Statement {
 	attributionCoveragePct: number;
 	accountMedianBlindPct: number;
 	accountBlindPct: number;
+	notLoaded: { sessions: number; withPaidMarker: number; sharePct: number };
+	conversionSuspect: {
+		blocked: boolean;
+		reason: string | null;
+		purchases: number;
+		checkoutReached: number;
+	};
 	accountVerdict: {
 		blindPctLow: number;
 		marginPoints: number;
@@ -584,16 +593,30 @@ export default function TrafficStatementPage() {
 							</p>
 							{accountVerdict.controlPct !== null && (
 								<p className="mt-2 text-[12.5px] leading-relaxed text-[#9ECFBC]">
-									{/* The comparison internal spread cannot hide from. If
-									    the pages were simply broken, traffic arriving
-									    without an ad would break on them too. */}
+									{/* Reframed after five of nine media-buying
+									    specialists independently rejected the old
+									    sentence. It read the paid-versus-organic gap as
+									    evidence that the paid traffic was bad. It is
+									    not: organic and direct are mostly returning
+									    customers and brand searches, on a desktop
+									    browser with a warm cache, while paid DR is cold
+									    interruption on mobile inside an in-app webview.
+									    A gap of that size is expected, and a competent
+									    media buyer would have used the overclaim to
+									    throw out the whole report.
+
+									    What the control legitimately proves is narrow
+									    and still worth printing: the site works. If the
+									    pages were broken, traffic arriving without an ad
+									    would break on them too. */}
 									Quem chega ao mesmo site sem anúncio não faz nada em apenas{" "}
 									<strong className="text-white">
 										{pct(accountVerdict.controlPct)}%
 									</strong>{" "}
-									das visitas, uma diferença de {pct(accountVerdict.gapPoints ?? 0)}{" "}
-									pontos. As suas páginas seguram atenção. O que você está comprando é
-									que não chega nelas disposto a nada.
+									das visitas. Boa parte dessa diferença é esperada, porque quem chega
+									sem anúncio em geral já conhece a loja. O que isso prova é mais
+									estreito e ainda importa: as suas páginas funcionam. Se estivessem
+									quebradas, quem chega sem anúncio também quebraria nelas.
 								</p>
 							)}
 							<p className="mt-2 text-[12.5px] leading-relaxed text-[#9ECFBC]">
@@ -867,6 +890,46 @@ export default function TrafficStatementPage() {
 					</p>
 				)}
 			</div>
+
+			{/* Paid clicks that never became a readable session.
+			    Previously these were dropped by a three-event gate with
+			    no trace, which six of nine media-buying specialists
+			    flagged independently. Measured on this account: 9.790
+			    sessions, 93,9% carrying an fbclid against 96,0% in the
+			    counted population, so they are clicks the operator paid
+			    for. Median 1,9 second, and 9.405 of 9.406 never scrolled.
+
+			    Deliberately NOT folded into the mute rate. Their device
+			    profile is inverted against the counted traffic (81%
+			    plain browser against 24%, where Meta paid traffic is 75%
+			    in-app webview), so averaging them into the rate the
+			    verdicts are calibrated on would move every threshold
+			    without anyone deciding to. Different finding, different
+			    owner: page delivery, not ad targeting. */}
+			{data.notLoaded.sessions > 0 && (
+				<div className="mb-6 rounded-card border border-edge bg-surface-card px-5 py-4">
+					<div className="mb-1 text-[14.5px] font-semibold text-content">
+						Cliques que nem viraram visita
+					</div>
+					<p className="text-[15px] leading-relaxed text-content">
+						<strong>{n(data.notLoaded.withPaidMarker)}</strong> cliques que você pagou
+						abriram o site e saíram antes de dar tempo de ver qualquer coisa. São{" "}
+						{pct(data.notLoaded.sharePct)}% de tudo que chegou por anúncio.
+					</p>
+					<p className="mt-2 text-[12.5px] leading-relaxed text-content-muted">
+						Esses não entram na conta de {MUTE.many} de propósito, e vale dizer por quê:
+						a gente não sabe se a pessoa não quis ou se a página não apareceu em tempo.
+						São duas causas diferentes, com dois consertos diferentes, e misturar as duas
+						mudaria todos os números desta tela sem ninguém ter decidido isso.{" "}
+						<MetricInfo>
+							Antes essas visitas eram descartadas sem aparecer em lugar nenhum, tratadas
+							como robô. A maioria carrega marca de clique pago, então era dinheiro seu
+							saindo de uma conta que você nunca via. O conserto foi passar a contar e a
+							mostrar, não passar a somar.
+						</MetricInfo>
+					</p>
+				</div>
+			)}
 
 			{/* The human column, placed right after the drift sentence
 			    because that paragraph ends on an open question. The

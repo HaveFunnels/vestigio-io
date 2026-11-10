@@ -49,7 +49,7 @@ import { MIN_EVENTS_INTERACTIVE } from "./measured-friction";
  *  beacons land against yesterday, so both are always redone. */
 export const TRAFFIC_ROLLUP_RECOMPUTE_DAYS = 2;
 
-export type RollupDimension = "campaign" | "page" | "term" | "account";
+export type RollupDimension = "campaign" | "page" | "term" | "account" | "placement";
 
 export interface TrafficRollupRow {
 	day: string;
@@ -111,6 +111,7 @@ export function foldDay(
 		campaign: new Map(),
 		page: new Map(),
 		term: new Map(),
+			placement: new Map(),
 	};
 	const account: Acc = {
 		label: null,
@@ -176,6 +177,14 @@ export function foldDay(
 
 		const term = searchTermOf(ft?.landing_url);
 		if (term) bump(dims.term, term, null);
+
+		// Where the ad was shown, written by Utmify into utm_term and
+		// never stored until now. It earns a place in the series for one
+		// reason: a placement verdict has to be scoreable, and the
+		// scoreboard reads history out of this table. Without the daily
+		// rows there is nothing to settle a placement claim against.
+		const placement = typeof ft?.utm_term === "string" ? ft.utm_term.trim() : "";
+		if (placement && placement.length <= 60) bump(dims.placement, placement, null);
 
 		account.sessions++;
 		if (blind) account.blind++;

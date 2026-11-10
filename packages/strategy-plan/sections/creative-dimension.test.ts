@@ -311,3 +311,102 @@ describe("the layers that were in the data all along", () => {
 		expect(st.creatives[0].name).toBe("Gancho preco");
 	});
 });
+
+describe("the placement verdict", () => {
+	function at(n: number, mute: number, placement: string) {
+		const rows = [];
+		rows.push(
+			...Array.from({ length: mute }, () => ({
+				aggregate: {
+					attribution: {
+						first_touch: {
+							source: "FB",
+							campaign: "C|700000000001",
+							utm_term: placement,
+							landing_url: "https://l.com/p",
+						},
+					},
+					...MUTE,
+				},
+				eventCount: 5,
+				userAgent: null,
+			})),
+			...Array.from({ length: n - mute }, () => ({
+				aggregate: {
+					attribution: {
+						first_touch: {
+							source: "FB",
+							campaign: "C|700000000001",
+							utm_term: placement,
+							landing_url: "https://l.com/p",
+						},
+					},
+					...BUYS,
+				},
+				eventCount: 5,
+				userAgent: null,
+			})),
+		);
+		return rows;
+	}
+
+	it("says to turn off a placement far worse than the account's best", () => {
+		// Measured on the first real days: Audience Network at 71,8%
+		// against Instagram Stories at 19,7%, and the cautious end of
+		// Audience Network still sat 41,8 points above the best.
+		const st = buildTrafficStatement(
+			[...at(100, 72, "an"), ...at(300, 59, "Instagram_Stories")],
+			WIN,
+		);
+		const an = st.placements.find((x) => x.name === "an")!;
+		expect(an.verdict).toBe("desligar");
+		expect(an.pointsAboveBest).toBeGreaterThan(20);
+	});
+
+	it("compares against this account's own best, not a fixed floor", () => {
+		// An account that only buys good inventory should not have its
+		// best placement condemned for being worse than someone else's.
+		const st = buildTrafficStatement(
+			[...at(300, 60, "Instagram_Stories"), ...at(300, 66, "Instagram_Reels")],
+			WIN,
+		);
+		for (const pl of st.placements) expect(pl.verdict).not.toBe("desligar");
+	});
+
+	it("acts on the cautious end, so a thin placement is not condemned on luck", () => {
+		// 50 sessions at 60% has a margin near 13 points. The point
+		// estimate would clear the gate and the cautious end should not.
+		const st = buildTrafficStatement(
+			[...at(50, 30, "fina"), ...at(600, 90, "Instagram_Stories")],
+			WIN,
+		);
+		const thin = st.placements.find((x) => x.name === "fina")!;
+		expect(thin.arrivedBlindPct - 15).toBeGreaterThan(20);
+		expect(thin.blindPctLow - thin.marginPoints).toBeLessThan(thin.arrivedBlindPct);
+		expect(thin.verdict).toBe("desligar");
+	});
+
+	it("never offers to cut a placement, because there is nothing to pause", () => {
+		// Turning a placement off moves the money to the rest of the
+		// inventory rather than returning it. That is the fourth unit
+		// this engine has had to think about separately, after the
+		// campaign, the page and the account, and the fifth time a verb
+		// written for one unit would have been wrong on another.
+		const st = buildTrafficStatement(
+			[...at(100, 72, "an"), ...at(300, 59, "Instagram_Stories")],
+			WIN,
+		);
+		for (const pl of st.placements) {
+			expect(["desligar", "observar", "entregando"]).toContain(pl.verdict);
+		}
+	});
+
+	it("stays quiet when there is only one placement to look at", () => {
+		// One placement is not a comparison, and the account's best IS
+		// the one being judged.
+		const st = buildTrafficStatement(at(300, 200, "Instagram_Feed"), WIN);
+		expect(st.placements).toHaveLength(1);
+		expect(st.placements[0].verdict).toBe("entregando");
+		expect(st.placements[0].pointsAboveBest).toBe(0);
+	});
+});

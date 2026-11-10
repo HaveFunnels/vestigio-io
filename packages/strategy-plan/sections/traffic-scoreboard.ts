@@ -46,6 +46,13 @@ const SCORED: ReadonlySet<string> = new Set([
 	// wrong. Scored like the others, because it is just as much a claim
 	// about what will happen.
 	"anuncio_errado",
+	// Turn this placement off. Scored like the rest, and this one is
+	// special for a reason worth writing down: it is the cheapest
+	// recommendation the product makes, a checkbox rather than a budget
+	// decision, so it is the one most likely to actually be followed.
+	// The first settled verdict in this product's history will probably
+	// be a placement.
+	"desligar",
 ]);
 
 /** How long before a verdict can be judged. Shorter than this and we
@@ -94,7 +101,7 @@ export type Outcome = "melhorou" | "piorou" | "igual" | "sumiu" | "indefinido";
 export async function recordVerdicts(
 	prisma: PrismaClient,
 	environmentId: string,
-	statement: Pick<TrafficStatement, "campaigns" | "landingPages">,
+	statement: Pick<TrafficStatement, "campaigns" | "landingPages" | "placements">,
 	now: Date = new Date(),
 ): Promise<number> {
 	// Both dimensions, because the decision card now draws from both and
@@ -106,7 +113,7 @@ export async function recordVerdicts(
 	// It rides in the same column with its own unit rather than getting
 	// a second column that is null for every campaign.
 	type Row = {
-		dimension: "campaign" | "page";
+		dimension: "campaign" | "page" | "placement";
 		key: string;
 		label: string | null;
 		verdict: string;
@@ -158,6 +165,28 @@ export async function recordVerdicts(
 				// have acted. Null here means "not applicable", which is
 				// why it is not folded in with the campaign nulls when
 				// the board is sliced by guard.
+				blockReason: null,
+				falseZeroRiskPct: null,
+				leakStep: null,
+			})),
+		...statement.placements
+			.filter((pl) => SCORED.has(pl.verdict))
+			.map((pl) => ({
+				dimension: "placement" as const,
+				key: pl.name,
+				label: pl.name,
+				verdict: pl.verdict,
+				blindPct: pl.arrivedBlindPct,
+				blindPctLow: pl.blindPctLow,
+				marginPoints: pl.marginPoints,
+				sessions: pl.sessions,
+				// A placement has no pause cost: turning it off moves
+				// the money to the rest of the inventory rather than
+				// returning it. What is recorded instead is how far
+				// above the account's own best placement it sat, which
+				// is the magnitude the claim was made on.
+				cost: Math.round(pl.pointsAboveBest),
+				costUnit: "pontos_acima_do_melhor",
 				blockReason: null,
 				falseZeroRiskPct: null,
 				leakStep: null,

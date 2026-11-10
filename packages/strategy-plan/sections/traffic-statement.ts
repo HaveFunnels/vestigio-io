@@ -454,6 +454,24 @@ export const MIN_SESSIONS_PER_ADSET = 120;
 export const MIN_SESSIONS_PER_PLACEMENT = 50;
 
 /**
+ * How far above the best placement a placement has to sit, on the
+ * cautious end, before the product says to turn it off.
+ *
+ * Compared against the account's OWN best placement rather than a fixed
+ * floor, because placement quality is relative to the inventory this
+ * advertiser actually buys: an account running only Stories has a
+ * different baseline than one running Audience Network.
+ *
+ * 20 points is deliberately wide. The first days of real data put
+ * Audience Network at 71,8% against Instagram Stories at 19,7%, a 52
+ * point spread, so a gate at 20 catches the real case with enormous
+ * room and refuses the marginal ones. A placement is a checkbox, but it
+ * is also inventory the operator paid for, and telling someone to
+ * discard inventory on a 6 point difference would be noise.
+ */
+export const PLACEMENT_POINTS_ABOVE_BEST = 20;
+
+/**
  * Below this many judged campaigns on a page, the share above is one
  * or two campaigns wearing a percentage. 2 of 2 is 100% and means
  * nothing.
@@ -1129,6 +1147,19 @@ export interface TrafficStatement {
 		marginPoints: number;
 		blindPctLow: number;
 		purchases: number;
+		/**
+		 * desligar when the cautious end sits far above this account's
+		 * own best placement, entregando otherwise.
+		 *
+		 * There is no "cortar" here and no cost of pausing, because a
+		 * placement is not a budget: turning it off moves the money to
+		 * the rest of the inventory rather than returning it. That is
+		 * the fourth unit this file has had to think about separately,
+		 * after the campaign, the page and the account.
+		 */
+		verdict: "desligar" | "observar" | "entregando";
+		/** Points above the best placement, on the cautious end. */
+		pointsAboveBest: number;
 	}[];
 	creativePower: {
 		comparable: number;
@@ -2689,21 +2720,41 @@ export function buildTrafficStatement(
 				};
 			})
 			.sort((a, b) => b.arrivedBlind - a.arrivedBlind),
-		placements: [...byPlacement.entries()]
-			.filter(([, c]) => c.sessions >= MIN_SESSIONS_PER_PLACEMENT)
-			.map(([name, c]) => {
+		placements: (() => {
+			const eligible = [...byPlacement.entries()].filter(
+				([, c]) => c.sessions >= MIN_SESSIONS_PER_PLACEMENT,
+			);
+			// This account's own best placement is the reference, not a
+			// fixed floor: placement quality is relative to the
+			// inventory this advertiser actually buys.
+			const best = Math.min(
+				...eligible.map(([, c]) => Math.round((1000 * c.blind) / c.sessions) / 10),
+			);
+			return eligible.map(([name, c]) => {
 				const pct = Math.round((1000 * c.blind) / c.sessions) / 10;
 				const m = marginOfError(pct, c.sessions);
+				const low = Math.max(0, Math.round((pct - m) * 10) / 10);
+				// The cautious end against the best, so a thin placement
+				// cannot be condemned on a lucky sample. Same discipline
+				// every other verdict in this file uses.
+				const above = eligible.length >= 2 ? Math.round((low - best) * 10) / 10 : 0;
 				return {
 					name,
 					sessions: c.sessions,
 					arrivedBlind: c.blind,
 					arrivedBlindPct: pct,
 					marginPoints: Math.round(m * 10) / 10,
-					blindPctLow: Math.max(0, Math.round((pct - m) * 10) / 10),
+					blindPctLow: low,
 					purchases: c.purchases,
+					verdict: (above >= PLACEMENT_POINTS_ABOVE_BEST
+						? "desligar"
+						: above >= MATERIAL_POINTS
+							? "observar"
+							: "entregando") as "desligar" | "observar" | "entregando",
+					pointsAboveBest: above,
 				};
-			})
+			});
+		})()
 			// Ranked by RATE, not by absolute waste, and this is the one
 			// dimension where that is right: the fix is a toggle, so the
 			// question is which placement is worst, not which holds the

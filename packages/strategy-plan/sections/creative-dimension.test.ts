@@ -3,6 +3,8 @@ import {
 	buildTrafficStatement,
 	MIN_SESSIONS_PER_CREATIVE,
 	MAX_CREATIVES_TO_COMPARE,
+	MIN_SESSIONS_PER_ADSET,
+	MIN_SESSIONS_PER_PLACEMENT,
 } from "./traffic-statement";
 
 // ──────────────────────────────────────────────
@@ -180,5 +182,132 @@ describe("refusing to rank what the sample cannot separate", () => {
 		expect(st.creatives.length).toBe(1);
 		expect(st.creativePower.tooThin).toBe(true);
 		expect(st.creativePower.detectablePoints).toBe(null);
+	});
+});
+
+describe("the layers that were in the data all along", () => {
+	// The product had been describing itself as unable to see ad sets,
+	// and four council members built arguments on that limitation. The
+	// limitation was a field nobody read.
+	//
+	// Utmify, which the account already uses, writes
+	// `{{adset.name}}|{{adset.id}}` into utm_medium and `{{placement}}`
+	// into utm_term, and the pixel has always captured medium. Measured:
+	// 99,5% of paid sessions carry the ad set, 96% with an id,
+	// retroactive across the whole history. Nothing had to change on the
+	// operator's side.
+
+	function withLayers(
+		n: number,
+		over: Record<string, unknown>,
+		adset: string,
+		placement: string,
+	) {
+		return Array.from({ length: n }, () => ({
+			aggregate: {
+				attribution: {
+					first_touch: {
+						source: "FB",
+						campaign: "Campanha|700000000001",
+						medium: adset,
+						utm_term: placement,
+						landing_url: "https://l.com/p",
+					},
+				},
+				...over,
+			},
+			eventCount: 5,
+			userAgent: null,
+		}));
+	}
+
+	it("reads the ad set out of utm_medium, with its id", () => {
+		const st = buildTrafficStatement(
+			[
+				...withLayers(300, MUTE, "Publico aberto 55+|120251111111111", "Instagram_Feed"),
+				...withLayers(700, BUYS, "Publico aberto 55+|120251111111111", "Instagram_Feed"),
+			],
+			WIN,
+		);
+		expect(st.adSets).toHaveLength(1);
+		expect(st.adSets[0].name).toBe("Publico aberto 55+");
+		expect(st.adSets[0].platformId).toBe("120251111111111");
+		expect(st.adSets[0].arrivedBlindPct).toBe(30);
+	});
+
+	it("separates two ad sets inside one campaign", () => {
+		// A layer the campaign verdict could never reach, and the layer
+		// where budget actually lives in Meta.
+		const st = buildTrafficStatement(
+			[
+				...withLayers(600, MUTE, "aberto|120251111111111", "Instagram_Feed"),
+				...withLayers(400, BUYS, "aberto|120251111111111", "Instagram_Feed"),
+				...withLayers(150, MUTE, "lookalike|120252222222222", "Instagram_Feed"),
+				...withLayers(850, BUYS, "lookalike|120252222222222", "Instagram_Feed"),
+			],
+			WIN,
+		);
+		expect(st.adSets).toHaveLength(2);
+		const aberto = st.adSets.find((a) => a.name === "aberto")!;
+		const look = st.adSets.find((a) => a.name === "lookalike")!;
+		expect(aberto.arrivedBlindPct).toBe(60);
+		expect(look.arrivedBlindPct).toBe(15);
+	});
+
+	it("ignores a medium that is not an ad set reference", () => {
+		// Plain "cpc" or "social" is a medium, not an ad set. Without
+		// the pipe there is no id and no reason to believe it names one.
+		const st = buildTrafficStatement(
+			[...withLayers(500, MUTE, "cpc", "Instagram_Feed"), ...withLayers(500, BUYS, "cpc", "Instagram_Feed")],
+			WIN,
+		);
+		expect(st.adSets).toEqual([]);
+	});
+
+	it("ranks placements by rate, because the fix is a toggle", () => {
+		// The one dimension where ranking by rate rather than by
+		// absolute waste is correct: the operator turns a placement off
+		// with a checkbox, so the question is which is worst, not which
+		// holds the most money.
+		//
+		// Measured on the first days of real data: Audience Network at
+		// 71,8% against Instagram Stories at 19,7%, a 52 point spread,
+		// and the pessimistic end of Audience Network is still 61,5%.
+		const st = buildTrafficStatement(
+			[
+				...withLayers(50, MUTE, "a|120251111111111", "an"),
+				...withLayers(20, BUYS, "a|120251111111111", "an"),
+				...withLayers(60, MUTE, "a|120251111111111", "Instagram_Stories"),
+				...withLayers(240, BUYS, "a|120251111111111", "Instagram_Stories"),
+			],
+			WIN,
+		);
+		expect(st.placements[0].name).toBe("an");
+		expect(st.placements[0].arrivedBlindPct).toBeGreaterThan(
+			st.placements[1].arrivedBlindPct,
+		);
+		// Even the cautious end has to stay clear of the better one, or
+		// the recommendation is noise.
+		expect(st.placements[0].blindPctLow).toBeGreaterThan(
+			st.placements[1].arrivedBlindPct,
+		);
+	});
+
+	it("uses a lower floor for placement than for budget layers", () => {
+		// Meta's whole inventory is under ten placements, so there is no
+		// multiple-comparison problem to correct for, and acting costs a
+		// checkbox rather than money.
+		expect(MIN_SESSIONS_PER_PLACEMENT).toBeLessThan(MIN_SESSIONS_PER_ADSET);
+	});
+
+	it("gives the creative a readable name instead of name piped to id", () => {
+		const st = buildTrafficStatement(
+			[
+				...sess(200, MUTE, "Gancho preco|120253333333333"),
+				...sess(300, BUYS, "Gancho preco|120253333333333"),
+			],
+			WIN,
+		);
+		expect(st.creatives[0].name).toBe("Gancho preco");
 	});
 });

@@ -52,7 +52,7 @@
   var ENDPOINT = '/api/behavioral/ingest';
   var BATCH_INTERVAL = 5000;    // 5s flush
   var MAX_BATCH_SIZE = 50;
-  var SCROLL_MILESTONES = [25, 50, 75, 90];
+  var SCROLL_MILESTONES = [10, 25, 50, 75, 90];
   var DEAD_CLICK_THRESHOLD = 3;  // 3 clicks in 2s same area
   var SESSION_TIMEOUT = 30 * 60 * 1000; // 30 min
   var HESITATION_THRESHOLD_MS = 3000; // 3s pause = hesitation

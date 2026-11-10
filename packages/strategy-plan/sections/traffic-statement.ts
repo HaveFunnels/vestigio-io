@@ -121,6 +121,30 @@ function num(v: unknown): number {
 export const SAW_SOMETHING_MILESTONE = 25;
 
 /**
+ * The band between a first scroll and the 25% milestone, which the
+ * pixel only started reporting on 2026-11-10.
+ *
+ * Why it exists: the sales-funnel and creative lenses of the
+ * media-buying council both landed on the same hole. A visitor who
+ * scrolled 10%, read the promise and refused the offer is the most
+ * informative session in Direct Response, because it says the hook
+ * worked and the offer failed. Until now the first milestone was 25%,
+ * so that visitor was indistinguishable from one who never saw
+ * anything, and the two call for opposite work: change the creative
+ * versus change the offer.
+ *
+ * Collection only. The predicate is deliberately NOT changed yet, and
+ * that restraint is the point: a new milestone cannot be backfilled, so
+ * moving SAW_SOMETHING_MILESTONE today would make the ruler mean one
+ * thing before 2026-11-10 and another after, with no way to tell the
+ * halves apart. RULER_VERSION exists to catch exactly that. The split
+ * becomes available once enough weeks have accumulated under the new
+ * pixel, and moving the predicate then is a deliberate ruler bump with
+ * its own version.
+ */
+export const FIRST_SCROLL_MILESTONE = 10;
+
+/**
  * Did this session arrive and do nothing at all?
  *
  * Scroll alone was wrong, and wrong by a factor of 2.8. Six reviewers

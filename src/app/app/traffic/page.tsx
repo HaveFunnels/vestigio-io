@@ -220,6 +220,13 @@ interface TrafficSeries {
 	byPage: Record<string, SeriesPoint[]>;
 	since: string | null;
 	driftPoints: number | null;
+	drift: {
+		totalPoints: number;
+		behaviourPoints: number;
+		mixPoints: number;
+		campaigns: number;
+		usable: boolean;
+	} | null;
 }
 
 interface TrafficMove {
@@ -884,6 +891,44 @@ export default function TrafficStatementPage() {
 									em {series.account.length} semanas, desde {series.since}. Isso não
 									aparece no aviso semanal: a subida vem em passos pequenos demais para
 									cruzar limite.
+									{/* The sentence that was wrong until now, and it was
+									    wrong in the direction that costs the operator
+									    work. Measured on the live account: of 34,5 points
+									    of drift, 23,1 are mix and minus 0,2 is
+									    behaviour. The campaigns did not get worse. The
+									    operator moved budget toward campaigns that were
+									    always worse. The old copy would have sent them to
+									    fix a page that never changed. */}
+									{series.drift?.usable && (
+										<>
+											{" "}
+											Mas quase tudo isso é{" "}
+											{Math.abs(series.drift.mixPoints) >
+											Math.abs(series.drift.behaviourPoints) ? (
+												<>
+													<strong className="text-content">mudança de mix</strong>:{" "}
+													{pct(series.drift.mixPoints)} pontos vêm de você ter
+													passado a comprar outras campanhas, e só{" "}
+													{pct(series.drift.behaviourPoints)} de as campanhas em si
+													terem piorado. As suas páginas não degradaram. A verba
+													mudou de lugar.
+												</>
+											) : (
+												<>
+													<strong className="text-attention">
+														piora de verdade
+													</strong>
+													: {pct(series.drift.behaviourPoints)} pontos vêm de as
+													mesmas campanhas renderem pior do que rendiam, e só{" "}
+													{pct(series.drift.mixPoints)} de mudança de mix. Isso é
+													coisa para consertar, não para reequilibrar.
+												</>
+											)}{" "}
+											<MetricInfo>
+												{`Separado comparando a média de 3 semanas de cada ponta, campanha por campanha (${series.drift.campaigns} apareceram nas duas pontas). "Mix" é o quanto a taxa da conta se moveu só porque você mudou quanto gasta em cada campanha, mantendo a taxa de cada uma parada. "Comportamento" é o contrário: o quanto se moveu com as mesmas campanhas rendendo diferente. Sem essa separação, escalar uma campanha que sempre foi ruim parece a sua página apodrecendo.`}
+											</MetricInfo>
+										</>
+									)}
 								</>
 							)}
 						</span>

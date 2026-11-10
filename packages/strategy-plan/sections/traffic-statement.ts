@@ -391,6 +391,42 @@ export const POINTS_BELOW_MEDIAN_TO_SCALE = 12;
 export const MATERIAL_POINTS = 5;
 
 /**
+ * The fewest sessions a creative needs before it is worth naming.
+ *
+ * Lower than the campaign floor on purpose, and the reason is
+ * arithmetic rather than generosity. The mute rate runs near 27% on
+ * this account, and a base rate that high separates two options with
+ * far less sample than a purchase rate near 2% ever could. The
+ * media-buying council's creative specialist did the comparison:
+ * telling two creatives apart on PURCHASES needs roughly 16.292 clicks
+ * per pair, which is twenty months of a small advertiser's budget.
+ * Telling them apart on MUTE VISITS needs 586 to 1.178, which is three
+ * to five weeks.
+ *
+ * That is the whole reason this product has a right to judge creative
+ * and a creative generator does not. Not a better model. A better base
+ * rate.
+ */
+export const MIN_SESSIONS_PER_CREATIVE = 120;
+
+/**
+ * How many creatives may be compared at once.
+ *
+ * Not a product limit, a sampling one. With N truly identical
+ * creatives the best of N looks better than the truth by roughly
+ * E[max of N normals] standard errors: 1,03 at N=4 and 1,42 at N=8. On
+ * 400 sessions each that is a 2,3 and a 3,2 point phantom advantage,
+ * and at 100 sessions each it is 6,3 points. A ranking of eight
+ * variants on a small budget is a lottery with a leaderboard, and it
+ * would regress to the mean next cycle, landing that regression in the
+ * behaviour term of the drift decomposition and corrupting the one
+ * clean finding this product has.
+ *
+ * Three is the honest ceiling. Often the honest answer is one.
+ */
+export const MAX_CREATIVES_TO_COMPARE = 3;
+
+/**
  * Below this many judged campaigns on a page, the share above is one
  * or two campaigns wearing a percentage. 2 of 2 is 100% and means
  * nothing.
@@ -993,6 +1029,44 @@ export interface TrafficStatement {
 	 * makes the ad-or-page verdict defensible. Null when there is too
 	 * little non-paid traffic to say anything.
 	 */
+	/**
+	 * What each creative brought, when the ad layer is present in the
+	 * URL.
+	 *
+	 * Empty until the operator pastes Meta's dynamic parameters into
+	 * the campaign URL field. That is a one-time action on their side
+	 * and the reason this arrives at 0% on an account that never did
+	 * it. Empty is honest: it means we cannot see the ad, not that
+	 * every ad performs the same.
+	 */
+	creatives: {
+		name: string;
+		sessions: number;
+		arrivedBlind: number;
+		arrivedBlindPct: number;
+		marginPoints: number;
+		blindPctLow: number;
+		reachedAction: number;
+		purchases: number;
+		campaigns: number;
+	}[];
+	/**
+	 * Whether this account can tell its creatives apart at all, and the
+	 * smallest difference it could detect if it tried.
+	 *
+	 * This exists because the honest answer is usually no, and because
+	 * every product in creative generation sells the opposite. Ranking
+	 * creatives you cannot distinguish is a lottery with a
+	 * leaderboard. Saying "your volume does not support this
+	 * comparison" is the same refusal the cut verdict already makes,
+	 * pointed at a new question.
+	 */
+	creativePower: {
+		comparable: number;
+		detectablePoints: number | null;
+		maxComparable: number;
+		tooThin: boolean;
+	};
 	control: {
 		sessions: number;
 		blind: number;
@@ -1633,6 +1707,8 @@ export function buildTrafficStatement(
 		campaigns: Set<string>;
 	}
 	const byTerm = new Map<string, TermAcc>();
+	/** The ad layer, keyed by whatever the operator named the ad. */
+	const byCreative = new Map<string, TermAcc>();
 	const contactsByChannel = new Map<string, number>();
 
 	// Paid clicks that never became a readable session. See the gate
@@ -1755,6 +1831,26 @@ export function buildTrafficStatement(
 			k.sessions++;
 			if (blind) k.blind++;
 			byKind.set(kind, k);
+		}
+		// The ad layer. Present only when the operator pasted Meta's
+		// dynamic parameters into the campaign URL field, which is why
+		// this map is empty on an account that never did it. Empty is
+		// honest: it means we cannot see the ad.
+		const creative = typeof ft?.utm_content === "string" ? ft.utm_content.trim() : "";
+		if (creative && creative.length <= 200) {
+			const cr = byCreative.get(creative) ?? {
+				sessions: 0,
+				blind: 0,
+				action: 0,
+				purchases: 0,
+				campaigns: new Set<string>(),
+			};
+			cr.sessions++;
+			if (blind) cr.blind++;
+			if (reachedAction(a, model)) cr.action++;
+			if (a.reached_thank_you) cr.purchases++;
+			cr.campaigns.add(key);
+			byCreative.set(creative, cr);
 		}
 		if (a.checkout_reached) acc.checkout++;
 		if (a.reached_thank_you) acc.completed++;
@@ -2439,6 +2535,49 @@ export function buildTrafficStatement(
 		landingPages: landingPageRows,
 		// 300 to match the per-campaign floor: below it the rate is noise
 		// and a noisy control is worse than none.
+		// The ad layer, ranked by waste in absolute terms like every
+		// other dimension. Capped at what the sample can carry: see
+		// MAX_CREATIVES_TO_COMPARE for why eight is a lottery.
+		creatives: [...byCreative.entries()]
+			.filter(([, c]) => c.sessions >= MIN_SESSIONS_PER_CREATIVE)
+			.map(([name, c]) => {
+				const pctC = Math.round((1000 * c.blind) / c.sessions) / 10;
+				const mC = marginOfError(pctC, c.sessions);
+				return {
+					name,
+					sessions: c.sessions,
+					arrivedBlind: c.blind,
+					arrivedBlindPct: pctC,
+					marginPoints: Math.round(mC * 10) / 10,
+					blindPctLow: Math.max(0, Math.round((pctC - mC) * 10) / 10),
+					reachedAction: c.action,
+					purchases: c.purchases,
+					campaigns: c.campaigns.size,
+				};
+			})
+			.sort((a, b) => b.arrivedBlind - a.arrivedBlind),
+		creativePower: (() => {
+			const ok = [...byCreative.values()]
+				.filter((c) => c.sessions >= MIN_SESSIONS_PER_CREATIVE)
+				.sort((a, b) => b.sessions - a.sessions);
+			// The smallest gap the two biggest creatives could tell
+			// apart, which is the combined margin of the pair. Anything
+			// narrower than this is a coin flip wearing a percentage.
+			const detectable =
+				ok.length >= 2
+					? Math.round(
+							(marginOfError((100 * ok[0].blind) / ok[0].sessions, ok[0].sessions) +
+								marginOfError((100 * ok[1].blind) / ok[1].sessions, ok[1].sessions)) *
+								10,
+						) / 10
+					: null;
+			return {
+				comparable: ok.length,
+				detectablePoints: detectable,
+				maxComparable: Math.min(ok.length, MAX_CREATIVES_TO_COMPARE),
+				tooThin: ok.length < 2,
+			};
+		})(),
 		control:
 			controlSessions >= 300
 				? {

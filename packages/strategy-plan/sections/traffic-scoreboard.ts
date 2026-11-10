@@ -116,6 +116,12 @@ export async function recordVerdicts(
 		sessions: number;
 		cost: number;
 		costUnit: string;
+		/** Which deterministic guard withheld a cut, or null. Frozen so
+		 *  the guard and any authorship bias can be told apart later;
+		 *  they push the same way, so without this they are collinear. */
+		blockReason: string | null;
+		falseZeroRiskPct: number | null;
+		leakStep: string | null;
 	};
 	const rows: Row[] = [
 		...statement.campaigns
@@ -131,6 +137,9 @@ export async function recordVerdicts(
 				sessions: c.sessions,
 				cost: c.pauseCost,
 				costUnit: c.pauseCostUnit,
+				blockReason: c.cutUnsafeReason,
+				falseZeroRiskPct: c.falseZeroRiskPct,
+				leakStep: c.leakStep,
 			})),
 		...statement.landingPages
 			.filter((g) => SCORED.has(g.verdict))
@@ -145,6 +154,13 @@ export async function recordVerdicts(
 				sessions: g.sessions,
 				cost: Math.round(g.wasteShare),
 				costUnit: "pct_do_desperdicio",
+				// A page verdict has no cut to withhold, so no guard can
+				// have acted. Null here means "not applicable", which is
+				// why it is not folded in with the campaign nulls when
+				// the board is sliced by guard.
+				blockReason: null,
+				falseZeroRiskPct: null,
+				leakStep: null,
 			})),
 	];
 	if (rows.length === 0) return 0;
@@ -161,8 +177,9 @@ export async function recordVerdicts(
 			`INSERT INTO "TrafficVerdict"
 			 ("id","envId","dimension","key","label","verdict","issuedAt",
 			  "blindPct","blindPctLow","marginPoints","sessions",
-			  "pauseCost","pauseCostUnit","rulerVersion")
-			 VALUES ($1,$2,$14,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+			  "pauseCost","pauseCostUnit","rulerVersion",
+			  "blockReason","falseZeroRiskPct","leakStep")
+			 VALUES ($1,$2,$14,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$15,$16,$17)
 			 ON CONFLICT ("envId","dimension","key","issuedAt") DO UPDATE SET
 			   "label" = EXCLUDED."label",
 			   "verdict" = EXCLUDED."verdict",
@@ -172,7 +189,10 @@ export async function recordVerdicts(
 			   "sessions" = EXCLUDED."sessions",
 			   "pauseCost" = EXCLUDED."pauseCost",
 			   "pauseCostUnit" = EXCLUDED."pauseCostUnit",
-			   "rulerVersion" = EXCLUDED."rulerVersion"`,
+			   "rulerVersion" = EXCLUDED."rulerVersion",
+			   "blockReason" = EXCLUDED."blockReason",
+			   "falseZeroRiskPct" = EXCLUDED."falseZeroRiskPct",
+			   "leakStep" = EXCLUDED."leakStep"`,
 			id,
 			environmentId,
 			key,
@@ -187,6 +207,9 @@ export async function recordVerdicts(
 			c.costUnit,
 			RULER_VERSION,
 			c.dimension,
+			c.blockReason,
+			c.falseZeroRiskPct,
+			c.leakStep,
 		);
 		written++;
 	}

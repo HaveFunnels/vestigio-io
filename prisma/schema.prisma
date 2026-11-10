@@ -1473,6 +1473,25 @@ model TrafficVerdict {
   /// survives a rename.
   label     String?
 
+  /// Which deterministic guard withheld a cut, or null when a cut was
+  /// available.
+  ///
+  /// The statistician's point, and it is the reason this column exists:
+  /// the engine already pushes verdicts away from "cortar" on purpose,
+  /// and a second force would push the same way if the product ever
+  /// authors what it judges. Two causes with the same sign are
+  /// collinear, so without recording which guard acted, nobody can
+  /// ever separate "the rule fired" from "we protected our own work".
+  /// Logging it breaks the collinearity.
+  blockReason      String?
+  /// How likely a zero purchase count was by sampling alone, frozen
+  /// with the claim, because it says what the zero was worth as
+  /// evidence at the moment we spoke.
+  falseZeroRiskPct Float?
+  /// The rung the verdict was about: chegada, acao, checkout,
+  /// pagamento.
+  leakStep         String?
+
   /// cortar | corrigir | medicao_suspeita. Only verdicts that ask for
   /// an action are recorded: "observar" and "entregando" are not
   /// recommendations and scoring them would inflate the hit rate with
@@ -1514,6 +1533,7 @@ model TrafficVerdict {
   @@unique([envId, dimension, key, issuedAt])
   @@index([envId, issuedAt])
   @@index([envId, outcome])
+  @@index([envId, blockReason])
 }
 
 /// The column we cannot measure, supplied by the person who can.

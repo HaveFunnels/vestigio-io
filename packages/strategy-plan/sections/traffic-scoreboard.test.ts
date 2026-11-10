@@ -231,3 +231,42 @@ describe("the money veto", () => {
 		expect(MEASURED_BASE_DISAPPEARANCE).toBeGreaterThan(0.5);
 	});
 });
+
+describe("the guard is recorded, so it can be told apart later", () => {
+	// The statistician's fix, and his argument is why it is not
+	// cosmetic. The engine already pushes verdicts away from "cortar"
+	// through three deterministic guards, and he approved that
+	// conservatism. If the product ever authors what it judges, a
+	// second force pushes the same way: admitting a wrong
+	// recommendation would also admit wrong authorship.
+	//
+	// Two causes, one effect, same sign. The authorship bias is not
+	// identifiable unless the guard is logged, because nobody can tell
+	// "the rule fired" from "we protected our own work". That is
+	// collinearity, and no volume of data resolves it.
+	//
+	// He was explicit that this is worth doing even if the product
+	// never teaches or generates anything, because without it every
+	// future test of self-flattery is inconclusive by construction.
+
+	it("keeps the three guards distinguishable by name", () => {
+		// If these ever collapse into one boolean, the conditioning he
+		// needs becomes impossible: "no cut" would stop saying why.
+		const reasons = [
+			"medicao_de_compra_quebrada",
+			"chega_ao_checkout",
+			"zero_nao_e_evidencia",
+		];
+		expect(new Set(reasons).size).toBe(3);
+	});
+
+	it("records what the zero was worth as evidence at the time", () => {
+		// Frozen with the claim rather than recomputed, for the same
+		// reason the rate is frozen: a later run must not be able to
+		// rewrite how much the zero counted when we spoke.
+		const atFloor = Math.pow(1 - 0.0177, 80);
+		const atVolume = Math.pow(1 - 0.0177, 900);
+		expect(atFloor).toBeGreaterThan(0.2);
+		expect(atVolume).toBeLessThan(0.0001);
+	});
+});

@@ -52,6 +52,7 @@ export interface ScoreboardData {
 	melhorou: number;
 	piorou: number;
 	igual: number;
+	cumprido: number;
 	sumiu: number;
 	pending: number;
 	corroborated: number;
@@ -81,6 +82,7 @@ const OUTCOME: Record<string, { label: string; tone: string }> = {
 	melhorou: { label: "a perda caiu", tone: "text-accent-text" },
 	piorou: { label: "a perda subiu", tone: "text-attention" },
 	igual: { label: "ficou igual", tone: "text-content-secondary" },
+	cumprido: { label: "você desligou", tone: "text-accent-text" },
 	sumiu: { label: "parou de rodar", tone: "text-content-secondary" },
 	indefinido: { label: "não dá para dizer", tone: "text-content-muted" },
 };
@@ -93,13 +95,24 @@ export default function Scoreboard({ data }: { data: ScoreboardData }) {
 	// can hold us to, and an empty section is just an absence.
 	if (data.rows.length === 0) return null;
 
-	// "sumiu" is no longer counted as a hit. Measured on the live
-	// account: 82% of campaigns that cleared the session floor stopped
-	// within 21 days with nobody advising anything about them. Counting
-	// a stop as a hit meant the board started at 82% for free and
-	// carried no information, in the number most likely to end up in a
-	// renewal conversation.
-	const hits = data.melhorou;
+	// Two ways a recommendation can be right, and the board needs both
+	// or it lies about itself.
+	//
+	// "melhorou" is the waste falling on something still running.
+	// "cumprido" is a subtraction the operator's own change log says
+	// they carried out: the thing is gone, so no rate can improve, and
+	// counting only "melhorou" meant a cut executed perfectly scored as
+	// nothing. It sat in the denominator, so the published rate FELL
+	// as the customer obeyed, and the cheapest recommendation we make
+	// is a placement checkbox, which is the one most likely to be
+	// followed and the one most likely to be apurado first.
+	//
+	// "sumiu" is still not a hit and never will be: 82% of campaigns
+	// on the live account stop within 21 days with nobody advising
+	// anything, so traffic stopping on its own proves nothing. The
+	// difference between "cumprido" and "sumiu" is the one piece of
+	// evidence that comes from outside our own measurement.
+	const hits = data.melhorou + data.cumprido;
 	const rate = data.judged > 0 ? Math.round((100 * hits) / data.judged) : null;
 	const oldest = data.rows[data.rows.length - 1]?.issuedAt ?? null;
 
@@ -125,7 +138,8 @@ export default function Scoreboard({ data }: { data: ScoreboardData }) {
 				<>
 					<p className="text-[15px] leading-relaxed text-content">
 						Das <strong>{data.judged}</strong> recomendações que já deu para apurar,{" "}
-						<strong className="text-accent-text">{hits}</strong> deram certo e{" "}
+						<strong className="text-accent-text">{hits}</strong>{" "}
+						{hits === 1 ? "deu certo" : "deram certo"} e{" "}
 						<strong className={data.piorou > 0 ? "text-attention" : undefined}>
 							{data.piorou}
 						</strong>{" "}

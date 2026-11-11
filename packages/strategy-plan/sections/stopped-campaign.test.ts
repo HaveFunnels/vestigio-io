@@ -155,6 +155,7 @@ describe("the scoreboard cannot be padded with campaigns that were already off",
 		// engine-side guard below is still the first line of defence,
 		// and this is the second.
 		const r = judge({
+			verdict: "cortar",
 			claimedPct: 62,
 			laterPct: null,
 			laterSessions: 0,

@@ -59,6 +59,22 @@ const SCORED: ReadonlySet<string> = new Set([
  *  are measuring noise; the operator has not had time to act. */
 export const DAYS_BEFORE_SCORING = 21;
 
+/**
+ * Verdicts whose requested action IS to stop sending traffic to the
+ * thing. For these, and only these, traffic going to zero is the
+ * recommendation being carried out rather than an unrelated event.
+ *
+ * "medicao_suspeita" is deliberately absent: there the requested
+ * action is to fix the instrumentation, so traffic disappearing is
+ * not the thing we asked for and cannot be scored as adherence.
+ */
+const SUBTRACTIONS: ReadonlySet<string> = new Set([
+	"cortar",
+	"desligar",
+	"anuncio_errado",
+	"corrigir",
+]);
+
 /** Movement smaller than this is "igual". Matches the materiality
  *  floor the weekly alert already uses, so the scoreboard and the
  *  alert cannot disagree about what counts as a change. */
@@ -88,7 +104,30 @@ const PAUSED_SHARE = 0.2;
  */
 export const MEASURED_BASE_DISAPPEARANCE = 0.82;
 
-export type Outcome = "melhorou" | "piorou" | "igual" | "sumiu" | "indefinido";
+export type Outcome =
+	| "melhorou"
+	| "piorou"
+	| "igual"
+	/**
+	 * The recommendation was a subtraction, the traffic went to zero,
+	 * AND the operator's own change log corroborates that they did it.
+	 *
+	 * This exists because the board used to have no way to record a
+	 * recommendation that worked. A cut executed perfectly sends the
+	 * traffic to zero, which landed in "sumiu", and "sumiu" sat in the
+	 * denominator with no path to the numerator. The published rate
+	 * therefore FELL as the customer obeyed, and the first settled
+	 * verdict in this product's history was always going to be a
+	 * placement cut, so the first rate ever published would have been
+	 * 0%.
+	 *
+	 * Separate from "melhorou" on purpose: nothing improved in the
+	 * measurement, the thing is gone. We are claiming adherence, not a
+	 * better rate, and the two must not share a bucket.
+	 */
+	| "cumprido"
+	| "sumiu"
+	| "indefinido";
 
 /**
  * Record what we just said, once per statement generation.
@@ -252,6 +291,13 @@ export async function recordVerdicts(
  * reading a query.
  */
 export function judge(args: {
+	/**
+	 * Which recommendation is being judged. Needed because "the
+	 * traffic went to zero" means opposite things depending on what we
+	 * asked for: for a subtraction it is the action being carried out,
+	 * for anything else it is an unrelated event.
+	 */
+	verdict: string;
 	claimedPct: number;
 	laterPct: number | null;
 	laterSessions: number;
@@ -313,6 +359,20 @@ export function judge(args: {
 		// The one thing that does corroborate is the operator's own
 		// change log, because it is the only evidence that comes from
 		// outside our own measurement.
+		//
+		// And when it DOES corroborate a subtraction, that is the
+		// recommendation working, so it belongs in the numerator. It
+		// used to fall through to "sumiu" and sit in the denominator
+		// forever: the board's published rate went DOWN every time a
+		// customer did exactly what we told them to do.
+		if (args.loggedChange && SUBTRACTIONS.has(args.verdict)) {
+			// The money veto applies here too, and it has to. We told
+			// them to cut something, they cut it, and the business
+			// earned less: that is not a win no matter how well the
+			// instruction was followed.
+			if (moneyFell) return { outcome: "igual", acted: true, moneyFell };
+			return { outcome: "cumprido", acted: true, moneyFell };
+		}
 		return { outcome: "sumiu", acted: args.loggedChange ? true : null, moneyFell };
 	}
 
@@ -371,6 +431,9 @@ export interface Scoreboard {
 	melhorou: number;
 	piorou: number;
 	igual: number;
+	/** Subtractions the operator's own change log confirms they made.
+	 *  Counts as a hit: see the Outcome union. */
+	cumprido: number;
 	sumiu: number;
 	/** Still inside the waiting period. Shown as pending, never as a
 	 *  miss: a prediction nobody has had time to act on is not wrong. */
@@ -411,6 +474,7 @@ export async function scoreVerdicts(
 			id: string;
 			dimension: string;
 			key: string;
+			verdict: string;
 			issuedAt: Date;
 			blindPct: number;
 			sessions: number;
@@ -423,7 +487,7 @@ export async function scoreVerdicts(
 		// page verdicts started being written: every page verdict would
 		// have looked for its history in the campaign rollups, found
 		// nothing, and scored itself "sumiu" forever.
-		`SELECT "id","dimension","key","issuedAt","blindPct","sessions","rulerVersion"
+		`SELECT "id","dimension","key","verdict","issuedAt","blindPct","sessions","rulerVersion"
 		 FROM "TrafficVerdict"
 		 WHERE "envId" = $1 AND "outcome" IS NULL AND "issuedAt" <= $2`,
 		environmentId,
@@ -497,6 +561,7 @@ export async function scoreVerdicts(
 		);
 
 		const { outcome, acted, moneyFell } = judge({
+			verdict: v.verdict,
 			loggedChange,
 			declaredBefore: declared[0]?.before_v ?? null,
 			declaredAfter: declared[0]?.after_v ?? null,
@@ -566,10 +631,20 @@ export async function scoreVerdicts(
 	const count = (o: Outcome) => rows.filter((r) => r.outcome === o).length;
 	return {
 		rows,
-		judged: rows.filter((r) => r.outcome !== null && r.outcome !== "indefinido").length,
+		// "sumiu" is NOT judged. Traffic vanishing with nothing to
+		// corroborate it is unknown, and 82% of campaigns on the
+		// instrumented account do it unprompted. Unknown is not a miss,
+		// so it cannot sit in the denominator of a hit rate: that is
+		// how a board punishes itself for other people's housekeeping.
+		// It stays reported on its own line, which is where a number
+		// you cannot interpret belongs.
+		judged: rows.filter(
+			(r) => r.outcome !== null && r.outcome !== "indefinido" && r.outcome !== "sumiu",
+		).length,
 		melhorou: count("melhorou"),
 		piorou: count("piorou"),
 		igual: count("igual"),
+		cumprido: count("cumprido"),
 		sumiu: count("sumiu"),
 		pending: rows.filter((r) => r.outcome === null).length,
 		corroborated: rows.filter((r) => r.acted === true).length,

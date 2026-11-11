@@ -21,6 +21,7 @@ import {
 // ──────────────────────────────────────────────
 
 const BASE = {
+	verdict: "cortar",
 	claimedPct: 70,
 	laterPct: 70,
 	laterSessions: 1000,
@@ -108,12 +109,56 @@ describe("judging one of our own recommendations", () => {
 		expect(r.acted).toBe(null);
 	});
 
-	it("accepts the operator's own change log as evidence of adherence", () => {
-		// The only corroboration available, because it is the only one
-		// that comes from outside our own measurement.
+	it("counts a corroborated subtraction as a hit, not as a disappearance", () => {
+		// This test used to assert `outcome: "sumiu"` here, and in doing
+		// so it pinned the worst bug this file ever had.
+		//
+		// A cut carried out perfectly sends the traffic to zero. That
+		// landed in "sumiu", "sumiu" sat in the denominator of the hit
+		// rate, and nothing could ever move it to the numerator. So the
+		// rate we published went DOWN every time a customer did exactly
+		// what we told them to do. The cheapest recommendation the
+		// product makes is a placement checkbox, which is both the one
+		// most likely to be followed and the one most likely to settle
+		// first, so the first rate this product ever published was going
+		// to be 0%.
+		//
+		// The corroboration requirement is what keeps it honest: the
+		// operator's own change log is the only evidence from outside
+		// our own measurement.
 		const r = judge({ ...BASE, laterSessions: 40, laterPct: 70, loggedChange: true });
-		expect(r.outcome).toBe("sumiu");
+		expect(r.outcome).toBe("cumprido");
 		expect(r.acted).toBe(true);
+	});
+
+	it("refuses to call it cumprido when the verdict was not a subtraction", () => {
+		// "medicao_suspeita" asks the operator to fix instrumentation.
+		// Traffic vanishing is not the thing we asked for, so a change
+		// log plus silence cannot be read as our recommendation working.
+		const r = judge({
+			...BASE,
+			verdict: "medicao_suspeita",
+			laterSessions: 40,
+			laterPct: 70,
+			loggedChange: true,
+		});
+		expect(r.outcome).toBe("sumiu");
+	});
+
+	it("still refuses a corroborated cut when the business earned less", () => {
+		// The money veto has to reach this branch too. We told them to
+		// cut, they cut, and the business earned less: following the
+		// instruction perfectly does not make it a win.
+		const r = judge({
+			...BASE,
+			laterSessions: 40,
+			laterPct: 70,
+			loggedChange: true,
+			declaredBefore: 50000,
+			declaredAfter: 41000,
+		});
+		expect(r.outcome).toBe("igual");
+		expect(r.moneyFell).toBe(true);
 	});
 
 	it("reads no later data at all as sumiu rather than igual", () => {
